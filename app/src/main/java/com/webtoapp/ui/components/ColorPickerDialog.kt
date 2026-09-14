@@ -12,6 +12,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -64,10 +65,11 @@ fun ColorPickerDialog(
     var customColorInput by remember { mutableStateOf(currentColor?.removePrefix("#") ?: "") }
     var selectedColor by remember { mutableStateOf(currentColor ?: "#2196F3") }
 
-    AlertDialog(
+    com.webtoapp.ui.design.WtaAlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(Strings.selectColor) },
-        text = {
+        icon = Icons.Outlined.Palette,
+        title = Strings.selectColor,
+        content = {
             Column(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {

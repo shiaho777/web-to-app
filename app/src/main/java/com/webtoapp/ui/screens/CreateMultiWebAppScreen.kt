@@ -68,6 +68,7 @@ fun CreateMultiWebAppScreen(
     var refreshInterval by remember { mutableStateOf(30) }
     var displayMode by remember { mutableStateOf("TABS") }
     var showSiteIcons by remember { mutableStateOf(true) }
+    var sitesInheritConfig by remember { mutableStateOf(true) }
 
     var selectedAppIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
     var filterType by remember { mutableStateOf<String?>(null) }
@@ -94,6 +95,7 @@ fun CreateMultiWebAppScreen(
                     refreshInterval = config.refreshInterval
                     displayMode = config.displayMode.ifBlank { "TABS" }
                     showSiteIcons = config.showSiteIcons
+                    sitesInheritConfig = !config.sitesUseOwnConfig
                 }
                 injectScripts = app.webViewConfig.injectScripts
             }
@@ -120,6 +122,7 @@ fun CreateMultiWebAppScreen(
                             displayMode = displayMode,
                             refreshInterval = refreshInterval,
                             showSiteIcons = showSiteIcons,
+                            sitesUseOwnConfig = !sitesInheritConfig,
                             projectId = ""
                         ),
                         appIcon,
@@ -184,6 +187,28 @@ fun CreateMultiWebAppScreen(
                                     onCheckedChange = { showSiteIcons = it }
                                 )
                             }
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    Strings.multiWebSitesInheritConfig,
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                                Text(
+                                    Strings.multiWebSitesInheritConfigHint,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Switch(
+                                checked = sitesInheritConfig,
+                                onCheckedChange = { sitesInheritConfig = it }
+                            )
                         }
                     }
                 }

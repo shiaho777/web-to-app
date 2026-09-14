@@ -147,6 +147,8 @@ object Strings {
     val multiWebModeDrawerDesc: String get() = StringsA.multiWebModeDrawerDesc
     val multiWebModeFeedDesc: String get() = StringsA.multiWebModeFeedDesc
     val multiWebShowSiteIcons: String get() = StringsA.multiWebShowSiteIcons
+    val multiWebSitesInheritConfig: String get() = StringsA.multiWebSitesInheritConfig
+    val multiWebSitesInheritConfigHint: String get() = StringsA.multiWebSitesInheritConfigHint
     val multiWebFeedEmpty: String get() = StringsA.multiWebFeedEmpty
     val multiWebFeedEmptyHint: String get() = StringsA.multiWebFeedEmptyHint
     val multiWebFeedStats: String get() = StringsA.multiWebFeedStats
@@ -6227,6 +6229,32 @@ object StringsA {
         AppLanguage.RUSSIAN -> "Показывать значки сайтов на карточках"
         AppLanguage.JAPANESE -> "カードにサイトアイコンを表示"
         AppLanguage.KOREAN -> "카드에 사이트 아이콘 표시"
+    }
+
+    val multiWebSitesInheritConfig: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "子站点跟随主应用配置"
+        AppLanguage.ENGLISH -> "Sites inherit the main app's config"
+        AppLanguage.ARABIC -> "المواقع تتبع إعدادات التطبيق الرئيسي"
+        AppLanguage.PORTUGUESE -> "Sites herdam a configuração do app principal"
+        AppLanguage.SPANISH -> "Los sitios heredan la configuración de la app principal"
+        AppLanguage.FRENCH -> "Les sites héritent de la config de l'app principale"
+        AppLanguage.GERMAN -> "Seiten übernehmen die Haupt-App-Konfiguration"
+        AppLanguage.RUSSIAN -> "Сайты наследуют настройки основного приложения"
+        AppLanguage.JAPANESE -> "サイトはメインアプリの設定を継承"
+        AppLanguage.KOREAN -> "사이트가 메인 앱 설정을 상속"
+    }
+
+    val multiWebSitesInheritConfigHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "仅加载子站点的内容与资源，通用配置以主应用为准"
+        AppLanguage.ENGLISH -> "Only site content and resources load; common settings follow the main app"
+        AppLanguage.ARABIC -> "يتم تحميل محتوى المواقع ومواردها فقط؛ الإعدادات العامة تتبع التطبيق الرئيسي"
+        AppLanguage.PORTUGUESE -> "Carrega apenas conteúdo e recursos dos sites; as configurações seguem o app principal"
+        AppLanguage.SPANISH -> "Solo se cargan contenido y recursos de los sitios; la configuración sigue a la app principal"
+        AppLanguage.FRENCH -> "Seuls le contenu et les ressources des sites sont chargés ; les réglages suivent l'app principale"
+        AppLanguage.GERMAN -> "Nur Inhalte und Ressourcen der Seiten werden geladen; allgemeine Einstellungen folgen der Haupt-App"
+        AppLanguage.RUSSIAN -> "Загружаются только контент и ресурсы сайтов; общие настройки берутся из основного приложения"
+        AppLanguage.JAPANESE -> "サイトのコンテンツとリソースのみ読み込み、共通設定はメインアプリに従います"
+        AppLanguage.KOREAN -> "사이트의 콘텐츠와 리소스만 로드하고 공통 설정은 메인 앱을 따릅니다"
     }
 
     val multiWebFeedEmpty: String get() = when (Strings.lang) {
@@ -36215,16 +36243,16 @@ object StringsC {
     }
 
     val exactAlarmPermissionHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "⚠ 需要精确闹钟权限才能准时启动，点击前往设置"
-        AppLanguage.ENGLISH -> "⚠ Exact alarm permission required for on-time launch, tap to open settings"
-        AppLanguage.ARABIC -> "⚠ يلزم إذن المنبه الدقيق للتشغيل في الوقت المحدد، انقر لفتح الإعدادات"
-        AppLanguage.PORTUGUESE -> "⚠ Permissão de alarme exato necessária para início pontual, toque para abrir as configurações"
-        AppLanguage.SPANISH -> "⚠ Se requiere permiso de alarma exacta para inicio puntual, toque para abrir configuración"
-        AppLanguage.FRENCH -> "⚠ Permission d'alarme exacte requise pour un lancement à l'heure, appuyez pour ouvrir les paramètres"
-        AppLanguage.GERMAN -> "⚠ Berechtigung für exakten Alarm für pünktlichen Start erforderlich, tippen, um Einstellungen zu öffnen"
-        AppLanguage.RUSSIAN -> "⚠ Для запуска вовремя требуется разрешение на точный будильник, нажмите, чтобы открыть настройки"
-        AppLanguage.JAPANESE -> "⚠ 時刻通りの起動には正確なアラーム権限が必要です、タップして設定を開く"
-        AppLanguage.KOREAN -> "⚠ 정시 시작을 위해 정확한 알람 권한이 필요합니다, 탭하여 설정 열기"
+        AppLanguage.CHINESE -> "需要精确闹钟权限才能准时启动，点击前往设置"
+        AppLanguage.ENGLISH -> "Exact alarm permission required for on-time launch, tap to open settings"
+        AppLanguage.ARABIC -> "يلزم إذن المنبه الدقيق للتشغيل في الوقت المحدد، انقر لفتح الإعدادات"
+        AppLanguage.PORTUGUESE -> "Permissão de alarme exato necessária para início pontual, toque para abrir as configurações"
+        AppLanguage.SPANISH -> "Se requiere permiso de alarma exacta para inicio puntual, toque para abrir configuración"
+        AppLanguage.FRENCH -> "Permission d'alarme exacte requise pour un lancement à l'heure, appuyez pour ouvrir les paramètres"
+        AppLanguage.GERMAN -> "Berechtigung für exakten Alarm für pünktlichen Start erforderlich, tippen, um Einstellungen zu öffnen"
+        AppLanguage.RUSSIAN -> "Для запуска вовремя требуется разрешение на точный будильник, нажмите, чтобы открыть настройки"
+        AppLanguage.JAPANESE -> "時刻通りの起動には正確なアラーム権限が必要です、タップして設定を開く"
+        AppLanguage.KOREAN -> "정시 시작을 위해 정확한 알람 권한이 필요합니다, 탭하여 설정 열기"
     }
 
     val batteryOptimizationHint: String get() = when (Strings.lang) {
@@ -59523,16 +59551,16 @@ object StringsE {
     }
 
     val permissionDangerTag: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "⚠ 高敏感权限 — Play Store 审核可能需要提供使用声明"
-        AppLanguage.ENGLISH -> "⚠ Highly sensitive — Play Store may require usage declaration"
-        AppLanguage.ARABIC -> "⚠ حساس للغاية — قد يتطلب Play Store إعلان الاستخدام"
-        AppLanguage.PORTUGUESE -> "⚠ Altamente sensível — Play Store pode exigir declaração de uso"
-        AppLanguage.SPANISH -> "⚠ Altamente sensible — Play Store puede requerir declaración de uso"
-        AppLanguage.FRENCH -> "⚠ Hautement sensible — Play Store peut exiger une déclaration d'usage"
-        AppLanguage.GERMAN -> "⚠ Hochsensibel — Play Store kann eine Nutzungserklärung verlangen"
-        AppLanguage.RUSSIAN -> "⚠ Высокочувствительное — Play Store может потребовать декларацию использования"
-        AppLanguage.JAPANESE -> "⚠ 高度に機密 — Play Store は使用宣言を要求する場合があります"
-        AppLanguage.KOREAN -> "⚠ 고도로 민감 — Play Store에서 사용 선언이 필요할 수 있습니다"
+        AppLanguage.CHINESE -> "高敏感权限 — Play Store 审核可能需要提供使用声明"
+        AppLanguage.ENGLISH -> "Highly sensitive — Play Store may require usage declaration"
+        AppLanguage.ARABIC -> "حساس للغاية — قد يتطلب Play Store إعلان الاستخدام"
+        AppLanguage.PORTUGUESE -> "Altamente sensível — Play Store pode exigir declaração de uso"
+        AppLanguage.SPANISH -> "Altamente sensible — Play Store puede requerir declaración de uso"
+        AppLanguage.FRENCH -> "Hautement sensible — Play Store peut exiger une déclaration d'usage"
+        AppLanguage.GERMAN -> "Hochsensibel — Play Store kann eine Nutzungserklärung verlangen"
+        AppLanguage.RUSSIAN -> "Высокочувствительное — Play Store может потребовать декларацию использования"
+        AppLanguage.JAPANESE -> "高度に機密 — Play Store は使用宣言を要求する場合があります"
+        AppLanguage.KOREAN -> "고도로 민감 — Play Store에서 사용 선언이 필요할 수 있습니다"
     }
     val permissionDangerWarning: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "此权限属于高敏感权限，Google Play 可能要求你填写权限使用声明才能通过审核"

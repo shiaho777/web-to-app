@@ -954,9 +954,11 @@ fun BrowserAdvancedConfigCard(
 
                     WtaSection(
                         title = Strings.sectionWebEngine,
-                        headerStyle = WtaSectionHeaderStyle.Quiet
+                        headerStyle = WtaSectionHeaderStyle.Quiet,
+                        collapsible = true,
+                        initiallyExpanded = false
                     ) {
-                        WtaSettingCard {
+                        Column(modifier = Modifier.fillMaxWidth()) {
                             WtaToggleRow(
                                 title = "JavaScript",
                                 subtitle = Strings.enableJavaScript,
@@ -982,9 +984,11 @@ fun BrowserAdvancedConfigCard(
 
                     WtaSection(
                         title = Strings.sectionContentDisplay,
-                        headerStyle = WtaSectionHeaderStyle.Quiet
+                        headerStyle = WtaSectionHeaderStyle.Quiet,
+                        collapsible = true,
+                        initiallyExpanded = false
                     ) {
-                        WtaSettingCard {
+                        Column(modifier = Modifier.fillMaxWidth()) {
                             WtaToggleRow(
                                 title = Strings.zoomSetting,
                                 subtitle = Strings.zoomSettingHint,
@@ -1028,9 +1032,11 @@ fun BrowserAdvancedConfigCard(
 
                     WtaSection(
                         title = Strings.sectionNavigation,
-                        headerStyle = WtaSectionHeaderStyle.Quiet
+                        headerStyle = WtaSectionHeaderStyle.Quiet,
+                        collapsible = true,
+                        initiallyExpanded = false
                     ) {
-                        WtaSettingCard {
+                        Column(modifier = Modifier.fillMaxWidth()) {
                             WtaToggleRow(
                                 title = Strings.swipeRefreshSetting,
                                 subtitle = Strings.swipeRefreshSettingHint,
@@ -1156,9 +1162,11 @@ fun BrowserAdvancedConfigCard(
 
                     WtaSection(
                         title = Strings.sectionAutoRefresh,
-                        headerStyle = WtaSectionHeaderStyle.Quiet
+                        headerStyle = WtaSectionHeaderStyle.Quiet,
+                        collapsible = true,
+                        initiallyExpanded = false
                     ) {
-                        WtaSettingCard {
+                        Column(modifier = Modifier.fillMaxWidth()) {
                             WtaToggleRow(
                                 title = Strings.autoRefreshSettingLabel,
                                 subtitle = Strings.autoRefreshSettingDesc,
@@ -1210,9 +1218,11 @@ fun BrowserAdvancedConfigCard(
 
                     WtaSection(
                         title = Strings.sectionOfflinePerformance,
-                        headerStyle = WtaSectionHeaderStyle.Quiet
+                        headerStyle = WtaSectionHeaderStyle.Quiet,
+                        collapsible = true,
+                        initiallyExpanded = false
                     ) {
-                        WtaSettingCard {
+                        Column(modifier = Modifier.fillMaxWidth()) {
                             WtaToggleRow(
                                 title = Strings.freshSessionModeTitle,
                                 subtitle = Strings.freshSessionModeDesc,
@@ -1347,7 +1357,9 @@ fun BrowserAdvancedConfigCard(
 
                     WtaSection(
                         title = Strings.sectionDeveloper,
-                        headerStyle = WtaSectionHeaderStyle.Quiet
+                        headerStyle = WtaSectionHeaderStyle.Quiet,
+                        collapsible = true,
+                        initiallyExpanded = false
                     ) {
                         KeyboardAdjustModeCard(
                             mode = config.keyboardAdjustMode,
@@ -1356,23 +1368,27 @@ fun BrowserAdvancedConfigCard(
 
                         UserScriptsSection(
                             scripts = config.injectScripts,
-                            onScriptsChange = { onConfigChange(config.copy(injectScripts = it)) }
+                            onScriptsChange = { onConfigChange(config.copy(injectScripts = it)) },
+                            useCard = false
                         )
                     }
 
                     WtaSection(
                         title = Strings.proxySectionTitle,
                         description = Strings.proxySectionSubtitle,
-                        headerStyle = WtaSectionHeaderStyle.Quiet
+                        headerStyle = WtaSectionHeaderStyle.Quiet,
+                        collapsible = true,
+                        initiallyExpanded = false
                     ) {
 
-                        WtaSettingCard {
-                            Column(
-                                modifier = Modifier.padding(
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(
                                     horizontal = WtaSpacing.RowHorizontal,
                                     vertical = WtaSpacing.ContentGap
                                 )
-                            ) {
+                        ) {
                                 Text(
                                     text = Strings.proxyModeLabel,
                                     style = MaterialTheme.typography.labelMedium,
@@ -1399,21 +1415,21 @@ fun BrowserAdvancedConfigCard(
                                     }
                                 }
                             }
-                        }
 
                         AnimatedVisibility(
                             visible = config.proxyMode == "STATIC",
                             enter = CardExpandTransition,
                             exit = CardCollapseTransition
                         ) {
-                            WtaSettingCard {
-                                Column(
-                                    modifier = Modifier.padding(
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(
                                         horizontal = WtaSpacing.RowHorizontal,
                                         vertical = WtaSpacing.ContentGap
                                     ),
-                                    verticalArrangement = Arrangement.spacedBy(WtaSpacing.ContentGap)
-                                ) {
+                                verticalArrangement = Arrangement.spacedBy(WtaSpacing.ContentGap)
+                            ) {
                                     Text(
                                         text = Strings.proxyTypeLabel,
                                         style = MaterialTheme.typography.labelMedium,
@@ -1524,7 +1540,6 @@ fun BrowserAdvancedConfigCard(
                                         textStyle = MaterialTheme.typography.bodySmall
                                     )
                                 }
-                            }
                         }
 
                         AnimatedVisibility(
@@ -1532,14 +1547,15 @@ fun BrowserAdvancedConfigCard(
                             enter = CardExpandTransition,
                             exit = CardCollapseTransition
                         ) {
-                            WtaSettingCard {
-                                Column(
-                                    modifier = Modifier.padding(
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(
                                         horizontal = WtaSpacing.RowHorizontal,
                                         vertical = WtaSpacing.ContentGap
                                     ),
-                                    verticalArrangement = Arrangement.spacedBy(WtaSpacing.ContentGap)
-                                ) {
+                                verticalArrangement = Arrangement.spacedBy(WtaSpacing.ContentGap)
+                            ) {
                                     PremiumTextField(
                                         value = config.pacUrl,
                                         onValueChange = { onConfigChange(config.copy(pacUrl = it.trim())) },
@@ -1579,7 +1595,6 @@ fun BrowserAdvancedConfigCard(
                                         textStyle = MaterialTheme.typography.bodySmall
                                     )
                                 }
-                            }
                         }
 
                         var hostsMappingsText by remember(config.hostsMappings) {
@@ -1591,7 +1606,7 @@ fun BrowserAdvancedConfigCard(
                             parseHostsMappingsInput(hostsMappingsText)
                         }
 
-                        WtaSettingCard {
+                        Column(modifier = Modifier.fillMaxWidth()) {
                             WtaToggleRow(
                                 title = Strings.hostsMappingTitle,
                                 subtitle = when {
@@ -1654,9 +1669,11 @@ fun BrowserAdvancedConfigCard(
                     WtaSection(
                         title = Strings.tlsFingerprintTitle,
                         description = Strings.tlsFingerprintSubtitle,
-                        headerStyle = WtaSectionHeaderStyle.Quiet
+                        headerStyle = WtaSectionHeaderStyle.Quiet,
+                        collapsible = true,
+                        initiallyExpanded = false
                     ) {
-                        WtaSettingCard {
+                        Column(modifier = Modifier.fillMaxWidth()) {
                             WtaToggleRow(
                                 title = Strings.tlsFingerprintTitle,
                                 subtitle = Strings.tlsFingerprintDescription,
@@ -1827,9 +1844,11 @@ fun ApkExportSettingsCard(
 
         WtaSection(
             title = Strings.sectionNavigation,
-            headerStyle = WtaSectionHeaderStyle.Quiet
+            headerStyle = WtaSectionHeaderStyle.Quiet,
+            collapsible = true,
+            initiallyExpanded = false
         ) {
-            WtaSettingCard {
+            Column(modifier = Modifier.fillMaxWidth()) {
                 WtaToggleRow(
                     title = Strings.deepLinkSetting,
                     subtitle = Strings.deepLinkSettingHint,
@@ -2026,7 +2045,7 @@ private fun ViewportModeSelector(
                         ),
                         supportingText = {
                             Text(
-                                if (displayWidth in 1..3840) "✓ ${Strings.viewportCustomWidth}: ${displayWidth}px"
+                                if (displayWidth in 1..3840) "${Strings.viewportCustomWidth}: ${displayWidth}px"
                                 else Strings.viewportCustomWidthHint
                             )
                         },
@@ -2896,11 +2915,12 @@ fun KeyboardAdjustModeCard(
         com.webtoapp.data.model.KeyboardAdjustMode.NOTHING -> Strings.keyboardAdjustNothingHint
     }
 
-    WtaSettingCard {
-        Column(
-            modifier = Modifier.padding(horizontal = WtaSpacing.RowHorizontal, vertical = WtaSpacing.RowVertical),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = WtaSpacing.RowHorizontal, vertical = WtaSpacing.RowVertical),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
             Column {
                 Text(
                     text = Strings.keyboardAdjustModeLabel,
@@ -2934,7 +2954,6 @@ fun KeyboardAdjustModeCard(
                 message = hintText,
                 tone = WtaStatusTone.Info
             )
-        }
     }
 }
 
@@ -2946,7 +2965,7 @@ fun ErrorPageConfigCard(
 ) {
     val isCustomized = config.mode != com.webtoapp.core.errorpage.ErrorPageMode.DEFAULT
 
-    WtaSettingCard {
+    Column(modifier = Modifier.fillMaxWidth()) {
         WtaToggleRow(
             title = Strings.errorPageTitle,
             subtitle = Strings.errorPageSubtitle,
@@ -3188,9 +3207,11 @@ fun SpecialSettingsCard(
 
                     WtaSection(
                         title = Strings.specialBasicSectionTitle,
-                        headerStyle = WtaSectionHeaderStyle.Quiet
+                        headerStyle = WtaSectionHeaderStyle.Quiet,
+                        collapsible = true,
+                        initiallyExpanded = false
                     ) {
-                        WtaSettingCard {
+                        Column(modifier = Modifier.fillMaxWidth()) {
                             WtaToggleRow(
                                 title = Strings.imageRepairTitle,
                                 subtitle = Strings.imageRepairDesc,
@@ -3343,7 +3364,9 @@ fun SpecialSettingsCard(
 
                     WtaSection(
                         title = Strings.specialAdvancedSectionTitle,
-                        headerStyle = WtaSectionHeaderStyle.Quiet
+                        headerStyle = WtaSectionHeaderStyle.Quiet,
+                        collapsible = true,
+                        initiallyExpanded = false
                     ) {
 
                         SpecialAdvancedRow(
@@ -3383,7 +3406,7 @@ fun SpecialSettingsCard(
                             )
                         }
 
-                        WtaSettingCard {
+                        Column(modifier = Modifier.fillMaxWidth()) {
                             WtaToggleRow(
                                 title = Strings.mediaAutoplayTitle,
                                 subtitle = Strings.mediaAutoplayDesc,
@@ -3670,7 +3693,7 @@ fun SpecialSettingsCard(
                             }
                         }
 
-                        WtaSettingCard {
+                        Column(modifier = Modifier.fillMaxWidth()) {
                             WtaToggleRow(
                                 title = Strings.cameraAccessTitle,
                                 subtitle = Strings.cameraAccessDesc,
@@ -3682,7 +3705,7 @@ fun SpecialSettingsCard(
                             )
                         }
 
-                        WtaSettingCard {
+                        Column(modifier = Modifier.fillMaxWidth()) {
                             WtaToggleRow(
                                 title = Strings.microphoneAccessTitle,
                                 subtitle = Strings.microphoneAccessDesc,
@@ -3865,9 +3888,11 @@ fun SpecialSettingsCard(
 
                     WtaSection(
                         title = Strings.errorUiSectionTitle,
-                        headerStyle = WtaSectionHeaderStyle.Quiet
+                        headerStyle = WtaSectionHeaderStyle.Quiet,
+                        collapsible = true,
+                        initiallyExpanded = false
                     ) {
-                        WtaSettingCard {
+                        Column(modifier = Modifier.fillMaxWidth()) {
                             WtaToggleRow(
                                 title = Strings.showHttp4xxErrorUiTitle,
                                 subtitle = Strings.showHttp4xxErrorUiDesc,
@@ -3933,29 +3958,27 @@ private fun SpecialAdvancedRow(
     onCheckedChange: (Boolean) -> Unit,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    WtaSettingCard {
-        Column {
-            WtaToggleRow(
-                title = title,
-                subtitle = subtitle,
-                icon = icon,
-                checked = checked,
-                onCheckedChange = onCheckedChange
+    Column(modifier = Modifier.fillMaxWidth()) {
+        WtaToggleRow(
+            title = title,
+            subtitle = subtitle,
+            icon = icon,
+            checked = checked,
+            onCheckedChange = onCheckedChange
+        )
+        AnimatedVisibility(
+            visible = checked,
+            enter = CardExpandTransition,
+            exit = CardCollapseTransition
+        ) {
+            Column(
+                modifier = Modifier.padding(
+                    horizontal = WtaSpacing.RowHorizontal,
+                    vertical = WtaSpacing.ContentGap
+                ),
+                verticalArrangement = Arrangement.spacedBy(WtaSpacing.SectionGap),
+                content = content
             )
-            AnimatedVisibility(
-                visible = checked,
-                enter = CardExpandTransition,
-                exit = CardCollapseTransition
-            ) {
-                Column(
-                    modifier = Modifier.padding(
-                        horizontal = WtaSpacing.RowHorizontal,
-                        vertical = WtaSpacing.ContentGap
-                    ),
-                    verticalArrangement = Arrangement.spacedBy(WtaSpacing.SectionGap),
-                    content = content
-                )
-            }
         }
     }
 }

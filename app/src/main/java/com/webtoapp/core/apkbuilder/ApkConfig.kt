@@ -866,6 +866,7 @@ data class MultiWebBlock(
     val displayMode: String = "TABS",
     val refreshInterval: Int = 30,
     val showSiteIcons: Boolean = true,
+    val sitesUseOwnConfig: Boolean = false,
     val projectId: String = ""
 )
 

@@ -8,21 +8,14 @@ import com.webtoapp.ui.design.WtaButtonVariant
 import com.webtoapp.ui.design.WtaSectionDivider
 import com.webtoapp.ui.design.WtaSize
 import com.webtoapp.ui.design.WtaSpacing
-import com.webtoapp.ui.design.WtaSwitch
 import com.webtoapp.ui.design.WtaToggleRow
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.animateFloatAsState
 import com.webtoapp.ui.animation.CardExpandTransition
 import com.webtoapp.ui.animation.CardCollapseTransition
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -34,9 +27,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.ui.platform.LocalClipboardManager
@@ -50,8 +41,6 @@ import androidx.compose.ui.unit.sp
 import com.webtoapp.core.activation.ActivationCode
 import com.webtoapp.core.activation.ActivationCodeType
 import com.webtoapp.core.i18n.Strings
-import androidx.compose.ui.res.painterResource
-import com.webtoapp.R
 import java.util.concurrent.TimeUnit
 
 private data class CodeTypeTheme(
@@ -107,7 +96,7 @@ fun ActivationCodeCard(
     var showDeleteAllDialog by remember { mutableStateOf(false) }
     var showRemoteGuideDialog by remember { mutableStateOf(false) }
     var showCustomTextSection by remember { mutableStateOf(false) }
-    var showCodesSection by remember { mutableStateOf(true) }
+    var showCodesSection by remember { mutableStateOf(false) }
     val clipboardManager = LocalClipboardManager.current
     val snackbarHostState = remember { SnackbarHostState() }
     var snackbarMessage by remember { mutableStateOf<String?>(null) }
@@ -285,7 +274,8 @@ fun ActivationCodeCard(
                                                 code = code,
                                                 onDelete = {
                                                     onCodesChange(activationCodes.filterIndexed { i, _ -> i != index })
-                                                }
+                                                },
+                                                onCopied = { snackbarMessage = Strings.activationCodeCopied }
                                             )
                                         }
                                     }
@@ -413,30 +403,22 @@ fun ActivationCodeCard(
     }
 
     if (showDeleteAllDialog) {
-        AlertDialog(
+        com.webtoapp.ui.design.WtaAlertDialog(
             onDismissRequest = { showDeleteAllDialog = false },
-            icon = {
-                Icon(
-                    Icons.Outlined.DeleteForever,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.size(32.dp)
-                )
-            },
-            title = { Text(Strings.deleteAllCodes, fontWeight = FontWeight.SemiBold) },
-            text = { Text(Strings.deleteAllCodesConfirm) },
+            icon = Icons.Outlined.DeleteForever,
+            iconTint = MaterialTheme.colorScheme.error,
+            title = Strings.deleteAllCodes,
+            text = Strings.deleteAllCodesConfirm,
             confirmButton = {
-                Button(
+                com.webtoapp.ui.design.WtaButton(
                     onClick = {
                         onCodesChange(emptyList())
                         showDeleteAllDialog = false
                     },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.error
-                    )
-                ) {
-                    Text(Strings.btnDelete)
-                }
+                    text = Strings.btnDelete,
+                    variant = com.webtoapp.ui.design.WtaButtonVariant.Destructive,
+                    size = com.webtoapp.ui.design.WtaButtonSize.Small
+                )
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteAllDialog = false }) {
@@ -607,8 +589,10 @@ private fun RemoteActivationGuideDialog(
         }
     }
 
-    AlertDialog(
+    com.webtoapp.ui.design.WtaAlertDialog(
         onDismissRequest = onDismiss,
+        icon = Icons.Outlined.IntegrationInstructions,
+        title = Strings.remoteActivationGuideTitle,
         confirmButton = {
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 TextButton(onClick = { saveLauncher.launch("webtoapp-activation-api.md") }) {
@@ -626,20 +610,7 @@ private fun RemoteActivationGuideDialog(
                 }
             }
         },
-        title = {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    Icons.Outlined.IntegrationInstructions,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary
-                )
-                Text(Strings.remoteActivationGuideTitle)
-            }
-        },
-        text = {
+        content = {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -933,26 +904,15 @@ private fun EmptyActivationCodesState() {
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun EnhancedActivationCodeItem(
     code: ActivationCode,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    onCopied: () -> Unit
 ) {
     val clipboardManager = LocalClipboardManager.current
-    var showCopiedToast by remember { mutableStateOf(false) }
-    val snackbarHostState = remember { SnackbarHostState() }
     val theme = getCodeTypeTheme(code.type)
-
-    LaunchedEffect(showCopiedToast) {
-        if (showCopiedToast) {
-            snackbarHostState.showSnackbar(
-                message = Strings.activationCodeCopied,
-                duration = SnackbarDuration.Short
-            )
-            showCopiedToast = false
-        }
-    }
 
     Surface(
         shape = RoundedCornerShape(14.dp),
@@ -960,13 +920,13 @@ private fun EnhancedActivationCodeItem(
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(
-            modifier = Modifier.padding(14.dp),
+            modifier = Modifier.padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
 
@@ -998,16 +958,12 @@ private fun EnhancedActivationCodeItem(
 
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.combinedClickable(
-                            onClick = {
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(6.dp))
+                            .clickable {
                                 clipboardManager.setText(AnnotatedString(code.code))
-                                showCopiedToast = true
-                            },
-                            onLongClick = {
-                                clipboardManager.setText(AnnotatedString(code.code))
-                                showCopiedToast = true
+                                onCopied()
                             }
-                        )
                     ) {
                         Text(
                             text = code.code,
@@ -1033,7 +989,7 @@ private fun EnhancedActivationCodeItem(
                     modifier = Modifier.size(32.dp)
                 ) {
                     Icon(
-                        Icons.Outlined.Close,
+                        Icons.Outlined.Delete,
                         Strings.btnDelete,
                         tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
                         modifier = Modifier.size(18.dp)
@@ -1041,31 +997,31 @@ private fun EnhancedActivationCodeItem(
                 }
             }
 
-            val infoChips = buildList {
+            val infoChips = buildList<Pair<ImageVector, String>> {
                 when (code.type) {
                     ActivationCodeType.TIME_LIMITED -> {
                         code.timeLimitMs?.let { timeLimit ->
                             val days = TimeUnit.MILLISECONDS.toDays(timeLimit)
                             val hours = TimeUnit.MILLISECONDS.toHours(timeLimit) % 24
-                            add("⏱ ${Strings.validityPeriod}：${days}${Strings.days}${if (hours > 0) " ${hours}${Strings.hours}" else ""}")
+                            add(Icons.Outlined.Timer to "${Strings.validityPeriod} ${days}${Strings.days}${if (hours > 0) " ${hours}${Strings.hours}" else ""}")
                         }
                     }
                     ActivationCodeType.USAGE_LIMITED -> {
                         code.usageLimit?.let { limit ->
-                            add("🔢 ${Strings.usageCount}：$limit ${Strings.times}")
+                            add(Icons.Outlined.ConfirmationNumber to "${Strings.usageCount} $limit ${Strings.times}")
                         }
                     }
                     ActivationCodeType.COMBINED -> {
                         code.timeLimitMs?.let { timeLimit ->
                             val days = TimeUnit.MILLISECONDS.toDays(timeLimit)
-                            add("⏱ ${days}${Strings.days}")
+                            add(Icons.Outlined.Timer to "${days}${Strings.days}")
                         }
                         code.usageLimit?.let { limit ->
-                            add("🔢 $limit ${Strings.times}")
+                            add(Icons.Outlined.ConfirmationNumber to "$limit ${Strings.times}")
                         }
                     }
                     ActivationCodeType.PERMANENT -> {
-                        add("♾️ ${Strings.permanentValid}")
+                        add(Icons.Outlined.AllInclusive to Strings.permanentValid)
                     }
                 }
 
@@ -1074,26 +1030,35 @@ private fun EnhancedActivationCodeItem(
                         "yyyy-MM-dd",
                         java.util.Locale.getDefault()
                     ).format(java.util.Date(expiresAt))
-                    add("📅 ${Strings.activationCodeValidUntil.replace("%s", formatted)}")
+                    add(Icons.Outlined.Event to Strings.activationCodeValidUntil.replace("%s", formatted))
                 }
 
                 code.note?.takeIf { it.isNotBlank() }?.let { note ->
-                    add("📝 $note")
+                    add(Icons.AutoMirrored.Outlined.Notes to note)
                 }
             }
 
             if (infoChips.isNotEmpty()) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    infoChips.forEach { chip ->
-                        Text(
-                            text = chip,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontSize = 11.sp
-                        )
+                    infoChips.forEach { (chipIcon, chipText) ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                chipIcon,
+                                contentDescription = null,
+                                modifier = Modifier.size(12.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = chipText,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
             }
@@ -1117,22 +1082,11 @@ private fun AddActivationCodeDialog(
     var codeLength by remember { mutableStateOf(com.webtoapp.core.activation.ActivationManager.DEFAULT_CODE_LENGTH.toFloat()) }
     var codeLengthError by remember { mutableStateOf<String?>(null) }
 
-    AlertDialog(
+    com.webtoapp.ui.design.WtaAlertDialog(
         onDismissRequest = onDismiss,
-        shape = RoundedCornerShape(24.dp),
-        title = {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    Icons.Outlined.Key,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(24.dp)
-                )
-                Spacer(modifier = Modifier.width(10.dp))
-                Text(Strings.addActivationCode, fontWeight = FontWeight.SemiBold)
-            }
-        },
-        text = {
+        icon = Icons.Outlined.Key,
+        title = Strings.addActivationCode,
+        content = {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -1403,19 +1357,11 @@ private fun BatchGenerateDialog(
     var expiryDays by remember { mutableStateOf("") }
     var codeLength by remember { mutableStateOf(com.webtoapp.core.activation.ActivationManager.DEFAULT_CODE_LENGTH.toFloat()) }
 
-    AlertDialog(
+    com.webtoapp.ui.design.WtaAlertDialog(
         onDismissRequest = onDismiss,
-        shape = RoundedCornerShape(24.dp),
-        icon = {
-            Icon(
-                Icons.Outlined.AutoAwesome,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(32.dp)
-            )
-        },
-        title = { Text(Strings.batchGenerate, fontWeight = FontWeight.SemiBold) },
-        text = {
+        icon = Icons.Outlined.AutoAwesome,
+        title = Strings.batchGenerate,
+        content = {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -1625,19 +1571,11 @@ private fun BatchImportDialog(
     val nonEmptyLineCount = input.split("\n").count { it.isBlank().not() }
     val validCount = parseBatchImportCodes(input, existingCodes).size
 
-    AlertDialog(
+    com.webtoapp.ui.design.WtaAlertDialog(
         onDismissRequest = onDismiss,
-        shape = RoundedCornerShape(24.dp),
-        icon = {
-            Icon(
-                Icons.Outlined.PostAdd,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(32.dp)
-            )
-        },
-        title = { Text(Strings.batchImportCodes, fontWeight = FontWeight.SemiBold) },
-        text = {
+        icon = Icons.Outlined.PostAdd,
+        title = Strings.batchImportCodes,
+        content = {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()

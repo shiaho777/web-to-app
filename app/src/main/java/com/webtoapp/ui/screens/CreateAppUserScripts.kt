@@ -35,13 +35,14 @@ import androidx.compose.ui.graphics.Color
 @Composable
 fun UserScriptsSection(
     scripts: List<UserScript>,
-    onScriptsChange: (List<UserScript>) -> Unit
+    onScriptsChange: (List<UserScript>) -> Unit,
+    useCard: Boolean = true
 ) {
     var showEditorDialog by remember { mutableStateOf(false) }
     var editingScript by remember { mutableStateOf<UserScript?>(null) }
     var editingIndex by remember { mutableIntStateOf(-1) }
 
-    WtaSettingCard {
+    val listContent: @Composable ColumnScope.() -> Unit = {
         WtaSettingRow(
             title = Strings.userScripts,
             subtitle = if (scripts.isEmpty()) Strings.userScriptsDesc
@@ -82,6 +83,12 @@ fun UserScriptsSection(
                 )
             }
         }
+    }
+
+    if (useCard) {
+        WtaSettingCard(content = listContent)
+    } else {
+        Column(modifier = Modifier.fillMaxWidth(), content = listContent)
     }
 
     if (showEditorDialog) {

@@ -968,6 +968,9 @@ data class MultiWebShellConfig(
     @SerializedName("showSiteIcons")
     val showSiteIcons: Boolean = true,
 
+    @SerializedName("sitesUseOwnConfig")
+    val sitesUseOwnConfig: Boolean = false,
+
     @SerializedName("projectId")
     val projectId: String = ""
 )

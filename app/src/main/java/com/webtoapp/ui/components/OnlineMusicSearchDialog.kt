@@ -1234,13 +1234,6 @@ private fun DownloadLogPanel(
                         DownloadLogEntry.LogType.INFO -> MaterialTheme.colorScheme.onSurfaceVariant
                     }
 
-                    val logIcon = when (log.type) {
-                        DownloadLogEntry.LogType.SUCCESS -> "✓"
-                        DownloadLogEntry.LogType.ERROR -> "✗"
-                        DownloadLogEntry.LogType.WARNING -> "⚠"
-                        DownloadLogEntry.LogType.INFO -> "›"
-                    }
-
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.Top
@@ -1253,13 +1246,15 @@ private fun DownloadLogPanel(
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
                             modifier = Modifier.padding(top = 1.dp)
                         )
-                        Text(
-                            " $logIcon ",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontSize = 10.sp,
-                            fontFamily = FontFamily.Monospace,
-                            color = logColor
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Box(
+                            modifier = Modifier
+                                .padding(top = 4.dp)
+                                .size(6.dp)
+                                .clip(CircleShape)
+                                .background(logColor)
                         )
+                        Spacer(modifier = Modifier.width(6.dp))
                         Text(
                             log.message,
                             style = MaterialTheme.typography.labelSmall,

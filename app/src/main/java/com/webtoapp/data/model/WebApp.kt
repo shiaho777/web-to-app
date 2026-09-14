@@ -932,6 +932,9 @@ data class MultiWebConfig(
     val displayMode: String = "TABS",
     val refreshInterval: Int = 30,
     val showSiteIcons: Boolean = true,
+    // Inverted storage: stored JSON predating this field deserializes to false,
+    // so existing and new apps both default to "sites follow the parent config".
+    val sitesUseOwnConfig: Boolean = false,
     val projectId: String = ""
 )
 

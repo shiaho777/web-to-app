@@ -27,9 +27,9 @@ object SessionTranscript {
             append("\n---\n\n")
             when (msg.role) {
                 com.webtoapp.core.agent.session.AgentMessage.Role.USER -> {
-                    append("## 👤 User\n\n")
+                    append("## User\n\n")
                     msg.userAttachmentsSafe.forEach { att ->
-                        append("- 📎 ").append(att.displayName).append('\n')
+                        append("- ").append(att.displayName).append('\n')
                     }
                     if (msg.userAttachmentsSafe.isNotEmpty()) append('\n')
                     append(AgentViewModel.stripInlineMarkers(msg.content).trim()).append('\n')
@@ -38,7 +38,7 @@ object SessionTranscript {
                     }
                 }
                 com.webtoapp.core.agent.session.AgentMessage.Role.ASSISTANT -> {
-                    append("## 🤖 Assistant\n\n")
+                    append("## Assistant\n\n")
                     msg.thinkingSegmentsSafe.forEachIndexed { i, seg ->
                         val c = seg.content.trim()
                         if (c.isBlank()) return@forEachIndexed
@@ -53,7 +53,7 @@ object SessionTranscript {
                     if (prose.isNotEmpty()) append(prose).append('\n')
                 }
                 com.webtoapp.core.agent.session.AgentMessage.Role.SYSTEM -> {
-                    append("## ⚙️ System\n\n")
+                    append("## System\n\n")
                     append(msg.content.trim()).append('\n')
                 }
             }
@@ -61,7 +61,7 @@ object SessionTranscript {
     }
 
     private fun StringBuilder.appendToolCall(tc: RecordedToolCall) {
-        append("\n### 🔧 ").append(tc.name).append('\n')
+        append("\n### ").append(tc.name).append('\n')
         val args = tc.argumentsJson.trim()
         if (args.isNotEmpty() && args != "{}") {
             append("\n```json\n").append(args).append("\n```\n")

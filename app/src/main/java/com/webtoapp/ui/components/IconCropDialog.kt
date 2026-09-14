@@ -179,31 +179,11 @@ fun IconCropDialog(
         }
     }
 
-    AlertDialog(
+    com.webtoapp.ui.design.WtaAlertDialog(
         onDismissRequest = { if (!isCropping) onDismiss() },
-        title = {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(32.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        Icons.Default.CropFree,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
-                Text(Strings.cropIcon)
-            }
-        },
-        text = {
+        icon = Icons.Default.CropFree,
+        title = Strings.cropIcon,
+        content = {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()

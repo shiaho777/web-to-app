@@ -3,6 +3,8 @@ package com.webtoapp.ui.design
 import androidx.compose.animation.AnimatedVisibility
 import com.webtoapp.ui.design.WtaSwitch
 import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -119,8 +121,10 @@ fun WtaSection(
 
         AnimatedVisibility(
             visible = isExpanded,
-            enter = expandVertically(animationSpec = WtaMotion.settleSpring()),
-            exit = shrinkVertically(animationSpec = WtaMotion.snapSpring())
+            enter = expandVertically(animationSpec = WtaMotion.settleSpring()) +
+                fadeIn(animationSpec = WtaMotion.standardTween(WtaMotion.DurationMedium)),
+            exit = shrinkVertically(animationSpec = WtaMotion.snapSpring()) +
+                fadeOut(animationSpec = WtaMotion.exitTween(WtaMotion.DurationQuick))
         ) {
             Column(
                 modifier = Modifier.fillMaxWidth(),

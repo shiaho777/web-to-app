@@ -3290,6 +3290,7 @@ fun WebViewScreen(
                             displayMode = multiWebConfig.displayMode,
                             refreshInterval = multiWebConfig.refreshInterval,
                             showSiteIcons = multiWebConfig.showSiteIcons,
+                            sitesUseOwnConfig = multiWebConfig.sitesUseOwnConfig,
                             projectId = multiWebConfig.projectId
                         ),
                         // App-level userscripts: MultiWebShellMode merges them into

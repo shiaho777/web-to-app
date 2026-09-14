@@ -136,7 +136,7 @@ internal fun formatMessageForCopy(message: AgentMessage, includeDetails: Boolean
     // Tool calls with their result previews.
     message.toolCalls.forEach { tc ->
         if (sb.isNotEmpty()) sb.append("\n\n")
-        sb.append("🔧 ").append(tc.name)
+        sb.append(tc.name)
         val args = tc.argumentsJson.trim()
         if (args.isNotEmpty()) sb.append("(").append(args).append(")")
         val result = tc.resultPreview.trim()

@@ -86,16 +86,19 @@ fun ApkExportSection(
 
         WtaSection(
             title = Strings.apkConfigNote,
-            headerStyle = WtaSectionHeaderStyle.Quiet
+            headerStyle = WtaSectionHeaderStyle.Quiet,
+            collapsible = true,
+            initiallyExpanded = false
         ) {
-            WtaSettingCard {
-                Column(
-                    modifier = Modifier.padding(
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(
                         horizontal = WtaSpacing.RowHorizontal,
                         vertical = WtaSpacing.ContentGap
                     ),
-                    verticalArrangement = Arrangement.spacedBy(WtaSpacing.ContentGap)
-                ) {
+                verticalArrangement = Arrangement.spacedBy(WtaSpacing.ContentGap)
+            ) {
                     OutlinedTextField(
                         value = packageName,
                         onValueChange = {
@@ -174,21 +177,23 @@ fun ApkExportSection(
                         )
                     }
                 }
-            }
         }
 
         WtaSection(
             title = Strings.apkArchitecture,
-            headerStyle = WtaSectionHeaderStyle.Quiet
+            headerStyle = WtaSectionHeaderStyle.Quiet,
+            collapsible = true,
+            initiallyExpanded = false
         ) {
-            WtaSettingCard {
-                Column(
-                    modifier = Modifier.padding(
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(
                         horizontal = WtaSpacing.RowHorizontal,
                         vertical = WtaSpacing.ContentGap
                     ),
-                    verticalArrangement = Arrangement.spacedBy(WtaSpacing.ContentGap)
-                ) {
+                verticalArrangement = Arrangement.spacedBy(WtaSpacing.ContentGap)
+            ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(WtaSpacing.ContentGap)
@@ -211,7 +216,6 @@ fun ApkExportSection(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-            }
         }
 
         if (onOpenPermissionConfig != null) {
@@ -249,9 +253,11 @@ fun ApkExportSection(
 
         WtaSection(
             title = Strings.apkLoggingTitle,
-            headerStyle = WtaSectionHeaderStyle.Quiet
+            headerStyle = WtaSectionHeaderStyle.Quiet,
+            collapsible = true,
+            initiallyExpanded = false
         ) {
-            WtaSettingCard {
+            Column(modifier = Modifier.fillMaxWidth()) {
                 WtaToggleRow(
                     title = Strings.apkLoggingTitle,
                     subtitle = Strings.apkLoggingHint,
@@ -282,9 +288,11 @@ private fun PerformanceOptimizationSection(
 ) {
     WtaSection(
         title = Strings.performanceOptimization,
-        headerStyle = WtaSectionHeaderStyle.Quiet
+        headerStyle = WtaSectionHeaderStyle.Quiet,
+        collapsible = true,
+        initiallyExpanded = false
     ) {
-        WtaSettingCard {
+        Column(modifier = Modifier.fillMaxWidth()) {
             WtaToggleRow(
                 title = Strings.performanceOptimization,
                 subtitle = if (config.performanceOptimization) Strings.perfEnabled else Strings.perfDisabled,
@@ -303,9 +311,11 @@ private fun PerformanceOptimizationSection(
 
                 WtaSection(
                     title = Strings.perfResourceOptimize,
-                    headerStyle = WtaSectionHeaderStyle.Quiet
+                    headerStyle = WtaSectionHeaderStyle.Quiet,
+                    collapsible = true,
+                    initiallyExpanded = false
                 ) {
-                    WtaSettingCard {
+                    Column(modifier = Modifier.fillMaxWidth()) {
                         WtaToggleRow(
                             title = Strings.perfCompressImages,
                             subtitle = Strings.perfCompressImagesHint,
@@ -346,9 +356,11 @@ private fun PerformanceOptimizationSection(
 
                 WtaSection(
                     title = Strings.perfBuildOptimize,
-                    headerStyle = WtaSectionHeaderStyle.Quiet
+                    headerStyle = WtaSectionHeaderStyle.Quiet,
+                    collapsible = true,
+                    initiallyExpanded = false
                 ) {
-                    WtaSettingCard {
+                    Column(modifier = Modifier.fillMaxWidth()) {
                         WtaToggleRow(
                             title = Strings.perfParallelProcessing,
                             subtitle = Strings.perfParallelProcessingHint,
@@ -371,9 +383,11 @@ private fun PerformanceOptimizationSection(
 
                 WtaSection(
                     title = Strings.perfLoadOptimize,
-                    headerStyle = WtaSectionHeaderStyle.Quiet
+                    headerStyle = WtaSectionHeaderStyle.Quiet,
+                    collapsible = true,
+                    initiallyExpanded = false
                 ) {
-                    WtaSettingCard {
+                    Column(modifier = Modifier.fillMaxWidth()) {
                         WtaToggleRow(
                             title = Strings.perfPreloadHints,
                             subtitle = Strings.perfPreloadHintsHint,
@@ -405,9 +419,11 @@ private fun PerformanceOptimizationSection(
 
                 WtaSection(
                     title = Strings.perfRuntimeOptimize,
-                    headerStyle = WtaSectionHeaderStyle.Quiet
+                    headerStyle = WtaSectionHeaderStyle.Quiet,
+                    collapsible = true,
+                    initiallyExpanded = false
                 ) {
-                    WtaSettingCard {
+                    Column(modifier = Modifier.fillMaxWidth()) {
                         WtaToggleRow(
                             title = Strings.perfRuntimeScript,
                             subtitle = Strings.perfRuntimeScriptHint,
@@ -440,9 +456,11 @@ private fun NetworkTrustConfigPanel(
     WtaSection(
         title = Strings.networkTrustTitle,
         description = Strings.networkTrustHint,
-        headerStyle = WtaSectionHeaderStyle.Quiet
+        headerStyle = WtaSectionHeaderStyle.Quiet,
+        collapsible = true,
+        initiallyExpanded = false
     ) {
-        WtaSettingCard {
+        Column(modifier = Modifier.fillMaxWidth()) {
             WtaToggleRow(
                 title = Strings.trustSystemCa,
                 subtitle = Strings.trustSystemCaHint,
@@ -517,7 +535,7 @@ private fun NetworkTrustConfigPanel(
         }
 
         config.customCaCertificates.forEach { cert ->
-            WtaSettingCard {
+            Column(modifier = Modifier.fillMaxWidth()) {
                 WtaSettingRow(
                     title = cert.displayName,
                     subtitle = "${Strings.sha256Prefix} ${cert.sha256.chunked(2).take(8).joinToString(":").uppercase()}...",
@@ -539,7 +557,7 @@ private fun NetworkTrustConfigPanel(
         }
 
         if (presets.isNotEmpty()) {
-            WtaSettingCard {
+            Column(modifier = Modifier.fillMaxWidth()) {
                 presets.forEachIndexed { index, preset ->
                     WtaSettingRow(
                         title = preset.name,
@@ -647,10 +665,12 @@ fun CustomSigningSection() {
 
     WtaSection(
         title = Strings.currentSigningStatus,
-        headerStyle = WtaSectionHeaderStyle.Quiet
+        headerStyle = WtaSectionHeaderStyle.Quiet,
+        collapsible = true,
+        initiallyExpanded = false
     ) {
 
-        WtaSettingCard {
+        Column(modifier = Modifier.fillMaxWidth()) {
             WtaSettingRow(
                 title = when (signerType) {
                     com.webtoapp.core.apkbuilder.JarSigner.SignerType.PKCS12_CUSTOM -> Strings.signingTypeCustom
@@ -670,7 +690,7 @@ fun CustomSigningSection() {
             tone = WtaStatusTone.Info
         )
 
-        WtaSettingCard {
+        Column(modifier = Modifier.fillMaxWidth()) {
             WtaSettingRow(
                 title = Strings.createKeystore,
                 subtitle = Strings.createKeystoreNote,
@@ -1047,14 +1067,16 @@ fun SigningSchemeSection() {
 
     WtaSection(
         title = Strings.signingSchemeTitle,
-        headerStyle = WtaSectionHeaderStyle.Quiet
+        headerStyle = WtaSectionHeaderStyle.Quiet,
+        collapsible = true,
+        initiallyExpanded = false
     ) {
         WtaStatusBanner(
             message = Strings.signingSchemeNote,
             tone = WtaStatusTone.Info
         )
 
-        WtaSettingCard {
+        Column(modifier = Modifier.fillMaxWidth()) {
             WtaToggleRow(
                 title = Strings.signingSchemeV1Title,
                 subtitle = Strings.signingSchemeV1Desc,
@@ -1087,7 +1109,7 @@ fun SigningSchemeSection() {
             )
         }
 
-        WtaSettingCard {
+        Column(modifier = Modifier.fillMaxWidth()) {
             WtaToggleRow(
                 title = Strings.signingSchemeAutoFallbackTitle,
                 subtitle = Strings.signingSchemeAutoFallbackDesc,
@@ -1098,14 +1120,15 @@ fun SigningSchemeSection() {
         }
 
         AnimatedVisibility(visible = options.v1Enabled) {
-            WtaSettingCard {
-                Column(
-                    modifier = Modifier.padding(
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(
                         horizontal = WtaSpacing.RowHorizontal,
                         vertical = WtaSpacing.ContentGap
                     ),
-                    verticalArrangement = Arrangement.spacedBy(WtaSpacing.ContentGap)
-                ) {
+                verticalArrangement = Arrangement.spacedBy(WtaSpacing.ContentGap)
+            ) {
                     Text(
                         text = Strings.v1SignerNameTitle,
                         style = MaterialTheme.typography.titleSmall,
@@ -1153,7 +1176,6 @@ fun SigningSchemeSection() {
                         color = MaterialTheme.colorScheme.primary
                     )
                 }
-            }
         }
 
         savedHint?.let { msg ->
@@ -1413,9 +1435,11 @@ private fun TargetSdkOverrideSection(
 
     WtaSection(
         title = Strings.targetSdkOverrideTitle,
-        headerStyle = WtaSectionHeaderStyle.Quiet
+        headerStyle = WtaSectionHeaderStyle.Quiet,
+        collapsible = true,
+        initiallyExpanded = false
     ) {
-        WtaSettingCard {
+        Column(modifier = Modifier.fillMaxWidth()) {
             WtaToggleRow(
                 title = Strings.targetSdkOverrideTitle,
                 subtitle = if (enabled) Strings.targetSdkOverrideOnHint else Strings.targetSdkOverrideOffHint,

@@ -514,7 +514,7 @@ fun ExtensionModuleScreen(
 
                     parseResult.warnings.forEach { warning ->
                         Text(
-                            "⚠️ $warning",
+                            warning,
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.error
                         )
@@ -793,7 +793,7 @@ fun ExtensionModuleScreen(
 
                     if (parseResult.unsupportedPermissions.isNotEmpty()) {
                         Text(
-                            "⚠️ ${Strings.unsupportedApis}: ${parseResult.unsupportedPermissions.joinToString(", ")}",
+                            "${Strings.unsupportedApis}: ${parseResult.unsupportedPermissions.joinToString(", ")}",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.error
                         )
@@ -801,7 +801,7 @@ fun ExtensionModuleScreen(
 
                     parseResult.warnings.filter { !it.startsWith("Unsupported permissions") }.forEach { warning ->
                         Text(
-                            "⚠️ $warning",
+                            warning,
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.error
                         )
@@ -1402,9 +1402,9 @@ private fun UserScriptCard(
     val isChromeExt = module.sourceType == ModuleSourceType.CHROME_EXTENSION
     val isGreasyFork = module.sourceType == ModuleSourceType.GREASYFORK
     val typeIcon = when {
-        isChromeExt -> "🧩"
-        isGreasyFork -> "🍴"
-        else -> "🐵"
+        isChromeExt -> "puzzle"
+        isGreasyFork -> "code"
+        else -> "code"
     }
     val typeLabel = when {
         isChromeExt -> "Chrome"

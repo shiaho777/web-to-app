@@ -1257,53 +1257,28 @@ fun TranslateCard(
 
     val engineOptions = TranslateEngine.entries.toList()
 
-    EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(
-                                if (enabled) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
-                                else MaterialTheme.colorScheme.surfaceVariant
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            Icons.Outlined.Translate,
-                            null,
-                            tint = if (enabled) MaterialTheme.colorScheme.primary
-                                   else MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(22.dp)
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column {
-                        Text(
-                            text = Strings.autoTranslate,
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                    }
-                }
-                WtaSwitch(
-                    checked = enabled,
-                    onCheckedChange = onEnabledChange
-                )
-            }
+    WtaSettingCard(modifier = Modifier.fillMaxWidth()) {
+        WtaToggleRow(
+            icon = Icons.Outlined.Translate,
+            title = Strings.autoTranslate,
+            checked = enabled,
+            onCheckedChange = onEnabledChange
+        )
 
-            AnimatedVisibility(
-                visible = enabled,
-                enter = CardExpandTransition,
-                exit = CardCollapseTransition
-            ) {
-              Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Spacer(Modifier.height(12.dp))
+        AnimatedVisibility(
+            visible = enabled,
+            enter = CardExpandTransition,
+            exit = CardCollapseTransition
+        ) {
+            Column {
+                WtaSectionDivider()
+                Column(
+                    modifier = Modifier.padding(
+                        horizontal = WtaSpacing.RowHorizontal,
+                        vertical = WtaSpacing.ContentGap
+                    ),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
                 Text(
                     text = Strings.autoTranslateHint,
                     style = MaterialTheme.typography.bodySmall,
@@ -1402,44 +1377,25 @@ fun TranslateCard(
                     }
                 }
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
-                        Text(Strings.showTranslateButton, style = MaterialTheme.typography.bodyMedium)
-                        Text(
-                            text = Strings.showTranslateButtonHint,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    WtaSwitch(
-                        checked = config.showFloatingButton,
-                        onCheckedChange = { onConfigChange(config.copy(showFloatingButton = it)) }
-                    )
                 }
+                WtaSectionDivider()
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
-                        Text(Strings.autoTranslateOnLoad, style = MaterialTheme.typography.bodyMedium)
-                        Text(
-                            text = Strings.autoTranslateOnLoadHint,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    WtaSwitch(
-                        checked = config.autoTranslateOnLoad,
-                        onCheckedChange = { onConfigChange(config.copy(autoTranslateOnLoad = it)) }
-                    )
-                }
-              }
+                WtaToggleRow(
+                    icon = Icons.Outlined.SmartButton,
+                    title = Strings.showTranslateButton,
+                    subtitle = Strings.showTranslateButtonHint,
+                    checked = config.showFloatingButton,
+                    onCheckedChange = { onConfigChange(config.copy(showFloatingButton = it)) }
+                )
+                WtaSectionDivider()
+
+                WtaToggleRow(
+                    icon = Icons.Outlined.Sync,
+                    title = Strings.autoTranslateOnLoad,
+                    subtitle = Strings.autoTranslateOnLoadHint,
+                    checked = config.autoTranslateOnLoad,
+                    onCheckedChange = { onConfigChange(config.copy(autoTranslateOnLoad = it)) }
+                )
             }
         }
     }

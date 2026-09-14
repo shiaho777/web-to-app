@@ -104,14 +104,23 @@ private fun SiteContent(
     // App-level inject scripts apply to every site; a site's own script wins on
     // a name collision so a more specific override is possible per site.
     val parentScripts = config.webViewConfig.injectScripts
+    val siteScripts = siteCfg?.webViewConfig?.injectScripts.orEmpty()
+    val mergedScripts = siteScripts +
+        parentScripts.filter { parent -> siteScripts.none { it.name == parent.name } }
+    // Sites contribute content (URL, HTML project, media, module assets), not
+    // settings: by default the parent's WebView config governs every site, so
+    // app-level fields baked into siteShellConfig can't fight the parent.
+    // `sitesUseOwnConfig` opts back into each site keeping its baked config.
+    val baseWvConfig = if (config.multiWebConfig?.sitesUseOwnConfig == true) {
+        siteCfg?.webViewConfig
+    } else {
+        config.webViewConfig
+    }
     val effectiveConfig = siteCfg?.copy(
         engineType = siteCfg.engineType.takeIf { it.isNotBlank() && it != "SYSTEM_WEBVIEW" }
             ?: config.engineType,
-        webViewConfig = siteCfg.webViewConfig.copy(
-            injectScripts = siteCfg.webViewConfig.injectScripts +
-                parentScripts.filter { parent ->
-                    siteCfg.webViewConfig.injectScripts.none { it.name == parent.name }
-                }
+        webViewConfig = (baseWvConfig ?: config.webViewConfig).copy(
+            injectScripts = mergedScripts
         )
     ) ?: ShellConfig(
         appName = site.name,
@@ -472,7 +481,12 @@ private fun CardsHomeGrid(
     ) {
         item {
             Column(modifier = Modifier.padding(vertical = 8.dp)) {
-                Text("🌐", fontSize = 40.sp)
+                Icon(
+                    Icons.Outlined.Language,
+                    contentDescription = null,
+                    modifier = Modifier.size(40.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     appName.ifBlank { Strings.multiWebSiteList },

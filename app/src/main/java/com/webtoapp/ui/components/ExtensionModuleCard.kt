@@ -606,46 +606,45 @@ private fun FabIconSelector(
     val isCustomSelected = selectedIcon.startsWith("custom:")
 
     if (pendingBitmap != null && pendingBase64 != null) {
-        AlertDialog(
+        WtaAlertDialog(
             onDismissRequest = {
                 pendingBitmap?.recycle()
                 pendingBitmap = null
                 pendingBase64 = null
             },
-            icon = {
-
-                Box(
-                    modifier = Modifier
-                        .shadow(8.dp, RoundedCornerShape(WtaRadius.Card))
-                        .clip(RoundedCornerShape(WtaRadius.Card))
-                        .background(MaterialTheme.colorScheme.primary)
+            icon = Icons.Outlined.CropOriginal,
+            title = Strings.fabIconPreviewTitle,
+            content = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Box(
-                        modifier = Modifier.size(64.dp),
-                        contentAlignment = Alignment.Center
+                        modifier = Modifier
+                            .shadow(8.dp, RoundedCornerShape(WtaRadius.Card))
+                            .clip(RoundedCornerShape(WtaRadius.Card))
+                            .background(MaterialTheme.colorScheme.primary)
                     ) {
-                        Image(
-                            bitmap = pendingBitmap!!.asImageBitmap(),
-                            contentDescription = null,
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(CircleShape)
-                        )
+                        Box(
+                            modifier = Modifier.size(64.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Image(
+                                bitmap = pendingBitmap!!.asImageBitmap(),
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .clip(CircleShape)
+                            )
+                        }
                     }
+                    Text(
+                        Strings.fabIconPreviewDesc,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
-            },
-            title = {
-                Text(
-                    Strings.fabIconPreviewTitle,
-                    style = MaterialTheme.typography.titleMedium
-                )
-            },
-            text = {
-                Text(
-                    Strings.fabIconPreviewDesc,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
             },
             confirmButton = {
                 TextButton(onClick = {
@@ -1579,10 +1578,11 @@ fun SavePresetDialog(
     var selectedIcon by remember { mutableStateOf("package") }
     var showIconPicker by remember { mutableStateOf(false) }
 
-    AlertDialog(
+    WtaAlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(Strings.saveAsSchemeTitle) },
-        text = {
+        icon = Icons.Outlined.CollectionsBookmark,
+        title = Strings.saveAsSchemeTitle,
+        content = {
             Column(modifier = Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -1592,10 +1592,11 @@ fun SavePresetDialog(
                             .background(MaterialTheme.colorScheme.primaryContainer)
                             .clickable { showIconPicker = true }
                     ) {
-                        Text(
-                            selectedIcon,
-                            fontSize = 32.sp,
-                            modifier = Modifier.padding(12.dp)
+                        ModuleIcon(
+                            iconId = selectedIcon,
+                            contentDescription = Strings.selectIconTitle,
+                            modifier = Modifier.padding(12.dp).size(32.dp),
+                            tint = MaterialTheme.colorScheme.primary
                         )
                     }
                     Spacer(modifier = Modifier.width(12.dp))

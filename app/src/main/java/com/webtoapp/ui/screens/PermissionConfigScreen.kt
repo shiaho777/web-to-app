@@ -29,7 +29,6 @@ import androidx.compose.ui.unit.dp
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.data.model.ApkRuntimePermissions
 import com.webtoapp.data.model.PermissionFeatureReason
-import com.webtoapp.ui.components.EnhancedElevatedCard
 import com.webtoapp.ui.components.IconSwitchCard
 import com.webtoapp.ui.components.PremiumButton
 import com.webtoapp.ui.components.PremiumTextField
@@ -38,6 +37,8 @@ import com.webtoapp.ui.design.WtaChip
 import com.webtoapp.ui.design.WtaSettingCard
 import com.webtoapp.ui.design.WtaSettingRow
 import com.webtoapp.ui.design.WtaSectionDivider
+import com.webtoapp.ui.design.WtaStatusBanner
+import com.webtoapp.ui.design.WtaStatusTone
 import com.webtoapp.util.PermissionPresetStorage
 import com.webtoapp.util.SavedPermissionPreset
 
@@ -267,51 +268,17 @@ fun PermissionConfigPanel(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         if (showDescription) {
-            EnhancedElevatedCard {
-                Row(
-                    modifier = Modifier.padding(16.dp),
-                    verticalAlignment = Alignment.Top
-                ) {
-                    Icon(
-                        Icons.Outlined.Info,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text(
-                        text = Strings.permissionConfigDesc,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
+            WtaStatusBanner(
+                message = Strings.permissionConfigDesc,
+                tone = WtaStatusTone.Info
+            )
         }
 
         if (autoHintCount > 0) {
-            EnhancedElevatedCard(
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.55f)
-                )
-            ) {
-                Row(
-                    modifier = Modifier.padding(16.dp),
-                    verticalAlignment = Alignment.Top
-                ) {
-                    Icon(
-                        Icons.Outlined.AutoAwesome,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.secondary,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text(
-                        text = Strings.permissionAutoEnabledSummary.format(autoHintCount),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer
-                    )
-                }
-            }
+            WtaStatusBanner(
+                message = Strings.permissionAutoEnabledSummary.format(autoHintCount),
+                tone = WtaStatusTone.Info
+            )
         }
 
         Row(
@@ -347,40 +314,12 @@ fun PermissionConfigPanel(
         )
 
         if (conflicts.isNotEmpty()) {
-            EnhancedElevatedCard(
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.6f)
-                )
-            ) {
-                Row(
-                    modifier = Modifier.padding(12.dp),
-                    verticalAlignment = Alignment.Top
-                ) {
-                    Icon(
-                        Icons.Outlined.Warning,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column {
-                        Text(
-                            text = Strings.permissionConflictTitle,
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.error
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        conflicts.forEach { conflict ->
-                            Text(
-                                text = "• $conflict",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onErrorContainer
-                            )
-                        }
-                    }
-                }
-            }
+            WtaStatusBanner(
+                title = Strings.permissionConflictTitle,
+                message = conflicts.joinToString("\n") { "• $it" },
+                tone = WtaStatusTone.Error,
+                messageMaxLines = 20
+            )
         }
 
         Surface(
@@ -445,7 +384,7 @@ fun PermissionSummaryCard(
         buildList {
             add(Strings.permissionEnabledCount.format(enabledCount))
             if (dangerousEnabledCount > 0) {
-                add("Sensitive $dangerousEnabledCount")
+                add("${Strings.sensitive} $dangerousEnabledCount")
             }
         }.joinToString(" · ")
     }
@@ -493,7 +432,7 @@ fun PermissionSummaryCard(
                 )
                 if (dangerousEnabledCount > 0) {
                     PermissionSummaryPill(
-                        label = "Sensitive",
+                        label = Strings.sensitive,
                         value = dangerousEnabledCount.toString(),
                         tint = MaterialTheme.colorScheme.error
                     )
@@ -512,7 +451,7 @@ private fun PermissionSchemeCard(
     onApplyScheme: (SavedPermissionPreset) -> Unit,
     onDeleteScheme: (SavedPermissionPreset) -> Unit
 ) {
-    EnhancedElevatedCard {
+    WtaSettingCard {
         Column(
             modifier = Modifier.padding(14.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
@@ -726,10 +665,7 @@ private fun PermissionSwitch(
 
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         IconSwitchCard(
-            title = buildString {
-                append(title)
-                if (isDangerous) append(" ⚠")
-            },
+            title = title,
             subtitle = combinedSubtitle,
             icon = icon,
             checked = checked,

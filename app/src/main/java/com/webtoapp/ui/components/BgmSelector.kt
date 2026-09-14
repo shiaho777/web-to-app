@@ -1,6 +1,7 @@
 package com.webtoapp.ui.components
 
 import com.webtoapp.core.logging.AppLogger
+import com.webtoapp.ui.design.WtaAlertDialog
 import com.webtoapp.ui.design.WtaChip
 import com.webtoapp.ui.design.WtaSpacing
 import com.webtoapp.ui.design.WtaSwitch
@@ -1064,10 +1065,11 @@ private fun UploadBgmDialog(
         ActivityResultContracts.GetContent()
     ) { uri -> coverUri = uri }
 
-    AlertDialog(
+    WtaAlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(Strings.uploadMusicTitle) },
-        text = {
+        icon = Icons.Outlined.AudioFile,
+        title = Strings.uploadMusicTitle,
+        content = {
             Column(modifier = Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 PremiumTextField(
                     value = bgmName,
@@ -1185,10 +1187,11 @@ private fun EditTagsDialog(
 ) {
     var selectedTags by remember { mutableStateOf(bgm.tags.toSet()) }
 
-    AlertDialog(
+    WtaAlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(Strings.editTagsTitle) },
-        text = {
+        icon = Icons.Outlined.Sell,
+        title = Strings.editTagsTitle,
+        content = {
             Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                 Text(
                     bgm.name,
