@@ -166,6 +166,8 @@ object Strings {
     val multiWebEnableSite: String get() = StringsA.multiWebEnableSite
     val multiWebMoveUp: String get() = StringsA.multiWebMoveUp
     val multiWebMoveDown: String get() = StringsA.multiWebMoveDown
+    val multiWebAddCustomSite: String get() = StringsA.multiWebAddCustomSite
+    val multiWebEditSite: String get() = StringsA.multiWebEditSite
     val appTypeWeb: String get() = StringsA.appTypeWeb
     val appTypeImage: String get() = StringsA.appTypeImage
     val appTypeVideo: String get() = StringsA.appTypeVideo
@@ -6477,6 +6479,32 @@ object StringsA {
         AppLanguage.RUSSIAN -> "Вниз"
         AppLanguage.JAPANESE -> "下に移動"
         AppLanguage.KOREAN -> "아래로 이동"
+    }
+
+    val multiWebAddCustomSite: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "自定义网页"
+        AppLanguage.ENGLISH -> "Custom Site"
+        AppLanguage.ARABIC -> "موقع مخصص"
+        AppLanguage.PORTUGUESE -> "Site Personalizado"
+        AppLanguage.SPANISH -> "Sitio Personalizado"
+        AppLanguage.FRENCH -> "Site personnalisé"
+        AppLanguage.GERMAN -> "Benutzerdefinierte Seite"
+        AppLanguage.RUSSIAN -> "Свой сайт"
+        AppLanguage.JAPANESE -> "カスタムサイト"
+        AppLanguage.KOREAN -> "사용자 지정 사이트"
+    }
+
+    val multiWebEditSite: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "编辑站点"
+        AppLanguage.ENGLISH -> "Edit Site"
+        AppLanguage.ARABIC -> "تحرير الموقع"
+        AppLanguage.PORTUGUESE -> "Editar Site"
+        AppLanguage.SPANISH -> "Editar Sitio"
+        AppLanguage.FRENCH -> "Modifier le site"
+        AppLanguage.GERMAN -> "Seite bearbeiten"
+        AppLanguage.RUSSIAN -> "Изменить сайт"
+        AppLanguage.JAPANESE -> "サイトを編集"
+        AppLanguage.KOREAN -> "사이트 편집"
     }
 
     val appTypeWeb: String get() = when (Strings.lang) {

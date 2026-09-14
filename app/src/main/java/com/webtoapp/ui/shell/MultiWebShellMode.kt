@@ -128,8 +128,10 @@ private fun SiteContent(
         targetUrl = site.url,
         packageName = config.packageName,
         engineType = config.engineType,
-        webViewConfig = com.webtoapp.core.shell.WebViewShellConfig(
-            injectScripts = parentScripts
+        // A site without baked config (custom URL site, deleted source) still
+        // inherits the parent WebView config — same rule as sitesUseOwnConfig.
+        webViewConfig = config.webViewConfig.copy(
+            injectScripts = mergedScripts
         )
     )
     val siteWvCfg = remember(site.id) { buildWebViewConfig(effectiveConfig) }

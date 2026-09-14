@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
@@ -20,6 +21,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -30,8 +32,10 @@ import com.webtoapp.data.model.HtmlFileType
 import com.webtoapp.ui.components.EnhancedElevatedCard
 import com.webtoapp.ui.components.PremiumTextField
 import com.webtoapp.ui.components.RuntimeIconPickerCard
+import com.webtoapp.ui.design.WtaAlertDialog
 import com.webtoapp.ui.design.WtaChip
 import com.webtoapp.ui.design.WtaSpacing
+import com.webtoapp.util.ensureWebUrlScheme
 import com.webtoapp.ui.screens.create.WtaCreateFlowScaffold
 import com.webtoapp.ui.screens.create.WtaCreateFlowSection
 import java.util.UUID
@@ -73,6 +77,8 @@ fun CreateMultiWebAppScreen(
     var selectedAppIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
     var filterType by remember { mutableStateOf<String?>(null) }
     var filterCategoryId by remember { mutableStateOf<Long?>(null) }
+    // Non-null while the add/edit custom-site dialog is open; siteId == null means adding.
+    var siteDialog by remember { mutableStateOf<SiteDialogData?>(null) }
     var categories by remember { mutableStateOf<List<com.webtoapp.data.model.AppCategory>>(emptyList()) }
     LaunchedEffect(Unit) {
         val catRepo = org.koin.java.KoinJavaComponent.get<com.webtoapp.data.repository.AppCategoryRepository>(
@@ -255,6 +261,9 @@ fun CreateMultiWebAppScreen(
                                         } else null,
                                         onMoveDown = if (index < sites.size - 1) {
                                             { sites = sites.toMutableList().also { val item = it.removeAt(index); it.add(index + 1, item) } }
+                                        } else null,
+                                        onEdit = if (site.sourceAppId == 0L) {
+                                            { siteDialog = SiteDialogData(site.id, site.name, site.url) }
                                         } else null
                                     )
                                 }
@@ -270,6 +279,7 @@ fun CreateMultiWebAppScreen(
                             categories = categories,
                             selectedAppIds = selectedAppIds,
                             addedAppIds = sites.map { it.sourceAppId }.toSet(),
+                            onAddCustomSite = { siteDialog = SiteDialogData(null, "", "") },
                             filterType = filterType,
                             filterCategoryId = filterCategoryId,
                             onFilterTypeChange = { filterType = it },
@@ -338,6 +348,91 @@ fun CreateMultiWebAppScreen(
                 Spacer(modifier = Modifier.height(16.dp))
             }
         }
+
+    siteDialog?.let { dialog ->
+        SiteEditDialog(
+            data = dialog,
+            onDismiss = { siteDialog = null },
+            onConfirm = { name, url ->
+                val normalizedUrl = ensureWebUrlScheme(url)
+                val resolvedName = name.ifBlank {
+                    runCatching { Uri.parse(normalizedUrl).host }.getOrNull() ?: normalizedUrl
+                }
+                sites = if (dialog.siteId == null) {
+                    sites + MultiWebSite(
+                        id = UUID.randomUUID().toString(),
+                        name = resolvedName,
+                        url = normalizedUrl,
+                        type = "URL",
+                        appType = "WEB",
+                        siteProjectId = UUID.randomUUID().toString(),
+                        enabled = true,
+                        sortIndex = sites.size
+                    )
+                } else {
+                    sites.map {
+                        if (it.id == dialog.siteId) it.copy(name = resolvedName, url = normalizedUrl) else it
+                    }
+                }
+                siteDialog = null
+            }
+        )
+    }
+}
+
+private data class SiteDialogData(val siteId: String?, val name: String, val url: String)
+
+@Composable
+private fun SiteEditDialog(
+    data: SiteDialogData,
+    onDismiss: () -> Unit,
+    onConfirm: (name: String, url: String) -> Unit
+) {
+    var name by remember(data.siteId) { mutableStateOf(data.name) }
+    var url by remember(data.siteId) { mutableStateOf(data.url) }
+    val normalized = ensureWebUrlScheme(url)
+    val urlValid = normalized.isNotBlank() &&
+        runCatching { Uri.parse(normalized).host?.isNotBlank() == true }.getOrDefault(false)
+    val isEdit = data.siteId != null
+
+    WtaAlertDialog(
+        onDismissRequest = onDismiss,
+        icon = Icons.Outlined.AddLink,
+        title = if (isEdit) Strings.multiWebEditSite else Strings.multiWebAddCustomSite,
+        content = {
+            PremiumTextField(
+                value = name,
+                onValueChange = { name = it },
+                label = { Text(Strings.name) },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+            PremiumTextField(
+                value = url,
+                onValueChange = { url = it },
+                label = { Text(Strings.labelUrl) },
+                placeholder = { Text("https://example.com") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                isError = url.isNotBlank() && !urlValid,
+                supportingText = if (url.isNotBlank() && !urlValid) {
+                    { Text(Strings.pleaseEnterValidUrl) }
+                } else null,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri)
+            )
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onConfirm(name.trim(), url.trim()) },
+                enabled = urlValid
+            ) {
+                Text(if (isEdit) Strings.btnSave else Strings.add)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(Strings.cancel) }
+        }
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -347,6 +442,7 @@ private fun ExistingAppPicker(
     categories: List<com.webtoapp.data.model.AppCategory>,
     selectedAppIds: Set<Long>,
     addedAppIds: Set<Long>,
+    onAddCustomSite: () -> Unit,
     filterType: String?,
     filterCategoryId: Long?,
     onFilterTypeChange: (String?) -> Unit,
@@ -384,6 +480,41 @@ private fun ExistingAppPicker(
             Strings.multiWebAddSite,
             style = MaterialTheme.typography.titleMedium
         )
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        Surface(
+            onClick = onAddCustomSite,
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            color = MaterialTheme.colorScheme.surfaceContainerLow,
+            tonalElevation = 0.dp
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(MaterialTheme.colorScheme.primaryContainer),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Outlined.AddLink, null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.width(10.dp))
+                Text(
+                    Strings.multiWebAddCustomSite,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+        }
 
         if (eligibleApps.isEmpty()) {
             Spacer(modifier = Modifier.height(16.dp))
@@ -723,7 +854,8 @@ private fun SiteItem(
     onDelete: () -> Unit,
     onToggleEnabled: (Boolean) -> Unit,
     onMoveUp: (() -> Unit)? = null,
-    onMoveDown: (() -> Unit)? = null
+    onMoveDown: (() -> Unit)? = null,
+    onEdit: (() -> Unit)? = null
 ) {
     var showMenu by remember { mutableStateOf(false) }
 
@@ -811,6 +943,15 @@ private fun SiteItem(
                             )
                         }
                     )
+                    if (onEdit != null) {
+                        DropdownMenuItem(
+                            text = { Text(Strings.multiWebEditSite) },
+                            onClick = { showMenu = false; onEdit() },
+                            leadingIcon = {
+                                Icon(Icons.Outlined.Edit, null, modifier = Modifier.size(18.dp))
+                            }
+                        )
+                    }
                     if (onMoveUp != null || onMoveDown != null) {
                         HorizontalDivider()
                         DropdownMenuItem(
