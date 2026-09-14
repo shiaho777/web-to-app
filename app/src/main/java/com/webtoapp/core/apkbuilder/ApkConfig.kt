@@ -119,6 +119,10 @@ data class ApkConfig(
     val showNavigationBarInFullscreen: Boolean get() = webView.showNavigationBarInFullscreen
     val showToolbarInFullscreen: Boolean get() = webView.showToolbarInFullscreen
     val fullscreenContentPaddingDp: Int get() = webView.fullscreenContentPaddingDp
+    val fullscreenContentPaddingTopDp: Int? get() = webView.fullscreenContentPaddingTopDp
+    val fullscreenContentPaddingBottomDp: Int? get() = webView.fullscreenContentPaddingBottomDp
+    val fullscreenContentPaddingStartDp: Int? get() = webView.fullscreenContentPaddingStartDp
+    val fullscreenContentPaddingEndDp: Int? get() = webView.fullscreenContentPaddingEndDp
     val landscapeMode: Boolean get() = webView.landscapeMode
     val orientationMode: String get() = webView.orientationMode
     val injectScripts: List<com.webtoapp.data.model.UserScript> get() = webView.injectScripts
@@ -488,6 +492,10 @@ data class WebViewBlock(
     val showNavigationBarInFullscreen: Boolean = false,
     val showToolbarInFullscreen: Boolean = false,
     val fullscreenContentPaddingDp: Int = 0,
+    val fullscreenContentPaddingTopDp: Int? = null,
+    val fullscreenContentPaddingBottomDp: Int? = null,
+    val fullscreenContentPaddingStartDp: Int? = null,
+    val fullscreenContentPaddingEndDp: Int? = null,
     val landscapeMode: Boolean = false,
     val orientationMode: String = "PORTRAIT",
     val injectScripts: List<com.webtoapp.data.model.UserScript> = emptyList(),

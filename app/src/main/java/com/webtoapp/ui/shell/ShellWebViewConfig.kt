@@ -50,6 +50,10 @@ fun buildWebViewConfig(config: ShellConfig): WebViewConfig {
         showNavigationBarInFullscreen = config.webViewConfig.showNavigationBarInFullscreen,
         showToolbarInFullscreen = config.webViewConfig.showToolbarInFullscreen,
         fullscreenContentPaddingDp = config.webViewConfig.fullscreenContentPaddingDp,
+        fullscreenContentPaddingTopDp = config.webViewConfig.fullscreenContentPaddingTopDp,
+        fullscreenContentPaddingBottomDp = config.webViewConfig.fullscreenContentPaddingBottomDp,
+        fullscreenContentPaddingStartDp = config.webViewConfig.fullscreenContentPaddingStartDp,
+        fullscreenContentPaddingEndDp = config.webViewConfig.fullscreenContentPaddingEndDp,
         landscapeMode = config.webViewConfig.landscapeMode,
         orientationMode = try {
             com.webtoapp.data.model.OrientationMode.valueOf(config.webViewConfig.orientationMode)

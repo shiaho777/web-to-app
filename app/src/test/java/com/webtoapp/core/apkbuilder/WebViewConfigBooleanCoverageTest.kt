@@ -212,6 +212,11 @@ class WebViewConfigBooleanCoverageTest {
                 blobInterceptThresholdMb = 10,
                 screenAwakeTimeoutMinutes = 15,
                 pageZoomPercent = 125,
+                fullscreenContentPaddingDp = 16,
+                fullscreenContentPaddingTopDp = 24,
+                fullscreenContentPaddingBottomDp = 8,
+                fullscreenContentPaddingStartDp = 4,
+                fullscreenContentPaddingEndDp = 12,
                 nativeBridgeCapabilities = com.webtoapp.data.model.NativeBridgeCapabilities(
                     googleSignIn = true,
                     googleSignInClientId = "test-client-id.apps.googleusercontent.com"
@@ -241,6 +246,13 @@ class WebViewConfigBooleanCoverageTest {
         readShell("blobInterceptThresholdMb", 10)
         readShell("screenAwakeTimeoutMinutes", 15)
         readShell("pageZoomPercent", 125)
+        // #916: uniform base plus every per-side override must reach the shell,
+        // or the sliders would only work in preview.
+        readShell("fullscreenContentPaddingDp", 16)
+        readShell("fullscreenContentPaddingTopDp", 24)
+        readShell("fullscreenContentPaddingBottomDp", 8)
+        readShell("fullscreenContentPaddingStartDp", 4)
+        readShell("fullscreenContentPaddingEndDp", 12)
         // Native Google sign-in: capability flag + the Web client ID both have to survive
         // the export, or the generated app silently falls back to the disabled state.
         readShell("nativeBridgeGoogleSignIn", true)
@@ -262,6 +274,26 @@ class WebViewConfigBooleanCoverageTest {
         assertThat(shellDarkIconsOf(WebViewConfig(statusBarDarkIconsDark = true))).isEqualTo(true)
         assertThat(shellDarkIconsOf(WebViewConfig(statusBarDarkIconsDark = false))).isEqualTo(false)
         assertThat(shellDarkIconsOf(WebViewConfig())).isNull()
+    }
+
+    @Test
+    fun `unset per-side padding stays null so it follows the uniform base`() {
+        fun shellSideOf(config: WebViewConfig, field: String): Any? {
+            val shellWv = shellWvOf(roundTrip(WebApp(name = "t", url = "https://t.example.com", webViewConfig = config)))
+            val f = shellWv.javaClass.declaredFields.associateBy { it.name }[field]
+                ?: throw AssertionError("ShellWebViewConfig missing field '$field'")
+            f.isAccessible = true
+            return f.get(shellWv)
+        }
+
+        // Old JSON lacks the per-side keys; they must deserialize to null (follow
+        // uniform), not 0 — a coerced 0 would silently pin every side to zero.
+        for (side in listOf(
+            "fullscreenContentPaddingTopDp", "fullscreenContentPaddingBottomDp",
+            "fullscreenContentPaddingStartDp", "fullscreenContentPaddingEndDp"
+        )) {
+            assertThat(shellSideOf(WebViewConfig(fullscreenContentPaddingDp = 16), side)).isNull()
+        }
     }
 
     // ────────────────────────────────────────────────────────────

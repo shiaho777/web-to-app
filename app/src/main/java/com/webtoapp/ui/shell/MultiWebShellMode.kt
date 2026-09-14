@@ -299,26 +299,30 @@ private fun TabsMode(
         // 把网页交互区从屏幕边缘内移，让角落按钮易于点按，并缓解与系统返回手势边缘带的冲突。
         // Issue #771: transparent/image 状态栏覆盖在内容上（常驻微信式），顶部不预留；
         // 实色栏保留预留，避免遮挡页面顶部控件。
-        val contentPad = webViewConfig.fullscreenContentPaddingDp.dp
+        // #916: per-side overrides; an unset side follows the uniform base.
+        val padTop = webViewConfig.fullscreenPadTop.dp
+        val padStart = webViewConfig.fullscreenPadStart.dp
+        val padEnd = webViewConfig.fullscreenPadEnd.dp
+        val padBottom = webViewConfig.fullscreenPadBottom.dp
         val multiDark = androidx.compose.foundation.isSystemInDarkTheme()
         val multiBgType = if (multiDark) webViewConfig.statusBarBackgroundTypeDark else webViewConfig.statusBarBackgroundType
         val multiMode = if (multiDark) webViewConfig.statusBarColorModeDark else webViewConfig.statusBarColorMode
         val multiOverlaysContent = multiBgType == com.webtoapp.data.model.StatusBarBackgroundType.IMAGE ||
             multiMode == com.webtoapp.data.model.StatusBarColorMode.TRANSPARENT
         val topPad = if (webViewConfig.hideToolbar && webViewConfig.showStatusBarInFullscreen) {
-            if (multiOverlaysContent) 0.dp else WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+            (if (multiOverlaysContent) 0.dp else WindowInsets.statusBars.asPaddingValues().calculateTopPadding()) + padTop
         } else {
-            contentPad
+            padTop
         }
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
                 .padding(
-                    start = contentPad,
-                    end = contentPad,
-                    bottom = contentPad,
-                    top = if (webViewConfig.hideToolbar) topPad else contentPad
+                    start = padStart,
+                    end = padEnd,
+                    bottom = padBottom,
+                    top = if (webViewConfig.hideToolbar) topPad else padTop
                 )
         ) {
             val visitedTabs = remember { mutableStateMapOf<Int, Boolean>() }

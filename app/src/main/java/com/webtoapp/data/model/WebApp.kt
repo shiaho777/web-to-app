@@ -339,6 +339,13 @@ data class WebViewConfig(
     val showNavigationBarInFullscreen: Boolean = false,
     val showToolbarInFullscreen: Boolean = false,
     val fullscreenContentPaddingDp: Int = 0,
+    // Per-side overrides (#916). Nullable on purpose: stored JSON predating these
+    // fields deserializes to null, which means "follow fullscreenContentPaddingDp"
+    // — existing apps keep their uniform padding without a migration.
+    val fullscreenContentPaddingTopDp: Int? = null,
+    val fullscreenContentPaddingBottomDp: Int? = null,
+    val fullscreenContentPaddingStartDp: Int? = null,
+    val fullscreenContentPaddingEndDp: Int? = null,
     val landscapeMode: Boolean = false,
     val orientationMode: OrientationMode = OrientationMode.PORTRAIT,
     val injectScripts: List<UserScript> = emptyList(),
@@ -521,7 +528,14 @@ data class WebViewConfig(
 
     val dnsMode: String = "SYSTEM",
     val dnsConfig: DnsConfig = DnsConfig()
-)
+) {
+    // Resolved per-side fullscreen content padding: an unset (null) side follows
+    // the uniform fullscreenContentPaddingDp base.
+    val fullscreenPadTop: Int get() = fullscreenContentPaddingTopDp ?: fullscreenContentPaddingDp
+    val fullscreenPadBottom: Int get() = fullscreenContentPaddingBottomDp ?: fullscreenContentPaddingDp
+    val fullscreenPadStart: Int get() = fullscreenContentPaddingStartDp ?: fullscreenContentPaddingDp
+    val fullscreenPadEnd: Int get() = fullscreenContentPaddingEndDp ?: fullscreenContentPaddingDp
+}
 
 data class HostMappingEntry(
     val host: String = "",

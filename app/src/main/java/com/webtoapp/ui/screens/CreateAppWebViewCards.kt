@@ -2326,6 +2326,7 @@ fun FullscreenModeCard(
     onWebViewConfigChange: (WebViewConfig) -> Unit = {}
 ) {
     var statusBarConfigExpanded by remember { mutableStateOf(false) }
+    var perSidePaddingExpanded by remember { mutableStateOf(false) }
     var statusBarModeTab by remember { mutableStateOf(0) }
 
     WtaSettingCard {
@@ -2371,6 +2372,71 @@ fun FullscreenModeCard(
                     valueRange = 0f..48f,
                     presets = listOf("0dp" to 0f, "8dp" to 8f, "16dp" to 16f, "24dp" to 24f)
                 )
+
+                WtaSectionDivider()
+                WtaChoiceRow(
+                    title = Strings.fullscreenPaddingPerSide,
+                    icon = Icons.Outlined.Padding,
+                    value = if (perSidePaddingExpanded) Strings.collapse else Strings.expand,
+                    isExpanded = perSidePaddingExpanded,
+                    onClick = { perSidePaddingExpanded = !perSidePaddingExpanded }
+                )
+                AnimatedVisibility(
+                    visible = perSidePaddingExpanded,
+                    enter = CardExpandTransition,
+                    exit = CardCollapseTransition
+                ) {
+                    Column {
+                        // #916: an unset side (null) follows the uniform value above;
+                        // dragging a side pins it. Left/right map to start/end so RTL
+                        // layouts mirror automatically.
+                        val uniform = webViewConfig.fullscreenContentPaddingDp
+                        WtaSliderRow(
+                            title = Strings.paddingSideTop,
+                            value = (webViewConfig.fullscreenContentPaddingTopDp ?: uniform).toFloat(),
+                            onValueChange = {
+                                onWebViewConfigChange(
+                                    webViewConfig.copy(fullscreenContentPaddingTopDp = it.toInt())
+                                )
+                            },
+                            valueLabel = "${webViewConfig.fullscreenContentPaddingTopDp ?: uniform}dp",
+                            valueRange = 0f..48f
+                        )
+                        WtaSliderRow(
+                            title = Strings.paddingSideBottom,
+                            value = (webViewConfig.fullscreenContentPaddingBottomDp ?: uniform).toFloat(),
+                            onValueChange = {
+                                onWebViewConfigChange(
+                                    webViewConfig.copy(fullscreenContentPaddingBottomDp = it.toInt())
+                                )
+                            },
+                            valueLabel = "${webViewConfig.fullscreenContentPaddingBottomDp ?: uniform}dp",
+                            valueRange = 0f..48f
+                        )
+                        WtaSliderRow(
+                            title = Strings.paddingSideLeft,
+                            value = (webViewConfig.fullscreenContentPaddingStartDp ?: uniform).toFloat(),
+                            onValueChange = {
+                                onWebViewConfigChange(
+                                    webViewConfig.copy(fullscreenContentPaddingStartDp = it.toInt())
+                                )
+                            },
+                            valueLabel = "${webViewConfig.fullscreenContentPaddingStartDp ?: uniform}dp",
+                            valueRange = 0f..48f
+                        )
+                        WtaSliderRow(
+                            title = Strings.paddingSideRight,
+                            value = (webViewConfig.fullscreenContentPaddingEndDp ?: uniform).toFloat(),
+                            onValueChange = {
+                                onWebViewConfigChange(
+                                    webViewConfig.copy(fullscreenContentPaddingEndDp = it.toInt())
+                                )
+                            },
+                            valueLabel = "${webViewConfig.fullscreenContentPaddingEndDp ?: uniform}dp",
+                            valueRange = 0f..48f
+                        )
+                    }
+                }
 
                 AnimatedVisibility(
                     visible = showStatusBar,

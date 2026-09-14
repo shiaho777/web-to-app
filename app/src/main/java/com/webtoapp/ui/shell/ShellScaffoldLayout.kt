@@ -193,7 +193,11 @@ fun BoxScope.ShellScaffoldLayout(
 
         // 全屏模式下可选的内容内边距：把网页交互区从屏幕边缘内移，让角落按钮易于点按，
         // 同时缓解与系统返回手势边缘带的冲突。默认 0 → 向后兼容旧行为。
-        val contentPad = config.webViewConfig.fullscreenContentPaddingDp.dp
+        // #916: each side may override the uniform value; null follows the base.
+        val padTop = config.webViewConfig.fullscreenPadTop.dp
+        val padStart = config.webViewConfig.fullscreenPadStart.dp
+        val padEnd = config.webViewConfig.fullscreenPadEnd.dp
+        val padBottom = config.webViewConfig.fullscreenPadBottom.dp
 
         // Issue #771: transparent/image bars overlay the content (persistent
         // WeChat-style bar) instead of reserving a strip; solid bars keep the
@@ -212,15 +216,20 @@ fun BoxScope.ShellScaffoldLayout(
             hideToolbar && config.webViewConfig.showStatusBarInFullscreen -> {
 
                 Modifier.fillMaxSize().padding(
-                    top = if (shellOverlaysContent) 0.dp else actualStatusBarPadding,
-                    start = contentPad,
-                    end = contentPad,
-                    bottom = contentPad
+                    top = (if (shellOverlaysContent) 0.dp else actualStatusBarPadding) + padTop,
+                    start = padStart,
+                    end = padEnd,
+                    bottom = padBottom
                 )
             }
             hideToolbar -> {
 
-                Modifier.fillMaxSize().padding(contentPad)
+                Modifier.fillMaxSize().padding(
+                    top = padTop,
+                    start = padStart,
+                    end = padEnd,
+                    bottom = padBottom
+                )
             }
             else -> {
 

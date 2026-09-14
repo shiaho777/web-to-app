@@ -2387,6 +2387,11 @@ object Strings {
     val showNavigationBarHint: String get() = StringsC.showNavigationBarHint
     val fullscreenContentPadding: String get() = StringsC.fullscreenContentPadding
     val fullscreenContentPaddingHint: String get() = StringsC.fullscreenContentPaddingHint
+    val fullscreenPaddingPerSide: String get() = StringsC.fullscreenPaddingPerSide
+    val paddingSideTop: String get() = StringsC.paddingSideTop
+    val paddingSideBottom: String get() = StringsC.paddingSideBottom
+    val paddingSideLeft: String get() = StringsC.paddingSideLeft
+    val paddingSideRight: String get() = StringsC.paddingSideRight
     val statusBarCustomizeLabel: String get() = StringsC.statusBarCustomizeLabel
     val statusBarLightModeLabel: String get() = StringsC.statusBarLightModeLabel
     val statusBarDarkModeLabel: String get() = StringsC.statusBarDarkModeLabel
@@ -34878,6 +34883,71 @@ object StringsC {
         AppLanguage.RUSSIAN -> "Отступ в полноэкранном режиме: кнопки в углах удобнее, меньше конфликтов с жестами"
         AppLanguage.JAPANESE -> "全画面で余白を設け、隅のボタンを押しやすくし、エッジジェスチャーとの競合を軽減"
         AppLanguage.KOREAN -> "전체 화면 여백: 모서리 버튼이 쉬워지고 가장자리 제스처 충돌 감소"
+    }
+
+    val fullscreenPaddingPerSide: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "分别设置四边"
+        AppLanguage.ENGLISH -> "Set each side separately"
+        AppLanguage.ARABIC -> "ضبط كل جانب على حدة"
+        AppLanguage.PORTUGUESE -> "Definir cada lado separadamente"
+        AppLanguage.SPANISH -> "Ajustar cada lado por separado"
+        AppLanguage.FRENCH -> "Régler chaque côté séparément"
+        AppLanguage.GERMAN -> "Jede Seite einzeln einstellen"
+        AppLanguage.RUSSIAN -> "Задать каждую сторону отдельно"
+        AppLanguage.JAPANESE -> "辺ごとに個別設定"
+        AppLanguage.KOREAN -> "변별로 개별 설정"
+    }
+
+    val paddingSideTop: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "上"
+        AppLanguage.ENGLISH -> "Top"
+        AppLanguage.ARABIC -> "أعلى"
+        AppLanguage.PORTUGUESE -> "Superior"
+        AppLanguage.SPANISH -> "Superior"
+        AppLanguage.FRENCH -> "Haut"
+        AppLanguage.GERMAN -> "Oben"
+        AppLanguage.RUSSIAN -> "Сверху"
+        AppLanguage.JAPANESE -> "上"
+        AppLanguage.KOREAN -> "위"
+    }
+
+    val paddingSideBottom: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "下"
+        AppLanguage.ENGLISH -> "Bottom"
+        AppLanguage.ARABIC -> "أسفل"
+        AppLanguage.PORTUGUESE -> "Inferior"
+        AppLanguage.SPANISH -> "Inferior"
+        AppLanguage.FRENCH -> "Bas"
+        AppLanguage.GERMAN -> "Unten"
+        AppLanguage.RUSSIAN -> "Снизу"
+        AppLanguage.JAPANESE -> "下"
+        AppLanguage.KOREAN -> "아래"
+    }
+
+    val paddingSideLeft: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "左"
+        AppLanguage.ENGLISH -> "Left"
+        AppLanguage.ARABIC -> "يسار"
+        AppLanguage.PORTUGUESE -> "Esquerda"
+        AppLanguage.SPANISH -> "Izquierda"
+        AppLanguage.FRENCH -> "Gauche"
+        AppLanguage.GERMAN -> "Links"
+        AppLanguage.RUSSIAN -> "Слева"
+        AppLanguage.JAPANESE -> "左"
+        AppLanguage.KOREAN -> "왼쪽"
+    }
+
+    val paddingSideRight: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "右"
+        AppLanguage.ENGLISH -> "Right"
+        AppLanguage.ARABIC -> "يمين"
+        AppLanguage.PORTUGUESE -> "Direita"
+        AppLanguage.SPANISH -> "Derecha"
+        AppLanguage.FRENCH -> "Droite"
+        AppLanguage.GERMAN -> "Rechts"
+        AppLanguage.RUSSIAN -> "Справа"
+        AppLanguage.JAPANESE -> "右"
+        AppLanguage.KOREAN -> "오른쪽"
     }
 
     val statusBarCustomizeLabel: String get() = when (Strings.lang) {

@@ -3177,7 +3177,10 @@ fun WebViewScreen(
         // reserve the status-bar height on top when the bar is shown, pad the
         // remaining edges so corner controls stay tappable. Preview used to ignore
         // this setting entirely, so the slider appeared dead until export.
-        val contentPad = (webApp?.webViewConfig?.fullscreenContentPaddingDp ?: 0).dp
+        val padTop = (webApp?.webViewConfig?.fullscreenPadTop ?: 0).dp
+        val padStart = (webApp?.webViewConfig?.fullscreenPadStart ?: 0).dp
+        val padEnd = (webApp?.webViewConfig?.fullscreenPadEnd ?: 0).dp
+        val padBottom = (webApp?.webViewConfig?.fullscreenPadBottom ?: 0).dp
 
         val contentModifier = when {
             hideToolbar && showToolbarInPreview -> {
@@ -3187,15 +3190,20 @@ fun WebViewScreen(
             hideToolbar && webApp?.webViewConfig?.showStatusBarInFullscreen == true -> {
 
                 Modifier.fillMaxSize().padding(
-                    top = if (barOverlaysContent) 0.dp else actualStatusBarPadding,
-                    start = contentPad,
-                    end = contentPad,
-                    bottom = contentPad
+                    top = (if (barOverlaysContent) 0.dp else actualStatusBarPadding) + padTop,
+                    start = padStart,
+                    end = padEnd,
+                    bottom = padBottom
                 )
             }
             hideToolbar -> {
 
-                Modifier.fillMaxSize().padding(contentPad)
+                Modifier.fillMaxSize().padding(
+                    top = padTop,
+                    start = padStart,
+                    end = padEnd,
+                    bottom = padBottom
+                )
             }
             else -> {
 

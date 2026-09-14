@@ -1173,6 +1173,18 @@ data class WebViewShellConfig(
     @SerializedName("fullscreenContentPaddingDp")
     val fullscreenContentPaddingDp: Int = 0,
 
+    @SerializedName("fullscreenContentPaddingTopDp")
+    val fullscreenContentPaddingTopDp: Int? = null,
+
+    @SerializedName("fullscreenContentPaddingBottomDp")
+    val fullscreenContentPaddingBottomDp: Int? = null,
+
+    @SerializedName("fullscreenContentPaddingStartDp")
+    val fullscreenContentPaddingStartDp: Int? = null,
+
+    @SerializedName("fullscreenContentPaddingEndDp")
+    val fullscreenContentPaddingEndDp: Int? = null,
+
     @SerializedName("landscapeMode")
     val landscapeMode: Boolean = false,
 
@@ -1597,7 +1609,14 @@ data class WebViewShellConfig(
 
     @SerializedName("dnsConfig")
     val dnsConfig: DnsShellConfig = DnsShellConfig()
-)
+) {
+    // Resolved per-side fullscreen content padding: an unset (null) side follows
+    // the uniform fullscreenContentPaddingDp base (#916).
+    val fullscreenPadTop: Int get() = fullscreenContentPaddingTopDp ?: fullscreenContentPaddingDp
+    val fullscreenPadBottom: Int get() = fullscreenContentPaddingBottomDp ?: fullscreenContentPaddingDp
+    val fullscreenPadStart: Int get() = fullscreenContentPaddingStartDp ?: fullscreenContentPaddingDp
+    val fullscreenPadEnd: Int get() = fullscreenContentPaddingEndDp ?: fullscreenContentPaddingDp
+}
 
 data class FloatingWindowShellConfig(
     @SerializedName("enabled")
