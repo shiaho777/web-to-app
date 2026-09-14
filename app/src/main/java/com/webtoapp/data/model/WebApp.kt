@@ -342,7 +342,7 @@ data class WebViewConfig(
     val landscapeMode: Boolean = false,
     val orientationMode: OrientationMode = OrientationMode.PORTRAIT,
     val injectScripts: List<UserScript> = emptyList(),
-    val statusBarColorMode: StatusBarColorMode = StatusBarColorMode.THEME,
+    val statusBarColorMode: StatusBarColorMode = StatusBarColorMode.TRANSPARENT,
     val statusBarColor: String? = null,
     val statusBarDarkIcons: Boolean? = null,
     val statusBarBackgroundType: StatusBarBackgroundType = StatusBarBackgroundType.COLOR,
@@ -351,7 +351,7 @@ data class WebViewConfig(
 
     val statusBarHeightDp: Int = -1,
 
-    val statusBarColorModeDark: StatusBarColorMode = StatusBarColorMode.THEME,
+    val statusBarColorModeDark: StatusBarColorMode = StatusBarColorMode.TRANSPARENT,
     val statusBarColorDark: String? = null,
     val statusBarDarkIconsDark: Boolean? = null,
     val statusBarBackgroundTypeDark: StatusBarBackgroundType = StatusBarBackgroundType.COLOR,

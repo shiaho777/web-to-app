@@ -9,7 +9,7 @@ class WebViewConfigDarkModeTest {
     fun `WebViewConfig dark mode status bar fields have correct defaults`() {
         val config = WebViewConfig()
 
-        assertThat(config.statusBarColorModeDark).isEqualTo(StatusBarColorMode.THEME)
+        assertThat(config.statusBarColorModeDark).isEqualTo(StatusBarColorMode.TRANSPARENT)
         assertThat(config.statusBarColorDark).isNull()
         assertThat(config.statusBarDarkIconsDark).isNull()
         assertThat(config.statusBarBackgroundTypeDark).isEqualTo(StatusBarBackgroundType.COLOR)
@@ -21,7 +21,7 @@ class WebViewConfigDarkModeTest {
     fun `WebViewConfig light mode status bar fields have correct defaults`() {
         val config = WebViewConfig()
 
-        assertThat(config.statusBarColorMode).isEqualTo(StatusBarColorMode.THEME)
+        assertThat(config.statusBarColorMode).isEqualTo(StatusBarColorMode.TRANSPARENT)
         assertThat(config.statusBarColor).isNull()
         assertThat(config.statusBarDarkIcons).isNull()
         assertThat(config.statusBarBackgroundType).isEqualTo(StatusBarBackgroundType.COLOR)

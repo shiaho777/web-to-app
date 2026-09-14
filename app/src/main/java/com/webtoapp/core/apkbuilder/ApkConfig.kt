@@ -615,14 +615,14 @@ data class ScreenAwakeBlock(
 )
 
 data class StatusBarBlock(
-    val colorMode: String = "THEME",
+    val colorMode: String = "TRANSPARENT",
     val color: String? = null,
     val darkIcons: Boolean? = null,
     val backgroundType: String = "COLOR",
     val backgroundImage: String? = null,
     val backgroundAlpha: Float = 1.0f,
     val heightDp: Int = -1,
-    val colorModeDark: String = "THEME",
+    val colorModeDark: String = "TRANSPARENT",
     val colorDark: String? = null,
     val darkIconsDark: Boolean? = null,
     val backgroundTypeDark: String = "COLOR",

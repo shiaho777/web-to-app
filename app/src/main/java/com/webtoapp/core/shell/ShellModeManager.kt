@@ -1183,7 +1183,7 @@ data class WebViewShellConfig(
     val injectScripts: List<ShellUserScript> = emptyList(),
 
     @SerializedName("statusBarColorMode")
-    val statusBarColorMode: String = "THEME",
+    val statusBarColorMode: String = "TRANSPARENT",
 
     @SerializedName("statusBarColor")
     val statusBarColor: String? = null,
@@ -1204,7 +1204,7 @@ data class WebViewShellConfig(
     val statusBarHeightDp: Int = -1,
 
     @SerializedName("statusBarColorModeDark")
-    val statusBarColorModeDark: String = "THEME",
+    val statusBarColorModeDark: String = "TRANSPARENT",
 
     @SerializedName("statusBarColorDark")
     val statusBarColorDark: String? = null,

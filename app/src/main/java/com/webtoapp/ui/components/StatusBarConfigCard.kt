@@ -159,6 +159,12 @@ fun StatusBarConfigCard(
                         verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
                     ) {
                         WtaChip(
+                            selected = config.statusBarColorMode == StatusBarColorMode.TRANSPARENT,
+                            onClick = { onConfigChange(config.copy(statusBarColorMode = StatusBarColorMode.TRANSPARENT)) },
+                            label = Strings.transparent,
+                            showSelectedCheck = false
+                        )
+                        WtaChip(
                             selected = config.statusBarColorMode == StatusBarColorMode.THEME,
                             onClick = { onConfigChange(config.copy(statusBarColorMode = StatusBarColorMode.THEME)) },
                             label = Strings.tagTheme,
@@ -174,12 +180,6 @@ fun StatusBarConfigCard(
                             selected = config.statusBarColorMode == StatusBarColorMode.CUSTOM,
                             onClick = { onConfigChange(config.copy(statusBarColorMode = StatusBarColorMode.CUSTOM)) },
                             label = Strings.backgroundColor,
-                            showSelectedCheck = false
-                        )
-                        WtaChip(
-                            selected = config.statusBarColorMode == StatusBarColorMode.TRANSPARENT,
-                            onClick = { onConfigChange(config.copy(statusBarColorMode = StatusBarColorMode.TRANSPARENT)) },
-                            label = Strings.transparent,
                             showSelectedCheck = false
                         )
                     }
