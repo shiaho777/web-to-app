@@ -32,9 +32,9 @@ class SessionTranscriptTest {
 
         assertTrue(md.startsWith("# My Session"))
         assertTrue(md.contains("- ID: `s-1`"))
-        assertTrue(md.contains("## 👤 User"))
+        assertTrue(md.contains("## User"))
         assertTrue(md.contains("hello"))
-        assertTrue(md.contains("## 🤖 Assistant"))
+        assertTrue(md.contains("## Assistant"))
         assertTrue(md.contains("hi there"))
     }
 
@@ -69,7 +69,7 @@ class SessionTranscriptTest {
             thinkingHeader = "💭 Thinking"
         )
 
-        assertTrue(md.contains("### 🔧 Read"))
+        assertTrue(md.contains("### Read"))
         assertTrue(md.contains("```json"))
         assertTrue(md.contains("file body"))
         assertFalse(md.contains("__running__"))
@@ -115,6 +115,6 @@ class SessionTranscriptTest {
             ),
             thinkingHeader = "💭 Thinking"
         )
-        assertTrue(md.contains("- 📎 x.png"))
+        assertTrue(md.contains("- x.png"))
     }
 }
