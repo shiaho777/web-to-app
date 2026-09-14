@@ -1068,6 +1068,7 @@ object Strings {
     val saveSuccess: String get() = StringsA.saveSuccess
     val storagePermissionRequired: String get() = StringsA.storagePermissionRequired
     val appConfigLoadFailed: String get() = StringsA.appConfigLoadFailed
+    val pressAgainToExit: String get() = StringsA.pressAgainToExit
     val shortcutCreatedSuccess: String get() = StringsA.shortcutCreatedSuccess
     val projectExportedTo: String get() = StringsA.projectExportedTo
     val preparing: String get() = StringsA.preparing
@@ -18588,6 +18589,19 @@ object StringsA {
         AppLanguage.RUSSIAN -> "Не удалось загрузить конфигурацию приложения, переустановите"
         AppLanguage.JAPANESE -> "アプリ設定の読み込みに失敗しました。再インストールしてください"
         AppLanguage.KOREAN -> "앱 설정 로드 실패, 재설치해주세요"
+    }
+
+    val pressAgainToExit: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "再按一次退出"
+        AppLanguage.ENGLISH -> "Press back again to exit"
+        AppLanguage.ARABIC -> "اضغط رجوع مرة أخرى للخروج"
+        AppLanguage.PORTUGUESE -> "Pressione voltar novamente para sair"
+        AppLanguage.SPANISH -> "Pulsa atrás de nuevo para salir"
+        AppLanguage.FRENCH -> "Appuyez à nouveau sur retour pour quitter"
+        AppLanguage.GERMAN -> "Zum Beenden erneut zurück drücken"
+        AppLanguage.RUSSIAN -> "Нажмите «назад» ещё раз для выхода"
+        AppLanguage.JAPANESE -> "もう一度戻るを押すと終了します"
+        AppLanguage.KOREAN -> "한 번 더 누르면 종료됩니다"
     }
 
     val shortcutCreatedSuccess: String get() = when (Strings.lang) {

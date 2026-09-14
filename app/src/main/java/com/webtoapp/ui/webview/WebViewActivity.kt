@@ -1001,13 +1001,8 @@ class WebViewActivity : AppCompatActivity() {
                             // GeckoView engine: no WebView handle — walk the engine's own
                             // history through the surface. The Escape-key JS probe is skipped
                             // (it needs an eval result, which Gecko's javascript: URI path
-                            // cannot return); back used to exit the preview outright here.
-                            val surface = browserSurface
-                            if (surface != null && surface.canGoBack()) {
-                                surface.goBack()
-                            } else {
-                                finish()
-                            }
+                            // cannot return).
+                            ShellWebViewNavigation.goBackOrFinish(this@WebViewActivity, browserSurface)
                         }
                     }
                 }

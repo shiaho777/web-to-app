@@ -36,6 +36,36 @@ class ShellWebViewNavigationTest {
     }
 
     @Test
+    fun `back skips blank entry instead of exiting when real page sits below it`() {
+        // [realA, about:blank, realB]: pressing back on realB used to FINISH the
+        // app because the previous entry was blank — one gesture exited past the
+        // blank AND the app (two layers). It must skip the artifact and land on
+        // realA instead.
+        assertThat(
+            ShellWebViewNavigation.resolveBackAction(
+                canGoBack = true,
+                currentIndex = 2,
+                currentUrls = listOf("https://example.com/page2"),
+                previousUrls = listOf("about:blank"),
+                beforePreviousUrls = listOf("https://example.com/page1")
+            )
+        ).isEqualTo(ShellWebViewNavigation.BackAction.SKIP_PREVIOUS)
+    }
+
+    @Test
+    fun `back skips generated error entry instead of exiting when real page sits below it`() {
+        assertThat(
+            ShellWebViewNavigation.resolveBackAction(
+                canGoBack = true,
+                currentIndex = 2,
+                currentUrls = listOf("https://example.com/page2"),
+                previousUrls = listOf("data:text/html;charset=utf-8;base64,PGgxPkVycm9yPC9oMT4="),
+                beforePreviousUrls = listOf("https://example.com/page1")
+            )
+        ).isEqualTo(ShellWebViewNavigation.BackAction.SKIP_PREVIOUS)
+    }
+
+    @Test
     fun `back exits when generated error page points back to failed remote preview url`() {
         assertThat(
             ShellWebViewNavigation.resolveBackAction(

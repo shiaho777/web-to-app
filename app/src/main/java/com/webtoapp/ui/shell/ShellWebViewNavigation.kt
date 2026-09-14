@@ -6,6 +6,32 @@ import com.webtoapp.core.engine.BrowserSurface
 
 object ShellWebViewNavigation {
 
+    private const val EXIT_CONFIRM_WINDOW_MS = 2500L
+
+    @Volatile
+    private var lastExitPromptAtMs = 0L
+
+    /**
+     * Double-back-to-exit: the first FINISH only shows a prompt; a second back
+     * press inside the window really leaves. This is the standard app exit
+     * pattern and also absorbs stray double-dispatched back events at the last
+     * history layer.
+     */
+    private fun confirmExitThenFinish(activity: AppCompatActivity) {
+        val now = android.os.SystemClock.uptimeMillis()
+        if (now - lastExitPromptAtMs <= EXIT_CONFIRM_WINDOW_MS) {
+            lastExitPromptAtMs = 0L
+            activity.finish()
+        } else {
+            lastExitPromptAtMs = now
+            android.widget.Toast.makeText(
+                activity,
+                com.webtoapp.core.i18n.Strings.pressAgainToExit,
+                android.widget.Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
+
     fun goBackOrFinish(activity: AppCompatActivity, webView: WebView?) {
         goBackOrFinish(activity, webView, useJsHistoryBack = false)
     }
@@ -48,7 +74,7 @@ object ShellWebViewNavigation {
             surface.goBack()
             return
         }
-        activity.finish()
+        confirmExitThenFinish(activity)
     }
 
     private fun goBackViaJsHistoryBack(activity: AppCompatActivity, webView: WebView) {
@@ -60,7 +86,7 @@ object ShellWebViewNavigation {
         // so the page's own popstate/pageshow handlers run and bfcache can
         // restore the previous DOM instead of doing a fresh load.
         when (resolveBackActionFor(webView)) {
-            BackAction.FINISH -> activity.finish()
+            BackAction.FINISH -> confirmExitThenFinish(activity)
             BackAction.GO_BACK -> webView.evaluateJavascript("history.back();", null)
             BackAction.SKIP_PREVIOUS -> webView.goBackOrForward(-2)
         }
@@ -68,7 +94,7 @@ object ShellWebViewNavigation {
 
     private fun goBackNative(activity: AppCompatActivity, wv: WebView) {
         when (resolveBackActionFor(wv)) {
-            BackAction.FINISH -> activity.finish()
+            BackAction.FINISH -> confirmExitThenFinish(activity)
             BackAction.GO_BACK -> wv.goBack()
             BackAction.SKIP_PREVIOUS -> wv.goBackOrForward(-2)
         }
@@ -134,11 +160,20 @@ object ShellWebViewNavigation {
             }
         }
 
-        val shouldFinish = previousHasBlank ||
-            previousHasError ||
-            currentHasBlank && (previousHasLocal || previousHasError) ||
-            currentHasError && (previousHasLocal || previousHasBlank) ||
-            currentHasLocal && previousHasError
+        // A generated artifact (blank bootstrap / inline error page) sitting in the
+        // middle of history must be stepped over, not treated as "nothing to go
+        // back to": [realA, artifact, realB] should land on realA. Finishing here
+        // reads as "one back press exited two layers" — the reported bug.
+        if (previousHasBlank || previousHasError) {
+            return if (beforePreviousHasRealPage && currentIndex > 1) {
+                BackAction.SKIP_PREVIOUS
+            } else {
+                BackAction.FINISH
+            }
+        }
+
+        val shouldFinish = currentHasBlank && previousHasLocal ||
+            currentHasError && previousHasLocal
 
         return if (shouldFinish) BackAction.FINISH else BackAction.GO_BACK
     }
