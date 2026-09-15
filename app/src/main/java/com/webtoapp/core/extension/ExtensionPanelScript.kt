@@ -53,8 +53,9 @@ object ExtensionPanelScript {
     if (window.__WTA_PANEL__) return;
 
     // ==================== 多语言支持 ====================
-    const LANG = (navigator.language || 'zh').toLowerCase().startsWith('ar') ? 'ar' :
-                 (navigator.language || 'zh').toLowerCase().startsWith('zh') ? 'zh' : 'en';
+    const __wtaLang__ = (window.__wtaAppLang || navigator.language || 'zh').toLowerCase();
+    const LANG = __wtaLang__.startsWith('ar') ? 'ar' :
+                 __wtaLang__.startsWith('zh') ? 'zh' : 'en';
     const I18N = {
         zh: {
             panelTitle: '扩展管理',

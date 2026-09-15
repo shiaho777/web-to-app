@@ -60,7 +60,7 @@ class HtmlPreviewActivity : ComponentActivity() {
 
         val filePath = intent.getStringExtra(EXTRA_FILE_PATH)
         val htmlContent = intent.getStringExtra(EXTRA_HTML_CONTENT)
-        val title = intent.getStringExtra(EXTRA_TITLE) ?: "预览"
+        val title = intent.getStringExtra(EXTRA_TITLE) ?: Strings.preview
 
         setContent {
             WebToAppTheme { _ ->
@@ -120,17 +120,17 @@ private fun HtmlPreviewScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.Close, "Close")
+                        Icon(Icons.Default.Close, Strings.close)
                     }
                 },
                 actions = {
 
                     IconButton(onClick = { showSourceDialog = true }) {
-                        Icon(Icons.Outlined.Description, "查看源代码")
+                        Icon(Icons.Outlined.Description, Strings.viewSourceCode)
                     }
 
                     IconButton(onClick = { webView?.reload() }) {
-                        Icon(Icons.Default.Refresh, "Refresh")
+                        Icon(Icons.Default.Refresh, Strings.refresh)
                     }
 
                     IconButton(onClick = { showDevTools = !showDevTools }) {
@@ -143,7 +143,7 @@ private fun HtmlPreviewScreen(
                         ) {
                             Icon(
                                 if (showDevTools) Icons.Filled.Code else Icons.Outlined.Code,
-                                "开发者工具"
+                                Strings.developerTools
                             )
                         }
                     }

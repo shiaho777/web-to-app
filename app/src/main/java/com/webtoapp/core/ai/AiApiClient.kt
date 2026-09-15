@@ -105,13 +105,13 @@ class AiApiClient(private val context: Context) {
                 AppLogger.e("AiApiClient", "API connection test FAILED: code=$responseCode, body=$errorBody")
 
                 val errorMsg = when (responseCode) {
-                    400 -> "请求参数错误 (400): $errorBody"
-                    401 -> "API Key 无效或已过期 (401)"
-                    403 -> "访问被拒绝 (403): 请检查权限或配额"
-                    404 -> "端点不存在 (404): 请检查 Base URL 是否正确，当前: $fullUrl"
-                    429 -> "请求过于频繁 (429)"
-                    500, 502, 503 -> "服务器错误 ($responseCode)"
-                    else -> "连接失败: $responseCode - ${errorBody.take(200)}"
+                    400 -> Strings.aiErrBadRequest("(400): $errorBody")
+                    401 -> Strings.aiErrInvalidKey
+                    403 -> Strings.aiErrForbidden
+                    404 -> Strings.aiErrNotFound
+                    429 -> Strings.aiErrRateLimited
+                    500, 502, 503 -> Strings.aiErrServer
+                    else -> Strings.aiErrHttp(responseCode, errorBody.take(200))
                 }
                 Result.failure(Exception(errorMsg))
             }
@@ -723,7 +723,7 @@ class AiApiClient(private val context: Context) {
                     if (data != null) return Result.success(data)
                 }
             }
-            Result.failure(Exception("未找到图像数据"))
+            Result.failure(Exception(Strings.aiNoImageData))
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -742,7 +742,7 @@ class AiApiClient(private val context: Context) {
             if (match != null) {
                 Result.success(match.groupValues[1])
             } else {
-                Result.failure(Exception("未找到图像数据"))
+                Result.failure(Exception(Strings.aiNoImageData))
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -1103,7 +1103,7 @@ val json = gson.fromJson(body, JsonObject::class.java)
             !apiKey.baseUrl.isNullOrBlank() -> apiKey.baseUrl.trimEnd('/')
             apiKey.provider.baseUrl.isNotBlank() -> apiKey.provider.baseUrl.trimEnd('/')
             else -> {
-                trySend(StreamEvent.Error("未配置API地址，请在设置中填写Base URL"))
+                trySend(StreamEvent.Error(Strings.aiNotConfigured))
                 close()
                 return@callbackFlow
             }
@@ -1123,14 +1123,14 @@ val json = gson.fromJson(body, JsonObject::class.java)
             override fun onFailure(call: Call, e: IOException) {
                 val errorMsg = when {
                     e.message?.contains("connection abort", ignoreCase = true) == true ->
-                        "网络连接中断，请检查网络后重试"
+                        Strings.aiNetworkInterrupted
                     e.message?.contains("timeout", ignoreCase = true) == true ->
-                        "请求超时，请检查网络连接"
+                        Strings.aiRequestTimeout
                     e.message?.contains("Unable to resolve host", ignoreCase = true) == true ->
-                        "无法连接服务器，请检查网络或API地址"
+                        Strings.aiCannotConnect
                     e.message?.contains("Connection refused", ignoreCase = true) == true ->
-                        "服务器拒绝连接，请检查API地址是否正确"
-                    else -> e.message ?: "网络连接失败"
+                        Strings.aiConnectionRefused
+                    else -> e.message ?: Strings.aiNetworkFailed
                 }
                 trySend(StreamEvent.Error(errorMsg))
                 close(e)
@@ -1147,17 +1147,17 @@ val json = gson.fromJson(body, JsonObject::class.java)
                                 val json = gson.fromJson(errorBody, JsonObject::class.java)
                                 val error = json.getAsJsonObject("error")
                                 val message = error?.get("message")?.asString ?: errorBody
-                                "请求参数错误: $message"
+                                Strings.aiErrBadRequest(message)
                             } catch (e: Exception) {
-                                "请求参数错误: $errorBody"
+                                Strings.aiErrBadRequest(errorBody)
                             }
                         }
-                        401 -> "API Key 无效或已过期，请检查设置"
-                        403 -> "API 访问被拒绝，请检查权限或配额"
-                        404 -> "模型不存在或 API 端点错误，请检查模型名称"
-                        429 -> "请求过于频繁，请稍后重试"
-                        500, 502, 503 -> "服务器错误，请稍后重试"
-                        else -> "请求失败: ${response.code} - $errorBody"
+                        401 -> Strings.aiErrInvalidKey
+                        403 -> Strings.aiErrForbidden
+                        404 -> Strings.aiErrNotFound
+                        429 -> Strings.aiErrRateLimited
+                        500, 502, 503 -> Strings.aiErrServer
+                        else -> Strings.aiErrHttp(response.code, errorBody)
                     }
 
                     trySend(StreamEvent.Error(errorMsg))
@@ -1167,7 +1167,7 @@ val json = gson.fromJson(body, JsonObject::class.java)
 
                 try {
                     val reader = response.body?.source() ?: run {
-                        trySend(StreamEvent.Error("响应体为空"))
+                        trySend(StreamEvent.Error(Strings.aiEmptyResponse))
                         close()
                         return
                     }
@@ -1199,7 +1199,7 @@ val json = gson.fromJson(body, JsonObject::class.java)
 
                             val error = json.getAsJsonObject("error")
                             if (error != null) {
-                                val errorMsg = error.get("message")?.asString ?: "API返回错误"
+                                val errorMsg = error.get("message")?.asString ?: Strings.aiReturnedError
                                 trySend(StreamEvent.Error(errorMsg))
                                 close()
                                 return
@@ -1331,11 +1331,11 @@ val json = gson.fromJson(body, JsonObject::class.java)
                     if (!doneSent) {
                         if (contentBuilder.isEmpty()) {
                             val debugInfo = if (!hasReceivedData) {
-                                "未收到任何数据，API可能不支持流式输出"
+                                Strings.aiNoStreamData
                             } else {
 
                                 AppLogger.e("AiApiClient", "StreamChat 解析失败，最后收到的数据: $lastReceivedPayload")
-                                "API返回数据格式异常，请查看日志或尝试其他模型。数据预览: ${lastReceivedPayload.take(100)}..."
+                                Strings.aiDataFormatError(lastReceivedPayload.take(100))
                             }
                             trySend(StreamEvent.Error(debugInfo))
                         } else {
@@ -1347,7 +1347,7 @@ val json = gson.fromJson(body, JsonObject::class.java)
                     close()
                 } catch (e: Exception) {
                     response.body?.close()
-                    trySend(StreamEvent.Error(e.message ?: "读取响应失败"))
+                    trySend(StreamEvent.Error(e.message ?: Strings.aiReadResponseFailed))
                     close(e)
                 }
             }
@@ -1835,7 +1835,7 @@ val json = gson.fromJson(body, JsonObject::class.java)
             !apiKey.baseUrl.isNullOrBlank() -> apiKey.baseUrl.trimEnd('/')
             apiKey.provider.baseUrl.isNotBlank() -> apiKey.provider.baseUrl.trimEnd('/')
             else -> {
-                trySend(ToolStreamEvent.Error("未配置API地址"))
+                trySend(ToolStreamEvent.Error(Strings.aiNotConfigured))
                 close()
                 return@callbackFlow
             }
@@ -1850,14 +1850,14 @@ val json = gson.fromJson(body, JsonObject::class.java)
             override fun onFailure(call: Call, e: IOException) {
                 val errorMsg = when {
                     e.message?.contains("connection abort", ignoreCase = true) == true ->
-                        "网络连接中断，请检查网络后重试"
+                        Strings.aiNetworkInterrupted
                     e.message?.contains("timeout", ignoreCase = true) == true ->
-                        "请求超时，请检查网络连接"
+                        Strings.aiRequestTimeout
                     e.message?.contains("Unable to resolve host", ignoreCase = true) == true ->
-                        "无法连接服务器，请检查网络或API地址"
+                        Strings.aiCannotConnect
                     e.message?.contains("Connection refused", ignoreCase = true) == true ->
-                        "服务器拒绝连接，请检查API地址是否正确"
-                    else -> e.message ?: "网络连接失败"
+                        Strings.aiConnectionRefused
+                    else -> e.message ?: Strings.aiNetworkFailed
                 }
                 trySend(ToolStreamEvent.Error(errorMsg))
                 close(e)
@@ -1875,17 +1875,17 @@ val json = gson.fromJson(body, JsonObject::class.java)
                                 val json = gson.fromJson(errorBody, JsonObject::class.java)
                                 val error = json.getAsJsonObject("error")
                                 val message = error?.get("message")?.asString ?: errorBody
-                                "请求参数错误: $message"
+                                Strings.aiErrBadRequest(message)
                             } catch (e: Exception) {
-                                "请求参数错误: $errorBody"
+                                Strings.aiErrBadRequest(errorBody)
                             }
                         }
-                        401 -> "API Key 无效或已过期，请检查设置"
-                        403 -> "API 访问被拒绝，请检查权限或配额"
-                        404 -> "模型不存在或 API 端点错误，请检查模型名称"
-                        429 -> "请求过于频繁，请稍后重试"
-                        500, 502, 503 -> "服务器错误，请稍后重试"
-                        else -> "请求失败: ${response.code} - $errorBody"
+                        401 -> Strings.aiErrInvalidKey
+                        403 -> Strings.aiErrForbidden
+                        404 -> Strings.aiErrNotFound
+                        429 -> Strings.aiErrRateLimited
+                        500, 502, 503 -> Strings.aiErrServer
+                        else -> Strings.aiErrHttp(response.code, errorBody)
                     }
 
                     trySend(ToolStreamEvent.Error(errorMsg))
@@ -1895,7 +1895,7 @@ val json = gson.fromJson(body, JsonObject::class.java)
 
                 try {
                     val reader = response.body?.source() ?: run {
-                        trySend(ToolStreamEvent.Error("响应体为空"))
+                        trySend(ToolStreamEvent.Error(Strings.aiEmptyResponse))
                         close()
                         return
                     }
@@ -2172,7 +2172,7 @@ val json = gson.fromJson(body, JsonObject::class.java)
                     close()
                 } catch (e: Exception) {
                     response.body?.close()
-                    trySend(ToolStreamEvent.Error(e.message ?: "读取响应失败"))
+                    trySend(ToolStreamEvent.Error(e.message ?: Strings.aiReadResponseFailed))
                     close(e)
                 }
             }
@@ -2421,7 +2421,7 @@ val json = gson.fromJson(body, JsonObject::class.java)
                 if (url != null) {
                     downloadImageAsBase64(url)
                 } else {
-                    Result.failure(Exception("未找到图像数据"))
+                    Result.failure(Exception(Strings.aiNoImageData))
                 }
             }
         } catch (e: Exception) {
@@ -2445,7 +2445,7 @@ val json = gson.fromJson(body, JsonObject::class.java)
                     if (data != null) return Result.success(data)
                 }
             }
-            Result.failure(Exception("未找到图像数据"))
+            Result.failure(Exception(Strings.aiNoImageData))
         } catch (e: Exception) {
             Result.failure(e)
         }

@@ -5027,6 +5027,80 @@ object Strings {
     val agentSessionExport: String get() = StringsE.agentSessionExport
     val agentFileDeleteConfirmTitle: String get() = StringsE.agentFileDeleteConfirmTitle
     val agentFileDeleteConfirmMessage: String get() = StringsE.agentFileDeleteConfirmMessage
+
+    // ---- #945 surfaced-string fixes ----
+    val aiIconFallbackName: String get() = StringsE.aiIconFallbackName
+    val lrcEmptyLine: String get() = StringsE.lrcEmptyLine
+    fun videoTrimSeconds(seconds: Int, tenths: Int): String = StringsE.videoTrimSeconds(seconds, tenths)
+    val copySuffix: String get() = StringsE.copySuffix
+    val downloadingNotificationText: String get() = StringsE.downloadingNotificationText
+    val filePrefixImage: String get() = StringsE.filePrefixImage
+    val filePrefixVideo: String get() = StringsE.filePrefixVideo
+    val filePrefixFile: String get() = StringsE.filePrefixFile
+    fun httpErrorCode(code: Int): String = StringsE.httpErrorCode(code)
+    fun wpProjectDirMissing(path: String): String = StringsE.wpProjectDirMissing(path)
+    val interstitialAdNotConfigured: String get() = StringsE.interstitialAdNotConfigured
+    val adSdkNotIntegrated: String get() = StringsE.adSdkNotIntegrated
+    val translateEngineAuto: String get() = StringsE.translateEngineAuto
+    val blobImageUsePageDownload: String get() = StringsE.blobImageUsePageDownload
+    val blobVideoUsePageDownload: String get() = StringsE.blobVideoUsePageDownload
+    val videoSavedToGallery: String get() = StringsE.videoSavedToGallery
+    fun aiErrBadRequest(detail: String): String = StringsE.aiErrBadRequest(detail)
+    val aiErrInvalidKey: String get() = StringsE.aiErrInvalidKey
+    val aiErrForbidden: String get() = StringsE.aiErrForbidden
+    val aiErrNotFound: String get() = StringsE.aiErrNotFound
+    val aiErrRateLimited: String get() = StringsE.aiErrRateLimited
+    val aiErrServer: String get() = StringsE.aiErrServer
+    fun aiErrHttp(code: Int, detail: String): String = StringsE.aiErrHttp(code, detail)
+    val aiNoImageData: String get() = StringsE.aiNoImageData
+    val aiNotConfigured: String get() = StringsE.aiNotConfigured
+    val aiNetworkInterrupted: String get() = StringsE.aiNetworkInterrupted
+    val aiRequestTimeout: String get() = StringsE.aiRequestTimeout
+    val aiCannotConnect: String get() = StringsE.aiCannotConnect
+    val aiConnectionRefused: String get() = StringsE.aiConnectionRefused
+    val aiNetworkFailed: String get() = StringsE.aiNetworkFailed
+    val aiEmptyResponse: String get() = StringsE.aiEmptyResponse
+    val aiReturnedError: String get() = StringsE.aiReturnedError
+    val aiNoStreamData: String get() = StringsE.aiNoStreamData
+    fun aiDataFormatError(preview: String): String = StringsE.aiDataFormatError(preview)
+    val aiReadResponseFailed: String get() = StringsE.aiReadResponseFailed
+    val developerTools: String get() = StringsE.developerTools
+    val runtimeNotReadyDownloadDeps: String get() = StringsE.runtimeNotReadyDownloadDeps
+    fun runtimeStartFailed(detail: String): String = StringsE.runtimeStartFailed(detail)
+    val runtimePortAllocFailed: String get() = StringsE.runtimePortAllocFailed
+    fun runtimePortInUse(port: String): String = StringsE.runtimePortInUse(port)
+    fun runtimeEntryMissing(entryFile: String): String = StringsE.runtimeEntryMissing(entryFile)
+    val phpBinaryNotReady: String get() = StringsE.phpBinaryNotReady
+    fun phpDocRootMissing(docRoot: String): String = StringsE.phpDocRootMissing(docRoot)
+    val phpServerStartTimeout: String get() = StringsE.phpServerStartTimeout
+    val goBinaryInvalid: String get() = StringsE.goBinaryInvalid
+    val goServerStartTimeout: String get() = StringsE.goServerStartTimeout
+    fun goStartFailedWithChannel(detail: String): String = StringsE.goStartFailedWithChannel(detail)
+    fun goToolchainUnsupportedAbi(abi: String): String = StringsE.goToolchainUnsupportedAbi(abi)
+    val goToolchainExtractIncomplete: String get() = StringsE.goToolchainExtractIncomplete
+    val goToolchainNotInstalled: String get() = StringsE.goToolchainNotInstalled
+    fun nodeRuntimeNotFound(abi: String): String = StringsE.nodeRuntimeNotFound(abi)
+    fun nodeExtractFailed(detail: String): String = StringsE.nodeExtractFailed(detail)
+    fun nodeBridgeLoadFailed(detail: String, channelNote: String): String = StringsE.nodeBridgeLoadFailed(detail, channelNote)
+    fun nodeLibLoadFailed(path: String, channelNote: String): String = StringsE.nodeLibLoadFailed(path, channelNote)
+    val nodeV8AlreadyInit: String get() = StringsE.nodeV8AlreadyInit
+    fun nodeExitedImmediately(exitCode: String): String = StringsE.nodeExitedImmediately(exitCode)
+    fun nodeProcessExited(exitCode: String): String = StringsE.nodeProcessExited(exitCode)
+    val nodeEntryScriptFailed: String get() = StringsE.nodeEntryScriptFailed
+    val nodeServerStartTimeout: String get() = StringsE.nodeServerStartTimeout
+    val phpArmOnly: String get() = StringsE.phpArmOnly
+    val phpBinaryNotFound: String get() = StringsE.phpBinaryNotFound
+    fun phpExtractFailed(detail: String): String = StringsE.phpExtractFailed(detail)
+    val wpExtractIncomplete: String get() = StringsE.wpExtractIncomplete
+    fun wpExtractFailed(detail: String): String = StringsE.wpExtractFailed(detail)
+    val sqlitePluginExtractIncomplete: String get() = StringsE.sqlitePluginExtractIncomplete
+    fun sqlitePluginExtractFailed(detail: String): String = StringsE.sqlitePluginExtractFailed(detail)
+    val unknownError: String get() = StringsE.unknownError
+    fun downloadTooSmall(label: String, size: Long): String = StringsE.downloadTooSmall(label, size)
+    fun downloadVersionMismatch(label: String, expected: String): String = StringsE.downloadVersionMismatch(label, expected)
+    fun downloadFailed(label: String, detail: String): String = StringsE.downloadFailed(label, detail)
+    val packageJsonMissing: String get() = StringsE.packageJsonMissing
+    val nodeRuntimeNotReady: String get() = StringsE.nodeRuntimeNotReady
 }
 
 object StringsA {
@@ -66806,6 +66880,948 @@ object StringsE {
         AppLanguage.RUSSIAN -> "Файл %s будет удалён безвозвратно. Действие нельзя отменить."
         AppLanguage.JAPANESE -> "ファイル %s は完全に削除されます。元に戻すことはできません。"
         AppLanguage.KOREAN -> "파일 %s이(가) 영구적으로 삭제되며 되돌릴 수 없습니다."
+    }
+
+    // ---- Misc UI leaks fixed in #945 ----
+
+    val aiIconFallbackName: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "AI图标"
+        AppLanguage.ENGLISH -> "AI icon"
+        AppLanguage.ARABIC -> "أيقونة AI"
+        AppLanguage.PORTUGUESE -> "Ícone de IA"
+        AppLanguage.SPANISH -> "Icono de IA"
+        AppLanguage.FRENCH -> "Icône IA"
+        AppLanguage.GERMAN -> "KI-Symbol"
+        AppLanguage.RUSSIAN -> "Значок ИИ"
+        AppLanguage.JAPANESE -> "AIアイコン"
+        AppLanguage.KOREAN -> "AI 아이콘"
+    }
+
+    val lrcEmptyLine: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "(空行)"
+        AppLanguage.ENGLISH -> "(empty line)"
+        AppLanguage.ARABIC -> "(سطر فارغ)"
+        AppLanguage.PORTUGUESE -> "(linha vazia)"
+        AppLanguage.SPANISH -> "(línea vacía)"
+        AppLanguage.FRENCH -> "(ligne vide)"
+        AppLanguage.GERMAN -> "(leere Zeile)"
+        AppLanguage.RUSSIAN -> "(пустая строка)"
+        AppLanguage.JAPANESE -> "(空行)"
+        AppLanguage.KOREAN -> "(빈 줄)"
+    }
+
+    fun videoTrimSeconds(seconds: Int, tenths: Int): String = when (Strings.lang) {
+        AppLanguage.CHINESE -> "$seconds.$tenths 秒"
+        AppLanguage.ENGLISH -> "${seconds}.${tenths}s"
+        AppLanguage.ARABIC -> "$seconds.$tenths ث"
+        AppLanguage.PORTUGUESE -> "${seconds}.${tenths}s"
+        AppLanguage.SPANISH -> "${seconds}.${tenths}s"
+        AppLanguage.FRENCH -> "${seconds}.${tenths} s"
+        AppLanguage.GERMAN -> "${seconds}.${tenths} s"
+        AppLanguage.RUSSIAN -> "$seconds.$tenths с"
+        AppLanguage.JAPANESE -> "$seconds.$tenths 秒"
+        AppLanguage.KOREAN -> "$seconds.$tenths초"
+    }
+
+    val copySuffix: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> " (副本)"
+        AppLanguage.ENGLISH -> " (copy)"
+        AppLanguage.ARABIC -> " (نسخة)"
+        AppLanguage.PORTUGUESE -> " (cópia)"
+        AppLanguage.SPANISH -> " (copia)"
+        AppLanguage.FRENCH -> " (copie)"
+        AppLanguage.GERMAN -> " (Kopie)"
+        AppLanguage.RUSSIAN -> " (копия)"
+        AppLanguage.JAPANESE -> " (コピー)"
+        AppLanguage.KOREAN -> " (사본)"
+    }
+
+    val downloadingNotificationText: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "正在下载..."
+        AppLanguage.ENGLISH -> "Downloading..."
+        AppLanguage.ARABIC -> "جارٍ التنزيل..."
+        AppLanguage.PORTUGUESE -> "Baixando..."
+        AppLanguage.SPANISH -> "Descargando..."
+        AppLanguage.FRENCH -> "Téléchargement..."
+        AppLanguage.GERMAN -> "Wird heruntergeladen..."
+        AppLanguage.RUSSIAN -> "Загрузка..."
+        AppLanguage.JAPANESE -> "ダウンロード中..."
+        AppLanguage.KOREAN -> "다운로드 중..."
+    }
+
+    val filePrefixImage: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "图片"
+        AppLanguage.ENGLISH -> "image"
+        AppLanguage.ARABIC -> "صورة"
+        AppLanguage.PORTUGUESE -> "imagem"
+        AppLanguage.SPANISH -> "imagen"
+        AppLanguage.FRENCH -> "image"
+        AppLanguage.GERMAN -> "Bild"
+        AppLanguage.RUSSIAN -> "изображение"
+        AppLanguage.JAPANESE -> "画像"
+        AppLanguage.KOREAN -> "이미지"
+    }
+
+    val filePrefixVideo: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "视频"
+        AppLanguage.ENGLISH -> "video"
+        AppLanguage.ARABIC -> "فيديو"
+        AppLanguage.PORTUGUESE -> "vídeo"
+        AppLanguage.SPANISH -> "vídeo"
+        AppLanguage.FRENCH -> "vidéo"
+        AppLanguage.GERMAN -> "Video"
+        AppLanguage.RUSSIAN -> "видео"
+        AppLanguage.JAPANESE -> "動画"
+        AppLanguage.KOREAN -> "동영상"
+    }
+
+    val filePrefixFile: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "文件"
+        AppLanguage.ENGLISH -> "file"
+        AppLanguage.ARABIC -> "ملف"
+        AppLanguage.PORTUGUESE -> "arquivo"
+        AppLanguage.SPANISH -> "archivo"
+        AppLanguage.FRENCH -> "fichier"
+        AppLanguage.GERMAN -> "Datei"
+        AppLanguage.RUSSIAN -> "файл"
+        AppLanguage.JAPANESE -> "ファイル"
+        AppLanguage.KOREAN -> "파일"
+    }
+
+    fun httpErrorCode(code: Int): String = when (Strings.lang) {
+        AppLanguage.CHINESE -> "HTTP 错误: $code"
+        AppLanguage.ENGLISH -> "HTTP error: $code"
+        AppLanguage.ARABIC -> "خطأ HTTP: $code"
+        AppLanguage.PORTUGUESE -> "Erro HTTP: $code"
+        AppLanguage.SPANISH -> "Error HTTP: $code"
+        AppLanguage.FRENCH -> "Erreur HTTP : $code"
+        AppLanguage.GERMAN -> "HTTP-Fehler: $code"
+        AppLanguage.RUSSIAN -> "Ошибка HTTP: $code"
+        AppLanguage.JAPANESE -> "HTTP エラー: $code"
+        AppLanguage.KOREAN -> "HTTP 오류: $code"
+    }
+
+    fun wpProjectDirMissing(path: String): String = when (Strings.lang) {
+        AppLanguage.CHINESE -> "WordPress 项目目录意外丢失: $path"
+        AppLanguage.ENGLISH -> "WordPress project directory unexpectedly missing: $path"
+        AppLanguage.ARABIC -> "اختفى دليل مشروع WordPress بشكل غير متوقع: $path"
+        AppLanguage.PORTUGUESE -> "O diretório do projeto WordPress desapareceu inesperadamente: $path"
+        AppLanguage.SPANISH -> "El directorio del proyecto WordPress desapareció inesperadamente: $path"
+        AppLanguage.FRENCH -> "Le répertoire du projet WordPress a disparu de manière inattendue : $path"
+        AppLanguage.GERMAN -> "WordPress-Projektverzeichnis unerwartet verschwunden: $path"
+        AppLanguage.RUSSIAN -> "Каталог проекта WordPress неожиданно пропал: $path"
+        AppLanguage.JAPANESE -> "WordPress プロジェクトのディレクトリが見つかりません: $path"
+        AppLanguage.KOREAN -> "WordPress 프로젝트 디렉터리가 예기치 않게 사라졌습니다: $path"
+    }
+
+    val interstitialAdNotConfigured: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "插屏广告未配置"
+        AppLanguage.ENGLISH -> "Interstitial ad not configured"
+        AppLanguage.ARABIC -> "الإعلان البيني غير مهيأ"
+        AppLanguage.PORTUGUESE -> "Anúncio intersticial não configurado"
+        AppLanguage.SPANISH -> "Anuncio intersticial no configurado"
+        AppLanguage.FRENCH -> "Annonce interstitielle non configurée"
+        AppLanguage.GERMAN -> "Interstitial-Anzeige nicht konfiguriert"
+        AppLanguage.RUSSIAN -> "Межстраничная реклама не настроена"
+        AppLanguage.JAPANESE -> "インタースティシャル広告が設定されていません"
+        AppLanguage.KOREAN -> "전면 광고가 구성되지 않았습니다"
+    }
+
+    val adSdkNotIntegrated: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "广告 SDK 未集成"
+        AppLanguage.ENGLISH -> "Ad SDK not integrated"
+        AppLanguage.ARABIC -> "لم يتم دمج حزمة SDK الإعلانية"
+        AppLanguage.PORTUGUESE -> "SDK de anúncios não integrado"
+        AppLanguage.SPANISH -> "SDK de anuncios no integrado"
+        AppLanguage.FRENCH -> "SDK publicitaire non intégré"
+        AppLanguage.GERMAN -> "Werbe-SDK nicht integriert"
+        AppLanguage.RUSSIAN -> "Рекламный SDK не интегрирован"
+        AppLanguage.JAPANESE -> "広告 SDK が統合されていません"
+        AppLanguage.KOREAN -> "광고 SDK가 통합되지 않았습니다"
+    }
+
+    val translateEngineAuto: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "自动选择"
+        AppLanguage.ENGLISH -> "Auto"
+        AppLanguage.ARABIC -> "تلقائي"
+        AppLanguage.PORTUGUESE -> "Automático"
+        AppLanguage.SPANISH -> "Automático"
+        AppLanguage.FRENCH -> "Automatique"
+        AppLanguage.GERMAN -> "Automatisch"
+        AppLanguage.RUSSIAN -> "Авто"
+        AppLanguage.JAPANESE -> "自動"
+        AppLanguage.KOREAN -> "자동"
+    }
+
+    val blobImageUsePageDownload: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Blob 图片需要通过页面下载"
+        AppLanguage.ENGLISH -> "Blob images must be downloaded via the page"
+        AppLanguage.ARABIC -> "يجب تنزيل صور Blob من الصفحة"
+        AppLanguage.PORTUGUESE -> "Imagens Blob precisam ser baixadas pela página"
+        AppLanguage.SPANISH -> "Las imágenes Blob deben descargarse desde la página"
+        AppLanguage.FRENCH -> "Les images Blob doivent être téléchargées depuis la page"
+        AppLanguage.GERMAN -> "Blob-Bilder müssen über die Seite heruntergeladen werden"
+        AppLanguage.RUSSIAN -> "Изображения Blob нужно скачивать со страницы"
+        AppLanguage.JAPANESE -> "Blob 画像はページからダウンロードしてください"
+        AppLanguage.KOREAN -> "Blob 이미지는 페이지에서 다운로드해야 합니다"
+    }
+
+    val blobVideoUsePageDownload: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Blob 视频需要通过页面下载"
+        AppLanguage.ENGLISH -> "Blob videos must be downloaded via the page"
+        AppLanguage.ARABIC -> "يجب تنزيل فيديوهات Blob من الصفحة"
+        AppLanguage.PORTUGUESE -> "Vídeos Blob precisam ser baixados pela página"
+        AppLanguage.SPANISH -> "Los vídeos Blob deben descargarse desde la página"
+        AppLanguage.FRENCH -> "Les vidéos Blob doivent être téléchargées depuis la page"
+        AppLanguage.GERMAN -> "Blob-Videos müssen über die Seite heruntergeladen werden"
+        AppLanguage.RUSSIAN -> "Видео Blob нужно скачивать со страницы"
+        AppLanguage.JAPANESE -> "Blob 動画はページからダウンロードしてください"
+        AppLanguage.KOREAN -> "Blob 동영상은 페이지에서 다운로드해야 합니다"
+    }
+
+    val videoSavedToGallery: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "视频已保存到相册"
+        AppLanguage.ENGLISH -> "Video saved to gallery"
+        AppLanguage.ARABIC -> "تم حفظ الفيديو في المعرض"
+        AppLanguage.PORTUGUESE -> "Vídeo salvo na galeria"
+        AppLanguage.SPANISH -> "Vídeo guardado en la galería"
+        AppLanguage.FRENCH -> "Vidéo enregistrée dans la galerie"
+        AppLanguage.GERMAN -> "Video in Galerie gespeichert"
+        AppLanguage.RUSSIAN -> "Видео сохранено в галерею"
+        AppLanguage.JAPANESE -> "動画をギャラリーに保存しました"
+        AppLanguage.KOREAN -> "동영상이 갤러리에 저장되었습니다"
+    }
+
+    // ---- AI API error messages (#945) ----
+
+    fun aiErrBadRequest(detail: String): String = when (Strings.lang) {
+        AppLanguage.CHINESE -> "请求参数错误: $detail"
+        AppLanguage.ENGLISH -> "Bad request: $detail"
+        AppLanguage.ARABIC -> "طلب غير صالح: $detail"
+        AppLanguage.PORTUGUESE -> "Requisição inválida: $detail"
+        AppLanguage.SPANISH -> "Solicitud inválida: $detail"
+        AppLanguage.FRENCH -> "Requête invalide : $detail"
+        AppLanguage.GERMAN -> "Ungültige Anfrage: $detail"
+        AppLanguage.RUSSIAN -> "Неверный запрос: $detail"
+        AppLanguage.JAPANESE -> "リクエストパラメータエラー: $detail"
+        AppLanguage.KOREAN -> "잘못된 요청: $detail"
+    }
+
+    val aiErrInvalidKey: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "API Key 无效或已过期，请检查设置"
+        AppLanguage.ENGLISH -> "API key invalid or expired — check your settings"
+        AppLanguage.ARABIC -> "مفتاح API غير صالح أو منتهي — تحقق من الإعدادات"
+        AppLanguage.PORTUGUESE -> "Chave de API inválida ou expirada — verifique as configurações"
+        AppLanguage.SPANISH -> "Clave de API inválida o caducada — revisa la configuración"
+        AppLanguage.FRENCH -> "Clé API invalide ou expirée — vérifiez les paramètres"
+        AppLanguage.GERMAN -> "API-Schlüssel ungültig oder abgelaufen — Einstellungen prüfen"
+        AppLanguage.RUSSIAN -> "API-ключ недействителен или истёк — проверьте настройки"
+        AppLanguage.JAPANESE -> "APIキーが無効または期限切れです。設定を確認してください"
+        AppLanguage.KOREAN -> "API 키가 유효하지 않거나 만료되었습니다 — 설정을 확인하세요"
+    }
+
+    val aiErrForbidden: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "API 访问被拒绝，请检查权限或配额"
+        AppLanguage.ENGLISH -> "API access denied — check permissions or quota"
+        AppLanguage.ARABIC -> "تم رفض الوصول إلى API — تحقق من الأذونات أو الحصة"
+        AppLanguage.PORTUGUESE -> "Acesso à API negado — verifique permissões ou cota"
+        AppLanguage.SPANISH -> "Acceso a la API denegado — revisa permisos o cuota"
+        AppLanguage.FRENCH -> "Accès API refusé — vérifiez les autorisations ou le quota"
+        AppLanguage.GERMAN -> "API-Zugriff verweigert — Berechtigungen oder Kontingent prüfen"
+        AppLanguage.RUSSIAN -> "Доступ к API запрещён — проверьте разрешения или квоту"
+        AppLanguage.JAPANESE -> "API アクセスが拒否されました。権限またはクォータを確認してください"
+        AppLanguage.KOREAN -> "API 접근이 거부되었습니다 — 권한 또는 할당량을 확인하세요"
+    }
+
+    val aiErrNotFound: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "模型或端点不存在 (404)，请检查模型名称与 Base URL"
+        AppLanguage.ENGLISH -> "Model or endpoint not found (404) — check the model name and Base URL"
+        AppLanguage.ARABIC -> "النموذج أو نقطة النهاية غير موجودة (404) — تحقق من اسم النموذج و Base URL"
+        AppLanguage.PORTUGUESE -> "Modelo ou endpoint não encontrado (404) — verifique o nome do modelo e a Base URL"
+        AppLanguage.SPANISH -> "Modelo o endpoint no encontrado (404) — revisa el nombre del modelo y la Base URL"
+        AppLanguage.FRENCH -> "Modèle ou point de terminaison introuvable (404) — vérifiez le nom du modèle et la Base URL"
+        AppLanguage.GERMAN -> "Modell oder Endpunkt nicht gefunden (404) — Modellname und Base URL prüfen"
+        AppLanguage.RUSSIAN -> "Модель или конечная точка не найдена (404) — проверьте имя модели и Base URL"
+        AppLanguage.JAPANESE -> "モデルまたはエンドポイントが見つかりません (404)。モデル名と Base URL を確認してください"
+        AppLanguage.KOREAN -> "모델 또는 엔드포인트를 찾을 수 없음 (404) — 모델 이름과 Base URL을 확인하세요"
+    }
+
+    val aiErrRateLimited: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "请求过于频繁，请稍后重试"
+        AppLanguage.ENGLISH -> "Rate limited — please retry later"
+        AppLanguage.ARABIC -> "تم تجاوز حد الطلبات — حاول لاحقاً"
+        AppLanguage.PORTUGUESE -> "Limite de requisições excedido — tente novamente mais tarde"
+        AppLanguage.SPANISH -> "Límite de solicitudes excedido — inténtalo más tarde"
+        AppLanguage.FRENCH -> "Limite de requêtes dépassée — réessayez plus tard"
+        AppLanguage.GERMAN -> "Anfragelimit erreicht — bitte später erneut versuchen"
+        AppLanguage.RUSSIAN -> "Превышен лимит запросов — повторите позже"
+        AppLanguage.JAPANESE -> "リクエストが多すぎます。しばらくしてから再試行してください"
+        AppLanguage.KOREAN -> "요청이 너무 많습니다 — 잠시 후 다시 시도하세요"
+    }
+
+    val aiErrServer: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "服务器错误，请稍后重试"
+        AppLanguage.ENGLISH -> "Server error — please retry later"
+        AppLanguage.ARABIC -> "خطأ في الخادم — حاول لاحقاً"
+        AppLanguage.PORTUGUESE -> "Erro do servidor — tente novamente mais tarde"
+        AppLanguage.SPANISH -> "Error del servidor — inténtalo más tarde"
+        AppLanguage.FRENCH -> "Erreur du serveur — réessayez plus tard"
+        AppLanguage.GERMAN -> "Serverfehler — bitte später erneut versuchen"
+        AppLanguage.RUSSIAN -> "Ошибка сервера — повторите позже"
+        AppLanguage.JAPANESE -> "サーバーエラー。しばらくしてから再試行してください"
+        AppLanguage.KOREAN -> "서버 오류 — 잠시 후 다시 시도하세요"
+    }
+
+    fun aiErrHttp(code: Int, detail: String): String = when (Strings.lang) {
+        AppLanguage.CHINESE -> "请求失败: $code - $detail"
+        AppLanguage.ENGLISH -> "Request failed: $code - $detail"
+        AppLanguage.ARABIC -> "فشل الطلب: $code - $detail"
+        AppLanguage.PORTUGUESE -> "Falha na requisição: $code - $detail"
+        AppLanguage.SPANISH -> "Solicitud fallida: $code - $detail"
+        AppLanguage.FRENCH -> "Échec de la requête : $code - $detail"
+        AppLanguage.GERMAN -> "Anfrage fehlgeschlagen: $code - $detail"
+        AppLanguage.RUSSIAN -> "Запрос не выполнен: $code - $detail"
+        AppLanguage.JAPANESE -> "リクエスト失敗: $code - $detail"
+        AppLanguage.KOREAN -> "요청 실패: $code - $detail"
+    }
+
+    val aiNoImageData: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "未找到图像数据"
+        AppLanguage.ENGLISH -> "No image data found"
+        AppLanguage.ARABIC -> "لم يتم العثور على بيانات الصورة"
+        AppLanguage.PORTUGUESE -> "Nenhum dado de imagem encontrado"
+        AppLanguage.SPANISH -> "No se encontraron datos de imagen"
+        AppLanguage.FRENCH -> "Aucune donnée d'image trouvée"
+        AppLanguage.GERMAN -> "Keine Bilddaten gefunden"
+        AppLanguage.RUSSIAN -> "Данные изображения не найдены"
+        AppLanguage.JAPANESE -> "画像データが見つかりません"
+        AppLanguage.KOREAN -> "이미지 데이터를 찾을 수 없습니다"
+    }
+
+    val aiNotConfigured: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "未配置 API 地址，请在设置中填写 Base URL"
+        AppLanguage.ENGLISH -> "API endpoint not configured — set the Base URL in settings"
+        AppLanguage.ARABIC -> "لم يتم تكوين عنوان API — قم بتعيين Base URL في الإعدادات"
+        AppLanguage.PORTUGUESE -> "Endpoint de API não configurado — defina a Base URL nas configurações"
+        AppLanguage.SPANISH -> "Endpoint de API no configurado — define la Base URL en ajustes"
+        AppLanguage.FRENCH -> "Endpoint API non configuré — définissez la Base URL dans les paramètres"
+        AppLanguage.GERMAN -> "API-Endpunkt nicht konfiguriert — Base URL in den Einstellungen setzen"
+        AppLanguage.RUSSIAN -> "Endpoint API не настроен — укажите Base URL в настройках"
+        AppLanguage.JAPANESE -> "API アドレスが未設定です。設定で Base URL を入力してください"
+        AppLanguage.KOREAN -> "API 주소가 구성되지 않았습니다 — 설정에서 Base URL을 입력하세요"
+    }
+
+    val aiNetworkInterrupted: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "网络连接中断，请检查网络后重试"
+        AppLanguage.ENGLISH -> "Network connection interrupted — check your network and retry"
+        AppLanguage.ARABIC -> "انقطع الاتصال بالشبكة — تحقق من الشبكة وحاول مجدداً"
+        AppLanguage.PORTUGUESE -> "Conexão de rede interrompida — verifique a rede e tente novamente"
+        AppLanguage.SPANISH -> "Conexión de red interrumpida — revisa la red y reintenta"
+        AppLanguage.FRENCH -> "Connexion réseau interrompue — vérifiez le réseau et réessayez"
+        AppLanguage.GERMAN -> "Netzwerkverbindung unterbrochen — Netzwerk prüfen und erneut versuchen"
+        AppLanguage.RUSSIAN -> "Сетевое соединение прервано — проверьте сеть и повторите"
+        AppLanguage.JAPANESE -> "ネットワーク接続が中断しました。接続を確認して再試行してください"
+        AppLanguage.KOREAN -> "네트워크 연결이 끊어졌습니다 — 연결을 확인하고 다시 시도하세요"
+    }
+
+    val aiRequestTimeout: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "请求超时，请检查网络连接"
+        AppLanguage.ENGLISH -> "Request timed out — check your network connection"
+        AppLanguage.ARABIC -> "انتهت مهلة الطلب — تحقق من اتصال الشبكة"
+        AppLanguage.PORTUGUESE -> "Requisição expirou — verifique a conexão de rede"
+        AppLanguage.SPANISH -> "La solicitud expiró — revisa tu conexión de red"
+        AppLanguage.FRENCH -> "Délai de requête dépassé — vérifiez votre connexion réseau"
+        AppLanguage.GERMAN -> "Anfrage-Timeout — Netzwerkverbindung prüfen"
+        AppLanguage.RUSSIAN -> "Время ожидания запроса истекло — проверьте подключение"
+        AppLanguage.JAPANESE -> "リクエストがタイムアウトしました。ネットワーク接続を確認してください"
+        AppLanguage.KOREAN -> "요청 시간 초과 — 네트워크 연결을 확인하세요"
+    }
+
+    val aiCannotConnect: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "无法连接服务器，请检查网络或 API 地址"
+        AppLanguage.ENGLISH -> "Cannot connect to server — check network or API address"
+        AppLanguage.ARABIC -> "تعذر الاتصال بالخادم — تحقق من الشبكة أو عنوان API"
+        AppLanguage.PORTUGUESE -> "Não foi possível conectar ao servidor — verifique a rede ou o endereço da API"
+        AppLanguage.SPANISH -> "No se puede conectar al servidor — revisa la red o la dirección de la API"
+        AppLanguage.FRENCH -> "Impossible de se connecter au serveur — vérifiez le réseau ou l'adresse de l'API"
+        AppLanguage.GERMAN -> "Verbindung zum Server nicht möglich — Netzwerk oder API-Adresse prüfen"
+        AppLanguage.RUSSIAN -> "Не удаётся подключиться к серверу — проверьте сеть или адрес API"
+        AppLanguage.JAPANESE -> "サーバーに接続できません。ネットワークまたは API アドレスを確認してください"
+        AppLanguage.KOREAN -> "서버에 연결할 수 없습니다 — 네트워크 또는 API 주소를 확인하세요"
+    }
+
+    val aiConnectionRefused: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "服务器拒绝连接，请检查 API 地址是否正确"
+        AppLanguage.ENGLISH -> "Server refused the connection — check the API address"
+        AppLanguage.ARABIC -> "رفض الخادم الاتصال — تحقق من صحة عنوان API"
+        AppLanguage.PORTUGUESE -> "Servidor recusou a conexão — verifique o endereço da API"
+        AppLanguage.SPANISH -> "El servidor rechazó la conexión — revisa la dirección de la API"
+        AppLanguage.FRENCH -> "Le serveur a refusé la connexion — vérifiez l'adresse de l'API"
+        AppLanguage.GERMAN -> "Server hat die Verbindung abgelehnt — API-Adresse prüfen"
+        AppLanguage.RUSSIAN -> "Сервер отклонил соединение — проверьте адрес API"
+        AppLanguage.JAPANESE -> "サーバーが接続を拒否しました。API アドレスを確認してください"
+        AppLanguage.KOREAN -> "서버가 연결을 거부했습니다 — API 주소를 확인하세요"
+    }
+
+    val aiNetworkFailed: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "网络连接失败"
+        AppLanguage.ENGLISH -> "Network request failed"
+        AppLanguage.ARABIC -> "فشل طلب الشبكة"
+        AppLanguage.PORTUGUESE -> "Falha na requisição de rede"
+        AppLanguage.SPANISH -> "Error de solicitud de red"
+        AppLanguage.FRENCH -> "Échec de la requête réseau"
+        AppLanguage.GERMAN -> "Netzwerkanfrage fehlgeschlagen"
+        AppLanguage.RUSSIAN -> "Сетевой запрос не выполнен"
+        AppLanguage.JAPANESE -> "ネットワーク接続に失敗しました"
+        AppLanguage.KOREAN -> "네트워크 연결 실패"
+    }
+
+    val aiEmptyResponse: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "响应体为空"
+        AppLanguage.ENGLISH -> "Empty response body"
+        AppLanguage.ARABIC -> "جسم الاستجابة فارغ"
+        AppLanguage.PORTUGUESE -> "Corpo da resposta vazio"
+        AppLanguage.SPANISH -> "Cuerpo de respuesta vacío"
+        AppLanguage.FRENCH -> "Corps de réponse vide"
+        AppLanguage.GERMAN -> "Leerer Antwortkörper"
+        AppLanguage.RUSSIAN -> "Пустое тело ответа"
+        AppLanguage.JAPANESE -> "レスポンスボディが空です"
+        AppLanguage.KOREAN -> "응답 본문이 비어 있습니다"
+    }
+
+    val aiReturnedError: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "API 返回错误"
+        AppLanguage.ENGLISH -> "API returned an error"
+        AppLanguage.ARABIC -> "أعادت API خطأ"
+        AppLanguage.PORTUGUESE -> "A API retornou um erro"
+        AppLanguage.SPANISH -> "La API devolvió un error"
+        AppLanguage.FRENCH -> "L'API a renvoyé une erreur"
+        AppLanguage.GERMAN -> "API hat einen Fehler zurückgegeben"
+        AppLanguage.RUSSIAN -> "API вернул ошибку"
+        AppLanguage.JAPANESE -> "API がエラーを返しました"
+        AppLanguage.KOREAN -> "API가 오류를 반환했습니다"
+    }
+
+    val aiNoStreamData: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "未收到任何数据，API 可能不支持流式输出"
+        AppLanguage.ENGLISH -> "No data received — the API may not support streaming"
+        AppLanguage.ARABIC -> "لم يتم استلام أي بيانات — قد لا تدعم API البث"
+        AppLanguage.PORTUGUESE -> "Nenhum dado recebido — a API pode não suportar streaming"
+        AppLanguage.SPANISH -> "No se recibieron datos — la API puede no admitir streaming"
+        AppLanguage.FRENCH -> "Aucune donnée reçue — l'API ne prend peut-être pas en charge le streaming"
+        AppLanguage.GERMAN -> "Keine Daten empfangen — die API unterstützt möglicherweise kein Streaming"
+        AppLanguage.RUSSIAN -> "Данные не получены — API может не поддерживать стриминг"
+        AppLanguage.JAPANESE -> "データを受信しませんでした。API がストリーミングをサポートしていない可能性があります"
+        AppLanguage.KOREAN -> "데이터를 받지 못했습니다 — API가 스트리밍을 지원하지 않을 수 있습니다"
+    }
+
+    fun aiDataFormatError(preview: String): String = when (Strings.lang) {
+        AppLanguage.CHINESE -> "API 返回数据格式异常，请查看日志或尝试其他模型。数据预览: $preview..."
+        AppLanguage.ENGLISH -> "Malformed API response data — check logs or try another model. Preview: $preview..."
+        AppLanguage.ARABIC -> "بيانات استجابة API غير صالحة — تحقق من السجلات أو جرب نموذجاً آخر. معاينة: $preview..."
+        AppLanguage.PORTUGUESE -> "Dados de resposta da API malformados — verifique os logs ou tente outro modelo. Prévia: $preview..."
+        AppLanguage.SPANISH -> "Datos de respuesta de la API mal formados — revisa los registros o prueba otro modelo. Vista previa: $preview..."
+        AppLanguage.FRENCH -> "Données de réponse API mal formées — consultez les journaux ou essayez un autre modèle. Aperçu : $preview..."
+        AppLanguage.GERMAN -> "Fehlerhafte API-Antwortdaten — Logs prüfen oder anderes Modell versuchen. Vorschau: $preview..."
+        AppLanguage.RUSSIAN -> "Некорректные данные ответа API — проверьте логи или попробуйте другую модель. Просмотр: $preview..."
+        AppLanguage.JAPANESE -> "API レスポンスデータの形式が異常です。ログを確認するか別のモデルを試してください。プレビュー: $preview..."
+        AppLanguage.KOREAN -> "API 응답 데이터 형식이 올바르지 않습니다 — 로그를 확인하거나 다른 모델을 시도하세요. 미리보기: $preview..."
+    }
+
+    val aiReadResponseFailed: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "读取响应失败"
+        AppLanguage.ENGLISH -> "Failed to read response"
+        AppLanguage.ARABIC -> "فشل قراءة الاستجابة"
+        AppLanguage.PORTUGUESE -> "Falha ao ler a resposta"
+        AppLanguage.SPANISH -> "Error al leer la respuesta"
+        AppLanguage.FRENCH -> "Échec de la lecture de la réponse"
+        AppLanguage.GERMAN -> "Antwort konnte nicht gelesen werden"
+        AppLanguage.RUSSIAN -> "Не удалось прочитать ответ"
+        AppLanguage.JAPANESE -> "レスポンスの読み取りに失敗しました"
+        AppLanguage.KOREAN -> "응답을 읽지 못했습니다"
+    }
+
+    val developerTools: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "开发者工具"
+        AppLanguage.ENGLISH -> "Developer tools"
+        AppLanguage.ARABIC -> "أدوات المطور"
+        AppLanguage.PORTUGUESE -> "Ferramentas do desenvolvedor"
+        AppLanguage.SPANISH -> "Herramientas del desarrollador"
+        AppLanguage.FRENCH -> "Outils de développement"
+        AppLanguage.GERMAN -> "Entwicklertools"
+        AppLanguage.RUSSIAN -> "Инструменты разработчика"
+        AppLanguage.JAPANESE -> "デベロッパーツール"
+        AppLanguage.KOREAN -> "개발자 도구"
+    }
+
+    // ---- Runtime error messages (#945) ----
+
+    val runtimeNotReadyDownloadDeps: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "运行时未就绪，请先下载依赖"
+        AppLanguage.ENGLISH -> "Runtime not ready — please download dependencies first"
+        AppLanguage.ARABIC -> "وقت التشغيل غير جاهز — يرجى تنزيل التبعيات أولاً"
+        AppLanguage.PORTUGUESE -> "Runtime não está pronto — baixe as dependências primeiro"
+        AppLanguage.SPANISH -> "El runtime no está listo — descarga las dependencias primero"
+        AppLanguage.FRENCH -> "Le runtime n'est pas prêt — téléchargez d'abord les dépendances"
+        AppLanguage.GERMAN -> "Runtime nicht bereit — bitte zuerst Abhängigkeiten herunterladen"
+        AppLanguage.RUSSIAN -> "Среда выполнения не готова — сначала загрузите зависимости"
+        AppLanguage.JAPANESE -> "ランタイムの準備ができていません。依存関係を先にダウンロードしてください"
+        AppLanguage.KOREAN -> "런타임이 준비되지 않았습니다 — 먼저 종속성을 다운로드하세요"
+    }
+
+    fun runtimeStartFailed(detail: String): String = when (Strings.lang) {
+        AppLanguage.CHINESE -> "启动失败: $detail"
+        AppLanguage.ENGLISH -> "Start failed: $detail"
+        AppLanguage.ARABIC -> "فشل البدء: $detail"
+        AppLanguage.PORTUGUESE -> "Falha ao iniciar: $detail"
+        AppLanguage.SPANISH -> "Error al iniciar: $detail"
+        AppLanguage.FRENCH -> "Échec du démarrage : $detail"
+        AppLanguage.GERMAN -> "Start fehlgeschlagen: $detail"
+        AppLanguage.RUSSIAN -> "Ошибка запуска: $detail"
+        AppLanguage.JAPANESE -> "起動に失敗しました: $detail"
+        AppLanguage.KOREAN -> "시작 실패: $detail"
+    }
+
+    val runtimePortAllocFailed: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "无法分配端口"
+        AppLanguage.ENGLISH -> "Unable to allocate a port"
+        AppLanguage.ARABIC -> "تعذر تخصيص منفذ"
+        AppLanguage.PORTUGUESE -> "Não foi possível alocar uma porta"
+        AppLanguage.SPANISH -> "No se pudo asignar un puerto"
+        AppLanguage.FRENCH -> "Impossible d'allouer un port"
+        AppLanguage.GERMAN -> "Port konnte nicht zugewiesen werden"
+        AppLanguage.RUSSIAN -> "Не удалось выделить порт"
+        AppLanguage.JAPANESE -> "ポートを割り当てられません"
+        AppLanguage.KOREAN -> "포트를 할당할 수 없습니다"
+    }
+
+    fun runtimePortInUse(port: String): String = when (Strings.lang) {
+        AppLanguage.CHINESE -> "端口被占用: $port"
+        AppLanguage.ENGLISH -> "Port already in use: $port"
+        AppLanguage.ARABIC -> "المنفذ قيد الاستخدام: $port"
+        AppLanguage.PORTUGUESE -> "Porta em uso: $port"
+        AppLanguage.SPANISH -> "Puerto en uso: $port"
+        AppLanguage.FRENCH -> "Port déjà utilisé : $port"
+        AppLanguage.GERMAN -> "Port belegt: $port"
+        AppLanguage.RUSSIAN -> "Порт занят: $port"
+        AppLanguage.JAPANESE -> "ポートが使用中です: $port"
+        AppLanguage.KOREAN -> "포트가 사용 중입니다: $port"
+    }
+
+    fun runtimeEntryMissing(entryFile: String): String = when (Strings.lang) {
+        AppLanguage.CHINESE -> "入口文件不存在: $entryFile"
+        AppLanguage.ENGLISH -> "Entry file not found: $entryFile"
+        AppLanguage.ARABIC -> "ملف الدخول غير موجود: $entryFile"
+        AppLanguage.PORTUGUESE -> "Arquivo de entrada não encontrado: $entryFile"
+        AppLanguage.SPANISH -> "Archivo de entrada no encontrado: $entryFile"
+        AppLanguage.FRENCH -> "Fichier d'entrée introuvable : $entryFile"
+        AppLanguage.GERMAN -> "Einstiegsdatei nicht gefunden: $entryFile"
+        AppLanguage.RUSSIAN -> "Точка входа не найдена: $entryFile"
+        AppLanguage.JAPANESE -> "エントリファイルが見つかりません: $entryFile"
+        AppLanguage.KOREAN -> "진입 파일을 찾을 수 없습니다: $entryFile"
+    }
+
+    val phpBinaryNotReady: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "PHP 二进制未就绪，请先下载依赖"
+        AppLanguage.ENGLISH -> "PHP binary not ready — please download dependencies first"
+        AppLanguage.ARABIC -> "ثنائي PHP غير جاهز — يرجى تنزيل التبعيات أولاً"
+        AppLanguage.PORTUGUESE -> "Binário PHP não está pronto — baixe as dependências primeiro"
+        AppLanguage.SPANISH -> "El binario PHP no está listo — descarga las dependencias primero"
+        AppLanguage.FRENCH -> "Le binaire PHP n'est pas prêt — téléchargez d'abord les dépendances"
+        AppLanguage.GERMAN -> "PHP-Binary nicht bereit — bitte zuerst Abhängigkeiten herunterladen"
+        AppLanguage.RUSSIAN -> "Бинарник PHP не готов — сначала загрузите зависимости"
+        AppLanguage.JAPANESE -> "PHP バイナリの準備ができていません。依存関係を先にダウンロードしてください"
+        AppLanguage.KOREAN -> "PHP 바이너리가 준비되지 않았습니다 — 먼저 종속성을 다운로드하세요"
+    }
+
+    fun phpDocRootMissing(docRoot: String): String = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Document root 不存在: $docRoot"
+        AppLanguage.ENGLISH -> "Document root does not exist: $docRoot"
+        AppLanguage.ARABIC -> "جذر المستند غير موجود: $docRoot"
+        AppLanguage.PORTUGUESE -> "Document root não existe: $docRoot"
+        AppLanguage.SPANISH -> "Document root no existe: $docRoot"
+        AppLanguage.FRENCH -> "La racine du document n'existe pas : $docRoot"
+        AppLanguage.GERMAN -> "Document root existiert nicht: $docRoot"
+        AppLanguage.RUSSIAN -> "Корень документов не существует: $docRoot"
+        AppLanguage.JAPANESE -> "Document root が存在しません: $docRoot"
+        AppLanguage.KOREAN -> "Document root가 존재하지 않습니다: $docRoot"
+    }
+
+    val phpServerStartTimeout: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "PHP 服务器启动超时"
+        AppLanguage.ENGLISH -> "PHP server start timed out"
+        AppLanguage.ARABIC -> "انتهت مهلة بدء خادم PHP"
+        AppLanguage.PORTUGUESE -> "Tempo limite de inicialização do servidor PHP"
+        AppLanguage.SPANISH -> "Tiempo de inicio del servidor PHP agotado"
+        AppLanguage.FRENCH -> "Délai de démarrage du serveur PHP dépassé"
+        AppLanguage.GERMAN -> "Zeitüberschreitung beim Start des PHP-Servers"
+        AppLanguage.RUSSIAN -> "Тайм-аут запуска PHP-сервера"
+        AppLanguage.JAPANESE -> "PHP サーバーの起動がタイムアウトしました"
+        AppLanguage.KOREAN -> "PHP 서버 시작 시간 초과"
+    }
+
+    val goBinaryInvalid: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Go 二进制无效或 ABI 不兼容"
+        AppLanguage.ENGLISH -> "Go binary invalid or ABI incompatible"
+        AppLanguage.ARABIC -> "ثنائي Go غير صالح أو ABI غير متوافق"
+        AppLanguage.PORTUGUESE -> "Binário Go inválido ou ABI incompatível"
+        AppLanguage.SPANISH -> "Binario Go inválido o ABI incompatible"
+        AppLanguage.FRENCH -> "Binaire Go invalide ou ABI incompatible"
+        AppLanguage.GERMAN -> "Go-Binary ungültig oder ABI inkompatibel"
+        AppLanguage.RUSSIAN -> "Бинарник Go недействителен или несовместим по ABI"
+        AppLanguage.JAPANESE -> "Go バイナリが無効か ABI 非互換です"
+        AppLanguage.KOREAN -> "Go 바이너리가 유효하지 않거나 ABI가 호환되지 않습니다"
+    }
+
+    val goServerStartTimeout: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Go 服务器启动超时"
+        AppLanguage.ENGLISH -> "Go server start timed out"
+        AppLanguage.ARABIC -> "انتهت مهلة بدء خادم Go"
+        AppLanguage.PORTUGUESE -> "Tempo limite de inicialização do servidor Go"
+        AppLanguage.SPANISH -> "Tiempo de inicio del servidor Go agotado"
+        AppLanguage.FRENCH -> "Délai de démarrage du serveur Go dépassé"
+        AppLanguage.GERMAN -> "Zeitüberschreitung beim Start des Go-Servers"
+        AppLanguage.RUSSIAN -> "Тайм-аут запуска Go-сервера"
+        AppLanguage.JAPANESE -> "Go サーバーの起動がタイムアウトしました"
+        AppLanguage.KOREAN -> "Go 서버 시작 시간 초과"
+    }
+
+    fun goStartFailedWithChannel(detail: String): String = when (Strings.lang) {
+        AppLanguage.CHINESE -> "启动失败: $detail"
+        AppLanguage.ENGLISH -> "Start failed: $detail"
+        AppLanguage.ARABIC -> "فشل البدء: $detail"
+        AppLanguage.PORTUGUESE -> "Falha ao iniciar: $detail"
+        AppLanguage.SPANISH -> "Error al iniciar: $detail"
+        AppLanguage.FRENCH -> "Échec du démarrage : $detail"
+        AppLanguage.GERMAN -> "Start fehlgeschlagen: $detail"
+        AppLanguage.RUSSIAN -> "Ошибка запуска: $detail"
+        AppLanguage.JAPANESE -> "起動に失敗しました: $detail"
+        AppLanguage.KOREAN -> "시작 실패: $detail"
+    }
+
+    fun goToolchainUnsupportedAbi(abi: String): String = when (Strings.lang) {
+        AppLanguage.CHINESE -> "当前设备架构 ($abi) 暂不支持 Go 工具链，仅支持 arm64-v8a"
+        AppLanguage.ENGLISH -> "Current device ABI ($abi) is not supported by the Go toolchain — only arm64-v8a is supported"
+        AppLanguage.ARABIC -> "بنية الجهاز الحالية ($abi) غير مدعومة من سلسلة أدوات Go — يدعم فقط arm64-v8a"
+        AppLanguage.PORTUGUESE -> "A ABI do dispositivo ($abi) não é suportada pela toolchain Go — apenas arm64-v8a"
+        AppLanguage.SPANISH -> "La ABI del dispositivo ($abi) no es compatible con la toolchain de Go — solo arm64-v8a"
+        AppLanguage.FRENCH -> "L'ABI de l'appareil ($abi) n'est pas prise en charge par la toolchain Go — uniquement arm64-v8a"
+        AppLanguage.GERMAN -> "Die aktuelle Geräte-ABI ($abi) wird von der Go-Toolchain nicht unterstützt — nur arm64-v8a"
+        AppLanguage.RUSSIAN -> "Текущая ABI устройства ($abi) не поддерживается инструментами Go — только arm64-v8a"
+        AppLanguage.JAPANESE -> "現在のデバイス ABI ($abi) は Go ツールチェーンでサポートされていません — arm64-v8a のみ"
+        AppLanguage.KOREAN -> "현재 기기 ABI ($abi)는 Go 툴체인에서 지원되지 않습니다 — arm64-v8a만 지원"
+    }
+
+    val goToolchainExtractIncomplete: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Go 工具链解压不完整，请重试"
+        AppLanguage.ENGLISH -> "Go toolchain extraction incomplete — please retry"
+        AppLanguage.ARABIC -> "استخراج سلسلة أدوات Go غير مكتمل — يرجى المحاولة مرة أخرى"
+        AppLanguage.PORTUGUESE -> "Extração da toolchain Go incompleta — tente novamente"
+        AppLanguage.SPANISH -> "Extracción de la toolchain de Go incompleta — reintenta"
+        AppLanguage.FRENCH -> "Extraction de la toolchain Go incomplète — réessayez"
+        AppLanguage.GERMAN -> "Go-Toolchain-Extraktion unvollständig — bitte erneut versuchen"
+        AppLanguage.RUSSIAN -> "Извлечение инструментов Go неполное — повторите"
+        AppLanguage.JAPANESE -> "Go ツールチェーンの解凍が不完全です。再試行してください"
+        AppLanguage.KOREAN -> "Go 툴체인 압축 해제가 불완전합니다 — 다시 시도하세요"
+    }
+
+    val goToolchainNotInstalled: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Go 工具链未安装"
+        AppLanguage.ENGLISH -> "Go toolchain not installed"
+        AppLanguage.ARABIC -> "سلسلة أدوات Go غير مثبتة"
+        AppLanguage.PORTUGUESE -> "Toolchain Go não instalada"
+        AppLanguage.SPANISH -> "Toolchain de Go no instalada"
+        AppLanguage.FRENCH -> "Toolchain Go non installée"
+        AppLanguage.GERMAN -> "Go-Toolchain nicht installiert"
+        AppLanguage.RUSSIAN -> "Инструменты Go не установлены"
+        AppLanguage.JAPANESE -> "Go ツールチェーンがインストールされていません"
+        AppLanguage.KOREAN -> "Go 툴체인이 설치되지 않았습니다"
+    }
+
+    fun nodeRuntimeNotFound(abi: String): String = when (Strings.lang) {
+        AppLanguage.CHINESE -> "解压后未找到 Node.js 运行时 (ABI: $abi)"
+        AppLanguage.ENGLISH -> "Node.js runtime not found after extraction (ABI: $abi)"
+        AppLanguage.ARABIC -> "لم يتم العثور على وقت تشغيل Node.js بعد الاستخراج (ABI: $abi)"
+        AppLanguage.PORTUGUESE -> "Runtime Node.js não encontrado após extração (ABI: $abi)"
+        AppLanguage.SPANISH -> "Runtime de Node.js no encontrado tras la extracción (ABI: $abi)"
+        AppLanguage.FRENCH -> "Runtime Node.js introuvable après extraction (ABI : $abi)"
+        AppLanguage.GERMAN -> "Node.js-Runtime nach Extraktion nicht gefunden (ABI: $abi)"
+        AppLanguage.RUSSIAN -> "Среда Node.js не найдена после распаковки (ABI: $abi)"
+        AppLanguage.JAPANESE -> "解凍後に Node.js ランタイムが見つかりません (ABI: $abi)"
+        AppLanguage.KOREAN -> "압축 해제 후 Node.js 런타임을 찾을 수 없습니다 (ABI: $abi)"
+    }
+
+    fun nodeExtractFailed(detail: String): String = when (Strings.lang) {
+        AppLanguage.CHINESE -> "解压 Node.js 失败: $detail"
+        AppLanguage.ENGLISH -> "Failed to extract Node.js: $detail"
+        AppLanguage.ARABIC -> "فشل استخراج Node.js: $detail"
+        AppLanguage.PORTUGUESE -> "Falha ao extrair Node.js: $detail"
+        AppLanguage.SPANISH -> "Error al extraer Node.js: $detail"
+        AppLanguage.FRENCH -> "Échec de l'extraction de Node.js : $detail"
+        AppLanguage.GERMAN -> "Extraktion von Node.js fehlgeschlagen: $detail"
+        AppLanguage.RUSSIAN -> "Ошибка распаковки Node.js: $detail"
+        AppLanguage.JAPANESE -> "Node.js の解凍に失敗しました: $detail"
+        AppLanguage.KOREAN -> "Node.js 압축 해제 실패: $detail"
+    }
+
+    fun nodeBridgeLoadFailed(detail: String, channelNote: String): String = when (Strings.lang) {
+        AppLanguage.CHINESE -> "libnode_bridge.so 加载失败 ($detail)。导出的 NODEJS_APP 需包含 libnode_bridge.so 与 libc++_shared.so；请用最新构建器重新导出。$channelNote"
+        AppLanguage.ENGLISH -> "libnode_bridge.so failed to load ($detail). Exported NODEJS_APP must include libnode_bridge.so and libc++_shared.so; re-export with the latest builder. $channelNote"
+        AppLanguage.ARABIC -> "فشل تحميل libnode_bridge.so ($detail). يجب أن يتضمن NODEJS_APP المُصدَّر libnode_bridge.so و libc++_shared.so؛ أعد التصدير بأحدث أداة بناء. $channelNote"
+        AppLanguage.PORTUGUESE -> "Falha ao carregar libnode_bridge.so ($detail). NODEJS_APP exportado deve incluir libnode_bridge.so e libc++_shared.so; reexporte com o construtor mais recente. $channelNote"
+        AppLanguage.SPANISH -> "Error al cargar libnode_bridge.so ($detail). El NODEJS_APP exportado debe incluir libnode_bridge.so y libc++_shared.so; reexporta con el constructor más reciente. $channelNote"
+        AppLanguage.FRENCH -> "Échec du chargement de libnode_bridge.so ($detail). Le NODEJS_APP exporté doit inclure libnode_bridge.so et libc++_shared.so ; réexportez avec le dernier constructeur. $channelNote"
+        AppLanguage.GERMAN -> "Laden von libnode_bridge.so fehlgeschlagen ($detail). Exportiertes NODEJS_APP muss libnode_bridge.so und libc++_shared.so enthalten; mit dem neuesten Builder neu exportieren. $channelNote"
+        AppLanguage.RUSSIAN -> "Не удалось загрузить libnode_bridge.so ($detail). Экспортируемый NODEJS_APP должен включать libnode_bridge.so и libc++_shared.so; переэкспортируйте последним билдером. $channelNote"
+        AppLanguage.JAPANESE -> "libnode_bridge.so の読み込みに失敗しました ($detail)。エクスポートした NODEJS_APP には libnode_bridge.so と libc++_shared.so が必要です。最新のビルダーで再エクスポートしてください。$channelNote"
+        AppLanguage.KOREAN -> "libnode_bridge.so 로드 실패 ($detail). 내보낸 NODEJS_APP에는 libnode_bridge.so와 libc++_shared.so가 포함되어야 합니다. 최신 빌더로 다시 내보내세요. $channelNote"
+    }
+
+    fun nodeLibLoadFailed(path: String, channelNote: String): String = when (Strings.lang) {
+        AppLanguage.CHINESE -> "libnode.so 加载失败 ($path)。请确认 APK 含 16KB 对齐的 libnode.so，或在主机下载 Node 运行时后重新导出。$channelNote"
+        AppLanguage.ENGLISH -> "libnode.so failed to load ($path). Ensure the APK contains a 16KB-aligned libnode.so, or download the Node runtime on the host and re-export. $channelNote"
+        AppLanguage.ARABIC -> "فشل تحميل libnode.so ($path). تأكد من أن APK يحتوي على libnode.so بمحاذاة 16KB، أو نزّل وقت تشغيل Node على المضيف وأعد التصدير. $channelNote"
+        AppLanguage.PORTUGUESE -> "Falha ao carregar libnode.so ($path). Certifique-se de que o APK contém libnode.so alinhado a 16KB, ou baixe o runtime Node no host e reexporte. $channelNote"
+        AppLanguage.SPANISH -> "Error al cargar libnode.so ($path). Asegúrate de que el APK contiene libnode.so alineado a 16KB, o descarga el runtime de Node en el host y reexporta. $channelNote"
+        AppLanguage.FRENCH -> "Échec du chargement de libnode.so ($path). Assurez-vous que l'APK contient un libnode.so aligné 16KB, ou téléchargez le runtime Node sur l'hôte et réexportez. $channelNote"
+        AppLanguage.GERMAN -> "Laden von libnode.so fehlgeschlagen ($path). Stellen Sie sicher, dass das APK ein 16KB-ausgerichtetes libnode.so enthält, oder laden Sie die Node-Runtime auf dem Host herunter und exportieren Sie neu. $channelNote"
+        AppLanguage.RUSSIAN -> "Не удалось загрузить libnode.so ($path). Убедитесь, что APK содержит 16KB-выровненный libnode.so, или загрузите runtime Node на хосте и переэкспортируйте. $channelNote"
+        AppLanguage.JAPANESE -> "libnode.so の読み込みに失敗しました ($path)。APK に 16KB アライメントの libnode.so が含まれていることを確認するか、ホストで Node ランタイムをダウンロードして再エクスポートしてください。$channelNote"
+        AppLanguage.KOREAN -> "libnode.so 로드 실패 ($path). APK에 16KB 정렬된 libnode.so가 포함되어 있는지 확인하거나 호스트에서 Node 런타임을 다운로드하고 다시 내보내세요. $channelNote"
+    }
+
+    val nodeV8AlreadyInit: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "V8 已初始化且服务器未运行，请发送 MSG_KILL_ENGINE 重建子进程"
+        AppLanguage.ENGLISH -> "V8 already initialized and server not running — send MSG_KILL_ENGINE to rebuild the child process"
+        AppLanguage.ARABIC -> "تم تهيئة V8 بالفعل والخادم لا يعمل — أرسل MSG_KILL_ENGINE لإعادة بناء العملية الفرعية"
+        AppLanguage.PORTUGUESE -> "V8 já inicializado e servidor não em execução — envie MSG_KILL_ENGINE para reconstruir o processo filho"
+        AppLanguage.SPANISH -> "V8 ya inicializado y servidor no en ejecución — envía MSG_KILL_ENGINE para reconstruir el proceso hijo"
+        AppLanguage.FRENCH -> "V8 déjà initialisé et serveur non actif — envoyez MSG_KILL_ENGINE pour reconstruire le processus enfant"
+        AppLanguage.GERMAN -> "V8 bereits initialisiert und Server läuft nicht — senden Sie MSG_KILL_ENGINE, um den Kindprozess neu aufzubauen"
+        AppLanguage.RUSSIAN -> "V8 уже инициализирован, сервер не запущен — отправьте MSG_KILL_ENGINE для пересоздания дочернего процесса"
+        AppLanguage.JAPANESE -> "V8 は既に初期化されておりサーバーは実行中ではありません — MSG_KILL_ENGINE を送信して子プロセスを再構築してください"
+        AppLanguage.KOREAN -> "V8이 이미 초기화되었고 서버가 실행 중이 아닙니다 — MSG_KILL_ENGINE을 보내 자식 프로세스를 재구성하세요"
+    }
+
+    fun nodeExitedImmediately(exitCode: String): String = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Node.js 启动后立即退出$exitCode"
+        AppLanguage.ENGLISH -> "Node.js exited immediately after start$exitCode"
+        AppLanguage.ARABIC -> "خرج Node.js فور البدء$exitCode"
+        AppLanguage.PORTUGUESE -> "Node.js saiu imediatamente após iniciar$exitCode"
+        AppLanguage.SPANISH -> "Node.js salió inmediatamente después de iniciar$exitCode"
+        AppLanguage.FRENCH -> "Node.js a quitté immédiatement après le démarrage$exitCode"
+        AppLanguage.GERMAN -> "Node.js wurde sofort nach dem Start beendet$exitCode"
+        AppLanguage.RUSSIAN -> "Node.js завершился сразу после запуска$exitCode"
+        AppLanguage.JAPANESE -> "Node.js は起動直後に終了しました$exitCode"
+        AppLanguage.KOREAN -> "Node.js가 시작 직후 종료되었습니다$exitCode"
+    }
+
+    fun nodeProcessExited(exitCode: String): String = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Node.js 进程已退出$exitCode"
+        AppLanguage.ENGLISH -> "Node.js process exited$exitCode"
+        AppLanguage.ARABIC -> "عملية Node.js خرجت$exitCode"
+        AppLanguage.PORTUGUESE -> "Processo Node.js encerrado$exitCode"
+        AppLanguage.SPANISH -> "El proceso Node.js salió$exitCode"
+        AppLanguage.FRENCH -> "Le processus Node.js s'est terminé$exitCode"
+        AppLanguage.GERMAN -> "Node.js-Prozess beendet$exitCode"
+        AppLanguage.RUSSIAN -> "Процесс Node.js завершился$exitCode"
+        AppLanguage.JAPANESE -> "Node.js プロセスが終了しました$exitCode"
+        AppLanguage.KOREAN -> "Node.js 프로세스가 종료되었습니다$exitCode"
+    }
+
+    val nodeEntryScriptFailed: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Node.js 入口脚本执行失败"
+        AppLanguage.ENGLISH -> "Node.js entry script execution failed"
+        AppLanguage.ARABIC -> "فشل تنفيذ سكربت دخول Node.js"
+        AppLanguage.PORTUGUESE -> "Falha na execução do script de entrada Node.js"
+        AppLanguage.SPANISH -> "Error en la ejecución del script de entrada de Node.js"
+        AppLanguage.FRENCH -> "Échec de l'exécution du script d'entrée Node.js"
+        AppLanguage.GERMAN -> "Ausführung des Node.js-Einstiegsskripts fehlgeschlagen"
+        AppLanguage.RUSSIAN -> "Ошибка выполнения точки входа Node.js"
+        AppLanguage.JAPANESE -> "Node.js エントリスクリプトの実行に失敗しました"
+        AppLanguage.KOREAN -> "Node.js 진입 스크립트 실행 실패"
+    }
+
+    val nodeServerStartTimeout: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Node.js 服务器启动超时"
+        AppLanguage.ENGLISH -> "Node.js server start timed out"
+        AppLanguage.ARABIC -> "انتهت مهلة بدء خادم Node.js"
+        AppLanguage.PORTUGUESE -> "Tempo limite de inicialização do servidor Node.js"
+        AppLanguage.SPANISH -> "Tiempo de inicio del servidor Node.js agotado"
+        AppLanguage.FRENCH -> "Délai de démarrage du serveur Node.js dépassé"
+        AppLanguage.GERMAN -> "Zeitüberschreitung beim Start des Node.js-Servers"
+        AppLanguage.RUSSIAN -> "Тайм-аут запуска Node.js-сервера"
+        AppLanguage.JAPANESE -> "Node.js サーバーの起動がタイムアウトしました"
+        AppLanguage.KOREAN -> "Node.js 서버 시작 시간 초과"
+    }
+
+    val phpArmOnly: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "PHP 二进制仅支持 arm64 设备"
+        AppLanguage.ENGLISH -> "PHP binary supports arm64 devices only"
+        AppLanguage.ARABIC -> "ثنائي PHP يدعم أجهزة arm64 فقط"
+        AppLanguage.PORTUGUESE -> "O binário PHP suporta apenas dispositivos arm64"
+        AppLanguage.SPANISH -> "El binario PHP solo admite dispositivos arm64"
+        AppLanguage.FRENCH -> "Le binaire PHP ne prend en charge que les appareils arm64"
+        AppLanguage.GERMAN -> "PHP-Binary unterstützt nur arm64-Geräte"
+        AppLanguage.RUSSIAN -> "Бинарник PHP поддерживает только arm64-устройства"
+        AppLanguage.JAPANESE -> "PHP バイナリは arm64 デバイスのみサポートします"
+        AppLanguage.KOREAN -> "PHP 바이너리는 arm64 기기만 지원합니다"
+    }
+
+    val phpBinaryNotFound: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "解压后未找到 PHP 二进制"
+        AppLanguage.ENGLISH -> "PHP binary not found after extraction"
+        AppLanguage.ARABIC -> "لم يتم العثور على ثنائي PHP بعد الاستخراج"
+        AppLanguage.PORTUGUESE -> "Binário PHP não encontrado após extração"
+        AppLanguage.SPANISH -> "Binario PHP no encontrado tras la extracción"
+        AppLanguage.FRENCH -> "Binaire PHP introuvable après extraction"
+        AppLanguage.GERMAN -> "PHP-Binary nach Extraktion nicht gefunden"
+        AppLanguage.RUSSIAN -> "Бинарник PHP не найден после распаковки"
+        AppLanguage.JAPANESE -> "解凍後に PHP バイナリが見つかりません"
+        AppLanguage.KOREAN -> "압축 해제 후 PHP 바이너리를 찾을 수 없습니다"
+    }
+
+    fun phpExtractFailed(detail: String): String = when (Strings.lang) {
+        AppLanguage.CHINESE -> "解压 PHP 失败: $detail"
+        AppLanguage.ENGLISH -> "Failed to extract PHP: $detail"
+        AppLanguage.ARABIC -> "فشل استخراج PHP: $detail"
+        AppLanguage.PORTUGUESE -> "Falha ao extrair PHP: $detail"
+        AppLanguage.SPANISH -> "Error al extraer PHP: $detail"
+        AppLanguage.FRENCH -> "Échec de l'extraction de PHP : $detail"
+        AppLanguage.GERMAN -> "Extraktion von PHP fehlgeschlagen: $detail"
+        AppLanguage.RUSSIAN -> "Ошибка распаковки PHP: $detail"
+        AppLanguage.JAPANESE -> "PHP の解凍に失敗しました: $detail"
+        AppLanguage.KOREAN -> "PHP 압축 해제 실패: $detail"
+    }
+
+    val wpExtractIncomplete: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "WordPress 解压不完整"
+        AppLanguage.ENGLISH -> "WordPress extraction incomplete"
+        AppLanguage.ARABIC -> "استخراج WordPress غير مكتمل"
+        AppLanguage.PORTUGUESE -> "Extração do WordPress incompleta"
+        AppLanguage.SPANISH -> "Extracción de WordPress incompleta"
+        AppLanguage.FRENCH -> "Extraction de WordPress incomplète"
+        AppLanguage.GERMAN -> "WordPress-Extraktion unvollständig"
+        AppLanguage.RUSSIAN -> "Извлечение WordPress неполное"
+        AppLanguage.JAPANESE -> "WordPress の解凍が不完全です"
+        AppLanguage.KOREAN -> "WordPress 압축 해제가 불완전합니다"
+    }
+
+    fun wpExtractFailed(detail: String): String = when (Strings.lang) {
+        AppLanguage.CHINESE -> "解压 WordPress 失败: $detail"
+        AppLanguage.ENGLISH -> "Failed to extract WordPress: $detail"
+        AppLanguage.ARABIC -> "فشل استخراج WordPress: $detail"
+        AppLanguage.PORTUGUESE -> "Falha ao extrair WordPress: $detail"
+        AppLanguage.SPANISH -> "Error al extraer WordPress: $detail"
+        AppLanguage.FRENCH -> "Échec de l'extraction de WordPress : $detail"
+        AppLanguage.GERMAN -> "Extraktion von WordPress fehlgeschlagen: $detail"
+        AppLanguage.RUSSIAN -> "Ошибка распаковки WordPress: $detail"
+        AppLanguage.JAPANESE -> "WordPress の解凍に失敗しました: $detail"
+        AppLanguage.KOREAN -> "WordPress 압축 해제 실패: $detail"
+    }
+
+    val sqlitePluginExtractIncomplete: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "SQLite 插件解压不完整"
+        AppLanguage.ENGLISH -> "SQLite plugin extraction incomplete"
+        AppLanguage.ARABIC -> "استخراج إضافة SQLite غير مكتمل"
+        AppLanguage.PORTUGUESE -> "Extração do plugin SQLite incompleta"
+        AppLanguage.SPANISH -> "Extracción del plugin SQLite incompleta"
+        AppLanguage.FRENCH -> "Extraction du plugin SQLite incomplète"
+        AppLanguage.GERMAN -> "SQLite-Plugin-Extraktion unvollständig"
+        AppLanguage.RUSSIAN -> "Извлечение плагина SQLite неполное"
+        AppLanguage.JAPANESE -> "SQLite プラグインの解凍が不完全です"
+        AppLanguage.KOREAN -> "SQLite 플러그인 압축 해제가 불완전합니다"
+    }
+
+    fun sqlitePluginExtractFailed(detail: String): String = when (Strings.lang) {
+        AppLanguage.CHINESE -> "解压 SQLite 插件失败: $detail"
+        AppLanguage.ENGLISH -> "Failed to extract SQLite plugin: $detail"
+        AppLanguage.ARABIC -> "فشل استخراج إضافة SQLite: $detail"
+        AppLanguage.PORTUGUESE -> "Falha ao extrair o plugin SQLite: $detail"
+        AppLanguage.SPANISH -> "Error al extraer el plugin SQLite: $detail"
+        AppLanguage.FRENCH -> "Échec de l'extraction du plugin SQLite : $detail"
+        AppLanguage.GERMAN -> "Extraktion des SQLite-Plugins fehlgeschlagen: $detail"
+        AppLanguage.RUSSIAN -> "Ошибка распаковки плагина SQLite: $detail"
+        AppLanguage.JAPANESE -> "SQLite プラグインの解凍に失敗しました: $detail"
+        AppLanguage.KOREAN -> "SQLite 플러그인 압축 해제 실패: $detail"
+    }
+
+    val unknownError: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "未知错误"
+        AppLanguage.ENGLISH -> "Unknown error"
+        AppLanguage.ARABIC -> "خطأ غير معروف"
+        AppLanguage.PORTUGUESE -> "Erro desconhecido"
+        AppLanguage.SPANISH -> "Error desconocido"
+        AppLanguage.FRENCH -> "Erreur inconnue"
+        AppLanguage.GERMAN -> "Unbekannter Fehler"
+        AppLanguage.RUSSIAN -> "Неизвестная ошибка"
+        AppLanguage.JAPANESE -> "不明なエラー"
+        AppLanguage.KOREAN -> "알 수 없는 오류"
+    }
+
+    fun downloadTooSmall(label: String, size: Long): String = when (Strings.lang) {
+        AppLanguage.CHINESE -> "$label 下载内容过小（${size} bytes），可能是错误页"
+        AppLanguage.ENGLISH -> "$label download too small (${size} bytes) — possibly an error page"
+        AppLanguage.ARABIC -> "تنزيل $label صغير جداً (${size} بايت) — ربما صفحة خطأ"
+        AppLanguage.PORTUGUESE -> "Download de $label muito pequeno (${size} bytes) — possivelmente uma página de erro"
+        AppLanguage.SPANISH -> "Descarga de $label demasiado pequeña (${size} bytes) — posiblemente una página de error"
+        AppLanguage.FRENCH -> "Téléchargement de $label trop petit (${size} octets) — possiblementement une page d'erreur"
+        AppLanguage.GERMAN -> "$label Download zu klein (${size} Bytes) — möglicherweise eine Fehlerseite"
+        AppLanguage.RUSSIAN -> "Загрузка $label слишком мала (${size} байт) — возможно, страница ошибки"
+        AppLanguage.JAPANESE -> "$label のダウンロードが小さすぎます (${size} バイト) — エラーページの可能性"
+        AppLanguage.KOREAN -> "$label 다운로드가 너무 작습니다 (${size} 바이트) — 오류 페이지일 수 있습니다"
+    }
+
+    fun downloadVersionMismatch(label: String, expected: String): String = when (Strings.lang) {
+        AppLanguage.CHINESE -> "$label 下载到的 phar 版本不匹配（期望 $expected）"
+        AppLanguage.ENGLISH -> "Downloaded $label phar version mismatch (expected $expected)"
+        AppLanguage.ARABIC -> "إصدار phar لـ $label الذي تم تنزيله غير مطابق (متوقع $expected)"
+        AppLanguage.PORTUGUESE -> "A versão phar de $label baixada não corresponde (esperada $expected)"
+        AppLanguage.SPANISH -> "La versión phar de $label descargada no coincide (esperada $expected)"
+        AppLanguage.FRENCH -> "La version phar de $label téléchargée ne correspond pas (attendue $expected)"
+        AppLanguage.GERMAN -> "Heruntergeladene $label phar-Version stimmt nicht überein (erwartet $expected)"
+        AppLanguage.RUSSIAN -> "Версия phar $label не совпадает (ожидается $expected)"
+        AppLanguage.JAPANESE -> "ダウンロードした $label の phar バージョンが一致しません（期待値 $expected）"
+        AppLanguage.KOREAN -> "다운로드한 $label phar 버전이 일치하지 않습니다 (예상 $expected)"
+    }
+
+    fun downloadFailed(label: String, detail: String): String = when (Strings.lang) {
+        AppLanguage.CHINESE -> "$label 下载失败: $detail"
+        AppLanguage.ENGLISH -> "$label download failed: $detail"
+        AppLanguage.ARABIC -> "فشل تنزيل $label: $detail"
+        AppLanguage.PORTUGUESE -> "Falha no download de $label: $detail"
+        AppLanguage.SPANISH -> "Error de descarga de $label: $detail"
+        AppLanguage.FRENCH -> "Échec du téléchargement de $label : $detail"
+        AppLanguage.GERMAN -> "$label Download fehlgeschlagen: $detail"
+        AppLanguage.RUSSIAN -> "Ошибка загрузки $label: $detail"
+        AppLanguage.JAPANESE -> "$label のダウンロードに失敗しました: $detail"
+        AppLanguage.KOREAN -> "$label 다운로드 실패: $detail"
+    }
+
+    val packageJsonMissing: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "package.json 不存在"
+        AppLanguage.ENGLISH -> "package.json not found"
+        AppLanguage.ARABIC -> "package.json غير موجود"
+        AppLanguage.PORTUGUESE -> "package.json não encontrado"
+        AppLanguage.SPANISH -> "package.json no encontrado"
+        AppLanguage.FRENCH -> "package.json introuvable"
+        AppLanguage.GERMAN -> "package.json nicht gefunden"
+        AppLanguage.RUSSIAN -> "package.json не найден"
+        AppLanguage.JAPANESE -> "package.json が見つかりません"
+        AppLanguage.KOREAN -> "package.json을 찾을 수 없습니다"
+    }
+
+    val nodeRuntimeNotReady: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Node.js 运行时未就绪"
+        AppLanguage.ENGLISH -> "Node.js runtime not ready"
+        AppLanguage.ARABIC -> "وقت تشغيل Node.js غير جاهز"
+        AppLanguage.PORTUGUESE -> "Runtime Node.js não está pronto"
+        AppLanguage.SPANISH -> "El runtime de Node.js no está listo"
+        AppLanguage.FRENCH -> "Le runtime Node.js n'est pas prêt"
+        AppLanguage.GERMAN -> "Node.js-Runtime nicht bereit"
+        AppLanguage.RUSSIAN -> "Среда Node.js не готова"
+        AppLanguage.JAPANESE -> "Node.js ランタイムの準備ができていません"
+        AppLanguage.KOREAN -> "Node.js 런타임이 준비되지 않았습니다"
     }
 
 }

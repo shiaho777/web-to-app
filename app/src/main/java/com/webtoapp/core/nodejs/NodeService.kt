@@ -11,6 +11,7 @@ import android.os.Message
 import android.os.Messenger
 import android.os.Process
 import android.os.RemoteException
+import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.linux.LocalDnsBridgeProxy
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.core.port.PortManager
@@ -65,6 +66,19 @@ class NodeService : Service() {
         android.util.Log.i(TAG, ":nodejs 子进程 NodeService onCreate, pid=${Process.myPid()}")
         AppLogger.i(TAG, ":nodejs 子进程 NodeService onCreate, pid=${Process.myPid()}")
         ShellLogger.i(TAG, ":nodejs 子进程 NodeService onCreate, pid=${Process.myPid()}")
+        // Strings.lang is per-process state; the :nodejs child never gets the main
+        // process's setLanguage() call. Generated APKs persist config.language to
+        // wta_runtime_lang prefs; the host preview falls back to the DataStore
+        // language — both are readable cross-process.
+        runCatching {
+            val prefLang = getSharedPreferences("wta_runtime_lang", MODE_PRIVATE)
+                .getString("app_language", null)
+                ?.let { runCatching { com.webtoapp.core.i18n.AppLanguage.valueOf(it) }.getOrNull() }
+            val lang = prefLang ?: kotlinx.coroutines.runBlocking {
+                com.webtoapp.core.i18n.LanguageManager.getInstance(this@NodeService).getCurrentLanguage()
+            }
+            com.webtoapp.core.i18n.Strings.setLanguage(lang)
+        }
     }
 
     override fun onDestroy() {
@@ -181,7 +195,7 @@ class NodeService : Service() {
                 replyFailed(
                     replyTo,
                     requestId,
-                    "libnode_bridge.so 加载失败 ($detail)。导出的 NODEJS_APP 需包含 libnode_bridge.so 与 libc++_shared.so；请用最新构建器重新导出。${channelNote()}"
+                    Strings.nodeBridgeLoadFailed(detail, channelNote())
                 )
                 return
             }
@@ -191,7 +205,7 @@ class NodeService : Service() {
                 replyFailed(
                     replyTo,
                     requestId,
-                    "libnode.so 加载失败 ($path)。请确认 APK 含 16KB 对齐的 libnode.so，或在主机下载 Node 运行时后重新导出。${channelNote()}"
+                    Strings.nodeLibLoadFailed(path, channelNote())
                 )
                 return
             }
@@ -201,14 +215,14 @@ class NodeService : Service() {
                 replyFailed(
                     replyTo,
                     requestId,
-                    "V8 已 init 过且 server 不在跑，请发送 MSG_KILL_ENGINE 重建子进程"
+                    Strings.nodeV8AlreadyInit
                 )
                 return
             }
 
             val entryFilePath = File(projectDir, entryFile).absolutePath
             if (!File(entryFilePath).exists()) {
-                replyFailed(replyTo, requestId, "入口文件不存在: $entryFile")
+                replyFailed(replyTo, requestId, Strings.runtimeEntryMissing(entryFile))
                 return
             }
 
@@ -224,11 +238,11 @@ class NodeService : Service() {
                 conflictPolicy = conflictPolicy
             )
             if (serverPort == PortManager.PORT_CONFLICT) {
-                replyFailed(replyTo, requestId, "端口被占用: $portPref")
+                replyFailed(replyTo, requestId, Strings.runtimePortInUse(portPref))
                 return
             }
             if (serverPort < 0) {
-                replyFailed(replyTo, requestId, "无法分配端口")
+                replyFailed(replyTo, requestId, Strings.runtimePortAllocFailed)
                 return
             }
             currentPort = serverPort
@@ -330,7 +344,7 @@ class NodeService : Service() {
                     replyTo,
                     requestId,
                     failureMessage(
-                        "Node.js 启动后立即退出" + (lastExitCode?.let { " (exitCode=$it)" } ?: "")
+                        Strings.nodeExitedImmediately(lastExitCode?.let { " (exitCode=$it)" } ?: "")
                     )
                 )
                 return
@@ -357,9 +371,9 @@ class NodeService : Service() {
                 stopServerInternal()
                 val headline = when {
                     !wasAlive ->
-                        "Node.js 进程已退出" + (lastExitCode?.let { " (exitCode=$it)" } ?: "")
-                    entryFailed -> "Node.js 入口脚本执行失败"
-                    else -> "Node.js 服务器启动超时"
+                        Strings.nodeProcessExited(lastExitCode?.let { " (exitCode=$it)" } ?: "")
+                    entryFailed -> Strings.nodeEntryScriptFailed
+                    else -> Strings.nodeServerStartTimeout
                 }
                 replyFailed(replyTo, requestId, failureMessage(headline))
             }
@@ -369,7 +383,7 @@ class NodeService : Service() {
             // past a failed start — the next successful start/stop pair would then never
             // bring the shared DNS proxy back down.
             runCatching { stopServerInternal() }
-            replyFailed(replyTo, requestId, "启动失败: ${e.message}")
+            replyFailed(replyTo, requestId, Strings.runtimeStartFailed(e.message ?: ""))
         }
     }
 

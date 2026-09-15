@@ -1,5 +1,7 @@
 package com.webtoapp.core.wordpress
 
+import com.webtoapp.core.i18n.Strings
+
 import android.content.Context
 import com.webtoapp.core.linux.LocalDnsBridgeProxy
 import com.webtoapp.core.logging.AppLogger
@@ -66,7 +68,7 @@ class WordPressPhpRuntime(private val context: Context) {
             }
 
             if (!isPhpAvailable()) {
-                _serverState.value = ServerState.Error("PHP 二进制未就绪，请先下载依赖")
+                _serverState.value = ServerState.Error(Strings.phpBinaryNotReady)
                 return@withContext -1
             }
 
@@ -90,7 +92,7 @@ class WordPressPhpRuntime(private val context: Context) {
             }
             val serverPort = PortManager.allocateForPhp("wp:$projectId", port, conflictPolicy = conflictPolicy)
             if (serverPort < 0) {
-                _serverState.value = ServerState.Error("无法分配端口")
+                _serverState.value = ServerState.Error(Strings.runtimePortAllocFailed)
                 return@withContext -1
             }
             currentPort = serverPort
@@ -165,7 +167,7 @@ class WordPressPhpRuntime(private val context: Context) {
                 serverPort
             } else {
                 stopServer()
-                _serverState.value = ServerState.Error("PHP 服务器启动超时")
+                _serverState.value = ServerState.Error(Strings.phpServerStartTimeout)
                 -1
             }
         } catch (e: Exception) {
@@ -173,7 +175,7 @@ class WordPressPhpRuntime(private val context: Context) {
             // Release the port allocation and DNS-bridge refcount taken before the failure;
             // this runtime instance dies with the failed start, so nobody else would.
             runCatching { stopServer() }
-            _serverState.value = ServerState.Error("启动失败: ${e.message}")
+            _serverState.value = ServerState.Error(Strings.runtimeStartFailed(e.message ?: ""))
             -1
         }
     }

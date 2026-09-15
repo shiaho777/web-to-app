@@ -7,6 +7,7 @@ import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
 import android.webkit.MimeTypeMap
+import com.webtoapp.core.i18n.Strings
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -143,8 +144,8 @@ object MediaSaver {
 
             val responseCode = connection.responseCode
             if (responseCode != java.net.HttpURLConnection.HTTP_OK) {
-                progressCallback?.onError("HTTP 错误: $responseCode")
-                return@withContext SaveResult.Error("HTTP 错误: $responseCode")
+                progressCallback?.onError(Strings.httpErrorCode(responseCode))
+                return@withContext SaveResult.Error(Strings.httpErrorCode(responseCode))
             }
 
             val actualMimeType = mimeType ?: connection.contentType ?: guessMimeType(fileName)

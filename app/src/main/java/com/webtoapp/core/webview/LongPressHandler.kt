@@ -370,7 +370,7 @@ class LongPressHandler(
         }
     }
 
-    fun copyToClipboard(text: String, label: String = "链接") {
+    fun copyToClipboard(text: String, label: String = "WebToApp") {
         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         val clip = ClipData.newPlainText(label, text)
         clipboard.setPrimaryClip(clip)
@@ -384,7 +384,7 @@ class LongPressHandler(
                     imageUrl.startsWith("data:") -> saveBase64Image(imageUrl)
                     imageUrl.startsWith("blob:") -> {
                         withContext(Dispatchers.Main) {
-                            onResult(false, "Blob 图片需要通过页面下载")
+                            onResult(false, Strings.blobImageUsePageDownload)
                         }
                         return@launch
                     }
@@ -393,15 +393,15 @@ class LongPressHandler(
 
                 withContext(Dispatchers.Main) {
                     if (result != null) {
-                        onResult(true, "Image saved")
+                        onResult(true, Strings.imageSavedToGallery)
                     } else {
-                        onResult(false, "Save failed")
+                        onResult(false, Strings.saveFailed)
                     }
                 }
             } catch (e: Exception) {
                 AppLogger.e(TAG, "保存图片失败", e)
                 withContext(Dispatchers.Main) {
-                    onResult(false, "保存失败: ${e.message}")
+                    onResult(false, Strings.saveFailedWithReason.format(e.message))
                 }
             }
         }
@@ -485,7 +485,7 @@ class LongPressHandler(
 
     fun downloadVideo(videoUrl: String, onResult: (Boolean, String) -> Unit) {
         if (videoUrl.startsWith("blob:")) {
-            onResult(false, "Blob 视频需要通过页面下载")
+            onResult(false, Strings.blobVideoUsePageDownload)
             return
         }
 
@@ -505,7 +505,7 @@ class LongPressHandler(
 
             when (result) {
                 is MediaSaver.SaveResult.Success -> {
-                    onResult(true, "视频已保存到相册")
+                    onResult(true, Strings.videoSavedToGallery)
                 }
                 is MediaSaver.SaveResult.Error -> {
                     AppLogger.e(TAG, "下载视频失败: ${result.message}")

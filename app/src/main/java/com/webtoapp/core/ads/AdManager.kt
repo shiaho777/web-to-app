@@ -2,6 +2,7 @@ package com.webtoapp.core.ads
 
 import android.content.Context
 import android.util.Log
+import com.webtoapp.core.i18n.Strings
 import com.webtoapp.data.model.AdConfig
 
 class AdManager(private val context: Context) {
@@ -28,12 +29,12 @@ class AdManager(private val context: Context) {
     fun loadInterstitialAd(onLoaded: () -> Unit, onFailed: (String) -> Unit) {
         val config = adConfig ?: return
         if (!config.interstitialEnabled || config.interstitialId.isBlank()) {
-            onFailed("插屏广告未配置")
+            onFailed(Strings.interstitialAdNotConfigured)
             return
         }
 
         Log.d(TAG, "loadInterstitialAd called but ad SDK not integrated")
-        onFailed("广告 SDK 未集成")
+        onFailed(Strings.adSdkNotIntegrated)
     }
 
     fun showInterstitialAd(activity: android.app.Activity, onDismissed: () -> Unit) {

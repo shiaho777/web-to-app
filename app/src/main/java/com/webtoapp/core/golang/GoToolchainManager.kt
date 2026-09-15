@@ -1,5 +1,7 @@
 package com.webtoapp.core.golang
 
+import com.webtoapp.core.i18n.Strings
+
 import android.content.Context
 import android.os.Build
 import com.webtoapp.core.download.DependencyDownloadEngine
@@ -212,7 +214,7 @@ object GoToolchainManager {
             if (abi != "arm64-v8a") {
 
                 AppLogger.e(TAG, "Go 工具链当前仅支持 arm64-v8a，设备 ABI: $abi")
-                markError("当前设备架构 ($abi) 暂不支持 Go 工具链，仅支持 arm64-v8a")
+                markError(Strings.goToolchainUnsupportedAbi(abi))
                 return@withLock false
             }
 
@@ -259,7 +261,7 @@ object GoToolchainManager {
                         TAG,
                         "解压完成但 go binary 不可用: 路径=${goBin.absolutePath} 存在=${goBin.exists()} 大小=${goBin.length()} 可执行=${goBin.canExecute()}"
                     )
-                    markError("Go 工具链解压不完整，请重试")
+                    markError(Strings.goToolchainExtractIncomplete)
                     return@withLock false
                 }
 
@@ -287,7 +289,7 @@ object GoToolchainManager {
 
     suspend fun verifyGoToolchain(context: Context): Result<String> = withContext(Dispatchers.IO) {
         if (!isGoReady(context)) {
-            return@withContext Result.failure(IllegalStateException("Go 工具链未安装"))
+            return@withContext Result.failure(IllegalStateException(Strings.goToolchainNotInstalled))
         }
         val goBin = getGoBinary(context)
         try {

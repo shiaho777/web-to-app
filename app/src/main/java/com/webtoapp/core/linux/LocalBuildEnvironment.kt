@@ -184,13 +184,13 @@ object LocalBuildEnvironment {
                 continue
             }
             if (target.length() < 1_000_000) {
-                lastError = IOException("$sourceLabel 下载内容过小（${target.length()} bytes），可能是错误页")
+                lastError = IOException(Strings.downloadTooSmall(sourceLabel, target.length()))
                 target.delete()
                 continue
             }
 
             if (!verifyComposerVersion(context, target)) {
-                lastError = IOException("$sourceLabel 下载到的 phar 版本不匹配（期望 $COMPOSER_VERSION）")
+                lastError = IOException(Strings.downloadVersionMismatch(sourceLabel, COMPOSER_VERSION))
                 target.delete()
                 continue
             }
@@ -815,7 +815,7 @@ object LocalBuildEnvironment {
                     AppLogger.w(TAG, "$displayName download from $url failed: ${e.message}")
                 }
             }
-            throw IOException("$displayName 下载失败: ${lastError?.message}")
+            throw IOException(Strings.downloadFailed(displayName, lastError?.message ?: ""))
         } finally {
             tempFile.delete()
         }

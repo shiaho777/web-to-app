@@ -262,42 +262,4 @@ self.addEventListener('fetch', event => {
         AppLogger.i(TAG, "PWA offline support injected (strategy: ${config.strategy})")
     }
 
-    fun generateOfflineFallbackHtml(): String = """
-        <!DOCTYPE html>
-        <html lang="zh">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>离线模式</title>
-            <style>
-                * { margin: 0; padding: 0; box-sizing: border-box; }
-                body {
-                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                    display: flex; align-items: center; justify-content: center;
-                    min-height: 100vh; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                    color: white; text-align: center; padding: 20px;
-                }
-                .container { max-width: 400px; }
-                .icon { font-size: 64px; margin-bottom: 20px; }
-                h1 { font-size: 24px; margin-bottom: 12px; font-weight: 600; }
-                p { font-size: 16px; opacity: 0.85; line-height: 1.5; margin-bottom: 24px; }
-                button {
-                    background: rgba(255,255,255,0.2); color: white; border: 2px solid rgba(255,255,255,0.4);
-                    padding: 12px 32px; border-radius: 25px; font-size: 16px; cursor: pointer;
-                    transition: all 0.3s; backdrop-filter: blur(10px);
-                }
-                button:hover { background: rgba(255,255,255,0.3); }
-                button:active { transform: scale(0.95); }
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <div class="icon">📡</div>
-                <h1>当前处于离线状态</h1>
-                <p>请检查网络连接后重试。<br>部分已缓存的内容可以正常浏览。</p>
-                <button onclick="location.reload()">重新加载</button>
-            </div>
-        </body>
-        </html>
-    """.trimIndent()
 }

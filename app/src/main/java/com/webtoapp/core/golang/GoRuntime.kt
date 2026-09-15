@@ -1,5 +1,7 @@
 package com.webtoapp.core.golang
 
+import com.webtoapp.core.i18n.Strings
+
 import android.content.Context
 import com.webtoapp.core.i18n.PreviewHtmlSupport.escapeText
 import com.webtoapp.core.i18n.PreviewHtmlSupport.htmlLang
@@ -123,7 +125,7 @@ class GoRuntime(private val context: Context) {
             val runnableBinaryName = readyBinaryPath?.let { File(it).name } ?: binaryName
             val binaryPath = GoDependencyManager.prepareBinary(context, projDir, runnableBinaryName)
             if (binaryPath == null) {
-                _serverState.value = ServerState.Error("Go 二进制无效或 ABI 不兼容")
+                _serverState.value = ServerState.Error(Strings.goBinaryInvalid)
                 return@withContext -1
             }
 
@@ -135,7 +137,7 @@ class GoRuntime(private val context: Context) {
             }
             val serverPort = PortManager.allocateForGo(projectId, port, conflictPolicy = conflictPolicy)
             if (serverPort < 0) {
-                _serverState.value = ServerState.Error("无法分配端口")
+                _serverState.value = ServerState.Error(Strings.runtimePortAllocFailed)
                 return@withContext -1
             }
             currentPort = serverPort
@@ -249,7 +251,7 @@ class GoRuntime(private val context: Context) {
                 serverPort
             } else {
                 stopServer()
-                _serverState.value = ServerState.Error("Go 服务器启动超时")
+                _serverState.value = ServerState.Error(Strings.goServerStartTimeout)
                 -1
             }
         } catch (e: Exception) {
@@ -265,7 +267,7 @@ class GoRuntime(private val context: Context) {
                 LocalDnsBridgeProxy.stop()
                 dnsProxyStarted = false
             }
-            _serverState.value = ServerState.Error("启动失败: ${e.message}${channelNote()}")
+            _serverState.value = ServerState.Error(Strings.goStartFailedWithChannel("${e.message ?: ""}${channelNote()}"))
             -1
         }
     }

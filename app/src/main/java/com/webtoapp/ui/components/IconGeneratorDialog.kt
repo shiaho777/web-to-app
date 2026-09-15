@@ -312,7 +312,7 @@ fun IconGeneratorDialog(
                                         scope.launch {
                                             val item = IconLibraryStorage.saveFromBase64(
                                                 context, base64,
-                                                prompt.take(20).ifBlank { "AI图标" }
+                                                prompt.take(20).ifBlank { Strings.aiIconFallbackName }
                                             )
                                             savedIconPath = item?.path
                                         }

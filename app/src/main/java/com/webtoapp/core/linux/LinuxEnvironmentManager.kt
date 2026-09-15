@@ -308,10 +308,10 @@ class LinuxEnvironmentManager private constructor(private val context: Context) 
         }
         try {
             if (!File(projectDir, "package.json").exists()) {
-                return@withContext Result.failure(IllegalStateException("package.json 不存在"))
+                return@withContext Result.failure(IllegalStateException(Strings.packageJsonMissing))
             }
             if (!LocalBuildEnvironment.isNodeReady(context)) {
-                return@withContext Result.failure(IllegalStateException("Node.js 运行时未就绪"))
+                return@withContext Result.failure(IllegalStateException(Strings.nodeRuntimeNotReady))
             }
             val pm = com.webtoapp.core.frontend.ProjectDetector.detectPackageManager(projectDir)
 

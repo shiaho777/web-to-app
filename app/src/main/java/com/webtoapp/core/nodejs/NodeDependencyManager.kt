@@ -281,7 +281,7 @@ object NodeDependencyManager {
                         true
                     } catch (e: Exception) {
                         AppLogger.e(TAG, "Failed to download Node.js runtime", e)
-                        markError(e.message ?: "未知错误")
+                        markError(e.message ?: Strings.unknownError)
                         false
                     }
                 }
@@ -337,7 +337,7 @@ object NodeDependencyManager {
                 AppLogger.i(TAG, "Node.js runtime ready: ${nodeLib.absolutePath} (${nodeLib.length()} bytes)")
             } else {
                 AppLogger.e(TAG, "Not found after extraction: $NODE_BINARY_NAME (ABI: $abi)")
-                markError("解压后未找到 Node.js 运行时 (ABI: $abi)")
+                markError(Strings.nodeRuntimeNotFound(abi))
                 return false
             }
 
@@ -349,7 +349,7 @@ object NodeDependencyManager {
             return true
         } catch (e: Exception) {
             AppLogger.e(TAG, "Failed to extract Node.js", e)
-            markError("解压 Node.js 失败: ${e.message}")
+            markError(Strings.nodeExtractFailed(e.message ?: ""))
             return false
         }
     }

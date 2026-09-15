@@ -6,6 +6,7 @@ import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.net.Uri
 import android.widget.Toast
+import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.logging.AppLogger
 import java.io.File
 import java.net.URLEncoder
@@ -37,20 +38,20 @@ fun Context.openUrl(url: String) {
         val safeUrl = normalizeExternalIntentUrl(url)
         if (safeUrl.isEmpty()) {
             AppLogger.w("Extensions", "Blocked openUrl with invalid or dangerous URL: $url")
-            toast("无法打开链接")
+            toast(Strings.cannotOpenLink)
             return
         }
         val scheme = getUrlScheme(safeUrl)
         val allowedSchemes = setOf("http", "https", "tel", "mailto", "sms", "smsto", "mms", "mmsto", "geo", "market")
         if (!isAllowedUrlScheme(safeUrl, allowedSchemes)) {
             AppLogger.w("Extensions", "Blocked openUrl with disallowed scheme: $scheme")
-            toast("无法打开链接")
+            toast(Strings.cannotOpenLink)
             return
         }
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(safeUrl))
         startActivity(intent)
     } catch (e: Exception) {
-        toast("无法打开链接")
+        toast(Strings.cannotOpenLink)
     }
 }
 

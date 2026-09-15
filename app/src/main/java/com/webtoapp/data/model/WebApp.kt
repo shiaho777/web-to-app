@@ -1441,12 +1441,21 @@ data class ApkEncryptionConfig(
     POLISH("pl", "Polski")
 }
 
-enum class TranslateEngine(val displayName: String) {
-    AUTO("自动选择"),
-    GOOGLE("Google Translate"),
-    MYMEMORY("MyMemory"),
-    LIBRE("LibreTranslate"),
-    LINGVA("Lingva Translate")
+enum class TranslateEngine {
+    AUTO,
+    GOOGLE,
+    MYMEMORY,
+    LIBRE,
+    LINGVA;
+
+    val displayName: String
+        get() = when (this) {
+            AUTO -> com.webtoapp.core.i18n.Strings.translateEngineAuto
+            GOOGLE -> "Google Translate"
+            MYMEMORY -> "MyMemory"
+            LIBRE -> "LibreTranslate"
+            LINGVA -> "Lingva Translate"
+        }
 }
 
 data class TranslateConfig(

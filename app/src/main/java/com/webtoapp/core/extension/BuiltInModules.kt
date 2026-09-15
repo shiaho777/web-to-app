@@ -192,8 +192,8 @@ object BuiltInModules {
 (function() {
     'use strict';
 
-    const LANG = (navigator.language || 'zh').toLowerCase().startsWith('ar') ? 'ar' :
-                 (navigator.language || 'zh').toLowerCase().startsWith('zh') ? 'zh' : 'en';
+    const LANG = (window.__wtaAppLang || navigator.language || 'zh').toLowerCase().startsWith('ar') ? 'ar' :
+                 (window.__wtaAppLang || navigator.language || 'zh').toLowerCase().startsWith('zh') ? 'zh' : 'en';
     const I18N = {
         zh: { name: '媒体下载', noMedia: '未检测到媒体', detected: '检测到 {0} 个媒体', video: '视频', image: '图片', audio: '音频', blob: 'Blob流', download: '下载', blobNotSupported: 'Blob流暂不支持直接下载', downloading: '开始下载...', bilibiliTip: '提示：B站视频和音频分离，需用工具合并', quality: '画质', dlVideo: '下载视频流', dlAudio: '下载音频流', dlMusic: '下载背景音乐', dlAllImg: '下载全部图片', dlAllVid: '下载全部视频', dlNoWm: '下载无水印视频', copied: '链接已复制', platform: '平台', detected2: '检测到 {0} 张图片，{1} 个视频' },
         en: { name: 'Media Download', noMedia: 'No media detected', detected: '{0} media items detected', video: 'Video', image: 'Image', audio: 'Audio', blob: 'Blob', download: 'Download', blobNotSupported: 'Blob stream not supported for direct download', downloading: 'Downloading...', bilibiliTip: 'Tip: Bilibili separates video and audio, merge with tools', quality: 'Quality', dlVideo: 'Download Video', dlAudio: 'Download Audio', dlMusic: 'Download Music', dlAllImg: 'Download all images', dlAllVid: 'Download all videos', dlNoWm: 'Download without watermark', copied: 'Link copied', platform: 'Platform', detected2: '{0} images, {1} videos detected' },
@@ -778,8 +778,8 @@ object BuiltInModules {
 (function() {
     'use strict';
 
-    const LANG = (navigator.language || 'zh').toLowerCase().startsWith('ar') ? 'ar' :
-                 (navigator.language || 'zh').toLowerCase().startsWith('zh') ? 'zh' : 'en';
+    const LANG = (window.__wtaAppLang || navigator.language || 'zh').toLowerCase().startsWith('ar') ? 'ar' :
+                 (window.__wtaAppLang || navigator.language || 'zh').toLowerCase().startsWith('zh') ? 'zh' : 'en';
     const I18N = {
         zh: { name: '视频增强', noVideo: '未检测到视频', speed: '播放速度', speedSet: '播放速度: ', features: '功能', pip: '画中画', loop: '循环播放', back10: '后退10秒', fwd10: '前进10秒', pipOn: '已开启画中画', pipOff: '退出画中画', pipUnavail: '画中画不可用', loopOn: '已开启循环', loopOff: '已关闭循环', fwd: '前进', back: '后退', sec: '秒', ytSection: 'YouTube 净化', ytAdSkip: '自动跳过广告', ytAdSkipDesc: '监视并点击跳过按钮', ytAutoQuality: '最高画质', ytAutoQualityDesc: '自动切换到最高清晰度', ytBgPlay: '后台播放', ytBgPlayDesc: '切到后台不暂停', ytSponsor: '跳过赞助段', ytSponsorDesc: 'SponsorBlock 赞助/片头', ytAdSkipped: '已跳过广告', ytQualitySet: '画质已设为最高', ytSponsorSkipped: '已跳过赞助段', ytSponsorFail: 'SponsorBlock 暂不可用', on: '已开启', off: '已关闭' },
         en: { name: 'Video Enhance', noVideo: 'No video detected', speed: 'Playback Speed', speedSet: 'Speed: ', features: 'Features', pip: 'PiP', loop: 'Loop', back10: 'Back 10s', fwd10: 'Forward 10s', pipOn: 'PiP enabled', pipOff: 'PiP disabled', pipUnavail: 'PiP unavailable', loopOn: 'Loop enabled', loopOff: 'Loop disabled', fwd: 'Forward ', back: 'Back ', sec: 's', ytSection: 'YouTube Cleanup', ytAdSkip: 'Auto-skip ads', ytAdSkipDesc: 'Watch and click skip buttons', ytAutoQuality: 'Max quality', ytAutoQualityDesc: 'Auto-select top resolution', ytBgPlay: 'Background play', ytBgPlayDesc: 'Keep audio when backgrounded', ytSponsor: 'Skip sponsors', ytSponsorDesc: 'SponsorBlock intro/sponsor', ytAdSkipped: 'Ad skipped', ytQualitySet: 'Quality set to max', ytSponsorSkipped: 'Sponsor segment skipped', ytSponsorFail: 'SponsorBlock unavailable', on: 'On', off: 'Off' },
@@ -999,8 +999,8 @@ object BuiltInModules {
     'use strict';
 
     // 多语言支持
-    const LANG = (navigator.language || 'zh').toLowerCase().startsWith('ar') ? 'ar' :
-                 (navigator.language || 'zh').toLowerCase().startsWith('zh') ? 'zh' : 'en';
+    const LANG = (window.__wtaAppLang || navigator.language || 'zh').toLowerCase().startsWith('ar') ? 'ar' :
+                 (window.__wtaAppLang || navigator.language || 'zh').toLowerCase().startsWith('zh') ? 'zh' : 'en';
     const I18N = {
         zh: { name: '网页分析', pageInfo: '页面信息', title: '标题', domain: '域名', perf: '性能数据', loadTime: '加载时间(ms)', domReady: 'DOM就绪(ms)', stats: '元素统计', scripts: '脚本', styles: '样式', images: '图片', links: '链接', forms: '表单', iframes: '内嵌框架', videos: '视频' },
         en: { name: 'Web Analyzer', pageInfo: 'Page Info', title: 'Title', domain: 'Domain', perf: 'Performance', loadTime: 'Load Time(ms)', domReady: 'DOM Ready(ms)', stats: 'Element Stats', scripts: 'Scripts', styles: 'Styles', images: 'Images', links: 'Links', forms: 'Forms', iframes: 'Iframes', videos: 'Videos' },
@@ -1084,8 +1084,8 @@ object BuiltInModules {
 (function() {
     'use strict';
 
-    const LANG = (navigator.language || 'zh').toLowerCase().startsWith('ar') ? 'ar' :
-                 (navigator.language || 'zh').toLowerCase().startsWith('zh') ? 'zh' : 'en';
+    const LANG = (window.__wtaAppLang || navigator.language || 'zh').toLowerCase().startsWith('ar') ? 'ar' :
+                 (window.__wtaAppLang || navigator.language || 'zh').toLowerCase().startsWith('zh') ? 'zh' : 'en';
     const I18N = {
         zh: { name: '页内查找', placeholder: '在当前页面查找', prev: '上一个', next: '下一个', clear: '清除', noMatch: '未找到匹配项', nativeUnavailable: '当前内核不支持原生页内查找', enterKeyword: '请输入关键词', searching: '正在查找...', tip: '使用 WebView 原生查找，高亮结果并自动定位', matchCount: '{0} / {1}' },
         en: { name: 'Find in page', placeholder: 'Find in current page', prev: 'Previous', next: 'Next', clear: 'Clear', noMatch: 'No matches found', nativeUnavailable: 'Native find is unavailable in this engine', enterKeyword: 'Enter a keyword', searching: 'Searching...', tip: 'Uses native WebView search to highlight and jump between matches', matchCount: '{0} / {1}' },
@@ -1247,8 +1247,8 @@ object BuiltInModules {
     'use strict';
 
     // 多语言支持
-    const LANG = (navigator.language || 'zh').toLowerCase().startsWith('ar') ? 'ar' :
-                 (navigator.language || 'zh').toLowerCase().startsWith('zh') ? 'zh' : 'en';
+    const LANG = (window.__wtaAppLang || navigator.language || 'zh').toLowerCase().startsWith('ar') ? 'ar' :
+                 (window.__wtaAppLang || navigator.language || 'zh').toLowerCase().startsWith('zh') ? 'zh' : 'en';
     const I18N = {
         zh: { name: '深色模式', enabled: '已开启深色模式', disabled: '已关闭深色模式', statusOn: '深色模式已开启', statusOff: '深色模式已关闭', desc: '智能反色，保护眼睛', turnOff: '关闭深色模式', turnOn: '开启深色模式' },
         en: { name: 'Dark Mode', enabled: 'Dark mode enabled', disabled: 'Dark mode disabled', statusOn: 'Dark Mode On', statusOff: 'Dark Mode Off', desc: 'Smart inversion, protect your eyes', turnOff: 'Turn Off Dark Mode', turnOn: 'Turn On Dark Mode' },
@@ -1362,8 +1362,8 @@ object BuiltInModules {
     'use strict';
 
     // 多语言支持
-    const LANG = (navigator.language || 'zh').toLowerCase().startsWith('ar') ? 'ar' :
-                 (navigator.language || 'zh').toLowerCase().startsWith('zh') ? 'zh' : 'en';
+    const LANG = (window.__wtaAppLang || navigator.language || 'zh').toLowerCase().startsWith('ar') ? 'ar' :
+                 (window.__wtaAppLang || navigator.language || 'zh').toLowerCase().startsWith('zh') ? 'zh' : 'en';
     const I18N = {
         zh: { name: '隐私保护', subtitle: '保护您的隐私安全', tracking: '阻止追踪', trackingDesc: '拦截常见追踪脚本', fingerprint: '指纹保护', fingerprintDesc: '模糊设备指纹信息', cookies: '清理Cookies', cookiesDesc: '退出时清理Cookies', enabled: '已开启', disabled: '已关闭' },
         en: { name: 'Privacy Protection', subtitle: 'Protect your privacy', tracking: 'Block Tracking', trackingDesc: 'Block common tracking scripts', fingerprint: 'Fingerprint Protection', fingerprintDesc: 'Blur device fingerprint info', cookies: 'Clear Cookies', cookiesDesc: 'Clear cookies on exit', enabled: 'Enabled', disabled: 'Disabled' },
@@ -1444,8 +1444,8 @@ object BuiltInModules {
     'use strict';
 
     // 多语言支持
-    const LANG = (navigator.language || 'zh').toLowerCase().startsWith('ar') ? 'ar' :
-                 (navigator.language || 'zh').toLowerCase().startsWith('zh') ? 'zh' : 'en';
+    const LANG = (window.__wtaAppLang || navigator.language || 'zh').toLowerCase().startsWith('ar') ? 'ar' :
+                 (window.__wtaAppLang || navigator.language || 'zh').toLowerCase().startsWith('zh') ? 'zh' : 'en';
     const I18N = {
         zh: { name: '内容增强', enableCopy: '解除复制限制', copyText: '复制页面文本', copyHtml: '复制页面HTML', toTop: '回到顶部', toBottom: '滚动到底部', copyEnabled: '已解除复制限制', textCopied: '页面文本已复制', htmlCopied: '页面HTML已复制', atTop: '已回到顶部', atBottom: '已到达底部' },
         en: { name: 'Content Enhance', enableCopy: 'Enable Copy', copyText: 'Copy Page Text', copyHtml: 'Copy Page HTML', toTop: 'To Top', toBottom: 'To Bottom', copyEnabled: 'Copy restriction removed', textCopied: 'Page text copied', htmlCopied: 'Page HTML copied', atTop: 'At top', atBottom: 'At bottom' },
@@ -1525,8 +1525,8 @@ object BuiltInModules {
     'use strict';
 
     // 多语言支持
-    const LANG = (navigator.language || 'zh').toLowerCase().startsWith('ar') ? 'ar' :
-                 (navigator.language || 'zh').toLowerCase().startsWith('zh') ? 'zh' : 'en';
+    const LANG = (window.__wtaAppLang || navigator.language || 'zh').toLowerCase().startsWith('ar') ? 'ar' :
+                 (window.__wtaAppLang || navigator.language || 'zh').toLowerCase().startsWith('zh') ? 'zh' : 'en';
     const I18N = {
         zh: {
             name: '元素屏蔽',

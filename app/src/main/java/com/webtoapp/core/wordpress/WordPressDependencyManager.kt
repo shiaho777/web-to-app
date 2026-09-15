@@ -1,5 +1,7 @@
 package com.webtoapp.core.wordpress
 
+import com.webtoapp.core.i18n.Strings
+
 import android.content.Context
 import android.os.Build
 import com.webtoapp.core.download.DependencyDownloadEngine
@@ -299,7 +301,7 @@ object WordPressDependencyManager {
         val abi = getDeviceAbi()
         if (abi != "arm64-v8a") {
             AppLogger.e(TAG, "PHP binary only supports arm64-v8a; current device: $abi")
-            markError("PHP 二进制仅支持 arm64 设备")
+            markError(Strings.phpArmOnly)
             return false
         }
 
@@ -339,7 +341,7 @@ object WordPressDependencyManager {
                 AppLogger.i(TAG, "PHP binary ready: ${targetBinary.absolutePath}")
             } else {
                 AppLogger.e(TAG, "PHP binary not found after extraction")
-                markError("解压后未找到 PHP 二进制")
+                markError(Strings.phpBinaryNotFound)
                 return false
             }
 
@@ -347,7 +349,7 @@ object WordPressDependencyManager {
             return true
         } catch (e: Exception) {
             AppLogger.e(TAG, "Failed to extract PHP", e)
-            markError("解压 PHP 失败: ${e.message}")
+            markError(Strings.phpExtractFailed(e.message ?: ""))
             return false
         }
     }
@@ -372,7 +374,7 @@ object WordPressDependencyManager {
 
             val wpDir = File(destDir, "wordpress")
             if (!wpDir.exists() || !File(wpDir, "wp-includes/version.php").exists()) {
-                markError("WordPress 解压不完整")
+                markError(Strings.wpExtractIncomplete)
                 return false
             }
 
@@ -380,7 +382,7 @@ object WordPressDependencyManager {
             return true
         } catch (e: Exception) {
             AppLogger.e(TAG, "Failed to extract WordPress", e)
-            markError("解压 WordPress 失败: ${e.message}")
+            markError(Strings.wpExtractFailed(e.message ?: ""))
             return false
         }
     }
@@ -405,7 +407,7 @@ object WordPressDependencyManager {
 
             val pluginDir = File(destDir, "sqlite-database-integration")
             if (!pluginDir.exists()) {
-                markError("SQLite 插件解压不完整")
+                markError(Strings.sqlitePluginExtractIncomplete)
                 return false
             }
 
@@ -413,7 +415,7 @@ object WordPressDependencyManager {
             return true
         } catch (e: Exception) {
             AppLogger.e(TAG, "Failed to extract SQLite plugin", e)
-            markError("解压 SQLite 插件失败: ${e.message}")
+            markError(Strings.sqlitePluginExtractFailed(e.message ?: ""))
             return false
         }
     }

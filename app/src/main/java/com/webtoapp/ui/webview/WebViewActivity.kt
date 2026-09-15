@@ -1842,7 +1842,7 @@ fun WebViewScreen(
 
         if (!wpDir.exists() || !wpDir.isDirectory) {
             wordPressPreviewState = WordPressPreviewState.Error(
-                "WordPress 项目目录意外丢失: ${wpDir.absolutePath}"
+                Strings.wpProjectDirMissing(wpDir.absolutePath)
             )
             return@LaunchedEffect
         }

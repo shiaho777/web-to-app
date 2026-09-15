@@ -267,6 +267,6 @@ private fun formatTime(ms: Long): String {
     return if (minutes > 0) {
         "%d:%02d.%d".format(minutes, seconds, millis)
     } else {
-        "%d.%d 秒".format(seconds, millis)
+        Strings.videoTrimSeconds(seconds, millis)
     }
 }

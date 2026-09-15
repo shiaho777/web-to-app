@@ -485,7 +485,7 @@ private fun LrcLineEditor(
                     )
                 } else {
                     Text(
-                        line.text.ifEmpty { "(空行)" },
+                        line.text.ifEmpty { Strings.lrcEmptyLine },
                         style = MaterialTheme.typography.bodyMedium,
                         color = if (line.text.isEmpty())
                             MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)

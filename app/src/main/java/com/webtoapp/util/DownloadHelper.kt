@@ -216,9 +216,9 @@ object DownloadHelper {
     ) {
         val mediaType = MediaSaver.getMediaType(mimeType) ?: MediaSaver.getMediaTypeByExtension(fileName)
         val typeText = when (mediaType) {
-            MediaSaver.MediaType.IMAGE -> if (Strings.currentLanguage.value == com.webtoapp.core.i18n.AppLanguage.CHINESE) "图片" else "image"
-            MediaSaver.MediaType.VIDEO -> if (Strings.currentLanguage.value == com.webtoapp.core.i18n.AppLanguage.CHINESE) "视频" else "video"
-            else -> if (Strings.currentLanguage.value == com.webtoapp.core.i18n.AppLanguage.CHINESE) "文件" else "file"
+            MediaSaver.MediaType.IMAGE -> Strings.filePrefixImage
+            MediaSaver.MediaType.VIDEO -> Strings.filePrefixVideo
+            else -> Strings.filePrefixFile
         }
 
         val notificationManager = DownloadNotificationManager.getInstance(context)
@@ -382,7 +382,7 @@ object DownloadHelper {
                 setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
             }
             setTitle(fileName)
-            setDescription("正在下载...")
+            setDescription(Strings.downloadingNotificationText)
 
             when (downloadLocationMode) {
                 com.webtoapp.data.model.DownloadLocationMode.APP_PRIVATE -> {

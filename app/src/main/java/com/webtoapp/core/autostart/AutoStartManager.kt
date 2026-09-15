@@ -170,26 +170,7 @@ class AutoStartManager(private val context: Context) {
         return null
     }
 
-    fun getNextTriggerTimeDisplay(): String? {
-        val config = getScheduledStartConfig() ?: return null
-        val effectiveTimes = config.times.ifEmpty { listOf(config.time) }
-        val nextTrigger = calculateNextTriggerTime(effectiveTimes, config.days) ?: return null
 
-        val now = Calendar.getInstance()
-        val daysDiff = ((nextTrigger.timeInMillis - now.timeInMillis) / (24 * 60 * 60 * 1000)).toInt()
-        val timeStr = SimpleDateFormat("HH:mm", Locale.getDefault()).format(nextTrigger.time)
-
-        return when (daysDiff) {
-            0 -> "今天 $timeStr"
-            1 -> "明天 $timeStr"
-            else -> {
-                val dayNames = arrayOf("周一", "周二", "周三", "周四", "周五", "周六", "周日")
-                val calendarDow = nextTrigger.get(Calendar.DAY_OF_WEEK)
-                val ourDow = if (calendarDow == Calendar.SUNDAY) 7 else calendarDow - 1
-                "${dayNames[ourDow - 1]} $timeStr"
-            }
-        }
-    }
 
     private fun scheduleNextAlarm(appId: Long, times: List<String>, days: List<Int>) {
 
@@ -393,13 +374,13 @@ class AutoStartManager(private val context: Context) {
     fun getOemBrandName(): String? {
         val manufacturer = Build.MANUFACTURER.lowercase(Locale.ROOT)
         return when {
-            manufacturer.contains("xiaomi") || manufacturer.contains("redmi") -> "小米/Redmi"
-            manufacturer.contains("huawei") || manufacturer.contains("honor") -> "华为/荣耀"
+            manufacturer.contains("xiaomi") || manufacturer.contains("redmi") -> "Xiaomi/Redmi"
+            manufacturer.contains("huawei") || manufacturer.contains("honor") -> "Huawei/Honor"
             manufacturer.contains("oppo") || manufacturer.contains("realme") -> "OPPO/realme"
             manufacturer.contains("vivo") || manufacturer.contains("iqoo") -> "vivo/iQOO"
-            manufacturer.contains("oneplus") -> "一加/OnePlus"
-            manufacturer.contains("samsung") -> "三星/Samsung"
-            manufacturer.contains("meizu") -> "魅族/Meizu"
+            manufacturer.contains("oneplus") -> "OnePlus"
+            manufacturer.contains("samsung") -> "Samsung"
+            manufacturer.contains("meizu") -> "Meizu"
             else -> null
         }
     }

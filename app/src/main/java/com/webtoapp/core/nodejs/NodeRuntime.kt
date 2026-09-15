@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.documentfile.provider.DocumentFile
 import com.webtoapp.core.i18n.PreviewHtmlSupport.escapeText
 import com.webtoapp.core.i18n.PreviewHtmlSupport.htmlLang
+import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.core.port.PortManager
 import com.webtoapp.core.shell.ShellLogger
@@ -47,7 +48,7 @@ class NodeRuntime(private val context: Context) {
     ): Int = withContext(Dispatchers.IO) {
         try {
             if (!isNodeAvailable()) {
-                _serverState.value = ServerState.Error("Node.js 运行时未就绪，请先下载依赖")
+                _serverState.value = ServerState.Error(Strings.runtimeNotReadyDownloadDeps)
                 return@withContext -1
             }
 
@@ -142,7 +143,7 @@ class NodeRuntime(private val context: Context) {
         } catch (e: Exception) {
             AppLogger.e(TAG, "启动 Node.js 服务器失败", e)
             ShellLogger.e(TAG, "启动 Node.js 服务器失败: ${e.message}")
-            _serverState.value = ServerState.Error("启动失败: ${e.message}")
+            _serverState.value = ServerState.Error(Strings.runtimeStartFailed(e.message ?: ""))
             isRunning = false
             currentPort = 0
             -1

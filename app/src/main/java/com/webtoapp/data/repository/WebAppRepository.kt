@@ -6,6 +6,7 @@ import com.webtoapp.data.dao.WebAppStartupCandidate
 import com.webtoapp.data.dao.WebAppSummary
 import com.webtoapp.data.model.AppType
 import com.webtoapp.data.model.WebApp
+import com.webtoapp.core.i18n.Strings
 import com.webtoapp.data.dao.AppCategoryDao
 import kotlinx.coroutines.flow.Flow
 
@@ -105,7 +106,7 @@ class WebAppRepository(private val webAppDao: WebAppDao) {
         val now = System.currentTimeMillis()
         val copy = original.copy(
             id = 0,
-            name = newName ?: "${original.name} (副本)",
+            name = newName ?: "${original.name}${Strings.copySuffix}",
             createdAt = now,
             updatedAt = now,
             isActivated = false

@@ -1,5 +1,7 @@
 package com.webtoapp.core.python
 
+import com.webtoapp.core.i18n.Strings
+
 import android.content.Context
 import com.webtoapp.core.i18n.PreviewHtmlSupport.escapeText
 import com.webtoapp.core.i18n.PreviewHtmlSupport.htmlLang
@@ -92,7 +94,7 @@ class PythonRuntime(private val context: Context) {
             }
 
             if (!isPythonAvailable()) {
-                _serverState.value = ServerState.Error("Python 运行时未就绪，请先下载依赖")
+                _serverState.value = ServerState.Error(Strings.runtimeNotReadyDownloadDeps)
                 return@withContext -1
             }
 
@@ -173,14 +175,14 @@ class PythonRuntime(private val context: Context) {
             }
             val serverPort = PortManager.allocateForPython(projectId, port, conflictPolicy = conflictPolicy)
             if (serverPort < 0) {
-                _serverState.value = ServerState.Error("无法分配端口")
+                _serverState.value = ServerState.Error(Strings.runtimePortAllocFailed)
                 return@withContext -1
             }
             currentPort = serverPort
 
             val entryFilePath = File(projDir, entryFile)
             if (!entryFilePath.exists()) {
-                _serverState.value = ServerState.Error("入口文件不存在: $entryFile")
+                _serverState.value = ServerState.Error(Strings.runtimeEntryMissing(entryFile))
                 PortManager.release(serverPort)
                 return@withContext -1
             }
@@ -328,7 +330,7 @@ class PythonRuntime(private val context: Context) {
             // this the port lingers until the 120s stale sweep because the runtime instance
             // dies together with the failed start.
             runCatching { stopServer() }
-            _serverState.value = ServerState.Error("启动失败: ${e.message}")
+            _serverState.value = ServerState.Error(Strings.runtimeStartFailed(e.message ?: ""))
             -1
         }
     }

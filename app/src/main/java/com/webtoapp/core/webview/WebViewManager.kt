@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.Dialog
 import android.util.Base64
+import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.logging.AppLogger
 import android.content.Context
 import android.content.Intent
@@ -4568,6 +4569,10 @@ class WebViewManager(
 
         try {
 
+            // Expose the app-configured language to in-webview scripts so they
+            // don't depend on the device locale (navigator.language).
+            webView.evaluateJavascript("window.__wtaAppLang='${Strings.lang.code}'", null)
+
             val panelScript = ExtensionPanelScript.getPanelInitScript(extensionFabIcon)
             webView.evaluateJavascript(panelScript, null)
 
@@ -5495,6 +5500,10 @@ class WebViewManager(
     ) {
 
         val moduleRunAt = runAt.toModuleRunTime()
+
+        // Expose the app-configured language so injected module JS (I18N tables)
+        // uses the app language rather than the device locale.
+        webView.evaluateJavascript("window.__wtaAppLang='${Strings.lang.code}'", null)
 
         val allModules = resolveActiveExtensionModules(appAttachedOnly)
         if (allModules.isEmpty()) {
