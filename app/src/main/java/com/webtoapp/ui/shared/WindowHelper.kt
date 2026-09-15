@@ -127,6 +127,22 @@ object WindowHelper {
 
             WindowInsetsControllerCompat(activity.window, activity.window.decorView).let { controller ->
                 var decorFitsSystemWindows = true
+
+                // Classic path only: hiding the status bar via the legacy decor flag merely
+                // *requests* a relayout. On some pre-30 ROMs (observed on Android 10 cutout
+                // devices) the flag holds — the bar is gone — yet the decor never relayouts,
+                // leaving the status-bar strip painted as bare window background; the #925
+                // re-assert restores cleared flags but cannot force that layout pass.
+                // FLAG_FULLSCREEN is a window attribute the system cannot clear, and it
+                // resizes the decor to full height through relayoutWindow — the mechanism
+                // fullscreen relied on before edge-to-edge existed. Every other branch
+                // clears it so the window attribute cannot leak across config changes.
+                if (enabled && !showStatusBar && classicKeyboardResize) {
+                    activity.window.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
+                } else {
+                    activity.window.clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
+                }
+
                 if (enabled) {
                     if (!classicKeyboardResize) {
                         activity.window.navigationBarColor = android.graphics.Color.TRANSPARENT
@@ -268,7 +284,7 @@ object WindowHelper {
                     listOf(350L, 900L, 1600L).forEach { delayMs ->
                         activity.window.decorView.postDelayed({
                             try {
-                                reAssertImmersiveFlags(activity.window.decorView, hideNavBar)
+                                reAssertImmersiveFlags(activity.window, hideNavBar, !showStatusBar)
                             } catch (e: Exception) {
                                 AppLogger.w(tag, "re-assert immersive flags failed", e)
                             }
@@ -282,19 +298,26 @@ object WindowHelper {
     }
 
     /**
-     * Re-set the legacy hidden-bar bits the system dropped. [hideNavBar] mirrors the
-     * caller's nav-bar choice so a config that keeps the navigation bar visible is
-     * not force-hidden here.
+     * Re-set the hidden-bar bits the system dropped. [hideNavBar] and [hideStatusBar]
+     * mirror the caller's bar choices so a config that keeps a bar visible is not
+     * force-hidden here.
      */
     @Suppress("DEPRECATION")
-    private fun reAssertImmersiveFlags(decorView: View, hideNavBar: Boolean) {
+    private fun reAssertImmersiveFlags(window: Window, hideNavBar: Boolean, hideStatusBar: Boolean) {
+        val decorView = window.decorView
         val target = decorView.systemUiVisibility
-        val required = View.SYSTEM_UI_FLAG_FULLSCREEN or
+        val required = (if (hideStatusBar) View.SYSTEM_UI_FLAG_FULLSCREEN else 0) or
             (if (hideNavBar) View.SYSTEM_UI_FLAG_HIDE_NAVIGATION else 0)
-        if ((target and required) != required) {
+        if (required != 0 && (target and required) != required) {
             decorView.systemUiVisibility = target or required or
                 View.SYSTEM_UI_FLAG_LOW_PROFILE or
                 View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+        }
+        // The window attribute cannot be cleared by the system, but re-add it
+        // defensively in case an OEM rewrites window flags on a config change.
+        if (hideStatusBar &&
+            window.attributes.flags and WindowManager.LayoutParams.FLAG_FULLSCREEN == 0) {
+            window.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
         }
     }
 

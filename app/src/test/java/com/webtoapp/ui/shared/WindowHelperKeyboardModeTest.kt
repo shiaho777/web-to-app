@@ -105,6 +105,60 @@ class WindowHelperKeyboardModePreApi30Test {
     }
 
     @Test
+    fun `fullscreen status-bar hide on the classic path sets the window fullscreen flag`() {
+        val activity = Robolectric.setupActivity(Activity::class.java)
+
+        WindowHelper.applyImmersiveFullscreen(
+            activity,
+            enabled = true,
+            showStatusBar = false,
+            keyboardAdjustMode = KeyboardAdjustMode.RESIZE
+        )
+
+        // The decor-flag hide only *requests* a relayout — on ROMs that never run that
+        // pass the status-bar strip stays as bare window background even though the bar
+        // is hidden (#924 follow-up). FLAG_FULLSCREEN is a window attribute the system
+        // cannot clear and forces the decor to full height through relayoutWindow.
+        assertThat(activity.window.attributes.flags and WindowManager.LayoutParams.FLAG_FULLSCREEN)
+            .isNotEqualTo(0)
+    }
+
+    @Test
+    fun `window fullscreen flag clears when the status bar shows or fullscreen exits`() {
+        val activity = Robolectric.setupActivity(Activity::class.java)
+
+        WindowHelper.applyImmersiveFullscreen(
+            activity,
+            enabled = true,
+            showStatusBar = false,
+            keyboardAdjustMode = KeyboardAdjustMode.RESIZE
+        )
+
+        WindowHelper.applyImmersiveFullscreen(
+            activity,
+            enabled = true,
+            showStatusBar = true,
+            keyboardAdjustMode = KeyboardAdjustMode.RESIZE
+        )
+        assertThat(activity.window.attributes.flags and WindowManager.LayoutParams.FLAG_FULLSCREEN)
+            .isEqualTo(0)
+
+        WindowHelper.applyImmersiveFullscreen(
+            activity,
+            enabled = true,
+            showStatusBar = false,
+            keyboardAdjustMode = KeyboardAdjustMode.RESIZE
+        )
+        WindowHelper.applyImmersiveFullscreen(
+            activity,
+            enabled = false,
+            keyboardAdjustMode = KeyboardAdjustMode.RESIZE
+        )
+        assertThat(activity.window.attributes.flags and WindowManager.LayoutParams.FLAG_FULLSCREEN)
+            .isEqualTo(0)
+    }
+
+    @Test
     fun `classic system bars window reports true below API 30 in resize mode`() {
         val activity = Robolectric.setupActivity(Activity::class.java)
 
@@ -138,6 +192,23 @@ class WindowHelperKeyboardModeApi30Test {
         val mode = activity.window.attributes.softInputMode
         assertThat(mode and WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING).isNotEqualTo(0)
         assertThat(isEdgeToEdge(activity)).isTrue()
+    }
+
+    @Test
+    fun `edge-to-edge fullscreen hide does not set the window fullscreen flag`() {
+        val activity = Robolectric.setupActivity(Activity::class.java)
+
+        WindowHelper.applyImmersiveFullscreen(
+            activity,
+            enabled = true,
+            showStatusBar = false,
+            keyboardAdjustMode = KeyboardAdjustMode.RESIZE
+        )
+
+        // API 30+ hides bars through the insets controller on an edge-to-edge window;
+        // the legacy window flag must stay clear so transient swipe-to-peek keeps working.
+        assertThat(activity.window.attributes.flags and WindowManager.LayoutParams.FLAG_FULLSCREEN)
+            .isEqualTo(0)
     }
 
     @Test
