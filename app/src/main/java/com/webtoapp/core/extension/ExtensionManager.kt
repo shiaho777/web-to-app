@@ -93,6 +93,12 @@ class ExtensionManager private constructor(private val context: Context) {
     private val _builtInModules = MutableStateFlow<List<ExtensionModule>>(emptyList())
     val builtInModules: StateFlow<List<ExtensionModule>> = _builtInModules.asStateFlow()
 
+    // Language the built-in modules were materialised under. BuiltInModules.getAll()
+    // snapshots Strings.* into name/description/tags at build time, so a language
+    // switch after the fact cannot be observed — the list must be rebuilt (#938).
+    @Volatile
+    private var builtInModulesLanguage: com.webtoapp.core.i18n.AppLanguage? = null
+
     @Volatile
     private var _allModulesCache: List<ExtensionModule> = emptyList()
 
@@ -243,6 +249,7 @@ class ExtensionManager private constructor(private val context: Context) {
     private fun loadBuiltInModules() {
         val builtInStates = loadBuiltInStates()
 
+        builtInModulesLanguage = Strings.lang
         val standardModules = BuiltInModules.getAll()
 
         val chromeExtModules = try {
@@ -264,17 +271,19 @@ class ExtensionManager private constructor(private val context: Context) {
     }
 
     fun reloadBuiltInModules() {
-        // Re-materialising the 8 built-in module graphs and re-reading the states file
-        // twice at startup (init + first InitializeLanguage) is wasted main-thread work;
-        // the language only affects display strings, which Strings.lang serves live.
-        // Only rebuild if built-ins were never loaded (defensive) or were cleared.
-        if (_builtInModules.value.isNotEmpty()) {
-            AppLogger.d(TAG, "Built-in modules already loaded; skipping reload")
+        // The built-in list bakes Strings.* into ExtensionModule fields at build
+        // time, so "Strings.lang serves live" does NOT apply to it: modules built
+        // under the startup-default language (Chinese, emitted first by
+        // InitializeLanguage's initial value) stay in that language forever.
+        // Rebuild whenever the language changed since they were materialised;
+        // same-language calls remain cheap no-ops.
+        if (_builtInModules.value.isNotEmpty() && builtInModulesLanguage == Strings.lang) {
+            AppLogger.d(TAG, "Built-in modules already loaded for ${Strings.lang}; skipping reload")
             return
         }
         loadBuiltInModules()
         rebuildAllModulesCache()
-        AppLogger.d(TAG, "Reloaded built-in modules")
+        AppLogger.d(TAG, "Reloaded built-in modules for ${Strings.lang}")
     }
 
     private fun loadBuiltInStates(): Map<String, Boolean> {
