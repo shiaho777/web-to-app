@@ -205,7 +205,7 @@ class NodeService : Service() {
                 replyFailed(
                     replyTo,
                     requestId,
-                    Strings.nodeLibLoadFailed(path, channelNote())
+                    Strings.nodeLibLoadFailed(path ?: "unknown", channelNote())
                 )
                 return
             }
@@ -238,7 +238,7 @@ class NodeService : Service() {
                 conflictPolicy = conflictPolicy
             )
             if (serverPort == PortManager.PORT_CONFLICT) {
-                replyFailed(replyTo, requestId, Strings.runtimePortInUse(portPref))
+                replyFailed(replyTo, requestId, Strings.runtimePortInUse(portPref.toString()))
                 return
             }
             if (serverPort < 0) {

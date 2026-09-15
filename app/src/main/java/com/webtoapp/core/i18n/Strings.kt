@@ -66916,7 +66916,7 @@ object StringsE {
         AppLanguage.GERMAN -> "${seconds}.${tenths} s"
         AppLanguage.RUSSIAN -> "$seconds.$tenths с"
         AppLanguage.JAPANESE -> "$seconds.$tenths 秒"
-        AppLanguage.KOREAN -> "$seconds.$tenths초"
+        AppLanguage.KOREAN -> "${seconds}.${tenths}초"
     }
 
     val copySuffix: String get() = when (Strings.lang) {
