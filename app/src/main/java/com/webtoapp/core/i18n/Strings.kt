@@ -5040,11 +5040,9 @@ object Strings {
     fun httpErrorCode(code: Int): String = StringsE.httpErrorCode(code)
     fun wpProjectDirMissing(path: String): String = StringsE.wpProjectDirMissing(path)
     val interstitialAdNotConfigured: String get() = StringsE.interstitialAdNotConfigured
-    val adSdkNotIntegrated: String get() = StringsE.adSdkNotIntegrated
     val translateEngineAuto: String get() = StringsE.translateEngineAuto
     val blobImageUsePageDownload: String get() = StringsE.blobImageUsePageDownload
     val blobVideoUsePageDownload: String get() = StringsE.blobVideoUsePageDownload
-    val videoSavedToGallery: String get() = StringsE.videoSavedToGallery
     fun aiErrBadRequest(detail: String): String = StringsE.aiErrBadRequest(detail)
     val aiErrInvalidKey: String get() = StringsE.aiErrInvalidKey
     val aiErrForbidden: String get() = StringsE.aiErrForbidden
@@ -5095,12 +5093,10 @@ object Strings {
     fun wpExtractFailed(detail: String): String = StringsE.wpExtractFailed(detail)
     val sqlitePluginExtractIncomplete: String get() = StringsE.sqlitePluginExtractIncomplete
     fun sqlitePluginExtractFailed(detail: String): String = StringsE.sqlitePluginExtractFailed(detail)
-    val unknownError: String get() = StringsE.unknownError
     fun downloadTooSmall(label: String, size: Long): String = StringsE.downloadTooSmall(label, size)
     fun downloadVersionMismatch(label: String, expected: String): String = StringsE.downloadVersionMismatch(label, expected)
     fun downloadFailed(label: String, detail: String): String = StringsE.downloadFailed(label, detail)
     val packageJsonMissing: String get() = StringsE.packageJsonMissing
-    val nodeRuntimeNotReady: String get() = StringsE.nodeRuntimeNotReady
 }
 
 object StringsA {
@@ -67027,18 +67023,6 @@ object StringsE {
         AppLanguage.KOREAN -> "전면 광고가 구성되지 않았습니다"
     }
 
-    val adSdkNotIntegrated: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "广告 SDK 未集成"
-        AppLanguage.ENGLISH -> "Ad SDK not integrated"
-        AppLanguage.ARABIC -> "لم يتم دمج حزمة SDK الإعلانية"
-        AppLanguage.PORTUGUESE -> "SDK de anúncios não integrado"
-        AppLanguage.SPANISH -> "SDK de anuncios no integrado"
-        AppLanguage.FRENCH -> "SDK publicitaire non intégré"
-        AppLanguage.GERMAN -> "Werbe-SDK nicht integriert"
-        AppLanguage.RUSSIAN -> "Рекламный SDK не интегрирован"
-        AppLanguage.JAPANESE -> "広告 SDK が統合されていません"
-        AppLanguage.KOREAN -> "광고 SDK가 통합되지 않았습니다"
-    }
 
     val translateEngineAuto: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "自动选择"
@@ -67079,18 +67063,6 @@ object StringsE {
         AppLanguage.KOREAN -> "Blob 동영상은 페이지에서 다운로드해야 합니다"
     }
 
-    val videoSavedToGallery: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "视频已保存到相册"
-        AppLanguage.ENGLISH -> "Video saved to gallery"
-        AppLanguage.ARABIC -> "تم حفظ الفيديو في المعرض"
-        AppLanguage.PORTUGUESE -> "Vídeo salvo na galeria"
-        AppLanguage.SPANISH -> "Vídeo guardado en la galería"
-        AppLanguage.FRENCH -> "Vidéo enregistrée dans la galerie"
-        AppLanguage.GERMAN -> "Video in Galerie gespeichert"
-        AppLanguage.RUSSIAN -> "Видео сохранено в галерею"
-        AppLanguage.JAPANESE -> "動画をギャラリーに保存しました"
-        AppLanguage.KOREAN -> "동영상이 갤러리에 저장되었습니다"
-    }
 
     // ---- AI API error messages (#945) ----
 
@@ -67746,18 +67718,6 @@ object StringsE {
         AppLanguage.KOREAN -> "SQLite 플러그인 압축 해제 실패: $detail"
     }
 
-    val unknownError: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "未知错误"
-        AppLanguage.ENGLISH -> "Unknown error"
-        AppLanguage.ARABIC -> "خطأ غير معروف"
-        AppLanguage.PORTUGUESE -> "Erro desconhecido"
-        AppLanguage.SPANISH -> "Error desconocido"
-        AppLanguage.FRENCH -> "Erreur inconnue"
-        AppLanguage.GERMAN -> "Unbekannter Fehler"
-        AppLanguage.RUSSIAN -> "Неизвестная ошибка"
-        AppLanguage.JAPANESE -> "不明なエラー"
-        AppLanguage.KOREAN -> "알 수 없는 오류"
-    }
 
     fun downloadTooSmall(label: String, size: Long): String = when (Strings.lang) {
         AppLanguage.CHINESE -> "$label 下载内容过小（${size} bytes），可能是错误页"
@@ -67811,18 +67771,6 @@ object StringsE {
         AppLanguage.KOREAN -> "package.json을 찾을 수 없습니다"
     }
 
-    val nodeRuntimeNotReady: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "Node.js 运行时未就绪"
-        AppLanguage.ENGLISH -> "Node.js runtime not ready"
-        AppLanguage.ARABIC -> "وقت تشغيل Node.js غير جاهز"
-        AppLanguage.PORTUGUESE -> "Runtime Node.js não está pronto"
-        AppLanguage.SPANISH -> "El runtime de Node.js no está listo"
-        AppLanguage.FRENCH -> "Le runtime Node.js n'est pas prêt"
-        AppLanguage.GERMAN -> "Node.js-Runtime nicht bereit"
-        AppLanguage.RUSSIAN -> "Среда Node.js не готова"
-        AppLanguage.JAPANESE -> "Node.js ランタイムの準備ができていません"
-        AppLanguage.KOREAN -> "Node.js 런타임이 준비되지 않았습니다"
-    }
 
 }
 
