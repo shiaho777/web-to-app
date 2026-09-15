@@ -72,6 +72,130 @@ class DownloadBridge(
                     var dl = target.getAttribute('download');
                     if (dl) blobNameMap.set(href, dl);
                 }, true);
+
+                // ---- Cross-context blob resolution ----
+                // blob:null/... URLs are created in opaque-origin contexts (sandboxed
+                // iframe, file:/data: document, opaque Worker). fetch() on them only
+                // works inside the creating context, and the map above is per-realm —
+                // so a blob URL clicked in a different frame resolves to nothing.
+                // Blob objects survive structured clone, though: every hooked frame
+                // answers blob queries and relays them to its own descendant frames.
+                const blobSeenQueries = new Set();
+                window.addEventListener('message', function(e) {
+                    const d = e && e.data;
+                    if (!d || d.__wta_blob_q__ !== true) return;
+                    const hit = blobUrlMap.get(d.url);
+                    if (hit && e.source) {
+                        try { e.source.postMessage({__wta_blob_a__: true, id: d.id, url: d.url, blob: hit}, '*'); } catch (err) {}
+                    }
+                    if (!blobSeenQueries.has(d.id)) {
+                        blobSeenQueries.add(d.id);
+                        if (blobSeenQueries.size > 200) blobSeenQueries.clear();
+                        const frames = document.querySelectorAll('iframe,frame');
+                        for (let i = 0; i < frames.length; i++) {
+                            try { if (frames[i].contentWindow) frames[i].contentWindow.postMessage(d, '*'); } catch (err) {}
+                        }
+                    }
+                });
+                window.addEventListener('message', function(e) {
+                    const d = e && e.data;
+                    if (!d || d.__wta_blob_a__ !== true) return;
+                    const pending = window.__wtaBlobPending;
+                    const cb = pending && pending[d.id];
+                    if (cb) {
+                        delete pending[d.id];
+                        if (d.blob instanceof Blob) blobUrlMap.set(d.url, d.blob);
+                        cb(d.blob instanceof Blob ? d.blob : null);
+                    }
+                });
+                window.__wtaQueryBlobFromFrames = function(url, timeoutMs) {
+                    return new Promise(function(resolve) {
+                        const pending = window.__wtaBlobPending || (window.__wtaBlobPending = {});
+                        const id = 'q' + Math.random().toString(36).slice(2) + Date.now();
+                        let done = false;
+                        const finish = function(b) { if (!done) { done = true; delete pending[id]; resolve(b); } };
+                        pending[id] = finish;
+                        const msg = {__wta_blob_q__: true, id: id, url: url};
+                        try { if (window.parent && window.parent !== window) window.parent.postMessage(msg, '*'); } catch (e) {}
+                        try { if (window.top && window.top !== window && window.top !== window.parent) window.top.postMessage(msg, '*'); } catch (e) {}
+                        const frames = document.querySelectorAll('iframe,frame');
+                        for (let i = 0; i < frames.length; i++) {
+                            try { if (frames[i].contentWindow) frames[i].contentWindow.postMessage(msg, '*'); } catch (e) {}
+                        }
+                        setTimeout(function() { finish(null); }, timeoutMs || 1500);
+                    });
+                };
+                window.__wtaResolveBlob = async function(url) {
+                    const local = blobUrlMap.get(url);
+                    if (local) return local;
+                    const remote = await window.__wtaQueryBlobFromFrames(url, 1500);
+                    if (remote) return remote;
+                    try {
+                        const response = await fetch(url);
+                        return await response.blob();
+                    } catch (e) {
+                        return null;
+                    }
+                };
+
+                // ---- Worker-created blobs ----
+                // URL.createObjectURL inside a Worker lives in the worker's own global —
+                // the page-side patch above never sees it, and blobs minted by opaque
+                // workers come out as blob:null which the page cannot fetch either.
+                // Wrap the constructor: prepend a preamble that reports every created
+                // blob back through postMessage (structured clone yields a live Blob
+                // handle the page can read), and filter those internal reports out of
+                // the page-facing message channel.
+                if (window.Worker && !window.__wtaWorkerPatched) {
+                    window.__wtaWorkerPatched = true;
+                    const OriginalWorker = window.Worker;
+                    const workerPreamble =
+                        "(function(){var _c=self.URL.createObjectURL.bind(self.URL);" +
+                        "self.URL.createObjectURL=function(b){var u=_c(b);" +
+                        "if(b instanceof Blob){try{self.postMessage({__wta_blob_reg__:1,url:u,blob:b});}catch(e){}}" +
+                        "return u;};})();\n";
+                    window.Worker = function(scriptURL, options) {
+                        try {
+                            const xhr = new XMLHttpRequest();
+                            xhr.open('GET', String(scriptURL), false);
+                            xhr.send();
+                            const wrapped = new Blob([workerPreamble, xhr.responseText], {type: 'text/javascript'});
+                            const w = new OriginalWorker(URL.createObjectURL(wrapped), options);
+                            let userOnMessage = null;
+                            const userListeners = [];
+                            w.addEventListener('message', function(e) {
+                                const d = e.data;
+                                if (d && d.__wta_blob_reg__ === 1) {
+                                    if (d.blob instanceof Blob) blobUrlMap.set(d.url, d.blob);
+                                    return;
+                                }
+                                if (userOnMessage) userOnMessage.call(w, e);
+                                for (let i = 0; i < userListeners.length; i++) userListeners[i].call(w, e);
+                            });
+                            w.addEventListener = function(type, fn, opts) {
+                                if (type === 'message') { userListeners.push(fn); return; }
+                                OriginalWorker.prototype.addEventListener.call(w, type, fn, opts);
+                            };
+                            w.removeEventListener = function(type, fn, opts) {
+                                if (type === 'message') {
+                                    const idx = userListeners.indexOf(fn);
+                                    if (idx >= 0) userListeners.splice(idx, 1);
+                                    return;
+                                }
+                                OriginalWorker.prototype.removeEventListener.call(w, type, fn, opts);
+                            };
+                            Object.defineProperty(w, 'onmessage', {
+                                get: function() { return userOnMessage; },
+                                set: function(fn) { userOnMessage = fn; }
+                            });
+                            return w;
+                        } catch (e) {
+                            return new OriginalWorker(scriptURL, options);
+                        }
+                    };
+                    window.Worker.prototype = OriginalWorker.prototype;
+                    try { Object.setPrototypeOf(window.Worker, OriginalWorker); } catch (e) {}
+                }
             })();
         """
 
@@ -106,6 +230,10 @@ class DownloadBridge(
 
                             console.log('[DownloadBridge] <a>.click() intercepted:', href.substring(0, 100), 'download:', download);
 
+                            if (element.getAttribute('data-wta-bypass') === '1') {
+                                return originalClick();
+                            }
+
                             if (href.startsWith('blob:') && download) {
                                 console.log('[DownloadBridge] Handling blob download programmatically');
                                 handleBlobDownload(href, download);
@@ -136,6 +264,7 @@ class DownloadBridge(
                         const download = target.getAttribute('download');
 
                         if (href.startsWith('blob:') && download) {
+                            if (target.getAttribute('data-wta-bypass') === '1') return true;
                             e.preventDefault();
                             e.stopPropagation();
                             console.log('[DownloadBridge] Handling blob download from click event');
@@ -152,6 +281,32 @@ class DownloadBridge(
                         }
                     }
                 }, true);
+
+                // window.open(blobUrl) bypasses click interception entirely. Route it
+                // through the download pipeline when the blob is resolvable; fall back
+                // to the original open so unresolvable URLs keep their preview chance.
+                const originalWindowOpen = window.open;
+                if (originalWindowOpen) {
+                    window.open = function(url, target, features) {
+                        if (typeof url === 'string' &&
+                            (url.indexOf('blob:') === 0 || url.indexOf('data:') === 0)) {
+                            (async function() {
+                                if (url.indexOf('data:') === 0) {
+                                    handleDataUrlDownload(url, '');
+                                    return;
+                                }
+                                const blob = await window.__wtaResolveBlob(url);
+                                if (blob) {
+                                    handleBlobDownload(url, '');
+                                } else {
+                                    try { originalWindowOpen.call(window, url, target, features); } catch (e) {}
+                                }
+                            })();
+                            return null;
+                        }
+                        return originalWindowOpen.apply(window, arguments);
+                    };
+                }
 
                 const LARGE_FILE_THRESHOLD = 10 * 1024 * 1024;
                 const CHUNK_SIZE = 512 * 1024;
@@ -171,18 +326,12 @@ class DownloadBridge(
                             window.AndroidDownload.showToast('$msgPreparingDownload' + filename);
                         }
 
-                        let blob = blobUrlMap.get(blobUrl);
+                        let blob = await window.__wtaResolveBlob(blobUrl);
 
                         if (!blob) {
-                            console.log('[DownloadBridge] Blob not in cache, trying fetch...');
-                            try {
-                                const response = await fetch(blobUrl);
-                                blob = await response.blob();
-                            } catch (fetchError) {
-                                console.error('[DownloadBridge] Fetch failed:', fetchError);
-                                alert('$msgCannotGetFileData');
-                                return;
-                            }
+                            console.error('[DownloadBridge] Blob unresolvable (map miss, no frame answer, fetch failed)');
+                            alert('$msgCannotGetFileData');
+                            return;
                         }
 
                         console.log('[DownloadBridge] Blob obtained, type:', blob.type, 'size:', blob.size);
@@ -191,6 +340,7 @@ class DownloadBridge(
                             console.log('[DownloadBridge] Below intercept threshold, deferring to native download');
                             try {
                                 var a = document.createElement('a');
+                                a.setAttribute('data-wta-bypass', '1');
                                 a.href = blobUrl;
                                 a.download = filename || '';
                                 a.style.display = 'none';

@@ -2765,18 +2765,27 @@ fun WebViewScreen(
                                                 processSmall(blob, filename);
                                             }
                                         }
+                                        function reportFailure(err) {
+                                            console.error('[DownloadHelper] Blob fetch failed:', err);
+                                            if (window.AndroidDownload && window.AndroidDownload.showToast) {
+                                                window.AndroidDownload.showToast('${Strings.downloadFailedWithReason}' + (err && err.message ? err.message : 'blob unavailable'));
+                                            }
+                                        }
                                         if (cachedBlob) {
                                             dispatch(cachedBlob);
+                                        } else if (window.__wtaResolveBlob) {
+                                            // 跨上下文解析（sandboxed iframe / worker 里创建的 blob:null 等）
+                                            window.__wtaResolveBlob(blobUrl)
+                                                .then(function(blob) {
+                                                    if (blob) dispatch(blob);
+                                                    else reportFailure(new Error('blob not resolvable'));
+                                                })
+                                                .catch(reportFailure);
                                         } else {
                                             fetch(blobUrl)
                                                 .then(function(r) { return r.blob(); })
                                                 .then(dispatch)
-                                                .catch(function(err) {
-                                                    console.error('[DownloadHelper] Blob fetch failed:', err);
-                                                    if (window.AndroidDownload && window.AndroidDownload.showToast) {
-                                                        window.AndroidDownload.showToast('${Strings.downloadFailedWithReason}' + err.message);
-                                                    }
-                                                });
+                                                .catch(reportFailure);
                                         }
                                     }
                                 } catch(e) {

@@ -733,18 +733,28 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
                                     processSmall(blob, filename);
                                 }
                             }
+                            function reportFailure(err) {
+                                console.error('[DownloadHelper] Blob fetch failed:', err);
+                                if (window.AndroidDownload && window.AndroidDownload.showToast) {
+                                    window.AndroidDownload.showToast('${Strings.downloadFailedPrefix}' + (err && err.message ? err.message : 'blob unavailable'));
+                                }
+                            }
                             if (cachedBlob) {
                                 dispatch(cachedBlob);
+                            } else if (window.__wtaResolveBlob) {
+                                // Cross-context resolution (sandboxed iframe / worker blobs,
+                                // blob:null opaque origins) — broadcast lookup before fetch.
+                                window.__wtaResolveBlob(blobUrl)
+                                    .then(function(blob) {
+                                        if (blob) dispatch(blob);
+                                        else reportFailure(new Error('blob not resolvable'));
+                                    })
+                                    .catch(reportFailure);
                             } else {
                                 fetch(blobUrl)
                                     .then(function(r) { return r.blob(); })
                                     .then(dispatch)
-                                    .catch(function(err) {
-                                        console.error('[DownloadHelper] Blob fetch failed:', err);
-                                        if (window.AndroidDownload && window.AndroidDownload.showToast) {
-                                            window.AndroidDownload.showToast('${Strings.downloadFailedPrefix}' + err.message);
-                                        }
-                                    });
+                                    .catch(reportFailure);
                             }
                         }
                     } catch(e) {
