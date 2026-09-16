@@ -126,14 +126,14 @@ fun AboutScreen(onBack: () -> Unit) {
 
             ContactGrid()
 
-            OtherProjectsSection()
-
             WtaSection(
                 title = Strings.dataBackupTitle,
                 headerStyle = WtaSectionHeaderStyle.Quiet
             ) {
                 DataBackupCard()
             }
+
+            OtherProjectsSection()
 
             LegalTabContent()
 
@@ -1575,6 +1575,8 @@ private fun versionCopiedToast(): String = when (Strings.currentLanguage.value) 
 
 private enum class RepoSortMode { STARS, RECENT }
 
+private const val COLLAPSED_REPO_COUNT = 5
+
 /**
  * "More projects" section: lists the author's public GitHub repos (forks and
  * this app filtered out). Cached JSON renders instantly on revisit while a
@@ -1592,6 +1594,7 @@ private fun OtherProjectsSection() {
     var refreshing by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var sortMode by remember { mutableStateOf(RepoSortMode.STARS) }
+    var showAllRepos by remember { mutableStateOf(false) }
 
     fun load() {
         scope.launch {
@@ -1682,8 +1685,37 @@ private fun OtherProjectsSection() {
                     }
                 }
                 else -> {
-                    sorted.forEach { repo ->
+                    val visibleRepos = if (showAllRepos) sorted else sorted.take(COLLAPSED_REPO_COUNT)
+                    visibleRepos.forEach { repo ->
                         RepoCard(repo = repo, onClick = { context.openUrl(repo.url) })
+                    }
+                    if (sorted.size > COLLAPSED_REPO_COUNT) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(WtaRadius.Control))
+                                .clickable { showAllRepos = !showAllRepos }
+                                .padding(vertical = 6.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                if (showAllRepos) {
+                                    showLessProjectsLabel()
+                                } else {
+                                    showMoreProjectsLabel(sorted.size - COLLAPSED_REPO_COUNT)
+                                },
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Icon(
+                                if (showAllRepos) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,
+                                contentDescription = null,
+                                modifier = Modifier.size(13.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
                     }
                     Row(
                         modifier = Modifier
@@ -2111,4 +2143,32 @@ private fun viewAllOnGitHub(): String = when (Strings.currentLanguage.value) {
     AppLanguage.RUSSIAN -> "Смотреть все на GitHub"
     AppLanguage.JAPANESE -> "GitHub ですべて見る"
     AppLanguage.KOREAN -> "GitHub에서 모두 보기"
+}
+
+@Composable
+private fun showMoreProjectsLabel(count: Int): String = when (Strings.currentLanguage.value) {
+    AppLanguage.CHINESE -> "展开其余 $count 个项目"
+    AppLanguage.ENGLISH -> "Show $count more"
+    AppLanguage.ARABIC -> "عرض $count إضافية"
+    AppLanguage.PORTUGUESE -> "Mostrar mais $count"
+    AppLanguage.SPANISH -> "Mostrar $count más"
+    AppLanguage.FRENCH -> "Afficher $count de plus"
+    AppLanguage.GERMAN -> "$count weitere anzeigen"
+    AppLanguage.RUSSIAN -> "Показать ещё $count"
+    AppLanguage.JAPANESE -> "あと $count 件を表示"
+    AppLanguage.KOREAN -> "${count}개 더 보기"
+}
+
+@Composable
+private fun showLessProjectsLabel(): String = when (Strings.currentLanguage.value) {
+    AppLanguage.CHINESE -> "收起"
+    AppLanguage.ENGLISH -> "Show less"
+    AppLanguage.ARABIC -> "عرض أقل"
+    AppLanguage.PORTUGUESE -> "Mostrar menos"
+    AppLanguage.SPANISH -> "Mostrar menos"
+    AppLanguage.FRENCH -> "Afficher moins"
+    AppLanguage.GERMAN -> "Weniger anzeigen"
+    AppLanguage.RUSSIAN -> "Свернуть"
+    AppLanguage.JAPANESE -> "折りたたむ"
+    AppLanguage.KOREAN -> "접기"
 }
