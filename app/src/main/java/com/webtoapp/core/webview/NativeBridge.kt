@@ -16,6 +16,7 @@ import android.content.pm.PackageManager
 import android.content.pm.ActivityInfo
 import android.net.Uri
 import android.os.Build
+import android.os.Looper
 import android.os.PowerManager
 import android.os.Process
 import android.provider.Settings
@@ -57,6 +58,7 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.ByteArrayOutputStream
 import java.net.URI
 import java.util.Locale
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
 class NativeBridge(
@@ -87,8 +89,25 @@ class NativeBridge(
     private val callerPageUrlProvider: (() -> String?)? = null
 ) {
     /** The URL of the page currently calling into the bridge, across both engines. */
-    private fun resolveCallerPageUrl(): String =
-        webViewProvider()?.url ?: callerPageUrlProvider?.invoke().orEmpty()
+    private fun resolveCallerPageUrl(): String {
+        val webView = webViewProvider() ?: return callerPageUrlProvider?.invoke().orEmpty()
+        // @JavascriptInterface entry points run on the JavaBridge thread, where
+        // any WebView method — getUrl() included — throws a Throwable. Read the
+        // URL on the view's own thread and block briefly; a timeout just
+        // degrades to the Gecko-side provider result.
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            return webView.url ?: callerPageUrlProvider?.invoke().orEmpty()
+        }
+        val latch = CountDownLatch(1)
+        var pageUrl: String? = null
+        if (webView.post {
+                pageUrl = runCatching { webView.url }.getOrNull()
+                latch.countDown()
+            }) {
+            latch.await(2, TimeUnit.SECONDS)
+        }
+        return pageUrl ?: callerPageUrlProvider?.invoke().orEmpty()
+    }
 
     companion object {
         const val JS_INTERFACE_NAME = "NativeBridge"
