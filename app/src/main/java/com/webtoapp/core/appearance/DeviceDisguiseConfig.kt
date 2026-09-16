@@ -223,13 +223,13 @@ data class DeviceDisguiseConfig(
     }
 }
 
-enum class DeviceType(val emoji: String, val displayOrder: Int) {
-    PHONE("📱", 0),
-    TABLET("📟", 1),
-    DESKTOP("🖥️", 2),
-    LAPTOP("💻", 3),
-    WATCH("⌚", 4),
-    TV("📺", 5)
+enum class DeviceType(val displayOrder: Int) {
+    PHONE(0),
+    TABLET(1),
+    DESKTOP(2),
+    LAPTOP(3),
+    WATCH(4),
+    TV(5)
 }
 
 enum class DeviceOS(val displayName: String) {

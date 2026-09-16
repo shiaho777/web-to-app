@@ -1358,7 +1358,7 @@ object ExtensionPanelScript {
             // 显示按钮（当FAB隐藏时）
             const showBtn = document.createElement('div');
             showBtn.id = 'wta-ext-show-btn';
-            showBtn.innerHTML = '❮';
+            showBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>';
             showBtn.title = T.showModules;
 
             // 边缘隐藏区域提示
@@ -1871,7 +1871,7 @@ object ExtensionPanelScript {
 
             win.innerHTML = `
                 <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--wta-outline);cursor:move;user-select:none">
-                    <span style="font-size:15px;font-weight:700;color:var(--wta-on-surface)">${"$"}{module.icon || '📦'} ${"$"}{module.name || T.unnamed}</span>
+                    <span style="font-size:15px;font-weight:700;color:var(--wta-on-surface);display:inline-flex;align-items:center;gap:6px">${"$"}{(module.icon && module.icon.indexOf('<') === 0) ? module.icon : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>'} ${"$"}{module.name || T.unnamed}</span>
                     <div style="display:flex;gap:6px">
                         <div style="width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--wta-on-surface-variant);font-size:12px" data-wta-action="minimizeModuleWindow" data-wta-arg="${"$"}{moduleId}">−</div>
                         <div style="width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--wta-on-surface-variant);font-size:12px" data-wta-action="closeModuleWindow" data-wta-arg="${"$"}{moduleId}">×</div>
@@ -1971,7 +1971,7 @@ object ExtensionPanelScript {
             mini.style.left = pos.left + 'px';
             mini.style.top = pos.top + 'px';
 
-            mini.innerHTML = module.icon || '📦';
+            mini.innerHTML = (module.icon && module.icon.indexOf('<') === 0) ? module.icon : '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>';
             mini.title = module.name || T.unnamed;
 
             var panelContainer = document.getElementById('wta-ext-panel-container') || document.body;
@@ -2134,8 +2134,8 @@ object ExtensionPanelScript {
             var desc = m.description || T.noDescription;
             var moduleRunMode = m.runMode || RUN_MODE.INTERACTIVE;
             var runModeBadge = moduleRunMode === RUN_MODE.AUTO ?
-                '<span class="wta-type-badge" style="background:var(--wta-accent-soft);color:var(--wta-on-surface)">⚡ ' + T.runModeAuto + '</span>' :
-                '<span class="wta-type-badge" style="background:var(--wta-accent-soft);color:var(--wta-on-surface-variant)">🖥️ ' + T.runModeInteractive + '</span>';
+                '<span class="wta-type-badge" style="background:var(--wta-accent-soft);color:var(--wta-on-surface);display:inline-flex;align-items:center;gap:3px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>' + T.runModeAuto + '</span>' :
+                '<span class="wta-type-badge" style="background:var(--wta-accent-soft);color:var(--wta-on-surface-variant);display:inline-flex;align-items:center;gap:3px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>' + T.runModeInteractive + '</span>';
             return '<div class="wta-ext-row" data-wta-action="onModuleClick" data-wta-arg="' + m.id + '">' +
                 '<div class="wta-ext-row-icon">' + icon + '</div>' +
                 '<div class="wta-ext-row-info">' +
@@ -2333,7 +2333,9 @@ object ExtensionPanelScript {
 
             // 运行方式
             var moduleRunMode = module.runMode || RUN_MODE.INTERACTIVE;
-            var runModeText = moduleRunMode === RUN_MODE.AUTO ? ('⚡ ' + T.runModeAuto) : ('🖥️ ' + T.runModeInteractive);
+            var runModeText = moduleRunMode === RUN_MODE.AUTO ?
+                ('<span style="display:inline-flex;align-items:center;gap:4px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>' + T.runModeAuto + '</span>') :
+                ('<span style="display:inline-flex;align-items:center;gap:4px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>' + T.runModeInteractive + '</span>');
             var runModeColor = moduleRunMode === RUN_MODE.AUTO ? 'var(--wta-on-surface)' : 'var(--wta-on-surface-variant)';
             html += '<div class="wta-detail-row"><span class="wta-detail-label">' + T.runModeInteractive.replace(T.runModeInteractive, (LANG === 'zh' ? '运行方式' : LANG === 'ar' ? 'وضع التشغيل' : 'Run Mode')) + '</span><span class="wta-detail-value" style="color:' + runModeColor + '">' + runModeText + '</span></div>';
 
@@ -2392,7 +2394,7 @@ object ExtensionPanelScript {
                 // AUTO 模式：显示自动运行状态，无操作界面
                 var autoStatusHtml = '<div class="wta-detail-section">' +
                     '<div style="text-align:center;padding:24px">' +
-                    '<div style="font-size:48px;margin-bottom:12px">⚡</div>' +
+                    '<div style="display:flex;justify-content:center;margin-bottom:12px"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="var(--wta-primary)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>' +
                     '<div style="font-size:15px;font-weight:600;color:var(--wta-on-surface);margin-bottom:8px">' + T.autoRunning + '</div>' +
                     '<div style="font-size:13px;color:var(--wta-on-surface-variant)">' + T.autoRunningDesc + '</div>' +
                     '</div></div>';
@@ -2403,7 +2405,7 @@ object ExtensionPanelScript {
                     '<button data-wta-action="launchModuleWindow" data-wta-arg="' + moduleId + '" ' +
                     'style="width:100%;padding:14px;border-radius:12px;border:none;font-size:15px;font-weight:500;cursor:pointer;' +
                     'background:var(--wta-gradient);color:var(--wta-on-primary);display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:12px">' +
-                    '<span style="font-size:18px">\ud83d\udda5\ufe0f</span> ' + T.launchWindow + '</button></div>';
+                    '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg> ' + T.launchWindow + '</button></div>';
 
                 // 简单 UI 操作界面（内联在管理面板中）
                 if (module.panelHtml) {

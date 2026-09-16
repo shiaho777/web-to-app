@@ -575,7 +575,7 @@ class PythonRuntime(private val context: Context) {
         val escapedErr = startupError?.take(1500)
             ?.replace("&", "&amp;")?.replace("<", "&lt;")?.replace(">", "&gt;")
         val errSection = if (escapedErr != null) {
-            """<div class="section err"><div class="section-title">⚠️ ${escapeText(S.previewServerStartFailedTitle)}</div><pre>$escapedErr</pre></div>"""
+            """<div class="section err"><div class="section-title"><svg style="display:inline-block;vertical-align:-3px;margin-right:6px" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9.5 16.5H2.5L12 3z"/><path d="M12 9.5v5"/><path d="M12 18h.01"/></svg>${escapeText(S.previewServerStartFailedTitle)}</div><pre>$escapedErr</pre></div>"""
         } else ""
         val notRunningNote = escapeText(S.previewNotRunningNote)
         val backendIntro = escapeText(S.previewBackendAppIntro.replace("%s", frameworkLabel))
@@ -585,13 +585,13 @@ class PythonRuntime(private val context: Context) {
 <html lang="${htmlLang()}"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>$frameworkLabel - ${escapeText(S.previewProjectSuffix)}</title>
 <style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:-apple-system,system-ui,sans-serif;background:#0d1117;color:#c9d1d9;padding:16px;line-height:1.6}.header{text-align:center;padding:24px 0;border-bottom:1px solid #30363d;margin-bottom:20px}.header h1{font-size:22px;color:#3776AB;margin-bottom:8px}.badge{display:inline-block;background:#3776AB;color:#fff;padding:4px 12px;border-radius:12px;font-size:13px;margin:4px}.badge.warn{background:#d29922}.badge.ready{background:#2ea043}.badge.fail{background:#da3633}.badge.muted{background:#6e7681}.section{background:#161b22;border:1px solid #30363d;border-radius:8px;margin-bottom:16px;overflow:hidden}.section.err{border-color:#da3633}.section.err .section-title{background:#3a1414;color:#ff7b72}.section-title{padding:12px 16px;background:#21262d;font-weight:600;font-size:14px;color:#8b949e;border-bottom:1px solid #30363d}pre{padding:16px;overflow-x:auto;font-size:13px;font-family:'SF Mono',Consolas,monospace;white-space:pre-wrap;word-break:break-all;color:#c9d1d9;max-height:400px;overflow-y:auto}ul{padding:12px 16px 12px 32px;font-size:13px}li{padding:2px 0;color:#8b949e}.note{background:#21262d;border:1px solid #30363d;border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:12px;color:#8b949e}.tip{background:#1a2332;border:1px solid #3776AB;border-radius:8px;padding:16px;margin-top:16px;font-size:13px;color:#3776AB}</style></head><body>
-<div class="header"><h1>🐍 $frameworkLabel</h1><span class="badge">$frameworkLabel</span>$statusBadge</div>
+<div class="header"><h1><svg style="display:inline-block;vertical-align:-4px;margin-right:6px" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6l-5 6 5 6"/><path d="M16 6l5 6-5 6"/></svg>$frameworkLabel</h1><span class="badge">$frameworkLabel</span>$statusBadge</div>
 <div class="note">$notRunningNote</div>
 $errSection
-<div class="section"><div class="section-title">📄 $entryFile</div><pre>$escapedSource</pre></div>
-${if (escapedReqs.isNotBlank()) """<div class="section"><div class="section-title">📦 requirements.txt</div><pre>$escapedReqs</pre></div>""" else ""}
-<div class="section"><div class="section-title">📁 $projectFilesTitle</div><ul>$filesHtml</ul></div>
-<div class="tip">💡 $backendIntro$runtimeTip</div>
+<div class="section"><div class="section-title"><svg style="display:inline-block;vertical-align:-3px;margin-right:6px" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13h8"/><path d="M8 17h5"/></svg>$entryFile</div><pre>$escapedSource</pre></div>
+${if (escapedReqs.isNotBlank()) """<div class="section"><div class="section-title"><svg style="display:inline-block;vertical-align:-3px;margin-right:6px" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8l-9-5-9 5v8l9 5 9-5z"/><path d="M3.3 7.5L12 12l8.7-4.5"/><path d="M12 12v9"/></svg>requirements.txt</div><pre>$escapedReqs</pre></div>""" else ""}
+<div class="section"><div class="section-title"><svg style="display:inline-block;vertical-align:-3px;margin-right:6px" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/></svg>$projectFilesTitle</div><ul>$filesHtml</ul></div>
+<div class="tip"><svg style="display:inline-block;vertical-align:-3px;margin-right:6px" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 21h4"/><path d="M12 3a6 6 0 00-3.5 10.9V15h7v-1.1A6 6 0 0012 3z"/></svg>$backendIntro$runtimeTip</div>
 </body></html>"""
     }
 

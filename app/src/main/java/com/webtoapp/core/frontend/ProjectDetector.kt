@@ -418,28 +418,28 @@ object ProjectDetector {
             if (runtimeRequirement.backendFramework != BackendFramework.NONE) {
                 val fwName = runtimeRequirement.backendFramework.name.lowercase()
                     .replaceFirstChar { it.uppercase() }
-                suggestions.add("🚀 ${Strings.frontendSuggestBackendDetected.format(fwName)}")
+                suggestions.add("${Strings.frontendSuggestBackendDetected.format(fwName)}")
             }
             if (runtimeRequirement.isSSR) {
-                suggestions.add("⚠️ ${Strings.frontendSuggestSsrDetected}")
+                suggestions.add("${Strings.frontendSuggestSsrDetected}")
             }
             if (runtimeRequirement.backendEntryFile != null) {
-                suggestions.add("📄 ${Strings.frontendSuggestBackendEntry.format(runtimeRequirement.backendEntryFile)}")
+                suggestions.add("${Strings.frontendSuggestBackendEntry.format(runtimeRequirement.backendEntryFile)}")
             }
         } else if (!hasDistFolder) {
-            suggestions.add("💡 ${Strings.frontendSuggestRunBuild}")
-            suggestions.add("💡 ${Strings.frontendSuggestSelectDist}")
+            suggestions.add("${Strings.frontendSuggestRunBuild}")
+            suggestions.add("${Strings.frontendSuggestSelectDist}")
         }
 
         if (runtimeRequirement.envVarHints.isNotEmpty()) {
-            suggestions.add("🔑 ${Strings.frontendSuggestEnvVars.format(runtimeRequirement.envVarHints.size)}")
+            suggestions.add("${Strings.frontendSuggestEnvVars.format(runtimeRequirement.envVarHints.size)}")
         }
 
         if (databases.isNotEmpty()) {
             if (runtimeRequirement.needsNodeRuntime) {
-                suggestions.add("🗃️ ${Strings.frontendSuggestDbWithNode}")
+                suggestions.add("${Strings.frontendSuggestDbWithNode}")
             } else {
-                suggestions.add("⚠️ ${Strings.frontendSuggestDbStaticOnly}")
+                suggestions.add("${Strings.frontendSuggestDbStaticOnly}")
             }
         }
     }

@@ -21,6 +21,7 @@ import com.webtoapp.core.i18n.InitializeLanguage
 import com.webtoapp.data.model.HtmlLoadMode
 import com.webtoapp.ui.agent.AgentScreen
 import com.webtoapp.ui.screens.AboutScreen
+import com.webtoapp.ui.screens.SettingsScreen
 import com.webtoapp.ui.screens.AiSettingsScreen
 import com.webtoapp.ui.screens.AppModifierScreen
 import com.webtoapp.ui.screens.AppModifyFullScreen
@@ -100,6 +101,7 @@ object Routes {
     const val PORT_MANAGER = "port_manager"
     const val STATS = "stats"
     const val ABOUT = "about"
+    const val SETTINGS = "settings"
     const val PLAY_STORE = "play_store?appId={appId}&autoStart={autoStart}"
     const val FILE_MANAGER = "file_manager"
     const val BUILD_APK = "build_apk/{appId}"
@@ -201,6 +203,7 @@ fun AppNavigation() {
                         onOpenPortManager = { navController.navigate(Routes.PORT_MANAGER) },
                         onOpenStats = { navController.navigate(Routes.STATS) },
                         onOpenAbout = { navController.navigate(Routes.ABOUT) },
+                        onOpenSettings = { navController.navigate(Routes.SETTINGS) },
                         onOpenPlayStore = { navController.navigate(Routes.playStore()) },
                         onExportAabForApp = { appId ->
                             navController.navigate(Routes.playStore(appId = appId, autoStart = true))
@@ -731,6 +734,10 @@ fun AppNavigation() {
 
             composable(Routes.ABOUT) {
                 AboutScreen(onBack = { navController.popBackStack() })
+            }
+
+            composable(Routes.SETTINGS) {
+                SettingsScreen(onBack = { navController.popBackStack() })
             }
 
             composable(Routes.EXTENSION_MODULES) {

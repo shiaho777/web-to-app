@@ -11,9 +11,9 @@
     "interception"
   ],
   "version": {
-    "code": 1,
-    "name": "1.0.0",
-    "changelog": "Initial release."
+    "code": 2,
+    "name": "1.0.1",
+    "changelog": "Replace emoji icon in countdown banner and fallback button with an inline SVG play icon."
   },
   "minAppVersion": 33,
   "author": {

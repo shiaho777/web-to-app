@@ -25,6 +25,7 @@ import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.data.model.FloatingBorderStyle
 import com.webtoapp.data.model.FloatingWindowAspectRatioMode
+import com.webtoapp.R
 import com.webtoapp.data.model.FloatingWindowConfig
 import kotlin.math.roundToInt
 
@@ -1326,10 +1327,10 @@ class FloatingWindowManager(private val context: Context) {
                 clipToOutline = true
             }
         } else {
-            TextView(context).apply {
-                text = "🌐"
-                textSize = 24f
-                gravity = Gravity.CENTER
+            ImageView(context).apply {
+                setImageResource(R.drawable.ic_type_web)
+                scaleType = ImageView.ScaleType.CENTER_INSIDE
+                setPadding((6 * density).toInt(), (6 * density).toInt(), (6 * density).toInt(), (6 * density).toInt())
             }
         }
     }

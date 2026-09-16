@@ -1369,6 +1369,38 @@ object Strings {
     val themeLavender: String get() = StringsB.themeLavender
     val themeKimiNoNawa: String get() = StringsB.themeKimiNoNawa
     val themeKimiNoNawaDesc: String get() = StringsB.themeKimiNoNawaDesc
+    val uiConfig: String get() = StringsB.uiConfig
+    val settingsThemeColor: String get() = StringsB.settingsThemeColor
+    val settingsThemeColorDesc: String get() = StringsB.settingsThemeColorDesc
+    val settingsDarkMode: String get() = StringsB.settingsDarkMode
+    val settingsAnimation: String get() = StringsB.settingsAnimation
+    val animEnableAll: String get() = StringsB.animEnableAll
+    val animParticles: String get() = StringsB.animParticles
+    val animHaptics: String get() = StringsB.animHaptics
+    val animSound: String get() = StringsB.animSound
+    val animSpeedTitle: String get() = StringsB.animSpeedTitle
+    val accentDefault: String get() = StringsB.accentDefault
+    val accentDynamic: String get() = StringsB.accentDynamic
+    val accentCharcoalPink: String get() = StringsB.accentCharcoalPink
+    val accentRoyalPurple: String get() = StringsB.accentRoyalPurple
+    val accentDeepSea: String get() = StringsB.accentDeepSea
+    val accentIvyViolet: String get() = StringsB.accentIvyViolet
+    val accentSakuraForest: String get() = StringsB.accentSakuraForest
+    val accentInkAqua: String get() = StringsB.accentInkAqua
+    val accentSunsetHaze: String get() = StringsB.accentSunsetHaze
+    val accentCamellia: String get() = StringsB.accentCamellia
+    val accentFrostCyan: String get() = StringsB.accentFrostCyan
+    val accentMochaLatte: String get() = StringsB.accentMochaLatte
+    val settingsInterface: String get() = StringsB.settingsInterface
+    val fontSizeTitle: String get() = StringsB.fontSizeTitle
+    val fontSizeSmall: String get() = StringsB.fontSizeSmall
+    val fontSizeStandard: String get() = StringsB.fontSizeStandard
+    val fontSizeLarge: String get() = StringsB.fontSizeLarge
+    val fontSizeXLarge: String get() = StringsB.fontSizeXLarge
+    val cornerStyleTitle: String get() = StringsB.cornerStyleTitle
+    val cornerSharp: String get() = StringsB.cornerSharp
+    val cornerStandard: String get() = StringsB.cornerStandard
+    val cornerRounded: String get() = StringsB.cornerRounded
     val animSmooth: String get() = StringsB.animSmooth
     val animBouncy: String get() = StringsB.animBouncy
     val animSnappy: String get() = StringsB.animSnappy
@@ -10967,16 +10999,16 @@ object StringsA {
     }
 
     val usageSteps: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "📋 使用步骤"
-        AppLanguage.ENGLISH -> "📋 Usage Steps"
-        AppLanguage.ARABIC -> "📋 خطوات الاستخدام"
-        AppLanguage.PORTUGUESE -> "📋 Passos de Uso"
-        AppLanguage.SPANISH -> "📋 Pasos de Uso"
-        AppLanguage.FRENCH -> "📋 Étapes d'Utilisation"
-        AppLanguage.GERMAN -> "📋 Verwendungsschritte"
-        AppLanguage.RUSSIAN -> "📋 Шаги использования"
-        AppLanguage.JAPANESE -> "📋 使用手順"
-        AppLanguage.KOREAN -> "📋 사용 단계"
+        AppLanguage.CHINESE -> "使用步骤"
+        AppLanguage.ENGLISH -> "Usage Steps"
+        AppLanguage.ARABIC -> "خطوات الاستخدام"
+        AppLanguage.PORTUGUESE -> "Passos de Uso"
+        AppLanguage.SPANISH -> "Pasos de Uso"
+        AppLanguage.FRENCH -> "Étapes d'Utilisation"
+        AppLanguage.GERMAN -> "Verwendungsschritte"
+        AppLanguage.RUSSIAN -> "Шаги использования"
+        AppLanguage.JAPANESE -> "使用手順"
+        AppLanguage.KOREAN -> "사용 단계"
     }
 
     val usageStepsContent: String get() = when (Strings.lang) {
@@ -12257,7 +12289,7 @@ object StringsA {
     val featureTip: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "激活码、BGM 等功能可在创建后编辑。"
         AppLanguage.ENGLISH -> "Add activation codes, BGM, and more after creation."
-        AppLanguage.ARABIC -> "💡 يمكن إضافة ميزات مثل رمز التفعيل والموسيقى الخلفية عبر 'تعديل' في إدارة المشروع بعد الإنشاء."
+        AppLanguage.ARABIC -> "يمكن إضافة ميزات مثل رمز التفعيل والموسيقى الخلفية عبر 'تعديل' في إدارة المشروع بعد الإنشاء."
         AppLanguage.PORTUGUESE -> "Adicione códigos de ativação, BGM e mais após a criação."
         AppLanguage.SPANISH -> "Añade códigos de activación, BGM y más tras la creación."
         AppLanguage.FRENCH -> "Ajoutez codes d'activation, BGM et plus après création."
@@ -16031,16 +16063,16 @@ object StringsA {
     }
 
     val lyricsPlaceholder: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "在这里粘贴或输入歌词...\n\n示例：\n♪ 前奏\n第一句歌词\n第二句歌词\n♪ 间奏\n继续歌词..."
-        AppLanguage.ENGLISH -> "Paste or enter lyrics here...\n\nExample:\n♪ Intro\nFirst line\nSecond line\n♪ Interlude\nContinue lyrics..."
-        AppLanguage.ARABIC -> "الصق أو أدخل كلمات الأغنية هنا...\n\nمثال:\n♪ مقدمة\nالسطر الأول\nالسطر الثاني\n♪ فاصل\nمتابعة الكلمات..."
-        AppLanguage.PORTUGUESE -> "Cole ou insira letras aqui...\n\nExemplo:\n♪ Intro\nPrimeira linha\nSegunda linha\n♪ Interlúdio\nContinuar letras..."
-        AppLanguage.SPANISH -> "Pegue o ingrese letras aquí...\n\nEjemplo:\n♪ Intro\nPrimera línea\nSegunda línea\n♪ Interludio\nContinuar letras..."
-        AppLanguage.FRENCH -> "Collez ou saisissez les paroles ici...\n\nExemple :\n♪ Intro\nPremière ligne\nDeuxième ligne\n♪ Interlude\nContinuer les paroles..."
-        AppLanguage.GERMAN -> "Hier Liedtext einfügen oder eingeben...\n\nBeispiel:\n♪ Intro\nErste Zeile\nZweite Zeile\n♪ Zwischenspiel\nLiedtext fortsetzen..."
-        AppLanguage.RUSSIAN -> "Вставьте или введите текст песни здесь...\n\nПример:\n♪ Вступление\nПервая строка\nВторая строка\n♪ Интерлюдия\nПродолжить текст..."
-        AppLanguage.JAPANESE -> "ここに歌詞を貼り付けまたは入力...\n\n例:\n♪ イントロ\n一行目\n二行目\n♪ 間奏\n歌詞を続ける..."
-        AppLanguage.KOREAN -> "여기에 가사를 붙여넣거나 입력하세요...\n\n예:\n♪ 인트로\n첫 번째 줄\n두 번째 줄\n♪ 간주\n가사 계속..."
+        AppLanguage.CHINESE -> "在这里粘贴或输入歌词...\n\n示例：\n前奏\n第一句歌词\n第二句歌词\n间奏\n继续歌词..."
+        AppLanguage.ENGLISH -> "Paste or enter lyrics here...\n\nExample:\nIntro\nFirst line\nSecond line\nInterlude\nContinue lyrics..."
+        AppLanguage.ARABIC -> "الصق أو أدخل كلمات الأغنية هنا...\n\nمثال:\nمقدمة\nالسطر الأول\nالسطر الثاني\nفاصل\nمتابعة الكلمات..."
+        AppLanguage.PORTUGUESE -> "Cole ou insira letras aqui...\n\nExemplo:\nIntro\nPrimeira linha\nSegunda linha\nInterlúdio\nContinuar letras..."
+        AppLanguage.SPANISH -> "Pegue o ingrese letras aquí...\n\nEjemplo:\nIntro\nPrimera línea\nSegunda línea\nInterludio\nContinuar letras..."
+        AppLanguage.FRENCH -> "Collez ou saisissez les paroles ici...\n\nExemple :\nIntro\nPremière ligne\nDeuxième ligne\nInterlude\nContinuer les paroles..."
+        AppLanguage.GERMAN -> "Hier Liedtext einfügen oder eingeben...\n\nBeispiel:\nIntro\nErste Zeile\nZweite Zeile\nZwischenspiel\nLiedtext fortsetzen..."
+        AppLanguage.RUSSIAN -> "Вставьте или введите текст песни здесь...\n\nПример:\nВступление\nПервая строка\nВторая строка\nИнтерлюдия\nПродолжить текст..."
+        AppLanguage.JAPANESE -> "ここに歌詞を貼り付けまたは入力...\n\n例:\nイントロ\n一行目\n二行目\n間奏\n歌詞を続ける..."
+        AppLanguage.KOREAN -> "여기에 가사를 붙여넣거나 입력하세요...\n\n예:\n인트로\n첫 번째 줄\n두 번째 줄\n간주\n가사 계속..."
     }
 
     val alignmentHint: String get() = when (Strings.lang) {
@@ -19651,29 +19683,29 @@ object StringsB {
     }
 
     val availableFunctions: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "💡 可用函数"
-        AppLanguage.ENGLISH -> "💡 Available Functions"
-        AppLanguage.ARABIC -> "💡 الدوال المتاحة"
-        AppLanguage.PORTUGUESE -> "💡 Funções Disponíveis"
-        AppLanguage.SPANISH -> "💡 Funciones Disponibles"
-        AppLanguage.FRENCH -> "💡 Fonctions Disponibles"
-        AppLanguage.GERMAN -> "💡 Verfügbare Funktionen"
-        AppLanguage.RUSSIAN -> "💡 Доступные функции"
-        AppLanguage.JAPANESE -> "💡 利用可能な関数"
-        AppLanguage.KOREAN -> "💡 사용 가능한 함수"
+        AppLanguage.CHINESE -> "可用函数"
+        AppLanguage.ENGLISH -> "Available Functions"
+        AppLanguage.ARABIC -> "الدوال المتاحة"
+        AppLanguage.PORTUGUESE -> "Funções Disponíveis"
+        AppLanguage.SPANISH -> "Funciones Disponibles"
+        AppLanguage.FRENCH -> "Fonctions Disponibles"
+        AppLanguage.GERMAN -> "Verfügbare Funktionen"
+        AppLanguage.RUSSIAN -> "Доступные функции"
+        AppLanguage.JAPANESE -> "利用可能な関数"
+        AppLanguage.KOREAN -> "사용 가능한 함수"
     }
 
     val cssTips: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "💡 CSS 提示"
-        AppLanguage.ENGLISH -> "💡 CSS Tips"
-        AppLanguage.ARABIC -> "💡 نصائح CSS"
-        AppLanguage.PORTUGUESE -> "💡 Dicas de CSS"
-        AppLanguage.SPANISH -> "💡 Consejos CSS"
-        AppLanguage.FRENCH -> "💡 Astuces CSS"
-        AppLanguage.GERMAN -> "💡 CSS-Tipps"
-        AppLanguage.RUSSIAN -> "💡 Советы по CSS"
-        AppLanguage.JAPANESE -> "💡 CSS のヒント"
-        AppLanguage.KOREAN -> "💡 CSS 팁"
+        AppLanguage.CHINESE -> "CSS 提示"
+        AppLanguage.ENGLISH -> "CSS Tips"
+        AppLanguage.ARABIC -> "نصائح CSS"
+        AppLanguage.PORTUGUESE -> "Dicas de CSS"
+        AppLanguage.SPANISH -> "Consejos CSS"
+        AppLanguage.FRENCH -> "Astuces CSS"
+        AppLanguage.GERMAN -> "CSS-Tipps"
+        AppLanguage.RUSSIAN -> "Советы по CSS"
+        AppLanguage.JAPANESE -> "CSS のヒント"
+        AppLanguage.KOREAN -> "CSS 팁"
     }
 
     val jsFunctionsHint: String get() = when (Strings.lang) {
@@ -19794,16 +19826,16 @@ object StringsB {
     }
 
     val developerGuide: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "📚 开发指南"
-        AppLanguage.ENGLISH -> "📚 Developer Guide"
-        AppLanguage.ARABIC -> "📚 دليل المطور"
-        AppLanguage.PORTUGUESE -> "📚 Guia do Desenvolvedor"
-        AppLanguage.SPANISH -> "📚 Guía del Desarrollador"
-        AppLanguage.FRENCH -> "📚 Guide du Développeur"
-        AppLanguage.GERMAN -> "📚 Entwicklerleitfaden"
-        AppLanguage.RUSSIAN -> "📚 Руководство разработчика"
-        AppLanguage.JAPANESE -> "📚 開発ガイド"
-        AppLanguage.KOREAN -> "📚 개발자 가이드"
+        AppLanguage.CHINESE -> "开发指南"
+        AppLanguage.ENGLISH -> "Developer Guide"
+        AppLanguage.ARABIC -> "دليل المطور"
+        AppLanguage.PORTUGUESE -> "Guia do Desenvolvedor"
+        AppLanguage.SPANISH -> "Guía del Desarrollador"
+        AppLanguage.FRENCH -> "Guide du Développeur"
+        AppLanguage.GERMAN -> "Entwicklerleitfaden"
+        AppLanguage.RUSSIAN -> "Руководство разработчика"
+        AppLanguage.JAPANESE -> "開発ガイド"
+        AppLanguage.KOREAN -> "개발자 가이드"
     }
 
     val developerGuideContent: String get() = when (Strings.lang) {
@@ -21602,16 +21634,16 @@ object StringsB {
     }
 
     val cssCodePlaceholder: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "/* 在这里编写 CSS 样式 */\n.ad-banner {\n    display: none !important;\n}"
-        AppLanguage.ENGLISH -> "/* Write CSS styles here */\n.ad-banner {\n    display: none !important;\n}"
-        AppLanguage.ARABIC -> "/* اكتب أنماط CSS هنا */\n.ad-banner {\n    display: none !important;\n}"
-        AppLanguage.PORTUGUESE -> "/* Escreva estilos CSS aqui */\n.ad-banner {\n    display: none !important;\n}"
-        AppLanguage.SPANISH -> "/* Escriba estilos CSS aquí */\n.ad-banner {\n    display: none !important;\n}"
-        AppLanguage.FRENCH -> "/* Écrivez les styles CSS ici */\n.ad-banner {\n    display: none !important;\n}"
-        AppLanguage.GERMAN -> "/* CSS-Stile hier schreiben */\n.ad-banner {\n    display: none !important;\n}"
-        AppLanguage.RUSSIAN -> "/* Пишите стили CSS здесь */\n.ad-banner {\n    display: none !important;\n}"
-        AppLanguage.JAPANESE -> "/* ここに CSS スタイルを記述 */\n.ad-banner {\n    display: none !important;\n}"
-        AppLanguage.KOREAN -> "/* 여기에 CSS 스타일 작성 */\n.ad-banner {\n    display: none !important;\n}"
+        AppLanguage.CHINESE -> "/* 在这里编写 CSS 样式 */\n.ad-banner {\n   display: none !important;\n}"
+        AppLanguage.ENGLISH -> "/* Write CSS styles here */\n.ad-banner {\n   display: none !important;\n}"
+        AppLanguage.ARABIC -> "/* اكتب أنماط CSS هنا */\n.ad-banner {\n   display: none !important;\n}"
+        AppLanguage.PORTUGUESE -> "/* Escreva estilos CSS aqui */\n.ad-banner {\n   display: none !important;\n}"
+        AppLanguage.SPANISH -> "/* Escriba estilos CSS aquí */\n.ad-banner {\n   display: none !important;\n}"
+        AppLanguage.FRENCH -> "/* Écrivez les styles CSS ici */\n.ad-banner {\n   display: none !important;\n}"
+        AppLanguage.GERMAN -> "/* CSS-Stile hier schreiben */\n.ad-banner {\n   display: none !important;\n}"
+        AppLanguage.RUSSIAN -> "/* Пишите стили CSS здесь */\n.ad-banner {\n   display: none !important;\n}"
+        AppLanguage.JAPANESE -> "/* ここに CSS スタイルを記述 */\n.ad-banner {\n   display: none !important;\n}"
+        AppLanguage.KOREAN -> "/* 여기에 CSS 스타일 작성 */\n.ad-banner {\n   display: none !important;\n}"
     }
 
     val authorAvatar: String get() = when (Strings.lang) {
@@ -22330,16 +22362,16 @@ object StringsB {
     }
 
     val hotTag: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "🔥 热门"
-        AppLanguage.ENGLISH -> "🔥 Hot"
-        AppLanguage.ARABIC -> "🔥 شائع"
-        AppLanguage.PORTUGUESE -> "🔥 Popular"
-        AppLanguage.SPANISH -> "🔥 Popular"
-        AppLanguage.FRENCH -> "🔥 Populaire"
-        AppLanguage.GERMAN -> "🔥 Beliebt"
-        AppLanguage.RUSSIAN -> "🔥 Популярно"
-        AppLanguage.JAPANESE -> "🔥 人気"
-        AppLanguage.KOREAN -> "🔥 인기"
+        AppLanguage.CHINESE -> "热门"
+        AppLanguage.ENGLISH -> "Hot"
+        AppLanguage.ARABIC -> "شائع"
+        AppLanguage.PORTUGUESE -> "Popular"
+        AppLanguage.SPANISH -> "Popular"
+        AppLanguage.FRENCH -> "Populaire"
+        AppLanguage.GERMAN -> "Beliebt"
+        AppLanguage.RUSSIAN -> "Популярно"
+        AppLanguage.JAPANESE -> "人気"
+        AppLanguage.KOREAN -> "인기"
     }
 
     val insertCode: String get() = when (Strings.lang) {
@@ -22587,6 +22619,422 @@ object StringsB {
         AppLanguage.RUSSIAN -> "Следы кометы по сумеречному небу, романтические сумерки в стиле Синкая"
         AppLanguage.JAPANESE -> "黄昏の空の彗星の軌跡、新海誠風のロマンチックな夕暮れ"
         AppLanguage.KOREAN -> "황혼 하늘의 혜성 궤적, 신카이 스타일의 로맨틱한 황혼"
+    }
+
+    val uiConfig: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "UI 配置"
+        AppLanguage.ENGLISH -> "UI Config"
+        AppLanguage.ARABIC -> "تكوين الواجهة"
+        AppLanguage.PORTUGUESE -> "Configuração de UI"
+        AppLanguage.SPANISH -> "Configuración de IU"
+        AppLanguage.FRENCH -> "Configuration de l'IU"
+        AppLanguage.GERMAN -> "UI-Konfiguration"
+        AppLanguage.RUSSIAN -> "Настройка интерфейса"
+        AppLanguage.JAPANESE -> "UI 設定"
+        AppLanguage.KOREAN -> "UI 설정"
+    }
+
+    val settingsThemeColor: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "主题色"
+        AppLanguage.ENGLISH -> "Theme color"
+        AppLanguage.ARABIC -> "لون السمة"
+        AppLanguage.PORTUGUESE -> "Cor do tema"
+        AppLanguage.SPANISH -> "Color del tema"
+        AppLanguage.FRENCH -> "Couleur du thème"
+        AppLanguage.GERMAN -> "Themenfarbe"
+        AppLanguage.RUSSIAN -> "Цвет темы"
+        AppLanguage.JAPANESE -> "テーマカラー"
+        AppLanguage.KOREAN -> "테마 색상"
+    }
+
+    val settingsThemeColorDesc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "为界面选择一组强调色"
+        AppLanguage.ENGLISH -> "Pick an accent palette for the interface"
+        AppLanguage.ARABIC -> "اختر لوحة ألوان مميزة للواجهة"
+        AppLanguage.PORTUGUESE -> "Escolha uma paleta de destaque para a interface"
+        AppLanguage.SPANISH -> "Elige una paleta de acento para la interfaz"
+        AppLanguage.FRENCH -> "Choisissez une palette d'accent pour l'interface"
+        AppLanguage.GERMAN -> "Akzentpalette für die Oberfläche wählen"
+        AppLanguage.RUSSIAN -> "Выберите акцентную палитру интерфейса"
+        AppLanguage.JAPANESE -> "インターフェースのアクセントカラーを選択"
+        AppLanguage.KOREAN -> "인터페이스 강조 색상을 선택하세요"
+    }
+
+    val settingsDarkMode: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "深色模式"
+        AppLanguage.ENGLISH -> "Dark mode"
+        AppLanguage.ARABIC -> "الوضع الداكن"
+        AppLanguage.PORTUGUESE -> "Modo escuro"
+        AppLanguage.SPANISH -> "Modo oscuro"
+        AppLanguage.FRENCH -> "Mode sombre"
+        AppLanguage.GERMAN -> "Dunkelmodus"
+        AppLanguage.RUSSIAN -> "Тёмный режим"
+        AppLanguage.JAPANESE -> "ダークモード"
+        AppLanguage.KOREAN -> "다크 모드"
+    }
+
+    val settingsAnimation: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "动画"
+        AppLanguage.ENGLISH -> "Animations"
+        AppLanguage.ARABIC -> "الحركات"
+        AppLanguage.PORTUGUESE -> "Animações"
+        AppLanguage.SPANISH -> "Animaciones"
+        AppLanguage.FRENCH -> "Animations"
+        AppLanguage.GERMAN -> "Animationen"
+        AppLanguage.RUSSIAN -> "Анимации"
+        AppLanguage.JAPANESE -> "アニメーション"
+        AppLanguage.KOREAN -> "애니메이션"
+    }
+
+    val animEnableAll: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "启用动画"
+        AppLanguage.ENGLISH -> "Enable animations"
+        AppLanguage.ARABIC -> "تفعيل الحركات"
+        AppLanguage.PORTUGUESE -> "Ativar animações"
+        AppLanguage.SPANISH -> "Activar animaciones"
+        AppLanguage.FRENCH -> "Activer les animations"
+        AppLanguage.GERMAN -> "Animationen aktivieren"
+        AppLanguage.RUSSIAN -> "Включить анимации"
+        AppLanguage.JAPANESE -> "アニメーションを有効化"
+        AppLanguage.KOREAN -> "애니메이션 사용"
+    }
+
+    val animParticles: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "粒子效果"
+        AppLanguage.ENGLISH -> "Particle effects"
+        AppLanguage.ARABIC -> "تأثيرات الجسيمات"
+        AppLanguage.PORTUGUESE -> "Efeitos de partículas"
+        AppLanguage.SPANISH -> "Efectos de partículas"
+        AppLanguage.FRENCH -> "Effets de particules"
+        AppLanguage.GERMAN -> "Partikeleffekte"
+        AppLanguage.RUSSIAN -> "Эффекты частиц"
+        AppLanguage.JAPANESE -> "パーティクル効果"
+        AppLanguage.KOREAN -> "파티클 효과"
+    }
+
+    val animHaptics: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "触觉反馈"
+        AppLanguage.ENGLISH -> "Haptic feedback"
+        AppLanguage.ARABIC -> "الاستجابة اللمسية"
+        AppLanguage.PORTUGUESE -> "Resposta tátil"
+        AppLanguage.SPANISH -> "Respuesta háptica"
+        AppLanguage.FRENCH -> "Retour haptique"
+        AppLanguage.GERMAN -> "Haptisches Feedback"
+        AppLanguage.RUSSIAN -> "Тактильный отклик"
+        AppLanguage.JAPANESE -> "触覚フィードバック"
+        AppLanguage.KOREAN -> "햅틱 피드백"
+    }
+
+    val animSound: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "音效"
+        AppLanguage.ENGLISH -> "Sound effects"
+        AppLanguage.ARABIC -> "المؤثرات الصوتية"
+        AppLanguage.PORTUGUESE -> "Efeitos sonoros"
+        AppLanguage.SPANISH -> "Efectos de sonido"
+        AppLanguage.FRENCH -> "Effets sonores"
+        AppLanguage.GERMAN -> "Soundeffekte"
+        AppLanguage.RUSSIAN -> "Звуковые эффекты"
+        AppLanguage.JAPANESE -> "サウンド効果"
+        AppLanguage.KOREAN -> "음향 효과"
+    }
+
+    val animSpeedTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "动画速度"
+        AppLanguage.ENGLISH -> "Animation speed"
+        AppLanguage.ARABIC -> "سرعة الحركة"
+        AppLanguage.PORTUGUESE -> "Velocidade da animação"
+        AppLanguage.SPANISH -> "Velocidad de animación"
+        AppLanguage.FRENCH -> "Vitesse d'animation"
+        AppLanguage.GERMAN -> "Animationsgeschwindigkeit"
+        AppLanguage.RUSSIAN -> "Скорость анимации"
+        AppLanguage.JAPANESE -> "アニメーション速度"
+        AppLanguage.KOREAN -> "애니메이션 속도"
+    }
+
+    val accentDefault: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "默认黑白"
+        AppLanguage.ENGLISH -> "Default"
+        AppLanguage.ARABIC -> "افتراضي"
+        AppLanguage.PORTUGUESE -> "Padrão"
+        AppLanguage.SPANISH -> "Predeterminado"
+        AppLanguage.FRENCH -> "Par défaut"
+        AppLanguage.GERMAN -> "Standard"
+        AppLanguage.RUSSIAN -> "По умолчанию"
+        AppLanguage.JAPANESE -> "デフォルト"
+        AppLanguage.KOREAN -> "기본값"
+    }
+
+    val accentDynamic: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "跟随壁纸"
+        AppLanguage.ENGLISH -> "Wallpaper"
+        AppLanguage.ARABIC -> "من الخلفية"
+        AppLanguage.PORTUGUESE -> "Do papel de parede"
+        AppLanguage.SPANISH -> "Del fondo"
+        AppLanguage.FRENCH -> "Du fond d'écran"
+        AppLanguage.GERMAN -> "Vom Hintergrund"
+        AppLanguage.RUSSIAN -> "Из обоев"
+        AppLanguage.JAPANESE -> "壁紙から"
+        AppLanguage.KOREAN -> "배경 화면"
+    }
+
+    val accentCharcoalPink: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "甜酷粉"
+        AppLanguage.ENGLISH -> "Sweet pink"
+        AppLanguage.ARABIC -> "وردي جريء"
+        AppLanguage.PORTUGUESE -> "Rosa ousado"
+        AppLanguage.SPANISH -> "Rosa audaz"
+        AppLanguage.FRENCH -> "Rose audacieux"
+        AppLanguage.GERMAN -> "Kräftiges Pink"
+        AppLanguage.RUSSIAN -> "Дерзкий розовый"
+        AppLanguage.JAPANESE -> "スイートピンク"
+        AppLanguage.KOREAN -> "스위트 핑크"
+    }
+
+    val accentRoyalPurple: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "帝王紫"
+        AppLanguage.ENGLISH -> "Royal purple"
+        AppLanguage.ARABIC -> "بنفسجي ملكي"
+        AppLanguage.PORTUGUESE -> "Roxo real"
+        AppLanguage.SPANISH -> "Púrpura real"
+        AppLanguage.FRENCH -> "Violet royal"
+        AppLanguage.GERMAN -> "Königspurpur"
+        AppLanguage.RUSSIAN -> "Королевский пурпур"
+        AppLanguage.JAPANESE -> "ロイヤルパープル"
+        AppLanguage.KOREAN -> "로열 퍼플"
+    }
+
+    val accentDeepSea: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "深海蓝"
+        AppLanguage.ENGLISH -> "Deep sea"
+        AppLanguage.ARABIC -> "أزرق أعماق البحر"
+        AppLanguage.PORTUGUESE -> "Azul profundo"
+        AppLanguage.SPANISH -> "Azul marino"
+        AppLanguage.FRENCH -> "Bleu profond"
+        AppLanguage.GERMAN -> "Tiefseeblau"
+        AppLanguage.RUSSIAN -> "Глубокий синий"
+        AppLanguage.JAPANESE -> "深海ブルー"
+        AppLanguage.KOREAN -> "딥시 블루"
+    }
+
+    val accentIvyViolet: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "藤紫青柠"
+        AppLanguage.ENGLISH -> "Ivy violet"
+        AppLanguage.ARABIC -> "لبلاب بنفسجي"
+        AppLanguage.PORTUGUESE -> "Violeta hera"
+        AppLanguage.SPANISH -> "Violeta hiedra"
+        AppLanguage.FRENCH -> "Violet lierre"
+        AppLanguage.GERMAN -> "Efeuviolett"
+        AppLanguage.RUSSIAN -> "Плющ и фиалка"
+        AppLanguage.JAPANESE -> "アイビーバイオレット"
+        AppLanguage.KOREAN -> "아이비 바이올렛"
+    }
+
+    val accentSakuraForest: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "樱花墨绿"
+        AppLanguage.ENGLISH -> "Sakura ink"
+        AppLanguage.ARABIC -> "ساكورا داكن"
+        AppLanguage.PORTUGUESE -> "Sakura escura"
+        AppLanguage.SPANISH -> "Sakura oscura"
+        AppLanguage.FRENCH -> "Sakura encre"
+        AppLanguage.GERMAN -> "Sakura-Tinte"
+        AppLanguage.RUSSIAN -> "Сакура и хвоя"
+        AppLanguage.JAPANESE -> "桜と深緑"
+        AppLanguage.KOREAN -> "사쿠라 잉크"
+    }
+
+    val accentInkAqua: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "捣蓝清水"
+        AppLanguage.ENGLISH -> "Ink aqua"
+        AppLanguage.ARABIC -> "أزرق حبري"
+        AppLanguage.PORTUGUESE -> "Azul tinta"
+        AppLanguage.SPANISH -> "Azul tinta"
+        AppLanguage.FRENCH -> "Bleu encre"
+        AppLanguage.GERMAN -> "Tintenblau"
+        AppLanguage.RUSSIAN -> "Чернила и вода"
+        AppLanguage.JAPANESE -> "藍と水"
+        AppLanguage.KOREAN -> "잉크 아쿠아"
+    }
+
+    val accentSunsetHaze: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "落日橙"
+        AppLanguage.ENGLISH -> "Sunset haze"
+        AppLanguage.ARABIC -> "برتقالي الغروب"
+        AppLanguage.PORTUGUESE -> "Laranja poente"
+        AppLanguage.SPANISH -> "Naranja atardecer"
+        AppLanguage.FRENCH -> "Orange couchant"
+        AppLanguage.GERMAN -> "Abendrot"
+        AppLanguage.RUSSIAN -> "Закатный оранж"
+        AppLanguage.JAPANESE -> "夕焼けオレンジ"
+        AppLanguage.KOREAN -> "선셋 헤이즈"
+    }
+
+    val accentCamellia: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "茶花红"
+        AppLanguage.ENGLISH -> "Camellia"
+        AppLanguage.ARABIC -> "أحمر الكاميليا"
+        AppLanguage.PORTUGUESE -> "Vermelho camélia"
+        AppLanguage.SPANISH -> "Rojo camelia"
+        AppLanguage.FRENCH -> "Rouge camélia"
+        AppLanguage.GERMAN -> "Kamelienrot"
+        AppLanguage.RUSSIAN -> "Красная камелия"
+        AppLanguage.JAPANESE -> "椿レッド"
+        AppLanguage.KOREAN -> "카멜리아 레드"
+    }
+
+    val accentFrostCyan: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "冰晶蓝青"
+        AppLanguage.ENGLISH -> "Frost cyan"
+        AppLanguage.ARABIC -> "أزرق جليدي"
+        AppLanguage.PORTUGUESE -> "Ciano glacial"
+        AppLanguage.SPANISH -> "Cian glacial"
+        AppLanguage.FRENCH -> "Cyan givré"
+        AppLanguage.GERMAN -> "Frostblau"
+        AppLanguage.RUSSIAN -> "Ледяной циан"
+        AppLanguage.JAPANESE -> "氷晶シアン"
+        AppLanguage.KOREAN -> "프로스트 시안"
+    }
+
+    val accentMochaLatte: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "摩卡拿铁"
+        AppLanguage.ENGLISH -> "Mocha latte"
+        AppLanguage.ARABIC -> "موكا لاتيه"
+        AppLanguage.PORTUGUESE -> "Mocha latte"
+        AppLanguage.SPANISH -> "Moka latte"
+        AppLanguage.FRENCH -> "Moka latte"
+        AppLanguage.GERMAN -> "Mokka"
+        AppLanguage.RUSSIAN -> "Мокко латте"
+        AppLanguage.JAPANESE -> "モカラテ"
+        AppLanguage.KOREAN -> "모카 라떼"
+    }
+
+    val settingsInterface: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "界面"
+        AppLanguage.ENGLISH -> "Interface"
+        AppLanguage.ARABIC -> "الواجهة"
+        AppLanguage.PORTUGUESE -> "Interface"
+        AppLanguage.SPANISH -> "Interfaz"
+        AppLanguage.FRENCH -> "Interface"
+        AppLanguage.GERMAN -> "Oberfläche"
+        AppLanguage.RUSSIAN -> "Интерфейс"
+        AppLanguage.JAPANESE -> "インターフェース"
+        AppLanguage.KOREAN -> "인터페이스"
+    }
+
+    val fontSizeTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "字体大小"
+        AppLanguage.ENGLISH -> "Font size"
+        AppLanguage.ARABIC -> "حجم الخط"
+        AppLanguage.PORTUGUESE -> "Tamanho da fonte"
+        AppLanguage.SPANISH -> "Tamaño de fuente"
+        AppLanguage.FRENCH -> "Taille de police"
+        AppLanguage.GERMAN -> "Schriftgröße"
+        AppLanguage.RUSSIAN -> "Размер шрифта"
+        AppLanguage.JAPANESE -> "フォントサイズ"
+        AppLanguage.KOREAN -> "글꼴 크기"
+    }
+
+    val fontSizeSmall: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "偏小"
+        AppLanguage.ENGLISH -> "Small"
+        AppLanguage.ARABIC -> "صغير"
+        AppLanguage.PORTUGUESE -> "Pequena"
+        AppLanguage.SPANISH -> "Pequeña"
+        AppLanguage.FRENCH -> "Petite"
+        AppLanguage.GERMAN -> "Klein"
+        AppLanguage.RUSSIAN -> "Мелкий"
+        AppLanguage.JAPANESE -> "小"
+        AppLanguage.KOREAN -> "작게"
+    }
+
+    val fontSizeStandard: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "标准"
+        AppLanguage.ENGLISH -> "Standard"
+        AppLanguage.ARABIC -> "قياسي"
+        AppLanguage.PORTUGUESE -> "Padrão"
+        AppLanguage.SPANISH -> "Estándar"
+        AppLanguage.FRENCH -> "Standard"
+        AppLanguage.GERMAN -> "Standard"
+        AppLanguage.RUSSIAN -> "Стандартный"
+        AppLanguage.JAPANESE -> "標準"
+        AppLanguage.KOREAN -> "표준"
+    }
+
+    val fontSizeLarge: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "偏大"
+        AppLanguage.ENGLISH -> "Large"
+        AppLanguage.ARABIC -> "كبير"
+        AppLanguage.PORTUGUESE -> "Grande"
+        AppLanguage.SPANISH -> "Grande"
+        AppLanguage.FRENCH -> "Grande"
+        AppLanguage.GERMAN -> "Groß"
+        AppLanguage.RUSSIAN -> "Крупный"
+        AppLanguage.JAPANESE -> "大"
+        AppLanguage.KOREAN -> "크게"
+    }
+
+    val fontSizeXLarge: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "特大"
+        AppLanguage.ENGLISH -> "Extra large"
+        AppLanguage.ARABIC -> "كبير جداً"
+        AppLanguage.PORTUGUESE -> "Extra grande"
+        AppLanguage.SPANISH -> "Extra grande"
+        AppLanguage.FRENCH -> "Très grande"
+        AppLanguage.GERMAN -> "Sehr groß"
+        AppLanguage.RUSSIAN -> "Очень крупный"
+        AppLanguage.JAPANESE -> "特大"
+        AppLanguage.KOREAN -> "매우 크게"
+    }
+
+    val cornerStyleTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "圆角风格"
+        AppLanguage.ENGLISH -> "Corner style"
+        AppLanguage.ARABIC -> "نمط الزوايا"
+        AppLanguage.PORTUGUESE -> "Estilo dos cantos"
+        AppLanguage.SPANISH -> "Estilo de esquinas"
+        AppLanguage.FRENCH -> "Style des coins"
+        AppLanguage.GERMAN -> "Eckenstil"
+        AppLanguage.RUSSIAN -> "Стиль углов"
+        AppLanguage.JAPANESE -> "角丸スタイル"
+        AppLanguage.KOREAN -> "모서리 스타일"
+    }
+
+    val cornerSharp: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "硬朗"
+        AppLanguage.ENGLISH -> "Sharp"
+        AppLanguage.ARABIC -> "حاد"
+        AppLanguage.PORTUGUESE -> "Reto"
+        AppLanguage.SPANISH -> "Definido"
+        AppLanguage.FRENCH -> "Anguleux"
+        AppLanguage.GERMAN -> "Kantig"
+        AppLanguage.RUSSIAN -> "Резкий"
+        AppLanguage.JAPANESE -> "シャープ"
+        AppLanguage.KOREAN -> "각진"
+    }
+
+    val cornerStandard: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "标准"
+        AppLanguage.ENGLISH -> "Standard"
+        AppLanguage.ARABIC -> "قياسي"
+        AppLanguage.PORTUGUESE -> "Padrão"
+        AppLanguage.SPANISH -> "Estándar"
+        AppLanguage.FRENCH -> "Standard"
+        AppLanguage.GERMAN -> "Standard"
+        AppLanguage.RUSSIAN -> "Стандартный"
+        AppLanguage.JAPANESE -> "標準"
+        AppLanguage.KOREAN -> "표준"
+    }
+
+    val cornerRounded: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "圆润"
+        AppLanguage.ENGLISH -> "Rounded"
+        AppLanguage.ARABIC -> "مستدير"
+        AppLanguage.PORTUGUESE -> "Arredondado"
+        AppLanguage.SPANISH -> "Redondeado"
+        AppLanguage.FRENCH -> "Arrondi"
+        AppLanguage.GERMAN -> "Rund"
+        AppLanguage.RUSSIAN -> "Скруглённый"
+        AppLanguage.JAPANESE -> "丸み"
+        AppLanguage.KOREAN -> "둥근"
     }
 
     val animSmooth: String get() = when (Strings.lang) {
@@ -24096,42 +24544,42 @@ object StringsB {
     }
 
     val testPageHintText: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "💡 测试页面会加载选中的模块，你可以观察模块的实际效果"
-        AppLanguage.ENGLISH -> "💡 Test page will load selected modules, you can observe actual effects"
-        AppLanguage.ARABIC -> "💡 ستقوم صفحة الاختبار بتحميل الوحدات المحددة، يمكنك ملاحظة التأثيرات الفعلية"
-        AppLanguage.PORTUGUESE -> "💡 A página de teste carregará os módulos selecionados, você pode observar os efeitos reais"
-        AppLanguage.SPANISH -> "💡 La página de prueba cargará los módulos seleccionados, puedes observar los efectos reales"
-        AppLanguage.FRENCH -> "💡 La page de test chargera les modules sélectionnés, vous pouvez observer les effets réels"
-        AppLanguage.GERMAN -> "💡 Die Testseite lädt ausgewählte Module, du kannst die tatsächlichen Effekte beobachten"
-        AppLanguage.RUSSIAN -> "💡 Тестовая страница загрузит выбранные модули, вы можете наблюдать реальные эффекты"
-        AppLanguage.JAPANESE -> "💡 テストページが選択したモジュールを読み込み、実際の効果を確認できます"
-        AppLanguage.KOREAN -> "💡 테스트 페이지가 선택한 모듈을 로드하며, 실제 효과를 관찰할 수 있습니다"
+        AppLanguage.CHINESE -> "测试页面会加载选中的模块，你可以观察模块的实际效果"
+        AppLanguage.ENGLISH -> "Test page will load selected modules, you can observe actual effects"
+        AppLanguage.ARABIC -> "ستقوم صفحة الاختبار بتحميل الوحدات المحددة، يمكنك ملاحظة التأثيرات الفعلية"
+        AppLanguage.PORTUGUESE -> "A página de teste carregará os módulos selecionados, você pode observar os efeitos reais"
+        AppLanguage.SPANISH -> "La página de prueba cargará los módulos seleccionados, puedes observar los efectos reales"
+        AppLanguage.FRENCH -> "La page de test chargera les modules sélectionnés, vous pouvez observer les effets réels"
+        AppLanguage.GERMAN -> "Die Testseite lädt ausgewählte Module, du kannst die tatsächlichen Effekte beobachten"
+        AppLanguage.RUSSIAN -> "Тестовая страница загрузит выбранные модули, вы можете наблюдать реальные эффекты"
+        AppLanguage.JAPANESE -> "テストページが選択したモジュールを読み込み、実際の効果を確認できます"
+        AppLanguage.KOREAN -> "테스트 페이지가 선택한 모듈을 로드하며, 실제 효과를 관찰할 수 있습니다"
     }
 
     val builtInSchemes: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "📦 内置方案"
-        AppLanguage.ENGLISH -> "📦 Built-in Schemes"
-        AppLanguage.ARABIC -> "📦 مخططات مدمجة"
-        AppLanguage.PORTUGUESE -> "📦 Esquemas Integrados"
-        AppLanguage.SPANISH -> "📦 Esquemas Integrados"
-        AppLanguage.FRENCH -> "📦 Schémas Intégrés"
-        AppLanguage.GERMAN -> "📦 Eingebaute Schemata"
-        AppLanguage.RUSSIAN -> "📦 Встроенные схемы"
-        AppLanguage.JAPANESE -> "📦 組み込みスキーム"
-        AppLanguage.KOREAN -> "📦 내장 스킴"
+        AppLanguage.CHINESE -> "内置方案"
+        AppLanguage.ENGLISH -> "Built-in Schemes"
+        AppLanguage.ARABIC -> "مخططات مدمجة"
+        AppLanguage.PORTUGUESE -> "Esquemas Integrados"
+        AppLanguage.SPANISH -> "Esquemas Integrados"
+        AppLanguage.FRENCH -> "Schémas Intégrés"
+        AppLanguage.GERMAN -> "Eingebaute Schemata"
+        AppLanguage.RUSSIAN -> "Встроенные схемы"
+        AppLanguage.JAPANESE -> "組み込みスキーム"
+        AppLanguage.KOREAN -> "내장 스킴"
     }
 
     val mySchemes: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "⭐ 我的方案"
-        AppLanguage.ENGLISH -> "⭐ My Schemes"
-        AppLanguage.ARABIC -> "⭐ مخططاتي"
-        AppLanguage.PORTUGUESE -> "⭐ Meus Esquemas"
-        AppLanguage.SPANISH -> "⭐ Mis Esquemas"
-        AppLanguage.FRENCH -> "⭐ Mes Schémas"
-        AppLanguage.GERMAN -> "⭐ Meine Schemata"
-        AppLanguage.RUSSIAN -> "⭐ Мои схемы"
-        AppLanguage.JAPANESE -> "⭐ マイスキーム"
-        AppLanguage.KOREAN -> "⭐ 내 스킴"
+        AppLanguage.CHINESE -> "我的方案"
+        AppLanguage.ENGLISH -> "My Schemes"
+        AppLanguage.ARABIC -> "مخططاتي"
+        AppLanguage.PORTUGUESE -> "Meus Esquemas"
+        AppLanguage.SPANISH -> "Mis Esquemas"
+        AppLanguage.FRENCH -> "Mes Schémas"
+        AppLanguage.GERMAN -> "Meine Schemata"
+        AppLanguage.RUSSIAN -> "Мои схемы"
+        AppLanguage.JAPANESE -> "マイスキーム"
+        AppLanguage.KOREAN -> "내 스킴"
     }
 
     val applied: String get() = when (Strings.lang) {
@@ -31275,16 +31723,16 @@ object StringsC {
         AppLanguage.KOREAN -> "출력 스트림을 열 수 없습니다"
     }
     val shareModuleTitle: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "📦 WebToApp 扩展模块分享"
-        AppLanguage.ENGLISH -> "📦 WebToApp Extension Module Share"
-        AppLanguage.ARABIC -> "📦 مشاركة وحدة إضافية WebToApp"
-        AppLanguage.PORTUGUESE -> "📦 Compartilhamento de Módulo de Extensão WebToApp"
-        AppLanguage.SPANISH -> "📦 Compartir Módulo de Extensión WebToApp"
-        AppLanguage.FRENCH -> "📦 Partage de Module d'Extension WebToApp"
-        AppLanguage.GERMAN -> "📦 WebToApp Erweiterungsmodul Teilen"
-        AppLanguage.RUSSIAN -> "📦 Поделиться модулем расширения WebToApp"
-        AppLanguage.JAPANESE -> "📦 WebToApp 拡張モジュールの共有"
-        AppLanguage.KOREAN -> "📦 WebToApp 확장 모듈 공유"
+        AppLanguage.CHINESE -> "WebToApp 扩展模块分享"
+        AppLanguage.ENGLISH -> "WebToApp Extension Module Share"
+        AppLanguage.ARABIC -> "مشاركة وحدة إضافية WebToApp"
+        AppLanguage.PORTUGUESE -> "Compartilhamento de Módulo de Extensão WebToApp"
+        AppLanguage.SPANISH -> "Compartir Módulo de Extensión WebToApp"
+        AppLanguage.FRENCH -> "Partage de Module d'Extension WebToApp"
+        AppLanguage.GERMAN -> "WebToApp Erweiterungsmodul Teilen"
+        AppLanguage.RUSSIAN -> "Поделиться модулем расширения WebToApp"
+        AppLanguage.JAPANESE -> "WebToApp 拡張モジュールの共有"
+        AppLanguage.KOREAN -> "WebToApp 확장 모듈 공유"
     }
     val shareModuleName: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "模块名称"
@@ -36494,16 +36942,16 @@ object StringsC {
     }
 
     val batteryOptimizationHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "🔋 建议关闭电池优化以保证自启动可靠触发，点击前往设置"
-        AppLanguage.ENGLISH -> "🔋 Disable battery optimization for reliable auto start, tap to open settings"
-        AppLanguage.ARABIC -> "🔋 قم بتعطيل تحسين البطارية لضمان التشغيل التلقائي الموثوق، انقر لفتح الإعدادات"
-        AppLanguage.PORTUGUESE -> "🔋 Desative a otimização de bateria para início automático confiável, toque para abrir as configurações"
-        AppLanguage.SPANISH -> "🔋 Desactive la optimización de batería para inicio automático confiable, toque para abrir configuración"
-        AppLanguage.FRENCH -> "🔋 Désactivez l'optimisation de batterie pour un démarrage automatique fiable, appuyez pour ouvrir les paramètres"
-        AppLanguage.GERMAN -> "🔋 Batterieoptimierung für zuverlässigen Autostart deaktivieren, tippen, um Einstellungen zu öffnen"
-        AppLanguage.RUSSIAN -> "🔋 Отключите оптимизацию батареи для надёжного автозапуска, нажмите, чтобы открыть настройки"
-        AppLanguage.JAPANESE -> "🔋 確実な自動起動のためバッテリー最適化を無効にしてください、タップして設定を開く"
-        AppLanguage.KOREAN -> "🔋 신뢰할 수 있는 자동 시작을 위해 배터리 최적화를 비활성화하세요, 탭하여 설정 열기"
+        AppLanguage.CHINESE -> "建议关闭电池优化以保证自启动可靠触发，点击前往设置"
+        AppLanguage.ENGLISH -> "Disable battery optimization for reliable auto start, tap to open settings"
+        AppLanguage.ARABIC -> "قم بتعطيل تحسين البطارية لضمان التشغيل التلقائي الموثوق، انقر لفتح الإعدادات"
+        AppLanguage.PORTUGUESE -> "Desative a otimização de bateria para início automático confiável, toque para abrir as configurações"
+        AppLanguage.SPANISH -> "Desactive la optimización de batería para inicio automático confiable, toque para abrir configuración"
+        AppLanguage.FRENCH -> "Désactivez l'optimisation de batterie pour un démarrage automatique fiable, appuyez pour ouvrir les paramètres"
+        AppLanguage.GERMAN -> "Batterieoptimierung für zuverlässigen Autostart deaktivieren, tippen, um Einstellungen zu öffnen"
+        AppLanguage.RUSSIAN -> "Отключите оптимизацию батареи для надёжного автозапуска, нажмите, чтобы открыть настройки"
+        AppLanguage.JAPANESE -> "確実な自動起動のためバッテリー最適化を無効にしてください、タップして設定を開く"
+        AppLanguage.KOREAN -> "신뢰할 수 있는 자동 시작을 위해 배터리 최적화를 비활성화하세요, 탭하여 설정 열기"
     }
 
     val bootDelay: String get() = when (Strings.lang) {
@@ -36520,29 +36968,29 @@ object StringsC {
     }
 
     val oemAutoStartHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "📱 检测到 %s 系统，请在手机管家中将本应用加入自启动白名单，否则系统可能阻止自启动"
-        AppLanguage.ENGLISH -> "📱 %s system detected. Please add this app to auto-start whitelist in phone manager to prevent system from blocking auto start"
-        AppLanguage.ARABIC -> "📱 تم اكتشاف نظام %s. يرجى إضافة هذا التطبيق إلى القائمة البيضاء للتشغيل التلقائي في مدير الهاتف"
-        AppLanguage.PORTUGUESE -> "📱 Sistema %s detectado. Adicione este app à lista branca de início automático no gerenciador do telefone para evitar que o sistema bloqueie o início automático"
-        AppLanguage.SPANISH -> "📱 Sistema %s detectado. Agregue esta app a la lista blanca de inicio automático en el administrador del teléfono para evitar que el sistema bloquee el inicio automático"
-        AppLanguage.FRENCH -> "📱 Système %s détecté. Ajoutez cette application à la liste blanche de démarrage automatique dans le gestionnaire du téléphone pour empêcher le système de bloquer le démarrage automatique"
-        AppLanguage.GERMAN -> "📱 %s-System erkannt. Bitte diese App zur Autostart-Whitelist im Telefon-Manager hinzufügen, damit das System den Autostart nicht blockiert"
-        AppLanguage.RUSSIAN -> "📱 Обнаружена система %s. Добавьте это приложение в белый список автозапуска в диспетчере телефона, чтобы система не блокировала автозапуск"
-        AppLanguage.JAPANESE -> "📱 %sシステムを検出しました。システムが自動起動をブロックしないよう、電話マネージャーでこのアプリを自動起動ホワイトリストに追加してください"
-        AppLanguage.KOREAN -> "📱 %s 시스템이 감지되었습니다. 시스템이 자동 시작을 차단하지 않도록 전화 관리자에서 이 앱을 자동 시작 화이트리스트에 추가하세요"
+        AppLanguage.CHINESE -> "检测到 %s 系统，请在手机管家中将本应用加入自启动白名单，否则系统可能阻止自启动"
+        AppLanguage.ENGLISH -> "%s system detected. Please add this app to auto-start whitelist in phone manager to prevent system from blocking auto start"
+        AppLanguage.ARABIC -> "تم اكتشاف نظام %s. يرجى إضافة هذا التطبيق إلى القائمة البيضاء للتشغيل التلقائي في مدير الهاتف"
+        AppLanguage.PORTUGUESE -> "Sistema %s detectado. Adicione este app à lista branca de início automático no gerenciador do telefone para evitar que o sistema bloqueie o início automático"
+        AppLanguage.SPANISH -> "Sistema %s detectado. Agregue esta app a la lista blanca de inicio automático en el administrador del teléfono para evitar que el sistema bloquee el inicio automático"
+        AppLanguage.FRENCH -> "Système %s détecté. Ajoutez cette application à la liste blanche de démarrage automatique dans le gestionnaire du téléphone pour empêcher le système de bloquer le démarrage automatique"
+        AppLanguage.GERMAN -> "%s-System erkannt. Bitte diese App zur Autostart-Whitelist im Telefon-Manager hinzufügen, damit das System den Autostart nicht blockiert"
+        AppLanguage.RUSSIAN -> "Обнаружена система %s. Добавьте это приложение в белый список автозапуска в диспетчере телефона, чтобы система не блокировала автозапуск"
+        AppLanguage.JAPANESE -> "%sシステムを検出しました。システムが自動起動をブロックしないよう、電話マネージャーでこのアプリを自動起動ホワイトリストに追加してください"
+        AppLanguage.KOREAN -> "%s 시스템이 감지되었습니다. 시스템이 자동 시작을 차단하지 않도록 전화 관리자에서 이 앱을 자동 시작 화이트리스트에 추가하세요"
     }
 
     val autoStartPermissionReady: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "✅ 所有权限已就绪，自启动功能将正常工作"
-        AppLanguage.ENGLISH -> "✅ All permissions ready, auto start will work properly"
-        AppLanguage.ARABIC -> "✅ جميع الأذونات جاهزة، سيعمل التشغيل التلقائي بشكل صحيح"
-        AppLanguage.PORTUGUESE -> "✅ Todas as permissões prontas, o início automático funcionará corretamente"
-        AppLanguage.SPANISH -> "✅ Todos los permisos listos, el inicio automático funcionará correctamente"
-        AppLanguage.FRENCH -> "✅ Toutes les permissions prêtes, le démarrage automatique fonctionnera correctement"
-        AppLanguage.GERMAN -> "✅ Alle Berechtigungen bereit, Autostart wird ordnungsgemäß funktionieren"
-        AppLanguage.RUSSIAN -> "✅ Все разрешения готовы, автозапуск будет работать корректно"
-        AppLanguage.JAPANESE -> "✅ すべての権限が準備完了、自動起動は正常に動作します"
-        AppLanguage.KOREAN -> "✅ 모든 권한이 준비되었습니다, 자동 시작이 정상적으로 작동합니다"
+        AppLanguage.CHINESE -> "所有权限已就绪，自启动功能将正常工作"
+        AppLanguage.ENGLISH -> "All permissions ready, auto start will work properly"
+        AppLanguage.ARABIC -> "جميع الأذونات جاهزة، سيعمل التشغيل التلقائي بشكل صحيح"
+        AppLanguage.PORTUGUESE -> "Todas as permissões prontas, o início automático funcionará corretamente"
+        AppLanguage.SPANISH -> "Todos los permisos listos, el inicio automático funcionará correctamente"
+        AppLanguage.FRENCH -> "Toutes les permissions prêtes, le démarrage automatique fonctionnera correctement"
+        AppLanguage.GERMAN -> "Alle Berechtigungen bereit, Autostart wird ordnungsgemäß funktionieren"
+        AppLanguage.RUSSIAN -> "Все разрешения готовы, автозапуск будет работать корректно"
+        AppLanguage.JAPANESE -> "すべての権限が準備完了、自動起動は正常に動作します"
+        AppLanguage.KOREAN -> "모든 권한이 준비되었습니다, 자동 시작이 정상적으로 작동합니다"
     }
 
     val selectAnnouncementStyle: String get() = when (Strings.lang) {
@@ -40941,16 +41389,16 @@ object StringsC {
     }
 
     val browserDisguiseTitle: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "🕶️ 浏览器伪装"
-        AppLanguage.ENGLISH -> "🕶️ Browser Disguise"
-        AppLanguage.ARABIC -> "🕶️ تمويه المتصفح"
-        AppLanguage.PORTUGUESE -> "🕶️ Disfarce do navegador"
-        AppLanguage.SPANISH -> "🕶️ Disfraz del navegador"
-        AppLanguage.FRENCH -> "🕶️ Déguisement du navigateur"
-        AppLanguage.GERMAN -> "🕶️ Browser-Tarnung"
-        AppLanguage.RUSSIAN -> "🕶️ Маскировка браузера"
-        AppLanguage.JAPANESE -> "🕶️ ブラウザ偽装"
-        AppLanguage.KOREAN -> "🕶️ 브라우저 위장"
+        AppLanguage.CHINESE -> "浏览器伪装"
+        AppLanguage.ENGLISH -> "Browser Disguise"
+        AppLanguage.ARABIC -> "تمويه المتصفح"
+        AppLanguage.PORTUGUESE -> "Disfarce do navegador"
+        AppLanguage.SPANISH -> "Disfraz del navegador"
+        AppLanguage.FRENCH -> "Déguisement du navigateur"
+        AppLanguage.GERMAN -> "Browser-Tarnung"
+        AppLanguage.RUSSIAN -> "Маскировка браузера"
+        AppLanguage.JAPANESE -> "ブラウザ偽装"
+        AppLanguage.KOREAN -> "브라우저 위장"
     }
 
     val browserDisguiseEnable: String get() = when (Strings.lang) {
@@ -47573,16 +48021,16 @@ object StringsD {
 
     val providerGoogle: String get() = "Google/Gemini"
     val providerGoogleDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "★推荐★ Gemini 3.0 Pro 前端表现出色，原生多模态支持，全面顶配支持。"
-        AppLanguage.ENGLISH -> "★Recommended★ Gemini 3.0 Pro excels at frontend, native multimodal support, fully featured."
-        AppLanguage.ARABIC -> "★موصى به★ Gemini 3.0 Pro متميز في الواجهة الأمامية، دعم متعدد الوسائط أصلي، ميزات كاملة."
-        AppLanguage.PORTUGUESE -> "★Recomendado★ Gemini 3.0 Pro destaca-se em frontend, suporte multimodal nativo, totalmente completo."
-        AppLanguage.SPANISH -> "★Recomendado★ Gemini 3.0 Pro destaca en frontend, soporte multimodal nativo, con todas las funciones."
-        AppLanguage.FRENCH -> "★Recommandé★ Gemini 3.0 Pro excelle en frontend, support multimodal natif, toutes fonctionnalités."
-        AppLanguage.GERMAN -> "★Empfohlen★ Gemini 3.0 Pro überzeugt im Frontend, native Multimodal-Unterstützung, voll ausgestattet."
-        AppLanguage.RUSSIAN -> "★Рекомендуется★ Gemini 3.0 Pro превосходен во фронтенде, нативная мультимодальная поддержка, все функции."
-        AppLanguage.JAPANESE -> "★推奨★ Gemini 3.0 Proはフロントエンドに優れ、ネイティブマルチモーダル対応、フル機能。"
-        AppLanguage.KOREAN -> "★추천★ Gemini 3.0 Pro는 프론트엔드에 뛰어나고, 네이티브 멀티모달 지원, 모든 기능 탑재."
+        AppLanguage.CHINESE -> "推荐：Gemini 3.0 Pro 前端表现出色，原生多模态支持，全面顶配支持。"
+        AppLanguage.ENGLISH -> "Recommended: Gemini 3.0 Pro excels at frontend, native multimodal support, fully featured."
+        AppLanguage.ARABIC -> "موصى به: Gemini 3.0 Pro متميز في الواجهة الأمامية، دعم متعدد الوسائط أصلي، ميزات كاملة."
+        AppLanguage.PORTUGUESE -> "Recomendado: Gemini 3.0 Pro destaca-se em frontend, suporte multimodal nativo, totalmente completo."
+        AppLanguage.SPANISH -> "Recomendado: Gemini 3.0 Pro destaca en frontend, soporte multimodal nativo, con todas las funciones."
+        AppLanguage.FRENCH -> "Recommandé : Gemini 3.0 Pro excelle en frontend, support multimodal natif, toutes fonctionnalités."
+        AppLanguage.GERMAN -> "Empfohlen: Gemini 3.0 Pro überzeugt im Frontend, native Multimodal-Unterstützung, voll ausgestattet."
+        AppLanguage.RUSSIAN -> "Рекомендуется: Gemini 3.0 Pro превосходен во фронтенде, нативная мультимодальная поддержка, все функции."
+        AppLanguage.JAPANESE -> "推奨：Gemini 3.0 Proはフロントエンドに優れ、ネイティブマルチモーダル対応、フル機能。"
+        AppLanguage.KOREAN -> "추천: Gemini 3.0 Pro는 프론트엔드에 뛰어나고, 네이티브 멀티모달 지원, 모든 기능 탑재."
     }
     val providerGooglePricing: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "有免费额度，超出后按 token 计费"
@@ -62982,16 +63430,16 @@ object StringsE {
         AppLanguage.KOREAN -> "정적 단일 페이지 앱이 브라우저 CORS 제한을 우회하여 외부 API를 직접 호출하도록 허용합니다. 요청은 네이티브 네트워크 스택을 통해 재전송됩니다."
     }
     val corsBypassWarning: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "⚠️ 安全提示：开启后，该应用内加载的所有网页（含第三方内容）都能经原生网络栈向任意地址发送任意 HTTP 请求，不再受同源策略保护。仅对你自己开发的应用开启；打包不可信网站时请保持关闭。"
-        AppLanguage.ENGLISH -> "⚠️ Security note: once enabled, every page loaded in this app (including third-party content) can send arbitrary HTTP requests to any URL via the native network stack, no longer protected by the same-origin policy. Only enable for apps you develop yourself; keep it off when packaging untrusted sites."
-        AppLanguage.ARABIC -> "⚠️ تنبيه أمني: بمجرد التفعيل، يمكن لكل صفحة تُحمّل في هذا التطبيق (بما في ذلك محتوى الطرف الثالث) إرسال طلبات HTTP عشوائية إلى أي عنوان عبر مكدس الشبكة الأصلي، دون حماية سياسة نفس الأصل. فعّله فقط للتطبيقات التي تطورها بنفسك؛ أبقه مطفأً عند تغليف مواقع غير موثوقة."
-        AppLanguage.PORTUGUESE -> "⚠️ Nota de segurança: uma vez ativado, todas as páginas carregadas neste app (incluindo conteúdo de terceiros) podem enviar requisições HTTP arbitrárias para qualquer URL via a pilha de rede nativa, sem mais a proteção da política de mesma origem. Ative apenas para apps que você mesmo desenvolve; mantenha desativado ao empacotar sites não confiáveis."
-        AppLanguage.SPANISH -> "⚠️ Nota de seguridad: una vez activado, todas las páginas cargadas en esta app (incluido contenido de terceros) pueden enviar solicitudes HTTP arbitrarias a cualquier URL a través de la pila de red nativa, sin la protección de la política del mismo origen. Actívalo solo para apps que tú mismo desarrollas; manténlo desactivado al empaquetar sitios no confiables."
-        AppLanguage.FRENCH -> "⚠️ Note de sécurité : une fois activé, chaque page chargée dans cette app (y compris le contenu tiers) peut envoyer des requêtes HTTP arbitraires vers n'importe quelle URL via la pile réseau native, sans la protection de la politique de même origine. N'activez que pour les apps que vous développez vous-même ; laissez désactivé lors du packaging de sites non fiables."
-        AppLanguage.GERMAN -> "⚠️ Sicherheitshinweis: einmal aktiviert, kann jede in dieser App geladene Seite (einschließlich Drittanbieter-Inhalte) beliebige HTTP-Anfragen an jede URL über den nativen Netzwerk-Stack senden, nicht mehr durch die Same-Origin-Policy geschützt. Nur für selbst entwickelte Apps aktivieren; beim Verpacken nicht vertrauenswürdiger Seiten deaktiviert lassen."
-        AppLanguage.RUSSIAN -> "⚠️ Примечание о безопасности: после включения каждая страница, загруженная в этом приложении (включая сторонний контент), может отправлять произвольные HTTP-запросы на любой URL через нативный сетевой стек, больше без защиты политики одного источника. Включайте только для приложений, которые вы разрабатываете сами; держите выключенным при упаковке недоверенных сайтов."
-        AppLanguage.JAPANESE -> "⚠️ セキュリティ上の注意: 有効にすると、このアプリで読み込まれるすべてのページ（サードパーティコンテンツを含む）が、ネイティブネットワークスタック経由で任意の URL に任意の HTTP リクエストを送信でき、Same-Origin ポリシーの保護対象外となります。自分で開発したアプリのみ有効化し、信頼できないサイトをパッケージ化する場合はオフのままにしてください。"
-        AppLanguage.KOREAN -> "⚠️ 보안 알림: 활성화하면 이 앱에 로드되는 모든 페이지(서드파티 콘텐츠 포함)가 네이티브 네트워크 스택을 통해 어떤 URL로든 임의의 HTTP 요청을 보낼 수 있으며, 동일 출처 정책의 보호를 받지 않습니다. 직접 개발한 앱에만 활성화하고, 신뢰할 수 없는 사이트를 패키징할 때는 꺼두세요."
+        AppLanguage.CHINESE -> "安全提示：开启后，该应用内加载的所有网页（含第三方内容）都能经原生网络栈向任意地址发送任意HTTP 请求，不再受同源策略保护。仅对你自己开发的应用开启；打包不可信网站时请保持关闭。"
+        AppLanguage.ENGLISH -> "Security note: once enabled, every page loaded in this app (including third-party content) can send arbitrary HTTP requests to any URL via the native network stack, no longer protected by the same-origin policy. Only enable for apps you develop yourself; keep it off when packaging untrusted sites."
+        AppLanguage.ARABIC -> "تنبيه أمني: بمجرد التفعيل، يمكن لكل صفحة تُحمّل في هذا التطبيق (بما في ذلك محتوى الطرف الثالث) إرسال طلبات HTTP عشوائية إلى أي عنوان عبر مكدس الشبكة الأصلي، دون حماية سياسة نفس الأصل. فعّله فقط للتطبيقات التي تطورها بنفسك؛ أبقه مطفأً عند تغليف مواقع غير موثوقة."
+        AppLanguage.PORTUGUESE -> "Nota de segurança: uma vez ativado, todas as páginas carregadas neste app (incluindo conteúdo de terceiros) podem enviar requisições HTTP arbitrárias para qualquer URL via a pilha de rede nativa, sem mais a proteção da política de mesma origem. Ative apenas para apps que você mesmo desenvolve; mantenha desativado ao empacotar sites não confiáveis."
+        AppLanguage.SPANISH -> "Nota de seguridad: una vez activado, todas las páginas cargadas en esta app (incluido contenido de terceros) pueden enviar solicitudes HTTP arbitrarias a cualquier URL a través de la pila de red nativa, sin la protección de la política del mismo origen. Actívalo solo para apps que tú mismo desarrollas; manténlo desactivado al empaquetar sitios no confiables."
+        AppLanguage.FRENCH -> "Note de sécurité : une fois activé, chaque page chargée dans cette app (y compris le contenu tiers) peut envoyer des requêtes HTTP arbitraires vers n'importe quelle URL via la pile réseau native, sans la protection de la politique de même origine. N'activez que pour les apps que vous développez vous-même ; laissez désactivé lors du packaging de sites non fiables."
+        AppLanguage.GERMAN -> "Sicherheitshinweis: einmal aktiviert, kann jede in dieser App geladene Seite (einschließlich Drittanbieter-Inhalte) beliebige HTTP-Anfragen an jede URL über den nativen Netzwerk-Stack senden, nicht mehr durch die Same-Origin-Policy geschützt. Nur für selbst entwickelte Apps aktivieren; beim Verpacken nicht vertrauenswürdiger Seiten deaktiviert lassen."
+        AppLanguage.RUSSIAN -> "Примечание о безопасности: после включения каждая страница, загруженная в этом приложении (включая сторонний контент), может отправлять произвольные HTTP-запросы на любой URL через нативный сетевой стек, больше без защиты политики одного источника. Включайте только для приложений, которые вы разрабатываете сами; держите выключенным при упаковке недоверенных сайтов."
+        AppLanguage.JAPANESE -> "セキュリティ上の注意: 有効にすると、このアプリで読み込まれるすべてのページ（サードパーティコンテンツを含む）が、ネイティブネットワークスタック経由で任意の URL に任意の HTTP リクエストを送信でき、Same-Origin ポリシーの保護対象外となります。自分で開発したアプリのみ有効化し、信頼できないサイトをパッケージ化する場合はオフのままにしてください。"
+        AppLanguage.KOREAN -> "보안 알림: 활성화하면 이 앱에 로드되는 모든 페이지(서드파티 콘텐츠 포함)가 네이티브 네트워크 스택을 통해 어떤 URL로든 임의의 HTTP 요청을 보낼 수 있으며, 동일 출처 정책의 보호를 받지 않습니다. 직접 개발한 앱에만 활성화하고, 신뢰할 수 없는 사이트를 패키징할 때는 꺼두세요."
     }
 
     val mixedContentTitle: String get() = when (Strings.lang) {
@@ -64169,16 +64617,16 @@ object StringsE {
     }
 
     val playStoreReportClean: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "未检测到违规配置 ✓"
-        AppLanguage.ENGLISH -> "No violations detected ✓"
-        AppLanguage.ARABIC -> "لم يتم اكتشاف أي مخالفات ✓"
-        AppLanguage.PORTUGUESE -> "Nenhuma violação detectada ✓"
-        AppLanguage.SPANISH -> "No se detectaron infracciones ✓"
-        AppLanguage.FRENCH -> "Aucune violation détectée ✓"
-        AppLanguage.GERMAN -> "Keine Verstöße erkannt ✓"
-        AppLanguage.RUSSIAN -> "Нарушений не обнаружено ✓"
-        AppLanguage.JAPANESE -> "違反は検出されませんでした ✓"
-        AppLanguage.KOREAN -> "위반 사항 없음 ✓"
+        AppLanguage.CHINESE -> "未检测到违规配置"
+        AppLanguage.ENGLISH -> "No violations detected"
+        AppLanguage.ARABIC -> "لم يتم اكتشاف أي مخالفات"
+        AppLanguage.PORTUGUESE -> "Nenhuma violação detectada"
+        AppLanguage.SPANISH -> "No se detectaron infracciones"
+        AppLanguage.FRENCH -> "Aucune violation détectée"
+        AppLanguage.GERMAN -> "Keine Verstöße erkannt"
+        AppLanguage.RUSSIAN -> "Нарушений не обнаружено"
+        AppLanguage.JAPANESE -> "違反は検出されませんでした"
+        AppLanguage.KOREAN -> "위반 사항 없음"
     }
     val playStoreReportCleanDesc: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "本地配置审核通过。注意：Google Play 还会对应用内容（图标、URL、注入脚本）进行人工审核，本工具无法替代。"
@@ -66762,16 +67210,16 @@ object StringsE {
     }
 
     val agentCopyThinkingHeader: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "💭 思考过程"
-        AppLanguage.ENGLISH -> "💭 Thinking"
-        AppLanguage.ARABIC -> "💭 عملية التفكير"
-        AppLanguage.PORTUGUESE -> "💭 Processo de pensamento"
-        AppLanguage.SPANISH -> "💭 Proceso de pensamiento"
-        AppLanguage.FRENCH -> "💭 Réflexion"
-        AppLanguage.GERMAN -> "💭 Denkprozess"
-        AppLanguage.RUSSIAN -> "💭 Рассуждение"
-        AppLanguage.JAPANESE -> "💭 思考プロセス"
-        AppLanguage.KOREAN -> "💭 사고 과정"
+        AppLanguage.CHINESE -> "思考过程"
+        AppLanguage.ENGLISH -> "Thinking"
+        AppLanguage.ARABIC -> "عملية التفكير"
+        AppLanguage.PORTUGUESE -> "Processo de pensamento"
+        AppLanguage.SPANISH -> "Proceso de pensamiento"
+        AppLanguage.FRENCH -> "Réflexion"
+        AppLanguage.GERMAN -> "Denkprozess"
+        AppLanguage.RUSSIAN -> "Рассуждение"
+        AppLanguage.JAPANESE -> "思考プロセス"
+        AppLanguage.KOREAN -> "사고 과정"
     }
 
     val agentSessionRename: String get() = when (Strings.lang) {

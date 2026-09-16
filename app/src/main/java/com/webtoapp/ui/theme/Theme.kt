@@ -4,6 +4,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.selection.LocalTextSelectionColors
+import androidx.compose.foundation.text.selection.TextSelectionColors
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.Color
@@ -98,11 +100,14 @@ fun WebToAppTheme(
 
     val themeType by themeManager.themeTypeFlow.collectAsStateWithLifecycle()
     val darkModeSetting by themeManager.darkModeFlow.collectAsStateWithLifecycle()
+    val accent by themeManager.accentFlow.collectAsStateWithLifecycle()
     val enableAnimations by themeManager.enableAnimationsFlow.collectAsStateWithLifecycle()
     val enableParticles by themeManager.enableParticlesFlow.collectAsStateWithLifecycle()
     val enableHaptics by themeManager.enableHapticsFlow.collectAsStateWithLifecycle()
     val enableSound by themeManager.enableSoundFlow.collectAsStateWithLifecycle()
     val animationSpeed by themeManager.animationSpeedFlow.collectAsStateWithLifecycle()
+    val fontSize by themeManager.fontSizeFlow.collectAsStateWithLifecycle()
+    val cornerStyle by themeManager.cornerStyleFlow.collectAsStateWithLifecycle()
 
     val useDarkTheme = when (darkModeSetting) {
         ThemeManager.DarkModeSettings.SYSTEM -> darkTheme
@@ -112,13 +117,14 @@ fun WebToAppTheme(
 
     val currentTheme = AppThemes.getTheme(themeType)
 
+    val baseScheme = if (useDarkTheme) currentTheme.darkColors else currentTheme.lightColors
+
     val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+        (dynamicColor || accent == AppAccent.DYNAMIC) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             if (useDarkTheme) dynamicDarkColorScheme(context)
             else dynamicLightColorScheme(context)
         }
-        useDarkTheme -> currentTheme.darkColors
-        else -> currentTheme.lightColors
+        else -> AppAccentPalettes.scheme(accent, useDarkTheme)?.applyTo(baseScheme) ?: baseScheme
     }
 
     val animationSettings = AnimationSettings(
@@ -129,27 +135,36 @@ fun WebToAppTheme(
         speedMultiplier = animationSpeed.multiplier
     )
 
+    SideEffect {
+        com.webtoapp.ui.design.WtaMotion.durationScale = animationSpeed.multiplier
+        com.webtoapp.ui.design.WtaMotion.motionEnabled = enableAnimations
+    }
+
     val themeShapes = Shapes(
 
-        extraSmall = RoundedCornerShape(6.dp),
+        extraSmall = RoundedCornerShape((6.dp * cornerStyle.scale)),
 
-        small = RoundedCornerShape(10.dp),
+        small = RoundedCornerShape((10.dp * cornerStyle.scale)),
 
-        medium = RoundedCornerShape(12.dp),
+        medium = RoundedCornerShape((12.dp * cornerStyle.scale)),
 
-        large = RoundedCornerShape(14.dp),
+        large = RoundedCornerShape((14.dp * cornerStyle.scale)),
 
-        extraLarge = RoundedCornerShape(20.dp)
+        extraLarge = RoundedCornerShape((20.dp * cornerStyle.scale))
     )
 
     CompositionLocalProvider(
         LocalAppTheme provides currentTheme,
         LocalAnimationSettings provides animationSettings,
         LocalIsDarkTheme provides useDarkTheme,
+        LocalTextSelectionColors provides TextSelectionColors(
+            handleColor = colorScheme.primary,
+            backgroundColor = colorScheme.primary.copy(alpha = 0.30f)
+        ),
     ) {
         MaterialTheme(
             colorScheme = colorScheme,
-            typography = WtaTypography,
+            typography = WtaTypography.withFontScale(fontSize.scale),
             shapes = themeShapes,
             content = { content(useDarkTheme) }
         )

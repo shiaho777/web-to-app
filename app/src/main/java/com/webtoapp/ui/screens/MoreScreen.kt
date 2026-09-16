@@ -37,6 +37,7 @@ fun MoreScreen(
     onOpenPortManager: () -> Unit = {},
     onOpenStats: () -> Unit = {},
     onOpenAbout: () -> Unit = {},
+    onOpenSettings: () -> Unit = {},
 ) {
     WtaScreen(title = Strings.tabMore) {
         Column(
@@ -143,6 +144,16 @@ fun MoreScreen(
                             title = Strings.menuStats,
                             icon = painterResource(R.drawable.ic_sidebar_stats),
                             onClick = onOpenStats
+                        )
+                    }
+                }
+
+                WtaSection(title = Strings.uiConfig) {
+                    WtaSettingCard {
+                        MoreMenuItem(
+                            title = Strings.uiConfig,
+                            icon = painterResource(R.drawable.ic_sidebar_settings),
+                            onClick = onOpenSettings
                         )
                     }
                 }

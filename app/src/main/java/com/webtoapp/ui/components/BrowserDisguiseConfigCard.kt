@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -267,14 +268,14 @@ fun BrowserDisguiseConfigCard(
                                             modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp),
                                             horizontalAlignment = Alignment.CenterHorizontally
                                         ) {
-                                            Text(
-                                                p.displayName.split(" ").first(),
-                                                style = MaterialTheme.typography.labelSmall,
-                                                textAlign = TextAlign.Center,
-                                                color = if (isSelected) chipColor else MaterialTheme.colorScheme.onSurfaceVariant
+                                            Icon(
+                                                imageVector = disguisePresetIcon(p),
+                                                contentDescription = null,
+                                                modifier = Modifier.size(18.dp),
+                                                tint = if (isSelected) chipColor else MaterialTheme.colorScheme.onSurfaceVariant
                                             )
                                             Text(
-                                                p.displayName.split(" ").getOrElse(1) { "" },
+                                                p.displayName,
                                                 style = MaterialTheme.typography.labelSmall,
                                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                                                 textAlign = TextAlign.Center,
@@ -579,4 +580,13 @@ private fun countActiveVectors(config: BrowserDisguiseConfig): Int {
     if (config.nativeToStringProtection) count++
     if (config.iframeDisguisePropagation) count++
     return count
+}
+
+private fun disguisePresetIcon(preset: BrowserDisguisePreset): ImageVector = when (preset) {
+    BrowserDisguisePreset.OFF -> Icons.Outlined.Block
+    BrowserDisguisePreset.STEALTH -> Icons.Outlined.VisibilityOff
+    BrowserDisguisePreset.GHOST -> Icons.Outlined.Fingerprint
+    BrowserDisguisePreset.PHANTOM -> Icons.Outlined.Masks
+    BrowserDisguisePreset.SPECTER -> Icons.Outlined.Security
+    BrowserDisguisePreset.CUSTOM -> Icons.Outlined.Tune
 }

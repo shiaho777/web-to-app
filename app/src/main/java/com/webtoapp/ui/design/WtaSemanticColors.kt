@@ -93,5 +93,16 @@ object WtaColors {
     val semantic: WtaSemanticPalette
         @Composable
         @ReadOnlyComposable
-        get() = if (LocalIsDarkTheme.current) DarkSemantic else LightSemantic
+        get() {
+            val base = if (LocalIsDarkTheme.current) DarkSemantic else LightSemantic
+            // The neutral role mirrors surface tokens so accent tinting flows
+            // into neutral badges; semantic hues (success/warning/...) stay fixed.
+            val scheme = MaterialTheme.colorScheme
+            return base.copy(
+                neutral = scheme.onSurfaceVariant,
+                onNeutral = scheme.surface,
+                neutralContainer = scheme.surfaceContainerHighest,
+                onNeutralContainer = scheme.onSurface
+            )
+        }
 }

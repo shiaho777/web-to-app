@@ -9,6 +9,8 @@ import android.webkit.WebViewClient
 import android.webkit.WebSettings
 import com.webtoapp.core.logging.AppLogger
 import kotlinx.coroutines.*
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.io.File
 import java.io.FileOutputStream
 
@@ -39,6 +41,14 @@ class WebsiteScreenshotService(private val context: Context) {
         File(context.filesDir, SCREENSHOT_DIR).also { it.mkdirs() }
     }
 
+    // Captures run an offscreen WebView on the main thread and take seconds each;
+    // serialize so list auto-capture and manual taps queue instead of piling up.
+    private val captureMutex = Mutex()
+
+    suspend fun captureScreenshot(appId: Long, url: String): String? = captureMutex.withLock {
+        captureScreenshotLocked(appId, url)
+    }
+
     fun getScreenshotPath(appId: Long): String {
         return File(screenshotDir, "app_${appId}.webp").absolutePath
     }
@@ -47,7 +57,7 @@ class WebsiteScreenshotService(private val context: Context) {
         return File(getScreenshotPath(appId)).exists()
     }
 
-    suspend fun captureScreenshot(appId: Long, url: String): String? {
+    private suspend fun captureScreenshotLocked(appId: Long, url: String): String? {
         val scheme = android.net.Uri.parse(url).scheme?.lowercase(java.util.Locale.ROOT)
         if (scheme != "http" && scheme != "https" && scheme != "file") {
             val invalidUrlMessage = "service skipped invalid url: appId=$appId, url=$url"
@@ -57,6 +67,7 @@ class WebsiteScreenshotService(private val context: Context) {
         }
 
         return withContext(Dispatchers.Main) {
+
             try {
                 val startMessage = "service start: appId=$appId, url=$url"
                 AppLogger.i("ScreenshotFlow", startMessage)

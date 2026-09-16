@@ -326,7 +326,7 @@ setTimeout(function(){
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>🕶️ Browser Disguise Diagnostic</title>
+<title>Browser Disguise Diagnostic</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Segoe UI',system-ui,sans-serif;background:#0a0a1a;color:#e0e0e8;padding:16px}
@@ -349,7 +349,7 @@ h1 span{font-size:28px}
 </style>
 </head>
 <body>
-<h1><span>🕶️</span> Browser Disguise Diagnostic</h1>
+<h1>Browser Disguise Diagnostic</h1>
 <div id="status">Analyzing...</div>
 <div id="report"></div>
 <script>
@@ -358,10 +358,10 @@ var r=document.getElementById('report');
 var s=document.getElementById('status');
 var checks={pass:0,fail:0};
 
-function addSection(title,icon,rows){
+function addSection(title,rows){
     var sec=document.createElement('div');
     sec.className='section';
-    sec.innerHTML='<h2>'+icon+' '+title+'</h2>';
+    sec.innerHTML='<h2>'+title+'</h2>';
     rows.forEach(function(row){
         var d=document.createElement('div');d.className='row';
         var valClass='val';
@@ -377,16 +377,16 @@ function addSection(title,icon,rows){
 
 // 1. WebView Detection
 var wvRows=[];
-wvRows.push(['navigator.webdriver',navigator.webdriver?'true ⚠️':'false ✓',navigator.webdriver?'warn':'pass']);
-wvRows.push(['window.chrome',window.chrome?'Present ✓':'Missing ⚠️',window.chrome?'pass':'warn']);
-wvRows.push(['chrome.runtime',window.chrome&&window.chrome.runtime?'Present ✓':'Missing ⚠️',window.chrome&&window.chrome.runtime?'pass':'warn']);
-wvRows.push(['chrome.loadTimes',typeof window.chrome?.loadTimes==='function'?'Function ✓':'Missing ⚠️',typeof window.chrome?.loadTimes==='function'?'pass':'warn']);
+wvRows.push(['navigator.webdriver',navigator.webdriver?'true':'false',navigator.webdriver?'warn':'pass']);
+wvRows.push(['window.chrome',window.chrome?'Present':'Missing',window.chrome?'pass':'warn']);
+wvRows.push(['chrome.runtime',window.chrome&&window.chrome.runtime?'Present':'Missing',window.chrome&&window.chrome.runtime?'pass':'warn']);
+wvRows.push(['chrome.loadTimes',typeof window.chrome?.loadTimes==='function'?'Function':'Missing',typeof window.chrome?.loadTimes==='function'?'pass':'warn']);
 wvRows.push(['navigator.plugins',navigator.plugins.length+' plugins',navigator.plugins.length>=3?'pass':'warn']);
 wvRows.push(['navigator.vendor',navigator.vendor,navigator.vendor==='Google Inc.'?'pass':'warn']);
-addSection('WebView Detection','🛡️',wvRows);
+addSection('WebView Detection',wvRows);
 
 // 2. Navigator
-addSection('Navigator Properties','🧭',[
+addSection('Navigator Properties',[
     ['userAgent',navigator.userAgent.substring(0,60)+'...'],
     ['platform',navigator.platform],
     ['language',navigator.language],
@@ -398,7 +398,7 @@ addSection('Navigator Properties','🧭',[
 ]);
 
 // 3. Screen
-addSection('Screen','📱',[
+addSection('Screen',[
     ['width × height',screen.width+' × '+screen.height],
     ['availWidth × availHeight',screen.availWidth+' × '+screen.availHeight],
     ['colorDepth',screen.colorDepth],
@@ -411,12 +411,12 @@ try{
     var c=document.createElement('canvas');
     var gl=c.getContext('webgl');
     var ext=gl?gl.getExtension('WEBGL_debug_renderer_info'):null;
-    addSection('WebGL','🎮',[
+    addSection('WebGL',[
         ['Vendor',ext?gl.getParameter(ext.UNMASKED_VENDOR_WEBGL):'N/A'],
         ['Renderer',ext?gl.getParameter(ext.UNMASKED_RENDERER_WEBGL):'N/A'],
         ['Version',gl?gl.getParameter(gl.VERSION):'N/A']
     ]);
-}catch(e){addSection('WebGL','🎮',[['Error',e.message,'warn']])}
+}catch(e){addSection('WebGL',[['Error',e.message,'warn']])}
 
 // 5. Canvas
 try{
@@ -428,15 +428,15 @@ try{
     ctx.fillText('FP Test',2,15);
     var d2=c2.toDataURL();
     var noiseActive=d1!==d2;
-    addSection('Canvas Fingerprint','🎨',[
+    addSection('Canvas Fingerprint',[
         ['Hash (first 50)',d1.substring(22,72)+'...'],
         ['Length',d1.length+' chars'],
-        ['Noise Active',noiseActive?'Yes ✓ (different each read)':'No (identical)',noiseActive?'pass':'']
+        ['Noise Active',noiseActive?'Yes (different each read)':'No (identical)',noiseActive?'pass':'']
     ]);
 }catch(e){}
 
 // 6. Timezone
-addSection('Timezone','🕐',[
+addSection('Timezone',[
     ['getTimezoneOffset()',new Date().getTimezoneOffset()+' min'],
     ['Intl timezone',Intl.DateTimeFormat().resolvedOptions().timeZone],
     ['Intl locale',Intl.DateTimeFormat().resolvedOptions().locale]
@@ -445,10 +445,10 @@ addSection('Timezone','🕐',[
 // 7. Protection Status
 try{
     var toStr=Function.prototype.toString.toString();
-    addSection('Protection','🔐',[
-        ['toString protection',toStr.includes('[native code]')?'Active ✓':'Exposed ⚠️',toStr.includes('[native code]')?'pass':'warn'],
-        ['__wta_browser_disguise__',window.__wta_browser_disguise__?'Injected ✓':'Not active',window.__wta_browser_disguise__?'pass':''],
-        ['selenium flags',window.__selenium_unwrapped?'Present ⚠️':'Clean ✓',window.__selenium_unwrapped?'warn':'pass']
+    addSection('Protection',[
+        ['toString protection',toStr.includes('[native code]')?'Active':'Exposed',toStr.includes('[native code]')?'pass':'warn'],
+        ['__wta_browser_disguise__',window.__wta_browser_disguise__?'Injected':'Not active',window.__wta_browser_disguise__?'pass':''],
+        ['selenium flags',window.__selenium_unwrapped?'Present':'Clean',window.__selenium_unwrapped?'warn':'pass']
     ]);
 }catch(e){}
 
@@ -456,10 +456,10 @@ try{
 var total=checks.pass+checks.fail;
 if(checks.fail===0){
     s.className='protected';
-    s.textContent='🛡️ ALL CHECKS PASSED ('+checks.pass+'/'+total+') — WebView Identity Hidden';
+    s.textContent='ALL CHECKS PASSED ('+checks.pass+'/'+total+') — WebView Identity Hidden';
 }else{
     s.className='exposed';
-    s.textContent='⚠️ '+checks.fail+' EXPOSED / '+total+' — Disguise incomplete';
+    s.textContent=checks.fail+' EXPOSED / '+total+' — Disguise incomplete';
 }
 })();
 </script>

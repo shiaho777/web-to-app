@@ -27,36 +27,61 @@ object WtaMotion {
 
     const val DurationDeliberate: Int = 400
 
-    fun <T> pressSpring(): SpringSpec<T> = spring(
-        dampingRatio = Spring.DampingRatioNoBouncy,
-        stiffness = 1200f
-    )
+    /**
+     * Global motion tuning, written from WebToAppTheme's composition.
+     * Spec factories below read these at call time, so a settings change
+     * applies to every animation started afterwards.
+     */
+    @Volatile
+    var durationScale: Float = 1f
 
-    fun <T> settleSpring(): SpringSpec<T> = spring(
-        dampingRatio = Spring.DampingRatioNoBouncy,
-        stiffness = 700f
-    )
+    @Volatile
+    var motionEnabled: Boolean = true
 
-    fun <T> snapSpring(): SpringSpec<T> = spring(
-        dampingRatio = Spring.DampingRatioNoBouncy,
-        stiffness = 900f
-    )
+    private fun scaledDuration(durationMillis: Int): Int =
+        (durationMillis * durationScale).toInt().coerceAtLeast(1)
 
-    fun <T> bouncySpring(): SpringSpec<T> = spring(
-        dampingRatio = 0.85f,
-        stiffness = 500f
-    )
+    private fun scaledStiffness(stiffness: Float): Float =
+        stiffness / durationScale.coerceAtLeast(0.1f)
 
-    fun <T> gentleSpring(): SpringSpec<T> = spring(
-        dampingRatio = Spring.DampingRatioNoBouncy,
-        stiffness = 400f
-    )
+    private fun <T> instantSpring(): SpringSpec<T> =
+        spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = 20000f)
+
+    fun <T> pressSpring(): SpringSpec<T> =
+        if (!motionEnabled) instantSpring() else spring(
+            dampingRatio = Spring.DampingRatioNoBouncy,
+            stiffness = scaledStiffness(1200f)
+        )
+
+    fun <T> settleSpring(): SpringSpec<T> =
+        if (!motionEnabled) instantSpring() else spring(
+            dampingRatio = Spring.DampingRatioNoBouncy,
+            stiffness = scaledStiffness(700f)
+        )
+
+    fun <T> snapSpring(): SpringSpec<T> =
+        if (!motionEnabled) instantSpring() else spring(
+            dampingRatio = Spring.DampingRatioNoBouncy,
+            stiffness = scaledStiffness(900f)
+        )
+
+    fun <T> bouncySpring(): SpringSpec<T> =
+        if (!motionEnabled) instantSpring() else spring(
+            dampingRatio = 0.85f,
+            stiffness = scaledStiffness(500f)
+        )
+
+    fun <T> gentleSpring(): SpringSpec<T> =
+        if (!motionEnabled) instantSpring() else spring(
+            dampingRatio = Spring.DampingRatioNoBouncy,
+            stiffness = scaledStiffness(400f)
+        )
 
     fun <T> standardTween(
         durationMillis: Int = DurationMedium,
         delayMillis: Int = 0
     ): TweenSpec<T> = tween(
-        durationMillis = durationMillis,
+        durationMillis = if (motionEnabled) scaledDuration(durationMillis) else 1,
         delayMillis = delayMillis,
         easing = StandardEasing
     )
@@ -65,7 +90,7 @@ object WtaMotion {
         durationMillis: Int = DurationMedium,
         delayMillis: Int = 0
     ): TweenSpec<T> = tween(
-        durationMillis = durationMillis,
+        durationMillis = if (motionEnabled) scaledDuration(durationMillis) else 1,
         delayMillis = delayMillis,
         easing = EnterEasing
     )
@@ -74,7 +99,7 @@ object WtaMotion {
         durationMillis: Int = DurationQuick,
         delayMillis: Int = 0
     ): TweenSpec<T> = tween(
-        durationMillis = durationMillis,
+        durationMillis = if (motionEnabled) scaledDuration(durationMillis) else 1,
         delayMillis = delayMillis,
         easing = ExitEasing
     )

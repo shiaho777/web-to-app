@@ -1218,7 +1218,8 @@ fun ModuleTestDialog(
                             WtaChip(
                                 selected = selectedTestPage?.id == page.id,
                                 onClick = { selectedTestPage = page },
-                                label = "${page.icon} ${page.name}"
+                                label = page.name,
+                                leadingIcon = com.webtoapp.util.SvgIconMapper.getIcon(page.icon)
                             )
                         }
                     }

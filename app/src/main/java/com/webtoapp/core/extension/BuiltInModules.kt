@@ -167,9 +167,9 @@ object BuiltInModules {
         runMode = ModuleRunMode.INTERACTIVE,
     )
 
-    private const val MEDIA_DOWNLOADER_PANEL_HTML = """<div class="wta-media-empty"><div class="wta-media-empty-icon">⬇️</div><div id="wta-media-status">Scanning for media...</div></div>"""
+    private const val MEDIA_DOWNLOADER_PANEL_HTML = """<div class="wta-media-empty"><div class="wta-media-empty-icon"><svg style="display:block;margin:0 auto" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 20h16"/></svg></div><div id="wta-media-status">Scanning for media...</div></div>"""
 
-    private const val VIDEO_ENHANCER_PANEL_HTML = """<div class="wta-video-empty"><div class="wta-video-empty-icon">🎬</div><div id="wta-video-status">Looking for video...</div></div>"""
+    private const val VIDEO_ENHANCER_PANEL_HTML = """<div class="wta-video-empty"><div class="wta-video-empty-icon"><svg style="display:block;margin:0 auto" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="13" height="16" rx="2"/><path d="M15 9l7-4v14l-7-4z"/></svg></div><div id="wta-video-status">Looking for video...</div></div>"""
 
     private const val WEB_ANALYZER_PANEL_HTML = """<div class="wta-analyzer-panel"><div class="wta-analyzer-section"><div class="wta-analyzer-section-title" id="wta-analyzer-status">Analyzing page...</div><div id="wta-analyzer-content"></div></div></div>"""
 
@@ -201,7 +201,7 @@ object BuiltInModules {
     };
     const T = I18N[LANG] || I18N.en;
 
-    const MODULE = { id: (typeof __MODULE_INFO__ !== 'undefined' ? __MODULE_INFO__.id : 'media-downloader'), name: T.name, icon: '⬇️', color: '#667eea' };
+    const MODULE = { id: (typeof __MODULE_INFO__ !== 'undefined' ? __MODULE_INFO__.id : 'media-downloader'), name: T.name, icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 20h16"/></svg>', color: '#667eea' };
     const host = location.hostname;
     let mediaList = [];
 
@@ -558,33 +558,33 @@ object BuiltInModules {
         if (platform === 'bilibili') {
             const info = getBilibiliInfo();
             const title = document.querySelector('h1.video-title, .video-title')?.textContent || T.video;
-            if (!info?.video && !info?.audio) return noMediaPanel('📺');
+            if (!info?.video && !info?.audio) return noMediaPanel('<svg style="display:block;margin:0 auto" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M17 2l-5 5-5-5"/></svg>');
             let html = '<div class="wta-media-header"><div class="wta-media-title">' + escapeHtml(title) + '</div><div class="wta-media-subtitle" style="color:#fb7299">' + T.quality + ': ' + info.quality + '</div></div>';
-            if (info.video) html += '<button class="wta-media-btn" style="background:linear-gradient(135deg,#fb7299,#fc9db8)" data-wta-action="mediaDL" data-wta-arg="bili_video"><span>⬇️</span> ' + T.dlVideo + '</button>';
-            if (info.audio) html += '<button class="wta-media-btn" style="background:linear-gradient(135deg,#23ade5,#5bc0de)" data-wta-action="mediaDL" data-wta-arg="bili_audio"><span>🎵</span> ' + T.dlAudio + '</button>';
+            if (info.video) html += '<button class="wta-media-btn" style="background:linear-gradient(135deg,#fb7299,#fc9db8)" data-wta-action="mediaDL" data-wta-arg="bili_video"><span><svg style="display:block" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 20h16"/></svg></span> ' + T.dlVideo + '</button>';
+            if (info.audio) html += '<button class="wta-media-btn" style="background:linear-gradient(135deg,#23ade5,#5bc0de)" data-wta-action="mediaDL" data-wta-arg="bili_audio"><span><svg style="display:block" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 17V5l10-2v12"/><circle cx="6" cy="17" r="3"/><circle cx="16" cy="15" r="3"/></svg></span> ' + T.dlAudio + '</button>';
             html += '<div class="wta-media-tip">' + T.bilibiliTip + '</div>';
             return html;
         }
 
         if (platform === 'douyin') {
             const data = getDouyinVideoData();
-            if (!data?.url) return noMediaPanel('🎵');
-            var douyinHtml = '<div class="wta-media-header"><div class="wta-media-title">' + escapeHtml(data.desc || T.video) + '</div><div class="wta-media-subtitle">@' + escapeHtml(data.author) + '</div></div><button class="wta-media-btn" style="background:linear-gradient(135deg,#fe2c55,#ff6b81)" data-wta-action="mediaDL" data-wta-arg="douyin"><span>⬇️</span> ' + T.dlNoWm + '</button>';
-            if (getDouyinAudio()) douyinHtml += '<button class="wta-media-btn" style="background:linear-gradient(135deg,#23ade5,#5bc0de)" data-wta-action="mediaDL" data-wta-arg="audio"><span>🎵</span> ' + T.dlMusic + '</button>';
+            if (!data?.url) return noMediaPanel('<svg style="display:block;margin:0 auto" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 17V5l10-2v12"/><circle cx="6" cy="17" r="3"/><circle cx="16" cy="15" r="3"/></svg>');
+            var douyinHtml = '<div class="wta-media-header"><div class="wta-media-title">' + escapeHtml(data.desc || T.video) + '</div><div class="wta-media-subtitle">@' + escapeHtml(data.author) + '</div></div><button class="wta-media-btn" style="background:linear-gradient(135deg,#fe2c55,#ff6b81)" data-wta-action="mediaDL" data-wta-arg="douyin"><span><svg style="display:block" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 20h16"/></svg></span> ' + T.dlNoWm + '</button>';
+            if (getDouyinAudio()) douyinHtml += '<button class="wta-media-btn" style="background:linear-gradient(135deg,#23ade5,#5bc0de)" data-wta-action="mediaDL" data-wta-arg="audio"><span><svg style="display:block" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 17V5l10-2v12"/><circle cx="6" cy="17" r="3"/><circle cx="16" cy="15" r="3"/></svg></span> ' + T.dlMusic + '</button>';
             return douyinHtml;
         }
 
         if (platform === 'xiaohongshu') {
             detectXiaohongshuMedia();
-            if (!mediaList.length) return noMediaPanel('📕');
+            if (!mediaList.length) return noMediaPanel('<svg style="display:block;margin:0 auto" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>');
             const images = mediaList.filter(m => m.type === 'image');
             const videos = mediaList.filter(m => m.type === 'video');
             let html = '<div class="wta-media-subtitle" style="margin-bottom:16px">' + T.detected2.replace('{0}', images.length).replace('{1}', videos.length) + '</div>';
-            if (images.length) html += '<button class="wta-media-btn" style="background:linear-gradient(135deg,#ff2442,#ff6b7a)" data-wta-action="mediaDL" data-wta-arg="xhs_all_image"><span>🖼️</span> ' + T.dlAllImg + ' (' + images.length + ')</button>';
-            if (videos.length) html += '<button class="wta-media-btn" style="background:linear-gradient(135deg,#667eea,#764ba2)" data-wta-action="mediaDL" data-wta-arg="xhs_all_video"><span>🎬</span> ' + T.dlAllVid + ' (' + videos.length + ')</button>';
+            if (images.length) html += '<button class="wta-media-btn" style="background:linear-gradient(135deg,#ff2442,#ff6b7a)" data-wta-action="mediaDL" data-wta-arg="xhs_all_image"><span><svg style="display:block" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg></span> ' + T.dlAllImg + ' (' + images.length + ')</button>';
+            if (videos.length) html += '<button class="wta-media-btn" style="background:linear-gradient(135deg,#667eea,#764ba2)" data-wta-action="mediaDL" data-wta-arg="xhs_all_video"><span><svg style="display:block" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="13" height="16" rx="2"/><path d="M15 9l7-4v14l-7-4z"/></svg></span> ' + T.dlAllVid + ' (' + videos.length + ')</button>';
             html += '<div class="wta-media-list">';
             mediaList.forEach(function(m, i) {
-                html += '<div class="wta-media-item"><span class="wta-media-item-icon">' + (m.type === 'image' ? '🖼️' : '🎬') + '</span><div class="wta-media-item-info">' + (m.type === 'image' ? T.image : T.video) + ' ' + (i+1) + '</div><button class="wta-media-item-btn" data-wta-action="mediaDL" data-wta-arg="xhs_' + i + '">' + T.download + '</button></div>';
+                html += '<div class="wta-media-item"><span class="wta-media-item-icon">' + (m.type === 'image' ? '<svg style="display:block" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>' : '<svg style="display:block" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="13" height="16" rx="2"/><path d="M15 9l7-4v14l-7-4z"/></svg>') + '</span><div class="wta-media-item-info">' + (m.type === 'image' ? T.image : T.video) + ' ' + (i+1) + '</div><button class="wta-media-item-btn" data-wta-action="mediaDL" data-wta-arg="xhs_' + i + '">' + T.download + '</button></div>';
             });
             html += '</div>';
             return html;
@@ -592,45 +592,45 @@ object BuiltInModules {
 
         if (platform === 'instagram') {
             getInstagramMedia();
-            if (!mediaList.length) return noMediaPanel('📷');
-            var igHtml = renderMediaListPanel('#E1306C', '📷');
-            if (getInstagramAudio()) igHtml += '<button class="wta-media-btn" style="background:linear-gradient(135deg,#23ade5,#5bc0de);margin-top:8px" data-wta-action="mediaDL" data-wta-arg="audio"><span>🎵</span> ' + T.dlAudio + '</button>';
+            if (!mediaList.length) return noMediaPanel('<svg style="display:block;margin:0 auto" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V9a2 2 0 012-2h3l2-3h6l2 3h3a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>');
+            var igHtml = renderMediaListPanel('#E1306C', '<svg style="display:block" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V9a2 2 0 012-2h3l2-3h6l2 3h3a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>');
+            if (getInstagramAudio()) igHtml += '<button class="wta-media-btn" style="background:linear-gradient(135deg,#23ade5,#5bc0de);margin-top:8px" data-wta-action="mediaDL" data-wta-arg="audio"><span><svg style="display:block" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 17V5l10-2v12"/><circle cx="6" cy="17" r="3"/><circle cx="16" cy="15" r="3"/></svg></span> ' + T.dlAudio + '</button>';
             return igHtml;
         }
 
         if (platform === 'facebook') {
             getFacebookMedia();
-            if (!mediaList.length) return noMediaPanel('📘');
-            return renderMediaListPanel('#1877F2', '📘');
+            if (!mediaList.length) return noMediaPanel('<svg style="display:block;margin:0 auto" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="13" height="16" rx="2"/><path d="M15 9l7-4v14l-7-4z"/></svg>');
+            return renderMediaListPanel('#1877F2', '<svg style="display:block" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="13" height="16" rx="2"/><path d="M15 9l7-4v14l-7-4z"/></svg>');
         }
 
         if (platform === 'tiktok') {
             getTikTokMedia();
-            if (!mediaList.length) return noMediaPanel('🎵');
-            var tiktokHtml = renderMediaListPanel('#000000', '🎵');
-            if (getTikTokAudio()) tiktokHtml += '<button class="wta-media-btn" style="background:linear-gradient(135deg,#23ade5,#5bc0de);margin-top:8px" data-wta-action="mediaDL" data-wta-arg="audio"><span>🎵</span> ' + T.dlMusic + '</button>';
+            if (!mediaList.length) return noMediaPanel('<svg style="display:block;margin:0 auto" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 17V5l10-2v12"/><circle cx="6" cy="17" r="3"/><circle cx="16" cy="15" r="3"/></svg>');
+            var tiktokHtml = renderMediaListPanel('#000000', '<svg style="display:block" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 17V5l10-2v12"/><circle cx="6" cy="17" r="3"/><circle cx="16" cy="15" r="3"/></svg>');
+            if (getTikTokAudio()) tiktokHtml += '<button class="wta-media-btn" style="background:linear-gradient(135deg,#23ade5,#5bc0de);margin-top:8px" data-wta-action="mediaDL" data-wta-arg="audio"><span><svg style="display:block" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 17V5l10-2v12"/><circle cx="6" cy="17" r="3"/><circle cx="16" cy="15" r="3"/></svg></span> ' + T.dlMusic + '</button>';
             return tiktokHtml;
         }
 
         if (platform === 'youtube') {
             getYouTubeMedia();
-            if (!mediaList.length) return noMediaPanel('▶️');
+            if (!mediaList.length) return noMediaPanel('<svg style="display:block;margin:0 auto" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="7 4 20 12 7 20 7 4"/></svg>');
             var ytItems = mediaList.map(function(m, i) {
                 var label = m.type === 'audio' ? T.audio : T.video;
                 var sub = m.q || (m.type === 'audio' ? 'm4a' : 'mp4');
-                return '<div class="wta-media-item" style="padding:16px;border-radius:12px"><div style="width:48px;height:48px;background:linear-gradient(135deg,#FF0000,#CC0000);border-radius:12px;display:flex;align-items:center;justify-content:center;color:white;font-size:20px">' + (m.type === 'audio' ? '🎵' : '🎬') + '</div><div style="flex:1"><div style="font-weight:600;color:var(--wta-on-surface,#1f2937)">' + label + '</div><div class="wta-media-subtitle">' + sub + '</div></div><button class="wta-media-item-btn" style="background:linear-gradient(135deg,#FF0000,#CC0000);color:#fff;padding:10px 20px;border-radius:8px" data-wta-action="mediaDL" data-wta-arg="yt_' + i + '">' + T.download + '</button></div>';
+                return '<div class="wta-media-item" style="padding:16px;border-radius:12px"><div style="width:48px;height:48px;background:linear-gradient(135deg,#FF0000,#CC0000);border-radius:12px;display:flex;align-items:center;justify-content:center;color:white;font-size:20px">' + (m.type === 'audio' ? '<svg style="display:block" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 17V5l10-2v12"/><circle cx="6" cy="17" r="3"/><circle cx="16" cy="15" r="3"/></svg>' : '<svg style="display:block" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="13" height="16" rx="2"/><path d="M15 9l7-4v14l-7-4z"/></svg>') + '</div><div style="flex:1"><div style="font-weight:600;color:var(--wta-on-surface,#1f2937)">' + label + '</div><div class="wta-media-subtitle">' + sub + '</div></div><button class="wta-media-item-btn" style="background:linear-gradient(135deg,#FF0000,#CC0000);color:#fff;padding:10px 20px;border-radius:8px" data-wta-action="mediaDL" data-wta-arg="yt_' + i + '">' + T.download + '</button></div>';
             }).join('');
             return '<div class="wta-media-subtitle" style="margin-bottom:16px">' + T.detected.replace('{0}', mediaList.length) + '</div>' + ytItems;
         }
 
         detectGenericVideos();
-        if (!mediaList.length) return noMediaPanel('🎬');
+        if (!mediaList.length) return noMediaPanel('<svg style="display:block;margin:0 auto" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="13" height="16" rx="2"/><path d="M15 9l7-4v14l-7-4z"/></svg>');
         let html = '<div class="wta-media-subtitle" style="margin-bottom:16px">' + T.detected.replace('{0}', mediaList.length) + '</div>';
         mediaList.forEach(function(v, i) {
-            html += '<div class="wta-media-item" style="padding:16px;border-radius:12px"><div style="width:48px;height:48px;background:linear-gradient(135deg,#667eea,#764ba2);border-radius:12px;display:flex;align-items:center;justify-content:center;color:white;font-size:20px">🎬</div><div style="flex:1"><div style="font-weight:600;color:var(--wta-on-surface,#1f2937)">' + T.video + ' ' + (i+1) + '</div><div class="wta-media-subtitle">' + (v.w || '?') + 'x' + (v.h || '?') + ' · ' + (v.blob ? T.blob : 'MP4') + '</div></div><button class="wta-media-item-btn" style="background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;padding:10px 20px;border-radius:8px" data-wta-action="mediaDL" data-wta-arg="generic_' + i + '">' + T.download + '</button></div>';
+            html += '<div class="wta-media-item" style="padding:16px;border-radius:12px"><div style="width:48px;height:48px;background:linear-gradient(135deg,#667eea,#764ba2);border-radius:12px;display:flex;align-items:center;justify-content:center;color:white;font-size:20px"><svg style="display:block" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="13" height="16" rx="2"/><path d="M15 9l7-4v14l-7-4z"/></svg></div><div style="flex:1"><div style="font-weight:600;color:var(--wta-on-surface,#1f2937)">' + T.video + ' ' + (i+1) + '</div><div class="wta-media-subtitle">' + (v.w || '?') + 'x' + (v.h || '?') + ' · ' + (v.blob ? T.blob : 'MP4') + '</div></div><button class="wta-media-item-btn" style="background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;padding:10px 20px;border-radius:8px" data-wta-action="mediaDL" data-wta-arg="generic_' + i + '">' + T.download + '</button></div>';
         });
         if (getGenericAudio()) {
-            html += '<button class="wta-media-btn" style="background:linear-gradient(135deg,#23ade5,#5bc0de);margin-top:8px" data-wta-action="mediaDL" data-wta-arg="audio"><span>🎵</span> ' + T.audio + ' ' + T.download + '</button>';
+            html += '<button class="wta-media-btn" style="background:linear-gradient(135deg,#23ade5,#5bc0de);margin-top:8px" data-wta-action="mediaDL" data-wta-arg="audio"><span><svg style="display:block" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 17V5l10-2v12"/><circle cx="6" cy="17" r="3"/><circle cx="16" cy="15" r="3"/></svg></span> ' + T.audio + ' ' + T.download + '</button>';
         }
         return html;
     }
@@ -643,7 +643,7 @@ object BuiltInModules {
         var html = '<div class="wta-media-subtitle" style="margin-bottom:16px">' + T.detected.replace('{0}', mediaList.length) + '</div>';
         mediaList.forEach(function(m, i) {
             html += '<div class="wta-media-item" style="padding:16px;border-radius:12px">' +
-                '<div style="width:48px;height:48px;background:linear-gradient(135deg,' + color + ',' + color + '99);border-radius:12px;display:flex;align-items:center;justify-content:center;color:white;font-size:20px">' + (m.type === 'image' ? '🖼️' : icon) + '</div>' +
+                '<div style="width:48px;height:48px;background:linear-gradient(135deg,' + color + ',' + color + '99);border-radius:12px;display:flex;align-items:center;justify-content:center;color:white;font-size:20px">' + (m.type === 'image' ? '<svg style="display:block" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>' : icon) + '</div>' +
                 '<div style="flex:1"><div style="font-weight:600;color:var(--wta-on-surface,#1f2937)">' + (m.type === 'image' ? T.image : T.video) + ' ' + (i+1) + '</div></div>' +
                 '<button class="wta-media-item-btn" style="background:linear-gradient(135deg,' + color + ',' + color + '99);color:#fff;padding:10px 20px;border-radius:8px" data-wta-action="mediaDL" data-wta-arg="list_' + i + '">' + T.download + '</button></div>';
         });
@@ -787,7 +787,7 @@ object BuiltInModules {
     };
     const T = I18N[LANG] || I18N.en;
 
-    const MODULE = { id: (typeof __MODULE_INFO__ !== 'undefined' ? __MODULE_INFO__.id : 'video-enhancer'), name: T.name, icon: '🎬', color: '#8b5cf6' };
+    const MODULE = { id: (typeof __MODULE_INFO__ !== 'undefined' ? __MODULE_INFO__.id : 'video-enhancer'), name: T.name, icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="13" height="16" rx="2"/><path d="M15 9l7-4v14l-7-4z"/></svg>', color: '#8b5cf6' };
     let currentSpeed = 1.0;
     const speeds = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 3.0];
 
@@ -915,7 +915,7 @@ object BuiltInModules {
             '<span class="wta-video-yt-chip ' + (enabled ? 'wta-video-yt-chip-on' : 'wta-video-yt-chip-off') + '">' + (enabled ? T.on : T.off) + '</span></div>' +
             '<div class="wta-video-yt-toggle-desc">' + desc + '</div></div>' +
             '<button class="wta-video-feature-btn" style="padding:8px 16px;flex-direction:row" data-wta-action="' + action + '">' +
-            '<span style="font-size:16px">' + (enabled ? '✓' : '○') + '</span></button></div>';
+            '<span style="font-size:16px">' + (enabled ? '<svg style="display:block" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l5 5L20 6"/></svg>' : '<svg style="display:block" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/></svg>') + '</span></button></div>';
     }
 
     function getPanelHtml() {
@@ -928,17 +928,17 @@ object BuiltInModules {
 
         const featuresHtml = '<div class="wta-video-section"><div class="wta-video-section-title">' + T.features + '</div>' +
             '<div class="wta-video-feature-grid">' +
-            '<button class="wta-video-feature-btn" data-wta-action="togglePiP"><span class="wta-video-feature-icon">📺</span>' + T.pip + '</button>' +
-            '<button class="wta-video-feature-btn" data-wta-action="toggleLoop"><span class="wta-video-feature-icon">🔁</span>' + T.loop + '</button>' +
-            '<button class="wta-video-feature-btn" data-wta-action="skipBack"><span class="wta-video-feature-icon">⏪</span>' + T.back10 + '</button>' +
-            '<button class="wta-video-feature-btn" data-wta-action="skipFwd"><span class="wta-video-feature-icon">⏩</span>' + T.fwd10 + '</button>' +
+            '<button class="wta-video-feature-btn" data-wta-action="togglePiP"><span class="wta-video-feature-icon"><svg style="display:block" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><rect x="13" y="8" width="7" height="6" rx="1"/><path d="M8 21h8"/><path d="M12 17v4"/></svg></span>' + T.pip + '</button>' +
+            '<button class="wta-video-feature-btn" data-wta-action="toggleLoop"><span class="wta-video-feature-icon"><svg style="display:block" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11v-1a4 4 0 014-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v1a4 4 0 01-4 4H3"/></svg></span>' + T.loop + '</button>' +
+            '<button class="wta-video-feature-btn" data-wta-action="skipBack"><span class="wta-video-feature-icon"><svg style="display:block" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 19 2 12 11 5 11 19"/><polygon points="22 19 13 12 22 5 22 19"/></svg></span>' + T.back10 + '</button>' +
+            '<button class="wta-video-feature-btn" data-wta-action="skipFwd"><span class="wta-video-feature-icon"><svg style="display:block" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 19 22 12 13 5 13 19"/><polygon points="2 19 11 12 2 5 2 19"/></svg></span>' + T.fwd10 + '</button>' +
             '</div></div>';
 
-        if (!v && !isYouTube) return '<div class="wta-video-empty"><div class="wta-video-empty-icon">🎬</div><div>' + T.noVideo + '</div></div>';
+        if (!v && !isYouTube) return '<div class="wta-video-empty"><div class="wta-video-empty-icon"><svg style="display:block;margin:0 auto" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="13" height="16" rx="2"/><path d="M15 9l7-4v14l-7-4z"/></svg></div><div>' + T.noVideo + '</div></div>';
         if (!isYouTube) return html + featuresHtml + '</div>';
 
         return html + featuresHtml +
-            '<div class="wta-video-section"><div class="wta-video-section-title">▶️ ' + T.ytSection + '</div>' +
+            '<div class="wta-video-section"><div class="wta-video-section-title"><svg style="display:inline-block;vertical-align:-3px;margin-right:4px" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="7 4 20 12 7 20 7 4"/></svg>' + T.ytSection + '</div>' +
             ytToggleRow('ytAdSkip', T.ytAdSkip, T.ytAdSkipDesc, ytCfg.adSkip) +
             ytToggleRow('ytAutoQuality', T.ytAutoQuality, T.ytAutoQualityDesc, ytCfg.autoQuality) +
             ytToggleRow('ytBgPlay', T.ytBgPlay, T.ytBgPlayDesc, ytCfg.bgPlay) +
@@ -1008,7 +1008,7 @@ object BuiltInModules {
     };
     const T = I18N[LANG] || I18N.en;
 
-    const MODULE = { id: (typeof __MODULE_INFO__ !== 'undefined' ? __MODULE_INFO__.id : 'web-analyzer'), name: T.name, icon: '🔍', color: '#059669' };
+    const MODULE = { id: (typeof __MODULE_INFO__ !== 'undefined' ? __MODULE_INFO__.id : 'web-analyzer'), name: T.name, icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4.3-4.3"/></svg>', color: '#059669' };
 
     function getPageInfo() {
         const scripts = document.querySelectorAll('script[src]').length;
@@ -1038,8 +1038,13 @@ object BuiltInModules {
             '<div class="wta-analyzer-perf-card" style="background:var(--wta-surface-dim,#eff6ff)"><div class="wta-analyzer-perf-num" style="color:#3b82f6">' + (domReady > 0 ? domReady : '-') + '</div><div class="wta-analyzer-perf-label">' + T.domReady + '</div></div></div></div>' +
             '<div class="wta-analyzer-section"><div class="wta-analyzer-section-title">' + T.stats + '</div>' +
             '<div class="wta-analyzer-stat-grid">' +
-            [['📜', info.scripts, T.scripts], ['🎨', info.styles, T.styles], ['🖼️', info.images, T.images], ['🔗', info.links, T.links],
-             ['📝', info.forms, T.forms], ['📺', info.iframes, T.iframes], ['🎬', info.videos, T.videos]].map(function(s) {
+            [['<svg style="display:block;margin:0 auto" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13h8"/><path d="M8 17h5"/></svg>', info.scripts, T.scripts],
+             ['<svg style="display:block;margin:0 auto" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 000 20c1.1 0 2-.9 2-2 0-.5-.2-1-.5-1.4-.3-.4-.5-.8-.5-1.1 0-.8.7-1.5 1.5-1.5H16a6 6 0 006-6c0-4.4-4.5-8-10-8z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10" cy="6.8" r="1"/><circle cx="14.5" cy="6.8" r="1"/><circle cx="17.5" cy="11" r="1"/></svg>', info.styles, T.styles],
+             ['<svg style="display:block;margin:0 auto" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>', info.images, T.images],
+             ['<svg style="display:block;margin:0 auto" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 007.5.5l3-3a5 5 0 00-7-7l-1.8 1.8"/><path d="M14 11a5 5 0 00-7.5-.5l-3 3a5 5 0 007 7l1.8-1.8"/></svg>', info.links, T.links],
+             ['<svg style="display:block;margin:0 auto" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.1 2.1 0 013 3L12 15l-4 1 1-4z"/></svg>', info.forms, T.forms],
+             ['<svg style="display:block;margin:0 auto" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>', info.iframes, T.iframes],
+             ['<svg style="display:block;margin:0 auto" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="13" height="16" rx="2"/><path d="M15 9l7-4v14l-7-4z"/></svg>', info.videos, T.videos]].map(function(s) {
                 return '<div class="wta-analyzer-stat"><div class="wta-analyzer-stat-icon">' + s[0] + '</div><div class="wta-analyzer-stat-num">' + s[1] + '</div><div class="wta-analyzer-stat-label">' + s[2] + '</div></div>';
             }).join('') +
             '</div></div></div>';
@@ -1055,15 +1060,15 @@ object BuiltInModules {
 
     private const val FIND_IN_PAGE_PANEL_HTML = """<div class="wta-mod-panel wta-find-panel">
 <div class="wta-find-bar">
-<span class="wta-find-icon">🔎</span>
+<span class="wta-find-icon"><svg style="display:block" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4.3-4.3"/></svg></span>
 <input id="wta-find-query" class="wta-find-input" placeholder="..." data-wta-action="findInput">
-<button class="wta-find-search-btn" data-wta-action="findSearch">⌕</button>
+<button class="wta-find-search-btn" data-wta-action="findSearch"><svg style="display:block" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4.3-4.3"/></svg></button>
 </div>
 <div class="wta-find-nav">
 <div id="wta-find-status" class="wta-find-status"></div>
 <div class="wta-find-nav-btns">
-<button class="wta-find-nav-btn" data-wta-action="findPrev">↑</button>
-<button class="wta-find-nav-btn" data-wta-action="findNext">↓</button>
+<button class="wta-find-nav-btn" data-wta-action="findPrev"><svg style="display:block" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 15 12 9 18 15"/></svg></button>
+<button class="wta-find-nav-btn" data-wta-action="findNext"><svg style="display:block" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
 <button class="wta-find-clear-btn" data-wta-action="findClear"></button>
 </div>
 </div>
@@ -1092,7 +1097,7 @@ object BuiltInModules {
         ar: { name: 'بحث في الصفحة', placeholder: 'ابحث في الصفحة الحالية', prev: 'السابق', next: 'التالي', clear: 'مسح', noMatch: 'لا توجد نتائج', nativeUnavailable: 'البحث الأصلي غير متاح في هذا المحرك', enterKeyword: 'أدخل كلمة البحث', searching: 'جاري البحث...', tip: 'يستخدم بحث WebView الأصلي لتمييز النتائج والتنقل بينها', matchCount: '{0} / {1}' }
     };
     const T = I18N[LANG] || I18N.en;
-    const MODULE = { id: (typeof __MODULE_INFO__ !== 'undefined' ? __MODULE_INFO__.id : 'find-in-page'), name: T.name, icon: '🔎', color: '#2563eb' };
+    const MODULE = { id: (typeof __MODULE_INFO__ !== 'undefined' ? __MODULE_INFO__.id : 'find-in-page'), name: T.name, icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4.3-4.3"/></svg>', color: '#2563eb' };
 
     let currentQuery = '';
     let currentState = { supported: false, activeMatchOrdinal: -1, numberOfMatches: 0, doneCounting: true, displayIndex: 0 };
@@ -1228,7 +1233,7 @@ object BuiltInModules {
 """
 
     private const val DARK_MODE_PANEL_HTML = """<div class="wta-mod-panel wta-dark-panel">
-<div class="wta-dark-icon" id="wta-dark-icon">☀️</div>
+<div class="wta-dark-icon" id="wta-dark-icon"><svg style="display:block;margin:0 auto" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="M4.9 4.9l1.4 1.4"/><path d="M17.7 17.7l1.4 1.4"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="M4.9 19.1l1.4-1.4"/><path d="M17.7 6.3l1.4-1.4"/></svg></div>
 <div class="wta-dark-status" id="wta-dark-status"></div>
 <div class="wta-mod-desc" id="wta-dark-desc"></div>
 <button class="wta-mod-btn" data-wta-action="toggleDark" id="wta-dark-btn"></button>
@@ -1256,7 +1261,7 @@ object BuiltInModules {
     };
     const T = I18N[LANG] || I18N.en;
 
-    const MODULE = { id: (typeof __MODULE_INFO__ !== 'undefined' ? __MODULE_INFO__.id : 'dark-mode'), name: T.name, icon: '🌙', color: '#6366f1' };
+    const MODULE = { id: (typeof __MODULE_INFO__ !== 'undefined' ? __MODULE_INFO__.id : 'dark-mode'), name: T.name, icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></svg>', color: '#6366f1' };
     const STORAGE_KEY = 'wta_dark_mode';
     let enabled = false;
     try { enabled = localStorage.getItem(STORAGE_KEY) === 'true'; } catch(e) { /* localStorage unavailable */ }
@@ -1309,11 +1314,15 @@ object BuiltInModules {
         var status = document.getElementById('wta-dark-status');
         var desc = document.getElementById('wta-dark-desc');
         var btn = document.getElementById('wta-dark-btn');
-        if (icon) icon.textContent = enabled ? '🌙' : '☀️';
+        if (icon) icon.innerHTML = enabled
+            ? '<svg style="display:block;margin:0 auto" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></svg>'
+            : '<svg style="display:block;margin:0 auto" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="M4.9 4.9l1.4 1.4"/><path d="M17.7 17.7l1.4 1.4"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="M4.9 19.1l1.4-1.4"/><path d="M17.7 6.3l1.4-1.4"/></svg>';
         if (status) status.textContent = enabled ? T.statusOn : T.statusOff;
         if (desc) desc.textContent = T.desc;
         if (btn) {
-            btn.textContent = enabled ? ('☀️ ' + T.turnOff) : ('🌙 ' + T.turnOn);
+            btn.innerHTML = enabled
+                ? ('<svg style="display:inline-block;vertical-align:-4px;margin-right:6px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="M4.9 4.9l1.4 1.4"/><path d="M17.7 17.7l1.4 1.4"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="M4.9 19.1l1.4-1.4"/><path d="M17.7 6.3l1.4-1.4"/></svg>' + T.turnOff)
+                : ('<svg style="display:inline-block;vertical-align:-4px;margin-right:6px" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></svg>' + T.turnOn);
             btn.className = 'wta-mod-btn ' + (enabled ? 'wta-mod-btn-secondary' : 'wta-mod-btn-primary');
         }
     }
@@ -1336,10 +1345,10 @@ object BuiltInModules {
 """
 
     private const val PRIVACY_PANEL_HTML = """<div class="wta-mod-panel wta-privacy-panel">
-<div class="wta-privacy-header"><div class="wta-privacy-icon">🛡️</div><div class="wta-mod-desc" id="wta-privacy-subtitle"></div></div>
-<div class="wta-privacy-item" data-wta-action="privacyToggle" data-wta-arg="tracking" id="wta-priv-tracking"><span class="wta-privacy-item-icon">🚫</span><div class="wta-privacy-item-text"><div class="wta-privacy-item-name" id="wta-priv-tracking-name"></div><div class="wta-privacy-item-desc" id="wta-priv-tracking-desc"></div></div><div class="wta-toggle"><div class="wta-toggle-track"></div><div class="wta-toggle-thumb"></div></div></div>
-<div class="wta-privacy-item" data-wta-action="privacyToggle" data-wta-arg="fingerprint" id="wta-priv-fingerprint"><span class="wta-privacy-item-icon">🎭</span><div class="wta-privacy-item-text"><div class="wta-privacy-item-name" id="wta-priv-fingerprint-name"></div><div class="wta-privacy-item-desc" id="wta-priv-fingerprint-desc"></div></div><div class="wta-toggle"><div class="wta-toggle-track"></div><div class="wta-toggle-thumb"></div></div></div>
-<div class="wta-privacy-item" data-wta-action="privacyToggle" data-wta-arg="cookies" id="wta-priv-cookies"><span class="wta-privacy-item-icon">🍪</span><div class="wta-privacy-item-text"><div class="wta-privacy-item-name" id="wta-priv-cookies-name"></div><div class="wta-privacy-item-desc" id="wta-priv-cookies-desc"></div></div><div class="wta-toggle"><div class="wta-toggle-track"></div><div class="wta-toggle-thumb"></div></div></div>
+<div class="wta-privacy-header"><div class="wta-privacy-icon"><svg style="display:block;margin:0 auto" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 3.5v6c0 5-3.4 9.3-8 10.5-4.6-1.2-8-5.5-8-10.5v-6L12 2z"/></svg></div><div class="wta-mod-desc" id="wta-privacy-subtitle"></div></div>
+<div class="wta-privacy-item" data-wta-action="privacyToggle" data-wta-arg="tracking" id="wta-priv-tracking"><span class="wta-privacy-item-icon"><svg style="display:block" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg></span><div class="wta-privacy-item-text"><div class="wta-privacy-item-name" id="wta-priv-tracking-name"></div><div class="wta-privacy-item-desc" id="wta-priv-tracking-desc"></div></div><div class="wta-toggle"><div class="wta-toggle-track"></div><div class="wta-toggle-thumb"></div></div></div>
+<div class="wta-privacy-item" data-wta-action="privacyToggle" data-wta-arg="fingerprint" id="wta-priv-fingerprint"><span class="wta-privacy-item-icon"><svg style="display:block" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 018-8 8 8 0 018 8v3"/><path d="M8 12a4 4 0 014-4 4 4 0 014 4v5"/><path d="M12 12v7"/></svg></span><div class="wta-privacy-item-text"><div class="wta-privacy-item-name" id="wta-priv-fingerprint-name"></div><div class="wta-privacy-item-desc" id="wta-priv-fingerprint-desc"></div></div><div class="wta-toggle"><div class="wta-toggle-track"></div><div class="wta-toggle-thumb"></div></div></div>
+<div class="wta-privacy-item" data-wta-action="privacyToggle" data-wta-arg="cookies" id="wta-priv-cookies"><span class="wta-privacy-item-icon"><svg style="display:block" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="9" cy="9" r="1"/><circle cx="15" cy="10" r="1"/><circle cx="10" cy="15" r="1"/><circle cx="15.5" cy="15" r="1"/></svg></span><div class="wta-privacy-item-text"><div class="wta-privacy-item-name" id="wta-priv-cookies-name"></div><div class="wta-privacy-item-desc" id="wta-priv-cookies-desc"></div></div><div class="wta-toggle"><div class="wta-toggle-track"></div><div class="wta-toggle-thumb"></div></div></div>
 </div>"""
 
     private const val PRIVACY_CSS = """.wta-privacy-panel{padding:16px}
@@ -1371,7 +1380,7 @@ object BuiltInModules {
     };
     const T = I18N[LANG] || I18N.en;
 
-    const MODULE = { id: (typeof __MODULE_INFO__ !== 'undefined' ? __MODULE_INFO__.id : 'privacy'), name: T.name, icon: '🛡️', color: '#dc2626' };
+    const MODULE = { id: (typeof __MODULE_INFO__ !== 'undefined' ? __MODULE_INFO__.id : 'privacy'), name: T.name, icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 3.5v6c0 5-3.4 9.3-8 10.5-4.6-1.2-8-5.5-8-10.5v-6L12 2z"/></svg>', color: '#dc2626' };
     const STORAGE_KEY = 'wta_privacy';
     let settings = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{"tracking":true,"fingerprint":true,"cookies":false}');
 
@@ -1425,11 +1434,11 @@ object BuiltInModules {
 
     private const val CONTENT_ENHANCER_PANEL_HTML = """<div class="wta-mod-panel">
 <div class="wta-tool-grid">
-<button class="wta-tool-btn" data-wta-action="enableCopy"><span class="wta-tool-icon">📋</span><span class="wta-tool-label" id="wta-tool-copy"></span></button>
-<button class="wta-tool-btn" data-wta-action="copyText"><span class="wta-tool-icon">📝</span><span class="wta-tool-label" id="wta-tool-text"></span></button>
-<button class="wta-tool-btn" data-wta-action="copyHtml"><span class="wta-tool-icon">📝</span><span class="wta-tool-label" id="wta-tool-html"></span></button>
-<button class="wta-tool-btn" data-wta-action="toTop"><span class="wta-tool-icon">⬆️</span><span class="wta-tool-label" id="wta-tool-top"></span></button>
-<button class="wta-tool-btn" data-wta-action="toBottom"><span class="wta-tool-icon">⬇️</span><span class="wta-tool-label" id="wta-tool-bottom"></span></button>
+<button class="wta-tool-btn" data-wta-action="enableCopy"><span class="wta-tool-icon"><svg style="display:block" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/></svg></span><span class="wta-tool-label" id="wta-tool-copy"></span></button>
+<button class="wta-tool-btn" data-wta-action="copyText"><span class="wta-tool-icon"><svg style="display:block" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.1 2.1 0 013 3L12 15l-4 1 1-4z"/></svg></span><span class="wta-tool-label" id="wta-tool-text"></span></button>
+<button class="wta-tool-btn" data-wta-action="copyHtml"><span class="wta-tool-icon"><svg style="display:block" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></span><span class="wta-tool-label" id="wta-tool-html"></span></button>
+<button class="wta-tool-btn" data-wta-action="toTop"><span class="wta-tool-icon"><svg style="display:block" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21V8"/><path d="M6 13l6-6 6 6"/><path d="M4 3h16"/></svg></span><span class="wta-tool-label" id="wta-tool-top"></span></button>
+<button class="wta-tool-btn" data-wta-action="toBottom"><span class="wta-tool-icon"><svg style="display:block" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13"/><path d="M6 11l6 6 6-6"/><path d="M4 21h16"/></svg></span><span class="wta-tool-label" id="wta-tool-bottom"></span></button>
 </div>
 </div>"""
 
@@ -1453,7 +1462,7 @@ object BuiltInModules {
     };
     const T = I18N[LANG] || I18N.en;
 
-    const MODULE = { id: (typeof __MODULE_INFO__ !== 'undefined' ? __MODULE_INFO__.id : 'content-enhancer'), name: T.name, icon: '✨', color: '#f59e0b' };
+    const MODULE = { id: (typeof __MODULE_INFO__ !== 'undefined' ? __MODULE_INFO__.id : 'content-enhancer'), name: T.name, icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M18 15l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9z"/></svg>', color: '#f59e0b' };
 
     function enableCopy() {
         document.body.style.userSelect = 'auto';
@@ -1501,7 +1510,7 @@ object BuiltInModules {
 """
 
     private const val ELEMENT_BLOCKER_PANEL_HTML = """<div class="wta-mod-panel wta-blocker-panel">
-<button class="wta-blocker-select-btn" data-wta-action="enterSelectMode"><span>👆</span><span id="wta-blocker-select-label"></span></button>
+<button class="wta-blocker-select-btn" data-wta-action="enterSelectMode"><span><svg style="display:block" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3l14 9-6.2 1.3L17 20l-2.6 1.2-3.2-6.6L6 19V3z"/></svg></span><span id="wta-blocker-select-label"></span></button>
 <div id="wta-blocker-list" class="wta-blocker-list"></div>
 <button class="wta-blocker-clear-btn" data-wta-action="clearAllBlocks" id="wta-blocker-clear"></button>
 </div>"""
@@ -1579,7 +1588,7 @@ object BuiltInModules {
     };
     const T = I18N[LANG] || I18N.en;
 
-    const MODULE = { id: (typeof __MODULE_INFO__ !== 'undefined' ? __MODULE_INFO__.id : 'element-blocker'), name: T.name, icon: '🚫', color: '#ef4444' };
+    const MODULE = { id: (typeof __MODULE_INFO__ !== 'undefined' ? __MODULE_INFO__.id : 'element-blocker'), name: T.name, icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg>', color: '#ef4444' };
     const STORAGE_KEY = 'wta_blocked_elements';
     let blockedSelectors = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
     let selectMode = false;
@@ -1783,7 +1792,7 @@ object BuiltInModules {
 
     function getPanelHtml() {
         let html = '<div class="wta-blocker-panel">' +
-            '<button class="wta-blocker-select-btn" data-wta-action="enterSelectMode"><span>👆</span> ' + T.selectElement + '</button>';
+            '<button class="wta-blocker-select-btn" data-wta-action="enterSelectMode"><span><svg style="display:block" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3l14 9-6.2 1.3L17 20l-2.6 1.2-3.2-6.6L6 19V3z"/></svg></span> ' + T.selectElement + '</button>';
 
         html += '<div class="wta-blocker-count">' + T.blockedCount.replace('{0}', blockedSelectors.length) + '</div>';
 
@@ -1793,12 +1802,12 @@ object BuiltInModules {
                 html += '<div class="wta-blocker-item">' +
                     '<span class="wta-blocker-item-selector">' + selector.replace(/</g, '&lt;') + '</span>' +
                     '<button class="wta-blocker-item-btn" data-wta-action="copySelector" data-wta-arg="' + i + '" title="' + T.copyRule + '">⧉</button>' +
-                    '<button class="wta-blocker-item-btn" data-wta-action="unblock" data-wta-arg="' + i + '">✕</button></div>';
+                    '<button class="wta-blocker-item-btn" data-wta-action="unblock" data-wta-arg="' + i + '"><svg style="display:block" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12"/><path d="M18 6L6 18"/></svg></button></div>';
             });
             html += '</div>';
             html += '<button class="wta-blocker-clear-btn" data-wta-action="clearAllBlocks">' + T.clearAll + '</button>';
         } else {
-            html += '<div class="wta-blocker-empty"><div class="wta-blocker-empty-icon">🎯</div><div>' + T.clickToSelect + '</div></div>';
+            html += '<div class="wta-blocker-empty"><div class="wta-blocker-empty-icon"><svg style="display:block;margin:0 auto" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></svg></div><div>' + T.clickToSelect + '</div></div>';
         }
 
         return html + '</div>';

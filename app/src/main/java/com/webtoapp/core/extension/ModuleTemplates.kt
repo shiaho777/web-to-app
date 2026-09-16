@@ -549,7 +549,7 @@ if (observerTarget instanceof Node) {
                 key = "buttonText",
                 name = Strings.templateButtonText,
                 type = ConfigItemType.TEXT,
-                defaultValue = "⬆️"
+                defaultValue = """<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg>"""
             ),
             ModuleConfigItem(
                 key = "action",
@@ -566,12 +566,12 @@ if (observerTarget instanceof Node) {
             )
         ),
         code = """
-const buttonText = getConfig('buttonText', '⬆️');
+const buttonText = getConfig('buttonText', '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg>');
 const action = getConfig('action', 'window.scrollTo({ top: 0, behavior: "smooth" });');
 const position = getConfig('position', 'bottom-right');
 
 const btn = document.createElement('div');
-btn.textContent = buttonText;
+btn.innerHTML = buttonText;
 const positions = {
     'bottom-right': 'bottom: 80px; right: 20px;',
     'bottom-left': 'bottom: 80px; left: 20px;',
@@ -676,7 +676,7 @@ if (showCountdown) {
         code = """
 const showAfter = parseInt(getConfig('showAfter', '300'));
 const btn = document.createElement('div');
-btn.innerHTML = '⬆️';
+btn.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg>';
 btn.style.cssText = 'position:fixed;bottom:80px;right:20px;z-index:99999;width:50px;height:50px;border-radius:50%;background:rgba(0,0,0,0.7);color:white;display:none;align-items:center;justify-content:center;font-size:24px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,0.3);';
 btn.onclick = () => window.scrollTo({ top: 0, behavior: 'smooth' });
 document.body.appendChild(btn);
@@ -1000,7 +1000,7 @@ const logs = [];
 
 const panel = document.createElement('div');
 panel.style.cssText = 'position:fixed;bottom:0;left:0;right:0;height:200px;background:#1e1e1e;color:#fff;font-family:monospace;font-size:12px;overflow-y:auto;z-index:999999;padding:10px;border-top:2px solid #333;';
-panel.innerHTML = '<div style="margin-bottom:5px;color:#888;">📋 Console Logger</div>';
+panel.innerHTML = '<div style="margin-bottom:5px;color:#888;"><svg style="display:inline-block;vertical-align:-2px;margin-right:4px" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/></svg>Console Logger</div>';
 const logContainer = document.createElement('div');
 panel.appendChild(logContainer);
 document.body.appendChild(panel);
@@ -1035,7 +1035,7 @@ function addLog(type, args) {
 const requests = [];
 const panel = document.createElement('div');
 panel.style.cssText = 'position:fixed;top:10px;right:10px;width:300px;max-height:400px;background:#1e1e1e;color:#fff;font-family:monospace;font-size:11px;overflow-y:auto;z-index:999999;padding:10px;border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,0.5);';
-panel.innerHTML = '<div style="margin-bottom:5px;color:#888;">🌐 Network Monitor</div>';
+panel.innerHTML = '<div style="margin-bottom:5px;color:#888;"><svg style="display:inline-block;vertical-align:-2px;margin-right:4px" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 010 18 14 14 0 010-18z"/></svg>Network Monitor</div>';
 const list = document.createElement('div');
 panel.appendChild(list);
 document.body.appendChild(panel);

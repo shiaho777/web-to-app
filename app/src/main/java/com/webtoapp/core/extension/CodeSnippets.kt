@@ -277,7 +277,7 @@ function addImageDownloadButtons() {
         wrapper.style.cssText = 'position:relative;display:inline-block;';
 
         const btn = document.createElement('button');
-        btn.textContent = '💾';
+        btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;vertical-align:middle"><path d="M5 3h11l4 4v14a1 1 0 01-1 1H5a1 1 0 01-1-1V4a1 1 0 011-1z"/><path d="M8 3v5h7V3M8 14h8v7H8z"/></svg>';
         btn.style.cssText = `
             position: absolute;
             top: 5px;
@@ -1228,7 +1228,7 @@ const url = buildUrl('https://example.com/search', { q: 'test', page: 1 });""",
                 description = Strings.snippetFloatingButtonDesc,
                 code = """function createFloatingButton(text, onClick, position = 'bottom-right') {
     const btn = document.createElement('div');
-    btn.textContent = text;
+    btn.innerHTML = text;
     const positions = {
         'bottom-right': 'bottom: 80px; right: 20px;',
         'bottom-left': 'bottom: 80px; left: 20px;',
@@ -1247,7 +1247,7 @@ const url = buildUrl('https://example.com/search', { q: 'test', page: 1 });""",
     document.body.appendChild(btn);
     return btn;
 }
-createFloatingButton('⬆️', () => window.scrollTo({top: 0, behavior: 'smooth'}));""",
+createFloatingButton('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;vertical-align:middle"><path d="M12 19V5M5 12l7-7 7 7"/></svg>', () => window.scrollTo({top: 0, behavior: 'smooth'}));""",
                 tags = listOf(Strings.tagButton, Strings.tagFloating)
             ),
             CodeSnippet(
@@ -1424,9 +1424,9 @@ showSnackbar('文件已删除', '撤销', () => console.log('撤销'));""",
 }
 
 createToolbar([
-    { icon: '⬆️', title: '返回顶部', onClick: () => window.scrollTo({top: 0, behavior: 'smooth'}) },
-    { icon: '🌙', title: '深色模式', onClick: () => document.body.classList.toggle('dark') },
-    { icon: '📖', title: '阅读模式', onClick: () => console.log('阅读模式') }
+    { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;vertical-align:middle"><path d="M12 19V5M5 12l7-7 7 7"/></svg>', title: '返回顶部', onClick: () => window.scrollTo({top: 0, behavior: 'smooth'}) },
+    { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;vertical-align:middle"><path d="M21 12.8A8 8 0 1111.2 3 7 7 0 0021 12.8z"/></svg>', title: '深色模式', onClick: () => document.body.classList.toggle('dark') },
+    { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;vertical-align:middle"><path d="M4 4h7a3 3 0 013 3v13a2 2 0 00-2-2H4z"/><path d="M20 4h-7a3 3 0 00-3 3v13a2 2 0 012-2h8z"/></svg>', title: '阅读模式', onClick: () => console.log('阅读模式') }
 ]);""",
                 tags = listOf(Strings.tagToolbar, Strings.tagFloating)
             ),
@@ -1450,7 +1450,7 @@ createToolbar([
     `;
 
     const toggle = document.createElement('button');
-    toggle.innerHTML = '☰';
+    toggle.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;vertical-align:middle"><path d="M4 7h16M4 12h16M4 17h16"/></svg>';
     toggle.style.cssText = `
         position: fixed; top: 50%; right: 0; transform: translateY(-50%);
         z-index: 999998; padding: 10px; background: #007bff; color: white;
@@ -1525,9 +1525,9 @@ createSidebar('<h3>设置</h3><p>这里是侧边栏内容</p>');""",
             </div>
         </div>
         <div style="display: flex; justify-content: center; gap: 20px; margin-top: 15px;">
-            <button style="background: none; border: none; color: white; font-size: 20px; cursor: pointer;">⏮</button>
-            <button style="background: none; border: none; color: white; font-size: 24px; cursor: pointer;">▶️</button>
-            <button style="background: none; border: none; color: white; font-size: 20px; cursor: pointer;">⏭</button>
+            <button style="background: none; border: none; color: white; font-size: 20px; cursor: pointer;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;vertical-align:middle"><path d="M11 6l-7 6 7 6z"/><path d="M20 6l-7 6 7 6z"/></svg></button>
+            <button style="background: none; border: none; color: white; font-size: 24px; cursor: pointer;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:24px;height:24px;vertical-align:middle"><path d="M7 5l12 7-12 7z"/></svg></button>
+            <button style="background: none; border: none; color: white; font-size: 20px; cursor: pointer;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;vertical-align:middle"><path d="M13 6l7 6-7 6z"/><path d="M4 6l7 6-7 6z"/></svg></button>
         </div>
     `;
     document.body.appendChild(player);
@@ -1710,7 +1710,7 @@ document.addEventListener('keydown', (e) => {
                 name = Strings.snippetBackToTopBtn,
                 description = Strings.snippetBackToTopBtnDesc,
                 code = """const backToTopBtn = document.createElement('div');
-backToTopBtn.innerHTML = '⬆️';
+backToTopBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;vertical-align:middle"><path d="M12 19V5M5 12l7-7 7 7"/></svg>';
 backToTopBtn.style.cssText = `
     position: fixed; bottom: 80px; right: 20px; z-index: 99999;
     width: 50px; height: 50px; border-radius: 50%;
@@ -1937,7 +1937,7 @@ clearForm('#myForm');""",
 
     const toggle = document.createElement('button');
     toggle.type = 'button';
-    toggle.innerHTML = '👁️';
+    toggle.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;vertical-align:middle"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     toggle.style.cssText = `
         position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
         background: none; border: none; cursor: pointer; font-size: 16px;
@@ -1948,7 +1948,7 @@ clearForm('#myForm');""",
 
     toggle.onclick = () => {
         input.type = input.type === 'password' ? 'text' : 'password';
-        toggle.innerHTML = input.type === 'password' ? '👁️' : '🙈';
+        toggle.innerHTML = input.type === 'password' ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;vertical-align:middle"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>' : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;vertical-align:middle"><path d="M2 12s4-7 10-7c2 0 3.5.7 4.8 1.6M22 12s-4 7-10 7c-2 0-3.5-.7-4.8-1.6"/><path d="M3 3l18 18"/></svg>';
     };
 }
 addPasswordToggle('#password');""",
@@ -2267,7 +2267,7 @@ document.addEventListener('mouseup', () => {
     if (selection.length > 0 && selection.length < 500) {
         // Show朗读按钮
         const btn = document.createElement('button');
-        btn.innerHTML = '🔊';
+        btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;vertical-align:middle"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16 8a4 4 0 010 8"/><path d="M19 5a8 8 0 010 14"/></svg>';
         btn.style.cssText = `
             position: fixed; z-index: 999999;
             padding: 8px 12px; background: #333; color: white;
@@ -2297,7 +2297,7 @@ document.addEventListener('mouseup', () => {
     const total = chinese + english + numbers;
 
     const result = `
-        📊 字数统计
+        字数统计
         ─────────
         中文: ${"$"}{chinese} 字
         英文: ${"$"}{english} 词
@@ -2819,7 +2819,7 @@ replaceText({
 
     const btn = document.createElement('button');
     btn.id = 'translate-btn';
-    btn.innerHTML = '🌐 翻译';
+    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;vertical-align:middle"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg> 翻译';
     btn.style.cssText = `
         position: fixed; z-index: 999999;
         left: ${"$"}{e.clientX}px; top: ${"$"}{e.clientY + 10}px;
@@ -3074,7 +3074,7 @@ autoFillAndSubmit({
 
     const timer = setInterval(() => {
         countdown--;
-        display.textContent = '🔄 ' + countdown + 's';
+        display.textContent = countdown + 's';
         if (countdown <= 0) {
             location.reload();
         }
@@ -3159,7 +3159,7 @@ panel.style.cssText = `
     font-size: 12px; overflow-y: auto; z-index: 999999;
     padding: 10px; border-top: 2px solid #007acc;
 `;
-panel.innerHTML = '<div style="color: #888;">📋 Console Panel</div>';
+panel.innerHTML = '<div style="color: #888;">Console Panel</div>';
 document.body.appendChild(panel);
 
 const originalLog = console.log;
@@ -3235,7 +3235,7 @@ document.addEventListener('keydown', (e) => {
     const firstPaint = performance.getEntriesByType('paint')[0]?.startTime || 0;
 
     const info = `
-        📊 性能信息
+        性能信息
         ─────────────
         页面加载: ${"$"}{loadTime}ms
         DOM 就绪: ${"$"}{domReady}ms

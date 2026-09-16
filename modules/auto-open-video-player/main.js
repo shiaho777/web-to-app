@@ -246,7 +246,7 @@
     countdownNum.textContent = COUNTDOWN;
 
     const label = document.createElement('span');
-    label.textContent = '📺 Opening in player…';
+    label.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;margin-right:4px"><polygon points="7 4 20 12 7 20 7 4"/></svg>Opening in player…';
 
     cancelBtn = document.createElement('div');
     cancelBtn.id = 'cancel-btn';
@@ -262,7 +262,7 @@
     fallbackBtn = document.createElement('div');
     fallbackBtn.id = 'fallback-btn';
     fallbackBtn.innerHTML = `
-      <span class="fb-icon">📺</span>
+      <span class="fb-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="display:block"><polygon points="7 4 20 12 7 20 7 4"/></svg></span>
       <span class="fb-text">Open with<span class="fb-sub">Choose Player</span></span>`;
 
     fallbackBtn.addEventListener('pointerdown', e => {

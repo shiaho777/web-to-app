@@ -39,7 +39,7 @@ object DebugTestPages {
     </style>
 </head>
 <body>
-    <h1>🧪 基础HTML测试页</h1>
+    <h1>基础HTML测试页</h1>
     <p>这是一个用于测试扩展模块的基础页面。</p>
 
     <div class="card">
@@ -103,7 +103,7 @@ object DebugTestPages {
     </style>
 </head>
 <body>
-    <h1>📝 表单测试页</h1>
+    <h1>表单测试页</h1>
     <form id="testForm">
         <div class="form-group">
             <label for="username">用户名</label>
@@ -172,7 +172,7 @@ object DebugTestPages {
     </style>
 </head>
 <body>
-    <h1>🎬 媒体测试页</h1>
+    <h1>媒体测试页</h1>
 
     <div class="media-section">
         <h2>图片画廊</h2>
@@ -235,30 +235,30 @@ object DebugTestPages {
 </head>
 <body>
     <div class="content">
-        <h1>🛡️ 广告模拟测试页</h1>
+        <h1>广告模拟测试页</h1>
         <p>此页面模拟各种广告元素，用于测试广告拦截模块。</p>
 
         <div class="ad-banner">
-            <h3>📢 横幅广告 (class="ad-banner")</h3>
+            <h3>横幅广告 (class="ad-banner")</h3>
             <p>这是一个模拟的横幅广告</p>
         </div>
 
         <p>这是正常的页面内容，不应该被隐藏。</p>
 
         <div class="ads-container">
-            <h3>📢 广告容器 (class="ads-container")</h3>
+            <h3>广告容器 (class="ads-container")</h3>
             <p>这是另一个广告区域</p>
         </div>
 
         <p>更多正常内容...</p>
 
         <div class="advertisement">
-            <h3>📢 广告区 (class="advertisement")</h3>
+            <h3>广告区 (class="advertisement")</h3>
             <p>Advertisement Area</p>
         </div>
 
         <div data-ad="true">
-            <h3>📢 数据广告 (data-ad="true")</h3>
+            <h3>数据广告 (data-ad="true")</h3>
             <p>Data Ad Element</p>
         </div>
 
@@ -271,7 +271,7 @@ object DebugTestPages {
     <div class="overlay" id="overlay"></div>
     <div id="popup-ad">
         <span class="close-btn" onclick="document.getElementById('popup-ad').style.display='none';document.getElementById('overlay').style.display='none';">✕</span>
-        <h2>🎁 弹窗广告</h2>
+        <h2>弹窗广告</h2>
         <p>恭喜！您获得了一个测试弹窗！</p>
         <button onclick="document.getElementById('popup-ad').style.display='none';document.getElementById('overlay').style.display='none';">关闭</button>
     </div>
@@ -304,7 +304,7 @@ object DebugTestPages {
     </style>
 </head>
 <body>
-    <h1>💬 弹窗测试页</h1>
+    <h1>弹窗测试页</h1>
     <p>点击按钮测试各种弹窗：</p>
 
     <button onclick="document.getElementById('modal1').style.display='block'">打开模态框</button>
@@ -324,13 +324,13 @@ object DebugTestPages {
     </div>
 
     <div class="cookie-banner" id="cookieBanner">
-        🍪 本网站使用 Cookie 来提升您的体验。
+        本网站使用 Cookie 来提升您的体验。
         <button onclick="this.parentElement.style.display='none'" style="margin-left:20px;">接受</button>
         <button onclick="this.parentElement.style.display='none'">拒绝</button>
     </div>
 
     <div class="notification-prompt" id="notifPrompt">
-        🔔 是否允许发送通知？
+        是否允许发送通知？
         <div style="margin-top:10px;">
             <button onclick="this.parentElement.parentElement.style.display='none'">允许</button>
             <button onclick="this.parentElement.parentElement.style.display='none'">拒绝</button>
@@ -365,7 +365,7 @@ object DebugTestPages {
 <body>
     <div class="scroll-indicator" id="scrollIndicator">滚动: 0%</div>
 
-    <h1>📜 滚动测试页</h1>
+    <h1>滚动测试页</h1>
     <p>这是一个长页面，用于测试滚动相关的扩展模块。</p>
 
     <div class="section"><h2>第 1 节</h2><p>向下滚动查看更多内容...</p></div>
@@ -409,7 +409,7 @@ object DebugTestPages {
     </style>
 </head>
 <body>
-    <h1>🌐 API测试页</h1>
+    <h1>API测试页</h1>
     <p>测试各种网络请求：</p>
 
     <div>
@@ -498,7 +498,7 @@ object DebugTestPages {
     </style>
 </head>
 <body>
-    <h1>🎨 样式测试页</h1>
+    <h1>样式测试页</h1>
 
     <h2>颜色</h2>
     <div class="color-box" style="background:#FF6B6B"></div>

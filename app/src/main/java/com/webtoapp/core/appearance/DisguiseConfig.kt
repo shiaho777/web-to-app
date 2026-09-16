@@ -303,11 +303,11 @@ enum class BrowserDisguisePreset(
     val level: Int
 ) {
     OFF("Off", "No browser disguise", 0),
-    STEALTH("🥷 Stealth", "Remove WebView traces, basic anti-detection", 1),
-    GHOST("👻 Ghost", "Canvas/WebGL/Audio fingerprint spoofing", 2),
-    PHANTOM("🔮 Phantom", "Full environment spoofing: timezone, language, hardware", 3),
-    SPECTER("💀 Specter", "Maximum disguise: prototype protection + iframe propagation", 4),
-    CUSTOM("⚙️ Custom", "Manual fine-grained control", 5)
+    STEALTH("Stealth", "Remove WebView traces, basic anti-detection", 1),
+    GHOST("Ghost", "Canvas/WebGL/Audio fingerprint spoofing", 2),
+    PHANTOM("Phantom", "Full environment spoofing: timezone, language, hardware", 3),
+    SPECTER("Specter", "Maximum disguise: prototype protection + iframe propagation", 4),
+    CUSTOM("Custom", "Manual fine-grained control", 5)
 }
 
 enum class WebGLRenderer(
