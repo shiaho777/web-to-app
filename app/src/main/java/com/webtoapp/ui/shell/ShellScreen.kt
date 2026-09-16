@@ -31,6 +31,8 @@ import kotlinx.coroutines.launch
  * ShellAnnouncementDialog's own construction (template/custom-icon mapping); this one carries
  * the trigger and version fields the show/hide gate must honor.
  */
+private const val CONSOLE_LOG_CAP = 500
+
 internal fun buildShellAnnouncement(config: ShellConfig): Announcement = Announcement(
     title = config.announcementTitle,
     content = config.announcementContent,
@@ -409,7 +411,7 @@ fun ShellScreen(
                 statusBarColorTracker?.scheduleSample(56L)
             },
             onRefreshFinished = { isRefreshing = false },
-            onConsoleLog = { entry -> consoleMessages = consoleMessages + entry }
+            onConsoleLog = { entry -> consoleMessages = (consoleMessages + entry).takeLast(CONSOLE_LOG_CAP) }
         )
     }
 
@@ -511,13 +513,13 @@ fun ShellScreen(
             // the entry shows "=> null" but the script does run in the page).
             val surface = browserSurfaceRef
             val appendResult: (String?) -> Unit = { result ->
-                consoleMessages = consoleMessages + ConsoleLogEntry(
+                consoleMessages = (consoleMessages + ConsoleLogEntry(
                     level = ConsoleLevel.LOG,
                     message = "=> $result",
                     source = "eval",
                     lineNumber = 0,
                     timestamp = System.currentTimeMillis()
-                )
+                )).takeLast(CONSOLE_LOG_CAP)
             }
             if (surface != null) {
                 surface.evaluateJavascript(script, appendResult)

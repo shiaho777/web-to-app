@@ -48,12 +48,22 @@ class DownloadBridge(
                 window._wtaBlobCacheHooked = true;
                 const blobUrlMap = window.__wtaBlobMap || (window.__wtaBlobMap = new Map());
                 const blobNameMap = window.__wtaBlobNameMap || (window.__wtaBlobNameMap = new Map());
+                // Blob handles pin real memory and most pages never revoke. Cap the cache
+                // (insertion-ordered LRU) so blob-heavy pages cannot grow it without bound.
+                const BLOB_CACHE_CAP = 200;
+                const blobCachePut = function(url, blob) {
+                    if (blobUrlMap.has(url)) blobUrlMap.delete(url);
+                    blobUrlMap.set(url, blob);
+                    while (blobUrlMap.size > BLOB_CACHE_CAP) {
+                        blobUrlMap.delete(blobUrlMap.keys().next().value);
+                    }
+                };
                 const originalCreateObjectURL = URL.createObjectURL.bind(URL);
                 const originalRevokeObjectURL = URL.revokeObjectURL.bind(URL);
                 URL.createObjectURL = function(blob) {
                     const url = originalCreateObjectURL(blob);
                     if (blob instanceof Blob) {
-                        blobUrlMap.set(url, blob);
+                        blobCachePut(url, blob);
                     }
                     return url;
                 };
@@ -104,7 +114,7 @@ class DownloadBridge(
                     const cb = pending && pending[d.id];
                     if (cb) {
                         delete pending[d.id];
-                        if (d.blob instanceof Blob) blobUrlMap.set(d.url, d.blob);
+                        if (d.blob instanceof Blob) blobCachePut(d.url, d.blob);
                         cb(d.blob instanceof Blob ? d.blob : null);
                     }
                 });
@@ -156,17 +166,28 @@ class DownloadBridge(
                         "return u;};})();\n";
                     window.Worker = function(scriptURL, options) {
                         try {
-                            const xhr = new XMLHttpRequest();
-                            xhr.open('GET', String(scriptURL), false);
-                            xhr.send();
-                            const wrapped = new Blob([workerPreamble, xhr.responseText], {type: 'text/javascript'});
+                            // Module workers cannot importScripts; run them unpatched
+                            // rather than break them (their blob URLs stay untracked).
+                            if (options && options.type === 'module') {
+                                return new OriginalWorker(scriptURL, options);
+                            }
+                            // importScripts in a bootstrap blob keeps worker creation
+                            // off the synchronous-XHR path: no JS-thread stall while
+                            // the script downloads. importScripts runs it in the same
+                            // worker, so preamble and page script share one context.
+                            var absUrl = new URL(String(scriptURL),
+                                (document.baseURI || location.href)).href;
+                            var wrapped = new Blob(
+                                [workerPreamble, "importScripts(" + JSON.stringify(absUrl) + ");\n"],
+                                {type: 'text/javascript'}
+                            );
                             const w = new OriginalWorker(URL.createObjectURL(wrapped), options);
                             let userOnMessage = null;
                             const userListeners = [];
                             w.addEventListener('message', function(e) {
                                 const d = e.data;
                                 if (d && d.__wta_blob_reg__ === 1) {
-                                    if (d.blob instanceof Blob) blobUrlMap.set(d.url, d.blob);
+                                    if (d.blob instanceof Blob) blobCachePut(d.url, d.blob);
                                     return;
                                 }
                                 if (userOnMessage) userOnMessage.call(w, e);

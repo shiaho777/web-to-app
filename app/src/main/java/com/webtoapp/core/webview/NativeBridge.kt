@@ -1506,6 +1506,32 @@ NativeBridge.googleSignIn('sign-in-' + Date.now());
         }
     }
 
+    /**
+     * Async variant of [httpRequest]: identical semantics, but the network call runs on
+     * the IO dispatcher and the result is delivered back into the page through
+     * `window.__wtaNativeHttpResponse(callbackId, json)`. The synchronous variant blocks
+     * the calling JS thread for the entire HTTP round-trip — pages polling APIs through
+     * the bridge froze for the duration of every request.
+     */
+    @JavascriptInterface
+    fun httpRequestAsync(requestJson: String, callbackId: String) {
+        scope.launch(Dispatchers.IO) {
+            val result = httpRequest(requestJson)
+            val quotedId = com.webtoapp.util.JsStrings.quote(callbackId)
+            val quotedResult = com.webtoapp.util.JsStrings.quote(result)
+            withContext(Dispatchers.Main) {
+                try {
+                    webViewProvider()?.evaluateJavascript(
+                        "window.__wtaNativeHttpResponse && window.__wtaNativeHttpResponse($quotedId, $quotedResult);",
+                        null
+                    )
+                } catch (e: Exception) {
+                    AppLogger.w("NativeBridge", "Failed to deliver async bridge response", e)
+                }
+            }
+        }
+    }
+
     /** Raised by the per-call redirect gate interceptor: a redirect tried to cross the private/public boundary. */
     private class RedirectBlockedByGateException(message: String) : java.io.IOException(message)
 
@@ -2124,5 +2150,10 @@ class PrivateNetworkNativeBridgeAdapter(
     @JavascriptInterface
     fun httpRequest(requestJson: String): String {
         return delegate.httpRequest(requestJson)
+    }
+
+    @JavascriptInterface
+    fun httpRequestAsync(requestJson: String, callbackId: String) {
+        delegate.httpRequestAsync(requestJson, callbackId)
     }
 }

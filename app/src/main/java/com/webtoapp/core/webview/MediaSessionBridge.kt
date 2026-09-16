@@ -226,7 +226,11 @@ class MediaSessionBridge(
                   "f" + Math.random().toString(36).slice(2, 10));
 
               const registeredHandlers = Object.create(null);
-              const boundElements = new WeakSet();
+              // boundElements = observer-maintained set of in-DOM media (iterate in
+              // synchronize); listenerBound = WeakSet so a re-inserted element never
+              // gets its event listeners attached twice.
+              const boundElements = new Set();
+              const listenerBound = new WeakSet();
 
               const hadNativeSession =
                 !!(navigator.mediaSession && navigator.mediaSession);
@@ -404,7 +408,13 @@ class MediaSessionBridge(
               }
 
               function getActiveMedia() {
-                const elements = getMediaElements();
+                // Prefer the observer-maintained set; a full-document rescan is
+                // only the lazy fallback for a claimed session with no bound
+                // element yet (e.g. shadow-DOM media added after install).
+                if (boundElements.size === 0) {
+                  getMediaElements().forEach(bindElement);
+                }
+                const elements = Array.from(boundElements);
 
                 let best = null;
                 let bestScore = -1;
@@ -427,7 +437,7 @@ class MediaSessionBridge(
                * real player's session (#566).
                */
               function frameOwnsMedia() {
-                if (getMediaElements().length > 0) return true;
+                if (boundElements.size > 0) return true;
 
                 if (mediaSession && mediaSession.metadata) return true;
 
@@ -557,16 +567,14 @@ class MediaSessionBridge(
                 sendPosition(element);
                 sendMetadata(element);
                 sendPlaybackState(element);
-
-                getMediaElements().forEach(bindElement);
               }
 
               function bindElement(element) {
-                if (!element || boundElements.has(element)) {
-                  return;
-                }
+                if (!element) return;
 
                 boundElements.add(element);
+                if (listenerBound.has(element)) return;
+                listenerBound.add(element);
 
                 [
                   "play",
@@ -768,8 +776,48 @@ class MediaSessionBridge(
                   };
               }
 
-              const observer = new MutationObserver(() => {
-                getMediaElements().forEach(bindElement);
+              /*
+               * Bind media inside just the mutated subtrees instead of
+               * rescanning the whole document (incl. every shadow root) on
+               * each mutation batch — DOM-busy pages otherwise pay a full
+               * querySelectorAll('*') sweep per mutation.
+               */
+              function bindSubtree(node) {
+                if (!node || node.nodeType !== 1) return;
+                try {
+                  if (node.matches && node.matches("audio, video")) {
+                    bindElement(node);
+                  }
+                  if (node.shadowRoot) {
+                    collectMedia(node.shadowRoot, []).forEach(bindElement);
+                  }
+                  if (node.querySelectorAll) {
+                    node.querySelectorAll("audio, video").forEach(bindElement);
+                    node.querySelectorAll("*").forEach(el => {
+                      if (el.shadowRoot) {
+                        collectMedia(el.shadowRoot, []).forEach(bindElement);
+                      }
+                    });
+                  }
+                } catch (_) {}
+              }
+              function unbindSubtree(node) {
+                if (!node || node.nodeType !== 1) return;
+                try {
+                  if (boundElements.has(node)) boundElements.delete(node);
+                  if (node.querySelectorAll) {
+                    node.querySelectorAll("audio, video").forEach(el => {
+                      boundElements.delete(el);
+                    });
+                  }
+                } catch (_) {}
+              }
+
+              const observer = new MutationObserver(mutations => {
+                for (const mutation of mutations) {
+                  mutation.addedNodes.forEach(bindSubtree);
+                  mutation.removedNodes.forEach(unbindSubtree);
+                }
               });
 
               observer.observe(

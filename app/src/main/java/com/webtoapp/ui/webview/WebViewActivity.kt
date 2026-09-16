@@ -97,6 +97,9 @@ private fun isOwnInjectionMarker(message: String): Boolean =
     message.startsWith("[UserScript:") || message.startsWith("[WebToApp") ||
         message.startsWith("[WTA]") || message.startsWith("[wta-")
 
+/** Bounded console buffer: page console spam must not grow state without limit. */
+private const val CONSOLE_LOG_CAP = 500
+
 class WebViewActivity : AppCompatActivity() {
 
     companion object {
@@ -2857,13 +2860,13 @@ fun WebViewScreen(
                     val line = "[$consoleLevel] $message ($sourceId:$lineNumber)"
                     if (level >= 4) AppLogger.e("WebViewConsole", line) else AppLogger.w("WebViewConsole", line)
                 }
-                consoleMessages = consoleMessages + ConsoleLogEntry(
+                consoleMessages = (consoleMessages + ConsoleLogEntry(
                     level = consoleLevel,
                     message = message,
                     source = sourceId,
                     lineNumber = lineNumber,
                     timestamp = System.currentTimeMillis()
-                )
+                )).takeLast(CONSOLE_LOG_CAP)
             }
 
             override fun onRenderProcessGone(didCrash: Boolean) {
@@ -3643,13 +3646,13 @@ fun WebViewScreen(
                                 // (webViewRef stays null there; Gecko cannot return the eval
                                 // result, so the entry shows "=> null" but the script runs).
                                 val appendResult: (String?) -> Unit = { result ->
-                                    consoleMessages = consoleMessages + ConsoleLogEntry(
+                                    consoleMessages = (consoleMessages + ConsoleLogEntry(
                                         level = ConsoleLevel.LOG,
                                         message = "=> $result",
                                         source = "eval",
                                         lineNumber = 0,
                                         timestamp = System.currentTimeMillis()
-                                    )
+                                    )).takeLast(CONSOLE_LOG_CAP)
                                 }
                                 val surface = browserSurfaceRef
                                 if (surface != null) {

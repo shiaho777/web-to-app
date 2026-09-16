@@ -6566,8 +6566,27 @@ class WebViewManager(
                     return { url: url, method: method.toUpperCase(), headers: headers, body: body };
                 }
 
+                // Async bridge mailbox: native delivers results into
+                // __wtaNativeHttpResponse(id, json) via evaluateJavascript, so the JS
+                // thread never blocks on the HTTP round-trip.
+                window.__wtaNativeHttpPending = window.__wtaNativeHttpPending || {};
+                window.__wtaNativeHttpResponse = function(id, raw) {
+                    var p = window.__wtaNativeHttpPending[id];
+                    if (p) { delete window.__wtaNativeHttpPending[id]; p(raw); }
+                };
+                var nativeHttpSeq = 0;
+
+                function parseBridgeResult(raw) {
+                    var result = JSON.parse(raw || '{}');
+                    if (!result.ok) {
+                        throw new TypeError(result.message || result.error || 'Private network request failed');
+                    }
+                    return result;
+                }
+
                 function nativeHttpRequest(payload) {
-                    if (!window.NativeBridge || typeof window.NativeBridge.httpRequest !== 'function') {
+                    if (!window.NativeBridge || (typeof window.NativeBridge.httpRequest !== 'function'
+                        && typeof window.NativeBridge.httpRequestAsync !== 'function')) {
                         // Defensive only since the wrapper is no longer injected without a
                         // bridge; kept actionable in case interface removal races injection.
                         return Promise.reject(new TypeError(
@@ -6576,17 +6595,28 @@ class WebViewManager(
                         ));
                     }
                     return bodyToBase64(payload.body).then(function(bodyBase64) {
-                        var raw = window.NativeBridge.httpRequest(JSON.stringify({
+                        var requestJson = JSON.stringify({
                             url: payload.url,
                             method: payload.method || 'GET',
                             headers: payload.headers || {},
                             bodyBase64: bodyBase64
-                        }));
-                        var result = JSON.parse(raw || '{}');
-                        if (!result.ok) {
-                            throw new TypeError(result.message || result.error || 'Private network request failed');
+                        });
+                        if (typeof window.NativeBridge.httpRequestAsync === 'function') {
+                            return new Promise(function(resolve, reject) {
+                                var id = 'h' + (++nativeHttpSeq) + '_' + Date.now();
+                                window.__wtaNativeHttpPending[id] = resolve;
+                                try {
+                                    window.NativeBridge.httpRequestAsync(requestJson, id);
+                                } catch (e) {
+                                    delete window.__wtaNativeHttpPending[id];
+                                    reject(e);
+                                }
+                            }).then(parseBridgeResult);
                         }
-                        return result;
+                        // Gecko polyfill returns a Promise; the sync WebView bridge a string.
+                        var raw = window.NativeBridge.httpRequest(requestJson);
+                        if (raw && typeof raw.then === 'function') return raw.then(parseBridgeResult);
+                        return parseBridgeResult(raw);
                     });
                 }
 

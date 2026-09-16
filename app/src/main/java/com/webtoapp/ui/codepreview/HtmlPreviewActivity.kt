@@ -47,6 +47,9 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 
+/** Bounded console buffer: page console spam must not grow state without limit. */
+private const val CONSOLE_LOG_CAP = 500
+
 class HtmlPreviewActivity : ComponentActivity() {
 
     companion object {
@@ -249,7 +252,7 @@ private fun HtmlPreviewScreen(
                                     isLoading = false
                                 },
                                 onConsoleMessage = { entry ->
-                                    consoleMessages = consoleMessages + entry
+                                    consoleMessages = (consoleMessages + entry).takeLast(CONSOLE_LOG_CAP)
                                 }
                             )
 
@@ -291,13 +294,13 @@ private fun HtmlPreviewScreen(
                     onClear = { consoleMessages = emptyList() },
                     onRunScript = { script ->
                         webView?.evaluateJavascript(script) { result ->
-                            consoleMessages = consoleMessages + ConsoleLogEntry(
+                            consoleMessages = (consoleMessages + ConsoleLogEntry(
                                 level = ConsoleLevel.LOG,
                                 message = "=> $result",
                                 source = "eval",
                                 lineNumber = 0,
                                 timestamp = System.currentTimeMillis()
-                            )
+                            )).takeLast(CONSOLE_LOG_CAP)
                         }
                     },
                     modifier = if (isDevToolsExpanded) Modifier.fillMaxHeight(0.6f) else Modifier.heightIn(max = 200.dp)

@@ -53,8 +53,12 @@ object WebScrollTracker {
 (function(){
     if(window.__wtaScrollTrackerInstalled) return;
     window.__wtaScrollTrackerInstalled = true;
+    var lastReported = -1;
     function report(canUp){
-        try { window._wtaScrollBridge.report(canUp ? 1 : 0); } catch(e) {}
+        var v = canUp ? 1 : 0;
+        if (v === lastReported) return;
+        lastReported = v;
+        try { window._wtaScrollBridge.report(v); } catch(e) {}
     }
     function chainCanScrollUp(el){
         try {
