@@ -35,8 +35,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -281,7 +281,7 @@ fun WtaCodeEditorDialog(
                                 modifier = Modifier.fillMaxWidth(),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                TextField(
+                                OutlinedTextField(
                                     value = searchQuery,
                                     onValueChange = {
                                         searchQuery = it
@@ -307,14 +307,14 @@ fun WtaCodeEditorDialog(
                                     keyboardActions = KeyboardActions(
                                         onSearch = { goToNextMatch() }
                                     ),
-                                    colors = TextFieldDefaults.colors(
+                                    colors = OutlinedTextFieldDefaults.colors(
                                         focusedContainerColor = scheme.background,
                                         unfocusedContainerColor = scheme.background,
                                         focusedTextColor = scheme.foreground,
                                         unfocusedTextColor = scheme.foreground,
                                         cursorColor = accentColor,
-                                        focusedIndicatorColor = accentColor.copy(alpha = 0.5f),
-                                        unfocusedIndicatorColor = scheme.muted.copy(alpha = 0.3f)
+                                        focusedBorderColor = accentColor.copy(alpha = 0.5f),
+                                        unfocusedBorderColor = scheme.muted.copy(alpha = 0.3f)
                                     )
                                 )
                                 Spacer(Modifier.width(4.dp))
@@ -393,7 +393,7 @@ fun WtaCodeEditorDialog(
                                     modifier = Modifier.fillMaxWidth(),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    TextField(
+                                    OutlinedTextField(
                                         value = replaceQuery,
                                         onValueChange = { replaceQuery = it },
                                         modifier = Modifier.weight(1f),
@@ -410,14 +410,14 @@ fun WtaCodeEditorDialog(
                                                 style = MaterialTheme.typography.bodySmall
                                             )
                                         },
-                                        colors = TextFieldDefaults.colors(
+                                        colors = OutlinedTextFieldDefaults.colors(
                                             focusedContainerColor = scheme.background,
                                             unfocusedContainerColor = scheme.background,
                                             focusedTextColor = scheme.foreground,
                                             unfocusedTextColor = scheme.foreground,
                                             cursorColor = accentColor,
-                                            focusedIndicatorColor = accentColor.copy(alpha = 0.5f),
-                                            unfocusedIndicatorColor = scheme.muted.copy(alpha = 0.3f)
+                                            focusedBorderColor = accentColor.copy(alpha = 0.5f),
+                                            unfocusedBorderColor = scheme.muted.copy(alpha = 0.3f)
                                         )
                                     )
                                     TextButton(
