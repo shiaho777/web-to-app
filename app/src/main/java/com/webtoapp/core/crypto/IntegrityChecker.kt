@@ -13,8 +13,6 @@ class IntegrityChecker(private val context: Context) {
         private const val TAG = "IntegrityChecker"
     }
 
-    private val keyManager = KeyManager.getInstance(context)
-
     fun check(): IntegrityResult {
         val results = mutableListOf<CheckItem>()
 

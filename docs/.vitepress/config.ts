@@ -92,6 +92,7 @@ const t = {
       portManager: 'Port Manager',
       browserKernel: 'Browser Kernel',
       hostsAdblock: 'Hosts Ad Blocking',
+      shareReceive: 'Receive Shared Content',
       usageStats: 'Usage Stats',
       googlePlay: 'Google Play',
       fileManager: 'File Manager',
@@ -212,6 +213,7 @@ const t = {
       portManager: '端口管理',
       browserKernel: '浏览器内核',
       hostsAdblock: 'Hosts 拦截',
+      shareReceive: '接收分享内容',
       usageStats: '使用统计',
       googlePlay: 'Google Play',
       fileManager: '文件管理',
@@ -409,7 +411,8 @@ function sidebar(lang: Lang, prefix: string) {
             collapsed: false,
             items: [
               { text: s.guide.browserKernel, link: `${prefix}/guide/more-features/browser-kernel` },
-              { text: s.guide.hostsAdblock, link: `${prefix}/guide/more-features/hosts-adblock` }
+              { text: s.guide.hostsAdblock, link: `${prefix}/guide/more-features/hosts-adblock` },
+              { text: s.guide.shareReceive, link: `${prefix}/guide/more-features/share-receive` }
             ]
           },
           {

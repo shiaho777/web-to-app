@@ -146,6 +146,41 @@ The dangerous ones (`COOKIE`, `INDEXED_DB`, `NETWORK`, `WEBSOCKET`,
 `SCREEN_CAPTURE`, `FILE_ACCESS`, `EVAL`, `IFRAME`) get extra scrutiny on
 review.
 
+### Consuming shared content
+
+When the host app has **Receive shared content** enabled (see
+[share-receive](https://shiaho777.github.io/web-to-app/guide/more-features/share-receive)),
+content shared into the app from the Android share sheet is announced to the page. A module
+with `DOM_ACCESS` can pick it up in its own script — no extra permission is involved, because
+the payload arrives as a normal DOM event in the module's own window:
+
+```js
+const inbox = window.WTAShareInbox;
+if (inbox) {
+  inbox.onShare((items) => {
+    for (const item of items) {
+      // item.type      "image" | "video" | "audio" | "text" | "file"
+      // item.mimeType  "image/png"
+      // item.name      "Screenshot_2026-09-17.png"
+      // item.size      bytes
+      // item.inline    true when dataUrl / text carries the content
+      // item.dataUrl   "data:image/png;base64,…"   (when inline)
+      // item.text      the shared text             (for text shares)
+    }
+  });
+}
+```
+
+`window.addEventListener('wta:share', (e) => …)` receives the same array as
+`e.detail.items`. Items are capped at 5 MB for inlining; larger ones reach the page as
+metadata only, so a module that needs the bytes for a big file should let the user go through
+the page's file chooser instead. Nothing fires when the feature is off, and nothing fires
+until content actually arrives — there is nothing to poll.
+
+`SHARE_RECEIVE` is **not** a permission value: the event is read-only, the user has already
+chosen the content, and the module cannot pull anything that arrived before it registered
+listeners. Use `DOM_ACCESS`.
+
 ### Allowed `configItems[].type` values
 
 `TEXT`, `TEXTAREA`, `NUMBER`, `BOOLEAN`, `SELECT`, `MULTI_SELECT`, `RADIO`,

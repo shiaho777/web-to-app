@@ -210,6 +210,7 @@ val syncShellRuntimeSources by tasks.registering(Sync::class) {
         "**/core/sample/**",
         "**/core/frontend/**",
         "**/core/kernel/**",
+        "**/core/share/**",
 
         "com/webtoapp/data/model/**",
         "com/webtoapp/data/converter/**",

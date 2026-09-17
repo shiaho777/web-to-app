@@ -54,6 +54,9 @@ fun createShellWebViewCallbacks(
     return object : WebViewCallbacks {
         override fun onPageStarted(url: String?) {
             if (url == "about:blank") return
+            // Issue #943: a share arriving mid-navigation must not be pushed into the document
+            // that is on its way out.
+            (context as? ShellActivity)?.onShellPageStarted()
             updateLoading(true)
             updateUrl(url ?: "")
             webViewRefProvider()?.let { WebScrollTracker.reset(it) }
@@ -129,6 +132,8 @@ fun createShellWebViewCallbacks(
                 }
 
             }
+            // Issue #943: release any share that was queued while the page was still loading.
+            (context as? ShellActivity)?.onShellPageReady()
             scheduleStatusBarAutoColorSample()
         }
 

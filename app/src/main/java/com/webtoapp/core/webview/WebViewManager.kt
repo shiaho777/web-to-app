@@ -61,6 +61,7 @@ class WebViewManager(
     private val backStateGuardScriptHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
     private val printBridgeScriptHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
     private val geolocationShimHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
+    private val shareInboxScriptHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
 
     companion object {
 
@@ -1683,6 +1684,10 @@ class WebViewManager(
 
             if (config.enableShareBridge) {
                 addJavascriptInterface(ShareBridge(context), "NativeShareBridge")
+            }
+
+            if (config.enableShareReceive) {
+                installShareInboxDocumentStart(this)
             }
 
             if (config.enablePrintBridge) {
@@ -3966,6 +3971,10 @@ class WebViewManager(
             runCatching { handler.remove() }
         }
         downloadBridgeScriptHandlers.clear()
+        shareInboxScriptHandlers.values.toList().forEach { handler ->
+            runCatching { handler.remove() }
+        }
+        shareInboxScriptHandlers.clear()
         printBridgeScriptHandlers.values.toList().forEach { handler ->
             runCatching { handler.remove() }
         }
@@ -4083,6 +4092,32 @@ class WebViewManager(
             AppLogger.i("WebViewManager", "[DownloadBridge] Installed at document start (applies to all hosts)")
         } catch (e: Exception) {
             AppLogger.w("WebViewManager", "[DownloadBridge] Document-start install failed, will use onPageStarted fallback", e)
+        }
+    }
+
+    /**
+     * Install the inbound-share page API early (issue #943).
+     *
+     * Document-start matters here: a page that wants the share content has to be able to
+     * subscribe before its own scripts run. `injectCompatibilityScripts` also carries the
+     * bootstrap as a fallback for WebView versions without document-start support, and the
+     * bootstrap is idempotent, so a double install is harmless.
+     */
+    private fun installShareInboxDocumentStart(webView: WebView) {
+        if (shareInboxScriptHandlers.containsKey(webView)) return
+        if (!WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
+            AppLogger.i("WebViewManager", "[ShareInbox] Document-start unsupported; using onPageFinished bootstrap only")
+            return
+        }
+        try {
+            shareInboxScriptHandlers[webView] = WebViewCompat.addDocumentStartJavaScript(
+                webView,
+                com.webtoapp.core.share.SHARE_INBOX_BOOTSTRAP_JS,
+                setOf("*")
+            )
+            AppLogger.i("WebViewManager", "[ShareInbox] Installed at document start (applies to all hosts)")
+        } catch (e: Exception) {
+            AppLogger.w("WebViewManager", "[ShareInbox] Document-start install failed, will use onPageFinished fallback", e)
         }
     }
 
@@ -4853,6 +4888,14 @@ class WebViewManager(
                         }
                     })();
                 """.trimIndent())
+            }
+
+            // Inbound share bootstrap (#943). Added on every page phase because WebView
+            // versions without DOCUMENT_START_SCRIPT never got the early install; the script
+            // is idempotent. Not gated on conservativeMode — unlike the navigator.share
+            // polyfill above, this only *adds* an API and overrides nothing the page owns.
+            if (config.enableShareReceive) {
+                scripts.add(com.webtoapp.core.share.SHARE_INBOX_BOOTSTRAP_JS)
             }
 
             if (config.enableNotificationPolyfill && !conservativeMode) {

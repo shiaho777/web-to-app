@@ -402,6 +402,39 @@ data class WebViewConfig(
      */
     val customAppReturnSchemes: List<String> = emptyList(),
     val enableShareBridge: Boolean = true,
+
+    /**
+     * Inbound counterpart of [enableShareBridge] (issue #943).
+     *
+     * `enableShareBridge` lets the *page* push content **out** to the system sheet via
+     * `navigator.share`. These fields let other apps push content **in** through the sheet:
+     * the exported APK gains an `ACTION_SEND` / `ACTION_SEND_MULTIPLE` intent-filter on
+     * `ShellActivity`, so the app shows up as a share target for images (and, when opted in,
+     * plain text/links).
+     *
+     * Both default to OFF: registering a share target changes the manifest (an extra
+     * exported entry point) and carries the same antivirus-reputation cost that keeps
+     * `geolocationEnabled` / `enableNotificationPolyfill` opt-in. The intent-filter is
+     * injected at export time in `AxmlRebuilder`, so `false` omits it entirely.
+     */
+    val receiveShareImages: Boolean = false,
+    val receiveShareText: Boolean = false,
+
+    /**
+     * How a received item reaches the page. `BOTH` is the default because the two
+     * channels cover disjoint cases: the DOM event is zero-tap but only reaches pages
+     * (or extension modules) that listen for it, while the file-chooser pre-fill works
+     * on any third-party site but needs the user to tap the page's own upload control.
+     */
+    val shareDeliveryMode: ShareDeliveryMode = ShareDeliveryMode.BOTH,
+
+    /**
+     * When pre-filling a file chooser, ask first instead of silently substituting the
+     * received file for the system picker. Opt-out (`false`) gives a fully automatic
+     * hand-off, at the cost of the user no longer being able to pick something else.
+     */
+    val sharePromptBeforeUse: Boolean = true,
+
     val enableZoomPolyfill: Boolean = true,
     val enableCrossOriginIsolation: Boolean = false,
     val hideUrlPreview: Boolean = false,
@@ -535,6 +568,21 @@ data class WebViewConfig(
     val fullscreenPadBottom: Int get() = fullscreenContentPaddingBottomDp ?: fullscreenContentPaddingDp
     val fullscreenPadStart: Int get() = fullscreenContentPaddingStartDp ?: fullscreenContentPaddingDp
     val fullscreenPadEnd: Int get() = fullscreenContentPaddingEndDp ?: fullscreenContentPaddingDp
+
+    /**
+     * Any inbound share channel enabled. A derived property, not a stored field — the export
+     * pipeline keeps the two filters separate so the intent-filter only advertises the types
+     * the app actually accepts (issue #943).
+     */
+    val enableShareReceive: Boolean get() = receiveShareImages || receiveShareText
+
+    /** Whether a chooser may be pre-filled with a received file. */
+    val prefillsFileChooser: Boolean get() = enableShareReceive &&
+        shareDeliveryMode != ShareDeliveryMode.JS_EVENT
+
+    /** Whether received content is announced to the page as a DOM event. */
+    val broadcastsShareEvent: Boolean get() = enableShareReceive &&
+        shareDeliveryMode != ShareDeliveryMode.FILE_CHOOSER_PREFILL
 }
 
 data class HostMappingEntry(
@@ -1586,6 +1634,21 @@ enum class Base64DeepLinkMode {
     GESTURE_ONLY,
 
     ALWAYS,
+}
+
+/**
+ * How content received from the Android share sheet (issue #943) is handed to the page.
+ */
+enum class ShareDeliveryMode {
+
+    /** Only queue + broadcast the `wta:share` DOM event; the page or an extension module opts in. */
+    JS_EVENT,
+
+    /** Only pre-fill the next WebView file chooser with the received file. */
+    FILE_CHOOSER_PREFILL,
+
+    /** Both: broadcast the event *and* pre-fill the next file chooser. */
+    BOTH,
 }
 
 enum class JsOpenWindowsPolicy {

@@ -385,6 +385,10 @@ class ApkBuildCache(private val context: Context) {
         parts += "icon=${fileFingerprint(iconPath)}"
         parts += "deeplinkHosts=${config.deepLinkHosts.sorted().joinToString(",")}"
         parts += "deeplinkSchemes=${config.deepLinkSchemes.sorted().joinToString(",")}"
+        // Inbound share sheet (#943) also rewrites the manifest — the ACTION_SEND
+        // intent-filter. Without it in the key, flipping the toggle would reuse a cached
+        // unsigned APK that never became a share target.
+        parts += "shareReceive=${config.shareReceiveMimeTypes.sorted().joinToString(",")}"
         parts += "runtimePerms=${config.runtimePermissions}"
         parts += "networkTrust=${config.networkTrustConfig}"
         // Native libs (libnode.so / libnode_bridge.so / libc++_shared.so) must participate

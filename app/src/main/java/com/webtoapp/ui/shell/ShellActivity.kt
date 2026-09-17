@@ -20,6 +20,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.*
 import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 import com.webtoapp.WebToAppApplication
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.ui.theme.ShellTheme
@@ -68,6 +69,14 @@ class ShellActivity : AppCompatActivity() {
 
     private var pendingFloatingWindowLaunch = false
     private var notificationPolyfillEnabled = false
+
+    // Inbound share sheet (issue #943).
+    private var shareReceiveMimeTypes: List<String> = emptyList()
+    private var shareDeliveryMode: com.webtoapp.data.model.ShareDeliveryMode =
+        com.webtoapp.data.model.ShareDeliveryMode.BOTH
+
+    /** Set once the main frame has loaded, so a share can be announced to a page that exists. */
+    private var sharePageReady = false
     private var mediaSessionBridge: com.webtoapp.core.webview.MediaSessionBridge? = null
     private var geckoMediaAdapter: com.webtoapp.core.engine.GeckoMediaSessionAdapter? = null
 
@@ -419,6 +428,18 @@ class ShellActivity : AppCompatActivity() {
             KeyboardAdjustMode.RESIZE
         }
 
+        shareReceiveMimeTypes = buildList {
+            if (config.webViewConfig.receiveShareImages) {
+                add(com.webtoapp.core.share.ShareReceiveContract.MIME_IMAGES)
+            }
+            if (config.webViewConfig.receiveShareText) {
+                add(com.webtoapp.core.share.ShareReceiveContract.MIME_TEXT)
+            }
+        }
+        shareDeliveryMode = try {
+            com.webtoapp.data.model.ShareDeliveryMode.valueOf(config.webViewConfig.shareDeliveryMode)
+        } catch (e: Exception) { com.webtoapp.data.model.ShareDeliveryMode.BOTH }
+
         immersiveFullscreenEnabled = config.webViewConfig.hideToolbar
         try {
             applyImmersiveFullscreen(immersiveFullscreenEnabled)
@@ -459,6 +480,10 @@ class ShellActivity : AppCompatActivity() {
             deepLinkUrl.value = validatedUrl
             com.webtoapp.core.shell.ShellLogger.i("ShellActivity", "收到 Deep Link: $validatedUrl (原始: $intentUrl)")
         }
+
+        // Issue #943: a cold start triggered by the share sheet. The payload is copied now,
+        // while the one-shot read grant on the sender's content:// URI is still valid.
+        acceptShareIntent(intent)
 
         com.webtoapp.core.shell.ShellLogger.i("ShellActivity", "setContent 开始，主题=${config.themeType}")
 
@@ -848,6 +873,102 @@ class ShellActivity : AppCompatActivity() {
 
             loadInBrowser(validatedUrl)
             com.webtoapp.core.shell.ShellLogger.i("ShellActivity", "onNewIntent Deep Link: $validatedUrl (原始: $url)")
+        }
+
+        // Issue #943: the app was already running (singleTask) and a share arrived. Handled
+        // here as well as in onCreate because a share that lands while the app is in the
+        // foreground never goes through onCreate.
+        acceptShareIntent(intent)
+    }
+
+    /**
+     * Persist anything an inbound `ACTION_SEND` carries, then announce it to the page
+     * (issue #943).
+     *
+     * Called from both `onCreate` and `onNewIntent`. The bytes are copied off the sender's URI
+     * immediately — that read grant dies with the intent, so deferring would silently lose the
+     * payload. Delivery is a separate, idempotent step because the page may not exist yet on a
+     * cold start; [deliverPendingShares] runs again from `onPageFinished`.
+     */
+    private fun acceptShareIntent(intent: Intent?) {
+        if (shareReceiveMimeTypes.isEmpty() || intent == null) return
+
+        lifecycleScope.launch {
+            // A share that cannot be handled must never take the app down with it: an
+            // exception escaping this scope is an uncaught exception. The inbox already drops
+            // individual bad payloads itself, so this only covers the wrapper.
+            try {
+                val accepted = com.webtoapp.core.share.SharedContentInbox.acceptIntent(
+                    this@ShellActivity,
+                    intent,
+                    shareReceiveMimeTypes
+                )
+                if (accepted.isEmpty()) return@launch
+
+                com.webtoapp.core.shell.ShellLogger.i(
+                    "ShellActivity",
+                    "收到分享内容: ${accepted.map { "${it.name}(${it.mimeType}, ${it.size}B)" }}"
+                )
+
+                if (accepted.any { !it.isText }) {
+                    Toast.makeText(
+                        this@ShellActivity,
+                        Strings.shareReceivedToast,
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+
+                deliverPendingShares()
+            } catch (e: Exception) {
+                com.webtoapp.core.shell.ShellLogger.e("ShellActivity", "接收分享内容失败: ${e.message}", e)
+            }
+        }
+    }
+
+    /** A new document started loading; hold deliveries until it has finished. */
+    fun onShellPageStarted() {
+        sharePageReady = false
+    }
+
+    /** Main frame loaded — the page can now receive queued shares. */
+    fun onShellPageReady() {
+        sharePageReady = true
+        deliverPendingShares()
+    }
+
+    /**
+     * Push every queued share to the current page when the delivery mode includes the JS
+     * channel. Re-announcing on each document load is intentional: the page de-duplicates by
+     * id, so a reload regains the content while a single document never sees it twice.
+     */
+    fun deliverPendingShares() {
+        if (shareReceiveMimeTypes.isEmpty()) return
+        if (shareDeliveryMode == com.webtoapp.data.model.ShareDeliveryMode.FILE_CHOOSER_PREFILL) return
+
+        val target = webView ?: browserSurface?.webView ?: return
+        if (!sharePageReady) return
+
+        lifecycleScope.launch {
+            try {
+                val items = com.webtoapp.core.share.SharedContentInbox.pending(this@ShellActivity)
+                if (items.isEmpty()) return@launch
+
+                val payload = com.webtoapp.core.share.buildShareBatch(items)
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    target.evaluateJavascript(
+                        "window.__WTA_SHARE_PUSH__ && window.__WTA_SHARE_PUSH__($payload)",
+                        null
+                    )
+                }
+                com.webtoapp.core.shell.ShellLogger.i(
+                    "ShellActivity",
+                    "已向页面投递 ${items.size} 条分享内容"
+                )
+            } catch (e: Exception) {
+                // Delivery is best-effort: the file-chooser channel is unaffected, and a
+                // failure here must not surface as a crash in an app the user just shared to.
+                com.webtoapp.core.shell.ShellLogger.w("ShellActivity", "分享内容投递失败: ${e.message}", e)
+            }
         }
     }
 

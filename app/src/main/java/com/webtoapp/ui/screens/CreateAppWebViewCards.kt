@@ -2528,6 +2528,197 @@ fun FullscreenModeCard(
     }
 }
 
+/**
+ * Inbound share sheet configuration (issue #943).
+ *
+ * Lets other apps hand content into this app through the Android share sheet. This is the
+ * mirror image of the outbound `navigator.share` support: that one pushes the page's content
+ * out to the system, this one pulls the system's content in.
+ *
+ * Follows the toggle-headed card shape used by [FullscreenModeCard]: full-bleed
+ * [WtaToggleRow] / [WtaChoiceRow] headers carrying their own padding, with anything that is
+ * not a row (radio group, notes) inside a [WtaSpacing.RowHorizontal]-padded column. Expansion
+ * state is its own `remember`, never bound to the feature switch.
+ */
+@Composable
+fun ShareReceiveCard(
+    webViewConfig: WebViewConfig,
+    onWebViewConfigChange: (WebViewConfig) -> Unit
+) {
+    var deliveryModeExpanded by remember { mutableStateOf(false) }
+
+    val receiveImages = webViewConfig.receiveShareImages
+    val receiveText = webViewConfig.receiveShareText
+    val enabled = receiveImages || receiveText
+    val deliveryMode = webViewConfig.shareDeliveryMode
+
+    WtaSettingCard {
+        WtaToggleRow(
+            icon = Icons.Outlined.Share,
+            title = Strings.receiveShare,
+            subtitle = Strings.receiveShareHint,
+            checked = enabled,
+            onCheckedChange = { on ->
+                // The master switch is a convenience over the two filters: turning it on
+                // enables the common case (images) and keeps any text opt-in the user already
+                // made; turning it off clears both so the exported manifest drops the filter.
+                onWebViewConfigChange(
+                    webViewConfig.copy(
+                        receiveShareImages = on,
+                        receiveShareText = if (on) receiveText else false
+                    )
+                )
+            }
+        )
+
+        AnimatedVisibility(
+            visible = enabled,
+            enter = CardExpandTransition,
+            exit = CardCollapseTransition
+        ) {
+            Column {
+                WtaSectionDivider()
+                WtaToggleRow(
+                    title = Strings.receiveShareImages,
+                    subtitle = Strings.receiveShareImagesHint,
+                    checked = receiveImages,
+                    onCheckedChange = {
+                        onWebViewConfigChange(webViewConfig.copy(receiveShareImages = it))
+                    }
+                )
+
+                WtaSectionDivider()
+                WtaToggleRow(
+                    title = Strings.receiveShareText,
+                    subtitle = Strings.receiveShareTextHint,
+                    checked = receiveText,
+                    onCheckedChange = {
+                        onWebViewConfigChange(webViewConfig.copy(receiveShareText = it))
+                    }
+                )
+
+                WtaSectionDivider()
+                WtaChoiceRow(
+                    title = Strings.receiveShareDeliveryMode,
+                    icon = Icons.Outlined.AltRoute,
+                    value = when (deliveryMode) {
+                        ShareDeliveryMode.JS_EVENT -> Strings.receiveShareModeEvent
+                        ShareDeliveryMode.FILE_CHOOSER_PREFILL -> Strings.receiveShareModeChooser
+                        ShareDeliveryMode.BOTH -> Strings.receiveShareModeBoth
+                    },
+                    isExpanded = deliveryModeExpanded,
+                    onClick = { deliveryModeExpanded = !deliveryModeExpanded }
+                )
+
+                AnimatedVisibility(
+                    visible = deliveryModeExpanded,
+                    enter = CardExpandTransition,
+                    exit = CardCollapseTransition
+                ) {
+                    Column(
+                        modifier = Modifier.padding(
+                            horizontal = WtaSpacing.RowHorizontal,
+                            vertical = WtaSpacing.ContentGap
+                        ),
+                        verticalArrangement = Arrangement.spacedBy(WtaSpacing.ContentGap)
+                    ) {
+                        Text(
+                            text = Strings.receiveShareDeliveryMode,
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+
+                        ShareDeliveryModeOption(
+                            label = Strings.receiveShareModeEvent,
+                            selected = deliveryMode == ShareDeliveryMode.JS_EVENT,
+                            onSelect = {
+                                onWebViewConfigChange(
+                                    webViewConfig.copy(shareDeliveryMode = ShareDeliveryMode.JS_EVENT)
+                                )
+                            }
+                        )
+                        ShareDeliveryModeOption(
+                            label = Strings.receiveShareModeChooser,
+                            selected = deliveryMode == ShareDeliveryMode.FILE_CHOOSER_PREFILL,
+                            onSelect = {
+                                onWebViewConfigChange(
+                                    webViewConfig.copy(shareDeliveryMode = ShareDeliveryMode.FILE_CHOOSER_PREFILL)
+                                )
+                            }
+                        )
+                        ShareDeliveryModeOption(
+                            label = Strings.receiveShareModeBoth,
+                            selected = deliveryMode == ShareDeliveryMode.BOTH,
+                            onSelect = {
+                                onWebViewConfigChange(
+                                    webViewConfig.copy(shareDeliveryMode = ShareDeliveryMode.BOTH)
+                                )
+                            }
+                        )
+
+                        // One description for the current selection — the radio options
+                        // themselves stay label-only, per the config-card grammar.
+                        Text(
+                            text = when (deliveryMode) {
+                                ShareDeliveryMode.JS_EVENT -> Strings.receiveShareModeEventHint
+                                ShareDeliveryMode.FILE_CHOOSER_PREFILL -> Strings.receiveShareModeChooserHint
+                                ShareDeliveryMode.BOTH -> Strings.receiveShareModeBothHint
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                if (deliveryMode != ShareDeliveryMode.JS_EVENT) {
+                    WtaSectionDivider()
+                    WtaToggleRow(
+                        title = Strings.receiveSharePromptBeforeUse,
+                        subtitle = Strings.receiveSharePromptBeforeUseHint,
+                        checked = webViewConfig.sharePromptBeforeUse,
+                        onCheckedChange = {
+                            onWebViewConfigChange(webViewConfig.copy(sharePromptBeforeUse = it))
+                        }
+                    )
+                }
+
+                Column(
+                    modifier = Modifier.padding(
+                        horizontal = WtaSpacing.RowHorizontal,
+                        vertical = WtaSpacing.ContentGap
+                    )
+                ) {
+                    Text(
+                        text = Strings.receiveShareCaveat,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ShareDeliveryModeOption(
+    label: String,
+    selected: Boolean,
+    onSelect: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.small)
+            .clickable { onSelect() }
+            .padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        RadioButton(selected = selected, onClick = onSelect)
+        Spacer(modifier = Modifier.width(4.dp))
+        Text(text = label, style = MaterialTheme.typography.bodySmall)
+    }
+}
+
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun LandscapeModeCard(

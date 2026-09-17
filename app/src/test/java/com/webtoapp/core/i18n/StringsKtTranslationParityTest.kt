@@ -8,11 +8,13 @@ class StringsKtTranslationParityTest {
 
     @Test
     fun `every when(lang) block covers all ten languages`() {
-        val source = readStringsKt()
-        val problems = analyse(source)
+        val sources = readStringsSources()
+        val problems = sources.flatMap { (file, source) ->
+            analyse(source).map { "$file: $it" }
+        }
         assertWithMessage(
             buildString {
-                appendLine("Strings.kt has when(lang) blocks that fail i18n parity rules.")
+                appendLine("Strings sources have when(lang) blocks that fail i18n parity rules.")
                 appendLine("Each block must list all ten branches explicitly:")
                 appendLine("  CHINESE, ENGLISH, ARABIC, PORTUGUESE, SPANISH,")
                 appendLine("  FRENCH, GERMAN, RUSSIAN, JAPANESE, KOREAN")
@@ -24,20 +26,49 @@ class StringsKtTranslationParityTest {
                 appendLine("providing them. pt/es/fr/de/ru/ja/ko have no values-*/ folder")
                 appendLine("and must therefore be served by inline branches.")
                 appendLine()
-                appendLine("Offending blocks (line number is the line containing 'when (Strings.lang)'):")
+                appendLine("Offending blocks (file and line number of 'when (Strings.lang)'):")
                 problems.forEach { appendLine("  $it") }
             }
         ).that(problems).isEmpty()
     }
 
-    private fun readStringsKt(): String {
+    @Test
+    fun `every split strings file is scanned by the parity test`() {
+        // Guards against a new StringsX.kt split file being added without
+        // extending readStringsSources() — otherwise its when(lang) blocks
+        // would silently lose parity enforcement.
+        val i18nDir = resolveI18nDir()
+        val onDisk = i18nDir.listFiles { file ->
+            file.isFile && Regex("^Strings[A-E]?\\.kt$").matches(file.name)
+        }?.map { it.name.removeSuffix(".kt") }?.sorted().orEmpty()
+
+        assertWithMessage("Found Strings*.kt files not scanned by readStringsSources()")
+            .that(onDisk).isEqualTo(readStringsSources().map { it.first }.sorted())
+
+        assertWithMessage("Expected the standard six split files under core/i18n/")
+            .that(onDisk).containsExactly("Strings", "StringsA", "StringsB", "StringsC", "StringsD", "StringsE")
+    }
+
+    private fun resolveI18nDir(): File {
         val candidates = listOf(
-            "app/src/main/java/com/webtoapp/core/i18n/Strings.kt",
-            "src/main/java/com/webtoapp/core/i18n/Strings.kt",
+            "app/src/main/java/com/webtoapp/core/i18n",
+            "src/main/java/com/webtoapp/core/i18n",
         )
-        val file = candidates.map(::File).firstOrNull { it.exists() }
-            ?: error("Could not locate Strings.kt from: $candidates")
-        return file.readText()
+        return candidates.map(::File).firstOrNull(File::exists)
+            ?: error("Could not locate core/i18n from: $candidates")
+    }
+
+    private fun readStringsSources(): List<Pair<String, String>> {
+        val names = listOf("Strings", "StringsA", "StringsB", "StringsC", "StringsD", "StringsE")
+        return names.map { name ->
+            val candidates = listOf(
+                "app/src/main/java/com/webtoapp/core/i18n/$name.kt",
+                "src/main/java/com/webtoapp/core/i18n/$name.kt",
+            )
+            val file = candidates.map(::File).firstOrNull { it.exists() }
+                ?: error("Could not locate $name.kt from: $candidates")
+            name to file.readText()
+        }
     }
 
     private fun analyse(source: String): List<String> {

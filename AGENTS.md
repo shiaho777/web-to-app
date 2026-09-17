@@ -47,11 +47,11 @@ Mental model:
 
 ## i18n
 
-- Host UI strings live in `app/src/main/java/com/webtoapp/core/i18n/Strings.kt` (split across `Strings` / `StringsA` … `StringsE`).
+- Host UI strings live under `app/src/main/java/com/webtoapp/core/i18n/` (facade `object Strings` in `Strings.kt`, delegating to `StringsA` … `StringsE`, one file per split object).
 - **All** user-visible strings must be inline `when (Strings.lang)` blocks covering all 10 languages: Chinese, English, Arabic, Portuguese, Spanish, French, German, Russian, Japanese, Korean. `when(lang)` blocks may never use `else ->` — `AppStringsResourceConsistencyTest` and `StringsKtTranslationParityTest` enforce this.
 - **Never** load user-visible text via `context.getString(R.string.*)` / `stringResource(R.string.*)`. `res/values/strings.xml` holds only `translatable="false"` resources (e.g. `app_name`) and no locale `values-*/` directories exist, so a localized resource string could never cover the 10 languages and would silently fall back to the default `values/` (Chinese). Use `Strings.xxx` (or `Strings.funName(arg)` for parameterised strings — see `linuxEnvInstalledToast(name)` for the pattern). Tests gate this: `kotlin source never references R string for user-visible text`, plus `values strings xml only holds non-localised resources` and `no locale values dirs or grouped app strings files exist` which block resurrecting resource-based strings.
 - `R.string` is reserved for `translatable="false"` non-localised resources only (e.g. `app_name`).
-- Prefer adding properties on the existing split objects; match surrounding style.
+- Prefer adding properties on the existing split objects (`StringsA` … `StringsE`, one object per file); match surrounding style.
 
 ## Android and packaging constraints
 

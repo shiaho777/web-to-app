@@ -62,6 +62,7 @@ class WebViewConfigBooleanCoverageTest {
             "enableCloudflareCompat", "enableCookiePersistence",
             "enablePrivateNetworkBridge", "enableNativeBridge",
             "enablePaymentSchemes", "enableShareBridge", "enableZoomPolyfill",
+            "receiveShareImages", "receiveShareText", "sharePromptBeforeUse",
             "enableAppReturn",
             "enableCrossOriginIsolation", "hideUrlPreview", "decodeBase64DeepLinks",
             "javaScriptCanOpenWindows", "mediaAutoplayEnabled",
@@ -395,6 +396,9 @@ class WebViewConfigBooleanCoverageTest {
             // Export-time input with no shell counterpart; see knownDerivedOrIntentional.
             enableAppReturn = bool("enableAppReturn"),
             enableShareBridge = bool("enableShareBridge"),
+            receiveShareImages = bool("receiveShareImages"),
+            receiveShareText = bool("receiveShareText"),
+            sharePromptBeforeUse = bool("sharePromptBeforeUse"),
             enableZoomPolyfill = bool("enableZoomPolyfill"),
             enableCrossOriginIsolation = bool("enableCrossOriginIsolation"),
             hideUrlPreview = bool("hideUrlPreview"),

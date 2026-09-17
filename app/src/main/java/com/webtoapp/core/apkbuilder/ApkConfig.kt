@@ -29,6 +29,7 @@ data class ApkConfig(
     val optionalServices: OptionalServicesBlock = OptionalServicesBlock(),
     val disguise: DisguiseBlock = DisguiseBlock(),
     val deepLink: DeepLinkBlock = DeepLinkBlock(),
+    val shareReceive: ShareReceiveBlock = ShareReceiveBlock(),
     val wordpress: WordpressBlock = WordpressBlock(),
     val nodejs: NodejsBlock = NodejsBlock(),
     val phpApp: PhpAppBlock = PhpAppBlock(),
@@ -344,6 +345,13 @@ data class ApkConfig(
     val deepLinkEnabled: Boolean get() = deepLink.enabled
     val deepLinkHosts: List<String> get() = deepLink.hosts
     val deepLinkSchemes: List<String> get() = deepLink.schemes
+
+    val shareReceiveEnabled: Boolean get() = shareReceive.enabled
+    val shareReceiveImages: Boolean get() = shareReceive.images
+    val shareReceiveText: Boolean get() = shareReceive.text
+    val shareDeliveryMode: String get() = shareReceive.deliveryMode
+    val sharePromptBeforeUse: Boolean get() = shareReceive.promptBeforeUse
+    val shareReceiveMimeTypes: List<String> get() = shareReceive.mimeTypes
 
     val wordpressSiteTitle: String get() = wordpress.siteTitle
     val wordpressAdminUser: String get() = wordpress.adminUser
@@ -810,6 +818,22 @@ data class DeepLinkBlock(
     val enabled: Boolean = false,
     val hosts: List<String> = emptyList(),
     val schemes: List<String> = emptyList()
+)
+
+/**
+ * Inbound share sheet registration (issue #943).
+ *
+ * [enabled] drives the `ACTION_SEND` intent-filter injection in [AxmlRebuilder]; when it is
+ * false no manifest change happens at all, so exported APKs are byte-identical to builds
+ * made before this block existed. [mimeTypes] is the resolved list the filter declares.
+ */
+data class ShareReceiveBlock(
+    val enabled: Boolean = false,
+    val images: Boolean = false,
+    val text: Boolean = false,
+    val deliveryMode: String = "BOTH",
+    val promptBeforeUse: Boolean = true,
+    val mimeTypes: List<String> = emptyList()
 )
 
 data class WordpressBlock(
