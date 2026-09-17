@@ -33,6 +33,9 @@ class AxmlRebuilder {
         private const val ATTR_SCHEME = 0x01010027
         private const val ATTR_HOST = 0x01010028
 
+        /** `android:mimeType`. Only `<data>` inside an intent-filter uses this attribute. */
+        private const val ATTR_MIME_TYPE = 0x01010026
+
         private val CLASS_NAME_REGEX = Regex("^[A-Z][a-zA-Z0-9]*$")
 
         private val BASELINE_RUNTIME_PERMISSIONS = listOf(
@@ -393,7 +396,7 @@ class AxmlRebuilder {
             for (scheme in schemes) {
                 val schemeValueIndex = getOrAddString(parsed.stringPool, scheme)
 
-                newChunks.add(buildSchemeOnlyDataElement(androidNsIndex, dataNameIndex, currentSchemeAttrIndex, schemeValueIndex))
+                newChunks.add(buildSingleAttrDataElement(androidNsIndex, dataNameIndex, currentSchemeAttrIndex, schemeValueIndex))
                 newChunks.add(buildEndElement(androidNsIndex, dataNameIndex))
             }
             newChunks.add(buildEndElement(androidNsIndex, intentFilterNameIndex))
@@ -403,6 +406,104 @@ class AxmlRebuilder {
         if (currentEndIndex >= 0) {
             parsed.chunks.addAll(currentEndIndex, newChunks)
             AppLogger.d(TAG, "Inserted ${newChunks.size} chunks for deep link intent-filter")
+        }
+    }
+
+    /**
+     * Register the app as a system share-sheet target (issue #943).
+     *
+     * Appends, just before `ShellActivity`'s closing `</activity>`, one intent-filter per send
+     * action:
+     *
+     * ```xml
+     * <intent-filter>
+     *   <action android:name="android.intent.action.SEND" />
+     *   <category android:name="android.intent.category.DEFAULT" />
+     *   <data android:mimeType="image-wildcard" />
+     * </intent-filter>
+     * ```
+     *
+     * (The mime value is one of [shareReceiveMimeTypes], e.g. `"image" + "/" + "*"`; it is
+     * spelled out at the call site rather than inline here because a literal wildcard would
+     * open a nested block comment.)
+     *
+     * `CATEGORY_BROWSABLE` is deliberately absent — unlike the `ACTION_VIEW` deep link filter,
+     * a share target must not be reachable from a browser. Two separate filters (rather than
+     * one carrying both actions) mirror what Android Studio emits, and keep `SEND_MULTIPLE`
+     * from being offered by senders that only handle single-item payloads.
+     *
+     * `ShellActivity` is already `android:exported="true"`, which `ACTION_SEND` requires.
+     */
+    private fun addShareReceiveIntentFilter(parsed: ParsedAxml, mimeTypes: List<String>) {
+        if (mimeTypes.isEmpty()) return
+
+        val resourceMap = parsed.resourceMap
+        if (resourceMap == null) {
+            AppLogger.e(TAG, "No resource map found, cannot add share-receive intent-filter")
+            return
+        }
+
+        if (resourceMap.indexOf(ATTR_NAME) < 0) {
+            AppLogger.e(TAG, "android:name not in resource map, cannot add share-receive intent-filter")
+            return
+        }
+
+        if (findActivityEndIndex(parsed, "com.webtoapp.ui.shell.ShellActivity") < 0) {
+            AppLogger.e(TAG, "Cannot find ShellActivity </activity> element for share-receive")
+            return
+        }
+
+        // `android:mimeType` may not be present in the template's resource map: the shell
+        // manifest declares no <data> element. Same append-at-string-pool-index dance the
+        // deep link filter does for scheme/host.
+        var mimeAttrIndex = parsed.resourceMap!!.indexOf(ATTR_MIME_TYPE)
+        if (mimeAttrIndex < 0) {
+            mimeAttrIndex = parsed.resourceMap!!.size
+            parsed.stringPool.strings.add(mimeAttrIndex, "mimeType")
+            updateStringIndicesAfterInsert(parsed, mimeAttrIndex)
+            val extended = parsed.resourceMap!!.copyOf(parsed.resourceMap!!.size + 1)
+            extended[mimeAttrIndex] = ATTR_MIME_TYPE
+            parsed.resourceMap = extended
+            AppLogger.d(TAG, "Added mimeType to string pool and resource map at index $mimeAttrIndex")
+        }
+
+        // Indices moved when the string pool grew above; re-resolve everything we use.
+        val currentNameAttrIndex = parsed.resourceMap!!.indexOf(ATTR_NAME)
+        val currentMimeAttrIndex = parsed.resourceMap!!.indexOf(ATTR_MIME_TYPE)
+
+        val androidNsIndex = getOrAddString(parsed.stringPool, "http://schemas.android.com/apk/res/android")
+        val intentFilterNameIndex = getOrAddString(parsed.stringPool, "intent-filter")
+        val actionNameIndex = getOrAddString(parsed.stringPool, "action")
+        val categoryNameIndex = getOrAddString(parsed.stringPool, "category")
+        val dataNameIndex = getOrAddString(parsed.stringPool, "data")
+
+        val sendActionIndex = getOrAddString(parsed.stringPool, "android.intent.action.SEND")
+        val sendMultipleActionIndex = getOrAddString(parsed.stringPool, "android.intent.action.SEND_MULTIPLE")
+        val defaultCategoryIndex = getOrAddString(parsed.stringPool, "android.intent.category.DEFAULT")
+
+        val newChunks = mutableListOf<Chunk>()
+        for (actionIndex in listOf(sendActionIndex, sendMultipleActionIndex)) {
+            newChunks.add(buildSimpleStartElement(androidNsIndex, intentFilterNameIndex, 0))
+
+            newChunks.add(buildActionOrCategoryElement(androidNsIndex, actionNameIndex, currentNameAttrIndex, actionIndex))
+            newChunks.add(buildEndElement(androidNsIndex, actionNameIndex))
+
+            newChunks.add(buildActionOrCategoryElement(androidNsIndex, categoryNameIndex, currentNameAttrIndex, defaultCategoryIndex))
+            newChunks.add(buildEndElement(androidNsIndex, categoryNameIndex))
+
+            for (mimeType in mimeTypes) {
+                val mimeValueIndex = getOrAddString(parsed.stringPool, mimeType)
+                newChunks.add(buildSingleAttrDataElement(androidNsIndex, dataNameIndex, currentMimeAttrIndex, mimeValueIndex))
+                newChunks.add(buildEndElement(androidNsIndex, dataNameIndex))
+            }
+
+            newChunks.add(buildEndElement(androidNsIndex, intentFilterNameIndex))
+        }
+
+        val insertIndex = findActivityEndIndex(parsed, "com.webtoapp.ui.shell.ShellActivity")
+        if (insertIndex >= 0) {
+            parsed.chunks.addAll(insertIndex, newChunks)
+            AppLogger.d(TAG, "Inserted ${newChunks.size} chunks for share-receive intent-filter ($mimeTypes)")
         }
     }
 
@@ -724,11 +825,16 @@ class AxmlRebuilder {
         return Chunk(CHUNK_START_ELEMENT, 0, chunkSize, buffer.array())
     }
 
-    private fun buildSchemeOnlyDataElement(
+    /**
+     * `<data>` carrying exactly one string-typed attribute — `android:scheme` for the deep link
+     * filter, `android:mimeType` for the share-receive filter. The attribute's resource id is
+     * [attrNameIndex]; only its position in the resource map distinguishes the two uses.
+     */
+    private fun buildSingleAttrDataElement(
         androidNsIndex: Int,
         elementNameIndex: Int,
-        schemeAttrIndex: Int,
-        schemeValueIndex: Int
+        attrNameIndex: Int,
+        attrValueIndex: Int
     ): Chunk {
         val attrCount = 1
         val attrSize = 20
@@ -752,12 +858,12 @@ class AxmlRebuilder {
         buffer.putShort(0)
 
         buffer.putInt(androidNsIndex)
-        buffer.putInt(schemeAttrIndex)
-        buffer.putInt(schemeValueIndex)
+        buffer.putInt(attrNameIndex)
+        buffer.putInt(attrValueIndex)
         buffer.putShort(8)
         buffer.put(0)
         buffer.put(0x03)
-        buffer.putInt(schemeValueIndex)
+        buffer.putInt(attrValueIndex)
 
         return Chunk(CHUNK_START_ELEMENT, 0, chunkSize, buffer.array())
     }
@@ -972,7 +1078,17 @@ class AxmlRebuilder {
         deepLinkSchemes: List<String> = emptyList(),
         permissions: List<String> = BASELINE_RUNTIME_PERMISSIONS,
         requiredComponents: Set<String> = DEFAULT_RUNTIME_COMPONENTS,
-        targetSdk: Int? = null
+        targetSdk: Int? = null,
+        /**
+         * Resolved mime filters for the inbound share channel (issue #943). Non-empty
+         * registers an `ACTION_SEND` / `ACTION_SEND_MULTIPLE` intent-filter on
+         * `ShellActivity` so the exported app appears in the system share sheet. Empty
+         * leaves the manifest untouched.
+         *
+         * Declared last, after [targetSdk], purely so the existing callers keep compiling —
+         * it is conceptually a sibling of `deepLinkHosts` / `deepLinkSchemes`.
+         */
+        shareReceiveMimeTypes: List<String> = emptyList()
     ): ByteArray {
         return try {
             val parsed = parseAxml(axmlData)
@@ -1009,9 +1125,14 @@ class AxmlRebuilder {
                 AppLogger.d(TAG, "Added deep link intent-filter for hosts: $deepLinkHosts, schemes: $deepLinkSchemes")
             }
 
+            if (shareReceiveMimeTypes.isNotEmpty()) {
+                addShareReceiveIntentFilter(parsed, shareReceiveMimeTypes)
+                AppLogger.d(TAG, "Added share-receive intent-filter for mime types: $shareReceiveMimeTypes")
+            }
+
             val result = rebuildAxml(parsed)
 
-            AppLogger.d(TAG, "AXML full rebuild complete: original=${axmlData.size}, new=${result.size}, deepLinkHosts=${deepLinkHosts.size}, deepLinkSchemes=${deepLinkSchemes.size}")
+            AppLogger.d(TAG, "AXML full rebuild complete: original=${axmlData.size}, new=${result.size}, deepLinkHosts=${deepLinkHosts.size}, deepLinkSchemes=${deepLinkSchemes.size}, shareReceiveMimeTypes=${shareReceiveMimeTypes.size}")
             result
 
         } catch (e: Exception) {

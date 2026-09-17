@@ -1271,6 +1271,21 @@ data class WebViewShellConfig(
     @SerializedName("enableShareBridge")
     val enableShareBridge: Boolean = true,
 
+    // Inbound share sheet (#943). Names must match ApkConfigJsonFactory.toShellConfigJson
+    // exactly — Gson drops unknown keys silently, so a rename here without the factory (or
+    // vice versa) turns the feature off in exported APKs with no error anywhere.
+    @SerializedName("receiveShareImages")
+    val receiveShareImages: Boolean = false,
+
+    @SerializedName("receiveShareText")
+    val receiveShareText: Boolean = false,
+
+    @SerializedName("shareDeliveryMode")
+    val shareDeliveryMode: String = "BOTH",
+
+    @SerializedName("sharePromptBeforeUse")
+    val sharePromptBeforeUse: Boolean = true,
+
     @SerializedName("enableZoomPolyfill")
     val enableZoomPolyfill: Boolean = true,
 

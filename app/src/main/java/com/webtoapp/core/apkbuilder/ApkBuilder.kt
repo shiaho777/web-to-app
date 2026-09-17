@@ -1465,7 +1465,8 @@ class ApkBuilder(private val context: Context) {
                                 config.deepLinkSchemes,
                                 buildRequiredPermissions(config),
                                 buildRequiredComponents(config),
-                                targetSdk = config.targetSdkOverride
+                                targetSdk = config.targetSdkOverride,
+                                shareReceiveMimeTypes = config.shareReceiveMimeTypes
                             )
                             writeEntryDeflated(zipOut, entry.name, modifiedData)
                         }
@@ -3996,6 +3997,7 @@ fun WebApp.toApkConfig(packageName: String, context: android.content.Context? = 
         optionalServices = buildOptionalServicesBlock(),
         disguise = buildDisguiseBlock(),
         deepLink = buildDeepLinkBlock(packageName),
+        shareReceive = buildShareReceiveBlock(),
         wordpress = buildWordpressBlock(),
         nodejs = buildNodejsBlock(),
         phpApp = buildPhpAppBlock(),
@@ -4648,6 +4650,31 @@ private fun WebApp.buildDeepLinkBlock(packageName: String): DeepLinkBlock = Deep
         customSchemes = webViewConfig.customAppReturnSchemes
     )
 )
+
+/**
+ * Resolve the inbound share sheet registration (issue #943).
+ *
+ * The two toggles collapse into one resolved mime list: an app that receives neither images
+ * nor text gets `enabled = false`, which makes `AxmlRebuilder` skip the intent-filter
+ * injection entirely and leaves the exported manifest identical to a build made before this
+ * feature existed.
+ */
+private fun WebApp.buildShareReceiveBlock(): ShareReceiveBlock {
+    val images = webViewConfig.receiveShareImages
+    val text = webViewConfig.receiveShareText
+    val mimeTypes = buildList {
+        if (images) add(com.webtoapp.core.share.ShareReceiveContract.MIME_IMAGES)
+        if (text) add(com.webtoapp.core.share.ShareReceiveContract.MIME_TEXT)
+    }
+    return ShareReceiveBlock(
+        enabled = mimeTypes.isNotEmpty(),
+        images = images,
+        text = text,
+        deliveryMode = webViewConfig.shareDeliveryMode.name,
+        promptBeforeUse = webViewConfig.sharePromptBeforeUse,
+        mimeTypes = mimeTypes
+    )
+}
 
 private fun WebApp.buildWordpressBlock(): WordpressBlock = WordpressBlock(
     siteTitle = wordpressConfig?.siteTitle ?: "",

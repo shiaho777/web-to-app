@@ -15402,5 +15402,292 @@ object StringsE {
         AppLanguage.KOREAN -> "package.json을 찾을 수 없습니다"
     }
 
+    // ── Inbound share sheet (issue #943) ────────────────────────────────────────
+
+    val receiveShare: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "接收分享内容"
+        AppLanguage.ENGLISH -> "Receive shared content"
+        AppLanguage.ARABIC -> "استقبال المحتوى المُشارَك"
+        AppLanguage.PORTUGUESE -> "Receber conteúdo compartilhado"
+        AppLanguage.SPANISH -> "Recibir contenido compartido"
+        AppLanguage.FRENCH -> "Recevoir le contenu partagé"
+        AppLanguage.GERMAN -> "Geteilte Inhalte empfangen"
+        AppLanguage.RUSSIAN -> "Приём общего содержимого"
+        AppLanguage.JAPANESE -> "共有コンテンツを受け取る"
+        AppLanguage.KOREAN -> "공유 콘텐츠 받기"
+    }
+
+    val receiveShareHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "让本应用出现在系统分享面板中"
+        AppLanguage.ENGLISH -> "Let this app appear in the system share sheet"
+        AppLanguage.ARABIC -> "اجعل هذا التطبيق يظهر في قائمة المشاركة بالنظام"
+        AppLanguage.PORTUGUESE -> "Fazer este app aparecer no menu de compartilhamento do sistema"
+        AppLanguage.SPANISH -> "Hacer que esta app aparezca en el menú de compartir del sistema"
+        AppLanguage.FRENCH -> "Faire apparaître cette app dans le menu de partage du système"
+        AppLanguage.GERMAN -> "Diese App im System-Teilen-Menü anzeigen"
+        AppLanguage.RUSSIAN -> "Показывать это приложение в системном меню «Поделиться»"
+        AppLanguage.JAPANESE -> "このアプリをシステムの共有メニューに表示します"
+        AppLanguage.KOREAN -> "이 앱을 시스템 공유 메뉴에 표시합니다"
+    }
+
+    val receiveShareImages: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "接收图片"
+        AppLanguage.ENGLISH -> "Receive images"
+        AppLanguage.ARABIC -> "استقبال الصور"
+        AppLanguage.PORTUGUESE -> "Receber imagens"
+        AppLanguage.SPANISH -> "Recibir imágenes"
+        AppLanguage.FRENCH -> "Recevoir des images"
+        AppLanguage.GERMAN -> "Bilder empfangen"
+        AppLanguage.RUSSIAN -> "Принимать изображения"
+        AppLanguage.JAPANESE -> "画像を受け取る"
+        AppLanguage.KOREAN -> "이미지 받기"
+    }
+
+    val receiveShareImagesHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "在分享面板中作为图片分享目标出现"
+        AppLanguage.ENGLISH -> "Appear as a target when sharing images"
+        AppLanguage.ARABIC -> "الظهور كهدف عند مشاركة الصور"
+        AppLanguage.PORTUGUESE -> "Aparecer como destino ao compartilhar imagens"
+        AppLanguage.SPANISH -> "Aparecer como destino al compartir imágenes"
+        AppLanguage.FRENCH -> "Apparaître comme cible lors du partage d'images"
+        AppLanguage.GERMAN -> "Beim Teilen von Bildern als Ziel erscheinen"
+        AppLanguage.RUSSIAN -> "Отображаться как получатель при отправке изображений"
+        AppLanguage.JAPANESE -> "画像の共有先として表示されます"
+        AppLanguage.KOREAN -> "이미지 공유 대상으로 표시됩니다"
+    }
+
+    val receiveShareText: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "接收文本与链接"
+        AppLanguage.ENGLISH -> "Receive text and links"
+        AppLanguage.ARABIC -> "استقبال النصوص والروابط"
+        AppLanguage.PORTUGUESE -> "Receber texto e links"
+        AppLanguage.SPANISH -> "Recibir texto y enlaces"
+        AppLanguage.FRENCH -> "Recevoir du texte et des liens"
+        AppLanguage.GERMAN -> "Text und Links empfangen"
+        AppLanguage.RUSSIAN -> "Принимать текст и ссылки"
+        AppLanguage.JAPANESE -> "テキストとリンクを受け取る"
+        AppLanguage.KOREAN -> "텍스트와 링크 받기"
+    }
+
+    val receiveShareTextHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "同时接收以纯文本形式分享的内容"
+        AppLanguage.ENGLISH -> "Also accept content shared as plain text"
+        AppLanguage.ARABIC -> "قبول المحتوى المُشارَك كنص عادي أيضًا"
+        AppLanguage.PORTUGUESE -> "Também aceitar conteúdo compartilhado como texto simples"
+        AppLanguage.SPANISH -> "Aceptar también contenido compartido como texto sin formato"
+        AppLanguage.FRENCH -> "Accepter aussi le contenu partagé en texte brut"
+        AppLanguage.GERMAN -> "Auch als reiner Text geteilte Inhalte annehmen"
+        AppLanguage.RUSSIAN -> "Также принимать содержимое, отправленное как обычный текст"
+        AppLanguage.JAPANESE -> "プレーンテキストとして共有された内容も受け取ります"
+        AppLanguage.KOREAN -> "일반 텍스트로 공유된 콘텐츠도 받습니다"
+    }
+
+    val receiveShareDeliveryMode: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "投递方式"
+        AppLanguage.ENGLISH -> "Delivery method"
+        AppLanguage.ARABIC -> "طريقة التسليم"
+        AppLanguage.PORTUGUESE -> "Método de entrega"
+        AppLanguage.SPANISH -> "Método de entrega"
+        AppLanguage.FRENCH -> "Mode de remise"
+        AppLanguage.GERMAN -> "Übergabemethode"
+        AppLanguage.RUSSIAN -> "Способ доставки"
+        AppLanguage.JAPANESE -> "受け渡し方法"
+        AppLanguage.KOREAN -> "전달 방식"
+    }
+
+    val receiveShareModeEvent: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "页面事件"
+        AppLanguage.ENGLISH -> "Page event"
+        AppLanguage.ARABIC -> "حدث الصفحة"
+        AppLanguage.PORTUGUESE -> "Evento da página"
+        AppLanguage.SPANISH -> "Evento de la página"
+        AppLanguage.FRENCH -> "Événement de page"
+        AppLanguage.GERMAN -> "Seitenereignis"
+        AppLanguage.RUSSIAN -> "Событие страницы"
+        AppLanguage.JAPANESE -> "ページイベント"
+        AppLanguage.KOREAN -> "페이지 이벤트"
+    }
+
+    val receiveShareModeEventHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "派发 wta:share 事件，零点击；需要页面或扩展模块主动监听"
+        AppLanguage.ENGLISH -> "Dispatch a wta:share event — zero taps, but the page or a module must listen"
+        AppLanguage.ARABIC -> "إرسال حدث wta:share — بدون نقرات، لكن يجب أن تستمع الصفحة أو الوحدة"
+        AppLanguage.PORTUGUESE -> "Disparar um evento wta:share — sem toques, mas a página ou um módulo precisa escutar"
+        AppLanguage.SPANISH -> "Lanzar un evento wta:share — sin toques, pero la página o un módulo debe escuchar"
+        AppLanguage.FRENCH -> "Émettre un événement wta:share — sans clic, mais la page ou un module doit écouter"
+        AppLanguage.GERMAN -> "Ein wta:share-Ereignis auslösen — ohne Tippen, aber Seite oder Modul muss lauschen"
+        AppLanguage.RUSSIAN -> "Отправлять событие wta:share — без нажатий, но страница или модуль должны слушать"
+        AppLanguage.JAPANESE -> "wta:share イベントを発火 — タップ不要ですが、ページかモジュールが待ち受ける必要があります"
+        AppLanguage.KOREAN -> "wta:share 이벤트를 발생 — 탭 없이 동작하지만 페이지나 모듈이 수신해야 합니다"
+    }
+
+    val receiveShareModeChooser: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "预填文件选择器"
+        AppLanguage.ENGLISH -> "Pre-fill file chooser"
+        AppLanguage.ARABIC -> "تعبئة منتقي الملفات مسبقًا"
+        AppLanguage.PORTUGUESE -> "Preencher o seletor de arquivos"
+        AppLanguage.SPANISH -> "Rellenar el selector de archivos"
+        AppLanguage.FRENCH -> "Pré-remplir le sélecteur de fichiers"
+        AppLanguage.GERMAN -> "Dateiauswahl vorbelegen"
+        AppLanguage.RUSSIAN -> "Подставлять в выбор файлов"
+        AppLanguage.JAPANESE -> "ファイル選択を自動入力"
+        AppLanguage.KOREAN -> "파일 선택기 미리 채우기"
+    }
+
+    val receiveShareModeChooserHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "页面点击上传时直接使用分享内容，对任意网站生效"
+        AppLanguage.ENGLISH -> "Use the shared content when the page asks for a file — works on any site"
+        AppLanguage.ARABIC -> "استخدام المحتوى المُشارَك عندما تطلب الصفحة ملفًا — يعمل على أي موقع"
+        AppLanguage.PORTUGUESE -> "Usar o conteúdo compartilhado quando a página pedir um arquivo — funciona em qualquer site"
+        AppLanguage.SPANISH -> "Usar el contenido compartido cuando la página pida un archivo — funciona en cualquier sitio"
+        AppLanguage.FRENCH -> "Utiliser le contenu partagé quand la page demande un fichier — fonctionne sur tout site"
+        AppLanguage.GERMAN -> "Geteilten Inhalt verwenden, wenn die Seite eine Datei anfordert — funktioniert überall"
+        AppLanguage.RUSSIAN -> "Использовать общее содержимое, когда страница запросит файл — работает на любом сайте"
+        AppLanguage.JAPANESE -> "ページがファイルを要求したときに共有内容を使用 — どのサイトでも機能します"
+        AppLanguage.KOREAN -> "페이지가 파일을 요청할 때 공유 콘텐츠 사용 — 모든 사이트에서 동작합니다"
+    }
+
+    val receiveShareModeBoth: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "两者都使用"
+        AppLanguage.ENGLISH -> "Both"
+        AppLanguage.ARABIC -> "كلاهما"
+        AppLanguage.PORTUGUESE -> "Ambos"
+        AppLanguage.SPANISH -> "Ambos"
+        AppLanguage.FRENCH -> "Les deux"
+        AppLanguage.GERMAN -> "Beides"
+        AppLanguage.RUSSIAN -> "Оба способа"
+        AppLanguage.JAPANESE -> "両方"
+        AppLanguage.KOREAN -> "둘 다"
+    }
+
+    val receiveShareModeBothHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "事件优先，文件选择器兜底（推荐）"
+        AppLanguage.ENGLISH -> "Event first, file chooser as fallback (recommended)"
+        AppLanguage.ARABIC -> "الحدث أولًا ومنتقي الملفات كبديل (موصى به)"
+        AppLanguage.PORTUGUESE -> "Evento primeiro, seletor de arquivos como alternativa (recomendado)"
+        AppLanguage.SPANISH -> "Evento primero, selector de archivos como respaldo (recomendado)"
+        AppLanguage.FRENCH -> "Événement d'abord, sélecteur de fichiers en secours (recommandé)"
+        AppLanguage.GERMAN -> "Erst Ereignis, Dateiauswahl als Rückfall (empfohlen)"
+        AppLanguage.RUSSIAN -> "Сначала событие, выбор файлов как запасной вариант (рекомендуется)"
+        AppLanguage.JAPANESE -> "イベント優先、ファイル選択はフォールバック（推奨）"
+        AppLanguage.KOREAN -> "이벤트 우선, 파일 선택기는 대체 수단 (권장)"
+    }
+
+    val receiveSharePromptBeforeUse: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "使用前先询问"
+        AppLanguage.ENGLISH -> "Ask before using"
+        AppLanguage.ARABIC -> "اسأل قبل الاستخدام"
+        AppLanguage.PORTUGUESE -> "Perguntar antes de usar"
+        AppLanguage.SPANISH -> "Preguntar antes de usar"
+        AppLanguage.FRENCH -> "Demander avant d'utiliser"
+        AppLanguage.GERMAN -> "Vor der Verwendung fragen"
+        AppLanguage.RUSSIAN -> "Спрашивать перед использованием"
+        AppLanguage.JAPANESE -> "使用前に確認する"
+        AppLanguage.KOREAN -> "사용 전에 확인"
+    }
+
+    val receiveSharePromptBeforeUseHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "关闭后直接用分享内容应答上传，不再询问"
+        AppLanguage.ENGLISH -> "When off, uploads are answered with the shared content without asking"
+        AppLanguage.ARABIC -> "عند الإيقاف، تُجاب عمليات الرفع بالمحتوى المُشارَك دون سؤال"
+        AppLanguage.PORTUGUESE -> "Desativado, os envios usam o conteúdo compartilhado sem perguntar"
+        AppLanguage.SPANISH -> "Desactivado, las subidas usan el contenido compartido sin preguntar"
+        AppLanguage.FRENCH -> "Désactivé, les envois utilisent le contenu partagé sans demander"
+        AppLanguage.GERMAN -> "Aus: Uploads verwenden den geteilten Inhalt ohne Nachfrage"
+        AppLanguage.RUSSIAN -> "Выкл.: загрузки используют общее содержимое без запроса"
+        AppLanguage.JAPANESE -> "オフの場合、共有内容を確認なしでアップロードに使用します"
+        AppLanguage.KOREAN -> "끄면 업로드에 공유 콘텐츠를 묻지 않고 사용합니다"
+    }
+
+    val receiveShareCaveat: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "第三方网站无法自动提交，需要在页面点击上传时选择已分享的内容"
+        AppLanguage.ENGLISH -> "Third-party sites cannot be submitted to automatically — tap the page's upload control and the shared content is used"
+        AppLanguage.ARABIC -> "لا يمكن الإرسال تلقائيًا في مواقع الطرف الثالث — انقر زر الرفع في الصفحة وسيُستخدم المحتوى المُشارَك"
+        AppLanguage.PORTUGUESE -> "Sites de terceiros não podem ser enviados automaticamente — toque no botão de envio da página e o conteúdo compartilhado será usado"
+        AppLanguage.SPANISH -> "Los sitios de terceros no pueden enviarse automáticamente — pulsa el botón de subida de la página y se usará el contenido compartido"
+        AppLanguage.FRENCH -> "Les sites tiers ne peuvent pas être envoyés automatiquement — touchez le bouton d'envoi de la page et le contenu partagé sera utilisé"
+        AppLanguage.GERMAN -> "Fremde Websites können nicht automatisch gesendet werden — tippen Sie auf die Upload-Schaltfläche der Seite, der geteilte Inhalt wird verwendet"
+        AppLanguage.RUSSIAN -> "Сторонние сайты нельзя отправить автоматически — нажмите кнопку загрузки на странице, и будет использовано общее содержимое"
+        AppLanguage.JAPANESE -> "サードパーティのサイトは自動送信できません — ページのアップロードボタンを押すと共有内容が使用されます"
+        AppLanguage.KOREAN -> "제3자 사이트는 자동으로 전송할 수 없습니다 — 페이지의 업로드 버튼을 누르면 공유 콘텐츠가 사용됩니다"
+    }
+
+    val shareReceivedToast: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "已接收分享内容，点击页面上传即可使用"
+        AppLanguage.ENGLISH -> "Shared content received — use the page's upload button"
+        AppLanguage.ARABIC -> "تم استقبال المحتوى المُشارَك — استخدم زر الرفع في الصفحة"
+        AppLanguage.PORTUGUESE -> "Conteúdo compartilhado recebido — use o botão de envio da página"
+        AppLanguage.SPANISH -> "Contenido compartido recibido — usa el botón de subida de la página"
+        AppLanguage.FRENCH -> "Contenu partagé reçu — utilisez le bouton d'envoi de la page"
+        AppLanguage.GERMAN -> "Geteilter Inhalt empfangen — verwenden Sie die Upload-Schaltfläche der Seite"
+        AppLanguage.RUSSIAN -> "Общее содержимое получено — используйте кнопку загрузки на странице"
+        AppLanguage.JAPANESE -> "共有内容を受け取りました — ページのアップロードボタンから使用できます"
+        AppLanguage.KOREAN -> "공유 콘텐츠를 받았습니다 — 페이지의 업로드 버튼을 사용하세요"
+    }
+
+    val shareReceivedPickTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "使用已分享的内容？"
+        AppLanguage.ENGLISH -> "Use the shared content?"
+        AppLanguage.ARABIC -> "استخدام المحتوى المُشارَك؟"
+        AppLanguage.PORTUGUESE -> "Usar o conteúdo compartilhado?"
+        AppLanguage.SPANISH -> "¿Usar el contenido compartido?"
+        AppLanguage.FRENCH -> "Utiliser le contenu partagé ?"
+        AppLanguage.GERMAN -> "Geteilten Inhalt verwenden?"
+        AppLanguage.RUSSIAN -> "Использовать общее содержимое?"
+        AppLanguage.JAPANESE -> "共有された内容を使用しますか？"
+        AppLanguage.KOREAN -> "공유된 콘텐츠를 사용할까요?"
+    }
+
+    val shareReceivedPickMessage: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "刚分享进来的内容可以直接用于这次上传。"
+        AppLanguage.ENGLISH -> "The content you just shared can be used for this upload."
+        AppLanguage.ARABIC -> "يمكن استخدام المحتوى الذي شاركته للتو في عملية الرفع هذه."
+        AppLanguage.PORTUGUESE -> "O conteúdo que você acabou de compartilhar pode ser usado neste envio."
+        AppLanguage.SPANISH -> "El contenido que acabas de compartir puede usarse en esta subida."
+        AppLanguage.FRENCH -> "Le contenu que vous venez de partager peut être utilisé pour cet envoi."
+        AppLanguage.GERMAN -> "Der gerade geteilte Inhalt kann für diesen Upload verwendet werden."
+        AppLanguage.RUSSIAN -> "Только что отправленное содержимое можно использовать для этой загрузки."
+        AppLanguage.JAPANESE -> "先ほど共有した内容をこのアップロードに使用できます。"
+        AppLanguage.KOREAN -> "방금 공유한 콘텐츠를 이 업로드에 사용할 수 있습니다."
+    }
+
+    fun shareReceivedPickMessageNamed(name: String): String = when (Strings.lang) {
+        AppLanguage.CHINESE -> "「$name」可以直接用于这次上传。"
+        AppLanguage.ENGLISH -> "\"$name\" can be used for this upload."
+        AppLanguage.ARABIC -> "يمكن استخدام «$name» في عملية الرفع هذه."
+        AppLanguage.PORTUGUESE -> "\"$name\" pode ser usado neste envio."
+        AppLanguage.SPANISH -> "\"$name\" puede usarse en esta subida."
+        AppLanguage.FRENCH -> "« $name » peut être utilisé pour cet envoi."
+        AppLanguage.GERMAN -> "„$name\" kann für diesen Upload verwendet werden."
+        AppLanguage.RUSSIAN -> "«$name» можно использовать для этой загрузки."
+        AppLanguage.JAPANESE -> "「$name」をこのアップロードに使用できます。"
+        AppLanguage.KOREAN -> "\"$name\"을(를) 이 업로드에 사용할 수 있습니다."
+    }
+
+    val shareReceivedPickUse: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "使用它"
+        AppLanguage.ENGLISH -> "Use it"
+        AppLanguage.ARABIC -> "استخدامه"
+        AppLanguage.PORTUGUESE -> "Usar"
+        AppLanguage.SPANISH -> "Usarlo"
+        AppLanguage.FRENCH -> "L'utiliser"
+        AppLanguage.GERMAN -> "Verwenden"
+        AppLanguage.RUSSIAN -> "Использовать"
+        AppLanguage.JAPANESE -> "使用する"
+        AppLanguage.KOREAN -> "사용"
+    }
+
+    val shareReceivedPickChoose: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "重新选择"
+        AppLanguage.ENGLISH -> "Choose another"
+        AppLanguage.ARABIC -> "اختيار آخر"
+        AppLanguage.PORTUGUESE -> "Escolher outro"
+        AppLanguage.SPANISH -> "Elegir otro"
+        AppLanguage.FRENCH -> "Choisir un autre"
+        AppLanguage.GERMAN -> "Anderes wählen"
+        AppLanguage.RUSSIAN -> "Выбрать другое"
+        AppLanguage.JAPANESE -> "別のものを選ぶ"
+        AppLanguage.KOREAN -> "다른 항목 선택"
+    }
 
 }

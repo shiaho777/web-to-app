@@ -5129,6 +5129,31 @@ object Strings {
     fun downloadVersionMismatch(label: String, expected: String): String = StringsE.downloadVersionMismatch(label, expected)
     fun downloadFailed(label: String, detail: String): String = StringsE.downloadFailed(label, detail)
     val packageJsonMissing: String get() = StringsE.packageJsonMissing
+
+    // ── Inbound share sheet (issue #943) ────────────────────────────────────────
+
+    val receiveShare: String get() = StringsE.receiveShare
+    val receiveShareHint: String get() = StringsE.receiveShareHint
+    val receiveShareImages: String get() = StringsE.receiveShareImages
+    val receiveShareImagesHint: String get() = StringsE.receiveShareImagesHint
+    val receiveShareText: String get() = StringsE.receiveShareText
+    val receiveShareTextHint: String get() = StringsE.receiveShareTextHint
+    val receiveShareDeliveryMode: String get() = StringsE.receiveShareDeliveryMode
+    val receiveShareModeEvent: String get() = StringsE.receiveShareModeEvent
+    val receiveShareModeEventHint: String get() = StringsE.receiveShareModeEventHint
+    val receiveShareModeChooser: String get() = StringsE.receiveShareModeChooser
+    val receiveShareModeChooserHint: String get() = StringsE.receiveShareModeChooserHint
+    val receiveShareModeBoth: String get() = StringsE.receiveShareModeBoth
+    val receiveShareModeBothHint: String get() = StringsE.receiveShareModeBothHint
+    val receiveSharePromptBeforeUse: String get() = StringsE.receiveSharePromptBeforeUse
+    val receiveSharePromptBeforeUseHint: String get() = StringsE.receiveSharePromptBeforeUseHint
+    val receiveShareCaveat: String get() = StringsE.receiveShareCaveat
+    val shareReceivedToast: String get() = StringsE.shareReceivedToast
+    val shareReceivedPickTitle: String get() = StringsE.shareReceivedPickTitle
+    val shareReceivedPickMessage: String get() = StringsE.shareReceivedPickMessage
+    fun shareReceivedPickMessageNamed(name: String): String = StringsE.shareReceivedPickMessageNamed(name)
+    val shareReceivedPickUse: String get() = StringsE.shareReceivedPickUse
+    val shareReceivedPickChoose: String get() = StringsE.shareReceivedPickChoose
 }
 
 

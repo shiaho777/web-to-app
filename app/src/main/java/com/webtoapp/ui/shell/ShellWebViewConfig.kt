@@ -90,6 +90,12 @@ fun buildWebViewConfig(config: ShellConfig): WebViewConfig {
         newWindowBehavior = try { com.webtoapp.data.model.NewWindowBehavior.valueOf(config.webViewConfig.newWindowBehavior) } catch (e: Exception) { com.webtoapp.data.model.NewWindowBehavior.SAME_WINDOW },
         enablePaymentSchemes = config.webViewConfig.enablePaymentSchemes,
         enableShareBridge = config.webViewConfig.enableShareBridge,
+        receiveShareImages = config.webViewConfig.receiveShareImages,
+        receiveShareText = config.webViewConfig.receiveShareText,
+        shareDeliveryMode = try {
+            com.webtoapp.data.model.ShareDeliveryMode.valueOf(config.webViewConfig.shareDeliveryMode)
+        } catch (e: Exception) { com.webtoapp.data.model.ShareDeliveryMode.BOTH },
+        sharePromptBeforeUse = config.webViewConfig.sharePromptBeforeUse,
         enableZoomPolyfill = config.webViewConfig.enableZoomPolyfill,
         enableCrossOriginIsolation = config.webViewConfig.enableCrossOriginIsolation,
         hideUrlPreview = config.webViewConfig.hideUrlPreview,
