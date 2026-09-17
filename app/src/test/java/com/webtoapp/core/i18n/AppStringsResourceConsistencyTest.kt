@@ -10,7 +10,7 @@ class AppStringsResourceConsistencyTest {
     private companion object {
 
         // The only keys allowed in res/values/strings.xml. Each must also carry
-        // translatable="false" — anything user-visible belongs in Strings.kt.
+        // translatable="false" — anything user-visible belongs in core/i18n/.
         val NON_LOCALIZED_STRING_KEYS = setOf(
 
             "app_name",
@@ -44,7 +44,7 @@ class AppStringsResourceConsistencyTest {
             buildString {
                 appendLine("res/values/strings.xml must only contain translatable=\"false\"")
                 appendLine("resources from NON_LOCALIZED_STRING_KEYS.")
-                appendLine("All user-visible text belongs in Strings.kt as inline")
+                appendLine("All user-visible text belongs in core/i18n/ as inline")
                 appendLine("when(Strings.lang) blocks covering all 10 languages — resource")
                 appendLine("lookups cannot cover locales that have no values-*/ directory and")
                 appendLine("silently fall back to the default values/ (Chinese).")
@@ -66,7 +66,7 @@ class AppStringsResourceConsistencyTest {
         }?.map { it.name }?.sorted().orEmpty()
         assertWithMessage(
             "Locale values-*/ directories must not exist — user-visible text lives in " +
-                "Strings.kt (all 10 languages inline), and partial locale resources " +
+                "core/i18n/ (all 10 languages inline), and partial locale resources " +
                 "silently fall back to Chinese for the missing 7. Found: $localeDirs"
         ).that(localeDirs).isEmpty()
 
@@ -75,7 +75,7 @@ class AppStringsResourceConsistencyTest {
         }?.map { it.name }?.sorted().orEmpty()
         assertWithMessage(
             "Grouped app_strings_*.xml files must not exist — they were dead duplicates " +
-                "of Strings.kt content, referenced by no code. Found: $groupedFiles"
+                "of core/i18n/ content, referenced by no code. Found: $groupedFiles"
         ).that(groupedFiles).isEmpty()
     }
 
@@ -111,7 +111,7 @@ class AppStringsResourceConsistencyTest {
         assertWithMessage(
             buildString {
                 appendLine("Kotlin source references R.string.* for user-visible text.")
-                appendLine("All user-facing strings must live in Strings.kt as inline")
+                appendLine("All user-facing strings must live in core/i18n/ as inline")
                 appendLine("when(Strings.lang) blocks covering all 10 languages.")
                 appendLine()
                 appendLine("R.string.* is forbidden because res/values/ only holds")

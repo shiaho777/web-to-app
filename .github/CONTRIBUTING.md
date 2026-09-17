@@ -165,8 +165,9 @@ codebase. A few rules worth calling out:
   layout grammar (see `AGENTS.md` recipe 12) — copy the neighbouring cards,
   don't invent your own, and verify on the emulator, not just by compiling.
 - **Strings must cover all 10 supported languages.** UI copy lives in
-  `core/i18n/Strings.kt` (facade `object Strings` + in-file `StringsA`…`StringsE`,
-  split only for the JVM constant pool). Supported: Chinese, English, Arabic,
+  `core/i18n/` (facade `object Strings` in `Strings.kt` + `StringsA`…`StringsE`,
+  one file per split object; split only for the JVM constant pool). Supported:
+  Chinese, English, Arabic,
   Portuguese, Spanish, French, German, Russian, Japanese, Korean.
   Every new or changed user-visible `when (Strings.lang)` block **must** have
   real translations for **all 10** branches with no `else ->` — do not leave
@@ -391,8 +392,8 @@ cd web-to-app
 - 复用 `ui/design/WtaTokens.kt` 里的设计 token（间距、圆角、透明度、高度），
   别硬编码数字。编辑器配置卡片共用一套排版语法（见 `AGENTS.md` recipe 12）——
   照抄相邻卡片，不要自创，跑模拟器验效果，不要只编译。
-- **字符串必须覆盖全部 10 种已支持语言**：文案在 `core/i18n/Strings.kt`
-  （facade `object Strings` + 同文件 `StringsA`…`StringsE`，拆分只为常量池）。
+- **字符串必须覆盖全部 10 种已支持语言**：文案在 `core/i18n/`
+  （facade `object Strings` 在 `Strings.kt` + `StringsA`…`StringsE`，每个拆分对象一个文件，拆分只为常量池）。
   已支持：中 / 英 / 阿 / 葡 / 西 / 法 / 德 / 俄 / 日 / 韩。
   新增或修改面向用户的 `when (Strings.lang)` **必须**为 10 个分支写真实翻译，
   且不许写 `else ->`；禁止把 pt/es/fr/de/ru/ja/ko 继续当英文占位。品牌名、

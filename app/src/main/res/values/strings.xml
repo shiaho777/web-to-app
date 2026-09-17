@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
     <!--
-        User-visible text lives in core/i18n/Strings.kt as inline when(Strings.lang)
+        User-visible text lives in core/i18n/StringsA.kt through StringsE.kt as inline when(Strings.lang)
         blocks covering all 10 languages. This file only holds translatable="false"
         resources (manifest labels etc.); AppStringsResourceConsistencyTest rejects
         localized keys here and any values-* locale directory.

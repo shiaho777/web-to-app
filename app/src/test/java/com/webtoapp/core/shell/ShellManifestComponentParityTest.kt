@@ -386,8 +386,9 @@ class ShellManifestComponentParityTest {
      * short placeholders so declaration scanning never sees code-like text inside
      * literals. Deliberately regex-free — java.util.regex recurses per repetition
      * on lazy/DOT_MATCHES_ALL quantifiers, and the synced set contains multi-MB
-     * sources (core/i18n/Strings.kt), which blew the CI test worker stack
-     * (StackOverflowError in StringUTF16 via Pattern) with the regex version.
+     * sources (core/i18n/StringsA.kt … StringsE.kt), which blew the CI test
+     * worker stack (StackOverflowError in StringUTF16 via Pattern) with the
+     * regex version.
      */
     private fun stripCodeNoise(source: String): String {
         val out = StringBuilder(source.length)
