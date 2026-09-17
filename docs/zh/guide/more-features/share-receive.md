@@ -2,9 +2,9 @@
 
 让生成的 App 出现在 Android 系统分享面板中，把内容分享**进** App —— 相册里的截图、聊天里的照片、浏览器里的链接。
 
-这是"出向"的镜像：`navigator.share`（见[浏览器](/zh/guide/config/browser)）把页面内容推给系统，而这个功能把系统内容拉进页面。
+这是"出向"的镜像：`navigator.share` 把页面内容推给系统，而这个功能把系统内容拉进页面。
 
-在[浏览器 → 接收分享内容](/zh/guide/config/browser)中按 App 开启。
+在编辑器浏览器卡片中按 App 开启 —— 见 [App 配置](/zh/guide/config/)。
 
 ## 用户看到的
 

@@ -2,9 +2,9 @@
 
 Lets a generated app appear in the Android share sheet, so content can be shared **into** it — a screenshot from the gallery, a photo from a chat, a link from a browser.
 
-This is the mirror image of the outbound direction: `navigator.share` (see [Browser](/guide/config/browser)) pushes the page's content out to the system. This feature pulls the system's content in.
+This is the mirror image of the outbound direction: `navigator.share` pushes the page's content out to the system. This feature pulls the system's content in.
 
-Turn it on per app under [Browser → Receive shared content](/guide/config/browser).
+Turn it on per app in the editor's browser card — see [App Configuration](/guide/config/).
 
 ## What the user sees
 
