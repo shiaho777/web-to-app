@@ -691,7 +691,15 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         val sid = _ui.value.currentSession?.id ?: return
         viewModelScope.launch {
             val text = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                files.readText(sid, path)
+                // Windowed read — previewing a giant upload must not OOM the app.
+                val w = files.readTextWindow(sid, path, 0, PREVIEW_MAX_LINES)
+                when {
+                    w == null -> null
+                    w.binary -> Strings.agentFileBinaryPreview
+                        .replace("%s", formatSize(w.totalBytes))
+                    else -> w.lines.joinToString("\n") +
+                        if (w.remainingLines > 0 || w.remainingCapped) "\n…" else ""
+                }
             }
             _ui.update {
                 it.copy(
@@ -944,68 +952,127 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             val session = ensureActiveSession() ?: return@launch
             val added = withContext(Dispatchers.IO) {
+                // Only warn about a slow import when a pick actually looks big —
+                // a tiny file shouldn't flash "Importing…" after it already landed.
+                val bigPick = uris.any {
+                    val size = querySizeBytes(it)
+                    size == null || size > IMPORTING_HINT_MIN_BYTES
+                }
+                if (bigPick) _ui.update { it.copy(info = Strings.agentAttachImporting) }
                 uris.mapNotNull { uri -> importUriToUploads(session.id, uri) }
             }
             if (added.isNotEmpty()) {
                 _ui.update { it.copy(pendingAttachments = it.pendingAttachments + added) }
                 refreshFiles(session.id)
             }
+            if (added.size < uris.size) {
+                _ui.update { it.copy(info = Strings.agentAttachFailed) }
+            }
         }
     }
 
     fun attachFolder(treeUri: Uri) {
         viewModelScope.launch {
+            _ui.update { it.copy(info = Strings.agentAttachImporting) }
             val session = ensureActiveSession() ?: return@launch
             val added = withContext(Dispatchers.IO) { importFolderToUploads(session.id, treeUri) }
-            if (added.isNotEmpty()) {
+            if (added != null) {
                 _ui.update { it.copy(pendingAttachments = it.pendingAttachments + added) }
                 refreshFiles(session.id)
+            } else {
+                _ui.update { it.copy(info = Strings.agentAttachFailed) }
             }
         }
     }
 
     fun removePendingAttachment(path: String) {
         val sid = _ui.value.currentSession?.id
-        if (sid != null) runCatching { files.delete(sid, path) }
+        if (sid != null) runCatching {
+            val target = files.resolveSafe(sid, path)
+            if (target?.isDirectory == true) target.deleteRecursively()
+            else files.delete(sid, path)
+        }
         _ui.update { it.copy(pendingAttachments = it.pendingAttachments.filter { it.path != path }) }
         if (sid != null) refreshFiles(sid)
     }
 
     private fun importUriToUploads(sessionId: String, uri: Uri): UserAttachment? {
         val name = queryDisplayName(uri) ?: "upload_${System.currentTimeMillis()}"
-        val mime = ctx.contentResolver.getType(uri) ?: mimeFromName(name)
-        val bytes = ctx.contentResolver.openInputStream(uri)?.use { it.readBytes() } ?: return null
-        return writeUpload(sessionId, "uploads", name, bytes, mime)
+        val mime = runCatching { ctx.contentResolver.getType(uri) }.getOrNull()
+            ?: mimeFromName(name)
+        // Streamed copy — a multi-GB upload must never be materialised into a
+        // heap ByteArray (that readBytes() call is what OOM-crashed on attach).
+        val input = runCatching { ctx.contentResolver.openInputStream(uri) }.getOrNull()
+            ?: return null
+        return input.use { writeUploadStream(sessionId, "uploads", name, it, mime) }
     }
 
-    private fun importFolderToUploads(sessionId: String, treeUri: Uri): List<UserAttachment> {
-        val tree = DocumentFile.fromTreeUri(ctx, treeUri) ?: return emptyList()
-        val folderName = tree.name ?: "folder"
-        val result = mutableListOf<UserAttachment>()
+    /**
+     * A folder attaches as ONE reference (`uploads/<name>/`), not one attachment
+     * per file — the chip UI's `path.endsWith("/")` folder branch was designed
+     * for this. Children are stream-copied under that directory so the model can
+     * walk them with ListFiles/Glob/Read itself.
+     */
+    private fun importFolderToUploads(sessionId: String, treeUri: Uri): UserAttachment? {
+        val tree = runCatching { DocumentFile.fromTreeUri(ctx, treeUri) }.getOrNull()
+            ?: return null
+        val folderName = (tree.name ?: "folder").replace('/', '_')
+        var base = "uploads/$folderName"
+        var i = 1
+        while (files.resolveSafe(sessionId, base)?.exists() == true) {
+            base = "uploads/$folderName-$i"
+            i++
+        }
+        var count = 0
+        var totalBytes = 0L
+        var truncated = false
         fun walk(dir: DocumentFile, relBase: String) {
             dir.listFiles().forEach { child ->
-                val childName = child.name ?: return@forEach
+                if (truncated) return@forEach
+                val childName = child.name?.replace('/', '_') ?: return@forEach
                 if (child.isDirectory) {
                     walk(child, "$relBase$childName/")
                 } else {
-                    val mime = child.type ?: mimeFromName(childName)
-                    val bytes = ctx.contentResolver.openInputStream(child.uri)
-                        ?.use { it.readBytes() } ?: return@forEach
-                    writeUpload(sessionId, "uploads/$relBase", childName, bytes, mime)?.let {
-                        result += it
+                    if (count >= MAX_FOLDER_IMPORT_FILES) {
+                        truncated = true
+                        return@forEach
                     }
+                    runCatching { ctx.contentResolver.openInputStream(child.uri) }
+                        .getOrNull()?.use { input ->
+                            files.writeStream(sessionId, "$relBase$childName", input)
+                        }?.let { info ->
+                            count++
+                            totalBytes += info.sizeBytes
+                        }
                 }
             }
         }
-        walk(tree, "$folderName/")
-        return result
+        walk(tree, "$base/")
+        // Materialise the dir even for an empty folder so the path is real.
+        files.resolveSafe(sessionId, base)?.mkdirs()
+        if (truncated) {
+            // Self-describing marker the model sees in ListFiles/Glob output.
+            files.writeText(
+                sessionId,
+                "$base/IMPORT-TRUNCATED.txt",
+                "Folder import stopped at $MAX_FOLDER_IMPORT_FILES files; the source folder has more."
+            )
+        }
+        return UserAttachment(
+            path = "$base/",
+            displayName = base.removePrefix("uploads/") + "/",
+            mimeType = "",
+            isImage = false,
+            sizeBytes = totalBytes,
+            entryCount = count
+        )
     }
 
-    private fun writeUpload(
+    private fun writeUploadStream(
         sessionId: String,
         dir: String,
         name: String,
-        bytes: ByteArray,
+        input: java.io.InputStream,
         mime: String
     ): UserAttachment? {
         val safeName = name.replace('/', '_')
@@ -1017,12 +1084,13 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
             candidate = "$dir/$base-$i$ext"
             i++
         }
-        files.writeBytes(sessionId, candidate, bytes) ?: return null
+        val info = files.writeStream(sessionId, candidate, input) ?: return null
         return UserAttachment(
             path = candidate,
             displayName = candidate.removePrefix("uploads/"),
             mimeType = mime,
-            isImage = mime.startsWith("image/")
+            isImage = mime.startsWith("image/"),
+            sizeBytes = info.sizeBytes
         )
     }
 
@@ -1036,6 +1104,14 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         }
         return name ?: uri.lastPathSegment?.substringAfterLast('/')
     }
+
+    /** Reported size via OpenableColumns.SIZE; null when the provider doesn't say. */
+    private fun querySizeBytes(uri: Uri): Long? = runCatching {
+        ctx.contentResolver.query(uri, null, null, null, null)?.use { c ->
+            val idx = c.getColumnIndex(android.provider.OpenableColumns.SIZE)
+            if (idx >= 0 && c.moveToFirst() && !c.isNull(idx)) c.getLong(idx) else null
+        }
+    }.getOrNull()
 
     private fun mimeFromName(name: String): String =
         when (name.substringAfterLast('.', "").lowercase()) {
@@ -1051,9 +1127,6 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
             "xml" -> "text/xml"
             else -> "application/octet-stream"
         }
-
-    private fun isTextUpload(mime: String): Boolean =
-        mime.startsWith("text/") || mime == "application/json" || mime == "application/xml"
 
     fun openContextPicker() {
         viewModelScope.launch {
@@ -1248,10 +1321,12 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         val registry = factory.build(hasImageModel = imageModel != null)
 
         val projectSummary = files.listAll(workingSession.id).take(40).map { f ->
-            val txt = if (f.isText) files.readText(workingSession.id, f.relativePath).orEmpty() else ""
+            // Streamed, capped count — a huge upload must not be slurped into a
+            // String just to fill a summary row (binary/oversized → -1 = size only).
+            val lines = if (f.isText) files.countLines(workingSession.id, f.relativePath) else -1
             com.webtoapp.core.agent.prompt.sections.ProjectFilesSection.FileSummary(
                 f.relativePath,
-                if (txt.isEmpty()) 0 else txt.lines().size,
+                lines,
                 f.sizeBytes
             )
         }
@@ -1280,17 +1355,21 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         )
 
         val tailMessage = workingSession.messages.lastOrNull()
-        val tailHasMentions =
-            tailMessage?.role == AgentMessage.Role.USER && tailMessage.mentionedFiles.isNotEmpty()
+        // The tail user message rides inside `history` (not `userMessage`) whenever
+        // it carries @mentions or attachments — otherwise its references would
+        // silently never reach the model.
+        val tailInHistory = tailMessage?.role == AgentMessage.Role.USER &&
+            (tailMessage.mentionedFiles.isNotEmpty() ||
+                tailMessage.userAttachmentsSafe.isNotEmpty())
 
-        val messagesForHistory = if (tailHasMentions) {
+        val messagesForHistory = if (tailInHistory) {
             workingSession.messages
         } else {
 
             workingSession.messages.dropLast(1)
         }
 
-        if (tailHasMentions) {
+        if (tailInHistory) {
             readFilesThisTurn += tailMessage.mentionedFiles
         }
 
@@ -1298,11 +1377,24 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
             when (m.role) {
                 AgentMessage.Role.USER -> {
                     val out = mutableListOf<LlmMessage>()
+                    // Images are the one attachment kind the model cannot inspect
+                    // by path (ViewImage needs an image model configured), so they
+                    // still travel as vision input — size-gated to stay under
+                    // provider limits and keep a giant image from OOMing the read.
                     val images = m.userAttachmentsSafe.filter { it.isImage }.mapNotNull { att ->
-                        val bytes = files.readBytes(workingSession.id, att.path) ?: return@mapNotNull null
+                        val f = files.resolveSafe(workingSession.id, att.path)
+                            ?: return@mapNotNull null
+                        if (!f.isFile || f.length() > MAX_INLINE_IMAGE_BYTES) {
+                            return@mapNotNull null
+                        }
+                        val bytes = runCatching { f.readBytes() }.getOrNull()
+                            ?: return@mapNotNull null
                         com.webtoapp.core.agent.tool.ImageAttachment(bytes, att.mimeType, att.path)
                     }
-                    out += LlmMessage(LlmMessage.Role.USER, m.content, images = images)
+                    val note = com.webtoapp.core.agent.session.AttachmentNote.build(
+                        m.userAttachmentsSafe
+                    ) { p -> files.resolveSafe(workingSession.id, p) }
+                    out += LlmMessage(LlmMessage.Role.USER, m.content + note, images = images)
                     out += synthesiseReadCallsFor(m, workingSession.id)
                     out
                 }
@@ -1362,7 +1454,7 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
                 systemPrompt = systemPrompt,
                 history = history,
 
-                userMessage = if (tailHasMentions) "" else prompt,
+                userMessage = if (tailInHistory) "" else prompt,
                 toolContext = toolCtx,
                 registry = registry,
                 sessionStore = sessionStore,
@@ -1949,11 +2041,15 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         sessionStore.setAutoTitle(session.id, title)
     }
 
+    /**
+     * `@file` mentions ride in as synthesised Read calls — an explicit "look at
+     * this" gesture that keeps inlining the file head (bounded). Windowed read
+     * only: the full file is never materialised, so mentioning a huge/binary
+     * upload degrades to a note instead of an OOM. (+ attachments are different:
+     * they stay pure path references via [com.webtoapp.core.agent.session.AttachmentNote].)
+     */
     private fun synthesiseReadCallsFor(m: AgentMessage, sessionId: String): List<LlmMessage> {
-        val textUploads = m.userAttachmentsSafe
-            .filter { !it.isImage && isTextUpload(it.mimeType) }
-            .map { it.path }
-        val pathsToRead = (m.mentionedFiles + textUploads).distinct()
+        val pathsToRead = m.mentionedFiles.distinct()
         if (pathsToRead.isEmpty()) return emptyList()
 
         val out = mutableListOf<LlmMessage>()
@@ -1966,21 +2062,29 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
             val argsJson = """{"path":"${path.replace("\"", "\\\"")}"}"""
             toolCalls += com.webtoapp.core.agent.llm.LlmToolCall(callId, "Read", argsJson)
 
-            val text = files.readText(sessionId, path)
-            val resultText = if (text == null) {
-                "(Read: $path no longer exists in the session)"
-            } else {
-                val lines = text.lines()
-                val window = lines.take(MENTION_LINE_LIMIT)
-                val numbered = window.mapIndexed { i, line -> "${i + 1}\t$line" }.joinToString("\n")
-                val tail = if (lines.size > MENTION_LINE_LIMIT)
-                    "\n… (${lines.size - MENTION_LINE_LIMIT} more lines, ask Read with offset to see them)"
-                else ""
-                val combined = numbered + tail
-                if (combined.length > budget) {
-                    val truncated = combined.take(budget.coerceAtLeast(0))
-                    "$truncated\n… (truncated to fit mention budget)"
-                } else combined
+            val window = files.readTextWindow(sessionId, path, 0, MENTION_LINE_LIMIT)
+            val resultText = when {
+                window == null ->
+                    "(Read: $path no longer exists in the session)"
+                window.binary ->
+                    "(Read: $path is a binary file (${formatSize(window.totalBytes)}) — not readable as text)"
+                else -> {
+                    val numbered = window.lines
+                        .mapIndexed { i, line -> "${i + 1}\t$line" }
+                        .joinToString("\n")
+                    val tail = when {
+                        window.remainingCapped ->
+                            "\n… (${window.remainingLines}+ more lines, ask Read with offset to see them)"
+                        window.remainingLines > 0 ->
+                            "\n… (${window.remainingLines} more lines, ask Read with offset to see them)"
+                        else -> ""
+                    }
+                    val combined = numbered + tail
+                    if (combined.length > budget) {
+                        val truncated = combined.take(budget.coerceAtLeast(0))
+                        "$truncated\n… (truncated to fit mention budget)"
+                    } else combined
+                }
             }
             budget -= resultText.length
 
@@ -1999,6 +2103,14 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         )
         out += toolResults
         return out
+    }
+
+    /** Byte-size label for model-facing notes (FileInfo.formatSize tops out at MB). */
+    private fun formatSize(bytes: Long): String = when {
+        bytes < 1024 -> "${bytes}B"
+        bytes < 1024 * 1024 -> "${bytes / 1024}KB"
+        bytes < 1024L * 1024 * 1024 -> "${bytes / (1024 * 1024)}MB"
+        else -> "%.1fGB".format(bytes / (1024.0 * 1024 * 1024))
     }
 
     private suspend fun attachSession(id: String) {
@@ -2079,6 +2191,18 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         private const val MENTION_LINE_LIMIT = 1500
 
         private const val MENTION_TOTAL_CHAR_BUDGET = 60_000
+
+        /** Vision-input cap for inlined image attachments (provider-side limits). */
+        private const val MAX_INLINE_IMAGE_BYTES = 20L * 1024 * 1024
+
+        /** Folder attachments stream-copy at most this many children. */
+        private const val MAX_FOLDER_IMPORT_FILES = 500
+
+        /** Picks at/under this size copy fast enough to skip the "Importing…" toast. */
+        private const val IMPORTING_HINT_MIN_BYTES = 32L * 1024 * 1024
+
+        /** Lines the file-preview pane loads via a bounded windowed read. */
+        private const val PREVIEW_MAX_LINES = 2_000
 
         private const val STREAM_UI_THROTTLE_MS = 66L
 

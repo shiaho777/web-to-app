@@ -1554,6 +1554,8 @@ object Strings {
     val agentAttachImage: String get() = StringsB.agentAttachImage
     val agentAttachFile: String get() = StringsB.agentAttachFile
     val agentAttachFolder: String get() = StringsB.agentAttachFolder
+    val agentAttachImporting: String get() = StringsB.agentAttachImporting
+    val agentAttachFailed: String get() = StringsB.agentAttachFailed
     val agentContextChipLabel: String get() = StringsB.agentContextChipLabel
     val agentContextPickerTitle: String get() = StringsB.agentContextPickerTitle
     val agentContextAppsHeader: String get() = StringsB.agentContextAppsHeader
@@ -1727,6 +1729,7 @@ object Strings {
     val agentFileOpenWith: String get() = StringsB.agentFileOpenWith
     val agentFileNotFound: String get() = StringsB.agentFileNotFound
     val agentFileOpenFailed: String get() = StringsB.agentFileOpenFailed
+    val agentFileBinaryPreview: String get() = StringsB.agentFileBinaryPreview
     val lrcGenerationDesc: String get() = StringsB.lrcGenerationDesc
     val translationDesc: String get() = StringsB.translationDesc
     val generalChatDesc: String get() = StringsB.generalChatDesc

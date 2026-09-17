@@ -6090,6 +6090,30 @@ object StringsB {
         AppLanguage.JAPANESE -> "フォルダー"
         AppLanguage.KOREAN -> "폴더"
     }
+    val agentAttachImporting: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "正在导入附件…"
+        AppLanguage.ENGLISH -> "Importing attachment…"
+        AppLanguage.ARABIC -> "جارٍ استيراد المرفق…"
+        AppLanguage.PORTUGUESE -> "Importando anexo…"
+        AppLanguage.SPANISH -> "Importando adjunto…"
+        AppLanguage.FRENCH -> "Import de la pièce jointe…"
+        AppLanguage.GERMAN -> "Anhang wird importiert…"
+        AppLanguage.RUSSIAN -> "Импорт вложения…"
+        AppLanguage.JAPANESE -> "添付ファイルをインポート中…"
+        AppLanguage.KOREAN -> "첨부 파일 가져오는 중…"
+    }
+    val agentAttachFailed: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "附件导入失败（文件过大或存储空间不足）"
+        AppLanguage.ENGLISH -> "Attachment import failed (file too large or storage full)"
+        AppLanguage.ARABIC -> "فشل استيراد المرفق (الملف كبير جدًا أو التخزين ممتلئ)"
+        AppLanguage.PORTUGUESE -> "Falha ao importar anexo (arquivo muito grande ou armazenamento cheio)"
+        AppLanguage.SPANISH -> "Error al importar el adjunto (archivo demasiado grande o almacenamiento lleno)"
+        AppLanguage.FRENCH -> "Échec de l'import de la pièce jointe (fichier trop volumineux ou stockage plein)"
+        AppLanguage.GERMAN -> "Anhang-Import fehlgeschlagen (Datei zu groß oder Speicher voll)"
+        AppLanguage.RUSSIAN -> "Не удалось импортировать вложение (файл слишком большой или память заполнена)"
+        AppLanguage.JAPANESE -> "添付ファイルのインポートに失敗しました（ファイルが大きすぎるか、ストレージ不足）"
+        AppLanguage.KOREAN -> "첨부 파일 가져오기 실패 (파일이 너무 크거나 저장 공간 부족)"
+    }
     val agentContextChipLabel: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "上下文"
         AppLanguage.ENGLISH -> "Context"
@@ -8178,6 +8202,18 @@ object StringsB {
         AppLanguage.RUSSIAN -> "Невозможно открыть этот файл"
         AppLanguage.JAPANESE -> "このファイルを開けません"
         AppLanguage.KOREAN -> "이 파일을 열 수 없습니다"
+    }
+    val agentFileBinaryPreview: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "二进制文件（%s），无文本预览"
+        AppLanguage.ENGLISH -> "Binary file (%s) — no text preview"
+        AppLanguage.ARABIC -> "ملف ثنائي (%s) — لا معاينة نصية"
+        AppLanguage.PORTUGUESE -> "Arquivo binário (%s) — sem pré-visualização de texto"
+        AppLanguage.SPANISH -> "Archivo binario (%s) — sin vista previa de texto"
+        AppLanguage.FRENCH -> "Fichier binaire (%s) — pas d'aperçu texte"
+        AppLanguage.GERMAN -> "Binärdatei (%s) — keine Textvorschau"
+        AppLanguage.RUSSIAN -> "Двоичный файл (%s) — текстовый предпросмотр недоступен"
+        AppLanguage.JAPANESE -> "バイナリファイル（%s）— テキストプレビューなし"
+        AppLanguage.KOREAN -> "바이너리 파일(%s) — 텍스트 미리보기 없음"
     }
 
     val lrcGenerationDesc: String get() = when (Strings.lang) {

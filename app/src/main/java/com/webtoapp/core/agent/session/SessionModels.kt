@@ -102,14 +102,21 @@ data class AgentMessage(
 /**
  * A file the user attached to a message from the composer. The bytes live in the
  * session sandbox at [path] (session-relative); only metadata is persisted here so
- * the sessions blob stays small. [isImage] attachments are also sent to the model
- * as vision input when it is multimodal.
+ * the sessions blob stays small. Attachments are PATH REFERENCES — their content
+ * is never inlined into the model context; the model inspects them with its file
+ * tools. [isImage] attachments additionally reach the model as vision input when
+ * it is multimodal (size-capped). A folder is a single attachment whose [path]
+ * ends with '/', with [entryCount] recording how many files were imported and
+ * [sizeBytes] their total size. [sizeBytes]/[entryCount] are 0 for attachments
+ * persisted before those fields existed — callers fall back to live stats.
  */
 data class UserAttachment(
     val path: String,
     val displayName: String,
     val mimeType: String,
-    val isImage: Boolean
+    val isImage: Boolean,
+    val sizeBytes: Long = 0,
+    val entryCount: Int = 0
 )
 
 data class RecordedToolCall(

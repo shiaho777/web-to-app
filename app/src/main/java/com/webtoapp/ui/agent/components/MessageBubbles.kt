@@ -48,6 +48,7 @@ import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.Extension
+import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.outlined.FolderOpen
 import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.ExpandLess
@@ -1420,7 +1421,11 @@ private fun UserAttachmentList(attachments: List<UserAttachment>) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
-                        imageVector = if (att.isImage) Icons.Outlined.Image else Icons.Outlined.AttachFile,
+                        imageVector = when {
+                            att.path.endsWith("/") -> Icons.Outlined.Folder
+                            att.isImage -> Icons.Outlined.Image
+                            else -> Icons.Outlined.AttachFile
+                        },
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onSecondaryContainer,
                         modifier = Modifier.size(WtaSize.IconSmall)
