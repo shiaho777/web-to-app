@@ -176,18 +176,28 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
             ?.map { it.trim() }
 
         activity.lifecycleScope.launch {
-            val item = com.webtoapp.core.share.SharedContentInbox.findForFileChooser(
-                activity,
-                acceptTypes
-            )
-            if (item == null) {
-                continueWithSystemPicker(fileChooserParams)
-                return@launch
-            }
-            if (wv.sharePromptBeforeUse) {
-                promptForSharedContent(item, fileChooserParams)
-            } else {
-                answerWithSharedContent(item)
+            // The callback has already been taken over, so *every* exit from here must answer
+            // it — an exception escaping this coroutine would both leave the page stuck and
+            // crash the process (uncaught exceptions in a lifecycle scope propagate).
+            try {
+                val item = com.webtoapp.core.share.SharedContentInbox.findForFileChooser(
+                    activity,
+                    acceptTypes
+                )
+                if (item == null) {
+                    continueWithSystemPicker(fileChooserParams)
+                } else if (wv.sharePromptBeforeUse) {
+                    promptForSharedContent(item, fileChooserParams)
+                } else {
+                    answerWithSharedContent(item)
+                }
+            } catch (e: Exception) {
+                AppLogger.e("ShellPermission", "Shared-content file chooser path failed", e)
+                // Only fall back while the callback is still unanswered; a failure *after*
+                // answerWithSharedContent() has already replied must not reply twice.
+                if (pendingFilePathCallback != null) {
+                    continueWithSystemPicker(fileChooserParams)
+                }
             }
         }
 

@@ -894,27 +894,34 @@ class ShellActivity : AppCompatActivity() {
         if (shareReceiveMimeTypes.isEmpty() || intent == null) return
 
         lifecycleScope.launch {
-            val accepted = com.webtoapp.core.share.SharedContentInbox.acceptIntent(
-                this@ShellActivity,
-                intent,
-                shareReceiveMimeTypes
-            )
-            if (accepted.isEmpty()) return@launch
-
-            com.webtoapp.core.shell.ShellLogger.i(
-                "ShellActivity",
-                "收到分享内容: ${accepted.map { "${it.name}(${it.mimeType}, ${it.size}B)" }}"
-            )
-
-            if (accepted.any { !it.isText }) {
-                Toast.makeText(
+            // A share that cannot be handled must never take the app down with it: an
+            // exception escaping this scope is an uncaught exception. The inbox already drops
+            // individual bad payloads itself, so this only covers the wrapper.
+            try {
+                val accepted = com.webtoapp.core.share.SharedContentInbox.acceptIntent(
                     this@ShellActivity,
-                    Strings.shareReceivedToast,
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
+                    intent,
+                    shareReceiveMimeTypes
+                )
+                if (accepted.isEmpty()) return@launch
 
-            deliverPendingShares()
+                com.webtoapp.core.shell.ShellLogger.i(
+                    "ShellActivity",
+                    "收到分享内容: ${accepted.map { "${it.name}(${it.mimeType}, ${it.size}B)" }}"
+                )
+
+                if (accepted.any { !it.isText }) {
+                    Toast.makeText(
+                        this@ShellActivity,
+                        Strings.shareReceivedToast,
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+
+                deliverPendingShares()
+            } catch (e: Exception) {
+                com.webtoapp.core.shell.ShellLogger.e("ShellActivity", "接收分享内容失败: ${e.message}", e)
+            }
         }
     }
 
@@ -942,23 +949,25 @@ class ShellActivity : AppCompatActivity() {
         if (!sharePageReady) return
 
         lifecycleScope.launch {
-            val items = com.webtoapp.core.share.SharedContentInbox.pending(this@ShellActivity)
-            if (items.isEmpty()) return@launch
+            try {
+                val items = com.webtoapp.core.share.SharedContentInbox.pending(this@ShellActivity)
+                if (items.isEmpty()) return@launch
 
-            val payload = com.webtoapp.core.share.buildShareBatch(items)
-            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
-                try {
+                val payload = com.webtoapp.core.share.buildShareBatch(items)
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
                     target.evaluateJavascript(
                         "window.__WTA_SHARE_PUSH__ && window.__WTA_SHARE_PUSH__($payload)",
                         null
                     )
-                    com.webtoapp.core.shell.ShellLogger.i(
-                        "ShellActivity",
-                        "已向页面投递 ${items.size} 条分享内容"
-                    )
-                } catch (e: Exception) {
-                    com.webtoapp.core.shell.ShellLogger.w("ShellActivity", "分享内容投递失败: ${e.message}")
                 }
+                com.webtoapp.core.shell.ShellLogger.i(
+                    "ShellActivity",
+                    "已向页面投递 ${items.size} 条分享内容"
+                )
+            } catch (e: Exception) {
+                // Delivery is best-effort: the file-chooser channel is unaffected, and a
+                // failure here must not surface as a crash in an app the user just shared to.
+                com.webtoapp.core.shell.ShellLogger.w("ShellActivity", "分享内容投递失败: ${e.message}", e)
             }
         }
     }
