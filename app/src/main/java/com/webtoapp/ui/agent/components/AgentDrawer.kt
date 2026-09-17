@@ -6,6 +6,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -88,6 +89,10 @@ fun AgentDrawer(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.surface)
+            // ModalDrawerSheet requests focus on open; landing on the drawer
+            // container keeps the IME down — without this the search field grabs
+            // initial focus and pops the keyboard every time the drawer opens.
+            .focusable()
     ) {
         DrawerHeader(state.drawerSearch, onSearchChange)
         WtaTabRow(

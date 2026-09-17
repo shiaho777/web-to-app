@@ -23,7 +23,11 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.exclude
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -305,7 +309,10 @@ fun AgentScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .imePadding()
+                    // WtaScreen's Scaffold padding already reserves the navigation
+                    // bar; pad only the IME excess so the composer lands flush on
+                    // top of the keyboard instead of floating a nav-bar above it.
+                    .windowInsetsPadding(WindowInsets.ime.exclude(WindowInsets.navigationBars))
             ) {
                 if (state.planActive) {
                     PlanBanner(
