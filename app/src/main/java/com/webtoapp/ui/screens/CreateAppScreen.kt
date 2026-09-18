@@ -240,17 +240,6 @@ fun CreateAppScreen(
             }
 
             item {
-                ShareReceiveCard(
-                    webViewConfig = editState.webViewConfig,
-                    onWebViewConfigChange = { newConfig ->
-                        viewModel.updateEditState {
-                            copy(webViewConfig = newConfig)
-                        }
-                    }
-                )
-            }
-
-            item {
                 FullscreenModeCard(
                     enabled = editState.webViewConfig.hideToolbar,
                     showStatusBar = editState.webViewConfig.showStatusBarInFullscreen,

@@ -2535,13 +2535,13 @@ fun FullscreenModeCard(
  * mirror image of the outbound `navigator.share` support: that one pushes the page's content
  * out to the system, this one pulls the system's content in.
  *
- * Follows the toggle-headed card shape used by [FullscreenModeCard]: full-bleed
+ * Rendered as rows inside [SpecialSettingsCard]'s basic toggles section: full-bleed
  * [WtaToggleRow] / [WtaChoiceRow] headers carrying their own padding, with anything that is
  * not a row (radio group, notes) inside a [WtaSpacing.RowHorizontal]-padded column. Expansion
  * state is its own `remember`, never bound to the feature switch.
  */
 @Composable
-fun ShareReceiveCard(
+private fun ShareReceiveRows(
     webViewConfig: WebViewConfig,
     onWebViewConfigChange: (WebViewConfig) -> Unit
 ) {
@@ -2552,7 +2552,7 @@ fun ShareReceiveCard(
     val enabled = receiveImages || receiveText
     val deliveryMode = webViewConfig.shareDeliveryMode
 
-    WtaSettingCard {
+    Column {
         WtaToggleRow(
             icon = Icons.Outlined.Share,
             title = Strings.receiveShare,
@@ -3616,6 +3616,12 @@ fun SpecialSettingsCard(
                                     )
                                 }
                             }
+
+                            WtaSectionDivider()
+                            ShareReceiveRows(
+                                webViewConfig = config,
+                                onWebViewConfigChange = onConfigChange
+                            )
                         }
                     }
 
