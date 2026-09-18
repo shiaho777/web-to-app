@@ -324,13 +324,18 @@ fun ThinkingBlock(
     initiallyExpanded: Boolean = isLive,
     modifier: Modifier = Modifier
 ) {
-    var expanded by remember(content.hashCode()) { mutableStateOf(initiallyExpanded && isLive) }
+    // Key on composition position, not content: a live segment's content grows with
+    // every delta, so a content-derived key would reset this state per token — for
+    // `appeared` that meant the fade-in could never finish (the block stayed
+    // invisible for the whole stream), and for `expanded` it meant a manual collapse
+    // was undone by the next delta.
+    var expanded by remember { mutableStateOf(initiallyExpanded && isLive) }
     LaunchedEffect(isLive) {
         if (!isLive) expanded = false
         else expanded = true
     }
     // Live thinking blocks materialize with a small fade+rise; settled ones stay static.
-    var appeared by remember(content.hashCode()) { mutableStateOf(!isLive) }
+    var appeared by remember { mutableStateOf(!isLive) }
     LaunchedEffect(Unit) { appeared = true }
     val appearAlpha by animateFloatAsState(if (appeared) 1f else 0f, tween(220), label = "appear-alpha")
     val appearDy by animateDpAsState(if (appeared) 0.dp else 8.dp, tween(220), label = "appear-dy")
