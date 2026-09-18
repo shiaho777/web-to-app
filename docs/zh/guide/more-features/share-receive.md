@@ -4,7 +4,7 @@
 
 这是"出向"的镜像：`navigator.share` 把页面内容推给系统，而这个功能把系统内容拉进页面。
 
-在编辑器浏览器卡片中按 App 开启 —— 见 [App 配置](/zh/guide/config/)。
+在编辑器 [特殊设置](/zh/guide/app-actions/edit-common-config/special-settings) 卡片的"基础开关"分组中按 App 开启。
 
 ## 用户看到的
 

@@ -23,6 +23,7 @@
 - **滚动记忆** —— 记住滚动位置(`enableScrollMemory`)。
 - **返回状态保留** —— `enableBackStatePreservation`。
 - **Blob 下载拦截** —— 带范围和大小阈值(`enableBlobDownloadInterception`、`blobInterceptThresholdMb`)。
+- **接收分享内容** —— 让生成的 App 出现在系统分享面板中,接收图片/文本/链接(`receiveShareImages`、`receiveShareText`、`shareDeliveryMode`、`sharePromptBeforeUse`)。详见[接收分享内容](/zh/guide/more-features/share-receive)。
 
 ## JavaScript 与窗口
 

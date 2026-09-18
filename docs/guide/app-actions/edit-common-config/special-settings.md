@@ -23,6 +23,7 @@ Compatibility polyfills, bridges, and other specialized toggles. This card colle
 - **Scroll memory** — remember scroll position (`enableScrollMemory`).
 - **Back-state preservation** — `enableBackStatePreservation`.
 - **Blob download interception** — with scope and size threshold (`enableBlobDownloadInterception`, `blobInterceptThresholdMb`).
+- **Receive shared content** — lets the generated app appear in the system share sheet to receive images / text / links (`receiveShareImages`, `receiveShareText`, `shareDeliveryMode`, `sharePromptBeforeUse`). See [Receive Shared Content](/guide/more-features/share-receive).
 
 ## JavaScript & windows
 

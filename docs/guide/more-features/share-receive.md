@@ -4,7 +4,7 @@ Lets a generated app appear in the Android share sheet, so content can be shared
 
 This is the mirror image of the outbound direction: `navigator.share` pushes the page's content out to the system. This feature pulls the system's content in.
 
-Turn it on per app in the editor's browser card — see [App Configuration](/guide/config/).
+Turn it on per app under the **Basic Toggles** group of the editor's [Special Settings](/guide/app-actions/edit-common-config/special-settings) card.
 
 ## What the user sees
 
