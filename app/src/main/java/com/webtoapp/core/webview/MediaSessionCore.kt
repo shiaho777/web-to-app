@@ -11,6 +11,7 @@ import android.graphics.BitmapFactory
 import android.media.MediaMetadata
 import android.media.session.MediaSession
 import android.media.session.PlaybackState
+import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
@@ -135,6 +136,14 @@ class MediaSessionCore(
 
                 override fun onFastForward() {
                     onCommand("seekforward", 10.0)
+                }
+
+                override fun onCustomAction(action: String, extras: Bundle?) {
+                    when (action) {
+                        "seekbackward" -> onCommand("seekbackward", 10.0)
+                        "seekforward" -> onCommand("seekforward", 10.0)
+                        else -> onCommand(action, 0.0)
+                    }
                 }
             }
         )
@@ -453,18 +462,52 @@ class MediaSessionCore(
          * position carried into setState is already the interpolated "now"
          * value, so the anchor is always continuous with what the user sees.
          */
-        val state = PlaybackState.Builder()
+        val stateBuilder = PlaybackState.Builder()
             .setActions(actions)
             .setState(
                 playbackState,
                 (interpolatedPositionSeconds() * 1000.0).toLong(),
                 if (isPlaying) playbackRate else 0.0f
             )
-            .build()
+
+        /*
+         * SystemUI allocates fixed slots for custom actions next to the
+         * standard transport controls. Publishing them keeps the button row
+         * filled and spread across the card like native players, instead of
+         * leaving a reserved slot empty (#971). Custom action names reuse
+         * the JS command names; onCustomAction() forwards them to the page.
+         */
+        if ("seekbackward" in supportedActions) {
+            stateBuilder.addCustomAction(
+                PlaybackState.CustomAction.Builder(
+                    "seekbackward",
+                    "Seek backward",
+                    android.R.drawable.ic_media_rew
+                ).build()
+            )
+        }
+
+        if ("seekforward" in supportedActions) {
+            stateBuilder.addCustomAction(
+                PlaybackState.CustomAction.Builder(
+                    "seekforward",
+                    "Seek forward",
+                    android.R.drawable.ic_media_ff
+                ).build()
+            )
+        }
+
+        stateBuilder.addCustomAction(
+            PlaybackState.CustomAction.Builder(
+                "stop",
+                "Stop",
+                android.R.drawable.ic_menu_close_clear_cancel
+            ).build()
+        )
 
         playbackStatePublishCount++
 
-        mediaSession.setPlaybackState(state)
+        mediaSession.setPlaybackState(stateBuilder.build())
     }
 
     // ---- Notification ----
@@ -521,6 +564,20 @@ class MediaSessionCore(
         val compactActionIndexes = mutableListOf<Int>()
         var actionIndex = 0
 
+        if ("seekbackward" in supportedActions) {
+            builder.addAction(
+                android.R.drawable.ic_media_rew,
+                "Seek backward",
+                WebMediaPlaybackService.commandPendingIntent(
+                    activity,
+                    "seekbackward",
+                    10.0
+                )
+            )
+
+            actionIndex++
+        }
+
         if ("previoustrack" in supportedActions) {
             builder.addAction(
                 android.R.drawable.ic_media_previous,
@@ -565,6 +622,21 @@ class MediaSessionCore(
             )
 
             compactActionIndexes.add(actionIndex)
+            actionIndex++
+        }
+
+        if ("seekforward" in supportedActions) {
+            builder.addAction(
+                android.R.drawable.ic_media_ff,
+                "Seek forward",
+                WebMediaPlaybackService.commandPendingIntent(
+                    activity,
+                    "seekforward",
+                    10.0
+                )
+            )
+
+            actionIndex++
         }
 
         val mediaStyle = MediaStyle()
