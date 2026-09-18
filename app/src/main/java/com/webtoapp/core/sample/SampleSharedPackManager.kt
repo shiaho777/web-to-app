@@ -35,6 +35,10 @@ object SampleSharedPackManager {
     private const val JSDELIVR_BASE =
         "https://cdn.jsdelivr.net/gh/shiaho777/web-to-app@main/sample-bundles"
 
+    /** Unit-test seam: when true, manifest fetches behave as unreachable. */
+    @Volatile
+    internal var manifestUnreachable = false
+
     data class PackInfo(val sha256: String, val bytes: Long)
 
     /**
@@ -113,6 +117,7 @@ object SampleSharedPackManager {
             "$JSDELIVR_BASE/$fileName").distinct()
 
     private fun fetchManifest(context: Context): Map<String, PackInfo> {
+        if (manifestUnreachable) return emptyMap()
         for (url in candidateUrls(MANIFEST_FILE)) {
             try {
                 val request = Request.Builder().url(url).build()

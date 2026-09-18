@@ -23,11 +23,13 @@ class SampleProjectExtractorTest {
 
     @Before
     fun setUp() {
+        SampleSharedPackManager.manifestUnreachable = true
         SampleProjectExtractor.clearExtractedProjects(context)
     }
 
     @After
     fun tearDown() {
+        SampleSharedPackManager.manifestUnreachable = false
         SampleProjectExtractor.clearExtractedProjects(context)
     }
 
