@@ -77,7 +77,7 @@ class ShellActivity : AppCompatActivity() {
 
     /** Set once the main frame has loaded, so a share can be announced to a page that exists. */
     private var sharePageReady = false
-    private var mediaSessionBridge: com.webtoapp.core.webview.MediaSessionBridge? = null
+    internal var mediaSessionBridge: com.webtoapp.core.webview.MediaSessionBridge? = null
     private var geckoMediaAdapter: com.webtoapp.core.engine.GeckoMediaSessionAdapter? = null
 
     // Screen-awake (ALWAYS/TIMED) timer management. The timed clear is tracked so it can be
@@ -606,16 +606,10 @@ class ShellActivity : AppCompatActivity() {
                                 this@ShellActivity,
                                 wv
                             )
-                            try {
-                                androidx.webkit.WebViewCompat.addDocumentStartJavaScript(
-                                    wv,
-                                    com.webtoapp.core.webview.MediaSessionBridge.INJECTION_SCRIPT,
-                                    setOf("*")
-                                )
+                            if (mediaBridge.install()) {
                                 com.webtoapp.core.shell.ShellLogger.i("ShellActivity", "[MediaSession] Installed at document start")
-                            } catch (e: Exception) {
-                                mediaBridge.injectNow()
-                                com.webtoapp.core.shell.ShellLogger.w("ShellActivity", "[MediaSession] Document-start unsupported, used injectNow fallback", e)
+                            } else {
+                                com.webtoapp.core.shell.ShellLogger.w("ShellActivity", "[MediaSession] Document-start unsupported, will re-inject on page finish")
                             }
                             mediaSessionBridge = mediaBridge
                         }

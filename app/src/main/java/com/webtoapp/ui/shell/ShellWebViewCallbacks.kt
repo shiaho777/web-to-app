@@ -132,6 +132,10 @@ fun createShellWebViewCallbacks(
                 }
 
             }
+            // WebViews without document-start script support lose the
+            // media-session polyfill on every navigation; re-inject it
+            // (idempotent). Runs for local runtime pages too.
+            (context as? ShellActivity)?.mediaSessionBridge?.onPageFinishedFallback()
             // Issue #943: release any share that was queued while the page was still loading.
             (context as? ShellActivity)?.onShellPageReady()
             scheduleStatusBarAutoColorSample()

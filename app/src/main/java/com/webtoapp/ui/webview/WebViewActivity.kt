@@ -140,7 +140,7 @@ class WebViewActivity : AppCompatActivity() {
     private var customView: View? = null
     private var customViewCallback: WebChromeClient.CustomViewCallback? = null
     private var filePathCallback: ValueCallback<Array<Uri>>? = null
-    private var mediaSessionBridge: com.webtoapp.core.webview.MediaSessionBridge? = null
+    internal var mediaSessionBridge: com.webtoapp.core.webview.MediaSessionBridge? = null
     internal var geckoMediaAdapter: com.webtoapp.core.engine.GeckoMediaSessionAdapter? = null
 
     private var pendingPermissionRequest: PermissionRequest? = null
@@ -929,18 +929,7 @@ class WebViewActivity : AppCompatActivity() {
                             this@WebViewActivity,
                             wv
                         )
-                        try {
-                            androidx.webkit.WebViewCompat.addDocumentStartJavaScript(
-                                wv,
-                                com.webtoapp.core.webview.MediaSessionBridge.INJECTION_SCRIPT,
-                                setOf("*")
-                            )
-                        } catch (e: Exception) {
-                            mediaBridge.injectNow()
-                        }
-                        // Fallback for pages that were already loaded before the
-                        // document-start script was registered (idempotent).
-                        mediaBridge.injectNow()
+                        mediaBridge.install()
                         mediaSessionBridge = mediaBridge
                     }
 
@@ -2605,6 +2594,9 @@ fun WebViewScreen(
                     }
                     statusBarColorTracker?.scheduleSample(80L)
                 }
+                // WebViews without document-start script support lose the
+                // polyfill on every navigation; re-inject it (idempotent).
+                (context as? WebViewActivity)?.mediaSessionBridge?.onPageFinishedFallback()
             }
 
             override fun onProgressChanged(progress: Int) {

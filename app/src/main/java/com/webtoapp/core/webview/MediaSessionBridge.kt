@@ -7,6 +7,9 @@ import android.os.Looper
 import android.os.SystemClock
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
+import androidx.webkit.ScriptHandler
+import androidx.webkit.WebViewCompat
+import androidx.webkit.WebViewFeature
 import org.json.JSONObject
 
 /**
@@ -56,11 +59,57 @@ class MediaSessionBridge(
         )
     }
 
+    /** Handle of the document-start script registration, for removal in [release]. */
+    private var documentStartScriptHandler: ScriptHandler? = null
+
     /**
-     * Install this script using WebViewCompat.addDocumentStartJavaScript().
+     * True when [INJECTION_SCRIPT] could not be registered at document start.
+     * An evaluateJavascript install is wiped by every navigation on such
+     * WebViews, so [onPageFinishedFallback] must re-run it per page load.
+     */
+    private var needsPageFinishedInjection = false
+
+    /**
+     * Install [INJECTION_SCRIPT] at document start via
+     * [WebViewCompat.addDocumentStartJavaScript], plus one immediate
+     * [injectNow] covering a page that was already loaded before registration
+     * (idempotent, harmless when the early install also landed).
      *
-     * Also call injectNow() from onPageFinished() as a fallback for pages that
-     * were already loaded before the document-start script was registered.
+     * Returns false on WebViews without [WebViewFeature.DOCUMENT_START_SCRIPT]
+     * support — the caller must then let [onPageFinishedFallback] re-inject
+     * the script after every finished navigation, or `navigator.mediaSession`
+     * stays undefined because the injected polyfill never survives a load.
+     */
+    fun install(): Boolean {
+        val installed = try {
+            if (!WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
+                throw UnsupportedOperationException("DOCUMENT_START_SCRIPT unsupported")
+            }
+            documentStartScriptHandler = WebViewCompat.addDocumentStartJavaScript(
+                webView,
+                INJECTION_SCRIPT,
+                setOf("*")
+            )
+            true
+        } catch (_: Exception) {
+            false
+        }
+        needsPageFinishedInjection = !installed
+        injectNow()
+        return installed
+    }
+
+    /**
+     * `onPageFinished` hook: re-injects the polyfill when document-start
+     * registration was unavailable ([install] returned false). No-op otherwise.
+     */
+    fun onPageFinishedFallback() {
+        if (needsPageFinishedInjection) injectNow()
+    }
+
+    /**
+     * Directly evaluates [INJECTION_SCRIPT] into the current main frame. The
+     * script is idempotent (`__wtaMediaBridgeInstalled` guard).
      */
     fun injectNow() {
         webView.post {
@@ -183,6 +232,9 @@ class MediaSessionBridge(
 
     fun release() {
         core.release()
+
+        documentStartScriptHandler?.let { runCatching { it.remove() } }
+        documentStartScriptHandler = null
 
         try {
             webView.removeJavascriptInterface(
