@@ -106,16 +106,6 @@ Most "website to app" tools stop at wrapping a URL in a WebView. WebToApp is clo
 - **It stays extensible after shipping.** Add JS/CSS modules, Tampermonkey-style userscripts, or MV3 Chrome extensions (live-searched and installed from the Chrome Web Store) without rebuilding the host.
 - **The host UI speaks 10 languages out of the box.** Chinese, English, Arabic (RTL), Portuguese, Spanish, French, German, Russian, Japanese, and Korean — switch anytime in Settings; new in-app copy is maintained for all ten.
 
-| | Typical URL wrapper | WebToApp |
-| --- | :---: | :---: |
-| Wrap a URL in a WebView | ✅ | ✅ |
-| Node.js / PHP / Python / Go / WordPress on-device | ❌ | ✅ fork + exec from app storage |
-| Signed APK **and** Play-ready AAB built on-device | ❌ | ✅ V1/V2/V3 + `targetSdk` rewrite |
-| DoH · TLS fingerprint spoofing · ECH · per-app proxy | ❌ | ✅ |
-| MV3 Chrome extensions + Tampermonkey userscripts | ❌ | ✅ |
-| 50+ fingerprint-disguise vectors · resource encryption | ❌ | ✅ |
-| Module market · AI agent with 57 tools | ❌ | ✅ |
-
 ---
 
 ## Capability overview

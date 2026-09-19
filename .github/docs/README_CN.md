@@ -106,16 +106,6 @@
 - **发布后仍可扩展。** 通过 JS/CSS 模块、Tampermonkey 风格油猴脚本,或 MV3 Chrome 扩展(可在应用内实时搜索 Chrome 网上应用店并安装)给应用补能力,不必重新发布宿主。
 - **宿主 UI 原生支持 10 种语言。** 中文、English、العربية(RTL)、Português、Español、Français、Deutsch、Русский、日本語、한국어 —— 设置里随时切换;新增界面文案按 10 语维护。
 
-| | 典型 URL 套壳工具 | WebToApp |
-| --- | :---: | :---: |
-| WebView 套一个网址 | ✅ | ✅ |
-| 设备端 Node.js / PHP / Python / Go / WordPress | ❌ | ✅ 从 app 存储 fork + exec |
-| 设备端构建签名 APK 和可上架 Play 的 AAB | ❌ | ✅ V1/V2/V3 + `targetSdk` 改写 |
-| DoH · TLS 指纹伪装 · ECH · 每应用代理 | ❌ | ✅ |
-| MV3 Chrome 扩展 + 油猴脚本 | ❌ | ✅ |
-| 50+ 维指纹伪装 · 资源加密 | ❌ | ✅ |
-| 模块市场 · 57 工具 AI 助手 | ❌ | ✅ |
-
 ---
 
 ## 能力速览
