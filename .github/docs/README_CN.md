@@ -10,10 +10,35 @@
 
 [English](../../README.md) · **简体中文**
 
-[![Stars](https://img.shields.io/github/stars/shiaho777/web-to-app?style=for-the-badge)](https://github.com/shiaho777/web-to-app/stargazers)
-[![Forks](https://img.shields.io/github/forks/shiaho777/web-to-app?style=for-the-badge)](https://github.com/shiaho777/web-to-app/network/members)
-[![License](https://img.shields.io/badge/License-Unlicense-blue?style=for-the-badge)](../../LICENSE)
-[![Android](https://img.shields.io/badge/Android-23%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white)](#)
+<p align="center">
+  <a href="https://github.com/shiaho777/web-to-app/stargazers">
+    <img src="https://img.shields.io/github/stars/shiaho777/web-to-app?style=for-the-badge" alt="Stars">
+  </a>
+  <a href="https://github.com/shiaho777/web-to-app/network/members">
+    <img src="https://img.shields.io/github/forks/shiaho777/web-to-app?style=for-the-badge" alt="Forks">
+  </a>
+  <a href="https://github.com/shiaho777/web-to-app/releases/latest">
+    <img src="https://img.shields.io/github/v/release/shiaho777/web-to-app" alt="最新版本">
+  </a>
+  <a href="../../LICENSE">
+    <img src="https://img.shields.io/badge/License-Unlicense-blue?style=for-the-badge" alt="License: Unlicense">
+  </a>
+  <a href="https://github.com/shiaho777/web-to-app/releases">
+    <img src="https://img.shields.io/badge/Android-6.0%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white" alt="Android 6.0+">
+  </a>
+  <a href="https://github.com/shiaho777/web-to-app/actions/workflows/android-ci.yml">
+    <img src="https://github.com/shiaho777/web-to-app/actions/workflows/android-ci.yml/badge.svg" alt="Android CI">
+  </a>
+  <a href="https://shiaho777.github.io/web-to-app/zh/">
+    <img src="https://img.shields.io/badge/docs-online-blue?style=for-the-badge" alt="文档站点">
+  </a>
+</p>
+
+<p align="center">
+  <a href="https://trendshift.io/repositories/22597?utm_source=trendshift-badge&utm_medium=badge&utm_campaign=badge-trendshift-22597" target="_blank" rel="noopener noreferrer">
+    <img src="https://trendshift.io/api/badge/trendshift/repositories/22597/weekly?language=Kotlin" alt="shiaho777%2Fweb-to-app | Trendshift" width="250" height="55">
+  </a>
+</p>
 
 </div>
 
@@ -25,10 +50,13 @@
 </p>
 
 <p align="center">
+  <a href="#应用截图">应用截图</a> ·
   <a href="#webtoapp-有什么不同">有什么不同</a> ·
   <a href="#能力速览">能力速览</a> ·
   <a href="#能打包什么">能打包什么</a> ·
+  <a href="#快速上手">快速上手</a> ·
   <a href="#完整能力地图">完整能力地图</a> ·
+  <a href="#agent">Agent</a> ·
   <a href="#模块市场">模块市场</a> ·
   <a href="#文档站点">文档站点</a> ·
   <a href="#架构说明">架构说明</a> ·
@@ -37,9 +65,34 @@
 
 ---
 
-<div align="center">
-<img src="../assets/social-preview.png" width="90%" alt="WebToApp:我的应用首页、应用列表与主工具箱(Agent、扩展模块、端口管理器)、单个应用的 APK 操作(编辑、创建快捷方式、构建/分享/导出 APK),以及关于页面——全部运行在 Android 手机上" />
-</div>
+## 应用截图
+
+<table>
+  <tr>
+    <td align="center"><img src="../assets/screenshots/01-home-empty.png" width="200" alt="「我的应用」主页"><br><sub><b>主页</b> —— 应用项目一览</sub></td>
+    <td align="center"><img src="../assets/screenshots/02-app-types.png" width="200" alt="12 种应用类型创建面板"><br><sub><b>创建</b> —— 12 种应用类型任选</sub></td>
+    <td align="center"><img src="../assets/screenshots/03-create-web.png" width="200" alt="Web 应用编辑器"><br><sub><b>Web 应用</b> —— 名称、URL、站点分析</sub></td>
+    <td align="center"><img src="../assets/screenshots/04-import-html.png" width="200" alt="HTML 项目导入"><br><sub><b>HTML 应用</b> —— 文件、ZIP 或写代码</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="../assets/screenshots/05-editor-basic.png" width="200" alt="编辑器基本信息卡"><br><sub><b>编辑器</b> —— 图标、名称与核心开关</sub></td>
+    <td align="center"><img src="../assets/screenshots/06-editor-toggles.png" width="200" alt="编辑器功能开关"><br><sub><b>编辑器</b> —— 启动屏、音乐、翻译等</sub></td>
+    <td align="center"><img src="../assets/screenshots/07-editor-advanced.png" width="200" alt="编辑器高级与导出设置"><br><sub><b>编辑器</b> —— 高级与导出设置</sub></td>
+    <td align="center"><img src="../assets/screenshots/08-app-actions.png" width="200" alt="单应用操作菜单"><br><sub><b>操作菜单</b> —— 构建、分享、导出等</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="../assets/screenshots/09-toolbox.png" width="200" alt="主工具箱菜单"><br><sub><b>工具箱</b> —— Agent、模块、端口、引擎</sub></td>
+    <td align="center"><img src="../assets/screenshots/10-preview.png" width="200" alt="带浏览器工具栏的应用预览"><br><sub><b>预览</b> —— 与导出产物同一运行时</sub></td>
+    <td align="center"><img src="../assets/screenshots/11-build-options.png" width="200" alt="构建 APK 对话框选项"><br><sub><b>构建</b> —— 引擎与加固选项</sub></td>
+    <td align="center"><img src="../assets/screenshots/12-build-result.png" width="200" alt="构建摘要与 APK 体积分析"><br><sub><b>产物</b> —— 签名 APK、体积分析</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="../assets/screenshots/13-generated-app.png" width="200" alt="生成应用运行效果"><br><sub><b>成品</b> —— 生成应用安装运行</sub></td>
+    <td align="center"><img src="../assets/screenshots/14-about.png" width="200" alt="关于页"><br><sub><b>关于</b> —— 版本与社区链接</sub></td>
+    <td align="center"></td>
+    <td align="center"></td>
+  </tr>
+</table>
 
 ### 演示视频
 
@@ -63,6 +116,16 @@
 - **整个构建自包含。** 二进制 AXML/ARSC 修补、权限裁剪、V1/V2/V3 签名、可直接上架 Google Play 的 AAB 导出,全部在 app 内通过 `apksig` 完成 —— 不排远程队列、不需要电脑。
 - **发布后仍可扩展。** 通过 JS/CSS 模块、Tampermonkey 风格油猴脚本,或 MV3 Chrome 扩展(可在应用内实时搜索 Chrome 网上应用店并安装)给应用补能力,不必重新发布宿主。
 - **宿主 UI 原生支持 10 种语言。** 中文、English、العربية(RTL)、Português、Español、Français、Deutsch、Русский、日本語、한국어 —— 设置里随时切换;新增界面文案按 10 语维护。
+
+| | 典型 URL 套壳工具 | WebToApp |
+| --- | :---: | :---: |
+| WebView 套一个网址 | ✅ | ✅ |
+| 设备端 Node.js / PHP / Python / Go / WordPress | ❌ | ✅ 从 app 存储 fork + exec |
+| 设备端构建签名 APK 和可上架 Play 的 AAB | ❌ | ✅ V1/V2/V3 + `targetSdk` 改写 |
+| DoH · TLS 指纹伪装 · ECH · 每应用代理 | ❌ | ✅ |
+| MV3 Chrome 扩展 + 油猴脚本 | ❌ | ✅ |
+| 50+ 维指纹伪装 · 资源加密 | ❌ | ✅ |
+| 模块市场 · 57 工具 AI 助手 | ❌ | ✅ |
 
 ---
 
@@ -95,6 +158,20 @@
 | 图片 / 视频 / 图库 | 媒体型 APK | 相册、课程材料、作品集、离线浏览 |
 | 多个网站 | 标签/卡片/信息流/抽屉布局 APK | 导航合集、门户、应用集合 |
 | 已安装 APK | 重命名克隆或桌面快捷方式伪装 | 图标/名称/包名实验、APK 重打包研究 |
+
+---
+
+## 快速上手
+
+从全新安装到第一个签名 APK,大约一分钟:
+
+1. **安装打包器** —— 从 [GitHub Releases](https://github.com/shiaho777/web-to-app/releases) 下载 APK,装到 Android 6.0(API 23)或更新的设备上。
+2. **创建应用** —— 在「我的应用」点 **创建**,从 12 种应用类型里选一个(网页 · 多站点 · HTML · 离线包 · 前端 · PHP · WordPress · Node.js · Python · Go · 媒体 · 画廊)。
+3. **填基本信息** —— 应用名、目标 URL(或项目文件)和可选图标,然后 **Save**。编辑器里其余卡片都是可选配置。
+4. **预览** —— 点应用卡片,运行在与导出产物相同的运行时代码里。
+5. **构建** —— 点 **⋮ → Build APK**,选引擎和选项,得到一个可直接安装/分享的签名 APK。要上 Google Play?改用 **⋮ → Google Play** —— 它会自动构建 APK、转换成 Play 可用的签名 AAB(自动改写 `targetSdk`),并在设备端生成 Play 元数据。
+
+带逐类型说明和底层原理的完整教程见[快速上手指南](https://shiaho777.github.io/web-to-app/zh/guide/getting-started)。
 
 ---
 
@@ -273,6 +350,16 @@ App 会同时拉取 `registry.json` 和 `submissions.json`,只展示两边都存
 
 ## 架构说明
 
+| 路径 | 作用 |
+| --- | --- |
+| `app/` | 完整构建器宿主:编辑器 UI、导出管线、运行时、预览 |
+| `shell/` | 运行时模板 —— 代码从 `app/` 同步,构建出 `webview_shell.apk` |
+| `clone-host/` | 宿主侧 APK 克隆 / 身份重塑支持库 |
+| `modules/` | 模块市场目录(`registry.json` + 各模块文件夹) |
+| `docs/` | VitePress 文档站源码(中英双语) |
+| `scripts/` | 构建辅助与 CI 门禁(配置漂移、shell 字符串、样例包) |
+| `sample-bundles/` | 按需下载的重量级样例依赖包 |
+
 - 仓库有**三个 Gradle 模块**:`app`(完整构建器和宿主)、`shell`(嵌入生成 APK 的运行时宿主)、`clone-host`(应用克隆的宿主代码 —— 编译提取 `classes.jar`,经 d8 转 DEX,作为 asset 供 `AppCloner` 使用)。
 - 运行时代码以 `app` 为唯一事实来源,再同步到 `shell`,所以共享 WebView/运行时行为只维护一份(`core/shell`、`core/webview`、`core/engine`、`core/extension`、`ui/shell` 等)。
 - APK 构建器在二进制 AXML/ARSC 层修补模板 APK,注入配置与资源,裁剪权限,并用 `apksig` 签名。另有独立的加密构建路径(`EncryptedApkBuilder`)提供资源加密、加壳和完整性校验。
@@ -311,6 +398,18 @@ App 会同时拉取 `registry.json` 和 `submissions.json`,只展示两边都存
 git clone https://github.com/shiaho777/web-to-app.git
 cd web-to-app
 ./gradlew assembleDebug
+```
+
+项目有两个分发 flavor,共享全部代码与构建规则:
+
+| Flavor | `applicationId` | 用途 |
+| --- | --- | --- |
+| `standard` | `com.webtoapp` | GitHub / 侧载发布 |
+| `gplay` | `shiaho.webtoapp` | Google Play(`com.webtoapp` 已被他方注册) |
+
+```bash
+./gradlew assembleStandardRelease   # 签名 release APK
+./gradlew bundleGplayRelease        # 可上架 Play 的签名 AAB
 ```
 
 Release 构建请通过 `local.properties` 和 `app/build.gradle.kts` 配置签名。
