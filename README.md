@@ -89,21 +89,10 @@
   <tr>
     <td align="center"><img src=".github/assets/screenshots/13-generated-app.png" width="200" alt="Generated app running"><br><sub><b>Output</b> — the generated app, running</sub></td>
     <td align="center"><img src=".github/assets/screenshots/14-about.png" width="200" alt="About page"><br><sub><b>About</b> — version & community links</sub></td>
-    <td align="center"></td>
-    <td align="center"></td>
+    <td align="center"><img src=".github/assets/screenshots/15-agent.png" width="200" alt="Agent screen with build suggestions"><br><sub><b>Agent</b> — describe it, AI builds it</sub></td>
+    <td align="center"><img src=".github/assets/screenshots/16-languages.png" width="200" alt="Language picker dialog"><br><sub><b>Languages</b> — 10 UI languages, incl. RTL</sub></td>
   </tr>
 </table>
-
-### Demo video
-
-<details>
-<summary><b>Watch: a quick tour of building and packaging an app on-device</b></summary>
-
-<video src="https://github.com/user-attachments/assets/4e1a476d-2687-4d97-90a9-d077a15ebe31" controls muted loop playsinline>
-  Your browser does not support the video tag.
-</video>
-
-</details>
 
 ---
 

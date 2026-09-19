@@ -89,21 +89,10 @@
   <tr>
     <td align="center"><img src="../assets/screenshots/13-generated-app.png" width="200" alt="生成应用运行效果"><br><sub><b>成品</b> —— 生成应用安装运行</sub></td>
     <td align="center"><img src="../assets/screenshots/14-about.png" width="200" alt="关于页"><br><sub><b>关于</b> —— 版本与社区链接</sub></td>
-    <td align="center"></td>
-    <td align="center"></td>
+    <td align="center"><img src="../assets/screenshots/15-agent.png" width="200" alt="Agent 界面与建议卡片"><br><sub><b>Agent</b> —— 描述需求,AI 来构建</sub></td>
+    <td align="center"><img src="../assets/screenshots/16-languages.png" width="200" alt="语言选择对话框"><br><sub><b>多语言</b> —— 10 种界面语言,含 RTL</sub></td>
   </tr>
 </table>
-
-### 演示视频
-
-<details>
-<summary><b>观看:在设备上构建并打包一个应用的快速演示</b></summary>
-
-<video src="https://github.com/user-attachments/assets/4e1a476d-2687-4d97-90a9-d077a15ebe31" controls muted loop playsinline>
-  您的浏览器不支持 video 标签。
-</video>
-
-</details>
 
 ---
 
