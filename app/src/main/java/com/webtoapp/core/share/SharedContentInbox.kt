@@ -106,6 +106,48 @@ object SharedContentInbox {
         }
     }
 
+    /**
+     * Accept an `ACTION_VIEW` "open with" intent (`WebViewConfig.openWithEnabled`).
+     *
+     * Same persistence contract as [acceptIntent] — the file is copied while the read grant
+     * is alive, then announced through both delivery channels — but the admit gate is wider:
+     * a file manager that labels `settings.conf` as `application/octet-stream` (or nothing)
+     * is still accepted when the URI's extension is in [ShareReceiveContract.OPEN_WITH_EXTENSIONS].
+     */
+    suspend fun acceptViewIntent(
+        context: Context,
+        intent: Intent?
+    ): SharedItem? = withContext(Dispatchers.IO) {
+        if (intent?.action != Intent.ACTION_VIEW) return@withContext null
+        val uri = intent.data ?: return@withContext null
+        val scheme = uri.scheme?.lowercase()
+        if (scheme != "content" && scheme != "file") return@withContext null
+
+        synchronized(lock) {
+            try {
+                val item = persistStream(
+                    context,
+                    uri,
+                    intent.type,
+                    ShareReceiveContract.OPEN_WITH_MIME_TYPES,
+                    ShareReceiveContract.OPEN_WITH_EXTENSIONS
+                )
+                if (item == null) {
+                    AppLogger.w(TAG, "Rejected open-with payload: uri=$uri type=${intent.type}")
+                } else {
+                    val index = readIndex(context).filterNot { it.id == item.id }
+                    writeIndex(context, (listOf(item) + index).take(ShareReceiveContract.MAX_ITEMS * 2))
+                    pruneLocked(context)
+                    AppLogger.i(TAG, "Accepted open-with file: ${item.name} (${item.mimeType}, ${item.size}B)")
+                }
+                item
+            } catch (e: Exception) {
+                AppLogger.e(TAG, "Failed to accept open-with file", e)
+                null
+            }
+        }
+    }
+
     /** Every queued item, newest first. */
     suspend fun pending(context: Context): List<SharedItem> = withContext(Dispatchers.IO) {
         synchronized(lock) {
@@ -221,10 +263,13 @@ object SharedContentInbox {
         context: Context,
         uri: Uri,
         declaredType: String?,
-        allowedMimeTypes: Collection<String>
+        allowedMimeTypes: Collection<String>,
+        allowedExtensions: Collection<String> = emptyList()
     ): SharedItem? {
         val mimeType = resolveMimeType(context, uri, declaredType)
-        if (!mimeAllowed(allowedMimeTypes, mimeType)) return null
+        if (!mimeAllowed(allowedMimeTypes, mimeType) && !extensionAllowed(allowedExtensions, uri)) {
+            return null
+        }
 
         val resolver = context.contentResolver
         // A provider is free to omit the descriptor or report no length; neither is an error,
@@ -331,6 +376,20 @@ object SharedContentInbox {
                 else -> false
             }
         }
+    }
+
+    /**
+     * Suffix-based admit gate for the "open with" channel: the URI's path extension is in
+     * the configured list. Used only for `ACTION_VIEW` file/content payloads — send intents
+     * stay strictly mime-gated.
+     */
+    internal fun extensionAllowed(allowedExtensions: Collection<String>, uri: Uri): Boolean {
+        if (allowedExtensions.isEmpty()) return false
+        val ext = uri.lastPathSegment
+            ?.substringAfterLast('.', "")
+            ?.lowercase()
+            .orEmpty()
+        return ext.isNotEmpty() && allowedExtensions.any { it.lowercase() == ext }
     }
 
     private fun resolveMimeType(context: Context, uri: Uri, declaredType: String?): String {

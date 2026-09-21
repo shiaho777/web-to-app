@@ -364,6 +364,17 @@
             android:foregroundServiceType="dataSync" />
 
         <!--
+            ApkBuildService - APK 构建期间的前台保活服务。
+            长构建（Node/Python 等运行时注入）在后台容易被系统回收，这里持 dataSync
+            前台通知 + 部分唤醒锁，保证导出过程跑完。
+        -->
+        <service
+            android:name=".core.apkbuilder.ApkBuildService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
+
+        <!--
             WebMediaPlaybackService - WebView 内媒体播放的后台保活前台服务。
             音频本身仍在 WebView 内播放；该服务提供 mediaPlayback 前台服务 + 唤醒锁 +
             媒体通知生命周期（播放中启动 / 暂停分离 / 停止移除）。

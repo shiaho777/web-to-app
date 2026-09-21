@@ -15703,4 +15703,95 @@ object StringsE {
         AppLanguage.KOREAN -> "다른 항목 선택"
     }
 
+    val buildServiceChannelName: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "APK 构建"
+        AppLanguage.ENGLISH -> "APK builds"
+        AppLanguage.ARABIC -> "بناء حزم APK"
+        AppLanguage.PORTUGUESE -> "Compilações de APK"
+        AppLanguage.SPANISH -> "Compilaciones de APK"
+        AppLanguage.FRENCH -> "Compilations d'APK"
+        AppLanguage.GERMAN -> "APK-Builds"
+        AppLanguage.RUSSIAN -> "Сборка APK"
+        AppLanguage.JAPANESE -> "APK ビルド"
+        AppLanguage.KOREAN -> "APK 빌드"
+    }
+
+    val buildServiceTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "正在构建 APK"
+        AppLanguage.ENGLISH -> "Building APK"
+        AppLanguage.ARABIC -> "جارٍ بناء APK"
+        AppLanguage.PORTUGUESE -> "Compilando APK"
+        AppLanguage.SPANISH -> "Compilando APK"
+        AppLanguage.FRENCH -> "Compilation de l'APK"
+        AppLanguage.GERMAN -> "APK wird erstellt"
+        AppLanguage.RUSSIAN -> "Сборка APK"
+        AppLanguage.JAPANESE -> "APK をビルド中"
+        AppLanguage.KOREAN -> "APK 빌드 중"
+    }
+
+    fun buildServiceRunning(appName: String): String = when (Strings.lang) {
+        AppLanguage.CHINESE -> "正在打包「$appName」，可切到后台等待完成"
+        AppLanguage.ENGLISH -> "Packaging \"$appName\" — safe to leave running in the background"
+        AppLanguage.ARABIC -> "جارٍ تجميع «$appName» — يمكنك تركه يعمل في الخلفية"
+        AppLanguage.PORTUGUESE -> "Empacotando \"$appName\" — pode continuar em segundo plano"
+        AppLanguage.SPANISH -> "Empaquetando \"$appName\" — puede seguir en segundo plano"
+        AppLanguage.FRENCH -> "Empaquetage de « $appName » — peut continuer en arrière-plan"
+        AppLanguage.GERMAN -> "„$appName\" wird gepackt — läuft im Hintergrund weiter"
+        AppLanguage.RUSSIAN -> "Упаковка «$appName» — можно свернуть, сборка продолжится"
+        AppLanguage.JAPANESE -> "「$appName」をパッケージ化中 — バックグラウンドで継続します"
+        AppLanguage.KOREAN -> "\"$appName\" 패키징 중 — 백그라운드에서 계속됩니다"
+    }
+
+    val openWithTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "注册为文件「打开方式」"
+        AppLanguage.ENGLISH -> "Register as file \"Open with\""
+        AppLanguage.ARABIC -> "التسجيل كخيار «فتح باستخدام» للملفات"
+        AppLanguage.PORTUGUESE -> "Registrar como \"Abrir com\" para arquivos"
+        AppLanguage.SPANISH -> "Registrarse como \"Abrir con\" para archivos"
+        AppLanguage.FRENCH -> "S'enregistrer comme « Ouvrir avec » pour les fichiers"
+        AppLanguage.GERMAN -> "Als „Öffnen mit\"-App für Dateien registrieren"
+        AppLanguage.RUSSIAN -> "Регистрация как «Открыть с помощью» для файлов"
+        AppLanguage.JAPANESE -> "ファイルの「開く」アプリとして登録"
+        AppLanguage.KOREAN -> "파일 \"다음으로 열기\" 앱으로 등록"
+    }
+
+    val openWithHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "生成的应用可接收文本、配置和代码文件（txt/json/xml/py/js 等），内容进入分享收件箱"
+        AppLanguage.ENGLISH -> "The exported app can receive text, config and code files (txt/json/xml/py/js…); content lands in the share inbox"
+        AppLanguage.ARABIC -> "يمكن للتطبيق المُصدَّر استقبال ملفات النصوص والإعدادات والشيفرة (txt/json/xml/py/js…)؛ يصل المحتوى إلى صندوق المشاركة"
+        AppLanguage.PORTUGUESE -> "O app exportado pode receber arquivos de texto, configuração e código (txt/json/xml/py/js…); o conteúdo vai para a caixa de compartilhamento"
+        AppLanguage.SPANISH -> "La app exportada puede recibir archivos de texto, configuración y código (txt/json/xml/py/js…); el contenido llega a la bandeja de compartidos"
+        AppLanguage.FRENCH -> "L'application exportée peut recevoir des fichiers texte, configuration et code (txt/json/xml/py/js…) ; le contenu arrive dans la boîte de partage"
+        AppLanguage.GERMAN -> "Die exportierte App kann Text-, Konfigurations- und Code-Dateien empfangen (txt/json/xml/py/js…); Inhalte landen im Posteingang"
+        AppLanguage.RUSSIAN -> "Экспортированное приложение может принимать текстовые, конфигурационные и файлы кода (txt/json/xml/py/js…); содержимое попадает в папку общих файлов"
+        AppLanguage.JAPANESE -> "エクスポートしたアプリでテキスト・設定・コードファイル（txt/json/xml/py/js…）を受け取れます。内容は共有ボックスに届きます"
+        AppLanguage.KOREAN -> "보낸 앱이 텍스트/설정/코드 파일(txt/json/xml/py/js…)을 받을 수 있습니다. 내용은 공유 받은함에 도착합니다"
+    }
+
+    val perAppSigningTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "每应用独立签名身份"
+        AppLanguage.ENGLISH -> "Per-app signing identity"
+        AppLanguage.ARABIC -> "هوية توقيع مستقلة لكل تطبيق"
+        AppLanguage.PORTUGUESE -> "Identidade de assinatura por app"
+        AppLanguage.SPANISH -> "Identidad de firma por aplicación"
+        AppLanguage.FRENCH -> "Identité de signature par application"
+        AppLanguage.GERMAN -> "Signaturidentität pro App"
+        AppLanguage.RUSSIAN -> "Отдельная подпись для каждого приложения"
+        AppLanguage.JAPANESE -> "アプリごとの署名アイデンティティ"
+        AppLanguage.KOREAN -> "앱별 독립 서명 ID"
+    }
+
+    val perAppSigningHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "为此包名生成并复用独立的 RSA-3072 证书，与全局签名互不影响；更新时身份保持一致"
+        AppLanguage.ENGLISH -> "Generates and reuses a dedicated RSA-3072 certificate for this package name — independent of the global signer, stable across rebuilds"
+        AppLanguage.ARABIC -> "يُنشئ شهادة RSA-3072 مخصصة لاسم الحزمة هذا ويعيد استخدامها — مستقلة عن الموقّع العام ومستقرة عبر عمليات البناء"
+        AppLanguage.PORTUGUESE -> "Gera e reutiliza um certificado RSA-3072 dedicado a este nome de pacote — independente do signatário global, estável entre builds"
+        AppLanguage.SPANISH -> "Genera y reutiliza un certificado RSA-3072 dedicado a este nombre de paquete — independiente del firmante global, estable entre compilaciones"
+        AppLanguage.FRENCH -> "Génère et réutilise un certificat RSA-3072 dédié à ce nom de package — indépendant du signataire global, stable d'une compilation à l'autre"
+        AppLanguage.GERMAN -> "Erzeugt und verwendet ein eigenes RSA-3072-Zertifikat für diesen Paketnamen — unabhängig vom globalen Signer, stabil über Builds hinweg"
+        AppLanguage.RUSSIAN -> "Создаёт и повторно использует выделенный сертификат RSA-3072 для этого имени пакета — независимо от глобальной подписи, стабильно между сборками"
+        AppLanguage.JAPANESE -> "このパッケージ名専用の RSA-3072 証明書を生成して再利用します — グローバル署名とは独立し、再ビルド間で安定します"
+        AppLanguage.KOREAN -> "이 패키지 이름 전용 RSA-3072 인증서를 생성하고 재사용합니다 — 전역 서명과 독립적이며 빌드 간에 안정적입니다"
+    }
+
 }

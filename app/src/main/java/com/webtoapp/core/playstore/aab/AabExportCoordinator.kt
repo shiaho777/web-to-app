@@ -57,10 +57,19 @@ class AabExportCoordinator(private val context: Context) {
         val outputAab = File(builtAabDir, "${safeName}_v${versionName}.aab")
         AppLogger.d(TAG, "Target AAB: ${outputAab.absolutePath}")
 
+        // Per-app signing carries over to the AAB: a Play upload signed with the host
+        // identity while the APK used the per-app one would split the update chain.
+        val signingIdentity = if (webApp.apkExportConfig?.perAppSigningEnabled == true) {
+            com.webtoapp.core.apkbuilder.PerAppSigningIdentity
+                .identityFor(context, ApkBuilder.resolvePackageName(webApp))
+                .toSigningIdentity()
+        } else null
+
         return AabExporter(context).export(
             sourceApk = apkToConvert,
             outputAab = outputAab,
             targetSdkOverride = ProtoManifestRewriter.DEFAULT_PLAY_TARGET_SDK,
+            signingIdentity = signingIdentity,
             onProgress = onProgress
         )
     }

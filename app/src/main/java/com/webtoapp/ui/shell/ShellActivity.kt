@@ -75,6 +75,9 @@ class ShellActivity : AppCompatActivity() {
     private var shareDeliveryMode: com.webtoapp.data.model.ShareDeliveryMode =
         com.webtoapp.data.model.ShareDeliveryMode.BOTH
 
+    // "Open with" file association (ACTION_VIEW on file/content URIs), same inbox.
+    private var openWithEnabled = false
+
     /** Set once the main frame has loaded, so a share can be announced to a page that exists. */
     private var sharePageReady = false
     internal var mediaSessionBridge: com.webtoapp.core.webview.MediaSessionBridge? = null
@@ -439,6 +442,7 @@ class ShellActivity : AppCompatActivity() {
         shareDeliveryMode = try {
             com.webtoapp.data.model.ShareDeliveryMode.valueOf(config.webViewConfig.shareDeliveryMode)
         } catch (e: Exception) { com.webtoapp.data.model.ShareDeliveryMode.BOTH }
+        openWithEnabled = config.webViewConfig.openWithEnabled
 
         immersiveFullscreenEnabled = config.webViewConfig.hideToolbar
         try {
@@ -475,7 +479,11 @@ class ShellActivity : AppCompatActivity() {
         }
 
         val intentUrl = intent?.data?.toString()
-        if (!intentUrl.isNullOrBlank() && intent?.action == Intent.ACTION_VIEW) {
+        if (isOpenWithCandidate(intent)) {
+            // An ACTION_VIEW on a file/content URI is the "open with" channel, not a deep
+            // link — the payload goes to the share inbox and never becomes a WebView URL.
+            acceptOpenWithIntent(intent)
+        } else if (!intentUrl.isNullOrBlank() && intent?.action == Intent.ACTION_VIEW) {
             val validatedUrl = resolveShellDeepLinkUrl(intentUrl, config)
             deepLinkUrl.value = validatedUrl
             com.webtoapp.core.shell.ShellLogger.i("ShellActivity", "收到 Deep Link: $validatedUrl (原始: $intentUrl)")
@@ -856,7 +864,9 @@ class ShellActivity : AppCompatActivity() {
         }
 
         val url = intent?.data?.toString()
-        if (!url.isNullOrBlank() && intent?.action == Intent.ACTION_VIEW) {
+        if (isOpenWithCandidate(intent)) {
+            acceptOpenWithIntent(intent)
+        } else if (!url.isNullOrBlank() && intent?.action == Intent.ACTION_VIEW) {
             if (clearBrowsingDataOnLaunch) {
                 resetFreshBrowsingSession()
             }
@@ -919,6 +929,48 @@ class ShellActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * True when the intent is an "open with" delivery we should claim: `ACTION_VIEW` with a
+     * `file`/`content` data URI and the feature enabled in the export config. Everything
+     * else keeps flowing through the deep-link resolver.
+     */
+    private fun isOpenWithCandidate(intent: Intent?): Boolean {
+        if (!openWithEnabled || intent?.action != Intent.ACTION_VIEW) return false
+        val scheme = intent.data?.scheme?.lowercase()
+        return scheme == "content" || scheme == "file"
+    }
+
+    /**
+     * Persist a file handed over via "open with" and announce it to the page — the same
+     * inbox + delivery channels as a share-sheet payload. Runs on a coroutine for the same
+     * reason as [acceptShareIntent]: the one-shot read grant dies with the intent.
+     */
+    private fun acceptOpenWithIntent(intent: Intent?) {
+        lifecycleScope.launch {
+            try {
+                val item = com.webtoapp.core.share.SharedContentInbox.acceptViewIntent(
+                    this@ShellActivity,
+                    intent
+                ) ?: return@launch
+
+                com.webtoapp.core.shell.ShellLogger.i(
+                    "ShellActivity",
+                    "收到打开方式文件: ${item.name}(${item.mimeType}, ${item.size}B)"
+                )
+
+                Toast.makeText(
+                    this@ShellActivity,
+                    Strings.shareReceivedToast,
+                    Toast.LENGTH_SHORT
+                ).show()
+
+                deliverPendingShares()
+            } catch (e: Exception) {
+                com.webtoapp.core.shell.ShellLogger.e("ShellActivity", "接收打开方式文件失败: ${e.message}", e)
+            }
+        }
+    }
+
     /** A new document started loading; hold deliveries until it has finished. */
     fun onShellPageStarted() {
         sharePageReady = false
@@ -936,7 +988,7 @@ class ShellActivity : AppCompatActivity() {
      * id, so a reload regains the content while a single document never sees it twice.
      */
     fun deliverPendingShares() {
-        if (shareReceiveMimeTypes.isEmpty()) return
+        if (shareReceiveMimeTypes.isEmpty() && !openWithEnabled) return
         if (shareDeliveryMode == com.webtoapp.data.model.ShareDeliveryMode.FILE_CHOOSER_PREFILL) return
 
         val target = webView ?: browserSurface?.webView ?: return

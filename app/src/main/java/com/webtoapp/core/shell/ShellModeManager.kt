@@ -1286,6 +1286,11 @@ data class WebViewShellConfig(
     @SerializedName("sharePromptBeforeUse")
     val sharePromptBeforeUse: Boolean = true,
 
+    // "Open with" file association (ACTION_VIEW file/content intents). Must match
+    // ApkConfigJsonFactory.webViewConfigPayload exactly — Gson drops unknown keys silently.
+    @SerializedName("openWithEnabled")
+    val openWithEnabled: Boolean = false,
+
     @SerializedName("enableZoomPolyfill")
     val enableZoomPolyfill: Boolean = true,
 

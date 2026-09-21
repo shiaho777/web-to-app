@@ -28,6 +28,7 @@ class AabExporter(private val context: Context) {
         sourceApk: File,
         outputAab: File,
         targetSdkOverride: Int? = null,
+        signingIdentity: com.webtoapp.core.apkbuilder.JarSigner.SigningIdentity? = null,
         onProgress: ((stage: Stage, percent: Int) -> Unit)? = null
     ): Result {
         require(sourceApk.exists()) {
@@ -59,7 +60,7 @@ class AabExporter(private val context: Context) {
             AppLogger.d(TAG, "Stage 2: signing AAB")
 
             val signed = try {
-                AabSigner(context).sign(unsignedAab, outputAab)
+                AabSigner(context).sign(unsignedAab, outputAab, signingIdentity)
             } catch (e: Exception) {
                 throw AabExportException(
                     failureStage = FailureStage.SIGN,

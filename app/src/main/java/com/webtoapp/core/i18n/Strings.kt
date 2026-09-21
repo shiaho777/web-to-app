@@ -5159,6 +5159,13 @@ object Strings {
     fun shareReceivedPickMessageNamed(name: String): String = StringsE.shareReceivedPickMessageNamed(name)
     val shareReceivedPickUse: String get() = StringsE.shareReceivedPickUse
     val shareReceivedPickChoose: String get() = StringsE.shareReceivedPickChoose
+    val buildServiceChannelName: String get() = StringsE.buildServiceChannelName
+    val buildServiceTitle: String get() = StringsE.buildServiceTitle
+    fun buildServiceRunning(appName: String): String = StringsE.buildServiceRunning(appName)
+    val openWithTitle: String get() = StringsE.openWithTitle
+    val openWithHint: String get() = StringsE.openWithHint
+    val perAppSigningTitle: String get() = StringsE.perAppSigningTitle
+    val perAppSigningHint: String get() = StringsE.perAppSigningHint
 }
 
 

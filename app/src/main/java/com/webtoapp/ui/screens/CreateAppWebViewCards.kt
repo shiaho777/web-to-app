@@ -2696,6 +2696,17 @@ private fun ShareReceiveRows(
                 }
             }
         }
+
+        WtaSectionDivider()
+        WtaToggleRow(
+            icon = Icons.Outlined.FileOpen,
+            title = Strings.openWithTitle,
+            subtitle = Strings.openWithHint,
+            checked = webViewConfig.openWithEnabled,
+            onCheckedChange = {
+                onWebViewConfigChange(webViewConfig.copy(openWithEnabled = it))
+            }
+        )
     }
 }
 

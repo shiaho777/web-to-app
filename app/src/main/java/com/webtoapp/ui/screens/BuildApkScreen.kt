@@ -24,6 +24,7 @@ import androidx.compose.material.icons.outlined.PieChart
 import androidx.compose.material.icons.outlined.PlayCircleOutline
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material.icons.outlined.SystemUpdateAlt
+import androidx.compose.material.icons.outlined.VerifiedUser
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
@@ -187,6 +188,10 @@ private fun BuildApkContent(
     var selectedEngineType by remember(webApp.id) {
         mutableStateOf(webApp.apkExportConfig?.engineType ?: "SYSTEM_WEBVIEW")
     }
+
+    var perAppSigningEnabled by remember(webApp.id) {
+        mutableStateOf(webApp.apkExportConfig?.perAppSigningEnabled ?: false)
+    }
     // Resolve the package exactly the way the builder does. That rule used to
     // live inside ApkBuilder, so the screen could not reproduce a derived
     // package name, never found the installed app, and never bumped the version.
@@ -222,7 +227,8 @@ private fun BuildApkContent(
                 backgroundRunConfig = backgroundRunConfig,
                 notificationEnabled = notificationEnabled,
                 notificationConfig = notificationConfig,
-                engineType = selectedEngineType
+                engineType = selectedEngineType,
+                perAppSigningEnabled = perAppSigningEnabled
             ).let { exportConfig ->
                 val suggested = suggestedVersion
                 if (suggested != null && (exportConfig.customVersionCode ?: 1) < suggested.first) {
@@ -592,6 +598,14 @@ private fun BuildApkContent(
                             subtitle = Strings.forceFullRebuildDesc,
                             checked = forceFullRebuild,
                             onCheckedChange = { forceFullRebuild = it }
+                        )
+                        WtaSectionDivider()
+                        WtaToggleRow(
+                            icon = Icons.Outlined.VerifiedUser,
+                            title = Strings.perAppSigningTitle,
+                            subtitle = Strings.perAppSigningHint,
+                            checked = perAppSigningEnabled,
+                            onCheckedChange = { perAppSigningEnabled = it }
                         )
                         WtaSectionDivider()
                         Row(

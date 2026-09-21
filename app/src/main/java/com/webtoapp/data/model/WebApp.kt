@@ -421,6 +421,21 @@ data class WebViewConfig(
     val receiveShareText: Boolean = false,
 
     /**
+     * `ACTION_VIEW` "open with" registration for text / config / code files.
+     *
+     * When on, `AxmlRebuilder` adds two intent-filters to `ShellActivity`: one matching the
+     * mime types in `ShareReceiveContract.OPEN_WITH_MIME_TYPES`, one matching the extension
+     * list via `pathPattern` (senders that label a `.conf` file `application/octet-stream`
+     * are still reachable by suffix). Received files land in the same share inbox as
+     * `ACTION_SEND` payloads and are delivered through the same channels.
+     *
+     * Off by default for the same reason as the share filters: an exported entry point is a
+     * manifest-visible capability, and anti-virus reputation treats broad file associations
+     * conservatively.
+     */
+    val openWithEnabled: Boolean = false,
+
+    /**
      * How a received item reaches the page. `BOTH` is the default because the two
      * channels cover disjoint cases: the DOM event is zero-tap but only reaches pages
      * (or extension modules) that listen for it, while the file-chooser pre-fill works
@@ -1273,7 +1288,17 @@ data class ApkExportConfig(
      * Enforced: server-runtime app types (`AppType.requiresProcessExec`) ignore this field
      * and always stay at 28. `null`/`<= 0` means "leave the template's 28 alone".
      */
-    val targetSdk: Int? = null
+    val targetSdk: Int? = null,
+
+    /**
+     * Sign this app with a dedicated, per-package identity instead of the host-wide signer.
+     *
+     * The identity is generated once per package name (RSA-3072 PKCS12 under
+     * `filesDir/app_signing/`, managed by `PerAppSigningIdentity`) and reused on every
+     * rebuild, so updates install cleanly while two different package names never share a
+     * certificate. When the flag is off the build behaves exactly as before.
+     */
+    val perAppSigningEnabled: Boolean = false
 )
 
 data class NetworkTrustConfig(

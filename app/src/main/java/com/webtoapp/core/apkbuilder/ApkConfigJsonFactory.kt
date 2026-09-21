@@ -234,6 +234,10 @@ internal object ApkConfigJsonFactory {
         "receiveShareText" to shareReceive.text,
         "shareDeliveryMode" to shareReceive.deliveryMode,
         "sharePromptBeforeUse" to shareReceive.promptBeforeUse,
+        // "Open with" file association — the runtime gate for ACTION_VIEW file/content
+        // intents. The declared mime/extension sets are contract constants, so only the
+        // boolean crosses the wire.
+        "openWithEnabled" to openWith.enabled,
         "enableZoomPolyfill" to webViewBehavior.enableZoomPolyfill,
         "enableCrossOriginIsolation" to webViewBehavior.enableCrossOriginIsolation,
         "hideUrlPreview" to webViewBehavior.hideUrlPreview,

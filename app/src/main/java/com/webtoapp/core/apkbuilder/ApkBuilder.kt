@@ -355,17 +355,27 @@ class ApkBuilder(private val context: Context) {
         // Serialize builds of the same package across all entry points (export screen,
         // home share, agent tools): the build writes deterministic temp paths keyed by
         // package name, so two overlapping builds would corrupt each other's files.
-        lockFor(resolvePackageName(webApp)).withLock {
-            val versioned = withInstallAwareVersion(context, webApp)
-            if (versioned !== webApp) {
-                AppLogger.i(
-                    "ApkBuilder",
-                    "Bumped version for ${resolvePackageName(webApp)}: " +
-                        "${webApp.apkExportConfig?.customVersionCode ?: 1} -> " +
-                        "${versioned.apkExportConfig?.customVersionCode}"
-                )
+        // The foreground service + wake lock covers the whole section — a long build must
+        // survive the app being backgrounded, and progress updates ride the same channel.
+        ApkBuildService.start(context, webApp.name)
+        try {
+            lockFor(resolvePackageName(webApp)).withLock {
+                val versioned = withInstallAwareVersion(context, webApp)
+                if (versioned !== webApp) {
+                    AppLogger.i(
+                        "ApkBuilder",
+                        "Bumped version for ${resolvePackageName(webApp)}: " +
+                            "${webApp.apkExportConfig?.customVersionCode ?: 1} -> " +
+                            "${versioned.apkExportConfig?.customVersionCode}"
+                    )
+                }
+                buildApkInternal(versioned, forceFullRebuild) { percent, text ->
+                    ApkBuildService.updateProgress(context, percent, text)
+                    onProgress(percent, text)
+                }
             }
-            buildApkInternal(versioned, forceFullRebuild, onProgress)
+        } finally {
+            ApkBuildService.stop(context)
         }
     }
 
@@ -378,6 +388,7 @@ class ApkBuilder(private val context: Context) {
         var currentPackageName: String? = null
         var currentUnsignedApkPath: String? = null
         var currentSignedApkPath: String? = null
+        val buildStartMs = System.currentTimeMillis()
 
         logger.startNewLog(webApp.name)
 
@@ -389,6 +400,29 @@ class ApkBuilder(private val context: Context) {
 
             val encryptionExportConfig = webApp.apkExportConfig?.encryptionConfig
                 ?: com.webtoapp.data.model.ApkEncryptionConfig()
+
+            // Per-app signing (opt-in). Resolved before the encryption-key derivation
+            // below: password-less encrypted builds mix the signing certificate hash into
+            // the key, so the hash must be the identity that will actually sign the APK.
+            // Failing to produce it fails the build — silently falling back to the global
+            // key would mint an APK the per-app identity can never update.
+            val perAppIdentity = if (webApp.apkExportConfig?.perAppSigningEnabled == true) {
+                try {
+                    PerAppSigningIdentity.identityFor(context, resolvePackageName(webApp))
+                } catch (e: Exception) {
+                    return@withContext failBuild(
+                        stage = BuildStage.PREPARE,
+                        cause = BuildFailureCause.SIGNING_EXCEPTION,
+                        message = "Per-app signing identity unavailable: ${e.message ?: "unknown error"}",
+                        throwable = e,
+                        details = mapOf("packageName" to resolvePackageName(webApp))
+                    )
+                }
+            } else null
+
+            val signingCertHash: () -> ByteArray = {
+                perAppIdentity?.certSha256() ?: signer.getCertificateSignatureHash()
+            }
 
             val perfOptEnabled = webApp.apkExportConfig?.performanceOptimization == true
             val perfConfig = if (perfOptEnabled) {
@@ -538,7 +572,7 @@ class ApkBuilder(private val context: Context) {
                             // cert must not be mixed in or every re-signed copy
                             // (incl. Play App Signing) would fail to decrypt.
                             val signatureHash = if (encryptionConfig.customPassword.isNullOrBlank()) {
-                                signer.getCertificateSignatureHash()
+                                signingCertHash()
                             } else {
                                 ByteArray(0)
                             }
@@ -884,6 +918,11 @@ class ApkBuilder(private val context: Context) {
                 perfFingerprint = webApp.apkExportConfig?.let { ec ->
                     "opt=${ec.performanceOptimization}|cfg=${ec.performanceConfig}"
                 },
+                // Encrypted builds embed the signing cert hash in the metadata, so the
+                // unsigned bytes depend on which identity signs. Key it explicitly.
+                signingFingerprint = runCatching {
+                    signingCertHash().joinToString("") { "%02x".format(it) }
+                }.getOrNull(),
                 multiWebSiteGalleryItems = mwSiteMedia.galleryItems.values.flatten(),
                 multiWebSiteMediaPaths = mwSiteMedia.mediaPaths.values.toList()
             )
@@ -946,7 +985,8 @@ class ApkBuilder(private val context: Context) {
                             errorPageMediaPath = errorPageMediaPath,
                             announcementIconPath = announcementIconPath,
                             perfConfig = perfConfig,
-                            mode = ModifyApkMode.CONTENT_OVERLAY
+                            mode = ModifyApkMode.CONTENT_OVERLAY,
+                            signingCertHash = signingCertHash
                         ) { progress, stageMessage ->
                             if (stageMessage.isNotBlank()) {
                                 progressMessage.set(stageMessage)
@@ -987,7 +1027,8 @@ class ApkBuilder(private val context: Context) {
                             errorPageMediaPath = errorPageMediaPath,
                             announcementIconPath = announcementIconPath,
                             perfConfig = perfConfig,
-                            mode = ModifyApkMode.FULL
+                            mode = ModifyApkMode.FULL,
+                            signingCertHash = signingCertHash
                         ) { progress, stageMessage ->
                             if (stageMessage.isNotBlank()) {
                                 progressMessage.set(stageMessage)
@@ -1031,7 +1072,8 @@ class ApkBuilder(private val context: Context) {
                         errorPageMediaPath = errorPageMediaPath,
                         announcementIconPath = announcementIconPath,
                         perfConfig = perfConfig,
-                        mode = ModifyApkMode.FULL
+                        mode = ModifyApkMode.FULL,
+                        signingCertHash = signingCertHash
                     ) { progress, stageMessage ->
                         if (stageMessage.isNotBlank()) {
                             progressMessage.set(stageMessage)
@@ -1140,12 +1182,23 @@ class ApkBuilder(private val context: Context) {
 
             logger.section("Sign APK")
             currentStage = BuildStage.SIGN
-            logger.logKeyValue("signerType", signer.getSignerType().name)
+            logger.logKeyValue(
+                "signerType",
+                if (perAppIdentity != null) "PER_APP" else signer.getSignerType().name
+            )
+            perAppIdentity?.let {
+                logger.logKeyValue("perAppCertSha256", it.certSha256Hex())
+                logger.logKeyValue("perAppKeystore", it.storeFile.name)
+            }
 
             // JarSigner.sign either returns true or throws; output validity is checked
             // right below, which is the real failure path.
             try {
-                signer.sign(unsignedApk, signedApk, targetSdk = config.targetSdkOverride ?: 28)
+                signer.sign(
+                    unsignedApk, signedApk,
+                    targetSdk = config.targetSdkOverride ?: 28,
+                    identity = perAppIdentity?.toSigningIdentity()
+                )
             } catch (e: Exception) {
                 return@withContext failBuild(
                     stage = BuildStage.SIGN,
@@ -1222,19 +1275,41 @@ class ApkBuilder(private val context: Context) {
             } else {
                 IncrementalBuildMode.FULL.name
             }
+            val resolvedReason = if (usedIncremental) {
+                incrementalPlan.reason
+            } else if (incrementalPlan.mode == IncrementalBuildMode.FULL) {
+                incrementalPlan.reason
+            } else {
+                "fallbackFull:" + incrementalPlan.reason
+            }
+
+            // Machine-readable release metadata next to the APK: which host version, which
+            // signing certificate, and the output's own SHA-256. Best-effort sidecar.
+            val certSha256Hex = runCatching {
+                (perAppIdentity?.certSha256() ?: signer.getCertificateSignatureHash())
+                    .joinToString(":") { "%02X".format(it) }
+            }.getOrNull()
+            val metadataFile = BuildMetadataWriter.write(
+                context = context,
+                webApp = webApp,
+                config = config,
+                apkFile = signedApk,
+                signerType = if (perAppIdentity != null) "PER_APP" else signer.getSignerType().name,
+                certSha256Hex = certSha256Hex,
+                buildMode = resolvedMode,
+                buildReason = resolvedReason,
+                durationMs = System.currentTimeMillis() - buildStartMs,
+                logPath = logger.getCurrentLogPath()
+            )
+
             BuildResult.Success(
                 apkFile = signedApk,
                 logPath = logger.getCurrentLogPath(),
                 analysisReport = analysisReport,
                 incremental = usedIncremental,
                 buildMode = resolvedMode,
-                buildReason = if (usedIncremental) {
-                    incrementalPlan.reason
-                } else if (incrementalPlan.mode == IncrementalBuildMode.FULL) {
-                    incrementalPlan.reason
-                } else {
-                    "fallbackFull:" + incrementalPlan.reason
-                }
+                buildReason = resolvedReason,
+                metadataPath = metadataFile?.absolutePath
             )
 
         } catch (e: Exception) {
@@ -1345,6 +1420,7 @@ class ApkBuilder(private val context: Context) {
         announcementIconPath: String? = null,
         perfConfig: com.webtoapp.core.linux.PerformanceOptimizer.OptimizeConfig? = null,
         mode: ModifyApkMode = ModifyApkMode.FULL,
+        signingCertHash: () -> ByteArray = { signer.getCertificateSignatureHash() },
         onProgress: (Int, String) -> Unit
     ) {
         logger.log(
@@ -1466,7 +1542,8 @@ class ApkBuilder(private val context: Context) {
                                 buildRequiredPermissions(config),
                                 buildRequiredComponents(config),
                                 targetSdk = config.targetSdkOverride,
-                                shareReceiveMimeTypes = config.shareReceiveMimeTypes
+                                shareReceiveMimeTypes = config.shareReceiveMimeTypes,
+                                openWithEnabled = config.openWithEnabled
                             )
                             writeEntryDeflated(zipOut, entry.name, modifiedData)
                         }
@@ -1598,7 +1675,7 @@ class ApkBuilder(private val context: Context) {
 
                 if (encryptionConfig.enabled) {
 
-                    val signatureHash = signer.getCertificateSignatureHash()
+                    val signatureHash = signingCertHash()
                     encryptedApkBuilder.writeEncryptionMetadata(
                         zipOut, encryptionConfig, config.packageName, signatureHash,
                         // Embedded mode: the encryption key IS the random baked key,
@@ -3998,6 +4075,7 @@ fun WebApp.toApkConfig(packageName: String, context: android.content.Context? = 
         disguise = buildDisguiseBlock(),
         deepLink = buildDeepLinkBlock(packageName),
         shareReceive = buildShareReceiveBlock(),
+        openWith = buildOpenWithBlock(),
         wordpress = buildWordpressBlock(),
         nodejs = buildNodejsBlock(),
         phpApp = buildPhpAppBlock(),
@@ -4676,6 +4754,14 @@ private fun WebApp.buildShareReceiveBlock(): ShareReceiveBlock {
     )
 }
 
+/**
+ * The "open with" registration is a single flag: the concrete mime/extension lists are
+ * contract constants (`ShareReceiveContract.OPEN_WITH_*`), so the block only carries the
+ * resolved enabled state that drives both manifest injection and the runtime gate.
+ */
+private fun WebApp.buildOpenWithBlock(): OpenWithBlock =
+    OpenWithBlock(enabled = webViewConfig.openWithEnabled)
+
 private fun WebApp.buildWordpressBlock(): WordpressBlock = WordpressBlock(
     siteTitle = wordpressConfig?.siteTitle ?: "",
     adminUser = wordpressConfig?.adminUser ?: "admin",
@@ -5298,7 +5384,9 @@ sealed class BuildResult {
         val analysisReport: ApkAnalyzer.AnalysisReport? = null,
         val incremental: Boolean = false,
         val buildMode: String = "FULL",
-        val buildReason: String = ""
+        val buildReason: String = "",
+        /** Absolute path of the `<name>.build.json` release-metadata sidecar, if written. */
+        val metadataPath: String? = null
     ) : BuildResult()
     data class Error(
         val message: String,

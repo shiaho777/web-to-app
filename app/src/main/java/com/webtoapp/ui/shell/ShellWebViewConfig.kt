@@ -96,6 +96,7 @@ fun buildWebViewConfig(config: ShellConfig): WebViewConfig {
             com.webtoapp.data.model.ShareDeliveryMode.valueOf(config.webViewConfig.shareDeliveryMode)
         } catch (e: Exception) { com.webtoapp.data.model.ShareDeliveryMode.BOTH },
         sharePromptBeforeUse = config.webViewConfig.sharePromptBeforeUse,
+        openWithEnabled = config.webViewConfig.openWithEnabled,
         enableZoomPolyfill = config.webViewConfig.enableZoomPolyfill,
         enableCrossOriginIsolation = config.webViewConfig.enableCrossOriginIsolation,
         hideUrlPreview = config.webViewConfig.hideUrlPreview,

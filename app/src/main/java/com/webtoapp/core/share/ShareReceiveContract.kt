@@ -64,6 +64,40 @@ object ShareReceiveContract {
     /** `kind` discriminator for a `text/plain` entry. */
     const val KIND_TEXT = "text"
 
+    /**
+     * `ACTION_VIEW` "open with" registration (opt-in, `WebViewConfig.openWithEnabled`):
+     * mime types declared on the mime-based intent-filter. The `text` wildcard covers
+     * plain text and most code/config payloads whose sender bothers to label them; the
+     * `application` entries catch the structured formats file managers tag explicitly.
+     * `octet-stream` is deliberately absent — it would make the app a candidate for
+     * *every* file.
+     */
+    val OPEN_WITH_MIME_TYPES = listOf(
+        "text/*",
+        "application/json",
+        "application/xml",
+        "application/x-yaml",
+        "application/toml",
+        "application/javascript",
+        "application/x-javascript"
+    )
+
+    /**
+     * Extension list for the `pathPattern`-based filter — many senders label text/code
+     * files `application/octet-stream` or nothing at all, so suffix matching catches what
+     * the mime filter cannot. Each entry becomes `.*\.<ext>` under both the `file` and
+     * `content` schemes.
+     */
+    val OPEN_WITH_EXTENSIONS = listOf(
+        "txt", "md", "markdown", "log", "csv", "tsv",
+        "json", "json5", "xml", "yml", "yaml", "toml", "ini", "cfg", "conf",
+        "properties", "prop",
+        "js", "mjs", "cjs", "ts", "css",
+        "py", "java", "kt", "kts",
+        "c", "h", "cpp", "cc", "cxx", "hpp",
+        "sh", "bash", "gradle", "go", "rs"
+    )
+
     /** Name of the page-facing JS namespace installed at document-start. */
     const val JS_NAMESPACE = "WTAShareInbox"
 

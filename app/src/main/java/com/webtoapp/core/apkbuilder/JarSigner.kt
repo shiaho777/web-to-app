@@ -45,6 +45,9 @@ class JarSigner(private val context: Context) {
 
         private const val V1_SIGNER_NAME_MAX_LEN = 8
 
+        fun signatureHashOf(cert: X509Certificate): ByteArray =
+            java.security.MessageDigest.getInstance("SHA-256").digest(cert.encoded)
+
         /**
          * Full BouncyCastle (bundled dependency), used explicitly for *reading* keystores.
          * The platform's stripped BC provider on many Android versions cannot decrypt PKCS12
@@ -133,6 +136,16 @@ class JarSigner(private val context: Context) {
         val sha256: String
     )
 
+    /**
+     * An externally supplied key/certificate pair (e.g. a per-package identity from
+     * [PerAppSigningIdentity]). When passed to [sign] it fully replaces the host's own
+     * signer for that invocation — the host's keystore files are neither read nor reset.
+     */
+    data class SigningIdentity(
+        val privateKey: PrivateKey,
+        val certificate: X509Certificate
+    )
+
     private var privateKey: PrivateKey? = null
     private var certificate: X509Certificate? = null
     private var initError: String? = null
@@ -146,7 +159,7 @@ class JarSigner(private val context: Context) {
 
     fun getCertificateSignatureHash(): ByteArray {
         val cert = certificate ?: throw IllegalStateException("证书未初始化")
-        return java.security.MessageDigest.getInstance("SHA-256").digest(cert.encoded)
+        return signatureHashOf(cert)
     }
 
     fun getCertificateInfo(): String? {
@@ -213,17 +226,17 @@ class JarSigner(private val context: Context) {
         }
     }
 
-    fun resolveV1SignerName(customName: String?): String {
+    fun resolveV1SignerName(customName: String?, cert: X509Certificate? = certificate): String {
         val explicit = customName?.trim().orEmpty()
         if (explicit.isNotEmpty()) {
             return sanitizeV1SignerName(explicit)
         }
 
-        return deriveSignerNameFromKey() ?: SIGNER_BASENAME
+        return deriveSignerNameFromKey(cert) ?: SIGNER_BASENAME
     }
 
-    private fun deriveSignerNameFromKey(): String? {
-        val cert = certificate ?: return null
+    private fun deriveSignerNameFromKey(cert: X509Certificate?): String? {
+        if (cert == null) return null
         val cn = extractCommonName(cert.subjectX500Principal.name)
             ?: cert.subjectX500Principal.name
         val sanitized = sanitizeV1SignerName(cn)
@@ -1067,30 +1080,38 @@ class JarSigner(private val context: Context) {
         return wrapWithTag(0x30, out.toByteArray())
     }
 
-    fun sign(inputApk: File, outputApk: File, targetSdk: Int = 28): Boolean {
+    @JvmOverloads
+    fun sign(
+        inputApk: File,
+        outputApk: File,
+        targetSdk: Int = 28,
+        identity: SigningIdentity? = null
+    ): Boolean {
 
         if (!validateInputs(inputApk, outputApk)) {
             throw IllegalStateException(Strings.signInputValidationFailed.format(inputApk.absolutePath))
         }
 
-        val key = privateKey
-        val cert = certificate
-        if (key == null || cert == null) {
-            AppLogger.e(TAG, "Key or certificate is empty, retrying initialisation...")
+        if (identity == null) {
+            val key = privateKey
+            val cert = certificate
+            if (key == null || cert == null) {
+                AppLogger.e(TAG, "Key or certificate is empty, retrying initialisation...")
 
-            File(context.filesDir, DEFAULT_PKCS12_FILE).delete()
-            File(context.filesDir, ".ks_credential").delete()
-            initializeKey()
-            if (privateKey == null || certificate == null) {
-                val errorDetail = initError ?: "key=${privateKey != null}, cert=${certificate != null}"
-                throw IllegalStateException(Strings.signKeyInitFailed.format(errorDetail))
+                File(context.filesDir, DEFAULT_PKCS12_FILE).delete()
+                File(context.filesDir, ".ks_credential").delete()
+                initializeKey()
+                if (privateKey == null || certificate == null) {
+                    val errorDetail = initError ?: "key=${privateKey != null}, cert=${certificate != null}"
+                    throw IllegalStateException(Strings.signKeyInitFailed.format(errorDetail))
+                }
             }
         }
 
         AppLogger.d(TAG, "Signing APK: input=${inputApk.absolutePath} (size=${inputApk.length()})")
-        AppLogger.d(TAG, "Signer type: $currentSignerType")
+        AppLogger.d(TAG, "Signer type: ${identity?.let { "PER_APP" } ?: currentSignerType.toString()}")
 
-        return trySignWithRetry(inputApk, outputApk, maxRetries = 2, targetSdk = targetSdk)
+        return trySignWithRetry(inputApk, outputApk, maxRetries = 2, targetSdk = targetSdk, identity = identity)
     }
 
     private fun validateInputs(inputApk: File, outputApk: File): Boolean {
@@ -1125,14 +1146,20 @@ class JarSigner(private val context: Context) {
         return true
     }
 
-    private fun trySignWithRetry(inputApk: File, outputApk: File, maxRetries: Int, targetSdk: Int): Boolean {
+    private fun trySignWithRetry(
+        inputApk: File,
+        outputApk: File,
+        maxRetries: Int,
+        targetSdk: Int,
+        identity: SigningIdentity? = null
+    ): Boolean {
         val errorMessages = mutableListOf<String>()
         var lastException: Throwable? = null
 
         data class SignConfig(val name: String, val v1: Boolean, val v2: Boolean, val v3: Boolean)
 
         val options = getSigningSchemeOptions()
-        val v1Name = resolveV1SignerName(options.v1SignerName)
+        val v1Name = resolveV1SignerName(options.v1SignerName, identity?.certificate)
         AppLogger.d(TAG, "Signing scheme options: $options (resolved V1 name=$v1Name)")
 
         // The shell template manifest declares minSdk 23 and generated APKs keep it, so
@@ -1184,7 +1211,10 @@ class JarSigner(private val context: Context) {
 
                 if (outputApk.exists()) outputApk.delete()
 
-                val success = attemptSign(inputApk, outputApk, config.v1, config.v2, config.v3, v1Name)
+                val success = attemptSign(
+                    inputApk, outputApk, config.v1, config.v2, config.v3, v1Name,
+                    identity
+                )
                 if (success) {
                     AppLogger.d(TAG, "Signed successfully: ${config.name}")
                     return true
@@ -1203,9 +1233,12 @@ class JarSigner(private val context: Context) {
 
                 if (outputApk.exists()) outputApk.delete()
 
-                if (causeChain.contains("key", ignoreCase = true) ||
-                    causeChain.contains("sign", ignoreCase = true) ||
-                    causeChain.contains("certificate", ignoreCase = true)) {
+                if (identity == null &&
+                    (causeChain.contains("key", ignoreCase = true) ||
+                        causeChain.contains("sign", ignoreCase = true) ||
+                        causeChain.contains("certificate", ignoreCase = true))) {
+                    // Only ever regenerate the host's own key — an externally supplied
+                    // identity is the caller's responsibility and must never be reset here.
                     AppLogger.d(TAG, "Possible key issue detected, regenerating...")
                     File(context.filesDir, DEFAULT_PKCS12_FILE).delete()
                     File(context.filesDir, ".ks_credential").delete()
@@ -1234,10 +1267,11 @@ class JarSigner(private val context: Context) {
     private fun attemptSign(
         inputApk: File, outputApk: File,
         v1: Boolean, v2: Boolean, v3: Boolean,
-        v1SignerName: String
+        v1SignerName: String,
+        identity: SigningIdentity? = null
     ): Boolean {
-        val key = privateKey ?: throw IllegalStateException("私钥为空")
-        val cert = certificate ?: throw IllegalStateException("证书为空")
+        val key = (identity?.privateKey ?: privateKey) ?: throw IllegalStateException("私钥为空")
+        val cert = (identity?.certificate ?: certificate) ?: throw IllegalStateException("证书为空")
 
         // The real manifest minSdk of every shell-based output is 23 (shell template
         // defaultConfig). Deriving minSdk from the scheme toggles made apksig skip

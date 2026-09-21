@@ -30,6 +30,7 @@ data class ApkConfig(
     val disguise: DisguiseBlock = DisguiseBlock(),
     val deepLink: DeepLinkBlock = DeepLinkBlock(),
     val shareReceive: ShareReceiveBlock = ShareReceiveBlock(),
+    val openWith: OpenWithBlock = OpenWithBlock(),
     val wordpress: WordpressBlock = WordpressBlock(),
     val nodejs: NodejsBlock = NodejsBlock(),
     val phpApp: PhpAppBlock = PhpAppBlock(),
@@ -352,6 +353,7 @@ data class ApkConfig(
     val shareDeliveryMode: String get() = shareReceive.deliveryMode
     val sharePromptBeforeUse: Boolean get() = shareReceive.promptBeforeUse
     val shareReceiveMimeTypes: List<String> get() = shareReceive.mimeTypes
+    val openWithEnabled: Boolean get() = openWith.enabled
 
     val wordpressSiteTitle: String get() = wordpress.siteTitle
     val wordpressAdminUser: String get() = wordpress.adminUser
@@ -834,6 +836,17 @@ data class ShareReceiveBlock(
     val deliveryMode: String = "BOTH",
     val promptBeforeUse: Boolean = true,
     val mimeTypes: List<String> = emptyList()
+)
+
+/**
+ * `ACTION_VIEW` "open with" registration (`WebViewConfig.openWithEnabled`).
+ *
+ * [enabled] drives the intent-filter injection in [AxmlRebuilder]; the actual mime/extension
+ * lists live in `ShareReceiveContract` (shell-synced, so the runtime inbox check uses the
+ * same constants the manifest declared). When disabled the manifest is left untouched.
+ */
+data class OpenWithBlock(
+    val enabled: Boolean = false
 )
 
 data class WordpressBlock(

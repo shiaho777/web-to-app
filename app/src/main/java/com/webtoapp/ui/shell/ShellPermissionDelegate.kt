@@ -162,7 +162,9 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
             null
         }
         val wv = config?.webViewConfig ?: return false
-        if (!wv.receiveShareImages) return false
+        // Both inbound channels feed the same inbox: an "open with" file should reach a
+        // page's upload control even when share-sheet receiving itself is off.
+        if (!wv.receiveShareImages && !wv.openWithEnabled) return false
 
         val mode = try {
             com.webtoapp.data.model.ShareDeliveryMode.valueOf(wv.shareDeliveryMode)

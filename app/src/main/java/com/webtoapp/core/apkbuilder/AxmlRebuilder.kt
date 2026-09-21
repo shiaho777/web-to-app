@@ -35,6 +35,7 @@ class AxmlRebuilder {
 
         /** `android:mimeType`. Only `<data>` inside an intent-filter uses this attribute. */
         private const val ATTR_MIME_TYPE = 0x01010026
+        private const val ATTR_PATH_PATTERN = 0x0101002c
 
         private val CLASS_NAME_REGEX = Regex("^[A-Z][a-zA-Z0-9]*$")
 
@@ -507,6 +508,137 @@ class AxmlRebuilder {
         }
     }
 
+    /**
+     * Ensure [attrResId] has a slot in the manifest's resource map, appending its name to the
+     * string pool at the map boundary when absent (the same insert-and-shift dance the
+     * share-receive filter does inline for `mimeType`). Returns the attribute's index into
+     * the resource map — the value stored in the `name` field of attribute records.
+     */
+    private fun ensureAttrIndex(parsed: ParsedAxml, attrResId: Int, attrName: String): Int {
+        val map = parsed.resourceMap ?: return -1
+        val existing = map.indexOf(attrResId)
+        if (existing >= 0) return existing
+
+        val insertAt = map.size
+        parsed.stringPool.strings.add(insertAt, attrName)
+        updateStringIndicesAfterInsert(parsed, insertAt)
+        val extended = map.copyOf(map.size + 1)
+        extended[insertAt] = attrResId
+        parsed.resourceMap = extended
+        AppLogger.d(TAG, "Added $attrName to string pool and resource map at index $insertAt")
+        return insertAt
+    }
+
+    /**
+     * Register the app as an "open with" handler for text / config / code files
+     * (`WebViewConfig.openWithEnabled`).
+     *
+     * Two filters are appended before `ShellActivity`'s closing `</activity>`:
+     *
+     * ```xml
+     * <!-- mime-based: catches senders that label the file type -->
+     * <intent-filter>
+     *   <action android:name="android.intent.action.VIEW" />
+     *   <category android:name="android.intent.category.DEFAULT" />
+     *   <data android:mimeType="…" /> (one per ShareReceiveContract.OPEN_WITH_MIME_TYPES)
+     * </intent-filter>
+     *
+     * <!-- extension-based: catches senders declaring octet-stream or nothing -->
+     * <intent-filter>
+     *   <action android:name="android.intent.action.VIEW" />
+     *   <category android:name="android.intent.category.DEFAULT" />
+     *   <data android:scheme="file" android:host="*" android:pathPattern=".*\\.txt" /> …
+     * </intent-filter>
+     * ```
+     *
+     * The two MUST stay separate filters: data attributes across a filter form an AND
+     * across dimensions, so declaring mimeTypes and pathPatterns together would mean "files
+     * whose mime matches AND whose path matches" — the octet-stream case would never fire.
+     *
+     * `CATEGORY_BROWSABLE` is deliberately absent — a file association must not be
+     * reachable from a browser link.
+     */
+    private fun addOpenWithIntentFilters(parsed: ParsedAxml) {
+        if (parsed.resourceMap == null) {
+            AppLogger.e(TAG, "No resource map found, cannot add open-with intent-filters")
+            return
+        }
+        if (findActivityEndIndex(parsed, "com.webtoapp.ui.shell.ShellActivity") < 0) {
+            AppLogger.e(TAG, "Cannot find ShellActivity </activity> element for open-with")
+            return
+        }
+
+        // Resource-map slots for every attribute we emit. scheme/host may already exist
+        // (deep link filter ran first); mimeType/pathPattern usually do not.
+        val mimeAttrIndex = ensureAttrIndex(parsed, ATTR_MIME_TYPE, "mimeType")
+        val schemeAttrIndex = ensureAttrIndex(parsed, ATTR_SCHEME, "scheme")
+        val hostAttrIndex = ensureAttrIndex(parsed, ATTR_HOST, "host")
+        val pathPatternAttrIndex = ensureAttrIndex(parsed, ATTR_PATH_PATTERN, "pathPattern")
+        val nameAttrIndex = parsed.resourceMap!!.indexOf(ATTR_NAME)
+        if (listOf(mimeAttrIndex, schemeAttrIndex, hostAttrIndex, pathPatternAttrIndex, nameAttrIndex).any { it < 0 }) {
+            AppLogger.e(TAG, "Missing resource-map slot for open-with attributes, skipping")
+            return
+        }
+
+        val pool = parsed.stringPool
+        val androidNsIndex = getOrAddString(pool, "http://schemas.android.com/apk/res/android")
+        val intentFilterNameIndex = getOrAddString(pool, "intent-filter")
+        val actionNameIndex = getOrAddString(pool, "action")
+        val categoryNameIndex = getOrAddString(pool, "category")
+        val dataNameIndex = getOrAddString(pool, "data")
+        val viewActionIndex = getOrAddString(pool, "android.intent.action.VIEW")
+        val defaultCategoryIndex = getOrAddString(pool, "android.intent.category.DEFAULT")
+        val fileSchemeIndex = getOrAddString(pool, "file")
+        val contentSchemeIndex = getOrAddString(pool, "content")
+        val wildcardHostIndex = getOrAddString(pool, "*")
+
+        fun MutableList<Chunk>.addFilterHead() {
+            add(buildSimpleStartElement(androidNsIndex, intentFilterNameIndex, 0))
+            add(buildActionOrCategoryElement(androidNsIndex, actionNameIndex, nameAttrIndex, viewActionIndex))
+            add(buildEndElement(androidNsIndex, actionNameIndex))
+            add(buildActionOrCategoryElement(androidNsIndex, categoryNameIndex, nameAttrIndex, defaultCategoryIndex))
+            add(buildEndElement(androidNsIndex, categoryNameIndex))
+        }
+
+        val newChunks = mutableListOf<Chunk>()
+
+        // Filter 1 — mime types.
+        newChunks.addFilterHead()
+        for (mimeType in com.webtoapp.core.share.ShareReceiveContract.OPEN_WITH_MIME_TYPES) {
+            val mimeValueIndex = getOrAddString(pool, mimeType)
+            newChunks.add(buildSingleAttrDataElement(androidNsIndex, dataNameIndex, mimeAttrIndex, mimeValueIndex))
+            newChunks.add(buildEndElement(androidNsIndex, dataNameIndex))
+        }
+        newChunks.add(buildEndElement(androidNsIndex, intentFilterNameIndex))
+
+        // Filter 2 — extension path patterns under both file and content schemes.
+        newChunks.addFilterHead()
+        for (schemeValueIndex in listOf(fileSchemeIndex, contentSchemeIndex)) {
+            for (ext in com.webtoapp.core.share.ShareReceiveContract.OPEN_WITH_EXTENSIONS) {
+                val patternValueIndex = getOrAddString(pool, ".*\\.$ext")
+                newChunks.add(
+                    buildMultiAttrDataElement(
+                        androidNsIndex,
+                        dataNameIndex,
+                        listOf(
+                            schemeAttrIndex to schemeValueIndex,
+                            hostAttrIndex to wildcardHostIndex,
+                            pathPatternAttrIndex to patternValueIndex
+                        )
+                    )
+                )
+                newChunks.add(buildEndElement(androidNsIndex, dataNameIndex))
+            }
+        }
+        newChunks.add(buildEndElement(androidNsIndex, intentFilterNameIndex))
+
+        val insertIndex = findActivityEndIndex(parsed, "com.webtoapp.ui.shell.ShellActivity")
+        if (insertIndex >= 0) {
+            parsed.chunks.addAll(insertIndex, newChunks)
+            AppLogger.d(TAG, "Inserted ${newChunks.size} chunks for open-with intent-filters")
+        }
+    }
+
     private fun rewireLauncherToShellActivity(parsed: ParsedAxml, addDirectLauncherToShell: Boolean) {
         val resourceMap = parsed.resourceMap ?: run {
             AppLogger.e(TAG, "No resource map found, cannot rewire launcher")
@@ -868,6 +1000,50 @@ class AxmlRebuilder {
         return Chunk(CHUNK_START_ELEMENT, 0, chunkSize, buffer.array())
     }
 
+    /**
+     * `<data>` carrying an arbitrary list of string-typed attributes — used by the
+     * extension-based open-with filter, where one element combines `scheme`, `host`
+     * and `pathPattern`.
+     */
+    private fun buildMultiAttrDataElement(
+        androidNsIndex: Int,
+        elementNameIndex: Int,
+        attrs: List<Pair<Int, Int>>
+    ): Chunk {
+        val attrCount = attrs.size
+        val attrSize = 20
+        val headerSize = 16
+        val chunkSize = 36 + attrCount * attrSize
+
+        val buffer = ByteBuffer.allocate(chunkSize).order(ByteOrder.LITTLE_ENDIAN)
+
+        buffer.putShort(CHUNK_START_ELEMENT.toShort())
+        buffer.putShort(headerSize.toShort())
+        buffer.putInt(chunkSize)
+        buffer.putInt(0)
+        buffer.putInt(-1)
+        buffer.putInt(-1)
+        buffer.putInt(elementNameIndex)
+        buffer.putShort(20)
+        buffer.putShort(attrSize.toShort())
+        buffer.putShort(attrCount.toShort())
+        buffer.putShort(0)
+        buffer.putShort(0)
+        buffer.putShort(0)
+
+        for ((attrNameIndex, attrValueIndex) in attrs) {
+            buffer.putInt(androidNsIndex)
+            buffer.putInt(attrNameIndex)
+            buffer.putInt(attrValueIndex)
+            buffer.putShort(8)
+            buffer.put(0)
+            buffer.put(0x03)
+            buffer.putInt(attrValueIndex)
+        }
+
+        return Chunk(CHUNK_START_ELEMENT, 0, chunkSize, buffer.array())
+    }
+
     private fun getOrAddString(pool: StringPool, str: String): Int {
         val index = pool.strings.indexOf(str)
         if (index >= 0) return index
@@ -1090,7 +1266,13 @@ class AxmlRebuilder {
          * Declared last, after [targetSdk], purely so the existing callers keep compiling —
          * it is conceptually a sibling of `deepLinkHosts` / `deepLinkSchemes`.
          */
-        shareReceiveMimeTypes: List<String> = emptyList()
+        shareReceiveMimeTypes: List<String> = emptyList(),
+        /**
+         * `WebViewConfig.openWithEnabled` — registers `ACTION_VIEW` intent-filters for
+         * text/config/code files so the exported app appears in the system's "open with"
+         * sheet. The mime/extension sets are `ShareReceiveContract.OPEN_WITH_*` constants.
+         */
+        openWithEnabled: Boolean = false
     ): ByteArray {
         val parsed = parseAxml(axmlData)
             ?: throw IllegalStateException("Failed to parse AndroidManifest.xml (full modification)")
@@ -1127,6 +1309,11 @@ class AxmlRebuilder {
             if (shareReceiveMimeTypes.isNotEmpty()) {
                 addShareReceiveIntentFilter(parsed, shareReceiveMimeTypes)
                 AppLogger.d(TAG, "Added share-receive intent-filter for mime types: $shareReceiveMimeTypes")
+            }
+
+            if (openWithEnabled) {
+                addOpenWithIntentFilters(parsed)
+                AppLogger.d(TAG, "Added open-with intent-filters")
             }
 
             val result = rebuildAxml(parsed)
