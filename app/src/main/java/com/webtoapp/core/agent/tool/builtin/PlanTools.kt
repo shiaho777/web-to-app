@@ -27,7 +27,7 @@ class EnterPlanModeTool(private val planManager: PlanManager) : Tool {
         return when (val r = planManager.enter()) {
             is PlanManager.EnterResult.Entered -> {
                 // Publish the path so PermissionChecker.checkPlan (which compares against
-                // ctx.activePlanFile) allows writes to the plan file for THIS turn.
+                // ctx.effectivePlanFile()) allows writes to the plan file for THIS turn.
                 ctx.setActivePlanFile(r.planPath)
                 ToolResult.ok("Entered plan mode. Plan file: ${r.planPath}\nWrite the plan there with Write/Edit, then call ExitPlanMode.")
             }
