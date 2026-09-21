@@ -62,6 +62,7 @@ class WebViewManager(
     private val printBridgeScriptHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
     private val geolocationShimHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
     private val shareInboxScriptHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
+    private val cosmeticFilterScriptHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
 
     companion object {
 
@@ -713,6 +714,148 @@ class WebViewManager(
 
                 setTimeout(function() { observer.disconnect(); }, 30000);
             })();
+        """
+
+        /**
+         * JavascriptInterface name the document-start cosmetic script uses to pull
+         * the per-host payload (issue #998).
+         */
+        private const val COSMETIC_BRIDGE_NAME = "WtaCosmeticBridge"
+
+        /**
+         * Shared cosmetic apply body, invoked as `(COSMETIC_APPLY_JS)(payload)`
+         * where payload is `{"css":…,"batches":[…],"proc":[…]}` from
+         * AdBlocker.getCosmeticPayloadJson. Used verbatim by both the document-start
+         * script (payload via JSON.parse of the bridge response) and the
+         * onPageFinished fallback (payload embedded as a literal), so both paths
+         * stay behaviour-identical and idempotent through the
+         * __wta_cosmetic_observer__ / style[data-wta] guards.
+         */
+        private const val COSMETIC_APPLY_JS = """
+        (function(p) {
+            'use strict';
+            if (!p) return;
+            if (window.__wta_cosmetic_observer__) return;
+            window.__wta_cosmetic_observer__ = true;
+            window.__wta_cosmetic_filters__ = true;
+
+            var css = p.css || '';
+            var batches = p.batches || [];
+            var procRules = p.proc || [];
+
+            if (css && !document.querySelector('style[data-wta="cosmetic"]')) {
+                try {
+                    var style = document.createElement('style');
+                    style.setAttribute('type', 'text/css');
+                    style.setAttribute('data-wta', 'cosmetic');
+                    style.textContent = css;
+                    (document.head || document.documentElement).appendChild(style);
+                } catch(e) {}
+            }
+
+            var hideMatches = function() {
+                for (var b = 0; b < batches.length; b++) {
+                    try {
+                        var els = document.querySelectorAll(batches[b]);
+                        for (var i = 0; i < els.length; i++) {
+                            if (els[i].style.display !== 'none') {
+                                els[i].style.setProperty('display', 'none', 'important');
+                                els[i].style.setProperty('visibility', 'hidden', 'important');
+                            }
+                        }
+                    } catch(e) { /* invalid selector list — skip this batch */ }
+                }
+            };
+
+            // Procedural rules: base selector via qSA, then the pseudo chain
+            // (t = text match, u = upward walk, r = remove) evaluated here in page JS.
+            var applyProc = function() {
+                for (var r = 0; r < procRules.length; r++) {
+                    var rule = procRules[r];
+                    try {
+                        var els = document.querySelectorAll(rule.b);
+                        for (var i = 0; i < els.length; i++) {
+                            var el = els[i];
+                            var ok = true;
+                            for (var o = 0; o < rule.o.length && ok; o++) {
+                                var op = rule.o[o];
+                                var kind = op.charAt(0);
+                                var arg = op.substring(2);
+                                if (kind === 't') {
+                                    var txt = el.textContent || '';
+                                    if (arg.length > 2 && arg.charAt(0) === '/' && arg.charAt(arg.length - 1) === '/') {
+                                        ok = new RegExp(arg.substring(1, arg.length - 1), 'i').test(txt);
+                                    } else {
+                                        ok = txt.toLowerCase().indexOf(arg.toLowerCase()) >= 0;
+                                    }
+                                } else if (kind === 'u') {
+                                    var steps = parseInt(arg, 10);
+                                    if (!isNaN(steps)) {
+                                        while (steps-- > 0 && el) el = el.parentElement;
+                                    } else if (el.closest) {
+                                        el = el.closest(arg);
+                                    } else {
+                                        el = null;
+                                    }
+                                    ok = !!el;
+                                }
+                            }
+                            if (!ok || !el) continue;
+                            if (rule.a === 1) {
+                                el.remove();
+                            } else if (el.style && el.style.display !== 'none') {
+                                el.style.setProperty('display', 'none', 'important');
+                                el.style.setProperty('visibility', 'hidden', 'important');
+                            }
+                        }
+                    } catch(e) { /* invalid base selector — skip rule */ }
+                }
+            };
+
+            if (batches.length > 0 || procRules.length > 0) {
+                var pending = false;
+                var observer = new MutationObserver(function() {
+                    if (pending) return;
+                    pending = true;
+                    (window.requestIdleCallback || setTimeout)(function() {
+                        pending = false;
+                        hideMatches();
+                        applyProc();
+                    }, { timeout: 100 });
+                });
+
+                // At document_start <html> may not exist yet; observing the
+                // document node still catches every element the parser adds.
+                var observerTarget = document.documentElement || document;
+                if (observerTarget instanceof Node) {
+                    observer.observe(observerTarget, {
+                        childList: true, subtree: true
+                    });
+                }
+
+                setTimeout(function() { observer.disconnect(); }, 30000);
+                applyProc();
+            }
+        })
+        """
+
+        /**
+         * Document-start bootstrap: the payload is host-specific, so it is pulled
+         * synchronously through the JavascriptInterface instead of being baked in
+         * (#998). Runs before page scripts and before any paint, which is what
+         * removes the cosmetic-filter flash.
+         */
+        private const val COSMETIC_DOCUMENT_START_JS = """
+        (function() {
+            'use strict';
+            try {
+                var bridge = window.$COSMETIC_BRIDGE_NAME;
+                if (!bridge || typeof bridge.getCosmeticPayload !== 'function') return;
+                var raw = bridge.getCosmeticPayload(location.href);
+                if (!raw) return;
+                ($COSMETIC_APPLY_JS)(JSON.parse(raw));
+            } catch(e) {}
+        })();
         """
 
         private val PAYMENT_SCHEMES = setOf(
@@ -1694,6 +1837,12 @@ class WebViewManager(
                 installPrintBridgeDocumentStart(this)
             }
 
+            // Cosmetic filtering at document start so the hide stylesheet and the
+            // mutation observer are in place before the page can paint (#998).
+            if (adBlocker.isEnabled() && config.javaScriptEnabled) {
+                installCosmeticFilterDocumentStart(this)
+            }
+
             if (config.geolocationEnabled) {
                 geoBridge?.destroy()
                 val bridge = GeolocationBridge(
@@ -2150,6 +2299,15 @@ class WebViewManager(
                 diagBlockedCount = 0
                 diagErrorCount = 0
 
+                // Warm the memoized per-host cosmetic payload while the navigation
+                // is in flight so the document-start bridge lookup does not pay the
+                // rule-scan cost inside the page parser (#998).
+                if (url != null && adBlocker.isEnabled()) {
+                    extractHostFromUrl(url)?.let { host ->
+                        proxyScope.launch(Dispatchers.IO) { adBlocker.getCosmeticPayloadJson(host) }
+                    }
+                }
+
                 if (view != null) {
 
                 }
@@ -2364,126 +2522,12 @@ class WebViewManager(
                         if (view.url == url) {
                             val pageHost = extractHostFromUrl(url) ?: ""
                             if (pageHost.isNotEmpty()) {
-                                val cosmeticCss = adBlocker.getCosmeticFilterCss(pageHost)
-                                if (cosmeticCss.isNotEmpty()) {
-                                    val escapedCss = cosmeticCss
-                                        .replace("\\", "\\\\")
-                                        .replace("'", "\\'")
-                                        .replace("\n", "\\n")
-                                        .replace("\r", "")
-                                    // Hide-selector batches mirror the CSS hide rules one
-                                    // entry per rule; querying per batch keeps one invalid
-                                    // selector list from skipping the remaining batches.
-                                    val hideBatchesJs = adBlocker.getCosmeticHideBatches(pageHost)
-                                        .joinToString(",") { batch ->
-                                            "'" + batch
-                                                .replace("\\", "\\\\")
-                                                .replace("'", "\\'")
-                                                .replace("\n", "\\n")
-                                                .replace("\r", "") + "'"
-                                        }
-                                    // Already a JS literal (JSON-escaped in AdBlocker).
-                                    val procJs = adBlocker.getCosmeticProceduralRulesJs(pageHost)
-                                    view.evaluateJavascript("""
-                                        (function() {
-                                            'use strict';
-                                            if (window.__wta_cosmetic_observer__) return;
-                                            window.__wta_cosmetic_observer__ = true;
-                                            if (!document.querySelector('style[data-wta="cosmetic"]')) {
-                                                var style = document.createElement('style');
-                                                style.setAttribute('type', 'text/css');
-                                                style.setAttribute('data-wta', 'cosmetic');
-                                                style.textContent = '$escapedCss';
-                                                (document.head || document.documentElement).appendChild(style);
-                                            }
-
-                                            var batches = [$hideBatchesJs];
-                                            var procRules = $procJs;
-
-                                            var hideMatches = function() {
-                                                for (var b = 0; b < batches.length; b++) {
-                                                    try {
-                                                        var els = document.querySelectorAll(batches[b]);
-                                                        for (var i = 0; i < els.length; i++) {
-                                                            if (els[i].style.display !== 'none') {
-                                                                els[i].style.setProperty('display', 'none', 'important');
-                                                                els[i].style.setProperty('visibility', 'hidden', 'important');
-                                                            }
-                                                        }
-                                                    } catch(e) { /* invalid selector list — skip this batch */ }
-                                                }
-                                            };
-
-                                            // Procedural rules: base selector via qSA, then the
-                                            // pseudo chain (t = text match, u = upward walk,
-                                            // r = remove) evaluated here in page JS.
-                                            var applyProc = function() {
-                                                for (var r = 0; r < procRules.length; r++) {
-                                                    var rule = procRules[r];
-                                                    try {
-                                                        var els = document.querySelectorAll(rule.b);
-                                                        for (var i = 0; i < els.length; i++) {
-                                                            var el = els[i];
-                                                            var ok = true;
-                                                            for (var o = 0; o < rule.o.length && ok; o++) {
-                                                                var op = rule.o[o];
-                                                                var kind = op.charAt(0);
-                                                                var arg = op.substring(2);
-                                                                if (kind === 't') {
-                                                                    var txt = el.textContent || '';
-                                                                    if (arg.length > 2 && arg.charAt(0) === '/' && arg.charAt(arg.length - 1) === '/') {
-                                                                        ok = new RegExp(arg.substring(1, arg.length - 1), 'i').test(txt);
-                                                                    } else {
-                                                                        ok = txt.toLowerCase().indexOf(arg.toLowerCase()) >= 0;
-                                                                    }
-                                                                } else if (kind === 'u') {
-                                                                    var steps = parseInt(arg, 10);
-                                                                    if (!isNaN(steps)) {
-                                                                        while (steps-- > 0 && el) el = el.parentElement;
-                                                                    } else if (el.closest) {
-                                                                        el = el.closest(arg);
-                                                                    } else {
-                                                                        el = null;
-                                                                    }
-                                                                    ok = !!el;
-                                                                }
-                                                            }
-                                                            if (!ok || !el) continue;
-                                                            if (rule.a === 1) {
-                                                                el.remove();
-                                                            } else if (el.style && el.style.display !== 'none') {
-                                                                el.style.setProperty('display', 'none', 'important');
-                                                                el.style.setProperty('visibility', 'hidden', 'important');
-                                                            }
-                                                        }
-                                                    } catch(e) { /* invalid base selector — skip rule */ }
-                                                }
-                                            };
-
-                                            if (batches.length > 0 || procRules.length > 0) {
-                                                var pending = false;
-                                                var observer = new MutationObserver(function() {
-                                                    if (pending) return;
-                                                    pending = true;
-                                                    (window.requestIdleCallback || setTimeout)(function() {
-                                                        pending = false;
-                                                        hideMatches();
-                                                        applyProc();
-                                                    }, { timeout: 100 });
-                                                });
-
-                                                var observerTarget = document.documentElement || document.body;
-                                                if (observerTarget instanceof Node) {
-                                                    observer.observe(observerTarget, {
-                                                        childList: true, subtree: true
-                                                    });
-                                                }
-
-                                                setTimeout(function() { observer.disconnect(); }, 30000);
-                                                applyProc();
-                                            }
-                                        })();
-                                    """.trimIndent(), null)
+                                // Fallback for WebViews without document-start support
+                                // (#998). Where the document-start script already ran,
+                                // the __wta_cosmetic_observer__ guard makes this a no-op.
+                                val payload = adBlocker.getCosmeticPayloadJson(pageHost)
+                                if (payload.isNotEmpty()) {
+                                    view.evaluateJavascript("$COSMETIC_APPLY_JS($payload)", null)
                                     AppLogger.d("WebViewManager", "DOCUMENT_END cosmetic observer injected for: $pageHost")
                                 }
                             }
@@ -3950,6 +3994,7 @@ class WebViewManager(
                 removeJavascriptInterface(GeolocationBridge.JS_INTERFACE_NAME)
                 removeJavascriptInterface(com.webtoapp.core.extension.GreasemonkeyBridge.JS_INTERFACE_NAME)
                 removeJavascriptInterface(com.webtoapp.core.extension.ChromeExtensionRuntime.JS_BRIDGE_NAME)
+                removeJavascriptInterface(COSMETIC_BRIDGE_NAME)
 
                 (parent as? android.view.ViewGroup)?.removeView(this)
 
@@ -3989,6 +4034,10 @@ class WebViewManager(
             runCatching { handler.remove() }
         }
         geolocationShimHandlers.clear()
+        cosmeticFilterScriptHandlers.values.toList().forEach { handler ->
+            runCatching { handler.remove() }
+        }
+        cosmeticFilterScriptHandlers.clear()
         managedWebViews.keys.toList().forEach { webView ->
             destroyWebView(webView)
         }
@@ -4157,6 +4206,50 @@ class WebViewManager(
             AppLogger.i("WebViewManager", "[BlobCacheHook] Installed at document start (applies to all hosts)")
         } catch (e: Exception) {
             AppLogger.w("WebViewManager", "[BlobCacheHook] Document-start install failed, will use fallback", e)
+        }
+    }
+
+    /**
+     * Synchronous host → payload lookup for the document-start cosmetic script.
+     * The interface is reachable from every frame; local runtime pages and a
+     * disabled blocker get an empty payload, which the page-side script treats
+     * as "no work". Runs on a WebView-private thread — the payload read goes
+     * through AdBlocker's memoized, synchronized cache.
+     */
+    private inner class CosmeticFilterJsInterface {
+        @JavascriptInterface
+        fun getCosmeticPayload(pageUrl: String?): String {
+            if (!adBlocker.isEnabled()) return ""
+            if (isLocalRuntimeUrl(pageUrl)) return ""
+            val pageHost = extractHostFromUrl(pageUrl) ?: return ""
+            return adBlocker.getCosmeticPayloadJson(pageHost)
+        }
+    }
+
+    /**
+     * Installs cosmetic filtering at document start (issue #998). uBO/Brave land
+     * the hide stylesheet before the page's first paint via document_start
+     * content scripts; doing the same removes the flash the old
+     * onPageFinished+200ms injection caused. The onPageFinished path stays as the
+     * fallback for WebViews without DOCUMENT_START_SCRIPT support and is
+     * idempotent through the __wta_cosmetic_observer__ guard.
+     */
+    private fun installCosmeticFilterDocumentStart(webView: WebView) {
+        if (cosmeticFilterScriptHandlers.containsKey(webView)) return
+        if (!WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
+            AppLogger.i("WebViewManager", "[CosmeticFilter] Document-start script unsupported; will use onPageFinished fallback")
+            return
+        }
+        try {
+            webView.addJavascriptInterface(CosmeticFilterJsInterface(), COSMETIC_BRIDGE_NAME)
+            cosmeticFilterScriptHandlers[webView] = WebViewCompat.addDocumentStartJavaScript(
+                webView,
+                COSMETIC_DOCUMENT_START_JS,
+                setOf("*")
+            )
+            AppLogger.i("WebViewManager", "[CosmeticFilter] Installed at document start (applies to all hosts)")
+        } catch (e: Exception) {
+            AppLogger.w("WebViewManager", "[CosmeticFilter] Document-start install failed, will use onPageFinished fallback", e)
         }
     }
 
@@ -5338,11 +5431,15 @@ class WebViewManager(
                                 if (window.__wta_cosmetic_filters__) return;
                                 window.__wta_cosmetic_filters__ = true;
                                 try {
-                                    var style = document.createElement('style');
-                                    style.setAttribute('type', 'text/css');
-                                    style.setAttribute('data-wta', 'cosmetic');
-                                    style.textContent = '$escapedCss';
-                                    (document.head || document.documentElement).appendChild(style);
+                                    // The document-start script may already have
+                                    // installed the stylesheet for this page (#998).
+                                    if (!document.querySelector('style[data-wta="cosmetic"]')) {
+                                        var style = document.createElement('style');
+                                        style.setAttribute('type', 'text/css');
+                                        style.setAttribute('data-wta', 'cosmetic');
+                                        style.textContent = '$escapedCss';
+                                        (document.head || document.documentElement).appendChild(style);
+                                    }
                                 } catch(e) { console.warn('[WTA] Cosmetic filter injection error:', e); }
                             })();
                         """.trimIndent())

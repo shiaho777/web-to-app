@@ -824,6 +824,7 @@ class AdBlocker {
 
     private val scriptletRules = mutableListOf<Pair<Set<String>, String>>()
 
+    @Volatile
     private var enabled = false
 
     @Volatile
@@ -989,6 +990,29 @@ class AdBlocker {
     fun getCosmeticFilterCss(pageHost: String): String {
         if (!enabled) return ""
         return cosmeticEntry(pageHost).css
+    }
+
+    /**
+     * One-shot JSON payload consumed by the document-start cosmetic script (#998):
+     * `{"css":"…","batches":["…"],"proc":[…]}`. Empty string when the blocker is
+     * off or nothing applies to [pageHost] — the page-side script treats that as
+     * "no work". Rides on the memoized [cosmeticEntry], so a navigation costs one
+     * cache read instead of three separate rule scans.
+     */
+    fun getCosmeticPayloadJson(pageHost: String): String {
+        if (!enabled) return ""
+        val entry = cosmeticEntry(pageHost)
+        val proc = entry.proceduralJs.ifEmpty { "[]" }
+        if (entry.css.isEmpty() && entry.hideBatches.isEmpty() && proc == "[]") return ""
+        return buildString {
+            append("{\"css\":").append(jsonString(entry.css))
+            append(",\"batches\":[")
+            entry.hideBatches.forEachIndexed { index, batch ->
+                if (index > 0) append(',')
+                append(jsonString(batch))
+            }
+            append("],\"proc\":").append(proc).append('}')
+        }
     }
 
     private fun cosmeticEntry(pageHost: String): CosmeticEntry {
