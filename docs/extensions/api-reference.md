@@ -13,6 +13,7 @@ A consolidated reference for the plugin APIs. Status legend:
 | `hcj.config.get` / `set` / `remove` / `all` | ✅ | Persistent KV, gated by `STORAGE` permission |
 | `hcj.fetch` | ✅ | Cross-origin via OkHttp, gated by `FETCH`; returns a Promise |
 | `hcj.notify` | ✅ | Android notification, gated by `NOTIFY` |
+| `hcj.toast` | ✅ | In-page floating toast — use for action feedback; `hcj.notify` is for rare real notifications |
 | `hcj.badge` | ✅ | Toolbar badge, gated by `BADGE` |
 | `hcj.addStyle` | ✅ | Injects page CSS as `<style id="hcj-css-<id>">`, idempotent per plugin per document |
 | `hcj.panel.open` / `close` / `send` / `onMessage` | ✅ | Hosted in the user-chosen panel surface |

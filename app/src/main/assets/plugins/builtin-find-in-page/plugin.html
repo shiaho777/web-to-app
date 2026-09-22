@@ -26,9 +26,8 @@
 (function() {
     'use strict';
 
-    function toast(msg) { hcj.notify((hcj.manifest && hcj.manifest.name) || 'plugin', String(msg)); }
-    function pushPanel() { hcj.panel.send({ type: 'panel', html: getPanelHtml() }); }
-    function pushHtml(html) { hcj.panel.send({ type: 'panel', html: html }); }
+    // Feedback goes to the page toast AND the panel toast — whichever is visible.
+    function toast(m) { hcj.toast(m); hcj.panel.send({ type: 'toast', msg: String(m) }); }
 
 
     const LANG = (hcj.lang || 'zh').toLowerCase().startsWith('ar') ? 'ar' :
@@ -60,12 +59,26 @@
         refreshPanel();
     }
 
-    function callNative(name) {
-        if (typeof NativeBridge === 'undefined' || typeof NativeBridge[name] !== 'function') return null;
+    var nativeUnavailable = false;
+    var canWindowFind = (typeof window.find === 'function');
+
+    // Returns a parsed state object, or null when the native path is absent
+    // or reports supported:false (that JSON string is truthy — must check
+    // the flag, not the return value).
+    function callNative(name, forward) {
+        if (nativeUnavailable) return null;
+        if (typeof NativeBridge === 'undefined' || typeof NativeBridge[name] !== 'function') {
+            nativeUnavailable = true;
+            return null;
+        }
         try {
-            if (name === 'findInPage') return NativeBridge.findInPage(currentQuery);
-            if (name === 'findNextInPage') return NativeBridge.findNextInPage(arguments[1] !== false);
-            if (name === 'clearFindInPage') return NativeBridge.clearFindInPage();
+            var raw;
+            if (name === 'findInPage') raw = NativeBridge.findInPage(currentQuery);
+            else if (name === 'findNextInPage') raw = NativeBridge.findNextInPage(forward !== false);
+            else if (name === 'clearFindInPage') raw = NativeBridge.clearFindInPage();
+            var st = parseState(raw);
+            if (st && st.supported === false) { nativeUnavailable = true; return null; }
+            return st;
         } catch(e) {
             console.warn('[Find in page] Native call failed:', e);
         }
@@ -73,11 +86,9 @@
     }
 
     function fallbackFind(forward) {
-        if (!currentQuery) return false;
+        if (!currentQuery || !canWindowFind) return false;
         try {
-            if (typeof window.find === 'function') {
-                return window.find(currentQuery, false, forward === false, true, false, false, false);
-            }
+            return window.find(currentQuery, false, forward === false, true, false, false, false);
         } catch(e) {
             console.warn('[Find in page] window.find fallback failed:', e);
         }
@@ -98,12 +109,14 @@
                 if (currentState.doneCounting && currentState.numberOfMatches === 0) {
                     toast(T.noMatch);
                 }
-            }, 500);
+            }, 600);
             return;
         }
 
-        currentState = { supported: false, activeMatchOrdinal: -1, numberOfMatches: fallbackFind(true) ? 1 : 0, doneCounting: true, displayIndex: 0 };
-        toast(currentState.numberOfMatches ? T.nativeUnavailable : T.noMatch);
+        const found = fallbackFind(true);
+        currentState = { supported: false, activeMatchOrdinal: -1, numberOfMatches: found ? 1 : 0, doneCounting: true, displayIndex: found ? 1 : 0 };
+        if (!canWindowFind) toast(T.nativeUnavailable);
+        else if (!found) toast(T.noMatch);
         refreshPanel();
     }
 
@@ -122,8 +135,8 @@
 
     function clearSearch() {
         currentQuery = '';
-        const nativeState = callNative('clearFindInPage');
-        currentState = parseState(nativeState) || { supported: false, activeMatchOrdinal: -1, numberOfMatches: 0, doneCounting: true, displayIndex: 0 };
+        callNative('clearFindInPage');
+        currentState = { supported: !nativeUnavailable, activeMatchOrdinal: -1, numberOfMatches: 0, doneCounting: true, displayIndex: 0 };
         refreshPanel();
     }
 
@@ -179,20 +192,8 @@
 </div></div>
 <div id="wta-toast"></div>
 <script>
-  var root = document.getElementById('root');
   var toastEl = document.getElementById('wta-toast');
   var toastTimer = null;
-
-  function wire() {
-    root.querySelectorAll('[data-wta-action]').forEach(function (el) {
-      if (el.__wired) return;
-      el.__wired = true;
-      el.addEventListener('click', function (ev) {
-        ev.preventDefault();
-        hcjPanel.send({ cmd: 'act', action: el.getAttribute('data-wta-action'), arg: el.getAttribute('data-wta-arg') || '' });
-      });
-    });
-  }
 
   function showToast(m) {
     toastEl.textContent = m;
@@ -203,9 +204,7 @@
 
   hcjPanel.onMessage(function (m) {
     if (!m) return;
-    if (m.type === 'panel' && typeof m.html === 'string') { root.innerHTML = m.html; wire(); }
-    else if (m.type === 'toast') showToast(m.msg || '');
-    else if (m.type === 'state' && typeof render === 'function') render(m);
+    if (m.type === 'toast') showToast(m.msg || '');
     else if (m.type === 'findstate' && typeof renderFind === 'function') renderFind(m);
   });
 
@@ -224,7 +223,6 @@
   document.getElementById('wta-find-clear').addEventListener('click', function () { input.value = ''; hcjPanel.send({ cmd: 'act', action: 'findClear' }); });
   input.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); hcjPanel.send({ cmd: 'act', action: 'findSearch', arg: input.value }); } });
   setTimeout(function () { input.focus(); }, 80);
-  wire();
   hcjPanel.send({ cmd: 'refresh' });
 </script>
 </body>

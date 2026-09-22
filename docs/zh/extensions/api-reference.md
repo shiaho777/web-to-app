@@ -13,6 +13,7 @@
 | `hcj.config.get` / `set` / `remove` / `all` | ✅ | 持久化 KV，需 `STORAGE` 权限 |
 | `hcj.fetch` | ✅ | 经 OkHttp 跨域，需 `FETCH`；返回 Promise |
 | `hcj.notify` | ✅ | 系统通知，需 `NOTIFY` |
+| `hcj.toast` | ✅ | 页面内浮层提示——操作反馈用它，`hcj.notify` 留给真正的系统通知 |
 | `hcj.badge` | ✅ | 工具栏角标，需 `BADGE` |
 | `hcj.addStyle` | ✅ | 注入页面 CSS 为 `<style id="hcj-css-<id>">`，按插件按文档幂等 |
 | `hcj.panel.open` / `close` / `send` / `onMessage` | ✅ | 由用户选定的面板宿主承载 |

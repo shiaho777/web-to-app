@@ -81,6 +81,7 @@ document.body.appendChild(banner)
 | `hcj.config.get/set/remove/all` | Persistent KV — requires `STORAGE` |
 | `hcj.fetch(url, opts)` | Cross-origin fetch via the host — requires `FETCH`, returns a Promise |
 | `hcj.notify(title, body)` | Android notification — requires `NOTIFY` |
+| `hcj.toast(msg)` | In-page floating toast — prefer over `notify` for action feedback |
 | `hcj.badge(text, color)` | Toolbar badge — requires `BADGE` |
 | `hcj.addStyle(css)` | Inject page CSS (idempotent per document) |
 | `hcj.panel.open()` / `close()` | Open/close this plugin's panel document |

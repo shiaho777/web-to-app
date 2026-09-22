@@ -63,6 +63,22 @@ object PluginInjection {
           });
         },
         notify: function(title, body) { B.notify(pid, token, String(title), String(body || '')); },
+        toast: function(msg) {
+          var t = document.getElementById('hcj-toast-' + pid);
+          if (!t) {
+            t = document.createElement('div');
+            t.id = 'hcj-toast-' + pid;
+            t.style.cssText = 'position:fixed;left:50%;bottom:28px;transform:translateX(-50%);' +
+              'background:rgba(17,24,39,.92);color:#fff;padding:9px 18px;border-radius:20px;' +
+              'font-size:13px;line-height:1.4;z-index:2147483647;pointer-events:none;' +
+              'opacity:0;transition:opacity .2s;max-width:80%;text-align:center';
+            (document.body || document.documentElement).appendChild(t);
+          }
+          t.textContent = String(msg);
+          t.style.opacity = '1';
+          clearTimeout(t.__hcjT);
+          t.__hcjT = setTimeout(function() { t.style.opacity = '0'; }, 1600);
+        },
         addStyle: function(css) {
           var id = 'hcj-css-' + pid;
           var s = document.getElementById(id);

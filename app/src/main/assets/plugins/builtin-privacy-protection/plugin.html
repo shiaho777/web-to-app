@@ -28,43 +28,107 @@
 (function() {
     'use strict';
 
-    function toast(msg) { hcj.notify((hcj.manifest && hcj.manifest.name) || 'plugin', String(msg)); }
-    function pushPanel() { hcj.panel.send({ type: 'panel', html: getPanelHtml() }); }
-    function pushHtml(html) { hcj.panel.send({ type: 'panel', html: html }); }
+    // Feedback goes to the page toast AND the panel toast — whichever is visible.
+    function toast(m) { hcj.toast(m); hcj.panel.send({ type: 'toast', msg: String(m) }); }
 
 
     // 多语言支持
     const LANG = (hcj.lang || 'zh').toLowerCase().startsWith('ar') ? 'ar' :
                  (hcj.lang || 'zh').toLowerCase().startsWith('zh') ? 'zh' : 'en';
     const I18N = {
-        zh: { name: '隐私保护', subtitle: '保护您的隐私安全', tracking: '阻止追踪', trackingDesc: '拦截常见追踪脚本', fingerprint: '指纹保护', fingerprintDesc: '模糊设备指纹信息', cookies: '清理Cookies', cookiesDesc: '退出时清理Cookies', enabled: '已开启', disabled: '已关闭' },
-        en: { name: 'Privacy Protection', subtitle: 'Protect your privacy', tracking: 'Block Tracking', trackingDesc: 'Block common tracking scripts', fingerprint: 'Fingerprint Protection', fingerprintDesc: 'Blur device fingerprint info', cookies: 'Clear Cookies', cookiesDesc: 'Clear cookies on exit', enabled: 'Enabled', disabled: 'Disabled' },
-        ar: { name: 'حماية الخصوصية', subtitle: 'حماية خصوصيتك', tracking: 'حظر التتبع', trackingDesc: 'حظر سكريبتات التتبع', fingerprint: 'حماية البصمة', fingerprintDesc: 'تمويه بصمة الجهاز', cookies: 'مسح Cookies', cookiesDesc: 'مسح Cookies عند الخروج', enabled: 'مفعل', disabled: 'موقف' }
+        zh: { name: '隐私保护', tracking: '阻止追踪', trackingDesc: '拦截常见追踪请求', fingerprint: '指纹保护', fingerprintDesc: '模糊设备指纹信息', cookies: '清理Cookies', cookiesDesc: '退出页面时清理', enabled: '已开启', disabled: '已关闭' },
+        en: { name: 'Privacy Protection', tracking: 'Block Tracking', trackingDesc: 'Block common tracking requests', fingerprint: 'Fingerprint Protection', fingerprintDesc: 'Blur device fingerprint info', cookies: 'Clear Cookies', cookiesDesc: 'Clear cookies when leaving', enabled: 'Enabled', disabled: 'Disabled' },
+        ar: { name: 'حماية الخصوصية', tracking: 'حظر التتبع', trackingDesc: 'حظر طلبات التتبع الشائعة', fingerprint: 'حماية البصمة', fingerprintDesc: 'تمويه بصمة الجهاز', cookies: 'مسح Cookies', cookiesDesc: 'المسح عند مغادرة الصفحة', enabled: 'مفعل', disabled: 'موقف' }
     };
     const T = I18N[LANG] || I18N.en;
-    const STORAGE_KEY = 'wta_privacy';
-    let settings = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{"tracking":true,"fingerprint":true,"cookies":false}');
+    // hcj.config is plugin-global KV (persists across sites), unlike
+    // localStorage which is per-origin and resets per site.
+    let settings = hcj.config.get('privacy', { tracking: true, fingerprint: true, cookies: false });
+    if (!settings || typeof settings !== 'object') settings = { tracking: true, fingerprint: true, cookies: false };
 
-    function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(settings)); }
+    function save() { hcj.config.set('privacy', settings); }
 
-    function applyProtection() {
-        if (settings.tracking) {
-            const blocked = ['google-analytics.com', 'googletagmanager.com', 'facebook.net', 'doubleclick.net', 'hotjar.com'];
-            const origFetch = window.fetch;
-            window.fetch = function(url, opts) {
-                if (blocked.some(b => url.toString().includes(b))) { console.log('[Privacy] Blocked:', url); return Promise.reject(); }
-                return origFetch.apply(this, arguments);
-            };
-        }
-        if (settings.fingerprint) {
-            Object.defineProperty(navigator, 'hardwareConcurrency', { get: () => 4 });
-            Object.defineProperty(navigator, 'deviceMemory', { get: () => 8 });
-            Object.defineProperty(screen, 'colorDepth', { get: () => 24 });
-        }
+    const TRACKERS = [
+        'google-analytics.com', 'googletagmanager.com', 'google-analytics.',
+        'facebook.net', 'facebook.com/tr', 'connect.facebook.net',
+        'doubleclick.net', 'googlesyndication.com', 'adservice.google',
+        'hotjar.com', 'mixpanel.com', 'segment.io', 'segment.com',
+        'amplitude.com', 'clarity.ms', 'umeng', 'cnzz.com', 'hm.baidu.com'
+    ];
+    function isTracker(url) {
+        try {
+            var s = (typeof url === 'string') ? url : (url && url.url) || String(url);
+            for (var i = 0; i < TRACKERS.length; i++) if (s.indexOf(TRACKERS[i]) >= 0) return true;
+        } catch (e) {}
+        return false;
     }
 
+    // Wrap the JS-initiated network APIs once; the live `settings.tracking`
+    // flag gates each call so toggles take effect without re-wrapping.
+    // (Declarative resource loads — tracking pixels etc. — can't be cancelled
+    // from JS; this covers fetch/XHR/beacon where modern trackers live.)
+    function installTrackerHooks() {
+        if (window.__wtaPrivacyHooks) return;
+        window.__wtaPrivacyHooks = true;
+        try {
+            var origFetch = window.fetch;
+            if (origFetch) {
+                window.fetch = function(url, opts) {
+                    if (settings.tracking && isTracker(url)) return Promise.reject(new Error('blocked by privacy plugin'));
+                    return origFetch.apply(this, arguments);
+                };
+            }
+        } catch (e) {}
+        try {
+            var XO = XMLHttpRequest.prototype.open;
+            var XS = XMLHttpRequest.prototype.send;
+            XMLHttpRequest.prototype.open = function(m, u) {
+                this.__wtaBlocked = isTracker(u);
+                return XO.apply(this, arguments);
+            };
+            XMLHttpRequest.prototype.send = function() {
+                if (settings.tracking && this.__wtaBlocked) return;
+                return XS.apply(this, arguments);
+            };
+        } catch (e) {}
+        try {
+            if (navigator.sendBeacon) {
+                var origBeacon = navigator.sendBeacon.bind(navigator);
+                navigator.sendBeacon = function(url, data) {
+                    if (settings.tracking && isTracker(url)) return true;
+                    return origBeacon(url, data);
+                };
+            }
+        } catch (e) {}
+    }
+
+    function applyFingerprint() {
+        if (!settings.fingerprint) return;
+        try { Object.defineProperty(navigator, 'hardwareConcurrency', { get: function() { return 4; }, configurable: true }); } catch (e) {}
+        try { Object.defineProperty(navigator, 'deviceMemory', { get: function() { return 8; }, configurable: true }); } catch (e) {}
+        try { Object.defineProperty(screen, 'colorDepth', { get: function() { return 24; }, configurable: true }); } catch (e) {}
+    }
+
+    // Best-effort: JS can only clear JS-visible (non-HttpOnly) cookies.
+    function clearCookies() {
+        try {
+            var names = document.cookie.split(';').map(function(c) { return c.split('=')[0].trim(); }).filter(Boolean);
+            if (!names.length) return;
+            var host = location.hostname;
+            var domains = ['', host, '.' + host];
+            var parts = host.split('.');
+            for (var i = 0; i < parts.length - 1; i++) domains.push('.' + parts.slice(i).join('.'));
+            names.forEach(function(name) {
+                domains.forEach(function(d) {
+                    document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/' + (d ? ';domain=' + d : '');
+                });
+            });
+        } catch (e) {}
+    }
+    window.addEventListener('pagehide', function() { if (settings.cookies) clearCookies(); });
+
     function updatePanelUI() {
-        hcj.panel.send({ type: 'state', settings: settings, labels: { subtitle: T.subtitle, tracking: T.tracking, trackingDesc: T.trackingDesc, fingerprint: T.fingerprint, fingerprintDesc: T.fingerprintDesc, cookies: T.cookies, cookiesDesc: T.cookiesDesc } });
+        hcj.panel.send({ type: 'state', settings: settings, labels: { tracking: T.tracking, trackingDesc: T.trackingDesc, fingerprint: T.fingerprint, fingerprintDesc: T.fingerprintDesc, cookies: T.cookies, cookiesDesc: T.cookiesDesc } });
     }
 
     function privacyToggle(key) {
@@ -74,7 +138,7 @@
         updatePanelUI();
     }
 
-    
+
     hcj.panel.onMessage(function (m) {
         if (!m) return;
         if (m.cmd === 'refresh') { updatePanelUI(); return; }
@@ -82,7 +146,8 @@
     });
     hcj.on('action', function () { hcj.panel.open(); });
 
-    applyProtection();
+    installTrackerHooks();
+    applyFingerprint();
 })();
 </script>
 </head>
@@ -118,17 +183,13 @@
 
   hcjPanel.onMessage(function (m) {
     if (!m) return;
-    if (m.type === 'panel' && typeof m.html === 'string') { root.innerHTML = m.html; wire(); }
-    else if (m.type === 'toast') showToast(m.msg || '');
+    if (m.type === 'toast') showToast(m.msg || '');
     else if (m.type === 'state' && typeof render === 'function') render(m);
-    else if (m.type === 'findstate' && typeof renderFind === 'function') renderFind(m);
   });
 
   function render(m) {
     var s = m.settings || {};
     var l = m.labels || {};
-    var sub = document.getElementById('wta-privacy-subtitle');
-    if (sub && l.subtitle) sub.textContent = l.subtitle;
     ['tracking', 'fingerprint', 'cookies'].forEach(function (key) {
       var el = document.getElementById('wta-priv-' + key);
       if (el) el.setAttribute('data-state', s[key] ? 'on' : 'off');

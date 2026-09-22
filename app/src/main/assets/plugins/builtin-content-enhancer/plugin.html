@@ -21,45 +21,67 @@
 (function() {
     'use strict';
 
-    function toast(msg) { hcj.notify((hcj.manifest && hcj.manifest.name) || 'plugin', String(msg)); }
-    function pushPanel() { hcj.panel.send({ type: 'panel', html: getPanelHtml() }); }
-    function pushHtml(html) { hcj.panel.send({ type: 'panel', html: html }); }
-
-
-    // 多语言支持
     const LANG = (hcj.lang || 'zh').toLowerCase().startsWith('ar') ? 'ar' :
                  (hcj.lang || 'zh').toLowerCase().startsWith('zh') ? 'zh' : 'en';
     const I18N = {
-        zh: { name: '内容增强', enableCopy: '解除复制限制', copyText: '复制页面文本', copyHtml: '复制页面HTML', toTop: '回到顶部', toBottom: '滚动到底部', copyEnabled: '已解除复制限制', textCopied: '页面文本已复制', htmlCopied: '页面HTML已复制', atTop: '已回到顶部', atBottom: '已到达底部' },
-        en: { name: 'Content Enhance', enableCopy: 'Enable Copy', copyText: 'Copy Page Text', copyHtml: 'Copy Page HTML', toTop: 'To Top', toBottom: 'To Bottom', copyEnabled: 'Copy restriction removed', textCopied: 'Page text copied', htmlCopied: 'Page HTML copied', atTop: 'At top', atBottom: 'At bottom' },
-        ar: { name: 'تحسين المحتوى', enableCopy: 'تفعيل النسخ', copyText: 'نسخ نص الصفحة', copyHtml: 'نسخ HTML', toTop: 'إلى الأعلى', toBottom: 'إلى الأسفل', copyEnabled: 'تم إزالة قيود النسخ', textCopied: 'تم نسخ النص', htmlCopied: 'تم نسخ HTML', atTop: 'في الأعلى', atBottom: 'في الأسفل' }
+        zh: { name: '内容增强', enableCopy: '解除复制限制', copyText: '复制页面文本', copyHtml: '复制页面HTML', toTop: '回到顶部', toBottom: '滚动到底部', copyEnabled: '已解除复制限制', textCopied: '页面文本已复制', htmlCopied: '页面HTML已复制', copyFailed: '复制失败', atTop: '已回到顶部', atBottom: '已到达底部' },
+        en: { name: 'Content Enhance', enableCopy: 'Enable Copy', copyText: 'Copy Page Text', copyHtml: 'Copy Page HTML', toTop: 'To Top', toBottom: 'To Bottom', copyEnabled: 'Copy restriction removed', textCopied: 'Page text copied', htmlCopied: 'Page HTML copied', copyFailed: 'Copy failed', atTop: 'At top', atBottom: 'At bottom' },
+        ar: { name: 'تحسين المحتوى', enableCopy: 'تفعيل النسخ', copyText: 'نسخ نص الصفحة', copyHtml: 'نسخ HTML', toTop: 'إلى الأعلى', toBottom: 'إلى الأسفل', copyEnabled: 'تم إزالة قيود النسخ', textCopied: 'تم نسخ النص', htmlCopied: 'تم نسخ HTML', copyFailed: 'فشل النسخ', atTop: 'في الأعلى', atBottom: 'في الأسفل' }
     };
     const T = I18N[LANG] || I18N.en;
 
+    // Feedback goes to the page toast AND the panel toast — whichever is visible.
+    function toast(m) { hcj.toast(m); hcj.panel.send({ type: 'toast', msg: String(m) }); }
+
+    var copyEnabledDone = false;
     function enableCopy() {
-        document.body.style.userSelect = 'auto';
-        document.body.style.webkitUserSelect = 'auto';
-        ['copy', 'cut', 'paste', 'selectstart', 'contextmenu'].forEach(e => {
-            document.addEventListener(e, ev => ev.stopPropagation(), true);
+        if (copyEnabledDone) { toast(T.copyEnabled); return; }
+        copyEnabledDone = true;
+        if (document.body) {
+            document.body.style.userSelect = 'auto';
+            document.body.style.webkitUserSelect = 'auto';
+        }
+        ['copy', 'cut', 'paste', 'selectstart', 'contextmenu'].forEach(function(e) {
+            document.addEventListener(e, function(ev) { ev.stopPropagation(); }, true);
         });
+        document.oncopy = document.oncut = document.onpaste = document.onselectstart = document.oncontextmenu = null;
         const style = document.createElement('style');
         style.textContent = '*{user-select:auto!important;-webkit-user-select:auto!important}';
-        document.head.appendChild(style);
-        toast(T.copyEnabled);
+        (document.head || document.documentElement).appendChild(style);
+        hcj.toast(T.copyEnabled);
     }
 
-    function copyPageText() {
-        const text = document.body.innerText;
-        navigator.clipboard?.writeText(text).then(() => toast(T.textCopied));
+    function copyText(text, okMsg) {
+        function done(ok) { toast(ok ? okMsg : T.copyFailed); }
+        try {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(function() { done(true); }, function() { legacyCopy(text, done); });
+            } else {
+                legacyCopy(text, done);
+            }
+        } catch (e) { legacyCopy(text, done); }
     }
 
-    function copyPageHtml() {
-        const html = document.documentElement.outerHTML;
-        navigator.clipboard?.writeText(html).then(() => toast(T.htmlCopied));
+    function legacyCopy(text, done) {
+        try {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.cssText = 'position:fixed;opacity:0;pointer-events:none';
+            document.body.appendChild(ta);
+            ta.select();
+            done(!!document.execCommand('copy'));
+            document.body.removeChild(ta);
+        } catch (e) { done(false); }
     }
+
+    function copyPageText() { copyText(document.body ? document.body.innerText : '', T.textCopied); }
+    function copyPageHtml() { copyText(document.documentElement.outerHTML, T.htmlCopied); }
 
     function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); toast(T.atTop); }
-    function scrollToBottom() { window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }); toast(T.atBottom); }
+    function scrollToBottom() {
+        window.scrollTo({ top: Math.max(document.documentElement.scrollHeight, document.body ? document.body.scrollHeight : 0), behavior: 'smooth' });
+        toast(T.atBottom);
+    }
 
     function updatePanelUI() {
         hcj.panel.send({ type: 'state', labels: { enableCopy: T.enableCopy, copyText: T.copyText, copyHtml: T.copyHtml, toTop: T.toTop, toBottom: T.toBottom } });
@@ -99,17 +121,6 @@
   var toastEl = document.getElementById('wta-toast');
   var toastTimer = null;
 
-  function wire() {
-    root.querySelectorAll('[data-wta-action]').forEach(function (el) {
-      if (el.__wired) return;
-      el.__wired = true;
-      el.addEventListener('click', function (ev) {
-        ev.preventDefault();
-        hcjPanel.send({ cmd: 'act', action: el.getAttribute('data-wta-action'), arg: el.getAttribute('data-wta-arg') || '' });
-      });
-    });
-  }
-
   function showToast(m) {
     toastEl.textContent = m;
     toastEl.classList.add('show');
@@ -119,10 +130,8 @@
 
   hcjPanel.onMessage(function (m) {
     if (!m) return;
-    if (m.type === 'panel' && typeof m.html === 'string') { root.innerHTML = m.html; wire(); }
-    else if (m.type === 'toast') showToast(m.msg || '');
+    if (m.type === 'toast') showToast(m.msg || '');
     else if (m.type === 'state' && typeof render === 'function') render(m);
-    else if (m.type === 'findstate' && typeof renderFind === 'function') renderFind(m);
   });
 
   function render(m) {
@@ -135,7 +144,6 @@
       hcjPanel.send({ cmd: 'act', action: el.getAttribute('data-ce-action') });
     });
   });
-  wire();
   hcjPanel.send({ cmd: 'refresh' });
 </script>
 </body>

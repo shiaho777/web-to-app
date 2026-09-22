@@ -30,9 +30,9 @@
 (function() {
     'use strict';
 
-    function toast(msg) { hcj.notify((hcj.manifest && hcj.manifest.name) || 'plugin', String(msg)); }
+    // Feedback goes to the page toast AND the panel toast — whichever is visible.
+    function toast(m) { hcj.toast(m); hcj.panel.send({ type: 'toast', msg: String(m) }); }
     function pushPanel() { hcj.panel.send({ type: 'panel', html: getPanelHtml() }); }
-    function pushHtml(html) { hcj.panel.send({ type: 'panel', html: html }); }
 
 
     const LANG = (hcj.lang || 'zh').toLowerCase().startsWith('ar') ? 'ar' :
@@ -524,6 +524,7 @@
         }
 
         if (action === 'audio') {
+            detectPlatformAudio();
             if (!audioUrl) return;
             var ext = platform === 'bilibili' ? '.m4a' : '.mp3';
             var fn = (audioTitle ? audioTitle.replace(/[^\w\u4e00-\u9fa5]/g, '_').slice(0, 40) : platform + '_audio') + '_' + Date.now() + ext;
@@ -542,6 +543,7 @@
         }
 
         if (action.startsWith('xhs_')) {
+            detectXiaohongshuMedia(); // re-detect: DOM may have shifted since render
             if (action === 'xhs_all_image' || action === 'xhs_all_video') {
                 const type = action === 'xhs_all_image' ? 'image' : 'video';
                 const items = mediaList.filter(m => m.type === type);
@@ -563,6 +565,7 @@
 
         if (action.startsWith('generic_')) {
             const idx = parseInt(action.slice(8));
+            detectGenericVideos(); // re-detect: DOM may have shifted since render
             const v = mediaList[idx];
             if (!v) return;
             if (v.blob) { toast(T.blobNotSupported); return; }
@@ -573,6 +576,10 @@
 
         if (action.startsWith('list_')) {
             const idx = parseInt(action.slice(5));
+            // re-detect: DOM may have shifted since render
+            if (platform === 'instagram') getInstagramMedia();
+            else if (platform === 'facebook') getFacebookMedia();
+            else getTikTokMedia();
             const m = mediaList[idx];
             if (!m) return;
             const prefix = platform === 'instagram' ? 'instagram' : platform === 'facebook' ? 'facebook' : 'tiktok';
@@ -623,11 +630,8 @@
     if (!m) return;
     if (m.type === 'panel' && typeof m.html === 'string') { root.innerHTML = m.html; wire();  }
     else if (m.type === 'toast') showToast(m.msg || '');
-    else if (m.type === 'state') { if (typeof render === 'function') render(m); }
-    else if (m.type === 'findstate') { if (typeof renderFind === 'function') renderFind(m); }
   });
 
-  
   hcjPanel.send({ cmd: 'refresh' });
 </script>
 </body>

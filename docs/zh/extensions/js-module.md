@@ -81,6 +81,7 @@ document.body.appendChild(banner)
 | `hcj.config.get/set/remove/all` | 持久化 KV——需要 `STORAGE` |
 | `hcj.fetch(url, opts)` | 经宿主的跨域请求——需要 `FETCH`，返回 Promise |
 | `hcj.notify(title, body)` | 系统通知——需要 `NOTIFY` |
+| `hcj.toast(msg)` | 页面内浮层提示——操作反馈优先用它而非 `notify` |
 | `hcj.badge(text, color)` | 工具栏角标——需要 `BADGE` |
 | `hcj.addStyle(css)` | 注入页面 CSS（按文档幂等） |
 | `hcj.panel.open()` / `close()` | 打开/关闭本插件的面板文档 |

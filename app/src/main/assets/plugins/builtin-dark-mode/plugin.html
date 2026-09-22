@@ -23,44 +23,53 @@
   var rawLang = (hcj.lang || 'zh').toLowerCase();
   var LANG = rawLang.indexOf('ar') === 0 ? 'ar' : (rawLang.indexOf('zh') === 0 ? 'zh' : 'en');
   var T = ({
-    zh: { on: '深色模式已开启', off: '深色模式已关闭', desc: '智能反色，保护眼睛', turnOn: '开启深色模式', turnOff: '关闭深色模式' },
-    en: { on: 'Dark Mode On', off: 'Dark Mode Off', desc: 'Smart inversion, protect your eyes', turnOn: 'Turn On Dark Mode', turnOff: 'Turn Off Dark Mode' },
-    ar: { on: 'الوضع الداكن مفعل', off: 'الوضع الداكن موقف', desc: 'عكس ذكي، حماية العين', turnOn: 'تفعيل الوضع الداكن', turnOff: 'إيقاف الوضع الداكن' }
+    zh: { on: '深色模式已开启', off: '深色模式已关闭', desc: '智能反色，保护眼睛' },
+    en: { on: 'Dark Mode On', off: 'Dark Mode Off', desc: 'Smart inversion, protect your eyes' },
+    ar: { on: 'الوضع الداكن مفعل', off: 'الوضع الداكن موقف', desc: 'عكس ذكي، حماية العين' }
   })[LANG] || {};
 
   var enabled = hcj.config.get('enabled', false);
   var styleEl = null;
 
-  var darkCSS = 'html,html body{filter:invert(1) hue-rotate(180deg)!important;-webkit-filter:invert(1) hue-rotate(180deg)!important;background:#111!important}' +
-    'img,video,picture,canvas,svg,iframe,[style*="background-image"],embed,object{filter:invert(1) hue-rotate(180deg)!important;-webkit-filter:invert(1) hue-rotate(180deg)!important}';
-
-  function styleParent() {
-    return document.head || document.documentElement;
-  }
+  // Single inversion on <html> only — the old `html, html body` selector
+  // double-inverted body content back to light while the unfiltered canvas
+  // background stayed #111, which is the "pure black page" bug.
+  // The canvas background IS inside the root filter, so the base color must
+  // be specified PRE-inversion: #eee inverts to ~#111 (dark, not pure black).
+  // Do NOT set color-scheme:dark here — it pre-lightens the UA default text
+  // color, which then inverts back to dark text (and UA controls would end
+  // up light). Media and inline background images are re-inverted back to
+  // natural colors. svg ELEMENTS are deliberately NOT re-inverted (icons
+  // follow text color); only raster <image> inside svg is.
+  var darkCSS =
+    'html{background:#eee!important;' +
+    'filter:invert(1) hue-rotate(180deg) contrast(.92)!important;' +
+    '-webkit-filter:invert(1) hue-rotate(180deg) contrast(.92)!important}' +
+    'img,video,picture,canvas,svg image,embed,object,[style*="url("]{' +
+    'filter:invert(1) hue-rotate(180deg)!important;' +
+    '-webkit-filter:invert(1) hue-rotate(180deg)!important}';
 
   function apply() {
     if (enabled) {
-      if (!styleEl || !styleEl.parentNode) {
+      if (!styleEl) {
         styleEl = document.createElement('style');
         styleEl.id = 'wta-dark-mode';
-        var parent = styleParent();
-        if (parent) {
-          parent.appendChild(styleEl);
-        } else {
-          var obs = new MutationObserver(function (m, o) {
-            var p = styleParent();
-            if (p) { p.appendChild(styleEl); styleEl.textContent = darkCSS; o.disconnect(); }
-          });
-          var target = document.documentElement || document.body;
-          if (target instanceof Node) obs.observe(target, { childList: true, subtree: true });
-          return;
-        }
+        styleEl.textContent = darkCSS;
       }
-      styleEl.textContent = darkCSS;
-    } else if (styleEl) {
-      styleEl.textContent = '';
+      if (!styleEl.parentNode) {
+        (document.head || document.documentElement).appendChild(styleEl);
+      }
+      hcj.badge('ON', '#6366f1');
+    } else {
+      if (styleEl) { styleEl.remove(); styleEl = null; }
+      // WebView quirk: dropping a root filter does not always invalidate the
+      // composited layer — force a full reflow so the page repaints light.
+      var de = document.documentElement;
+      de.style.display = 'none';
+      void de.offsetHeight;
+      de.style.display = '';
+      hcj.badge('', '#6366f1');
     }
-    hcj.badge(enabled ? 'ON' : '', '#6366f1');
   }
 
   function pushState() {
@@ -81,9 +90,10 @@
     if (m.cmd === 'getState') pushState();
   });
 
-  apply();
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function () { if (enabled) apply(); });
+    document.addEventListener('DOMContentLoaded', apply);
+  } else {
+    apply();
   }
 })();
 </script>

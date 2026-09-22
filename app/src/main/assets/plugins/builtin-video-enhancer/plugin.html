@@ -14,6 +14,7 @@
 .wta-video-speed-grid{display:flex;flex-wrap:wrap;gap:8px}
 .wta-video-speed-btn{padding:10px 16px;border-radius:10px;border:1px solid var(--wta-outline,#e5e7eb);background:var(--wta-surface-dim,#f9fafb);font-size:14px;cursor:pointer;color:var(--wta-on-surface,#374151);transition:all .2s}
 .wta-video-speed-btn:active{background:var(--wta-accent-soft,rgba(99,102,241,.1))}
+.wta-video-speed-btn.wta-video-speed-active{background:var(--wta-accent,#6366f1);color:#fff;border-color:transparent}
 .wta-video-feature-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .wta-video-feature-btn{padding:14px;border-radius:12px;border:none;background:var(--wta-surface-dim,#f3f4f6);font-size:14px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--wta-on-surface,#374151);transition:all .2s}
 .wta-video-feature-btn:active{background:var(--wta-accent-soft,rgba(99,102,241,.1))}
@@ -36,9 +37,9 @@
     'use strict';
 
     var ACT = {};
-    function toast(msg) { hcj.notify((hcj.manifest && hcj.manifest.name) || 'plugin', String(msg)); }
+    // Feedback goes to the page toast AND the panel toast — whichever is visible.
+    function toast(m) { hcj.toast(m); hcj.panel.send({ type: 'toast', msg: String(m) }); }
     function pushPanel() { hcj.panel.send({ type: 'panel', html: getPanelHtml() }); }
-    function pushHtml(html) { hcj.panel.send({ type: 'panel', html: html }); }
 
 
     const LANG = (hcj.lang || 'zh').toLowerCase().startsWith('ar') ? 'ar' :
@@ -58,7 +59,19 @@
     let ytCfg = { adSkip: true, autoQuality: true, bgPlay: true, sponsor: false };
     try { const saved = localStorage.getItem(YT_KEY); if (saved) ytCfg = Object.assign(ytCfg, JSON.parse(saved)); } catch(e) {}
 
-    function getVideo() { return document.querySelector('video'); }
+    // Pick the meaningful video: prefer playing, else largest visible, else first.
+    function getVideo() {
+        var vs = Array.prototype.slice.call(document.querySelectorAll('video'));
+        if (!vs.length) return null;
+        var playing = vs.filter(function(v) { return !v.paused && !v.ended && v.readyState >= 2; });
+        if (playing.length) return playing[0];
+        var visible = vs.filter(function(v) { return v.clientWidth > 0 && v.clientHeight > 0; });
+        if (visible.length) {
+            visible.sort(function(a, b) { return b.clientWidth * b.clientHeight - a.clientWidth * a.clientHeight; });
+            return visible[0];
+        }
+        return vs[0];
+    }
 
     function setSpeed(speed) {
         const v = getVideo();
@@ -75,6 +88,7 @@
     function saveYt() { try { localStorage.setItem(YT_KEY, JSON.stringify(ytCfg)); } catch(e) {} }
 
     let ytAdObserver = null;
+    let ytBgArmObserver = null;
     let ytQualityDone = false;
     let ytSponsorTimer = null;
     let ytSponsorSegments = [];
@@ -86,6 +100,10 @@
         return false;
     }
 
+    // YouTube menu labels are locale-dependent — match the word "quality"
+    // across common UI languages instead of English only.
+    const QUALITY_RE = /quality|画质|畫質|品質|qualit|calidad|qualidade|качество|جودة|품질|qualiteit|kalite/i;
+
     function selectMaxQuality() {
         try {
             const settingsBtn = document.querySelector('.ytp-settings-button');
@@ -93,7 +111,10 @@
             settingsBtn.click();
             const menuItems = document.querySelectorAll('.ytp-menuitem');
             let qualityItem = null;
-            menuItems.forEach(function(m) { if (m.textContent && m.textContent.toLowerCase().indexOf('quality') >= 0) qualityItem = m; });
+            menuItems.forEach(function(m) {
+                var label = (m.textContent || '') + ' ' + (m.getAttribute('aria-label') || '');
+                if (QUALITY_RE.test(label)) qualityItem = m;
+            });
             if (!qualityItem) { document.body.click(); return false; }
             qualityItem.click();
             const options = document.querySelectorAll('.ytp-quality-menu .ytp-menuitem, .ytp-panel-menu .ytp-menuitem');
@@ -132,6 +153,14 @@
         }
     }
 
+    function armBgPlay(v) {
+        if (!v || v.__wtaBgPlay) return;
+        v.__wtaBgPlay = true;
+        v.addEventListener('pause', function() {
+            if (ytCfg.bgPlay && document.hidden) v.play().catch(function(){});
+        });
+    }
+
     function startYouTubeWatchers() {
         if (!isYouTube || ytAdObserver) return;
 
@@ -150,16 +179,18 @@
             ytSponsorTimer = setInterval(checkSponsor, 1000);
         }
 
-        document.addEventListener('visibilitychange', function() {
-            if (ytCfg.bgPlay && document.hidden) {
-                const v = getVideo();
-                if (v && v.paused) v.play().catch(function(){});
-            }
-        });
+        // YouTube pauses the video AFTER the tab hides — arm the pause hook
+        // on any video that appears, not just on visibilitychange.
+        if (!ytBgArmObserver) {
+            ytBgArmObserver = new MutationObserver(function() { var v = getVideo(); if (v) armBgPlay(v); });
+            ytBgArmObserver.observe(document.body || document.documentElement, { childList: true, subtree: true });
+        }
+        armBgPlay(getVideo());
     }
 
     function stopYouTubeWatchers() {
         if (ytAdObserver) { ytAdObserver.disconnect(); ytAdObserver = null; }
+        if (ytBgArmObserver) { ytBgArmObserver.disconnect(); ytBgArmObserver = null; }
         if (ytSponsorTimer) { clearInterval(ytSponsorTimer); ytSponsorTimer = null; }
         ytQualityDone = false;
     }
@@ -232,6 +263,14 @@
     hcj.on('action', function () { hcj.panel.open(); });
     function register() {
         if (isYouTube) {
+            // visibilitychange is registered once here — putting it inside
+            // startYouTubeWatchers would stack a listener per toggle.
+            document.addEventListener('visibilitychange', function() {
+                if (ytCfg.bgPlay && document.hidden) {
+                    const v = getVideo();
+                    if (v) { armBgPlay(v); if (v.paused) v.play().catch(function(){}); }
+                }
+            });
             if (ytCfg.adSkip || ytCfg.autoQuality || ytCfg.bgPlay || ytCfg.sponsor) {
                 setTimeout(startYouTubeWatchers, 800);
             }
@@ -273,11 +312,8 @@
     if (!m) return;
     if (m.type === 'panel' && typeof m.html === 'string') { root.innerHTML = m.html; wire();  }
     else if (m.type === 'toast') showToast(m.msg || '');
-    else if (m.type === 'state') { if (typeof render === 'function') render(m); }
-    else if (m.type === 'findstate') { if (typeof renderFind === 'function') renderFind(m); }
   });
 
-  
   hcjPanel.send({ cmd: 'refresh' });
 </script>
 </body>

@@ -30,9 +30,9 @@
     'use strict';
 
     var ACT = {};
-    function toast(msg) { hcj.notify((hcj.manifest && hcj.manifest.name) || 'plugin', String(msg)); }
+    // Feedback goes to the page toast AND the panel toast — whichever is visible.
+    function toast(m) { hcj.toast(m); hcj.panel.send({ type: 'toast', msg: String(m) }); }
     function pushPanel() { hcj.panel.send({ type: 'panel', html: getPanelHtml() }); }
-    function pushHtml(html) { hcj.panel.send({ type: 'panel', html: html }); }
 
 
     // 多语言支持
@@ -44,8 +44,8 @@
             blocked: '已屏蔽元素',
             unblocked: '已取消屏蔽',
             selected: '已选中',
-            dblClickToBlock: '双击屏蔽',
-            selectMode: '选择模式：单击选择，双击屏蔽，按 ESC 退出',
+            tapAgainToBlock: '再次点按即可屏蔽',
+            selectMode: '选择模式：点按选择元素，再次点按屏蔽',
             clearedAll: '已清除所有屏蔽',
             selectElement: '选择要屏蔽的元素',
             blockedCount: '已屏蔽 {0} 个元素',
@@ -60,8 +60,8 @@
             blocked: 'Element blocked',
             unblocked: 'Unblocked',
             selected: 'Selected',
-            dblClickToBlock: 'double-click to block',
-            selectMode: 'Select mode: click to select, double-click to block, ESC to exit',
+            tapAgainToBlock: 'tap again to block',
+            selectMode: 'Select mode: tap to select, tap again to block',
             clearedAll: 'All blocks cleared',
             selectElement: 'Select element to block',
             blockedCount: '{0} elements blocked',
@@ -76,8 +76,8 @@
             blocked: 'تم حظر العنصر',
             unblocked: 'تم إلغاء الحظر',
             selected: 'محدد',
-            dblClickToBlock: 'انقر مرتين للحظر',
-            selectMode: 'وضع التحديد: انقر للتحديد، انقر مرتين للحظر، ESC للخروج',
+            tapAgainToBlock: 'انقر مرة أخرى للحظر',
+            selectMode: 'وضع التحديد: انقر للتحديد، انقر مرة أخرى للحظر',
             clearedAll: 'تم مسح جميع الحظر',
             selectElement: 'حدد العنصر للحظر',
             blockedCount: 'تم حظر {0} عنصر',
@@ -90,10 +90,12 @@
     };
     const T = I18N[LANG] || I18N.en;
     const STORAGE_KEY = 'wta_blocked_elements';
-    let blockedSelectors = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    let blockedSelectors = [];
+    try { blockedSelectors = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]') || []; } catch (e) {}
     let selectMode = false;
-    let hoveredElement = null;
+    let selectedElement = null;
     let highlightOverlay = null;
+    let escHandler = null;
 
     // Create高亮覆盖层
     function createOverlay() {
@@ -133,11 +135,13 @@
 
     // App屏蔽规则
     function applyBlockedRules() {
+        const parent = document.head || document.documentElement;
+        if (!parent) return;
         let styleEl = document.getElementById('wta-blocked-styles');
         if (!styleEl) {
             styleEl = document.createElement('style');
             styleEl.id = 'wta-blocked-styles';
-            document.head.appendChild(styleEl);
+            parent.appendChild(styleEl);
         }
         if (blockedSelectors.length) {
             styleEl.textContent = blockedSelectors.map(s => s + '{display:none!important}').join('');
@@ -146,9 +150,9 @@
         }
     }
 
-    // Save屏蔽规则
+    // Save屏蔽规则 (per-origin localStorage — rules are site-scoped by nature)
     function saveRules() {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(blockedSelectors));
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(blockedSelectors)); } catch (e) {}
         applyBlockedRules();
     }
 
@@ -208,78 +212,96 @@
         pushPanel();
     }
 
-    // 鼠标移动事件
+    function pickElement(x, y) {
+        const el = document.elementFromPoint(x, y);
+        if (!el || el === highlightOverlay || el === document.body || el === document.documentElement) return null;
+        return el;
+    }
+
+    function highlight(el) {
+        if (!highlightOverlay || !el) return;
+        const rect = el.getBoundingClientRect();
+        highlightOverlay.style.display = 'block';
+        highlightOverlay.style.left = rect.left + 'px';
+        highlightOverlay.style.top = rect.top + 'px';
+        highlightOverlay.style.width = rect.width + 'px';
+        highlightOverlay.style.height = rect.height + 'px';
+    }
+
+    // Desktop hover preview (mousemove doesn't fire on touchscreens)
     function onMouseMove(e) {
         if (!selectMode) return;
-        const el = document.elementFromPoint(e.clientX, e.clientY);
-        if (!el || el === highlightOverlay || el.closest('#wta-module-panel') || el.closest('#wta-module-fab')) {
-            if (highlightOverlay) highlightOverlay.style.display = 'none';
-            hoveredElement = null;
-            return;
-        }
-        hoveredElement = el;
-        const rect = el.getBoundingClientRect();
-        if (highlightOverlay) {
-            highlightOverlay.style.display = 'block';
-            highlightOverlay.style.left = rect.left + 'px';
-            highlightOverlay.style.top = rect.top + 'px';
-            highlightOverlay.style.width = rect.width + 'px';
-            highlightOverlay.style.height = rect.height + 'px';
-        }
+        const el = pickElement(e.clientX, e.clientY);
+        if (!el) { if (highlightOverlay) highlightOverlay.style.display = 'none'; return; }
+        highlight(el);
     }
 
-    // 单击选择
-    function onClick(e) {
-        if (!selectMode || !hoveredElement) return;
+    // Tap/click: first tap selects (works on touch via e.target), second tap
+    // on the SAME element blocks it. Double-click still blocks directly on
+    // desktop.
+    function onTap(e) {
+        if (!selectMode) return;
+        let el = e.target;
+        if (!el || el === highlightOverlay || el === document.body || el === document.documentElement) {
+            el = (e.clientX || e.clientY) ? pickElement(e.clientX, e.clientY) : null;
+        }
+        if (!el) return;
         e.preventDefault();
         e.stopPropagation();
-        const selector = getSelector(hoveredElement);
-        if (selector) {
-            toast(T.selected + ': ' + hoveredElement.tagName.toLowerCase() + ' (' + T.dblClickToBlock + ')');
+        e.stopImmediatePropagation();
+        if (selectedElement === el) {
+            const selector = getSelector(el);
+            if (selector) { blockElement(selector); exitSelectMode(); }
+        } else {
+            selectedElement = el;
+            highlight(el);
+            toast(T.selected + ': ' + el.tagName.toLowerCase() + ' — ' + T.tapAgainToBlock);
         }
     }
 
-    // 双击屏蔽
     function onDblClick(e) {
-        if (!selectMode || !hoveredElement) return;
+        if (!selectMode) return;
+        const el = e.target;
+        if (!el || el === highlightOverlay) return;
         e.preventDefault();
         e.stopPropagation();
-        const selector = getSelector(hoveredElement);
-        if (selector) {
-            blockElement(selector);
-            exitSelectMode();
-        }
+        const selector = getSelector(el);
+        if (selector) { blockElement(selector); exitSelectMode(); }
     }
 
     // 进入选择模式
     function enterSelectMode() {
+        if (selectMode) return;
         selectMode = true;
+        selectedElement = null;
         createOverlay();
         document.addEventListener('mousemove', onMouseMove, true);
-        document.addEventListener('click', onClick, true);
+        document.addEventListener('click', onTap, true);
+        document.addEventListener('touchend', onTap, true);
         document.addEventListener('dblclick', onDblClick, true);
-        document.body.style.cursor = 'crosshair';
+        if (document.body) document.body.style.cursor = 'crosshair';
         toast(T.selectMode);
         hcj.panel.close();
 
-        // ESC 退出
-        document.addEventListener('keydown', function escHandler(e) {
-            if (e.key === 'Escape') {
-                exitSelectMode();
-                document.removeEventListener('keydown', escHandler);
-            }
-        });
+        escHandler = function(e) {
+            if (e.key === 'Escape') exitSelectMode();
+        };
+        document.addEventListener('keydown', escHandler);
     }
 
     // 退出选择模式
     function exitSelectMode() {
+        if (!selectMode) return;
         selectMode = false;
-        hoveredElement = null;
+        selectedElement = null;
         if (highlightOverlay) highlightOverlay.style.display = 'none';
         document.removeEventListener('mousemove', onMouseMove, true);
-        document.removeEventListener('click', onClick, true);
+        document.removeEventListener('click', onTap, true);
+        document.removeEventListener('touchend', onTap, true);
         document.removeEventListener('dblclick', onDblClick, true);
-        document.body.style.cursor = '';
+        if (escHandler) { document.removeEventListener('keydown', escHandler); escHandler = null; }
+        if (document.body) document.body.style.cursor = '';
+        pushPanel();
     }
 
     // 清除所有屏蔽
@@ -361,8 +383,6 @@
     if (!m) return;
     if (m.type === 'panel' && typeof m.html === 'string') { root.innerHTML = m.html; wire(); }
     else if (m.type === 'toast') showToast(m.msg || '');
-    else if (m.type === 'state' && typeof render === 'function') render(m);
-    else if (m.type === 'findstate' && typeof renderFind === 'function') renderFind(m);
   });
 
 

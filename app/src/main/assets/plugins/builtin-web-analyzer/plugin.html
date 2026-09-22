@@ -31,9 +31,7 @@
 (function() {
     'use strict';
 
-    function toast(msg) { hcj.notify((hcj.manifest && hcj.manifest.name) || 'plugin', String(msg)); }
     function pushPanel() { hcj.panel.send({ type: 'panel', html: getPanelHtml() }); }
-    function pushHtml(html) { hcj.panel.send({ type: 'panel', html: html }); }
 
 
     // 多语言支持
@@ -60,9 +58,18 @@
 
     function getPanelHtml() {
         const info = getPageInfo();
-        const perf = performance.timing;
-        const loadTime = perf.loadEventEnd - perf.navigationStart;
-        const domReady = perf.domContentLoadedEventEnd - perf.navigationStart;
+        // Navigation Timing Level 2 first; fall back to deprecated timing.
+        let loadTime = -1, domReady = -1;
+        try {
+            const nav = (performance.getEntriesByType && performance.getEntriesByType('navigation') || [])[0];
+            if (nav) {
+                loadTime = Math.round(nav.loadEventEnd);
+                domReady = Math.round(nav.domContentLoadedEventEnd);
+            } else if (performance.timing) {
+                loadTime = performance.timing.loadEventEnd - performance.timing.navigationStart;
+                domReady = performance.timing.domContentLoadedEventEnd - performance.timing.navigationStart;
+            }
+        } catch (e) {}
 
         return '<div class="wta-analyzer-panel">' +
             '<div class="wta-analyzer-section"><div class="wta-analyzer-section-title">' + T.pageInfo + '</div>' +
@@ -127,8 +134,6 @@
     if (!m) return;
     if (m.type === 'panel' && typeof m.html === 'string') { root.innerHTML = m.html; wire(); }
     else if (m.type === 'toast') showToast(m.msg || '');
-    else if (m.type === 'state' && typeof render === 'function') render(m);
-    else if (m.type === 'findstate' && typeof renderFind === 'function') renderFind(m);
   });
 
 
