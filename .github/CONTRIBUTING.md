@@ -32,8 +32,8 @@ schema, field rules, reviewer checklist, and CI validation details. The short
 version here is only meant to help you pick the right contribution lane:
 
 1. Fork the repo.
-2. Add `modules/<your-plugin>/plugin.json` and `main.js` (plus `style.css` /
-   `panel.html` if you need them).
+2. Add `modules/<your-plugin>/plugin.json` and `plugin.html` (one HTML file —
+   page script in a `<script type="hcj/page">` block, the rest is the panel UI).
 3. Add an entry to `modules/registry.json`.
 4. Open a PR.
 
@@ -279,8 +279,8 @@ CI 校验细节的主文档是 [`modules/README.md`](../modules/README.md)。这
 留一个极简入口，方便你先判断自己是不是走这条贡献路线：
 
 1. Fork 本仓库
-2. 新建 `modules/<你的插件>/plugin.json` 和 `main.js`（需要时再加
-   `style.css` / `panel.html`）
+2. 新建 `modules/<你的插件>/plugin.json` 和 `plugin.html`（单个 HTML 文件——
+   页面脚本放在 `<script type="hcj/page">` 块里，其余部分是面板界面）
 3. 在 `modules/registry.json` 里加一行索引
 4. 提 PR
 

@@ -15,7 +15,7 @@ import java.util.zip.ZipInputStream
  *
  *  - `.user.js` / `.js` — Greasemonkey scripts. The `==UserScript==` metadata
  *    block becomes `plugin.json`; the full source (metadata included, it is
- *    just comments) becomes `main.js`.
+ *    just comments) becomes the `hcj/page` block of `plugin.html`.
  *  - `.hcj` — a zip of one plugin directory (`plugin.json` + files). Exported
  *    via [exportHcj].
  *  - `.zip` — same handling; a top-level `plugin.json` or a single root folder
@@ -45,7 +45,10 @@ class PluginImporter(private val context: Context) {
 
     suspend fun importUserScript(content: String, fileName: String = ""): ImportResult {
         val manifest = manifestFromUserScript(content, fileName)
-        return install(manifest, PluginKind.USERSCRIPT, mapOf(PluginStore.MAIN_FILE to content))
+        return install(
+            manifest, PluginKind.USERSCRIPT,
+            mapOf(PluginStore.PLUGIN_FILE to buildPluginHtml(content, ""))
+        )
     }
 
     suspend fun importUserScript(uri: Uri): ImportResult = withContext(Dispatchers.IO) {

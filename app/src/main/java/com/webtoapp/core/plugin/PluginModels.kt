@@ -12,10 +12,11 @@ import java.util.concurrent.TimeoutException
 /**
  * HCJ plugin platform — unified model for the three plugin kinds:
  *
- *  - [PluginKind.HCJ]: first-party packages. A directory with `plugin.json`,
- *    `main.js`, optional `panel.html`, optional icon. Page styles are
- *    authored inside `main.js` via `hcj.addStyle(css)`; a bare `style.css`
- *    file still loads for compatibility (migrated/older packages).
+ *  - [PluginKind.HCJ]: first-party packages. A directory with `plugin.json`
+ *    and a single `plugin.html` — the document doubles as the panel UI, and
+ *    the page-side script lives in an inert `<script type="hcj/page">` block.
+ *    Legacy `main.js` / `panel.html` / `style.css` files still load for
+ *    compatibility (migrated/older packages).
  *  - [PluginKind.USERSCRIPT]: Greasemonkey/Tampermonkey scripts. Imported into the
  *    same package layout (metadata block -> plugin.json); the GM_* polyfill is
  *    injected by the runtime, not stored.
@@ -26,6 +27,68 @@ import java.util.concurrent.TimeoutException
  * The model deliberately knows nothing about *how* a plugin is presented — that
  * is the user's choice via [PluginEntryStyle] / [PluginPanelStyle].
  */
+
+// ---------------------------------------------------------------------------
+// plugin.html — single-document package format
+// ---------------------------------------------------------------------------
+
+/**
+ * Inert script type carrying the page-side code inside plugin.html. Unknown
+ * script types never execute — the standard HTML data-block idiom — so the
+ * same file can also serve as the panel document.
+ */
+const val PAGE_SCRIPT_TYPE = "hcj/page"
+
+private val PAGE_SCRIPT_RE = Regex(
+    """<script[^>]*type\s*=\s*["']hcj/page["'][^>]*>(.*?)</script>""",
+    setOf(RegexOption.DOT_MATCHES_ALL, RegexOption.IGNORE_CASE)
+)
+private val HTML_COMMENT_RE = Regex("""<!--.*?-->""", RegexOption.DOT_MATCHES_ALL)
+private val BODY_RE = Regex(
+    """<body[^>]*>(.*?)</body>""",
+    setOf(RegexOption.DOT_MATCHES_ALL, RegexOption.IGNORE_CASE)
+)
+private val SCRIPT_CLOSE_RE = Regex("</script", RegexOption.IGNORE_CASE)
+
+/** All page-side script bodies inside a plugin.html document. */
+fun extractPageJs(pluginHtml: String): String =
+    PAGE_SCRIPT_RE.findAll(pluginHtml)
+        .map { it.groupValues[1].trim() }
+        .filter { it.isNotEmpty() }
+        .joinToString("\n")
+
+/**
+ * Whether the plugin.html document renders an actual panel — i.e. it carries
+ * markup beyond the inert page-script block. A file that only holds
+ * `<script type="hcj/page">` is a page-only plugin.
+ */
+fun hasPanelMarkup(pluginHtml: String): Boolean {
+    if (pluginHtml.isBlank()) return false
+    val region = BODY_RE.find(pluginHtml)?.groupValues?.get(1) ?: pluginHtml
+    return region
+        .replace(PAGE_SCRIPT_RE, "")
+        .replace(HTML_COMMENT_RE, "")
+        .isNotBlank()
+}
+
+/**
+ * Assemble the canonical plugin.html document: page JS rides in an inert
+ * `hcj/page` script block, the panel document follows it. A literal `</script`
+ * in the page source is escaped to `<\/script` (identical value inside JS
+ * strings/regexes) so neither the HTML parser nor [PAGE_SCRIPT_RE] can end
+ * the block early.
+ */
+fun buildPluginHtml(pageJs: String, panelDoc: String): String = buildString {
+    if (pageJs.isNotBlank()) {
+        append("<script type=\"").append(PAGE_SCRIPT_TYPE).append("\">\n")
+        append(pageJs.trim().replace(SCRIPT_CLOSE_RE, "<\\/script"))
+        append("\n</script>\n")
+    }
+    if (panelDoc.isNotBlank()) {
+        if (isNotEmpty()) append("\n")
+        append(panelDoc.trim()).append("\n")
+    }
+}
 
 // ---------------------------------------------------------------------------
 // Enums
@@ -343,8 +406,8 @@ data class PluginManifest(
 
 /**
  * One installed plugin. For HCJ / USERSCRIPT kinds, `packageDir` names a
- * directory under `files/plugins/` holding `plugin.json`, `main.js`, optional
- * `style.css` / `panel.html` / `config.json`. For CHROME_EXTENSION,
+ * directory under `files/plugins/` holding `plugin.json`, `plugin.html`,
+ * optional `style.css` / `files/…` / `config.json`. For CHROME_EXTENSION,
  * [chromeExtId] points into the extension engine's own storage.
  */
 data class Plugin(

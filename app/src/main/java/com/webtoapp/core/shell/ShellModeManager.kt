@@ -568,7 +568,8 @@ data class EmbeddedShellPlugin(
                 toolbar = p.showInToolbar,
                 entryStyle = p.entryStyle.name,
                 panelStyle = p.panelStyle.name,
-                hasPanel = resolved.panelHtml.isNotBlank() || p.hasPanel,
+                hasPanel = com.webtoapp.core.plugin.hasPanelMarkup(resolved.panelHtml) ||
+                    p.hasPanel,
                 mainJs = resolved.mainJs,
                 css = resolved.css,
                 panelHtml = resolved.panelHtml,
@@ -623,7 +624,7 @@ data class EmbeddedShellPlugin(
         showInToolbar = toolbar,
         entryStyle = com.webtoapp.core.plugin.PluginEntryStyle.parse(entryStyle),
         panelStyle = com.webtoapp.core.plugin.PluginPanelStyle.parse(panelStyle),
-        hasPanel = hasPanel || panelHtml.isNotBlank(),
+        hasPanel = hasPanel || com.webtoapp.core.plugin.hasPanelMarkup(panelHtml),
         gmGrants = gmGrants,
         requireUrls = requireUrls,
         resources = resources,

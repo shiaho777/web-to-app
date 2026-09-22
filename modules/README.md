@@ -23,17 +23,37 @@ modules/
 ├── README.md                  ← this file
 └── <plugin-path>/             ← one folder per plugin
     ├── plugin.json            ← plugin manifest (required)
-    ├── main.js                ← plugin source (required)
-    ├── style.css              ← optional CSS, auto-injected at document-start
-    ├── panel.html             ← optional plugin UI (hosted in a sheet/window)
+    ├── plugin.html            ← the whole plugin (required) — see below
     └── icon.png               ← optional 256 KB-max icon (also .svg/.webp/.jpg)
 ```
 
-A plugin is a plain **HTML + CSS + JavaScript** package — the same trio you
-already know, no custom DSL. `main.js` runs inside the page like a userscript,
-`style.css` is injected automatically, and `panel.html` (if present) becomes
+A plugin is **one HTML document** — no custom DSL. `plugin.html` carries both
+sides of the plugin:
+
+```html
+<script type="hcj/page">
+  // page-side code — runs inside matching pages like a userscript
+  hcj.on('action', () => { /* user tapped the entry */ });
+  hcj.addStyle('img { border-radius: 8px; }');   // inject page CSS from JS
+</script>
+
+<!-- everything else in the file is the panel UI -->
+<style>body { font-family: sans-serif; padding: 16px; }</style>
+<button id="go">Go</button>
+<script>
+  document.getElementById('go').onclick = () => hcjPanel.send({ go: true });
+</script>
+```
+
+The `<script type="hcj/page">` block never executes inside the panel (unknown
+script types are inert — the standard HTML data-block idiom); the host
+extracts it and injects it into matching pages. The rest of the document is
 the plugin's own interface, hosted in a bottom sheet / floating window /
-fullscreen — whichever the user picked.
+fullscreen — whichever the user picked. A plugin with only the `hcj/page`
+block has no panel.
+
+> **Legacy layout:** packages made of `main.js` + `style.css` + `panel.html`
+> still install and validate, but new submissions should ship `plugin.html`.
 
 When a user opens the market, the app fetches both `registry.json` and
 `submissions.json`, then renders each entry that appears in **both** —
@@ -55,7 +75,7 @@ hands them to the plugin store. The registry is cached for one hour.
    `registry.json`.
 3. Add at minimum:
    - `plugin.json` — manifest, see [schema](#pluginjson-schema)
-   - `main.js` — code that runs in the WebView
+   - `plugin.html` — the plugin document (page script + panel UI)
 4. Add a matching entry to [`registry.json`](registry.json). Keep `id`,
    `name`, and `version` consistent between both files.
 5. Open a pull request. CI validates the catalog — see
@@ -106,9 +126,9 @@ Unchanged: `id`, `path`, `name`, `description`, `icon`, `category`, `tags`,
 `hasCss`, optional `iconUrl`, `sourceType` (`CUSTOM` / `CHROME_EXTENSION` +
 `storeId` for Chrome Web Store passthrough entries).
 
-## `main.js` runtime contract
+## `plugin.html` runtime contract
 
-`main.js` executes inside the page with a scoped `hcj` API object:
+The `hcj/page` script executes inside the page with a scoped `hcj` API object:
 
 ```js
 hcj.id                    // plugin id
@@ -124,22 +144,23 @@ hcj.fetch(url, opts)      // cross-origin fetch (requires FETCH) → Promise
 hcj.notify(title, body)   // Android notification (requires NOTIFY)
 hcj.badge(text, color)    // toolbar badge (requires BADGE)
 
-hcj.panel.open()          // open this plugin's panel.html
+hcj.panel.open()          // open this plugin's panel
 hcj.panel.close()
 hcj.panel.send(msg)       // page → panel message
 hcj.panel.onMessage(fn)   // panel → page messages
 
 hcj.on('action', fn)      // fired when the user taps the plugin entry
-                          // (plugins without panel.html)
+                          // (plugins without panel UI)
 hcj.emit(evt, data)       // fire a custom event into your own handlers
+hcj.addStyle(css)         // inject a <style> into the page (idempotent)
 ```
 
-Inside `panel.html`, a mirrored `hcjPanel` object is available:
+Inside the panel document, a mirrored `hcjPanel` object is available:
 `hcjPanel.config.*`, `hcjPanel.send(msg)`, `hcjPanel.onMessage(fn)`,
 `hcjPanel.close()`.
 
-Settings UI is *yours*: build it in `panel.html` with ordinary HTML/CSS/JS
-and persist via `hcjPanel.config`. There is no form DSL to learn.
+Settings UI is *yours*: build it in the same `plugin.html` with ordinary
+HTML/CSS/JS and persist via `hcjPanel.config`. There is no form DSL to learn.
 
 ## Versioning
 
@@ -156,7 +177,7 @@ python3 .github/scripts/ci/validate_modules.py
 ## Reviewer checklist
 
 - `plugin.json` parses and `id`/`name`/`version` match `registry.json`.
-- `main.js` has no top-level `return`, no obfuscation, no remote-code fetch+eval.
+- The page script (`hcj/page` block) has no top-level `return`, no obfuscation, no remote-code fetch+eval.
 - `permissions` only lists what the code actually calls.
 - Icons stay under 256 KB; `iconUrl` relative paths point at allowed filenames.
 
@@ -176,15 +197,34 @@ modules/
 ├── submissions.json           ← CI 生成的 PR/贡献者元数据
 └── <plugin-path>/             ← 每个插件一个文件夹
     ├── plugin.json            ← 插件清单（必需）
-    ├── main.js                ← 插件源码（必需）
-    ├── style.css              ← 可选 CSS，document-start 自动注入
-    ├── panel.html             ← 可选插件界面（抽屉/浮窗/全屏宿主）
+    ├── plugin.html            ← 整个插件（必需）——见下
     └── icon.png               ← 可选图标，≤256 KB（.svg/.webp/.jpg 亦可）
 ```
 
-插件就是一个纯 **HTML + CSS + JS** 包——就是你熟悉的三件套，没有自定义
-DSL。`main.js` 像油猴脚本一样注入页面，`style.css` 自动注入，`panel.html`
-（如果存在）就是插件自己的界面，由用户选择的宿主形态承载。
+插件就是**一个 HTML 文档**——没有自定义 DSL。`plugin.html` 同时承载两侧：
+
+```html
+<script type="hcj/page">
+  // 页面侧代码——像油猴脚本一样运行在匹配页面里
+  hcj.on('action', () => { /* 用户点了插件入口 */ });
+  hcj.addStyle('img { border-radius: 8px; }');   // 用 JS 注入页面 CSS
+</script>
+
+<!-- 文件中其余部分就是面板界面 -->
+<style>body { font-family: sans-serif; padding: 16px; }</style>
+<button id="go">执行</button>
+<script>
+  document.getElementById('go').onclick = () => hcjPanel.send({ go: true });
+</script>
+```
+
+`<script type="hcj/page">` 块在面板里永远不会执行（未知 script 类型是
+惰性的——标准 HTML 数据块用法）；宿主会把它提取出来注入匹配页面。文档
+其余部分就是插件自己的界面，由用户选择的宿主形态（抽屉/浮窗/全屏）承载。
+只有 `hcj/page` 块的插件没有面板。
+
+> **旧版布局**：`main.js` + `style.css` + `panel.html` 多文件包仍可安装、
+> 可通过校验，但新投稿请用单文件 `plugin.html`。
 
 ### `plugin.json` 清单
 
@@ -199,26 +239,27 @@ DSL。`main.js` 像油猴脚本一样注入页面，`style.css` 自动注入，`
 `permissions`、`urlMatches`、`hasCss`、可选 `iconUrl`、`sourceType`
 （`CUSTOM` / `CHROME_EXTENSION` + `storeId`）。
 
-### `main.js` 运行时合约
+### `plugin.html` 运行时合约
 
-页面内注入一个作用域化的 `hcj` API 对象：
+`hcj/page` 脚本在页面内获得一个作用域化的 `hcj` API 对象：
 
 - `hcj.config.get/set/remove/all` — 持久化 KV（需 `STORAGE` 权限）
 - `hcj.fetch(url, opts)` — 跨域请求（需 `FETCH`），返回 Promise
 - `hcj.notify(title, body)` — 系统通知（需 `NOTIFY`）
 - `hcj.badge(text, color)` — 工具栏角标（需 `BADGE`）
 - `hcj.panel.open/close/send/onMessage` — 面板控制与页面↔面板消息
-- `hcj.on('action', fn)` — 用户点击插件入口时触发（无 panel.html 的插件）
+- `hcj.on('action', fn)` — 用户点击插件入口时触发（无面板界面的插件）
+- `hcj.addStyle(css)` — 向页面注入 `<style>`（幂等）
 - `hcj.id` / `hcj.manifest` / `hcj.lang`
 
-`panel.html` 内有对应的 `hcjPanel`：`config.*`、`send`、`onMessage`、`close`。
+面板文档内有对应的 `hcjPanel`：`config.*`、`send`、`onMessage`、`close`。
 
-设置界面完全由你自己用 HTML/CSS/JS 写——没有需要学习的表单 DSL。
+设置界面完全由你自己在同一个 `plugin.html` 里用 HTML/CSS/JS 写——没有需要学习的表单 DSL。
 
 ### 提交流程
 
 1. Fork 仓库，在 `modules/` 下建 kebab-case 文件夹。
-2. 至少提供 `plugin.json` 和 `main.js`。
+2. 至少提供 `plugin.json` 和 `plugin.html`。
 3. 在 `registry.json` 加对应条目，保持 `id`/`name`/`version` 一致。
 4. 提 PR；本地可先跑 `python3 .github/scripts/ci/validate_modules.py` 自检。
 5. 合入即发布，客户端下次刷新即可看到。
@@ -231,6 +272,6 @@ DSL。`main.js` 像油猴脚本一样注入页面，`style.css` 自动注入，`
 ### 审核 Checklist
 
 - `plugin.json` 可解析，`id`/`name`/`version` 与 `registry.json` 一致。
-- `main.js` 无顶层 `return`、无混淆、无远程拉取代码 eval。
+- 页面脚本（`hcj/page` 块）无顶层 `return`、无混淆、无远程拉取代码 eval。
 - `permissions` 只声明实际调用的能力。
 - 图标 ≤256 KB；`iconUrl` 相对路径指向允许的文件名。

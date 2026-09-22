@@ -157,9 +157,11 @@ class PluginMigrator(private val context: Context) {
             val code = m.str("code")
             val css = m.str("cssCode")
             val panel = m.str("panelHtml")
-            if (code.isNotBlank()) files[PluginStore.MAIN_FILE] = code
+            // Canonical single file: page JS + panel document live together in
+            // plugin.html; style.css stays a separate file the loader injects.
+            val pluginHtml = buildPluginHtml(code, panel)
+            if (pluginHtml.isNotBlank()) files[PluginStore.PLUGIN_FILE] = pluginHtml
             if (css.isNotBlank()) files[PluginStore.CSS_FILE] = css
-            if (panel.isNotBlank()) files[PluginStore.PANEL_FILE] = panel
             m.obj("codeFiles")?.entrySet()?.forEach { (rel, content) ->
                 if (rel.contains("..")) return@forEach
                 files["files/$rel"] = content.asString
@@ -250,9 +252,9 @@ class PluginMigrator(private val context: Context) {
         val css = sidecar("css_$id.css").ifBlank { m.str("cssCode") }
         val panel = m.str("panelHtml")
 
-        if (code.isNotBlank()) File(dir, PluginStore.MAIN_FILE).writeText(code)
+        val pluginHtml = buildPluginHtml(code, panel)
+        if (pluginHtml.isNotBlank()) File(dir, PluginStore.PLUGIN_FILE).writeText(pluginHtml)
         if (css.isNotBlank()) File(dir, PluginStore.CSS_FILE).writeText(css)
-        if (panel.isNotBlank()) File(dir, PluginStore.PANEL_FILE).writeText(panel)
 
         // Multi-file modules keep their relative paths under files/.
         val codeFilesDir = File(oldDir, "codefiles_$id")
@@ -265,7 +267,7 @@ class PluginMigrator(private val context: Context) {
             }
         }
         filesFrom(m).forEach { (rel, content) ->
-            if (rel == PluginStore.MAIN_FILE || rel == PluginStore.CSS_FILE || rel == PluginStore.PANEL_FILE) {
+            if (rel == PluginStore.PLUGIN_FILE || rel == PluginStore.CSS_FILE) {
                 // Inline fallbacks only — sidecar content above wins.
                 if (File(dir, rel).exists()) return@forEach
             }

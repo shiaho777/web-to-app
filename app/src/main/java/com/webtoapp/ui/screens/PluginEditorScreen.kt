@@ -61,13 +61,13 @@ fun PluginEditorScreen(
     var permissions by remember { mutableStateOf(PluginPermission.values().toSet()) }
     var showEntry by remember { mutableStateOf(true) }
 
-    // Package files
-    var mainJs by remember { mutableStateOf("") }
+    // Package files — one authored document (plugin.html); css only survives
+    // a load→save round-trip for legacy packages that still carry style.css.
+    var pluginHtml by remember { mutableStateOf("") }
     var css by remember { mutableStateOf("") }
-    var panelHtml by remember { mutableStateOf("") }
     var extraFiles by remember { mutableStateOf(mapOf<String, String>()) }
 
-    var codeEditTarget by remember { mutableStateOf<Int?>(null) } // 1=js 2=css 3=panel
+    var showCodeEditor by remember { mutableStateOf(false) }
     var nameError by remember { mutableStateOf(false) }
     // Fields the form doesn't edit (userscript grants/requires, legacyCompat,
     // noframes, preferredEntry) — preserved from the on-disk manifest on save
@@ -76,7 +76,7 @@ fun PluginEditorScreen(
 
     LaunchedEffect(pluginId) {
         if (pluginId == null) {
-            mainJs = NEW_PLUGIN_STUB
+            pluginHtml = NEW_PLUGIN_STUB
             return@LaunchedEffect
         }
         val plugin = store.getPlugin(pluginId) ?: run { onNavigateBack(); return@LaunchedEffect }
@@ -111,11 +111,14 @@ fun PluginEditorScreen(
             showEntry = rawManifest.toolbar
             homepage = rawManifest.homepage
         }
-        mainJs = files[PluginStore.MAIN_FILE].orEmpty()
+        pluginHtml = files[PluginStore.PLUGIN_FILE]
+            ?: buildPluginHtml(
+                files[PluginStore.MAIN_FILE].orEmpty(),
+                files[PluginStore.PANEL_FILE].orEmpty()
+            )
         css = files[PluginStore.CSS_FILE].orEmpty()
-        panelHtml = files[PluginStore.PANEL_FILE].orEmpty()
         extraFiles = files - PluginStore.MANIFEST_FILE - PluginStore.MAIN_FILE -
-            PluginStore.CSS_FILE - PluginStore.PANEL_FILE
+            PluginStore.CSS_FILE - PluginStore.PANEL_FILE - PluginStore.PLUGIN_FILE
         loaded = true
     }
 
@@ -145,9 +148,8 @@ fun PluginEditorScreen(
             legacyCompat = preservedManifest?.legacyCompat ?: false
         )
         val files = buildMap {
-            put(PluginStore.MAIN_FILE, mainJs)
+            put(PluginStore.PLUGIN_FILE, pluginHtml)
             if (css.isNotBlank()) put(PluginStore.CSS_FILE, css)
-            if (panelHtml.isNotBlank()) put(PluginStore.PANEL_FILE, panelHtml)
             putAll(extraFiles)
         }
         scope.launch {
@@ -200,40 +202,26 @@ fun PluginEditorScreen(
                     isError = nameError, errorText = Strings.pluginNameRequired)
                 Field(Strings.description, description, { description = it })
                 CodeSection(
-                    content = mainJs,
-                    language = "JavaScript",
-                    fileName = PluginStore.MAIN_FILE,
-                    placeholder = JS_PLACEHOLDER,
-                    onEdit = { codeEditTarget = 1 }
-                )
-                CodeSection(
-                    content = panelHtml,
+                    content = pluginHtml,
                     language = "HTML",
-                    fileName = PluginStore.PANEL_FILE,
+                    fileName = PluginStore.PLUGIN_FILE,
                     placeholder = HTML_PLACEHOLDER,
-                    onEdit = { codeEditTarget = 3 }
+                    onEdit = { showCodeEditor = true }
                 )
             }
         }
     }
 
-    codeEditTarget?.let { target ->
-        val (content, language, placeholder) = when (target) {
-            1 -> Triple(mainJs, "JavaScript", JS_PLACEHOLDER)
-            else -> Triple(panelHtml, "HTML", HTML_PLACEHOLDER)
-        }
+    if (showCodeEditor) {
         WtaCodeEditorDialog(
-            language = language,
-            initialContent = content,
-            placeholder = placeholder,
+            language = "HTML",
+            initialContent = pluginHtml,
+            placeholder = HTML_PLACEHOLDER,
             onSave = { newCode ->
-                when (target) {
-                    1 -> mainJs = newCode
-                    else -> panelHtml = newCode
-                }
-                codeEditTarget = null
+                pluginHtml = newCode
+                showCodeEditor = false
             },
-            onDismiss = { codeEditTarget = null }
+            onDismiss = { showCodeEditor = false }
         )
     }
 }
@@ -241,16 +229,28 @@ fun PluginEditorScreen(
 private fun slugFor(name: String): String =
     name.lowercase().replace(Regex("[^a-z0-9]+"), "-").trim('-').ifBlank { "my-plugin" }
 
-private const val JS_PLACEHOLDER = "// main.js — runs inside matching pages\n// hcj.config / hcj.fetch / hcj.badge / hcj.panel / hcj.addStyle …\n"
-private const val HTML_PLACEHOLDER = "<!-- panel.html — plugin popup UI hosted by the app -->\n"
+private val HTML_PLACEHOLDER = """
+<!-- plugin.html — one file is the whole plugin -->
+<script type="hcj/page">
+// runs inside matching pages — hcj.* API
+// hcj.config · hcj.fetch · hcj.badge · hcj.panel · hcj.notify · hcj.on · hcj.emit · hcj.addStyle
+</script>
+
+<!-- everything else in this document is the panel UI (hcjPanel API) -->
+""".trimStart() + "\n"
 
 private val NEW_PLUGIN_STUB = """
-// main.js — runs inside matching pages.
-// API: hcj.config · hcj.fetch · hcj.badge · hcj.panel · hcj.notify · hcj.on · hcj.emit · hcj.addStyle
-
+<script type="hcj/page">
+// runs inside matching pages — hcj.* API
 hcj.on('action', () => {
     // Fired when the user taps this plugin's entry.
 });
+</script>
+
+<!-- Panel UI below — normal HTML/CSS/JS, talk to the page via hcjPanel.send -->
+<style>
+  body { font-family: sans-serif; padding: 16px; }
+</style>
 
 """.trimStart()
 

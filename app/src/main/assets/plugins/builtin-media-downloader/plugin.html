@@ -1,3 +1,31 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, -apple-system, sans-serif; padding: 16px; color: var(--wta-on-surface, #1f2937); }
+.wta-media-panel{padding:4px}
+.wta-media-header{margin-bottom:16px}
+.wta-media-title{font-size:15px;font-weight:600;color:var(--wta-on-surface,#1f2937);margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wta-media-subtitle{font-size:13px;color:var(--wta-on-surface-variant,#9ca3af)}
+.wta-media-btn{width:100%;border:none;padding:14px;border-radius:12px;font-size:15px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:12px;color:#fff;transition:opacity .2s}
+.wta-media-btn:active{opacity:.8}
+.wta-media-tip{margin-top:16px;padding:12px;background:var(--wta-surface-dim,#fef3f6);border-radius:8px;font-size:12px;color:var(--wta-on-surface-variant,#9ca3af)}
+.wta-media-empty{text-align:center;padding:40px;color:var(--wta-on-surface-variant,#9ca3af)}
+.wta-media-empty-icon{font-size:28px;margin-bottom:10px}
+.wta-media-list{max-height:200px;overflow-y:auto}
+.wta-media-item{display:flex;align-items:center;gap:12px;padding:12px;background:var(--wta-surface-dim,#f9fafb);border-radius:8px;margin-bottom:8px}
+.wta-media-item-icon{font-size:20px}
+.wta-media-item-info{flex:1;font-size:13px;color:var(--wta-on-surface-variant,#4b5563);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wta-media-item-btn{background:var(--wta-surface-dim,#f3f4f6);border:none;padding:6px 12px;border-radius:6px;font-size:12px;cursor:pointer;color:var(--wta-on-surface,#374151)}
+  #wta-toast { position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%);
+    background: #111827; color: #fff; font-size: 13px; padding: 8px 16px; border-radius: 20px;
+    opacity: 0; transition: opacity .2s; pointer-events: none; max-width: 90%; }
+  #wta-toast.show { opacity: .95; }
+</style>
+<script type="hcj/page">
 
 (function() {
     'use strict';
@@ -563,3 +591,44 @@
     });
     hcj.on('action', function () { hcj.panel.open(); });
 })();
+</script>
+</head>
+<body>
+<div id="root"><div class="wta-media-empty"><div class="wta-media-empty-icon"><svg style="display:block;margin:0 auto" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 20h16"/></svg></div><div id="wta-media-status">Scanning for media...</div></div></div>
+<div id="wta-toast"></div>
+<script>
+  var root = document.getElementById('root');
+  var toastEl = document.getElementById('wta-toast');
+  var toastTimer = null;
+
+  function wire() {
+    root.querySelectorAll('[data-wta-action]').forEach(function (el) {
+      if (el.__wired) return;
+      el.__wired = true;
+      el.addEventListener('click', function (ev) {
+        ev.preventDefault();
+        hcjPanel.send({ cmd: 'act', action: el.getAttribute('data-wta-action'), arg: el.getAttribute('data-wta-arg') || '' });
+      });
+    });
+  }
+
+  function showToast(m) {
+    toastEl.textContent = m;
+    toastEl.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toastEl.classList.remove('show'); }, 1800);
+  }
+
+  hcjPanel.onMessage(function (m) {
+    if (!m) return;
+    if (m.type === 'panel' && typeof m.html === 'string') { root.innerHTML = m.html; wire();  }
+    else if (m.type === 'toast') showToast(m.msg || '');
+    else if (m.type === 'state') { if (typeof render === 'function') render(m); }
+    else if (m.type === 'findstate') { if (typeof renderFind === 'function') renderFind(m); }
+  });
+
+  
+  hcjPanel.send({ cmd: 'refresh' });
+</script>
+</body>
+</html>

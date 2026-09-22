@@ -1,3 +1,32 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, -apple-system, sans-serif; padding: 16px; color: var(--wta-on-surface, #1f2937); }
+.wta-analyzer-panel{padding:4px}
+.wta-analyzer-section{margin-bottom:20px}
+.wta-analyzer-section-title{font-size:14px;color:var(--wta-on-surface-variant,#6b7280);margin-bottom:12px}
+.wta-analyzer-info-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--wta-outline,rgba(0,0,0,.06))}
+.wta-analyzer-label{color:var(--wta-on-surface-variant,#6b7280);font-size:13px}
+.wta-analyzer-value{color:var(--wta-on-surface,#1f2937);font-weight:500;font-size:13px;max-width:60%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right}
+.wta-analyzer-perf-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.wta-analyzer-perf-card{background:var(--wta-surface-dim,#ecfdf5);padding:12px;border-radius:8px;text-align:center}
+.wta-analyzer-perf-num{font-size:20px;font-weight:600;color:var(--wta-accent,#059669)}
+.wta-analyzer-perf-label{font-size:11px;color:var(--wta-on-surface-variant,#6b7280)}
+.wta-analyzer-stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.wta-analyzer-stat{background:var(--wta-surface-dim,#f9fafb);padding:10px;border-radius:8px;text-align:center}
+.wta-analyzer-stat-icon{font-size:16px}
+.wta-analyzer-stat-num{font-size:16px;font-weight:600;color:var(--wta-on-surface,#1f2937)}
+.wta-analyzer-stat-label{font-size:10px;color:var(--wta-on-surface-variant,#9ca3af)}
+  #wta-toast { position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%);
+    background: #111827; color: #fff; font-size: 13px; padding: 8px 16px; border-radius: 20px;
+    opacity: 0; transition: opacity .2s; pointer-events: none; max-width: 90%; }
+  #wta-toast.show { opacity: .95; }
+</style>
+<script type="hcj/page">
 
 (function() {
     'use strict';
@@ -66,3 +95,45 @@
     });
     hcj.on('action', function () { hcj.panel.open(); });
 })();
+</script>
+</head>
+<body>
+<div id="root"><div class="wta-analyzer-panel"><div class="wta-analyzer-section"><div class="wta-analyzer-section-title" id="wta-analyzer-status">Analyzing page...</div><div id="wta-analyzer-content"></div></div></div></div>
+<div id="wta-toast"></div>
+<script>
+  var root = document.getElementById('root');
+  var toastEl = document.getElementById('wta-toast');
+  var toastTimer = null;
+
+  function wire() {
+    root.querySelectorAll('[data-wta-action]').forEach(function (el) {
+      if (el.__wired) return;
+      el.__wired = true;
+      el.addEventListener('click', function (ev) {
+        ev.preventDefault();
+        hcjPanel.send({ cmd: 'act', action: el.getAttribute('data-wta-action'), arg: el.getAttribute('data-wta-arg') || '' });
+      });
+    });
+  }
+
+  function showToast(m) {
+    toastEl.textContent = m;
+    toastEl.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toastEl.classList.remove('show'); }, 1800);
+  }
+
+  hcjPanel.onMessage(function (m) {
+    if (!m) return;
+    if (m.type === 'panel' && typeof m.html === 'string') { root.innerHTML = m.html; wire(); }
+    else if (m.type === 'toast') showToast(m.msg || '');
+    else if (m.type === 'state' && typeof render === 'function') render(m);
+    else if (m.type === 'findstate' && typeof renderFind === 'function') renderFind(m);
+  });
+
+
+  wire();
+  hcjPanel.send({ cmd: 'refresh' });
+</script>
+</body>
+</html>

@@ -38,6 +38,8 @@ import kotlinx.coroutines.withContext
 import java.io.*
 import java.util.zip.*
 import javax.crypto.SecretKey
+import com.webtoapp.core.plugin.PluginStore
+import com.webtoapp.core.plugin.hasPanelMarkup
 import com.webtoapp.util.AppConstants
 import com.webtoapp.util.NetworkTrustStorage
 import com.webtoapp.util.TextFileClassifier
@@ -5286,7 +5288,7 @@ fun WebApp.toApkConfigWithModules(packageName: String, context: android.content.
                     runAt = plugin.runAt.name,
                     permissions = plugin.permissions.map { it.name },
                     toolbar = plugin.showInToolbar,
-                    hasPanel = code.panelHtml.isNotBlank(),
+                    hasPanel = hasPanelMarkup(code.panelHtml),
                     entryStyle = plugin.entryStyle.name,
                     panelStyle = plugin.panelStyle.name,
                     mainJs = code.mainJs,

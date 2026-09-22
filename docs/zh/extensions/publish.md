@@ -25,11 +25,11 @@ App 同时拉取 `registry.json` 和 `submissions.json`，**只展示两边都�
    ```
    modules/my-plugin/
    ├── plugin.json    # 必需
-   ├── main.js        # 必需
-   ├── style.css      # 可选
-   ├── panel.html     # 可选
+   ├── plugin.html    # 必需 —— 页面脚本（`<script type="hcj/page">`）+ 面板文档合一
    └── icon.png       # 可选，≤256KB
    ```
+
+   旧版 `main.js` / `style.css` / `panel.html` 多文件包仍可通过校验并安装；新投稿请用单文件 `plugin.html`。
 
 2. 在 `registry.json` 中加条目：
 
@@ -67,7 +67,7 @@ App 同时拉取 `registry.json` 和 `submissions.json`，**只展示两边都�
 - kebab-case 文件夹名；无孤儿/幽灵条目；`id`/`path` 不重复
 - 必需文件齐全；`hasCss` 与 `style.css` 是否存在一致
 - `iconUrl` 大小/扩展名限制
-- `main.js` 无顶层 `return`
+- 页面脚本（`hcj/page` 块 / `main.js`）无顶层 `return`
 
 ## 浏览器扩展另算
 

@@ -28,9 +28,11 @@ import java.io.File
  * ```
  * files/plugins/
  *   <id>/plugin.json     manifest (authored for HCJ, generated for userscripts)
- *   <id>/main.js         page script (page CSS goes through hcj.addStyle)
+ *   <id>/plugin.html     the authored document: inert `<script type="hcj/page">`
+ *                        block = page script; the rest = the panel UI
+ *   <id>/main.js         legacy page script — still injected when present
  *   <id>/style.css       legacy optional — still injected when present
- *   <id>/panel.html      optional — hosted by the plugin panel surface
+ *   <id>/panel.html      legacy optional — hosted by the plugin panel surface
  *   <id>/icon.*          optional package icon
  *   <id>/files/...       optional extra files (migrated multi-file modules)
  * files/plugin_state.json   list order + chrome-extension records
@@ -52,6 +54,7 @@ class PluginStore private constructor(private val context: Context) {
         const val BUILTIN_ASSET_DIR = "plugins"
         const val PANEL_FILE = "panel.html"
         const val MAIN_FILE = "main.js"
+        const val PLUGIN_FILE = "plugin.html"
         const val CSS_FILE = "style.css"
         const val MANIFEST_FILE = "plugin.json"
 
@@ -235,7 +238,7 @@ class PluginStore private constructor(private val context: Context) {
                         manifest = manifest,
                         packageDir = dir.name,
                         kind = kind,
-                        hasPanel = File(dir, PANEL_FILE).exists(),
+                        hasPanel = dirHasPanel(dir),
                         hasCss = File(dir, CSS_FILE).exists(),
                         builtIn = false
                     )
@@ -258,6 +261,16 @@ class PluginStore private constructor(private val context: Context) {
         }
     }
 
+    /** plugin.html wins when it carries markup; legacy panel.html is the fallback signal. */
+    private fun dirHasPanel(dir: File): Boolean =
+        (File(dir, PLUGIN_FILE).takeIf { it.exists() }
+            ?.let { runCatching { hasPanelMarkup(it.readText()) }.getOrDefault(false) }
+            ?: false) || File(dir, PANEL_FILE).exists()
+
+    private fun assetDirHasPanel(dir: String): Boolean =
+        (assetText("$dir/$PLUGIN_FILE")?.let(::hasPanelMarkup) ?: false) ||
+            assetExists("$dir/$PANEL_FILE")
+
     private fun loadBuiltIns() {
         builtInsLanguage = Strings.lang
         val overlay = readOverlay()
@@ -279,7 +292,7 @@ class PluginStore private constructor(private val context: Context) {
                         manifest = manifest,
                         packageDir = "$BUILTIN_ASSET_DIR/$dirName",
                         kind = PluginKind.HCJ,
-                        hasPanel = assetExists("$BUILTIN_ASSET_DIR/$dirName/$PANEL_FILE"),
+                        hasPanel = assetDirHasPanel("$BUILTIN_ASSET_DIR/$dirName"),
                         hasCss = assetExists("$BUILTIN_ASSET_DIR/$dirName/$CSS_FILE"),
                         builtIn = true
                     )
@@ -358,11 +371,7 @@ class PluginStore private constructor(private val context: Context) {
         } catch (e: Exception) {
             ""
         }
-        return PackageCode(
-            mainJs = read(MAIN_FILE),
-            css = read(CSS_FILE),
-            panelHtml = read(PANEL_FILE)
-        )
+        return combine(read(PLUGIN_FILE), read(MAIN_FILE), read(CSS_FILE), read(PANEL_FILE))
     }
 
     private fun loadAssetPackageCode(plugin: Plugin): PackageCode {
@@ -371,12 +380,28 @@ class PluginStore private constructor(private val context: Context) {
         } catch (e: Exception) {
             ""
         }
-        return PackageCode(
-            mainJs = read(MAIN_FILE),
-            css = read(CSS_FILE),
-            panelHtml = read(PANEL_FILE)
-        )
+        return combine(read(PLUGIN_FILE), read(MAIN_FILE), read(CSS_FILE), read(PANEL_FILE))
     }
+
+    /**
+     * Merge the single-file layout with legacy files. plugin.html supplies the
+     * page script via its inert `hcj/page` block and doubles as the panel
+     * document; main.js / panel.html are kept working for older packages.
+     */
+    private fun combine(
+        pluginHtml: String,
+        legacyMainJs: String,
+        css: String,
+        legacyPanelHtml: String
+    ): PackageCode = PackageCode(
+        mainJs = listOf(extractPageJs(pluginHtml), legacyMainJs)
+            .filter { it.isNotBlank() }
+            .joinToString("\n"),
+        css = css,
+        // A page-only plugin.html must not shadow a real legacy panel.html,
+        // and must not pose as a panel document itself.
+        panelHtml = pluginHtml.takeIf { hasPanelMarkup(it) } ?: legacyPanelHtml
+    )
 
     /**
      * Resolve plugins into injectable payloads. `ids == null` resolves every
@@ -390,7 +415,7 @@ class PluginStore private constructor(private val context: Context) {
             if (plugin.isScriptPlugin) {
                 val code = loadPackageCode(plugin)
                 PluginSession.Resolved(
-                    plugin = plugin.copy(hasPanel = code.panelHtml.isNotBlank()),
+                    plugin = plugin.copy(hasPanel = hasPanelMarkup(code.panelHtml)),
                     mainJs = code.mainJs,
                     css = code.css,
                     panelHtml = code.panelHtml,
@@ -517,7 +542,8 @@ class PluginStore private constructor(private val context: Context) {
 
     /**
      * Install/overwrite an HCJ package. Returns the installed plugin id.
-     * `files` maps package-relative paths ("main.js", "panel.html", "files/x.js").
+     * `files` maps package-relative paths ("plugin.html", "files/x.js"; legacy
+     * "main.js" / "panel.html" / "style.css" are still honored on load).
      */
     suspend fun installPackage(
         manifest: PluginManifest,
@@ -552,7 +578,8 @@ class PluginStore private constructor(private val context: Context) {
                 manifest = effectiveManifest,
                 packageDir = id,
                 kind = kind,
-                hasPanel = File(dir, PANEL_FILE).exists(),
+                hasPanel = (files[PLUGIN_FILE]?.let(::hasPanelMarkup) ?: false) ||
+                    File(dir, PANEL_FILE).exists(),
                 hasCss = File(dir, CSS_FILE).exists(),
                 builtIn = false
             ).copy(

@@ -25,11 +25,11 @@ The app fetches both `registry.json` and `submissions.json` and **only shows plu
    ```
    modules/my-plugin/
    ├── plugin.json    # required
-   ├── main.js        # required
-   ├── style.css      # optional
-   ├── panel.html     # optional
+   ├── plugin.html    # required — page script (`<script type="hcj/page">`) + panel document
    └── icon.png       # optional, ≤256KB
    ```
+
+   Legacy `main.js` / `style.css` / `panel.html` packages still validate and install; new submissions should use the single `plugin.html`.
 
 2. Add an entry to `registry.json`:
 
@@ -65,9 +65,9 @@ The app fetches both `registry.json` and `submissions.json` and **only shows plu
 - Allowed values (`runAt`, `permissions`, registry enums)
 - `plugin.json` ↔ `registry.json` consistency (`id` / `name` / `version`)
 - kebab-case folder names; no orphan or ghost entries; no duplicate `id`/`path`
-- Required files present; `hasCss` agrees with the presence of `style.css`
+- Required files present (`plugin.html`, or legacy `main.js`)
 - `iconUrl` size/extension limits
-- No top-level `return` in `main.js`
+- No top-level `return` in the page script (`hcj/page` block / `main.js`)
 
 ## Browser extensions are different
 

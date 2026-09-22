@@ -12,7 +12,7 @@ class GetModuleTool : Tool {
     override val name = "GetModule"
     override val description = """
         Get a plugin's full definition as JSON: its plugin.json manifest plus every
-        package file (main.js / style.css / panel.html / files/*). Use ListModules
+        package file (plugin.html / style.css / files/*). Use ListModules
         to find the id. CreateModule and UpdateModule accept a legacy module JSON
         or this plugin shape.
     """.trimIndent()

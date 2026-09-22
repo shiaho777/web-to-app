@@ -14,9 +14,9 @@ class UpdateModuleTool : Tool {
     override val description = """
         Edit an existing plugin package. Provide a partial JSON patch: top-level
         fields merge into plugin.json; an optional "files" object maps
-        package-relative paths ("main.js", "style.css", "panel.html", "files/x")
-        to new file contents. The plugin id is always kept. Inspect the current
-        shape with GetModule first.
+        package-relative paths ("plugin.html", "style.css", "files/x") to new
+        file contents. The plugin id is always kept. Inspect the current shape
+        with GetModule first.
     """.trimIndent()
 
     override val name = "UpdateModule"

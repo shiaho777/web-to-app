@@ -69,7 +69,7 @@ KEBAB_CASE_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 SEMVER_RE = re.compile(r"^\d+(?:\.\d+){0,3}(?:[-+][\w.-]+)?$")
 
 # Files we let people drop in besides the ones the runtime actually
-# downloads (plugin.json, main.js, style.css, panel.html).
+# downloads (plugin.json, plugin.html; legacy main.js/style.css/panel.html).
 ALLOWED_EXTRA_FILES: set[str] = {
     "README.md",       # nice for module pages on GitHub
     "CHANGELOG.md",
@@ -78,7 +78,7 @@ ALLOWED_EXTRA_FILES: set[str] = {
     ".gitkeep",
 }
 
-# Image files contributors may drop next to `main.js` for use as the
+# Image files contributors may drop next to `plugin.html` for use as the
 # module icon. The CI generator does not download these — they are served
 # via the same GitHub raw / jsDelivr fallback the runtime already uses.
 ALLOWED_ICON_FILES: set[str] = {
@@ -316,8 +316,14 @@ def _validate_folder_layout(report: Report, folder: Path) -> None:
     if not (folder / "plugin.json").is_file():
         report.error(where, "missing required `plugin.json`")
 
-    if not (folder / "main.js").is_file():
-        report.error(where, "missing required `main.js`")
+    if not (folder / "plugin.html").is_file():
+        if (folder / "main.js").is_file():
+            report.warning(
+                where,
+                "legacy multi-file layout (main.js/panel.html) — prefer a single `plugin.html` with a `<script type=\"hcj/page\">` block",
+            )
+        else:
+            report.error(where, "missing required `plugin.html`")
 
     if (folder / "module.json").is_file():
         report.error(
@@ -326,7 +332,7 @@ def _validate_folder_layout(report: Report, folder: Path) -> None:
         )
 
     # Flag stray files. The runtime ignores them, so they only bloat the repo.
-    expected = {"plugin.json", "main.js", "style.css", "panel.html"}
+    expected = {"plugin.json", "plugin.html", "main.js", "style.css", "panel.html"}
     for child in folder.iterdir():
         if child.name in expected or child.name in ALLOWED_EXTRA_FILES:
             continue
@@ -414,20 +420,49 @@ def _validate_icon_coherence(
         )
 
 
-def _validate_main_js(report: Report, folder: Path) -> None:
-    """Cheap heuristics on `main.js`."""
-
+def _page_script_sources(report: Report, folder: Path) -> list[tuple[str, str]]:
+    """Page-side JS sources: the hcj/page block(s) in plugin.html, plus any
+    legacy main.js. Returns (where, content) pairs."""
+    out: list[tuple[str, str]] = []
+    plugin_html = folder / "plugin.html"
+    if plugin_html.is_file():
+        try:
+            html = plugin_html.read_text(encoding="utf-8")
+        except UnicodeDecodeError:
+            report.error(f"modules/{folder.name}/plugin.html", "must be UTF-8")
+            html = ""
+        blocks = re.findall(
+            r'<script[^>]*type\s*=\s*["\']hcj/page["\'][^>]*>(.*?)</script>',
+            html, flags=re.DOTALL | re.IGNORECASE,
+        )
+        if plugin_html.is_file() and not blocks and "main.js" not in html:
+            report.warning(
+                f"modules/{folder.name}/plugin.html",
+                "has no `<script type=\"hcj/page\">` block — page-side code will not run",
+            )
+        if blocks:
+            out.append((f"modules/{folder.name}/plugin.html", "\n".join(blocks)))
     main_js = folder / "main.js"
-    if not main_js.is_file():
-        return
-    where = f"modules/{folder.name}/main.js"
+    if main_js.is_file():
+        try:
+            out.append((f"modules/{folder.name}/main.js", main_js.read_text(encoding="utf-8")))
+        except UnicodeDecodeError:
+            report.error(f"modules/{folder.name}/main.js", "must be UTF-8")
+    return out
 
-    try:
-        content = main_js.read_text(encoding="utf-8")
-    except UnicodeDecodeError:
-        report.error(where, "must be UTF-8")
+
+def _validate_main_js(report: Report, folder: Path) -> None:
+    """Cheap heuristics on the page-side script (hcj/page block / main.js)."""
+
+    sources = _page_script_sources(report, folder)
+    if not sources:
         return
 
+    for where, content in sources:
+        _check_page_js(report, folder, where, content)
+
+
+def _check_page_js(report: Report, folder: Path, where: str, content: str) -> None:
     if not content.strip():
         report.error(where, "is empty")
         return

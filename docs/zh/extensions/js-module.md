@@ -7,12 +7,18 @@ HCJ 插件是原生格式：把普通的 **HTML + CSS + JavaScript** 打成一�
 ```
 my-plugin/
 ├── plugin.json    # 必需 —— 清单
-├── main.js        # 必需 —— 在 WebView 中运行
-├── style.css      # 可选 —— document-start 自动注入
-├── panel.html     # 可选 —— 插件自己的界面
+├── plugin.html    # 必需 —— 页面脚本 + 面板文档合一
 ├── icon.png       # 可选 —— ≤256KB；png/svg/webp/jpg/jpeg
 └── files/         # 可选的额外包文件
 ```
+
+::: info 一个 HTML 文件就是整个插件
+`plugin.html` 是普通 HTML 文档。在匹配**网页**里运行的部分放在惰性块 `<script type="hcj/page">…</script>` 中（未知 script type 不会执行——标准的数据块用法）；文档的其余部分就是**面板 UI**。纯页面插件的 `plugin.html` 里只有这一块。
+:::
+
+::: details 旧的多文件布局
+旧包可能还带着 `main.js` + `panel.html` + `style.css`。它们照常加载——页面脚本照跑、`panel.html` 照托管、`style.css` 照注入。在编辑器里保存这类包时会自动改写成 `plugin.html`。
+:::
 
 ## `plugin.json` 清单
 
@@ -55,17 +61,18 @@ my-plugin/
 - **正则** —— 用斜杠包裹：`"/example\\.com\\/article\\/\\d+/"`，200ms 超时，超时按不匹配处理。
 - **`excludeMatches`** —— 把命中的 URL 从结果中排除。
 
-## `main.js` 合约
+## 页面脚本合约
 
-代码被包进 IIFE，并注入一个作用域化的 `hcj` API 对象（异常进 `console.error`，不会影响页面）：
+`<script type="hcj/page">` 里的代码被包进 IIFE，并注入一个作用域化的 `hcj` API 对象（异常进 `console.error`，不会影响页面）：
 
-```js
-// main.js
+```html
+<script type="hcj/page">
 const greeting = hcj.config.get('greeting', 'Hello')
 const banner = document.createElement('div')
 banner.textContent = greeting
 banner.style.cssText = 'position:fixed;top:0;left:0;z-index:99999;padding:8px;background:#2563eb;color:#fff'
 document.body.appendChild(banner)
+</script>
 ```
 
 | API | 说明 |
@@ -75,9 +82,10 @@ document.body.appendChild(banner)
 | `hcj.fetch(url, opts)` | 经宿主的跨域请求——需要 `FETCH`，返回 Promise |
 | `hcj.notify(title, body)` | 系统通知——需要 `NOTIFY` |
 | `hcj.badge(text, color)` | 工具栏角标——需要 `BADGE` |
-| `hcj.panel.open()` / `close()` | 打开/关闭本插件的 `panel.html` |
+| `hcj.addStyle(css)` | 注入页面 CSS（按文档幂等） |
+| `hcj.panel.open()` / `close()` | 打开/关闭本插件的面板文档 |
 | `hcj.panel.send(msg)` / `hcj.panel.onMessage(fn)` | 页面 ↔ 面板消息 |
-| `hcj.on('action', fn)` | 用户点击插件入口时触发（无 `panel.html` 的插件） |
+| `hcj.on('action', fn)` | 用户点击插件入口时触发（纯页面插件） |
 | `hcj.emit(evt, data)` | 给自己的 handler 发自定义事件 |
 | `hcj.log(msg)` | 写宿主日志 |
 
@@ -85,9 +93,9 @@ document.body.appendChild(banner)
 代码被包在 IIFE 里，顶层 `return` 是语法错误，市场校验器会直接拒绝。
 :::
 
-## 面板（`panel.html`）
+## 面板（`plugin.html` 的其余部分）
 
-面板是插件自己的页面，由用户选定的宿主承载（底部抽屉/悬浮窗/全屏）。面板脚本运行前，会先注入镜像版 `hcjPanel` 对象：
+`hcj/page` 块之外的内容就是插件自己的页面，由用户选定的宿主承载（底部抽屉/悬浮窗/全屏）。面板脚本运行前，会先注入镜像版 `hcjPanel` 对象：
 
 ```html
 <script>
@@ -99,7 +107,7 @@ document.body.appendChild(banner)
 </script>
 ```
 
-**设置界面完全由你写。** 在 `panel.html` 里用普通 HTML/CSS/JS 做表单，用 `hcjPanel.config` 持久化；页面侧可以重读配置，或监听 `hcj.panel.onMessage` 实时应用变更。
+**设置界面完全由你写。** 直接在 `plugin.html` 里用普通 HTML/CSS/JS 做表单，用 `hcjPanel.config` 持久化；页面侧可以重读配置，或监听 `hcj.panel.onMessage` 实时应用变更。
 
 ## 油猴互通
 

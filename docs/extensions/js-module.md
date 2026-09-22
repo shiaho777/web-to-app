@@ -7,12 +7,18 @@ An HCJ plugin is the native format: ordinary **HTML + CSS + JavaScript** package
 ```
 my-plugin/
 ├── plugin.json    # required — the manifest
-├── main.js        # required — runs in the WebView
-├── style.css      # optional — auto-injected at document-start
-├── panel.html     # optional — the plugin's own UI
+├── plugin.html    # required — page script + panel document in one file
 ├── icon.png       # optional — ≤256KB; png/svg/webp/jpg/jpeg
 └── files/         # optional extra package files
 ```
+
+::: info One HTML file is the whole plugin
+`plugin.html` is a normal HTML document. The part that runs inside matching **pages** lives in an inert block `<script type="hcj/page">…</script>` (unknown script types never execute — the standard data-block idiom). Everything else in the document is the **panel UI**. A page-only plugin is just a `plugin.html` holding nothing but the `hcj/page` block.
+:::
+
+::: details Legacy multi-file layout
+Older packages may still carry `main.js` + `panel.html` + `style.css`. They keep loading unchanged — page scripts run, `panel.html` is hosted, `style.css` is injected. Saving such a package in the editor rewrites it as `plugin.html`.
+:::
 
 ## `plugin.json` schema
 
@@ -55,17 +61,18 @@ my-plugin/
 - **Regex** — wrap the pattern in slashes: `"/example\\.com\\/article\\/\\d+/"`. A 200ms timeout applies; a timeout counts as no match.
 - **`excludeMatches`** — removes matching URLs from the result set.
 
-## The `main.js` contract
+## The page-script contract
 
-Your code is wrapped in an IIFE with a scoped `hcj` API object (errors go to `console.error` and never break the page):
+The code inside `<script type="hcj/page">` is wrapped in an IIFE with a scoped `hcj` API object (errors go to `console.error` and never break the page):
 
-```js
-// main.js
+```html
+<script type="hcj/page">
 const greeting = hcj.config.get('greeting', 'Hello')
 const banner = document.createElement('div')
 banner.textContent = greeting
 banner.style.cssText = 'position:fixed;top:0;left:0;z-index:99999;padding:8px;background:#2563eb;color:#fff'
 document.body.appendChild(banner)
+</script>
 ```
 
 | API | Notes |
@@ -75,9 +82,10 @@ document.body.appendChild(banner)
 | `hcj.fetch(url, opts)` | Cross-origin fetch via the host — requires `FETCH`, returns a Promise |
 | `hcj.notify(title, body)` | Android notification — requires `NOTIFY` |
 | `hcj.badge(text, color)` | Toolbar badge — requires `BADGE` |
-| `hcj.panel.open()` / `close()` | Open/close this plugin's `panel.html` |
+| `hcj.addStyle(css)` | Inject page CSS (idempotent per document) |
+| `hcj.panel.open()` / `close()` | Open/close this plugin's panel document |
 | `hcj.panel.send(msg)` / `hcj.panel.onMessage(fn)` | Page ↔ panel messages |
-| `hcj.on('action', fn)` | Fired when the user taps the plugin entry (plugins without `panel.html`) |
+| `hcj.on('action', fn)` | Fired when the user taps the plugin entry (page-only plugins) |
 | `hcj.emit(evt, data)` | Fire a custom event into your own handlers |
 | `hcj.log(msg)` | Host-side log |
 
@@ -85,9 +93,9 @@ document.body.appendChild(banner)
 Because your code is wrapped in an IIFE, a top-level `return` is invalid and is rejected by the market validator.
 :::
 
-## Panels (`panel.html`)
+## The panel (the rest of `plugin.html`)
 
-A panel is the plugin's own page, hosted in the user's chosen container (bottom sheet / floating window / fullscreen). Inside it, a mirrored `hcjPanel` object is available before your scripts run:
+Everything outside the `hcj/page` block is the plugin's own page, hosted in the user's chosen container (bottom sheet / floating window / fullscreen). Inside it, a mirrored `hcjPanel` object is available before your scripts run:
 
 ```html
 <script>
@@ -99,7 +107,7 @@ A panel is the plugin's own page, hosted in the user's chosen container (bottom 
 </script>
 ```
 
-**Settings UI is yours.** Build it in `panel.html` with ordinary HTML/CSS/JS and persist via `hcjPanel.config`. The page side can re-read values or listen for a `hcj.panel.onMessage` ping to apply changes live.
+**Settings UI is yours.** Build it directly in `plugin.html` with ordinary HTML/CSS/JS and persist via `hcjPanel.config`. The page side can re-read values or listen for a `hcj.panel.onMessage` ping to apply changes live.
 
 ## Userscript interop
 

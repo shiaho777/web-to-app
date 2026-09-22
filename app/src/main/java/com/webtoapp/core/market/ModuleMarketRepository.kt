@@ -195,18 +195,23 @@ class ModuleMarketRepository private constructor(
             ?: return Result.failure(IllegalStateException("plugin.json is malformed"))
 
         onProgress(InstallProgress(Strings.moduleMarketDlCode, 1, 3))
-        val mainJs = fetchRaw("${entry.path}/main.js")
-            ?: return Result.failure(IOException("main.js download failed"))
-
-        onProgress(InstallProgress(Strings.moduleMarketDlStyle, 2, 3))
-        val styleCss = fetchRaw("${entry.path}/style.css").orEmpty()
-        val panelHtml = fetchRaw("${entry.path}/panel.html").orEmpty()
+        val files = linkedMapOf<String, String>()
+        val pluginHtml = fetchRaw("${entry.path}/plugin.html").orEmpty()
+        if (pluginHtml.isNotBlank()) {
+            files[com.webtoapp.core.plugin.PluginStore.PLUGIN_FILE] = pluginHtml
+        } else {
+            // Legacy multi-file layout still installs unchanged.
+            val mainJs = fetchRaw("${entry.path}/main.js")
+                ?: return Result.failure(IOException("plugin code download failed"))
+            files[com.webtoapp.core.plugin.PluginStore.MAIN_FILE] = mainJs
+            onProgress(InstallProgress(Strings.moduleMarketDlStyle, 2, 3))
+            fetchRaw("${entry.path}/style.css")?.takeIf { it.isNotBlank() }
+                ?.let { files[com.webtoapp.core.plugin.PluginStore.CSS_FILE] = it }
+            fetchRaw("${entry.path}/panel.html")?.takeIf { it.isNotBlank() }
+                ?.let { files[com.webtoapp.core.plugin.PluginStore.PANEL_FILE] = it }
+        }
 
         onProgress(InstallProgress(Strings.moduleMarketInstalling, 3, 3))
-        val files = linkedMapOf<String, String>()
-        files[com.webtoapp.core.plugin.PluginStore.MAIN_FILE] = mainJs
-        if (styleCss.isNotBlank()) files[com.webtoapp.core.plugin.PluginStore.CSS_FILE] = styleCss
-        if (panelHtml.isNotBlank()) files[com.webtoapp.core.plugin.PluginStore.PANEL_FILE] = panelHtml
 
         val effective = manifest.copy(id = manifest.id.takeIf { it.isNotBlank() } ?: entry.id)
         return com.webtoapp.core.plugin.PluginStore.getInstance(context)
