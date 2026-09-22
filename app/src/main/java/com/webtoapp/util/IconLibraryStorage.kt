@@ -117,34 +117,6 @@ object IconLibraryStorage {
         }
     }
 
-    suspend fun saveFromBitmap(
-        context: Context,
-        bitmap: Bitmap,
-        name: String = Strings.icon
-    ): IconLibraryItem? = withContext(Dispatchers.IO) {
-        try {
-            val id = "lib_${UUID.randomUUID().toString().take(8)}"
-            val file = File(getLibraryDir(context), "$id.png")
-
-            FileOutputStream(file).use { out ->
-                bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
-            }
-
-            val item = IconLibraryItem(
-                id = id,
-                path = file.absolutePath,
-                name = name,
-                isAiGenerated = false
-            )
-
-            _iconsFlow.value = listOf(item) + _iconsFlow.value
-            item
-        } catch (e: Exception) {
-            AppLogger.e(TAG, "Operation failed", e)
-            null
-        }
-    }
-
     suspend fun delete(context: Context, item: IconLibraryItem) = withContext(Dispatchers.IO) {
         try {
             File(item.path).delete()

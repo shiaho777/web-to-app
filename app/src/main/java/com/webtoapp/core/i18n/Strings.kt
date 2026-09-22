@@ -989,13 +989,6 @@ object Strings {
     val savedIcons: String get() = StringsA.savedIcons
     val uploadToLibrary: String get() = StringsA.uploadToLibrary
     val uploadToLibraryDesc: String get() = StringsA.uploadToLibraryDesc
-    val cropIcon: String get() = StringsA.cropIcon
-    val cropDragHint: String get() = StringsA.cropDragHint
-    val cropRatioSquare: String get() = StringsA.cropRatioSquare
-    val cropRatioFree: String get() = StringsA.cropRatioFree
-    val cropRatioCircle: String get() = StringsA.cropRatioCircle
-    val cropOriginalSize: String get() = StringsA.cropOriginalSize
-    val cropOutputSize: String get() = StringsA.cropOutputSize
     val deleteIcon: String get() = StringsA.deleteIcon
     val deleteIconConfirm: String get() = StringsA.deleteIconConfirm
     val saveFailed: String get() = StringsA.saveFailed

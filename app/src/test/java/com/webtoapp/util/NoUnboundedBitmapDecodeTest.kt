@@ -18,7 +18,6 @@ class NoUnboundedBitmapDecodeTest {
         // The guard implementation itself.
         "com/webtoapp/util/BoundedBitmaps.kt",
         // Own two-pass bounds sampling for the crop UI.
-        "com/webtoapp/ui/components/IconCropDialog.kt",
         "com/webtoapp/ui/components/StatusBarImageCropper.kt",
         // Own bounds sampling on the import path.
         "com/webtoapp/util/IconStorage.kt",

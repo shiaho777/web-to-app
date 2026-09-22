@@ -12539,107 +12539,16 @@ object StringsA {
     }
 
     val uploadToLibraryDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "从相册选择图片，裁剪后存入图标库"
-        AppLanguage.ENGLISH -> "Pick an image from the gallery, crop it, and save it to the library"
-        AppLanguage.ARABIC -> "اختر صورة من المعرض، قصها، واحفظها في المكتبة"
-        AppLanguage.PORTUGUESE -> "Escolha uma imagem da galeria, recorte-a e salve-a na biblioteca"
-        AppLanguage.SPANISH -> "Elige una imagen de la galería, recórtala y guárdala en la biblioteca"
-        AppLanguage.FRENCH -> "Choisissez une image dans la galerie, recadrez-la et enregistrez-la dans la bibliothèque"
-        AppLanguage.GERMAN -> "Bild aus der Galerie wählen, zuschneiden und in der Bibliothek speichern"
-        AppLanguage.RUSSIAN -> "Выберите изображение из галереи, обрежьте его и сохраните в библиотеку"
-        AppLanguage.JAPANESE -> "ギャラリーから画像を選び、クロップしてライブラリに保存"
-        AppLanguage.KOREAN -> "갤러리에서 이미지를 선택하고 자른 뒤 라이브러리에 저장"
-    }
-
-    val cropIcon: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "裁剪图标"
-        AppLanguage.ENGLISH -> "Crop Icon"
-        AppLanguage.ARABIC -> "قص الأيقونة"
-        AppLanguage.PORTUGUESE -> "Recortar Ícone"
-        AppLanguage.SPANISH -> "Recortar Icono"
-        AppLanguage.FRENCH -> "Rogner l'icône"
-        AppLanguage.GERMAN -> "Symbol zuschneiden"
-        AppLanguage.RUSSIAN -> "Обрезать иконку"
-        AppLanguage.JAPANESE -> "アイコンをクロップ"
-        AppLanguage.KOREAN -> "아이콘 자르기"
-    }
-
-    val cropDragHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "拖动或双指缩放调整裁剪区域"
-        AppLanguage.ENGLISH -> "Drag or pinch to adjust the crop area"
-        AppLanguage.ARABIC -> "اسحب أو استخدم إصبعين لضبط منطقة القص"
-        AppLanguage.PORTUGUESE -> "Arraste ou pinça para ajustar a área de corte"
-        AppLanguage.SPANISH -> "Arrastra o pellizca para ajustar el área de recorte"
-        AppLanguage.FRENCH -> "Faites glisser ou pincez pour ajuster la zone de rognage"
-        AppLanguage.GERMAN -> "Ziehen oder auf-/zuziehen, um den Zuschnitt anzupassen"
-        AppLanguage.RUSSIAN -> "Перетащите или сожмите пальцами, чтобы настроить область обрезки"
-        AppLanguage.JAPANESE -> "ドラッグまたはピンチでクロップ範囲を調整"
-        AppLanguage.KOREAN -> "드래그하거나 두 손가락으로 확대/축소하여 영역 조정"
-    }
-
-    val cropRatioSquare: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "方形"
-        AppLanguage.ENGLISH -> "Square"
-        AppLanguage.ARABIC -> "مربع"
-        AppLanguage.PORTUGUESE -> "Quadrado"
-        AppLanguage.SPANISH -> "Cuadrado"
-        AppLanguage.FRENCH -> "Carré"
-        AppLanguage.GERMAN -> "Quadratisch"
-        AppLanguage.RUSSIAN -> "Квадрат"
-        AppLanguage.JAPANESE -> "正方形"
-        AppLanguage.KOREAN -> "정사각형"
-    }
-
-    val cropRatioFree: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "自由"
-        AppLanguage.ENGLISH -> "Free"
-        AppLanguage.ARABIC -> "حر"
-        AppLanguage.PORTUGUESE -> "Livre"
-        AppLanguage.SPANISH -> "Libre"
-        AppLanguage.FRENCH -> "Libre"
-        AppLanguage.GERMAN -> "Frei"
-        AppLanguage.RUSSIAN -> "Свободно"
-        AppLanguage.JAPANESE -> "自由"
-        AppLanguage.KOREAN -> "자유"
-    }
-
-    val cropRatioCircle: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "圆形"
-        AppLanguage.ENGLISH -> "Circle"
-        AppLanguage.ARABIC -> "دائرة"
-        AppLanguage.PORTUGUESE -> "Círculo"
-        AppLanguage.SPANISH -> "Círculo"
-        AppLanguage.FRENCH -> "Cercle"
-        AppLanguage.GERMAN -> "Kreis"
-        AppLanguage.RUSSIAN -> "Круг"
-        AppLanguage.JAPANESE -> "円形"
-        AppLanguage.KOREAN -> "원형"
-    }
-
-    val cropOriginalSize: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "原图尺寸"
-        AppLanguage.ENGLISH -> "Original Size"
-        AppLanguage.ARABIC -> "الحجم الأصلي"
-        AppLanguage.PORTUGUESE -> "Tamanho Original"
-        AppLanguage.SPANISH -> "Tamaño Original"
-        AppLanguage.FRENCH -> "Taille d'origine"
-        AppLanguage.GERMAN -> "Originalgröße"
-        AppLanguage.RUSSIAN -> "Исходный размер"
-        AppLanguage.JAPANESE -> "元のサイズ"
-        AppLanguage.KOREAN -> "원본 크기"
-    }
-
-    val cropOutputSize: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "输出尺寸"
-        AppLanguage.ENGLISH -> "Output Size"
-        AppLanguage.ARABIC -> "حجم الإخراج"
-        AppLanguage.PORTUGUESE -> "Tamanho de Saída"
-        AppLanguage.SPANISH -> "Tamaño de Salida"
-        AppLanguage.FRENCH -> "Taille de sortie"
-        AppLanguage.GERMAN -> "Ausgabegröße"
-        AppLanguage.RUSSIAN -> "Размер вывода"
-        AppLanguage.JAPANESE -> "出力サイズ"
-        AppLanguage.KOREAN -> "출력 크기"
+        AppLanguage.CHINESE -> "从相册选择图片，存入图标库"
+        AppLanguage.ENGLISH -> "Pick an image from the gallery and save it to the library"
+        AppLanguage.ARABIC -> "اختر صورة من المعرض واحفظها في المكتبة"
+        AppLanguage.PORTUGUESE -> "Escolha uma imagem da galeria e salve-a na biblioteca"
+        AppLanguage.SPANISH -> "Elige una imagen de la galería y guárdala en la biblioteca"
+        AppLanguage.FRENCH -> "Choisissez une image dans la galerie et enregistrez-la dans la bibliothèque"
+        AppLanguage.GERMAN -> "Bild aus der Galerie wählen und in der Bibliothek speichern"
+        AppLanguage.RUSSIAN -> "Выберите изображение из галереи и сохраните в библиотеку"
+        AppLanguage.JAPANESE -> "ギャラリーから画像を選びライブラリに保存"
+        AppLanguage.KOREAN -> "갤러리에서 이미지를 선택해 라이브러리에 저장"
     }
 
     val deleteIcon: String get() = when (Strings.lang) {

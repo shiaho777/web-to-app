@@ -1,6 +1,6 @@
 package com.webtoapp.ui.components
 
-import android.net.Uri
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -41,17 +41,23 @@ fun IconLibraryDialog(
     val scope = rememberCoroutineScope()
     val icons by IconLibraryStorage.iconsFlow.collectAsState(initial = emptyList())
 
-    var pendingCropUri by remember { mutableStateOf<Uri?>(null) }
-
     LaunchedEffect(Unit) {
         IconLibraryStorage.initialize(context)
     }
 
-    val cropImageLauncher = rememberLauncherForActivityResult(
+    val uploadImageLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
     ) { uri ->
         if (uri != null) {
-            pendingCropUri = uri
+            scope.launch {
+                val item = IconLibraryStorage.saveFromUri(context, uri)
+                if (item != null) {
+                    onSelectIcon(item.path)
+                    onDismiss()
+                } else {
+                    Toast.makeText(context, Strings.saveFailed, Toast.LENGTH_SHORT).show()
+                }
+            }
         }
     }
 
@@ -106,7 +112,7 @@ fun IconLibraryDialog(
 
                 OutlinedCard(
                     onClick = {
-                        cropImageLauncher.launch(
+                        uploadImageLauncher.launch(
                             PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
                         )
                     },
@@ -257,18 +263,6 @@ fun IconLibraryDialog(
                 }
             }
         }
-    }
-
-    pendingCropUri?.let { uri ->
-        IconCropDialog(
-            imageUri = uri,
-            onDismiss = { pendingCropUri = null },
-            onCropComplete = { path ->
-                pendingCropUri = null
-                onSelectIcon(path)
-                onDismiss()
-            }
-        )
     }
 }
 
