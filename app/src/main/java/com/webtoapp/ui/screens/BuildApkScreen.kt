@@ -34,6 +34,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -42,6 +43,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
@@ -83,6 +85,7 @@ import com.webtoapp.ui.design.WtaRadius
 import com.webtoapp.ui.design.WtaScreen
 import com.webtoapp.ui.design.WtaSectionDivider
 import com.webtoapp.ui.design.WtaToggleRow
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -130,6 +133,7 @@ private fun BuildApkContent(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val repository = remember { WebToAppApplication.repository }
 
     // 双阶段渲染：先显示轻量骨架，等导航过渡动画结束（220ms）后再初始化重活，
     // 避免 ApkBuilder 构造（mkdirs）、包名查询、引擎检查、预检等与过渡动画抢主线程导致掉帧。
@@ -158,7 +162,9 @@ private fun BuildApkContent(
     // surface them so "preparing" shows real progress instead of a bare spinner.
     val depDownloadState by com.webtoapp.core.download.DependencyDownloadEngine.state
         .collectAsStateWithLifecycle()
-    var forceFullRebuild by remember(webApp.id) { mutableStateOf(false) }
+    var forceFullRebuild by remember(webApp.id) {
+        mutableStateOf(webApp.apkExportConfig?.forceFullRebuild ?: false)
+    }
     var lastBuildMode by remember(webApp.id) { mutableStateOf<String?>(null) }
     var lastBuildReason by remember(webApp.id) { mutableStateOf<String?>(null) }
     var cacheMessage by remember(webApp.id) { mutableStateOf<String?>(null) }
@@ -218,18 +224,29 @@ private fun BuildApkContent(
         }
     }
 
+    /**
+     * The build-screen-managed slice of [com.webtoapp.data.model.ApkExportConfig]: every
+     * option this screen edits, merged onto the app's stored config so untouched fields
+     * (package name, version, permissions, …) survive. Single source for both the build
+     * call and the persist path below.
+     */
+    fun buildScreenExportConfig(): com.webtoapp.data.model.ApkExportConfig {
+        return (webApp.apkExportConfig ?: com.webtoapp.data.model.ApkExportConfig()).copy(
+            encryptionConfig = encryptionConfig,
+            isolationConfig = isolationConfig,
+            backgroundRunEnabled = backgroundRunEnabled,
+            backgroundRunConfig = backgroundRunConfig,
+            notificationEnabled = notificationEnabled,
+            notificationConfig = notificationConfig,
+            engineType = selectedEngineType,
+            perAppSigningEnabled = perAppSigningEnabled,
+            forceFullRebuild = forceFullRebuild
+        )
+    }
+
     fun currentBuildConfig(): WebApp {
         return webApp.copy(
-            apkExportConfig = (webApp.apkExportConfig ?: com.webtoapp.data.model.ApkExportConfig()).copy(
-                encryptionConfig = encryptionConfig,
-                isolationConfig = isolationConfig,
-                backgroundRunEnabled = backgroundRunEnabled,
-                backgroundRunConfig = backgroundRunConfig,
-                notificationEnabled = notificationEnabled,
-                notificationConfig = notificationConfig,
-                engineType = selectedEngineType,
-                perAppSigningEnabled = perAppSigningEnabled
-            ).let { exportConfig ->
+            apkExportConfig = buildScreenExportConfig().let { exportConfig ->
                 val suggested = suggestedVersion
                 if (suggested != null && (exportConfig.customVersionCode ?: 1) < suggested.first) {
                     exportConfig.copy(
@@ -241,6 +258,32 @@ private fun BuildApkContent(
                 }
             }
         ).withRuntimePermissionsSyncedFromFeatures()
+    }
+
+    // Persist the build options onto the app row so a later visit restores them instead
+    // of resetting to defaults. The snapshot from first composition is the "clean"
+    // baseline — writes only run after the user actually changes something, and
+    // persistBuildScreenExportConfig itself skips no-op writes (updateWebApp bumps
+    // `updatedAt`, which would reshuffle the app list and re-emit into the collector).
+    val exportConfigSnapshot = buildScreenExportConfig()
+    val initialExportConfig = remember(webApp.id) { exportConfigSnapshot }
+    val latestExportConfig by rememberUpdatedState(exportConfigSnapshot)
+    LaunchedEffect(exportConfigSnapshot) {
+        if (exportConfigSnapshot == initialExportConfig) return@LaunchedEffect
+        delay(400)
+        persistBuildScreenExportConfig(repository, webApp.id, exportConfigSnapshot)
+    }
+    DisposableEffect(webApp.id) {
+        onDispose {
+            val pending = latestExportConfig
+            if (pending != initialExportConfig) {
+                // The composition scope is already gone by the time onDispose runs; flush
+                // on a detached IO scope so a change made right before leaving still lands.
+                CoroutineScope(Dispatchers.IO).launch {
+                    persistBuildScreenExportConfig(repository, webApp.id, pending)
+                }
+            }
+        }
     }
 
     fun launchBuild() {
@@ -963,6 +1006,22 @@ private fun resolveBuildIsolationDefault(
     config: com.webtoapp.core.privacy.IsolationConfig?
 ): com.webtoapp.core.privacy.IsolationConfig {
     return config ?: com.webtoapp.core.privacy.IsolationConfig.DISABLED
+}
+
+/**
+ * Write the build screen's export config back onto the stored app row, preserving fields
+ * the screen doesn't manage. Skips the update entirely when the stored row already
+ * matches — [WebAppRepository.updateWebApp] bumps `updatedAt`, so even a no-op write
+ * would reshuffle the app list and feed this screen's collector another emission.
+ */
+internal suspend fun persistBuildScreenExportConfig(
+    repository: com.webtoapp.data.repository.WebAppRepository,
+    appId: Long,
+    exportConfig: com.webtoapp.data.model.ApkExportConfig
+) {
+    val base = repository.getWebApp(appId) ?: return
+    if (base.apkExportConfig == exportConfig) return
+    repository.updateWebApp(base.copy(apkExportConfig = exportConfig))
 }
 
 

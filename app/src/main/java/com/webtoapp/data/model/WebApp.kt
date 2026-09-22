@@ -1309,7 +1309,14 @@ data class ApkExportConfig(
      * rebuild, so updates install cleanly while two different package names never share a
      * certificate. When the flag is off the build behaves exactly as before.
      */
-    val perAppSigningEnabled: Boolean = false
+    val perAppSigningEnabled: Boolean = false,
+
+    /**
+     * Remembered state of the build screen's "force full rebuild" toggle. Build-invocation
+     * behavior only: consumed host-side by `ApkBuilder.buildApk` and never serialized into
+     * the generated app's shell config JSON.
+     */
+    val forceFullRebuild: Boolean = false
 )
 
 data class NetworkTrustConfig(

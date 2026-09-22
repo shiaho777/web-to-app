@@ -126,6 +126,23 @@ class ConvertersTest {
     }
 
     @Test
+    fun `apk export config keeps force full rebuild across a roundtrip`() {
+        val config = ApkExportConfig(forceFullRebuild = true)
+
+        val decoded = converters.toApkExportConfig(converters.fromApkExportConfig(config))
+
+        assertThat(decoded?.forceFullRebuild).isTrue()
+    }
+
+    @Test
+    fun `legacy export config json without forceFullRebuild decodes as false`() {
+        val decoded = converters.toApkExportConfig("""{"engineType":"GECKOVIEW"}""")
+
+        assertThat(decoded?.engineType).isEqualTo("GECKOVIEW")
+        assertThat(decoded?.forceFullRebuild).isFalse()
+    }
+
+    @Test
     fun `enum decoding accepts the serialized name that encoding emits`() {
         // NotificationType declares lowercase @SerializedName values, so this is the
         // on-disk representation Gson writes.
