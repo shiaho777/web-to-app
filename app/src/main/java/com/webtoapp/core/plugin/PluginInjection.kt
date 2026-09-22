@@ -141,7 +141,23 @@ object PluginInjection {
     },
     send: function(msg) { B.send(pid, JSON.stringify(msg === undefined ? null : msg)); },
     onMessage: function(fn) { window.__hcjPanelOnMsg = fn; },
-    close: function() { B.close(pid); }
+    close: function() { B.close(pid); },
+    toast: function(msg) {
+      var t = document.getElementById('hcj-panel-toast');
+      if (!t) {
+        t = document.createElement('div');
+        t.id = 'hcj-panel-toast';
+        t.style.cssText = 'position:fixed;left:50%;bottom:28px;transform:translateX(-50%);' +
+          'background:rgba(17,24,39,.92);color:#fff;padding:9px 18px;border-radius:20px;' +
+          'font-size:13px;line-height:1.4;z-index:2147483647;pointer-events:none;' +
+          'opacity:0;transition:opacity .2s;max-width:80%;text-align:center';
+        (document.body || document.documentElement).appendChild(t);
+      }
+      t.textContent = String(msg);
+      t.style.opacity = '1';
+      clearTimeout(t.__hcjT);
+      t.__hcjT = setTimeout(function() { t.style.opacity = '0'; }, 1600);
+    }
   };
 })();
 """

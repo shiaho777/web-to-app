@@ -122,6 +122,7 @@ class PluginBridge(
                     val bytes = resp.body?.bytes() ?: ByteArray(0)
                     val truncated = bytes.size > MAX_BODY_BYTES
                     val payload = bytes.let { if (truncated) it.copyOf(MAX_BODY_BYTES.toInt()) else it }
+                    val binary = opts?.get("responseType")?.asString == "base64"
                     val respHeaders = com.google.gson.JsonObject()
                     resp.headers.forEach { (n, v) -> respHeaders.addProperty(n, v) }
                     gson.toJson(
@@ -129,7 +130,10 @@ class PluginBridge(
                             "status" to resp.code,
                             "statusText" to resp.message,
                             "headers" to respHeaders,
-                            "body" to payload.toString(Charsets.UTF_8),
+                            "body" to if (binary)
+                                android.util.Base64.encodeToString(payload, android.util.Base64.NO_WRAP)
+                            else payload.toString(Charsets.UTF_8),
+                            "encoding" to if (binary) "base64" else "utf8",
                             "truncated" to truncated
                         )
                     )

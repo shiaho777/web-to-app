@@ -11,13 +11,14 @@ A consolidated reference for the plugin APIs. Status legend:
 | API | Status | Notes |
 | --- | --- | --- |
 | `hcj.config.get` / `set` / `remove` / `all` | ✅ | Persistent KV, gated by `STORAGE` permission |
-| `hcj.fetch` | ✅ | Cross-origin via OkHttp, gated by `FETCH`; returns a Promise |
+| `hcj.fetch` | ✅ | Cross-origin via OkHttp, gated by `FETCH`; returns a Promise. `{method, headers, body}` supported; `responseType: "base64"` returns the body base64-encoded (`encoding` field tells which) for binary payloads |
 | `hcj.notify` | ✅ | Android notification, gated by `NOTIFY` |
 | `hcj.toast` | ✅ | In-page floating toast — use for action feedback; `hcj.notify` is for rare real notifications |
 | `hcj.badge` | ✅ | Toolbar badge, gated by `BADGE` |
 | `hcj.addStyle` | ✅ | Injects page CSS as `<style id="hcj-css-<id>">`, idempotent per plugin per document |
 | `hcj.panel.open` / `close` / `send` / `onMessage` | ✅ | Hosted in the user-chosen panel surface |
 | `hcj.on('action')` / `hcj.emit` | ✅ | Plugin entry tap / custom events |
+| `hcj.on('navigate')` | ✅ | Fired on every URL change including SPA `pushState` — payload `{url}`; re-arm page hooks there |
 | `hcj.id` / `hcj.manifest` / `hcj.lang` | ✅ | |
 
 ## `hcjPanel.*` (panel side)
@@ -26,6 +27,7 @@ A consolidated reference for the plugin APIs. Status legend:
 | --- | --- | --- |
 | `hcjPanel.config.*` | ✅ | Same KV store as the page side |
 | `hcjPanel.send` / `hcjPanel.onMessage` / `hcjPanel.close` | ✅ | Panel ↔ page channel and dismissal |
+| `hcjPanel.toast` | ✅ | Floating toast inside the panel surface |
 
 ## Userscript `GM_*`
 

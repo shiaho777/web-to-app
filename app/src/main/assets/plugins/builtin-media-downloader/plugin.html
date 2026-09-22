@@ -596,6 +596,13 @@
         if (m.cmd === 'refresh') { pushPanel(); return; }
         if (m.cmd === 'act' && m.action === 'mediaDL') { mediaDL(m.arg || ''); }
     });
+    // SPA navigation keeps the JS context alive — drop stale detections and
+    // re-render so an open panel never lists the previous page's media.
+    hcj.on('navigate', function () {
+        mediaList = [];
+        audioUrl = null;
+        pushPanel();
+    });
     hcj.on('action', function () { hcj.panel.open(); });
 })();
 </script>

@@ -11,13 +11,14 @@
 | API | 状态 | 说明 |
 | --- | --- | --- |
 | `hcj.config.get` / `set` / `remove` / `all` | ✅ | 持久化 KV，需 `STORAGE` 权限 |
-| `hcj.fetch` | ✅ | 经 OkHttp 跨域，需 `FETCH`；返回 Promise |
+| `hcj.fetch` | ✅ | 经 OkHttp 跨域，需 `FETCH`；返回 Promise。支持 `{method, headers, body}`；`responseType: "base64"` 时 body 按 base64 返回（`encoding` 字段标识），用于二进制载荷 |
 | `hcj.notify` | ✅ | 系统通知，需 `NOTIFY` |
 | `hcj.toast` | ✅ | 页面内浮层提示——操作反馈用它，`hcj.notify` 留给真正的系统通知 |
 | `hcj.badge` | ✅ | 工具栏角标，需 `BADGE` |
 | `hcj.addStyle` | ✅ | 注入页面 CSS 为 `<style id="hcj-css-<id>">`，按插件按文档幂等 |
 | `hcj.panel.open` / `close` / `send` / `onMessage` | ✅ | 由用户选定的面板宿主承载 |
 | `hcj.on('action')` / `hcj.emit` | ✅ | 入口点击 / 自定义事件 |
+| `hcj.on('navigate')` | ✅ | 每次 URL 变化触发（含 SPA pushState），载荷 `{url}`——在此重新绑定页面钩子 |
 | `hcj.id` / `hcj.manifest` / `hcj.lang` | ✅ | |
 
 ## `hcjPanel.*`（面板侧）
@@ -26,6 +27,7 @@
 | --- | --- | --- |
 | `hcjPanel.config.*` | ✅ | 与页面侧同一个 KV 存储 |
 | `hcjPanel.send` / `hcjPanel.onMessage` / `hcjPanel.close` | ✅ | 面板 ↔ 页面通道与关闭 |
+| `hcjPanel.toast` | ✅ | 面板内浮层提示 |
 
 ## 油猴脚本 `GM_*`
 

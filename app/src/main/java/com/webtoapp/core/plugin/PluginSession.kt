@@ -189,7 +189,23 @@ class PluginSession(
     fun onUrlChanged(url: String) {
         currentUrl = url
         publishEntries()
+        // SPA navigations (pushState / doUpdateVisitedHistory) never reload the
+        // document, so page-side plugin code would otherwise never learn the
+        // URL changed — listeners keep binding to detached elements. Emit
+        // `hcj.on('navigate')` to every plugin matching the new URL. On real
+        // navigations the event fires into the dying context, harmlessly.
+        if (url != lastNavEmittedUrl) {
+            lastNavEmittedUrl = url
+            val payload = org.json.JSONObject().put("url", url).toString()
+            resolvedPlugins.forEach { r ->
+                if (r.plugin.kind != PluginKind.CHROME_EXTENSION && r.plugin.matchesUrl(url)) {
+                    evalOnPage(PluginInjection.emitEvent(r.plugin.id, "navigate", payload))
+                }
+            }
+        }
     }
+
+    private var lastNavEmittedUrl: String? = null
 
     fun pluginFor(id: String): Plugin? = resolvedPlugins.firstOrNull { it.plugin.id == id }?.plugin
 

@@ -274,8 +274,18 @@
             if (ytCfg.adSkip || ytCfg.autoQuality || ytCfg.bgPlay || ytCfg.sponsor) {
                 setTimeout(startYouTubeWatchers, 800);
             }
-            var lastUrl = location.href;
-            setInterval(function() { if (location.href !== lastUrl) { lastUrl = location.href; ytQualityDone = false; if (ytCfg.sponsor) { var vid = getYouTubeVideoId(); if (vid) fetchSponsorSegments(vid); } } }, 1500);
+            // SPA navigation: the host emits `navigate` from
+            // doUpdateVisitedHistory — no need to poll location.href.
+            // Re-arm bgPlay on the new <video> and reset quality/sponsor
+            // state for the new watch page.
+            hcj.on('navigate', function() {
+                ytQualityDone = false;
+                if (ytCfg.sponsor) {
+                    var vid = getYouTubeVideoId();
+                    if (vid) fetchSponsorSegments(vid);
+                }
+                armBgPlay(getVideo());
+            });
         }
     }
     document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', register) : register();
