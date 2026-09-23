@@ -90,15 +90,16 @@ fun ApkExportSection(
             collapsible = true,
             initiallyExpanded = false
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(
-                        horizontal = WtaSpacing.RowHorizontal,
-                        vertical = WtaSpacing.ContentGap
-                    ),
-                verticalArrangement = Arrangement.spacedBy(WtaSpacing.ContentGap)
-            ) {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(
+                            horizontal = WtaSpacing.RowHorizontal,
+                            vertical = WtaSpacing.ContentGap
+                        ),
+                    verticalArrangement = Arrangement.spacedBy(WtaSpacing.ContentGap)
+                ) {
                     OutlinedTextField(
                         value = packageName,
                         onValueChange = {
@@ -177,6 +178,13 @@ fun ApkExportSection(
                         )
                     }
                 }
+                WtaToggleRow(
+                    title = Strings.autoVersionBump,
+                    subtitle = Strings.autoVersionBumpHint,
+                    checked = config.autoVersionBump,
+                    onCheckedChange = { onConfigChange(config.copy(autoVersionBump = it)) }
+                )
+            }
         }
 
         WtaSection(

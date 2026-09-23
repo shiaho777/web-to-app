@@ -24,7 +24,8 @@ class ApkBuilderVersionTest {
         name: String = "My Site",
         packageName: String? = null,
         versionCode: Int? = null,
-        versionName: String? = null
+        versionName: String? = null,
+        autoVersionBump: Boolean = true
     ): WebApp = WebApp(
         id = 1L,
         name = name,
@@ -32,7 +33,8 @@ class ApkBuilderVersionTest {
         apkExportConfig = ApkExportConfig(
             customPackageName = packageName,
             customVersionCode = versionCode,
-            customVersionName = versionName
+            customVersionName = versionName,
+            autoVersionBump = autoVersionBump
         )
     )
 
@@ -103,14 +105,46 @@ class ApkBuilderVersionTest {
     }
 
     @Test
-    fun `an explicit version that cannot be installed still gets bumped`() {
+    fun `an explicit version equal to the installed one is left alone`() {
+        // Same-versionCode installs are valid updates on Android — only a real
+        // downgrade fails — so a rebuild at the user's manual version must not
+        // ratchet it upward.
         val context = ApplicationProvider.getApplicationContext<android.app.Application>()
         val webApp = app("My Site", versionCode = 5, versionName = "2.1.7")
         install(ApkBuilder.resolvePackageName(webApp), 5)
 
+        assertThat(ApkBuilder.suggestedVersionForInstall(context, webApp)).isNull()
+        assertThat(ApkBuilder.withInstallAwareVersion(context, webApp)).isSameInstanceAs(webApp)
+    }
+
+    @Test
+    fun `an explicit version lower than the installed one still gets bumped`() {
+        val context = ApplicationProvider.getApplicationContext<android.app.Application>()
+        val webApp = app("My Site", versionCode = 5, versionName = "2.1.7")
+        install(ApkBuilder.resolvePackageName(webApp), 7)
+
         val suggested = ApkBuilder.suggestedVersionForInstall(context, webApp)
-        assertThat(suggested!!.first).isEqualTo(6)
+        assertThat(suggested!!.first).isEqualTo(8)
         assertThat(suggested.second).isEqualTo("2.1.8")
+    }
+
+    @Test
+    fun `auto bump disabled pins the configured version even on downgrade`() {
+        val context = ApplicationProvider.getApplicationContext<android.app.Application>()
+        val webApp = app("My Site", versionCode = 5, autoVersionBump = false)
+        install(ApkBuilder.resolvePackageName(webApp), 7)
+
+        assertThat(ApkBuilder.suggestedVersionForInstall(context, webApp)).isNull()
+        assertThat(ApkBuilder.withInstallAwareVersion(context, webApp)).isSameInstanceAs(webApp)
+    }
+
+    @Test
+    fun `auto bump disabled keeps default version pinned as well`() {
+        val context = ApplicationProvider.getApplicationContext<android.app.Application>()
+        val webApp = app("My Site", autoVersionBump = false)
+        install(ApkBuilder.resolvePackageName(webApp), 3)
+
+        assertThat(ApkBuilder.suggestedVersionForInstall(context, webApp)).isNull()
     }
 
     @Test

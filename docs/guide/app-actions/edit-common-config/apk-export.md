@@ -7,7 +7,8 @@ Packaging and identity settings for the generated APK. This is the export drawer
 ## Identity
 
 - **Custom package name** — the APK's application id (validated against a package-name pattern).
-- **Version code / version name** — the APK version; the builder can suggest the next version code if the package is already installed.
+- **Version code / version name** — the APK version.
+- **Auto-bump version** — when this package is already installed with a higher versionCode, the builder raises the version so the update can install. On by default; turn it off to always keep the version set above (a downgrade install may then fail).
 - **Engine type** — System WebView or GeckoView for the exported app.
 
 ## Signing

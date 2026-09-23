@@ -217,10 +217,12 @@ class ApkBuilder(private val context: Context) {
         }
 
         /**
-         * Android refuses to install over an existing package unless versionCode
-         * is strictly greater, so rebuilds targeting an already-installed
-         * package bump the version. An explicit higher version set by the user
-         * is left alone — we only step in when the build would not install.
+         * Android refuses to install over an existing package when versionCode
+         * is lower, so rebuilds that would land as a downgrade get their
+         * version bumped. Equal-or-higher versions set by the user are left
+         * alone — reinstalling the same versionCode is a valid update — and
+         * [ApkExportConfig.autoVersionBump] = false pins the configured
+         * version exactly, downgrade or not.
          */
         internal fun withInstallAwareVersion(context: Context, webApp: WebApp): WebApp {
             val (code, name) = suggestedVersionForInstall(context, webApp) ?: return webApp
@@ -242,11 +244,12 @@ class ApkBuilder(private val context: Context) {
          * bump identically).
          */
         fun suggestedVersionForInstall(context: Context, webApp: WebApp): Pair<Int, String>? {
+            val config = webApp.apkExportConfig
+            if (config?.autoVersionBump == false) return null
             val installed = findInstalledVersionCode(context, resolvePackageName(webApp))
                 ?: return null
-            val config = webApp.apkExportConfig
             val configured = config?.customVersionCode ?: 1
-            if (configured > installed) return null
+            if (configured >= installed) return null
 
             val bumpedCode = (installed + 1).coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
             val currentName = config?.customVersionName?.takeIf { it.isNotBlank() }

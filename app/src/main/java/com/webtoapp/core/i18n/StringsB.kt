@@ -1304,6 +1304,32 @@ object StringsB {
         AppLanguage.JAPANESE -> "1"
         AppLanguage.KOREAN -> "1"
     }
+    val autoVersionBump: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "自动提升版本号"
+        AppLanguage.ENGLISH -> "Auto-bump version"
+        AppLanguage.ARABIC -> "رفع الإصدار تلقائيًا"
+        AppLanguage.PORTUGUESE -> "Elevar versão automaticamente"
+        AppLanguage.SPANISH -> "Elevar versión automáticamente"
+        AppLanguage.FRENCH -> "Élever la version automatiquement"
+        AppLanguage.GERMAN -> "Version automatisch erhöhen"
+        AppLanguage.RUSSIAN -> "Автоповышение версии"
+        AppLanguage.JAPANESE -> "バージョンを自動で引き上げ"
+        AppLanguage.KOREAN -> "버전 자동 올림"
+    }
+
+    val autoVersionBumpHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "设备已安装同包名且版本号更高的应用时，自动提升构建版本号以便覆盖安装。关闭后始终使用上方填写的版本。"
+        AppLanguage.ENGLISH -> "When this package is already installed with a higher versionCode, raises the build's version so it can install. Turn off to always keep the version above."
+        AppLanguage.ARABIC -> "عندما تكون هذه الحزمة مثبتة برقم إصدار أعلى، يتم رفع إصدار البناء ليتمكن من التثبيت. أوقفه لاستخدام الإصدار المحدد أعلاه دائمًا."
+        AppLanguage.PORTUGUESE -> "Quando este pacote já está instalado com um versionCode maior, eleva a versão do build para poder instalar. Desative para sempre manter a versão acima."
+        AppLanguage.SPANISH -> "Cuando este paquete ya está instalado con un versionCode mayor, eleva la versión del build para poder instalarla. Desactívalo para mantener siempre la versión de arriba."
+        AppLanguage.FRENCH -> "Quand ce package est déjà installé avec un versionCode supérieur, augmente la version du build pour permettre l'installation. Désactivez pour toujours garder la version ci-dessus."
+        AppLanguage.GERMAN -> "Ist dieses Paket bereits mit höherem versionCode installiert, erhöht sich die Build-Version, damit die Installation klappt. Deaktivieren, um immer die obige Version zu verwenden."
+        AppLanguage.RUSSIAN -> "Если этот пакет уже установлен с более высоким versionCode, версия сборки повышается, чтобы обновление установилось. Отключите, чтобы всегда использовать указанную выше версию."
+        AppLanguage.JAPANESE -> "このパッケージがより高い versionCode で既にインストールされている場合、インストールできるようビルドのバージョンを引き上げます。オフにすると常に上記のバージョンを使用します。"
+        AppLanguage.KOREAN -> "이 패키지가 더 높은 versionCode로 이미 설치된 경우 설치할 수 있도록 빌드 버전을 올립니다. 끄면 항상 위에 지정한 버전을 사용합니다."
+    }
+
     val updateApkGuide: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "将使用相同包名 %s 并把版本号提升到 %d。构建完成后点击安装，Android 会显示正常更新确认。"
         AppLanguage.ENGLISH -> "Uses the same package %s and raises versionCode to %d. After build, tap Install and Android will show the normal update prompt."

@@ -1316,7 +1316,17 @@ data class ApkExportConfig(
      * behavior only: consumed host-side by `ApkBuilder.buildApk` and never serialized into
      * the generated app's shell config JSON.
      */
-    val forceFullRebuild: Boolean = false
+    val forceFullRebuild: Boolean = false,
+
+    /**
+     * When the target package is already installed on this device with a higher
+     * versionCode, raise the build's version so the update can install
+     * (`ApkBuilder.suggestedVersionForInstall`). When false the build ships exactly
+     * [customVersionCode] / [customVersionName] — useful for pinned versions, at the
+     * cost of a downgrade install failing on devices that already have a higher
+     * versionCode. Build-invocation only; never serialized into the shell config.
+     */
+    val autoVersionBump: Boolean = true
 )
 
 data class NetworkTrustConfig(

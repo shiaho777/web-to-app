@@ -143,6 +143,22 @@ class ConvertersTest {
     }
 
     @Test
+    fun `apk export config keeps auto version bump off across a roundtrip`() {
+        val config = ApkExportConfig(autoVersionBump = false)
+
+        val decoded = converters.toApkExportConfig(converters.fromApkExportConfig(config))
+
+        assertThat(decoded?.autoVersionBump).isFalse()
+    }
+
+    @Test
+    fun `legacy export config json without autoVersionBump decodes as true`() {
+        val decoded = converters.toApkExportConfig("""{"engineType":"GECKOVIEW"}""")
+
+        assertThat(decoded?.autoVersionBump).isTrue()
+    }
+
+    @Test
     fun `enum decoding accepts the serialized name that encoding emits`() {
         // NotificationType declares lowercase @SerializedName values, so this is the
         // on-disk representation Gson writes.

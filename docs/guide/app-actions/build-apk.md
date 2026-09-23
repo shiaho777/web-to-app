@@ -10,7 +10,7 @@ Builds and signs an installable APK from the app. Tap ⋮ on an app card, then *
 - **Background run** — keep the app's service alive in the background.
 - **Notifications** — scheduled/persistent notifications, URL-polling foreground service, deep links.
 - **Force full rebuild** — skip incremental caching.
-- **Version code** — auto-suggests the next version code when a custom package name is already installed.
+- **Version code** — bumps to the next installable version code when the package is already installed with a higher one. Turn off **Auto-bump version** in the editor's APK export config to pin the configured version.
 
 A **preflight check** runs first and reports blocking errors. After a successful build you can jump to [AAB export](/guide/more-features/google-play).
 

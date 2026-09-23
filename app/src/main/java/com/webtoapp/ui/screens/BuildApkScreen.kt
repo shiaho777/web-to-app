@@ -203,10 +203,11 @@ private fun BuildApkContent(
     // package name, never found the installed app, and never bumped the version.
     val resolvedPackageName = com.webtoapp.core.apkbuilder.ApkBuilder.resolvePackageName(webApp)
     val baseVersionCode = webApp.apkExportConfig?.customVersionCode ?: 1
+    val autoVersionBump = webApp.apkExportConfig?.autoVersionBump ?: true
     var suggestedVersion by remember(resolvedPackageName) {
         mutableStateOf<Pair<Int, String>?>(null)
     }
-    LaunchedEffect(resolvedPackageName, baseVersionCode, uiReady) {
+    LaunchedEffect(resolvedPackageName, baseVersionCode, autoVersionBump, uiReady) {
         if (!uiReady) return@LaunchedEffect
         suggestedVersion = withContext(Dispatchers.IO) {
             com.webtoapp.core.apkbuilder.ApkBuilder.suggestedVersionForInstall(context, webApp)
