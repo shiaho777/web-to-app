@@ -4469,6 +4469,14 @@ class WebViewManager(
 
             if (minimizeLocalRuntimeInjection) {
                 injectPrivateNetworkApiBridgeFallback(webView, url)
+                // The compat batch below is skipped on local-runtime pages, but the
+                // orientation shim is purely additive (screen.orientation.lock →
+                // NativeBridge) and a WEB app pointed at a LAN dev server (JavaWeb on
+                // 192.168.x.x, etc.) hits this same gate — install it standalone or the
+                // enableOrientationPolyfill toggle silently does nothing there (#1023).
+                if (!scriptlessMode && currentConfig?.enableOrientationPolyfill == true) {
+                    webView.evaluateJavascript(ORIENTATION_POLYFILL_JS, null)
+                }
             }
 
             if (!scriptlessMode && !minimizeLocalRuntimeInjection) {
