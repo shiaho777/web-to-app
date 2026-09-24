@@ -70,14 +70,21 @@ class NodeService : Service() {
         // process's setLanguage() call. Generated APKs persist config.language to
         // wta_runtime_lang prefs; the host preview falls back to the DataStore
         // language — both are readable cross-process.
-        runCatching {
-            val prefLang = getSharedPreferences("wta_runtime_lang", MODE_PRIVATE)
-                .getString("app_language", null)
-                ?.let { runCatching { com.webtoapp.core.i18n.AppLanguage.valueOf(it) }.getOrNull() }
-            val lang = prefLang ?: kotlinx.coroutines.runBlocking {
-                com.webtoapp.core.i18n.LanguageManager.getInstance(this@NodeService).getCurrentLanguage()
+        //
+        // Resolve on the worker thread: the DataStore fallback must not
+        // runBlocking the service main thread (StrictMode/ANR risk), and every
+        // Strings consumer already runs on this same handler, so the FIFO
+        // ordering guarantees the language is set before any use.
+        workerHandler.post {
+            runCatching {
+                val prefLang = getSharedPreferences("wta_runtime_lang", MODE_PRIVATE)
+                    .getString("app_language", null)
+                    ?.let { runCatching { com.webtoapp.core.i18n.AppLanguage.valueOf(it) }.getOrNull() }
+                val lang = prefLang ?: kotlinx.coroutines.runBlocking {
+                    com.webtoapp.core.i18n.LanguageManager.getInstance(this@NodeService).getCurrentLanguage()
+                }
+                com.webtoapp.core.i18n.Strings.setLanguage(lang)
             }
-            com.webtoapp.core.i18n.Strings.setLanguage(lang)
         }
     }
 
