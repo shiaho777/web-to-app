@@ -95,6 +95,13 @@ class ShellActivity : AppCompatActivity() {
     private var shellConfig: com.webtoapp.core.shell.ShellConfig? = null
 
     /**
+     * External-pointer normalizer (#1031): feeds the touch stream so a quirky
+     * OEM dispatch that reports the primary mouse button as raw
+     * BUTTON_PRESS/RELEASE generic events still produces a click.
+     */
+    private val mouseInputCompat = com.webtoapp.core.webview.MouseInputCompat()
+
+    /**
      * Persists the committed page URL that last handed off to an external app
      * (#1030). When the process dies while e.g. WeChat is foreground, the
      * restored WebView history has that page as its current entry — and OAuth /
@@ -260,7 +267,27 @@ class ShellActivity : AppCompatActivity() {
     }
 
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
+        mouseInputCompat.noteTouchEvent(ev.source, ev.getToolType(0), ev.actionMasked)
         return super.dispatchTouchEvent(ev)
+    }
+
+    override fun dispatchGenericMotionEvent(ev: MotionEvent): Boolean {
+        val translated = mouseInputCompat.translateButtonAction(
+            ev.source, ev.getToolType(0), ev.actionMasked, ev.actionButton
+        )
+        if (translated != null) {
+            com.webtoapp.core.shell.ShellLogger.d(
+                "ShellActivity",
+                "Mouse primary button arrived via generic-motion path; re-dispatching as touch action=$translated"
+            )
+            val converted = com.webtoapp.core.webview.MouseInputCompat.copyWithAction(ev, translated)
+            return try {
+                dispatchTouchEvent(converted)
+            } finally {
+                converted.recycle()
+            }
+        }
+        return super.dispatchGenericMotionEvent(ev)
     }
 
     fun handlePermissionRequest(request: PermissionRequest) = permissionDelegate.handlePermissionRequest(request)

@@ -75,6 +75,14 @@ class WebSwipeRefreshLayout @JvmOverloads constructor(
     }
 
     override fun onInterceptTouchEvent(ev: MotionEvent): Boolean {
+        // Pull-to-refresh is a finger gesture only (#1031): a mouse or stylus
+        // press inside the armed zone belongs to the page. Intercepting it
+        // would cancel the WebView's click and pop the refresh spinner on any
+        // press-drag (text selection, drag-scroll, click jitter).
+        if (ev.getToolType(0) != MotionEvent.TOOL_TYPE_FINGER) {
+            pullArmed = false
+            return false
+        }
         when (ev.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
                 refreshIndicatorOffsetIfNeeded()

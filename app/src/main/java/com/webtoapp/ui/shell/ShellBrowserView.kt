@@ -87,19 +87,44 @@ fun ShellBrowserAndroidView(
                     if (wv != null && enableLongPress) {
                         var lastTouchX = 0f
                         var lastTouchY = 0f
+                        var downFromFinger = false
                         wv.setOnTouchListener { view, event ->
-                            when (event.action) {
-                                MotionEvent.ACTION_DOWN,
+                            when (event.actionMasked) {
+                                MotionEvent.ACTION_DOWN -> {
+                                    lastTouchX = event.x
+                                    lastTouchY = event.y
+                                    downFromFinger =
+                                        event.getToolType(0) == MotionEvent.TOOL_TYPE_FINGER
+                                    if (event.isFromSource(android.view.InputDevice.SOURCE_MOUSE)) {
+                                        // A mouse click does not always move focus
+                                        // by itself on every OEM path; make it
+                                        // explicit so a hardware keyboard lands in
+                                        // the page afterwards (#1031).
+                                        view.requestFocus()
+                                    }
+                                }
                                 MotionEvent.ACTION_MOVE -> {
                                     lastTouchX = event.x
                                     lastTouchY = event.y
                                 }
-                                MotionEvent.ACTION_UP -> view.performClick()
+                                MotionEvent.ACTION_UP -> {
+                                    view.performClick()
+                                    downFromFinger = false
+                                }
+                                MotionEvent.ACTION_CANCEL -> downFromFinger = false
                             }
                             false
                         }
                         wv.setOnLongClickListener {
-                            webViewCallbacks.onLongPress(wv, lastTouchX, lastTouchY)
+                            // A right-click also routes through performLongClick —
+                            // keep the touch menu finger-only so pointer/keyboard
+                            // long-clicks fall back to the default context menu
+                            // instead of a touch menu at a stale position (#1031).
+                            if (downFromFinger) {
+                                webViewCallbacks.onLongPress(wv, lastTouchX, lastTouchY)
+                            } else {
+                                false
+                            }
                         }
                     }
 

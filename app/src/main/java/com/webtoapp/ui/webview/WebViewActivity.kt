@@ -743,6 +743,12 @@ class WebViewActivity : AppCompatActivity() {
     // ShellActivity, which already restores the WebView back-forward list.
     private var webViewStateBundle: Bundle? = null
     private val resumeStore by lazy { com.webtoapp.core.webview.WebViewResumeStore(this) }
+
+    /**
+     * External-pointer normalizer (#1031): same OEM button-event quirk handling
+     * as ShellActivity so preview and generated APKs behave alike.
+     */
+    private val mouseInputCompat = com.webtoapp.core.webview.MouseInputCompat()
     private var sessionKey: String? = null
     private var launchDirectUrl: String? = null
     private var launchPreviewApp: WebApp? = null
@@ -1058,6 +1064,30 @@ class WebViewActivity : AppCompatActivity() {
             return true
         }
         return super.dispatchKeyEvent(event)
+    }
+
+    override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
+        mouseInputCompat.noteTouchEvent(ev.source, ev.getToolType(0), ev.actionMasked)
+        return super.dispatchTouchEvent(ev)
+    }
+
+    override fun dispatchGenericMotionEvent(ev: MotionEvent): Boolean {
+        val translated = mouseInputCompat.translateButtonAction(
+            ev.source, ev.getToolType(0), ev.actionMasked, ev.actionButton
+        )
+        if (translated != null) {
+            AppLogger.d(
+                "WebViewActivity",
+                "Mouse primary button arrived via generic-motion path; re-dispatching as touch action=$translated"
+            )
+            val converted = com.webtoapp.core.webview.MouseInputCompat.copyWithAction(ev, translated)
+            return try {
+                dispatchTouchEvent(converted)
+            } finally {
+                converted.recycle()
+            }
+        }
+        return super.dispatchGenericMotionEvent(ev)
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
@@ -3639,19 +3669,38 @@ fun WebViewScreen(
 
                                     var lastTouchX = 0f
                                     var lastTouchY = 0f
+                                    var downFromFinger = false
                                     setOnTouchListener { view, event ->
-                                        when (event.action) {
-                                            MotionEvent.ACTION_DOWN,
+                                        when (event.actionMasked) {
+                                            MotionEvent.ACTION_DOWN -> {
+                                                lastTouchX = event.x
+                                                lastTouchY = event.y
+                                                downFromFinger =
+                                                    event.getToolType(0) == MotionEvent.TOOL_TYPE_FINGER
+                                                if (event.isFromSource(android.view.InputDevice.SOURCE_MOUSE)) {
+                                                    // See ShellBrowserView: force the focus
+                                                    // transfer a mouse click may skip (#1031).
+                                                    view.requestFocus()
+                                                }
+                                            }
                                             MotionEvent.ACTION_MOVE -> {
                                                 lastTouchX = event.x
                                                 lastTouchY = event.y
                                             }
-                                            MotionEvent.ACTION_UP -> view.performClick()
+                                            MotionEvent.ACTION_UP -> {
+                                                view.performClick()
+                                                downFromFinger = false
+                                            }
+                                            MotionEvent.ACTION_CANCEL -> downFromFinger = false
                                         }
                                         false
                                     }
                                     setOnLongClickListener {
-                                        webViewCallbacks.onLongPress(this, lastTouchX, lastTouchY)
+                                        if (downFromFinger) {
+                                            webViewCallbacks.onLongPress(this, lastTouchX, lastTouchY)
+                                        } else {
+                                            false
+                                        }
                                     }
 
                                     statusBarColorTracker?.detach()
