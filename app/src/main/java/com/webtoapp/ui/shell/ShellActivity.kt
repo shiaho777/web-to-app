@@ -31,6 +31,7 @@ import com.webtoapp.ui.shared.WindowHelper
 
 /** One generated APK hosts exactly one app — the resume-state key is constant. */
 private const val SHELL_RESUME_SESSION_KEY = "shell"
+private const val KEY_SAVED_SURFACE_SITE_ID = "com.webtoapp.SAVED_SURFACE_SITE_ID"
 
 class ShellActivity : AppCompatActivity() {
 
@@ -650,7 +651,18 @@ class ShellActivity : AppCompatActivity() {
                         com.webtoapp.core.shell.ShellLogger.i("ShellActivity", "WebView 创建成功, timers resumed")
 
                         val savedState = webViewStateBundle
-                        if (savedState != null) {
+                        // Multi-web surfaces save with their site id; a bundle
+                        // tagged for another site must wait for that site's
+                        // own view instead of being grafted onto whichever
+                        // site happened to compose first (#1036).
+                        val savedSiteId = savedState?.getString(KEY_SAVED_SURFACE_SITE_ID)
+                        val wvSiteId = (wv as? com.webtoapp.core.webview.WtaWebView)?.siteId
+                        if (savedState != null && savedSiteId != null && savedSiteId != wvSiteId) {
+                            com.webtoapp.core.shell.ShellLogger.i(
+                                "ShellActivity",
+                                "Saved WebView state belongs to site $savedSiteId, skipping site ${wvSiteId ?: "?"}"
+                            )
+                        } else if (savedState != null) {
                             val restored = wv.restoreState(savedState)
                             webViewStateBundle = null
                             if (restored != null) {
@@ -936,6 +948,13 @@ class ShellActivity : AppCompatActivity() {
         // Save through the surface first: on engine-backed (GeckoView) sites the
         // activity's webView field stays null while the surface holds the live view.
         browserSurface?.saveState(outState) ?: webView?.saveState(outState)
+        // Multi-web: record which site the saved surface belonged to so a
+        // restore only lands on that site's view — otherwise the first-created
+        // site would inherit the previously selected site's history (#1036).
+        outState.putString(
+            KEY_SAVED_SURFACE_SITE_ID,
+            ((browserSurface?.webView ?: webView) as? com.webtoapp.core.webview.WtaWebView)?.siteId
+        )
         permissionDelegate.onSaveInstanceState(outState)
         com.webtoapp.core.shell.ShellLogger.logLifecycle("ShellActivity", "onSaveInstanceState - WebView state saved")
     }

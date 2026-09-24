@@ -25,6 +25,8 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -146,7 +148,12 @@ private fun SiteContent(
         swipeRefreshEnabled = swipeRefreshEnabled,
         isRefreshing = isRefreshing,
         onRefresh = onRefresh,
-        onWebViewCreated = onWebViewCreated,
+        onWebViewCreated = { wv ->
+            // Stamp the site so the activity's WebView-state bundle only lands
+            // on the surface it was saved from (#1036).
+            (wv as? com.webtoapp.core.webview.WtaWebView)?.siteId = site.id
+            onWebViewCreated(wv)
+        },
         onWebViewRefUpdated = { },
         onActivityFinish = { },
         // Without this the activity never sees per-site surfaces: on a Gecko site the
@@ -175,6 +182,24 @@ private class SiteRuntimeRegistry {
     }
 }
 
+/**
+ * Shared selected-site store for the three display modes. Keyed by the app's
+ * package/name pair — the record is only a site id, and callers always
+ * validate it against the current site list, so a stale entry from a renamed
+ * or re-edited app simply falls back to the default selection (#1036).
+ */
+@Composable
+private fun rememberResumeStore(
+    config: ShellConfig
+): Pair<com.webtoapp.core.webview.MultiWebResumeStore, String> {
+    val context = LocalContext.current
+    val store = remember { com.webtoapp.core.webview.MultiWebResumeStore(context) }
+    val key = remember(config.packageName, config.appName) {
+        "${config.packageName}/${config.appName}"
+    }
+    return store to key
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun TabsMode(
@@ -190,7 +215,20 @@ private fun TabsMode(
     onRefresh: () -> Unit,
     onBrowserSurfaceCreated: (com.webtoapp.core.engine.BrowserSurface) -> Unit = {}
 ) {
-    var selectedTab by remember { mutableIntStateOf(0) }
+    val (resumeStore, resumeKey) = rememberResumeStore(config)
+    // Selected site persists by id: rememberSaveable covers config-change and
+    // process-death recreation, the store covers cold relaunch — the recorded
+    // id is validated against the current site list before use (#1036).
+    var selectedTab by rememberSaveable {
+        mutableIntStateOf(
+            resumeStore.resumeSiteId(resumeKey)
+                ?.let { savedId -> sites.indexOfFirst { it.id == savedId }.takeIf { it >= 0 } }
+                ?: 0
+        )
+    }
+    LaunchedEffect(selectedTab) {
+        resumeStore.persistSelectedSiteId(resumeKey, sites.getOrNull(selectedTab)?.id)
+    }
     val tabsListState = rememberLazyListState()
     val registry = remember { SiteRuntimeRegistry() }
 
@@ -414,11 +452,23 @@ private fun CardsMode(
     onRefresh: () -> Unit,
     onBrowserSurfaceCreated: (com.webtoapp.core.engine.BrowserSurface) -> Unit = {}
 ) {
-    var openSite by remember { mutableStateOf<MultiWebSiteShellConfig?>(null) }
+    val (resumeStore, resumeKey) = rememberResumeStore(config)
+    // Persist the open site by id; null = the user is on the card grid and a
+    // cold start must reopen the grid, not a site they already left (#1036).
+    var openSiteId by rememberSaveable {
+        mutableStateOf(
+            resumeStore.resumeSiteId(resumeKey)
+                ?.takeIf { savedId -> sites.any { it.id == savedId } }
+        )
+    }
+    LaunchedEffect(openSiteId) {
+        resumeStore.persistSelectedSiteId(resumeKey, openSiteId)
+    }
+    val openSite = sites.find { it.id == openSiteId }
     val registry = remember { SiteRuntimeRegistry() }
 
     fun closeSite() {
-        openSite = null
+        openSiteId = null
         webViewCallbacks.onTitleChanged(config.appName)
     }
 
@@ -481,7 +531,7 @@ private fun CardsMode(
             sites = sites,
             appName = config.appName,
             showIcons = multiWebConfig.showSiteIcons,
-            onSiteClicked = { openSite = it }
+            onSiteClicked = { openSiteId = it.id }
         )
     }
 }
@@ -670,8 +720,11 @@ private fun FeedMode(
     val scope = rememberCoroutineScope()
     var feedItems by remember { mutableStateOf<List<FeedItem>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
-    var openUrl by remember { mutableStateOf<String?>(null) }
-    var openTitle by remember { mutableStateOf("") }
+    // Article overlay state is saveable so config-change/process-death
+    // recreation reopens the article instead of dropping to the feed (#1036).
+    // The feed list itself is refetched anyway, so it stays plain remember.
+    var openUrl by rememberSaveable { mutableStateOf<String?>(null) }
+    var openTitle by rememberSaveable { mutableStateOf("") }
     var articleWebView by remember { mutableStateOf<WebView?>(null) }
     var articleSurface by remember { mutableStateOf<com.webtoapp.core.engine.BrowserSurface?>(null) }
 
@@ -869,7 +922,21 @@ private fun DrawerMode(
     onRefresh: () -> Unit,
     onBrowserSurfaceCreated: (com.webtoapp.core.engine.BrowserSurface) -> Unit = {}
 ) {
-    var selectedSite by remember { mutableStateOf(sites.firstOrNull()) }
+    val (resumeStore, resumeKey) = rememberResumeStore(config)
+    // Selected site persists by id (same store contract as TabsMode) —
+    // falling back to the first enabled site when nothing valid was
+    // recorded (#1036).
+    var selectedSiteId by rememberSaveable {
+        mutableStateOf(
+            resumeStore.resumeSiteId(resumeKey)
+                ?.takeIf { savedId -> sites.any { it.id == savedId } }
+                ?: sites.firstOrNull()?.id
+        )
+    }
+    LaunchedEffect(selectedSiteId) {
+        resumeStore.persistSelectedSiteId(resumeKey, selectedSiteId)
+    }
+    val selectedSite = sites.find { it.id == selectedSiteId }
     var drawerVisible by remember { mutableStateOf(false) }
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -905,8 +972,8 @@ private fun DrawerMode(
                 Spacer(modifier = Modifier.height(8.dp))
                 LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(vertical = 8.dp)) {
                     items(sites) { site ->
-                        val isSelected = selectedSite?.id == site.id
-                        DrawerSiteItem(site = site, isSelected = isSelected, onClick = { selectedSite = site; drawerVisible = false })
+                        val isSelected = selectedSiteId == site.id
+                        DrawerSiteItem(site = site, isSelected = isSelected, onClick = { selectedSiteId = site.id; drawerVisible = false })
                     }
                 }
             }

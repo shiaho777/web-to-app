@@ -20,6 +20,13 @@ import android.webkit.WebView
  */
 class WtaWebView(context: Context) : WebView(context) {
 
+    /**
+     * Multi-web site this view belongs to, stamped by SiteContent so the
+     * activity can save/restore WebView state against the correct site's
+     * surface instead of blindly applying it to the first-created one (#1036).
+     */
+    var siteId: String? = null
+
     override fun onCreateInputConnection(outAttrs: EditorInfo): InputConnection? {
         val connection = super.onCreateInputConnection(outAttrs)
         if (resources.configuration.keyboard == Configuration.KEYBOARD_QWERTY) {
