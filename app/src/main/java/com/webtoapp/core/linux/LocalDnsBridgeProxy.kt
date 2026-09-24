@@ -1,5 +1,6 @@
 package com.webtoapp.core.linux
 
+import android.util.Base64
 import com.webtoapp.core.logging.AppLogger
 import java.io.BufferedInputStream
 import java.io.ByteArrayOutputStream
@@ -13,6 +14,8 @@ import java.net.Socket
 import java.net.SocketTimeoutException
 import java.net.URI
 import java.nio.charset.StandardCharsets
+import java.security.MessageDigest
+import java.security.SecureRandom
 import java.util.Locale
 import java.util.concurrent.SynchronousQueue
 import java.util.concurrent.ThreadPoolExecutor
@@ -34,6 +37,16 @@ object LocalDnsBridgeProxy {
 
     @Volatile private var refCount: Int = 0
 
+    /**
+     * Per-session credential. Any app on the device can reach a loopback
+     * socket, so the proxy would otherwise be an unauthenticated forward
+     * proxy: callers could borrow this app's network identity for arbitrary
+     * egress or CONNECT into our own loopback runtime ports. The token is
+     * handed to runtimes as proxy-URL userinfo via [proxyEnvFor] and verified
+     * on every request; it rotates each time the proxy starts.
+     */
+    @Volatile private var authToken: String = ""
+
     @Synchronized
     fun start(): Int {
         if (running && listenPort > 0) {
@@ -44,6 +57,7 @@ object LocalDnsBridgeProxy {
             val socket = ServerSocket(0, 64, InetAddress.getByName("127.0.0.1"))
             serverSocket = socket
             listenPort = socket.localPort
+            authToken = newSessionToken()
             running = true
             refCount = 1
             executor = ThreadPoolExecutor(
@@ -88,7 +102,10 @@ object LocalDnsBridgeProxy {
 
     fun proxyEnvFor(port: Int): Map<String, String> {
         if (port <= 0) return emptyMap()
-        val url = "http://127.0.0.1:$port"
+        // Standard proxy env semantics: clients derive
+        // "Proxy-Authorization: Basic base64(user:token)" from the userinfo.
+        val userInfo = if (authToken.isNotBlank()) "wta:$authToken@" else ""
+        val url = "http://${userInfo}127.0.0.1:$port"
         return mapOf(
 
             "http_proxy" to url,
@@ -116,6 +133,12 @@ object LocalDnsBridgeProxy {
         executor = null
         acceptThread = null
         listenPort = 0
+        authToken = ""
+    }
+
+    private fun newSessionToken(): String {
+        val bytes = ByteArray(16).also { SecureRandom().nextBytes(it) }
+        return bytes.joinToString("") { "%02x".format(it) }
     }
 
     private fun acceptLoop(socket: ServerSocket) {
@@ -180,6 +203,15 @@ object LocalDnsBridgeProxy {
             val target = parts[1]
             val version = parts[2]
 
+            // The socket is loopback-only, but loopback is shared with every
+            // other app on the device — require the per-session token before
+            // forwarding anything (CONNECT tunnels and plain HTTP alike).
+            if (!isProxyAuthorized(headerLines)) {
+                sendProxyAuthRequired(output)
+                safeClose(client)
+                return
+            }
+
             if (method.equals("CONNECT", ignoreCase = true)) {
                 handleConnect(client, output, target)
             } else {
@@ -189,6 +221,45 @@ object LocalDnsBridgeProxy {
             AppLogger.w(TAG, "client error: ${e.message}")
             safeClose(client)
         }
+    }
+
+    /**
+     * Validate `Proxy-Authorization: Basic base64(user:token)` against the
+     * per-session token. Fails closed: no token configured (proxy not running)
+     * means nothing may forward. The password half is compared in constant
+     * time; the username is free-form.
+     */
+    private fun isProxyAuthorized(headers: List<String>): Boolean {
+        val expected = authToken
+        if (expected.isBlank()) return false
+        val header = headers.firstOrNull {
+            it.startsWith("Proxy-Authorization:", ignoreCase = true)
+        }?.substringAfter(':')?.trim() ?: return false
+        if (!header.substringBefore(' ').equals("Basic", ignoreCase = true)) return false
+        val decoded = try {
+            String(
+                Base64.decode(header.substringAfter(' ', "").trim(), Base64.DEFAULT),
+                StandardCharsets.UTF_8
+            )
+        } catch (_: Exception) {
+            return false
+        }
+        val password = decoded.substringAfter(':', "")
+        return MessageDigest.isEqual(
+            password.toByteArray(StandardCharsets.UTF_8),
+            expected.toByteArray(StandardCharsets.UTF_8)
+        )
+    }
+
+    private fun sendProxyAuthRequired(out: OutputStream) {
+        try {
+            val msg = "HTTP/1.1 407 Proxy Authentication Required\r\n" +
+                "Proxy-Authenticate: Basic realm=\"wta-dns-bridge\"\r\n" +
+                "Content-Length: 0\r\n" +
+                "Connection: close\r\n\r\n"
+            out.write(msg.toByteArray(StandardCharsets.US_ASCII))
+            out.flush()
+        } catch (_: Exception) {}
     }
 
     private fun handleConnect(
