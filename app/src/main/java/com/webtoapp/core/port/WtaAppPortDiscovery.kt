@@ -106,74 +106,107 @@ object WtaAppPortDiscovery {
     }
 
     suspend fun queryApp(context: Context, app: WtaAppInfo): WtaAppPortReport = withContext(Dispatchers.IO) {
-        val deferred = CompletableDeferred<Pair<Int, Bundle?>>()
-
-        val resultReceiver = object : BroadcastReceiver() {
-            override fun onReceive(c: Context, intent: Intent) {
-
-                deferred.complete(resultCode to (getResultExtras(false) ?: Bundle()))
-            }
-        }
-
-        val intent = Intent(PortQueryReceiver.ACTION_PORT_QUERY).apply {
-            setPackage(app.packageName)
-
-            component = ComponentName(
-                app.packageName,
-                "com.webtoapp.core.port.PortQueryReceiver"
+        // sendPortQuery returns null both on send failure and on timeout; the
+        // original behavior folded both into "no response" as well.
+        val pair = sendPortQuery(context, app.packageName)
+            ?: return@withContext WtaAppPortReport(
+                app = app,
+                responded = false,
+                allocations = emptyList(),
+                errorMessage = "timeout"
             )
-        }
-
-        return@withContext try {
-            context.sendOrderedBroadcast(
-                intent,
-                 null,
-                resultReceiver,
-                 null,
-                 0,
-                 null,
-                 null
-            )
-
-            val pair = withTimeoutOrNull(QUERY_TIMEOUT_MS) { deferred.await() }
-            if (pair == null) {
-                WtaAppPortReport(
-                    app = app,
-                    responded = false,
-                    allocations = emptyList(),
-                    errorMessage = "timeout"
-                )
-            } else {
-                val (code, extras) = pair
-                if (code == PortQueryReceiver.RESULT_CODE_OK && extras != null) {
-                    val json = extras.getString(PortQueryReceiver.EXTRA_ALLOCATIONS).orEmpty()
-                    val allocations = parseAllocations(json)
-                    WtaAppPortReport(app = app, responded = true, allocations = allocations)
-                } else {
-                    WtaAppPortReport(
-                        app = app,
-                        responded = false,
-                        allocations = emptyList(),
-                        errorMessage = "code=$code"
-                    )
-                }
-            }
-        } catch (e: Exception) {
-            AppLogger.w(TAG, "queryApp failed for ${app.packageName}: ${e.message}")
+        val (code, extras) = pair
+        if (code == PortQueryReceiver.RESULT_CODE_OK && extras != null) {
+            val json = extras.getString(PortQueryReceiver.EXTRA_ALLOCATIONS).orEmpty()
+            WtaAppPortReport(app = app, responded = true, allocations = parseAllocations(json))
+        } else {
             WtaAppPortReport(
                 app = app,
                 responded = false,
                 allocations = emptyList(),
-                errorMessage = e.message
+                errorMessage = "code=$code"
             )
         }
     }
 
+    /**
+     * Fire the ordered PORT_QUERY at [packageName] and await the result.
+     * `null` on timeout, or on a send failure that already logged. Shared by
+     * [queryApp] and the release handshake (which needs the token the query
+     * receiver mints into its result extras).
+     */
+    private suspend fun sendPortQuery(context: Context, packageName: String): Pair<Int, Bundle?>? =
+        withContext(Dispatchers.IO) {
+            val deferred = CompletableDeferred<Pair<Int, Bundle?>>()
+
+            val resultReceiver = object : BroadcastReceiver() {
+                override fun onReceive(c: Context, intent: Intent) {
+                    deferred.complete(resultCode to (getResultExtras(false) ?: Bundle()))
+                }
+            }
+
+            val intent = Intent(PortQueryReceiver.ACTION_PORT_QUERY).apply {
+                setPackage(packageName)
+                component = ComponentName(
+                    packageName,
+                    "com.webtoapp.core.port.PortQueryReceiver"
+                )
+            }
+
+            return@withContext try {
+                context.sendOrderedBroadcast(
+                    intent,
+                    null,
+                    resultReceiver,
+                    null,
+                    0,
+                    null,
+                    null
+                )
+                withTimeoutOrNull(QUERY_TIMEOUT_MS) { deferred.await() }
+            } catch (e: Exception) {
+                AppLogger.w(TAG, "port query failed for $packageName: ${e.message}")
+                null
+            }
+        }
+
+    /** True when [packageName] resolves to a WTA-marked app (generated APK or host). */
+    fun isWtaApp(context: Context, packageName: String): Boolean {
+        return try {
+            val appInfo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                context.packageManager.getApplicationInfo(
+                    packageName,
+                    PackageManager.ApplicationInfoFlags.of(PackageManager.GET_META_DATA.toLong())
+                )
+            } else {
+                @Suppress("DEPRECATION")
+                context.packageManager.getApplicationInfo(packageName, PackageManager.GET_META_DATA)
+            }
+            appInfo.metaData?.get(META_MARKER)?.toString()?.lowercase() == "true"
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    /**
+     * Release [port] on the remote WTA app. The release receiver requires a
+     * single-use session token minted by its query receiver, so this performs
+     * the query → token → release handshake transparently; the caller-facing
+     * signature is unchanged.
+     */
     suspend fun releaseRemotePort(
         context: Context,
         packageName: String,
         port: Int
     ): Boolean = withContext(Dispatchers.IO) {
+        val token = sendPortQuery(context, packageName)
+            ?.second
+            ?.getString(PortQueryReceiver.EXTRA_SESSION_TOKEN)
+        if (token.isNullOrBlank()) {
+            AppLogger.w(TAG, "releaseRemotePort: no session token from $packageName")
+            return@withContext false
+        }
+
         val deferred = CompletableDeferred<Int>()
 
         val resultReceiver = object : BroadcastReceiver() {
@@ -189,6 +222,7 @@ object WtaAppPortDiscovery {
                 "com.webtoapp.core.port.PortReleaseReceiver"
             )
             putExtra(PortReleaseReceiver.EXTRA_PORT, port)
+            putExtra(PortReleaseReceiver.EXTRA_SESSION_TOKEN, token)
         }
 
         return@withContext try {
