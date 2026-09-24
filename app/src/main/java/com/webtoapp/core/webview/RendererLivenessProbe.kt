@@ -32,12 +32,16 @@ object RendererLivenessProbe {
         onDead: () -> Unit
     ) {
         val wv = webView ?: return
-        val url = wv.url
-        // Nothing was ever loaded into this view — nothing to rescue.
-        if (url.isNullOrBlank() || url == "about:blank") return
 
         var answered = false
         try {
+            // The url read sits inside the guard too: on a destroyed view even
+            // property access can throw on some OEM builds, and a throw here
+            // means the same thing as evaluateJavascript throwing — dead.
+            val url = wv.url
+            // Nothing was ever loaded into this view — nothing to rescue.
+            if (url.isNullOrBlank() || url == "about:blank") return
+
             wv.evaluateJavascript("void 0") { answered = true }
         } catch (e: Exception) {
             // A destroyed view throws instead of answering — that is dead enough.
