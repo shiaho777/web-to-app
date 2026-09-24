@@ -25,7 +25,7 @@ class SystemWebViewEngine(
         config: WebViewConfig,
         callback: BrowserEngineCallback
     ): View {
-        val wv = WebView(context)
+        val wv = com.webtoapp.core.webview.WtaWebView(context)
 
         val bridgeCallbacks = object : WebViewCallbacks {
             override fun onPageStarted(url: String?) = callback.onPageStarted(url)

@@ -1060,8 +1060,23 @@ class WebViewActivity : AppCompatActivity() {
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        // Same Enter/modifier diagnostics as the shell path (#1032).
+        val isEnter = event.keyCode == KeyEvent.KEYCODE_ENTER ||
+            event.keyCode == KeyEvent.KEYCODE_NUMPAD_ENTER
         if (shouldForwardKeyToWebView(event) && isFocusInsideWebView() && webView?.dispatchKeyEvent(event) == true) {
+            if (isEnter) {
+                AppLogger.d(
+                    "WebViewActivity",
+                    "Enter key delivered to page: meta=0x${Integer.toHexString(event.metaState)}"
+                )
+            }
             return true
+        }
+        if (isEnter) {
+            AppLogger.d(
+                "WebViewActivity",
+                "Enter key fell back to default dispatch (IME/focus path): meta=0x${Integer.toHexString(event.metaState)}"
+            )
         }
         return super.dispatchKeyEvent(event)
     }

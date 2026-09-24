@@ -23,7 +23,7 @@ class ExtensionPopupManager(
 
     @SuppressLint("SetJavaScriptEnabled")
     fun createPopupWebView(): WebView {
-        val webView = WebView(context).apply {
+        val webView = com.webtoapp.core.webview.WtaWebView(context).apply {
             settings.apply {
                 javaScriptEnabled = true
                 domStorageEnabled = true

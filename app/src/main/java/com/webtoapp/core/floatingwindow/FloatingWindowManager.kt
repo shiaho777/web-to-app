@@ -271,7 +271,7 @@ class FloatingWindowManager(private val context: Context) {
         }
 
         val webViewContainer = FrameLayout(context)
-        webView = WebView(context).apply {
+        webView = com.webtoapp.core.webview.WtaWebView(context).apply {
 
             val externalConfigurator = onWebViewConfigure
             if (externalConfigurator != null) {

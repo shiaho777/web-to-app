@@ -202,7 +202,7 @@ private fun HtmlPreviewScreen(
 
                 AndroidView(
                     factory = { ctx ->
-                        WebView(ctx).apply {
+                        com.webtoapp.core.webview.WtaWebView(ctx).apply {
                             webView = this
 
                             setBackgroundColor(android.graphics.Color.WHITE)

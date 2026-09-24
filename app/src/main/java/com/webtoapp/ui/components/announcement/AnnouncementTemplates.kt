@@ -161,7 +161,7 @@ private fun AnnouncementContent(
     AndroidView(
         modifier = modifier.fillMaxWidth(),
         factory = { ctx ->
-            android.webkit.WebView(ctx).apply {
+            com.webtoapp.core.webview.WtaWebView(ctx).apply {
                 setBackgroundColor(android.graphics.Color.TRANSPARENT)
                 isVerticalScrollBarEnabled = false
                 isHorizontalScrollBarEnabled = false

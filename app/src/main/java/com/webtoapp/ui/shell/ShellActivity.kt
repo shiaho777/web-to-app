@@ -253,12 +253,30 @@ class ShellActivity : AppCompatActivity() {
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        // Enter diagnostics for hardware-keyboard modifier loss (#1032): if the
+        // IME translated the key into an editor action it never reaches us — a
+        // missing log line is itself the signal; a logged meta=0x0 means the
+        // pipeline dropped modifiers upstream.
+        val isEnter = event.keyCode == KeyEvent.KEYCODE_ENTER ||
+            event.keyCode == KeyEvent.KEYCODE_NUMPAD_ENTER
         if (shouldForwardKeyToWebView(event) && isFocusInsidePageView() &&
             (browserSurface?.dispatchKeyEvent(event) == true || webView?.dispatchKeyEvent(event) == true)
         ) {
+            if (isEnter) {
+                com.webtoapp.core.shell.ShellLogger.d(
+                    "ShellActivity",
+                    "Enter key delivered to page: meta=0x${Integer.toHexString(event.metaState)}"
+                )
+            }
             return true
         }
 
+        if (isEnter) {
+            com.webtoapp.core.shell.ShellLogger.d(
+                "ShellActivity",
+                "Enter key fell back to default dispatch (IME/focus path): meta=0x${Integer.toHexString(event.metaState)}"
+            )
+        }
         return super.dispatchKeyEvent(event)
     }
 

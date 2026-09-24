@@ -643,7 +643,7 @@ private fun PluginPanelWebView(
             val chromeWv = if (request.kind == PluginKind.CHROME_EXTENSION) {
                 session?.popupWebViewFactory?.invoke(request.url)
             } else null
-            chromeWv ?: WebView(ctx).apply {
+            chromeWv ?: com.webtoapp.core.webview.WtaWebView(ctx).apply {
                 settings.javaScriptEnabled = true
                 settings.domStorageEnabled = true
                 setBackgroundColor(scheme.surface.toArgb())
