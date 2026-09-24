@@ -478,20 +478,25 @@ class ShellActivity : AppCompatActivity() {
             }
         }
 
-        val intentUrl = intent?.data?.toString()
-        if (isOpenWithCandidate(intent)) {
-            // An ACTION_VIEW on a file/content URI is the "open with" channel, not a deep
-            // link — the payload goes to the share inbox and never becomes a WebView URL.
-            acceptOpenWithIntent(intent)
-        } else if (!intentUrl.isNullOrBlank() && intent?.action == Intent.ACTION_VIEW) {
-            val validatedUrl = resolveShellDeepLinkUrl(intentUrl, config)
-            deepLinkUrl.value = validatedUrl
-            com.webtoapp.core.shell.ShellLogger.i("ShellActivity", "收到 Deep Link: $validatedUrl (原始: $intentUrl)")
-        }
+        // Issue #1029: relaunching the task from Recents replays its original launch
+        // intent (ACTION_SEND / ACTION_VIEW) — a history restore, not a fresh share or
+        // deep link. None of the inbound-intent channels below may fire for it.
+        if (!com.webtoapp.core.share.SharedContentInbox.isHistoryRelaunchIntent(intent)) {
+            val intentUrl = intent?.data?.toString()
+            if (isOpenWithCandidate(intent)) {
+                // An ACTION_VIEW on a file/content URI is the "open with" channel, not a
+                // deep link — the payload goes to the share inbox, not a WebView URL.
+                acceptOpenWithIntent(intent)
+            } else if (!intentUrl.isNullOrBlank() && intent?.action == Intent.ACTION_VIEW) {
+                val validatedUrl = resolveShellDeepLinkUrl(intentUrl, config)
+                deepLinkUrl.value = validatedUrl
+                com.webtoapp.core.shell.ShellLogger.i("ShellActivity", "收到 Deep Link: $validatedUrl (原始: $intentUrl)")
+            }
 
-        // Issue #943: a cold start triggered by the share sheet. The payload is copied now,
-        // while the one-shot read grant on the sender's content:// URI is still valid.
-        acceptShareIntent(intent)
+            // Issue #943: a cold start triggered by the share sheet. The payload is copied
+            // now, while the one-shot read grant on the sender's content:// URI is valid.
+            acceptShareIntent(intent)
+        }
 
         com.webtoapp.core.shell.ShellLogger.i("ShellActivity", "setContent 开始，主题=${config.themeType}")
 
@@ -835,6 +840,10 @@ class ShellActivity : AppCompatActivity() {
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
 
+        // Issue #1029: the same Recents replay can reach an activity that is still
+        // around — a history restore must never re-fire inbound intent handling.
+        if (com.webtoapp.core.share.SharedContentInbox.isHistoryRelaunchIntent(intent)) return
+
         val launcherRelaunch = intent?.action == Intent.ACTION_MAIN &&
             intent.hasCategory(Intent.CATEGORY_LAUNCHER)
         if (clearBrowsingDataOnLaunch && launcherRelaunch) {
@@ -909,6 +918,10 @@ class ShellActivity : AppCompatActivity() {
                 )
                 if (accepted.isEmpty()) return@launch
 
+                // Consume the launch intent so a later recreate() — e.g. after the
+                // custom-password dialog — cannot re-accept the same share (#1029).
+                setIntent(Intent(Intent.ACTION_MAIN))
+
                 com.webtoapp.core.shell.ShellLogger.i(
                     "ShellActivity",
                     "收到分享内容: ${accepted.map { "${it.name}(${it.mimeType}, ${it.size}B)" }}"
@@ -952,6 +965,9 @@ class ShellActivity : AppCompatActivity() {
                     this@ShellActivity,
                     intent
                 ) ?: return@launch
+
+                // Same consume step as acceptShareIntent (#1029).
+                setIntent(Intent(Intent.ACTION_MAIN))
 
                 com.webtoapp.core.shell.ShellLogger.i(
                     "ShellActivity",

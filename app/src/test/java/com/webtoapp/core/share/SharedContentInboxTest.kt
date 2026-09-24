@@ -262,4 +262,61 @@ class SharedContentInboxTest {
         assertThat(SharedContentInbox.pending(context)).isEmpty()
         assertThat(SharedContentInbox.inboxDir(context).listFiles().orEmpty()).isEmpty()
     }
+
+    // ── history relaunch (issue #1029) ────────────────────────────────────────
+
+    @Test
+    fun `a recents relaunch replaying the share intent is not persisted again`() = runBlocking {
+        registerImage("png-bytes".toByteArray())
+
+        // The original cold-start share persists normally.
+        val first = SharedContentInbox.acceptIntent(
+            context,
+            sendImageIntent(),
+            listOf(ShareReceiveContract.MIME_IMAGES)
+        )
+        assertThat(first).hasSize(1)
+
+        // Tapping the task card in Recents replays the same ACTION_SEND, flagged.
+        val replayed = sendImageIntent()
+            .addFlags(Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY)
+        val second = SharedContentInbox.acceptIntent(
+            context,
+            replayed,
+            listOf(ShareReceiveContract.MIME_IMAGES)
+        )
+
+        assertThat(second).isEmpty()
+        // …and the inbox still holds exactly the original item — no duplicate.
+        assertThat(SharedContentInbox.pending(context)).hasSize(1)
+    }
+
+    @Test
+    fun `a recents relaunch replaying an open-with intent is ignored`() = runBlocking {
+        val uri = Uri.parse("content://files/config.json")
+        shadowOf(context.contentResolver)
+            .registerInputStream(uri, ByteArrayInputStream("{}".toByteArray()))
+
+        fun viewIntent() = Intent(Intent.ACTION_VIEW).apply {
+            // setDataAndType — separate setData/setType calls would clear each other.
+            setDataAndType(uri, "application/json")
+        }
+
+        // A fresh "open with" is accepted; the flagged replay of the same intent is not.
+        assertThat(SharedContentInbox.acceptViewIntent(context, viewIntent())).isNotNull()
+        val replayed = viewIntent().addFlags(Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY)
+        assertThat(SharedContentInbox.acceptViewIntent(context, replayed)).isNull()
+        assertThat(SharedContentInbox.pending(context)).hasSize(1)
+    }
+
+    @Test
+    fun `history relaunch detection only matches the flag`() {
+        assertThat(SharedContentInbox.isHistoryRelaunchIntent(null)).isFalse()
+        assertThat(SharedContentInbox.isHistoryRelaunchIntent(sendImageIntent())).isFalse()
+        assertThat(
+            SharedContentInbox.isHistoryRelaunchIntent(
+                sendImageIntent().addFlags(Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY)
+            )
+        ).isTrue()
+    }
 }

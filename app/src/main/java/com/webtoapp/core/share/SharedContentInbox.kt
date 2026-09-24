@@ -63,6 +63,10 @@ object SharedContentInbox {
     ): List<SharedItem> = withContext(Dispatchers.IO) {
         if (intent == null || allowedMimeTypes.isEmpty()) return@withContext emptyList()
 
+        // Issue #1029: a Recents relaunch replays the task's original ACTION_SEND —
+        // restoring history is not a new share, so it must never persist a second copy.
+        if (isHistoryRelaunchIntent(intent)) return@withContext emptyList()
+
         val action = intent.action
         val isSingle = action == Intent.ACTION_SEND
         val isMultiple = action == Intent.ACTION_SEND_MULTIPLE
@@ -119,6 +123,9 @@ object SharedContentInbox {
         intent: Intent?
     ): SharedItem? = withContext(Dispatchers.IO) {
         if (intent?.action != Intent.ACTION_VIEW) return@withContext null
+        // Issue #1029: same replay guard as [acceptIntent] — a Recents relaunch of a task
+        // originally opened via "open with" must not re-persist the file.
+        if (isHistoryRelaunchIntent(intent)) return@withContext null
         val uri = intent.data ?: return@withContext null
         val scheme = uri.scheme?.lowercase()
         if (scheme != "content" && scheme != "file") return@withContext null
@@ -147,6 +154,15 @@ object SharedContentInbox {
             }
         }
     }
+
+    /**
+     * True when the intent is a Recents-task relaunch replaying the task's original
+     * launch intent rather than a fresh share (issue #1029). The system sets
+     * [Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY] on it; honouring it would persist —
+     * and re-announce to the page — a payload that was already consumed once.
+     */
+    internal fun isHistoryRelaunchIntent(intent: Intent?): Boolean =
+        intent != null && (intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY) != 0
 
     /** Every queued item, newest first. */
     suspend fun pending(context: Context): List<SharedItem> = withContext(Dispatchers.IO) {
