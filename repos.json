@@ -2,7 +2,7 @@
   {
     "name": "WebToApp",
     "description": "Turn any website into an installable app across iOS, Android, Windows, macOS and Linux, and generate a sharing link.",
-    "stargazers_count": 97,
+    "stargazers_count": 100,
     "forks_count": 25,
     "language": "Python",
     "pushed_at": "2026-09-14T14:42:06Z",
@@ -167,7 +167,7 @@
     "stargazers_count": 1,
     "forks_count": 0,
     "language": "Python",
-    "pushed_at": "2026-09-23T22:17:04Z",
+    "pushed_at": "2026-09-24T12:40:21Z",
     "html_url": "https://github.com/shiaho777/pyj-j"
   },
   {
@@ -176,7 +176,7 @@
     "stargazers_count": 1,
     "forks_count": 0,
     "language": "C",
-    "pushed_at": "2026-09-21T09:55:49Z",
+    "pushed_at": "2026-09-24T10:57:37Z",
     "html_url": "https://github.com/shiaho777/stratum"
   },
   {
