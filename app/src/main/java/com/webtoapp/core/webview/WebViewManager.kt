@@ -214,6 +214,20 @@ class WebViewManager(
             return h == "127.0.0.1" || h == "localhost" || h == "[::1]" || h == "::1"
         }
 
+        /**
+         * Hardens a page-supplied `intent://` parse result before launch (Chrome parity):
+         * an explicit `component` bypasses intent-filter/category resolution entirely and
+         * would let a page address any app's exported activity; a `selector` redirects
+         * resolution away from data/type. Strip both — `package=` targeting keeps working
+         * via implicit resolution, and BROWSABLE keeps the result browser-eligible.
+         */
+        @JvmStatic
+        fun hardenIntentSchemeIntent(intent: android.content.Intent) {
+            intent.addCategory(android.content.Intent.CATEGORY_BROWSABLE)
+            intent.component = null
+            intent.selector = null
+        }
+
         fun beginFreshBrowsingSession() {
             browsingDataClearGeneration++
         }
@@ -3999,10 +4013,7 @@ class WebViewManager(
                                     }
                                 }
                                 addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
-
-                                addCategory(android.content.Intent.CATEGORY_BROWSABLE)
-
-                                selector?.addCategory(android.content.Intent.CATEGORY_BROWSABLE)
+                                hardenIntentSchemeIntent(this)
                             }
                         }
                     } catch (e: java.net.URISyntaxException) {
