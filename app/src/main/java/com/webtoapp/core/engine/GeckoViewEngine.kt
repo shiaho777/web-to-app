@@ -485,6 +485,20 @@ class GeckoViewEngine(
         config: WebViewConfig,
         callback: BrowserEngineCallback
     ): View {
+        // Retire a pre-existing session first: an engine reused for a second
+        // createView must not orphan the earlier session — it would stay open
+        // and pinned in liveSessions forever, permanently deferring runtime
+        // recreation via ensureRuntimeForConfig (#1035 skip logic counts it).
+        // Doing this before ensureRuntimeForConfig also keeps a stale session
+        // owned by this engine from counting against the recreate decision.
+        session?.let { old ->
+            try { old.close() } catch (_: Exception) {}
+            liveSessions.remove(old)
+            session = null
+        }
+        geckoView?.releaseSession()
+        geckoView = null
+
         this.callback = callback
         this.lastConfig = config
 
