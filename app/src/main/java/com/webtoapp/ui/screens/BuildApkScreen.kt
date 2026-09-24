@@ -621,7 +621,9 @@ private fun BuildApkContent(
                 )
             }
 
-            if (webApp.appType == AppType.WEB) {
+            // GeckoView is offered for WEB and MULTI_WEB: multi-web surfaces share
+            // one GeckoRuntime across per-site GeckoSessions (#1035).
+            if (webApp.appType == AppType.WEB || webApp.appType == AppType.MULTI_WEB) {
                 item {
                     WtaCard {
                         EngineSelectionCard(

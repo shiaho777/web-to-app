@@ -49,6 +49,16 @@ class GeckoViewEngine(
         @Volatile
         private var sharedRuntime: GeckoRuntime? = null
 
+        /**
+         * Every GeckoSession opened on [sharedRuntime] across all engine
+         * instances. Multi-web apps run several sessions on one shared runtime
+         * — recreating the runtime for a config change would kill every live
+         * session, so [ensureRuntimeForConfig] defers the recreate while any
+         * are open (#1035).
+         */
+        private val liveSessions =
+            java.util.Collections.synchronizedSet(mutableSetOf<GeckoSession>())
+
         @Volatile
         private var runtimeConfigFingerprint: String = ""
 
@@ -131,6 +141,17 @@ class GeckoViewEngine(
                     return
                 }
                 if (want != runtimeConfigFingerprint) {
+                    if (liveSessions.isNotEmpty()) {
+                        // Multi-web: a recreate would kill the sessions other
+                        // sites are using. Keep the existing runtime — the new
+                        // global config applies on next process start (#1035).
+                        AppLogger.w(
+                            TAG,
+                            "GeckoRuntime config change (want=$want, current=$runtimeConfigFingerprint) " +
+                                "skipped: ${liveSessions.size} live session(s) would be killed"
+                        )
+                        return
+                    }
                     AppLogger.i(
                         TAG,
                         "Recreating GeckoRuntime to apply config change (want=$want, current=$runtimeConfigFingerprint)"
@@ -541,6 +562,7 @@ class GeckoViewEngine(
         setupDelegates(newSession, callback, context, config)
 
         newSession.open(runtime)
+        liveSessions.add(newSession)
         session = newSession
 
         val view = GeckoView(context)
@@ -1197,7 +1219,10 @@ class GeckoViewEngine(
 
         try {
 
-            try { session?.close() } catch (_: Exception) { }
+            session?.let { old ->
+                try { old.close() } catch (_: Exception) { }
+                liveSessions.remove(old)
+            }
             session = null
 
             val runtime = getRuntime(context)
@@ -1218,6 +1243,7 @@ class GeckoViewEngine(
                 config = lastConfig ?: WebViewConfig()
             )
             newSession.open(runtime)
+            liveSessions.add(newSession)
 
             lastUserAgentOverride?.let {
                 newSession.settings.userAgentOverride = it
@@ -1285,10 +1311,13 @@ class GeckoViewEngine(
     override fun getView(): View? = geckoView
 
     override fun destroy() {
-        try {
-            session?.close()
-        } catch (e: Exception) {
-            AppLogger.e(TAG, "Error closing session", e)
+        session?.let { s ->
+            try {
+                s.close()
+            } catch (e: Exception) {
+                AppLogger.e(TAG, "Error closing session", e)
+            }
+            liveSessions.remove(s)
         }
         session = null
         geckoView = null

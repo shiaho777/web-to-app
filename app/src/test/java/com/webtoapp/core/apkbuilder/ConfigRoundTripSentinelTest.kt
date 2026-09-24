@@ -359,6 +359,25 @@ class ConfigRoundTripSentinelTest {
     }
 
     @Test
+    fun `multi-web app propagates gecko engine selection to shell config`() {
+        // The build screen now offers GeckoView for MULTI_WEB (#1035); the
+        // selection must survive model -> ApkConfig JSON -> ShellConfig or the
+        // generated multi-web app silently stays on System WebView.
+        val app = baseApp(AppType.MULTI_WEB).copy(
+            apkExportConfig = ApkExportConfig(engineType = "GECKOVIEW"),
+            multiWebConfig = com.webtoapp.data.model.MultiWebConfig(
+                sites = listOf(
+                    com.webtoapp.data.model.MultiWebSite(
+                        id = "s1", name = "One", url = "https://one.example.com"
+                    )
+                )
+            )
+        )
+        val shell = roundTrip(app)
+        assertThat(shell.engineType).isEqualTo("GECKOVIEW")
+    }
+
+    @Test
     fun `runtimePermissions are derived from backgroundRun and notification`() {
         val app = baseApp().copy(
             apkExportConfig = ApkExportConfig(
