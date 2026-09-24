@@ -128,23 +128,27 @@ class WebMediaPlaybackService : Service() {
     }
 
     private fun acquireWakeLock() {
-        if (wakeLock?.isHeld == true) {
-            return
-        }
-
         /*
-         * A timeout prevents an accidental permanent wake lock.
-         * The timeout is renewed whenever PLAYING is reported again.
+         * A timeout prevents an accidental permanent wake lock. PLAYING is
+         * reported on every media sync, so each report renews the timeout by
+         * rotating to a fresh lock: acquire(timeout) on an already-held,
+         * non-reference-counted WakeLock is treated as a no-op by the
+         * platform and would NOT restart the timeout.
+         *
+         * The new lock is taken before the old one is released so coverage
+         * never lapses mid-rotation.
          *
          * WakeLockCompat returns null when the generated APK lacks WAKE_LOCK
          * (or an OEM permission manager revoked it) — playback continues
          * without the lock instead of crashing (#1034).
          */
+        val previous = wakeLock
         wakeLock = WakeLockCompat.acquire(
             this,
             "$packageName:WebMediaPlayback",
             WAKE_LOCK_TIMEOUT
         )
+        WakeLockCompat.release(previous)
     }
 
     private fun releaseWakeLock() {
