@@ -29,6 +29,9 @@ import com.webtoapp.data.model.KeyboardAdjustMode
 import com.webtoapp.core.floatingwindow.FloatingWindowService
 import com.webtoapp.ui.shared.WindowHelper
 
+/** One generated APK hosts exactly one app — the resume-state key is constant. */
+private const val SHELL_RESUME_SESSION_KEY = "shell"
+
 class ShellActivity : AppCompatActivity() {
 
     private var webView: WebView? = null
@@ -90,6 +93,22 @@ class ShellActivity : AppCompatActivity() {
 
     private var webViewStateBundle: Bundle? = null
     private var shellConfig: com.webtoapp.core.shell.ShellConfig? = null
+
+    /**
+     * Persists the committed page URL that last handed off to an external app
+     * (#1030). When the process dies while e.g. WeChat is foreground, the
+     * restored WebView history has that page as its current entry — and OAuth /
+     * payment trampolines are one-shot: reloading them either lands on an
+     * expired-token page or bounces straight back out, which reads as a frozen
+     * white screen. The restore path below vetoes that entry instead.
+     */
+    private val resumeStore by lazy { com.webtoapp.core.webview.WebViewResumeStore(this) }
+
+    internal fun noteExternalAppLaunch(sourceUrl: String?) {
+        if (sourceUrl.isNullOrBlank()) return
+        val baseUrl = shellConfig?.targetUrl ?: return
+        resumeStore.persistExternalJump(SHELL_RESUME_SESSION_KEY, baseUrl, sourceUrl)
+    }
     private fun applyStatusBarColor(
         colorMode: String,
         customColor: String?,
@@ -342,6 +361,7 @@ class ShellActivity : AppCompatActivity() {
         }
 
         savedInstanceState?.let { webViewStateBundle = it }
+        permissionDelegate.onRestoreInstanceState(savedInstanceState)
 
         if (WebToAppApplication.shellMode.requiresCustomPassword()) {
             showPasswordDialog()
@@ -567,9 +587,24 @@ class ShellActivity : AppCompatActivity() {
                             val restored = wv.restoreState(savedState)
                             webViewStateBundle = null
                             if (restored != null) {
-
-                                wv.tag = "state_restored"
-                                com.webtoapp.core.shell.ShellLogger.i("ShellActivity", "WebView state restored from saved bundle")
+                                val restoredUrl = restored.currentItem?.url
+                                val externalJumpUrl = resumeStore.consumeExternalJump(
+                                    SHELL_RESUME_SESSION_KEY, config.targetUrl
+                                )
+                                if (com.webtoapp.core.webview.WebViewRestoreGuard
+                                        .isUsableRestoredUrl(restoredUrl, externalJumpUrl)
+                                ) {
+                                    wv.tag = "state_restored"
+                                    com.webtoapp.core.shell.ShellLogger.i("ShellActivity", "WebView state restored from saved bundle")
+                                } else {
+                                    // A dead entry (blank page / external-app
+                                    // trampoline) must not become the reload target;
+                                    // untagged falls through to initialUrl = targetUrl.
+                                    com.webtoapp.core.shell.ShellLogger.i(
+                                        "ShellActivity",
+                                        "Restored WebView entry is not resumable ($restoredUrl), loading start URL"
+                                    )
+                                }
                             }
                         }
 
@@ -834,6 +869,7 @@ class ShellActivity : AppCompatActivity() {
         // Save through the surface first: on engine-backed (GeckoView) sites the
         // activity's webView field stays null while the surface holds the live view.
         browserSurface?.saveState(outState) ?: webView?.saveState(outState)
+        permissionDelegate.onSaveInstanceState(outState)
         com.webtoapp.core.shell.ShellLogger.logLifecycle("ShellActivity", "onSaveInstanceState - WebView state saved")
     }
 

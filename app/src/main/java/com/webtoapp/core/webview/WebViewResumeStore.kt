@@ -33,6 +33,9 @@ class WebViewResumeStore(context: Context) {
     fun persist(key: String?, baseUrl: String?, lastUrl: String?) {
         if (key == null || baseUrl.isNullOrBlank()) return
         if (lastUrl.isNullOrBlank() || !isResumable(lastUrl)) return
+        // A page that just launched an external app is a one-shot trampoline
+        // (OAuth/payment bounce); it is not a place a restart should resume to.
+        if (lastUrl == prefs.getString(key + SUFFIX_JUMP, null)) return
         prefs.edit()
             .putString(key + SUFFIX_BASE, baseUrl)
             .putString(key + SUFFIX_LAST, lastUrl)
@@ -42,12 +45,38 @@ class WebViewResumeStore(context: Context) {
     fun resumeUrl(key: String?, baseUrl: String?): String? {
         if (key == null || baseUrl.isNullOrBlank()) return null
         if (prefs.getString(key + SUFFIX_BASE, null) != baseUrl) return null
-        return prefs.getString(key + SUFFIX_LAST, null)
+        val last = prefs.getString(key + SUFFIX_LAST, null)
+        // Never resume into a recorded external-jump trampoline.
+        if (last != null && last == prefs.getString(key + SUFFIX_JUMP, null)) return null
+        return last
+    }
+
+    /**
+     * Record the committed page URL that just handed off to an external app
+     * (#1030). If the process dies while that app is foreground, the restored
+     * WebView history has this URL as its current entry — reloading it either
+     * lands on an expired one-shot page or bounces straight back out to the
+     * external app. [consumeExternalJump] lets the restore path veto it.
+     */
+    fun persistExternalJump(key: String?, baseUrl: String?, url: String?) {
+        if (key == null || baseUrl.isNullOrBlank() || url.isNullOrBlank()) return
+        prefs.edit()
+            .putString(key + SUFFIX_BASE, baseUrl)
+            .putString(key + SUFFIX_JUMP, url)
+            .apply()
+    }
+
+    fun consumeExternalJump(key: String?, baseUrl: String?): String? {
+        if (key == null || baseUrl.isNullOrBlank()) return null
+        if (prefs.getString(key + SUFFIX_BASE, null) != baseUrl) return null
+        val url = prefs.getString(key + SUFFIX_JUMP, null)
+        if (url != null) prefs.edit().remove(key + SUFFIX_JUMP).apply()
+        return url
     }
 
     fun clear(key: String?) {
         if (key == null) return
-        prefs.edit().remove(key + SUFFIX_BASE).remove(key + SUFFIX_LAST).apply()
+        prefs.edit().remove(key + SUFFIX_BASE).remove(key + SUFFIX_LAST).remove(key + SUFFIX_JUMP).apply()
     }
 
     private fun isResumable(url: String): Boolean {
@@ -60,6 +89,7 @@ class WebViewResumeStore(context: Context) {
         const val PREFS_NAME = "webview_preview_resume"
         const val SUFFIX_BASE = ".base"
         const val SUFFIX_LAST = ".last"
+        const val SUFFIX_JUMP = ".jump"
         val LOCAL_HOSTS = setOf("localhost", "127.0.0.1", "::1", "10.0.2.2")
     }
 }

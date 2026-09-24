@@ -1408,6 +1408,21 @@ class WebViewManager(
 
         this.currentConfig = config
 
+        // Keep the renderer at foreground priority even while the app is in the
+        // background (camera capture, WeChat/Alipay OAuth hop, share sheet). The
+        // default BOUND policy lets the system reap the renderer as soon as the
+        // app leaves the foreground — a backgrounded renderer is the first LMK
+        // victim, and a missed onRenderProcessGone leaves a dead WebView showing
+        // a white page forever (#1030). With IMPORTANT the system kills the whole
+        // app under pressure instead, which the save/restore path recovers from.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            try {
+                webView.setRendererPriorityPolicy(WebView.RENDERER_PRIORITY_IMPORTANT, false)
+            } catch (e: Exception) {
+                AppLogger.w("WebViewManager", "setRendererPriorityPolicy failed", e)
+            }
+        }
+
         if (config.clearBrowsingDataOnLaunch && appliedBrowsingDataClearGeneration != browsingDataClearGeneration) {
             appliedBrowsingDataClearGeneration = browsingDataClearGeneration
             clearBrowsingData(context, webView)
@@ -2268,7 +2283,7 @@ class WebViewManager(
                     AppLogger.d("WebViewManager", "Main-frame navigation request: $url")
                 }
 
-                if (handleSpecialUrl(url, isUserGesture, view)) {
+                if (handleSpecialUrl(url, isUserGesture, view, callbacks)) {
                     return true
                 }
 
@@ -2281,7 +2296,7 @@ class WebViewManager(
                     }
                     if (shouldTry) {
                         val decoded = tryDecodeBase64DeepLink(url)
-                        if (decoded != null && handleSpecialUrl(decoded, true, view)) {
+                        if (decoded != null && handleSpecialUrl(decoded, true, view, callbacks)) {
                             return true
                         }
                     }
@@ -3166,12 +3181,7 @@ class WebViewManager(
                 AppLogger.e("WebViewManager", "$reason, rendererPriority=${detail?.rendererPriorityAtExit()}")
 
                 view?.let { goneView ->
-                    userscriptInjectionState.remove(goneView)
-                    pagePhaseExecutionState.remove(goneView)
-                    managedWebViews.remove(goneView)
-                    primeUserActivationDone.remove(goneView)
-                    failoverCursor.remove(goneView)
-                    cancelFailoverTimeout(goneView)
+                    discardWebView(goneView)
                     goneView.stopLoading()
                     goneView.webChromeClient = null
                     (goneView.parent as? android.view.ViewGroup)?.removeView(goneView)
@@ -3195,6 +3205,20 @@ class WebViewManager(
                 return true
             }
         }
+    }
+
+    /**
+     * Drop every per-WebView bookkeeping entry for [webView]. Called when a view
+     * is torn down outside the normal client callbacks — e.g. the resume-time
+     * liveness probe found a renderer whose death was never reported (#1030).
+     */
+    fun discardWebView(webView: WebView) {
+        userscriptInjectionState.remove(webView)
+        pagePhaseExecutionState.remove(webView)
+        managedWebViews.remove(webView)
+        primeUserActivationDone.remove(webView)
+        failoverCursor.remove(webView)
+        cancelFailoverTimeout(webView)
     }
 
     private fun Context.findActivity(): Activity? {
@@ -3903,7 +3927,12 @@ class WebViewManager(
         }
     }
 
-    private fun handleSpecialUrl(url: String, isUserGesture: Boolean, webView: WebView? = null): Boolean {
+    private fun handleSpecialUrl(
+        url: String,
+        isUserGesture: Boolean,
+        webView: WebView? = null,
+        callbacks: WebViewCallbacks? = null
+    ): Boolean {
         val uri = Uri.parse(url)
         val scheme = uri.scheme?.lowercase() ?: return false
 
@@ -3989,11 +4018,13 @@ class WebViewManager(
                     if (resolveInfo != null) {
                         AppLogger.d("WebViewManager", "Resolved activity: ${resolveInfo.activityInfo?.packageName}")
                         context.startActivity(intent)
+                        notifyExternalAppLaunch(scheme, url, webView, callbacks)
                         return true
                     }
 
                     AppLogger.d("WebViewManager", "resolveActivity returned null, trying direct launch")
                     context.startActivity(intent)
+                    notifyExternalAppLaunch(scheme, url, webView, callbacks)
                     return true
 
                 } catch (e: android.content.ActivityNotFoundException) {
@@ -4023,6 +4054,24 @@ class WebViewManager(
             AppLogger.w("WebViewManager", "Error handling special URL: $scheme", e)
             true
         }
+    }
+
+    /**
+     * Report a successful handoff to an external app so hosts can flag the
+     * source page as a potential one-shot trampoline (#1030). Scoped to real
+     * app-switch schemes (payment/social deep links and `intent://` wrappers) —
+     * a `tel:`/`mailto:` launch is a short interaction, not a page worth
+     * vetoing on restore.
+     */
+    private fun notifyExternalAppLaunch(
+        scheme: String,
+        url: String,
+        webView: WebView?,
+        callbacks: WebViewCallbacks?
+    ) {
+        if (callbacks == null) return
+        if (scheme != "intent" && scheme !in PAYMENT_SCHEMES) return
+        callbacks.onExternalAppLaunch(url, webView?.url ?: currentMainFrameUrl)
     }
 
     private fun sanitizeFallbackUrl(rawUrl: String?): String? {

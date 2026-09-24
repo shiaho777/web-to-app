@@ -54,6 +54,14 @@ interface WebViewCallbacks {
     fun onRenderProcessGone(didCrash: Boolean) {}
 
     /**
+     * A main-frame navigation was handed to an external app (deep-link schemes
+     * like `weixin://`, `intent://` app launches). [sourceUrl] is the committed
+     * page that issued the jump — often a one-shot OAuth/payment trampoline
+     * that must not be restored after process death (#1030).
+     */
+    fun onExternalAppLaunch(url: String, sourceUrl: String?) {}
+
+    /**
      * Request Android runtime permissions on behalf of an engine that cannot request them itself
      * (GeckoView). The host shows the system dialog and reports the result via [onResult]. Default
      * grants so hosts without an Activity (e.g. headless preview) do not deadlock the engine.

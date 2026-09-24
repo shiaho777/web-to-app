@@ -163,6 +163,12 @@ fun createShellWebViewCallbacks(
             com.webtoapp.core.shell.ShellLogger.logWebView("SSL错误", currentUrlProvider(), error)
         }
 
+        override fun onExternalAppLaunch(url: String, sourceUrl: String?) {
+            // The page that bounced out is usually a one-shot trampoline; flag it
+            // so a post-process-death restore never reloads it (#1030).
+            (context as? ShellActivity)?.noteExternalAppLaunch(sourceUrl)
+        }
+
         override fun onExternalLink(url: String) {
             try {
                 val safeUrl = normalizeExternalUrlForIntent(url)

@@ -1177,6 +1177,19 @@ class WebViewActivity : AppCompatActivity() {
         return resumeStore.resumeUrl(sessionKey, sessionBaseUrl())
     }
 
+    /**
+     * The committed page that just handed off to an external app (#1030) — usually
+     * a one-shot OAuth/payment trampoline that must not become the restore target
+     * after process death.
+     */
+    internal fun persistExternalJump(sourceUrl: String?) {
+        resumeStore.persistExternalJump(sessionKey, sessionBaseUrl(), sourceUrl)
+    }
+
+    /** Read-and-clear the external-jump marker recorded by [persistExternalJump]. */
+    internal fun consumeExternalJump(): String? =
+        resumeStore.consumeExternalJump(sessionKey, sessionBaseUrl())
+
     override fun onTrimMemory(level: Int) {
         super.onTrimMemory(level)
 
@@ -2620,6 +2633,10 @@ fun WebViewScreen(
                 errorMessage = Strings.sslError
             }
 
+            override fun onExternalAppLaunch(url: String, sourceUrl: String?) {
+                (context as? WebViewActivity)?.persistExternalJump(sourceUrl)
+            }
+
             override fun onExternalLink(url: String) {
                 try {
                     val safeUrl = normalizeExternalUrlForIntent(url)
@@ -2882,6 +2899,35 @@ fun WebViewScreen(
     }
 
     val webViewManager = remember { WebViewManager(context, adBlocker) }
+
+    // Issue #1030 backstop: same renderer liveness probe as the shell — some OEM
+    // WebView builds never deliver onRenderProcessGone for a background kill,
+    // leaving a dead WebView that shows a permanent white page.
+    val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                val wv = webViewRef
+                if (wv != null && !isLoading) {
+                    com.webtoapp.core.webview.RendererLivenessProbe.probe(
+                        wv,
+                        stillCurrent = { webViewRef === wv }
+                    ) {
+                        AppLogger.w("WebViewActivity", "Renderer unresponsive after resume — recreating WebView")
+                        runCatching {
+                            wv.stopLoading()
+                            (wv.parent as? android.view.ViewGroup)?.removeView(wv)
+                            wv.destroy()
+                        }
+                        webViewManager.discardWebView(wv)
+                        webViewCallbacks.onRenderProcessGone(false)
+                    }
+                }
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
 
     val localHttpServer = remember { LocalHttpServer.getInstance(context) }
 
@@ -3629,7 +3675,12 @@ fun WebViewScreen(
                                     tracker.scheduleSample(80L)
                                     val host = context as? WebViewActivity
                                     val savedState = host?.consumeWebViewState()
-                                    if (savedState != null && restoreState(savedState) != null) {
+                                    val restored = savedState?.let { restoreState(it) }
+                                    val externalJumpUrl = if (restored != null) host?.consumeExternalJump() else null
+                                    if (restored != null &&
+                                        com.webtoapp.core.webview.WebViewRestoreGuard
+                                            .isUsableRestoredUrl(restored.currentItem?.url, externalJumpUrl)
+                                    ) {
                                         // Bundle path: back-forward list restored — load the
                                         // current entry instead of the configured start URL
                                         // (same contract as ShellBrowserView's state_restored tag).

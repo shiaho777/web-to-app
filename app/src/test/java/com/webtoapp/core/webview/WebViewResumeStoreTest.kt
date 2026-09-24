@@ -74,4 +74,61 @@ class WebViewResumeStoreTest {
         assertThat(store.resumeUrl("app:1", "https://site.example/")).isNull()
         assertThat(store.resumeUrl(null, "https://site.example/")).isNull()
     }
+
+    @Test
+    fun `external jump marker round trips once`() {
+        val store = newStore()
+        store.persistExternalJump("app:1", "https://site.example/", "https://oauth.example/bounce")
+        assertThat(store.consumeExternalJump("app:1", "https://site.example/"))
+            .isEqualTo("https://oauth.example/bounce")
+        // Consumed: a second read returns nothing.
+        assertThat(store.consumeExternalJump("app:1", "https://site.example/")).isNull()
+    }
+
+    @Test
+    fun `external jump marker respects the base url`() {
+        val store = newStore()
+        store.persistExternalJump("app:1", "https://old.example/", "https://oauth.example/bounce")
+        assertThat(store.consumeExternalJump("app:1", "https://new.example/")).isNull()
+    }
+
+    @Test
+    fun `the jump-source page is never recorded as a resume target`() {
+        val store = newStore()
+        val trampoline = "https://oauth.example/bounce"
+        store.persistExternalJump("app:1", "https://site.example/", trampoline)
+        // onSaveInstanceState persists the current page after the jump marker was
+        // written — the trampoline must not become the resume URL.
+        store.persist("app:1", "https://site.example/", trampoline)
+        assertThat(store.resumeUrl("app:1", "https://site.example/")).isNull()
+    }
+
+    @Test
+    fun `a stale last url equal to the jump marker never resumes`() {
+        val store = newStore()
+        val trampoline = "https://oauth.example/bounce"
+        // Marker persisted after the URL was already recorded (ordering flip).
+        store.persist("app:1", "https://site.example/", trampoline)
+        store.persistExternalJump("app:1", "https://site.example/", trampoline)
+        assertThat(store.resumeUrl("app:1", "https://site.example/")).isNull()
+    }
+
+    @Test
+    fun `pages that did not launch an app still resume after a jump`() {
+        val store = newStore()
+        store.persist("app:1", "https://site.example/", "https://site.example/login")
+        store.persistExternalJump("app:1", "https://site.example/", "https://oauth.example/bounce")
+        store.persist("app:1", "https://site.example/", "https://oauth.example/bounce")
+        // The trampoline write is skipped; the earlier real page survives.
+        assertThat(store.resumeUrl("app:1", "https://site.example/"))
+            .isEqualTo("https://site.example/login")
+    }
+
+    @Test
+    fun `clear drops the jump marker too`() {
+        val store = newStore()
+        store.persistExternalJump("app:1", "https://site.example/", "https://oauth.example/bounce")
+        store.clear("app:1")
+        assertThat(store.consumeExternalJump("app:1", "https://site.example/")).isNull()
+    }
 }

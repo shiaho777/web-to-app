@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
+import android.os.Bundle
 import android.os.Environment
 import android.provider.MediaStore
 import android.webkit.GeolocationPermissions
@@ -24,6 +25,8 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+
+private const val KEY_PENDING_CAMERA_PHOTO = "wta_pending_camera_photo"
 
 class ShellPermissionDelegate(private val activity: AppCompatActivity) {
 
@@ -61,6 +64,21 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
     private var cameraPhotoUri: Uri? = null
 
     private var pendingFilePathCallback: android.webkit.ValueCallback<Array<Uri>>? = null
+
+    /**
+     * A pending FilePathCallback cannot survive process death — when the camera
+     * app gets us killed, the restored activity re-receives the chooser result
+     * with no callback to answer, and the captured temp file would leak in
+     * cacheDir. Persist the URI so [onRestoreInstanceState] can drop it (#1030).
+     */
+    fun onSaveInstanceState(outState: Bundle) {
+        outState.putString(KEY_PENDING_CAMERA_PHOTO, cameraPhotoUri?.toString())
+    }
+
+    fun onRestoreInstanceState(state: Bundle?) {
+        val uri = state?.getString(KEY_PENDING_CAMERA_PHOTO)?.let(Uri::parse) ?: return
+        runCatching { activity.contentResolver.delete(uri, null, null) }
+    }
 
     private val fileChooserActivityLauncher = activity.registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()

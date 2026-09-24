@@ -421,6 +421,36 @@ fun ShellScreen(
         com.webtoapp.core.webview.WebViewManager(context, adBlocker)
     }
 
+    // Issue #1030 backstop: onRenderProcessGone is the primary renderer-death
+    // signal, but some OEM WebView builds never deliver it for a background kill.
+    // Probe on every resume — a dead renderer never answers evaluateJavascript —
+    // and route the discovery through the same recreation path.
+    val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                val wv = webViewRef
+                if (wv != null && !isLoading) {
+                    com.webtoapp.core.webview.RendererLivenessProbe.probe(
+                        wv,
+                        stillCurrent = { webViewRef === wv }
+                    ) {
+                        AppLogger.w("ShellScreen", "Renderer unresponsive after resume — recreating WebView")
+                        runCatching {
+                            wv.stopLoading()
+                            (wv.parent as? android.view.ViewGroup)?.removeView(wv)
+                            wv.destroy()
+                        }
+                        webViewManager.discardWebView(wv)
+                        webViewCallbacks.onRenderProcessGone(false)
+                    }
+                }
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
     val hideToolbar = config.webViewConfig.hideToolbar
 
     val swipeRefreshEnabled = config.webViewConfig.swipeRefreshEnabled
