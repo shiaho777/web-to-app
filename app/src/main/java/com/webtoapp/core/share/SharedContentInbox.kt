@@ -164,11 +164,35 @@ object SharedContentInbox {
     internal fun isHistoryRelaunchIntent(intent: Intent?): Boolean =
         intent != null && (intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY) != 0
 
-    /** Every queued item, newest first. */
+    /**
+     * Mark [ids] consumed (issue #1038): the page took them via `WTAShareInbox.take()` /
+     * `consume(ids)`. Consumed items leave [pending] and [findForFileChooser] so they are
+     * never re-announced, but their payload is kept until TTL — a `fileUrl` the page just
+     * received must keep resolving for the rest of the window.
+     */
+    suspend fun consume(context: Context, ids: Collection<String>) = withContext(Dispatchers.IO) {
+        if (ids.isEmpty()) return@withContext
+        synchronized(lock) {
+            val wanted = ids.toSet()
+            val now = System.currentTimeMillis()
+            var changed = false
+            val updated = readIndex(context).map { item ->
+                if (!item.isConsumed && item.id in wanted) {
+                    changed = true
+                    item.copy(consumedAt = now)
+                } else {
+                    item
+                }
+            }
+            if (changed) writeIndex(context, updated)
+        }
+    }
+
+    /** Every queued item still awaiting use, newest first. */
     suspend fun pending(context: Context): List<SharedItem> = withContext(Dispatchers.IO) {
         synchronized(lock) {
             pruneLocked(context)
-            readIndex(context)
+            readIndex(context).filterNot { it.isConsumed }
         }
     }
 
@@ -185,7 +209,7 @@ object SharedContentInbox {
             synchronized(lock) {
                 pruneLocked(context)
                 readIndex(context).firstOrNull { item ->
-                    !item.isText && chooserAccepts(acceptTypes, item.mimeType)
+                    !item.isConsumed && !item.isText && chooserAccepts(acceptTypes, item.mimeType)
                 }
             }
         }
@@ -519,7 +543,8 @@ object SharedContentInbox {
                     size = json.optLong("size"),
                     path = path,
                     text = json.optString("text").takeIf { it.isNotEmpty() },
-                    receivedAt = json.optLong("receivedAt", System.currentTimeMillis())
+                    receivedAt = json.optLong("receivedAt", System.currentTimeMillis()),
+                    consumedAt = json.optLong("consumedAt")
                 )
             }.filter { it.id.isNotEmpty() }
         } catch (e: Exception) {
@@ -544,6 +569,7 @@ object SharedContentInbox {
                         item.path?.let { put("path", it) }
                         item.text?.let { put("text", it) }
                         put("receivedAt", item.receivedAt)
+                        put("consumedAt", item.consumedAt)
                     }
                 )
             }

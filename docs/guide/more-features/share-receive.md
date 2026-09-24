@@ -37,7 +37,7 @@ const off = window.WTAShareInbox.onShare((items) => {
 
 // Or pull on demand — items received in this document and not yet taken.
 const pending = window.WTAShareInbox.peek();
-const taken = window.WTAShareInbox.take();
+const taken = window.WTAShareInbox.take();   // also marks them consumed natively
 ```
 
 The `wta:share` event carries the same array as `event.detail.items`:
@@ -47,6 +47,14 @@ window.addEventListener('wta:share', (e) => {
   console.log(e.detail.items);
 });
 ```
+
+Items stay in the inbox until the page consumes them or they expire. `take()` marks what it returns as consumed; pages that only listen to the event can acknowledge items explicitly:
+
+```js
+window.WTAShareInbox.consume(item.id);       // or consume([id1, id2, …])
+```
+
+A consumed item is never re-announced — not to a later document, not on the next app launch. An item nobody consumed still re-fires `wta:share` on each document load, so a reload in the middle of handling cannot lose it. Either way, a `fileUrl` already handed out keeps resolving until the 1-hour expiry.
 
 This channel is **zero taps** but only works on pages that listen — a custom HTML/frontend app, or an [extension module](/guide/more-features/extension-modules) that declares the `DOM_ACCESS` permission and registers a listener. Third-party sites do not know about it.
 

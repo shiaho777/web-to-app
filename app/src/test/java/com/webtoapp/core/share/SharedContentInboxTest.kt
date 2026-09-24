@@ -319,4 +319,67 @@ class SharedContentInboxTest {
             )
         ).isTrue()
     }
+
+    // ── consume (issue #1038) ───────────────────────────────────────────────────
+
+    @Test
+    fun `consumed items leave pending and the chooser but keep their payload until TTL`() = runBlocking {
+        registerImage("png-bytes".toByteArray())
+        val item = SharedContentInbox.acceptIntent(
+            context,
+            sendImageIntent(),
+            listOf(ShareReceiveContract.MIME_IMAGES)
+        ).single()
+
+        SharedContentInbox.consume(context, listOf(item.id))
+
+        // A later document no longer re-announces it, and the chooser skips it…
+        assertThat(SharedContentInbox.pending(context)).isEmpty()
+        assertThat(SharedContentInbox.findForFileChooser(context, null)).isNull()
+        // …but a fileUrl the page already grabbed must keep resolving until TTL.
+        assertThat(File(item.path!!).readText()).isEqualTo("png-bytes")
+    }
+
+    @Test
+    fun `consume ignores unknown ids and leaves other items pending`() = runBlocking {
+        registerImage()
+        SharedContentInbox.acceptIntent(
+            context,
+            sendImageIntent(),
+            listOf(ShareReceiveContract.MIME_IMAGES)
+        )
+
+        SharedContentInbox.consume(context, listOf("does-not-exist"))
+        SharedContentInbox.consume(context, emptyList())
+
+        assertThat(SharedContentInbox.pending(context)).hasSize(1)
+    }
+
+    @Test
+    fun `a share accepted after a consume still announces normally`() = runBlocking {
+        registerImage("first".toByteArray())
+        val first = SharedContentInbox.acceptIntent(
+            context,
+            sendImageIntent(),
+            listOf(ShareReceiveContract.MIME_IMAGES)
+        ).single()
+        SharedContentInbox.consume(context, listOf(first.id))
+
+        val secondUri = Uri.parse("content://media/external/images/media/43")
+        shadowOf(context.contentResolver)
+            .registerInputStream(secondUri, ByteArrayInputStream("second".toByteArray()))
+        SharedContentInbox.acceptIntent(
+            context,
+            Intent(Intent.ACTION_SEND).apply {
+                type = "image/jpeg"
+                putExtra(Intent.EXTRA_STREAM, secondUri)
+            },
+            listOf(ShareReceiveContract.MIME_IMAGES)
+        )
+
+        // Only the fresh item is pending — the consumed one stays silent.
+        val pending = SharedContentInbox.pending(context)
+        assertThat(pending).hasSize(1)
+        assertThat(pending.single().name).endsWith(".jpg")
+    }
 }

@@ -104,6 +104,13 @@ object ShareReceiveContract {
     /** DOM event dispatched on `window` and `document` for every delivered batch. */
     const val JS_EVENT_NAME = "wta:share"
 
+    /**
+     * Name of the `addJavascriptInterface` object the bootstrap calls to mark items
+     * consumed natively (`take()` / `consume(ids)`, issue #1038). Internal plumbing —
+     * pages only ever see the [JS_NAMESPACE] API.
+     */
+    const val JS_BRIDGE_NAME = "__WTAShareInboxBridge"
+
     /** Default file name when a sender supplies none and none can be derived. */
     const val FALLBACK_NAME = "shared_content"
 }
@@ -123,7 +130,14 @@ data class SharedItem(
     val size: Long,
     val path: String? = null,
     val text: String? = null,
-    val receivedAt: Long = System.currentTimeMillis()
+    val receivedAt: Long = System.currentTimeMillis(),
+    /**
+     * Non-zero once the page has consumed the item (issue #1038). Consumed items leave
+     * the pending queues — JS re-announce and file-chooser prefill — while their payload
+     * stays on disk until TTL, so a `fileUrl` already handed out keeps resolving.
+     */
+    val consumedAt: Long = 0
 ) {
     val isText: Boolean get() = kind == ShareReceiveContract.KIND_TEXT
+    val isConsumed: Boolean get() = consumedAt > 0
 }

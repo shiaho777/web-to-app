@@ -69,6 +69,28 @@ val SHARE_INBOX_BOOTSTRAP_JS: String = """
             }
         }
 
+        function idsOf(items) {
+            var ids = [];
+            for (var i = 0; i < items.length; i++) {
+                var id = items[i] && items[i].id;
+                if (id) ids.push(id);
+            }
+            return ids;
+        }
+
+        // Acknowledge items to the native inbox (#1038): consumed items are never
+        // re-announced to a later document or app launch. The bridge object only exists
+        // while the feature is on, so every call is guarded.
+        function consumeNative(ids) {
+            if (!ids || !ids.length) return;
+            try {
+                var bridge = window.${ShareReceiveContract.JS_BRIDGE_NAME};
+                if (bridge && typeof bridge.consume === 'function') {
+                    bridge.consume(JSON.stringify(ids));
+                }
+            } catch (e) { }
+        }
+
         window.${ShareReceiveContract.JS_NAMESPACE} = {
             __wta__: true,
             version: 1,
@@ -83,11 +105,28 @@ val SHARE_INBOX_BOOTSTRAP_JS: String = """
             },
             /** Items received in this document and not yet taken, without draining. */
             peek: function() { return queue.slice(); },
-            /** Drain the items received in this document. */
+            /** Drain the items received in this document — and mark them consumed natively,
+                so they are never re-announced. */
             take: function() {
                 var items = queue.slice();
                 queue = [];
+                consumeNative(idsOf(items));
                 return items;
+            },
+            /** Mark item(s) consumed natively without taking them — for pages that only
+                listen to the event. Accepts an id, an item, or an array of either. */
+            consume: function(ids) {
+                var list = (ids == null) ? [] : (ids instanceof Array ? ids : [ids]);
+                var drop = {};
+                var out = [];
+                for (var i = 0; i < list.length; i++) {
+                    var id = (list[i] && list[i].id) ? list[i].id : list[i];
+                    if (id && !drop[id]) { drop[id] = true; out.push(id); }
+                }
+                if (out.length) {
+                    queue = queue.filter(function(item) { return !(item && drop[item.id]); });
+                    consumeNative(out);
+                }
             },
             /** Forget everything received in this document (does not affect native storage). */
             clear: function() { queue = []; }

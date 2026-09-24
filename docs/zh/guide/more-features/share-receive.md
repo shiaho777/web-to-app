@@ -37,7 +37,7 @@ const off = window.WTAShareInbox.onShare((items) => {
 
 // 或者按需拉取 —— 当前文档收到且尚未取走的内容。
 const pending = window.WTAShareInbox.peek();
-const taken = window.WTAShareInbox.take();
+const taken = window.WTAShareInbox.take();   // 同时将这些条目在原生侧标记为已消费
 ```
 
 `wta:share` 事件通过 `event.detail.items` 携带同一个数组：
@@ -47,6 +47,14 @@ window.addEventListener('wta:share', (e) => {
   console.log(e.detail.items);
 });
 ```
+
+条目会一直留在收件箱，直到页面消费或过期为止。`take()` 会把它返回的条目标记为已消费；只监听事件的页面可以显式确认：
+
+```js
+window.WTAShareInbox.consume(item.id);       // 或 consume([id1, id2, …])
+```
+
+已消费的条目不会再被派发 —— 不会推到之后的文档，也不会在下次启动时重现。没有被消费的条目仍会在每次文档加载时重发 `wta:share`，因此处理到一半刷新页面也不会丢内容。两种情况下 `fileUrl` 副本在 1 小时过期前都可读。
 
 这条通道**零点击**，但只对会监听的页面有效 —— 你自己写的 HTML/前端 App，或者声明了 `DOM_ACCESS` 权限并注册监听的[扩展模块](/zh/guide/more-features/extension-modules)。第三方网站并不知道这个事件。
 

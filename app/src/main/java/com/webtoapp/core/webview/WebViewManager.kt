@@ -1815,7 +1815,15 @@ class WebViewManager(
             }
 
             if (config.enableShareReceive) {
+                // The ack bridge lets the page mark items consumed (issue #1038); without
+                // it a processed share keeps re-announcing on every document load until TTL.
+                addJavascriptInterface(
+                    com.webtoapp.core.share.ShareInboxBridge(context),
+                    com.webtoapp.core.share.ShareReceiveContract.JS_BRIDGE_NAME
+                )
                 installShareInboxDocumentStart(this)
+            } else {
+                removeJavascriptInterface(com.webtoapp.core.share.ShareReceiveContract.JS_BRIDGE_NAME)
             }
 
             if (config.enablePrintBridge) {
