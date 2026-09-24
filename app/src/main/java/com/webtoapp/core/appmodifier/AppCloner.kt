@@ -120,7 +120,14 @@ class AppCloner(private val context: Context) {
                 Intent(context, SplashLauncherActivity::class.java).apply {
 
                     action = Intent.ACTION_VIEW
-                    putExtra(SplashLauncherActivity.EXTRA_PAYLOAD_JSON, payload.toJson())
+                    val payloadJson = payload.toJson()
+                    putExtra(SplashLauncherActivity.EXTRA_PAYLOAD_JSON, payloadJson)
+                    // The launcher replays this intent — sign the payload so the
+                    // exported SplashLauncherActivity can reject forged extras.
+                    putExtra(
+                        SplashLauncherActivity.EXTRA_PAYLOAD_SIGNATURE,
+                        PayloadIntegrity.sign(context, payloadJson)
+                    )
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
                 }

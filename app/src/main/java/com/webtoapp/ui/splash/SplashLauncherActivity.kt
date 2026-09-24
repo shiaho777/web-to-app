@@ -45,12 +45,27 @@ class SplashLauncherActivity : AppCompatActivity() {
 
     companion object {
         const val EXTRA_PAYLOAD_JSON = "app_modify_payload"
+        const val EXTRA_PAYLOAD_SIGNATURE = "app_modify_payload_sig"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val payload = AppModifyPayload.fromJson(intent.getStringExtra(EXTRA_PAYLOAD_JSON))
+        // This activity is exported because pinned shortcuts are replayed by the
+        // launcher app — so the payload is caller-controlled input. Verify the
+        // host-issued HMAC before trusting targetPackage / verifyUrl / dialog text
+        // / mediaPath; a forged payload must never reach activation or splash IO.
+        val payloadJson = intent.getStringExtra(EXTRA_PAYLOAD_JSON)
+        if (!com.webtoapp.core.appmodifier.PayloadIntegrity.verify(
+                this, payloadJson, intent.getStringExtra(EXTRA_PAYLOAD_SIGNATURE)
+            )
+        ) {
+            AppLogger.w("SplashLauncherActivity", "Rejected unsigned or tampered payload, finishing")
+            finish()
+            return
+        }
+
+        val payload = AppModifyPayload.fromJson(payloadJson)
         if (payload == null || payload.targetPackage.isBlank()) {
             AppLogger.w("SplashLauncherActivity", "Missing or invalid payload, finishing")
             finish()
