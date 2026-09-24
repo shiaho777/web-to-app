@@ -156,6 +156,16 @@ fun ShellBrowserAndroidView(
                     swipeLayout.isRefreshing = isRefreshing
                 }
             },
+            // Leaving composition — key bump, hidden multi-web tab eviction, or
+            // teardown — must destroy the surface's WebView too. The explicit
+            // recreation paths already do; this catches every other drop (#1033).
+            onRelease = { swipeLayout ->
+                val surface = swipeLayout.tag as? BrowserSurface
+                surface?.webView?.let { webViewManager.discardWebView(it) }
+                surface?.destroy()
+                (swipeLayout.context as? ShellActivity)?.releaseSurfaceRefs(surface)
+                swipeLayout.removeAllViews()
+            },
             modifier = modifier
         )
     }

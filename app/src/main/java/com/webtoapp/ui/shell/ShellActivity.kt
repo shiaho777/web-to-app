@@ -342,6 +342,28 @@ class ShellActivity : AppCompatActivity() {
         webViewStateBundle = null
     }
 
+    /**
+     * Stash a WebView state bundle for the next creation — the composable-side
+     * memory teardown (#1033) hands the saved navigation stack here so the
+     * restored view picks it up exactly like process-death recovery.
+     */
+    internal fun stashWebViewState(bundle: Bundle) {
+        webViewStateBundle = bundle
+    }
+
+    /** Drop activity-level view refs after a composable-side teardown. */
+    internal fun clearWebViewRefs() {
+        webView = null
+        browserSurface = null
+    }
+
+    /** Drop activity-level refs that still point at [surface] — release order vs. recreation is not guaranteed. */
+    internal fun releaseSurfaceRefs(surface: BrowserSurface?) {
+        if (surface != null && browserSurface === surface) browserSurface = null
+        val wv = surface?.webView
+        if (wv != null && webView === wv) webView = null
+    }
+
 
     private fun loadInBrowser(url: String) {
         browserSurface?.loadUrl(url) ?: webView?.loadUrl(url)
@@ -1175,7 +1197,9 @@ class ShellActivity : AppCompatActivity() {
         super.onTrimMemory(level)
 
         if (level >= android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW) {
-            com.webtoapp.core.shell.ShellLogger.logLifecycle("ShellActivity", "Memory pressure (level=$level), skipped manual GC")
+            // The real work happens in ShellScreen's ComponentCallbacks2 —
+            // it owns the recreation key needed to rebuild after a teardown.
+            com.webtoapp.core.shell.ShellLogger.logLifecycle("ShellActivity", "Memory pressure (level=$level)")
         }
     }
 

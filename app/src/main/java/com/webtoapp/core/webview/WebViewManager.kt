@@ -87,6 +87,11 @@ class WebViewManager(
 
         private const val PLUGIN_NOTIFICATION_CHANNEL_ID = "plugin_notifications"
 
+        // Transport WebViews backing onCreateWindow are only destroyed when a
+        // navigation actually lands; a popup that never loads would leak the
+        // whole view, so cap their lifetime (#1033).
+        private const val TRANSPORT_WEBVIEW_TIMEOUT_MS = 15_000L
+
         private val DESKTOP_UA_MODES = setOf(
             UserAgentMode.CHROME_DESKTOP,
             UserAgentMode.SAFARI_DESKTOP,
@@ -3212,6 +3217,15 @@ class WebViewManager(
      * is torn down outside the normal client callbacks — e.g. the resume-time
      * liveness probe found a renderer whose death was never reported (#1030).
      */
+    /**
+     * Transport WebViews created for `onCreateWindow` are destroyed inside
+     * `shouldOverrideUrlLoading` once the popup URL is known — a popup that is
+     * granted but never navigates would otherwise leak the whole view (#1033).
+     */
+    private fun scheduleTransportWebViewDestroy(webView: WebView) {
+        webView.postDelayed({ runCatching { webView.destroy() } }, TRANSPORT_WEBVIEW_TIMEOUT_MS)
+    }
+
     fun discardWebView(webView: WebView) {
         userscriptInjectionState.remove(webView)
         pagePhaseExecutionState.remove(webView)
@@ -3821,6 +3835,7 @@ class WebViewManager(
                         }
                         transport.webView = tempWebView
                         resultMsg.sendToTarget()
+                        scheduleTransportWebViewDestroy(tempWebView)
                     }
                     return true
                 }
@@ -3858,6 +3873,7 @@ class WebViewManager(
                             }
                             transport.webView = tempWebView
                             resultMsg.sendToTarget()
+                            scheduleTransportWebViewDestroy(tempWebView)
                         }
                         true
                     }

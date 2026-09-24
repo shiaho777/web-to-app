@@ -106,6 +106,9 @@ fun ShellScreen(
     var canGoBack by remember { mutableStateOf(false) }
     var canGoForward by remember { mutableStateOf(false) }
     var isRefreshing by remember { mutableStateOf(false) }
+    // #1033: set when memory pressure tore the WebView down while backgrounded;
+    // the next ON_RESUME recreates it instead of probing a dead view.
+    var memoryTeardownPending by remember { mutableStateOf(false) }
 
     val splashMediaExists = remember {
         if (config.splashEnabled) {
@@ -429,6 +432,11 @@ fun ShellScreen(
     DisposableEffect(lifecycleOwner) {
         val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
             if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                if (memoryTeardownPending) {
+                    memoryTeardownPending = false
+                    webViewRecreationKey++
+                    return@LifecycleEventObserver
+                }
                 val wv = webViewRef
                 if (wv != null && !isLoading) {
                     com.webtoapp.core.webview.RendererLivenessProbe.probe(
@@ -449,6 +457,41 @@ fun ShellScreen(
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
+    // Issue #1033: TRIM_MEMORY_COMPLETE means the process is next in line for
+    // LMK — and on a WebView app the renderer IS the memory. Shed it ourselves
+    // (navigation state stashed, recreated on resume) instead of letting the
+    // system starve lower-priority processes like the Launcher.
+    DisposableEffect(lifecycleOwner) {
+        val componentCallbacks = object : android.content.ComponentCallbacks2 {
+            override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {}
+            override fun onLowMemory() {}
+            override fun onTrimMemory(level: Int) {
+                if (!com.webtoapp.core.webview.WebViewMemoryTrimmer.onTrimMemory(level, context)) return
+                val wv = webViewRef ?: return
+                if (memoryTeardownPending) return
+                val bundle = android.os.Bundle()
+                runCatching { wv.saveState(bundle) }
+                if (!bundle.isEmpty) {
+                    (activity as? ShellActivity)?.stashWebViewState(bundle)
+                }
+                AppLogger.w("ShellScreen", "TRIM_MEMORY_COMPLETE — tearing down WebView, will rebuild on resume")
+                runCatching {
+                    wv.stopLoading()
+                    wv.onPause()
+                    (wv.parent as? android.view.ViewGroup)?.removeView(wv)
+                    wv.destroy()
+                }
+                webViewManager.discardWebView(wv)
+                webViewRef = null
+                browserSurfaceRef = null
+                (activity as? ShellActivity)?.clearWebViewRefs()
+                memoryTeardownPending = true
+            }
+        }
+        context.registerComponentCallbacks(componentCallbacks)
+        onDispose { context.unregisterComponentCallbacks(componentCallbacks) }
     }
 
     val hideToolbar = config.webViewConfig.hideToolbar

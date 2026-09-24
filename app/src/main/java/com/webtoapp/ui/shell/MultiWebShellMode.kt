@@ -197,6 +197,13 @@ private fun TabsMode(
     LaunchedEffect(selectedTab, sites.size) {
         val site = sites.getOrNull(selectedTab)
         if (site != null) {
+            // Visited tabs stay composed for session restore, but a hidden
+            // WebView has no reason to keep running layout/JS/media at full
+            // speed — per-view onPause keeps the page, sheds the work (#1033).
+            registry.webViews.forEach { (id, wv) ->
+                if (id != site.id) runCatching { wv.onPause() }
+            }
+            registry.webViews[site.id]?.let { wv -> runCatching { wv.onResume() } }
             registry.pushCurrent(site.id, onWebViewCreated, onBrowserSurfaceCreated)
             webViewCallbacks.onTitleChanged(site.name.ifBlank { extractDomain(site.url) })
             // onUrlChanged (not onPageStarted): the tab's page is already loaded;
@@ -327,6 +334,30 @@ private fun TabsMode(
         ) {
             val visitedTabs = remember { mutableStateMapOf<Int, Boolean>() }
             visitedTabs[selectedTab] = true
+
+            // Under kill-list pressure (TRIM_MEMORY_COMPLETE) drop every hidden
+            // tab's composable — AndroidView.onRelease destroys each surface,
+            // and the tab simply reloads from its site URL on next select (#1033).
+            val trimContext = androidx.compose.ui.platform.LocalContext.current
+            DisposableEffect(Unit) {
+                val componentCallbacks = object : android.content.ComponentCallbacks2 {
+                    override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {}
+                    override fun onLowMemory() {}
+                    override fun onTrimMemory(level: Int) {
+                        if (!com.webtoapp.core.webview.WebViewMemoryTrimmer.shouldTeardownWebView(level)) return
+                        visitedTabs.keys.filter { it != selectedTab }.forEach { index ->
+                            val site = sites.getOrNull(index)
+                            visitedTabs.remove(index)
+                            if (site != null) {
+                                registry.webViews.remove(site.id)
+                                registry.surfaces.remove(site.id)
+                            }
+                        }
+                    }
+                }
+                trimContext.registerComponentCallbacks(componentCallbacks)
+                onDispose { trimContext.unregisterComponentCallbacks(componentCallbacks) }
+            }
 
             sites.forEachIndexed { index, site ->
                 val isVisited = visitedTabs.containsKey(index)

@@ -1207,6 +1207,28 @@ class WebViewActivity : AppCompatActivity() {
     }
 
     /**
+     * Stash a WebView state bundle for the next creation — the composable-side
+     * memory teardown (#1033) hands the saved navigation stack here so the
+     * restored view picks it up exactly like process-death recovery.
+     */
+    internal fun stashWebViewState(bundle: Bundle) {
+        webViewStateBundle = bundle
+    }
+
+    /** Drop activity-level view refs after a composable-side teardown. */
+    internal fun clearWebViewRefs() {
+        webView = null
+        browserSurface = null
+    }
+
+    /** Drop activity-level refs that still point at [surface] — release order vs. recreation is not guaranteed. */
+    internal fun releaseSurfaceRefs(surface: BrowserSurface?) {
+        if (surface != null && browserSurface === surface) browserSurface = null
+        val wv = surface?.webView
+        if (wv != null && webView === wv) webView = null
+    }
+
+    /**
      * Mark the resume URL as used without reading it — after a successful bundle
      * restore, a later recreation (render-process-gone) must reload the start URL
      * rather than the page that may have crashed the renderer.
@@ -1239,7 +1261,9 @@ class WebViewActivity : AppCompatActivity() {
         super.onTrimMemory(level)
 
         if (level >= android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW) {
-            com.webtoapp.core.logging.AppLogger.w("WebViewActivity", "Memory pressure (level=$level), skipped manual GC")
+            // The real work happens in the screen's ComponentCallbacks2 —
+            // it owns the recreation key needed to rebuild after a teardown.
+            com.webtoapp.core.logging.AppLogger.w("WebViewActivity", "Memory pressure (level=$level)")
         }
     }
 
@@ -1331,6 +1355,9 @@ fun WebViewScreen(
     var isActivationChecked by remember { mutableStateOf(false) }
 
     var webViewRecreationKey by remember { mutableIntStateOf(0) }
+    // #1033: set when memory pressure tore the WebView down while backgrounded;
+    // the next ON_RESUME recreates it instead of probing a dead view.
+    var memoryTeardownPending by remember { mutableStateOf(false) }
     var canGoBack by remember { mutableStateOf(false) }
     var canGoForward by remember { mutableStateOf(false) }
     var isRefreshing by remember { mutableStateOf(false) }
@@ -2952,6 +2979,11 @@ fun WebViewScreen(
     DisposableEffect(lifecycleOwner) {
         val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
             if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                if (memoryTeardownPending) {
+                    memoryTeardownPending = false
+                    webViewRecreationKey++
+                    return@LifecycleEventObserver
+                }
                 val wv = webViewRef
                 if (wv != null && !isLoading) {
                     com.webtoapp.core.webview.RendererLivenessProbe.probe(
@@ -2972,6 +3004,41 @@ fun WebViewScreen(
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
+    // Issue #1033: TRIM_MEMORY_COMPLETE means the process is next in line for
+    // LMK — and on a WebView app the renderer IS the memory. Shed it ourselves
+    // (navigation state stashed, recreated on resume) instead of letting the
+    // system starve lower-priority processes like the Launcher.
+    DisposableEffect(lifecycleOwner) {
+        val componentCallbacks = object : android.content.ComponentCallbacks2 {
+            override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {}
+            override fun onLowMemory() {}
+            override fun onTrimMemory(level: Int) {
+                if (!com.webtoapp.core.webview.WebViewMemoryTrimmer.onTrimMemory(level, context)) return
+                val wv = webViewRef ?: return
+                if (memoryTeardownPending) return
+                val bundle = android.os.Bundle()
+                runCatching { wv.saveState(bundle) }
+                if (!bundle.isEmpty) {
+                    (context as? WebViewActivity)?.stashWebViewState(bundle)
+                }
+                AppLogger.w("WebViewActivity", "TRIM_MEMORY_COMPLETE — tearing down WebView, will rebuild on resume")
+                runCatching {
+                    wv.stopLoading()
+                    wv.onPause()
+                    (wv.parent as? android.view.ViewGroup)?.removeView(wv)
+                    wv.destroy()
+                }
+                webViewManager.discardWebView(wv)
+                webViewRef = null
+                browserSurfaceRef = null
+                (context as? WebViewActivity)?.clearWebViewRefs()
+                memoryTeardownPending = true
+            }
+        }
+        context.registerComponentCallbacks(componentCallbacks)
+        onDispose { context.unregisterComponentCallbacks(componentCallbacks) }
     }
 
     val localHttpServer = remember { LocalHttpServer.getInstance(context) }
@@ -3785,6 +3852,17 @@ fun WebViewScreen(
                             if (swipeLayout.isRefreshing != isRefreshing) {
                                 swipeLayout.isRefreshing = isRefreshing
                             }
+                        },
+                        // Any drop of this composable (key bump, teardown,
+                        // disposal) must destroy the surface's WebView too —
+                        // otherwise the renderer outlives its view (#1033).
+                        onRelease = { swipeLayout ->
+                            val surface = swipeLayout.tag as? BrowserSurface
+                            surface?.webView?.let { webViewManager.discardWebView(it) }
+                            surface?.destroy()
+                            if (browserSurfaceRef === surface) browserSurfaceRef = null
+                            (context as? WebViewActivity)?.releaseSurfaceRefs(surface)
+                            swipeLayout.removeAllViews()
                         },
                         modifier = Modifier.weight(weight = 1f, fill = true)
                     )
