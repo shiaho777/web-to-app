@@ -518,6 +518,23 @@ NativeBridge.googleSignIn('sign-in-' + Date.now());
         }
 
         /**
+         * Whether a resolved [InetAddress] lands in private/loopback/link-local
+         * territory — the DNS-rebinding counterpart to [isPrivateNetworkUrl],
+         * which can only classify the hostname string. `InetAddress` covers
+         * loopback/any-local/link-local/site-local/multicast; [isPrivateNetworkHost]
+         * adds the IPv6 ULA range (fc00::/7) that `isSiteLocalAddress` misses.
+         */
+        internal fun isRebindingBlockedAddress(addr: java.net.InetAddress): Boolean {
+            if (addr.isAnyLocalAddress || addr.isLoopbackAddress || addr.isLinkLocalAddress ||
+                addr.isSiteLocalAddress || addr.isMulticastAddress
+            ) {
+                return true
+            }
+            // Scoped literal suffix ("fe80::1%eth0") must not reach the classifier.
+            return isPrivateNetworkHost(addr.hostAddress?.substringBefore('%'))
+        }
+
+        /**
          * Whether [pageUrl] belongs to the app's configured origin ([appOriginUrl] — the
          * target URL, or the local server base for packaged/server app types). Same host
          * or a subdomain counts; anything else is a foreign page riding the WebView.
@@ -546,6 +563,24 @@ NativeBridge.googleSignIn('sign-in-' + Date.now());
             )
             .retryOnConnectionFailure(true)
             .build()
+    }
+
+    /**
+     * Fail-closed DNS for remote-page callers: a hostname that resolves to a
+     * private/loopback/link-local address is refused before any byte leaves the
+     * device — the URL-string gate cannot see resolutions (DNS rebinding would
+     * otherwise launder a public-looking name into a local target).
+     */
+    private val publicOnlyDns = object : okhttp3.Dns {
+        override fun lookup(hostname: String): List<java.net.InetAddress> {
+            val resolved = okhttp3.Dns.SYSTEM.lookup(hostname)
+            resolved.firstOrNull { isRebindingBlockedAddress(it) }?.let { blocked ->
+                throw java.net.UnknownHostException(
+                    "Blocked DNS rebinding: $hostname resolves to private address ${blocked.hostAddress}"
+                )
+            }
+            return resolved
+        }
     }
 
     private fun isAppOriginCallerPage(pageUrl: String): Boolean {
@@ -1352,6 +1387,11 @@ NativeBridge.googleSignIn('sign-in-' + Date.now());
             // follow-up request by a network interceptor so a redirect chain cannot
             // cross the private/public boundary the initial URL was classified against.
             var redirectGate: ((okhttp3.HttpUrl) -> Boolean)? = null
+            // DNS-rebinding guard for remote-page callers: the URL gate classifies
+            // the hostname string, but a public-looking name can resolve to a
+            // private address (127.0.0.1, LAN, cloud metadata). When set, the
+            // request's Dns rejects any resolution landing on a private address.
+            var requirePublicResolution = false
             if (corsBypass) {
                 if (!isHttpUrl(url)) {
                     AppLogger.w("NativeBridge", "Blocked CORS-bypass request to non-HTTP(S) URL: $url")
@@ -1397,6 +1437,7 @@ NativeBridge.googleSignIn('sign-in-' + Date.now());
                 // the same rule to every follow-up request.
                 if (!pageIsLocal) {
                     redirectGate = { target -> !isPrivateNetworkUrl(target.toString()) }
+                    requirePublicResolution = true
                 }
             } else if (!isPrivateNetworkUrl(url)) {
                 AppLogger.w("NativeBridge", "Blocked private-network bridge request to non-private URL: $url")
@@ -1448,19 +1489,24 @@ NativeBridge.googleSignIn('sign-in-' + Date.now());
             builder.header("X-WebToApp-Private-Network-Bridge", "1")
             builder.method(method, requestBody)
 
-            val client = redirectGate?.let { gate ->
-                privateNetworkHttpClient.newBuilder()
-                    .addNetworkInterceptor { chain ->
-                        val followUp = chain.request()
-                        if (!gate(followUp.url)) {
-                            throw RedirectBlockedByGateException(
-                                "Blocked redirect to ${followUp.url.host}: target class changed mid-chain"
-                            )
+            val client = if (redirectGate != null || requirePublicResolution) {
+                privateNetworkHttpClient.newBuilder().apply {
+                    if (requirePublicResolution) dns(publicOnlyDns)
+                    redirectGate?.let { gate ->
+                        addNetworkInterceptor { chain ->
+                            val followUp = chain.request()
+                            if (!gate(followUp.url)) {
+                                throw RedirectBlockedByGateException(
+                                    "Blocked redirect to ${followUp.url.host}: target class changed mid-chain"
+                                )
+                            }
+                            chain.proceed(followUp)
                         }
-                        chain.proceed(followUp)
                     }
-                    .build()
-            } ?: privateNetworkHttpClient
+                }.build()
+            } else {
+                privateNetworkHttpClient
+            }
 
             client.newCall(builder.build()).execute().use { response ->
                 val responseBody = response.body
