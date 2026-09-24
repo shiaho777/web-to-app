@@ -347,8 +347,13 @@ class ShellActivity : AppCompatActivity() {
      * Stash a WebView state bundle for the next creation — the composable-side
      * memory teardown (#1033) hands the saved navigation stack here so the
      * restored view picks it up exactly like process-death recovery.
+     *
+     * [siteId] must be the saved surface's site id, matching what
+     * [onSaveInstanceState] writes: without the tag the restore site check is
+     * bypassed and a multi-web bundle can graft onto the wrong site's view.
      */
-    internal fun stashWebViewState(bundle: Bundle) {
+    internal fun stashWebViewState(bundle: Bundle, siteId: String?) {
+        bundle.putString(KEY_SAVED_SURFACE_SITE_ID, siteId)
         webViewStateBundle = bundle
     }
 

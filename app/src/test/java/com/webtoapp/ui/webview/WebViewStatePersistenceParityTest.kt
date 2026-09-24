@@ -16,6 +16,7 @@ class WebViewStatePersistenceParityTest {
 
     private val activitySrc = readSanitized("com/webtoapp/ui/webview/WebViewActivity.kt")
     private val shellSrc = readSanitized("com/webtoapp/ui/shell/ShellActivity.kt")
+    private val shellScreenSrc = readSanitized("com/webtoapp/ui/shell/ShellScreen.kt")
 
     @Test
     fun `host preview saves WebView state into the instance bundle`() {
@@ -59,6 +60,26 @@ class WebViewStatePersistenceParityTest {
             .substringBefore("override fun", "")
         assertWithMessage("ShellActivity must save via browserSurface first (Gecko sites have no webView field)")
             .that(onSave).contains("browserSurface?.saveState(outState)")
+    }
+
+    @Test
+    fun `memory-teardown stash keeps the multi-web site guard`() {
+        // The TRIM_MEMORY_COMPLETE path must tag the stashed bundle with the
+        // surface's site id, or the #1036 restore check is bypassed and a
+        // saved surface can graft onto whichever site composes first.
+        val stash = shellSrc.substringAfter("internal fun stashWebViewState")
+            .substringBefore("internal fun", "")
+        assertWithMessage("stashWebViewState must write the saved site id into the bundle")
+            .that(stash).contains("KEY_SAVED_SURFACE_SITE_ID")
+        assertWithMessage("the restore path must still consume the saved site id")
+            .that(shellSrc).contains("getString(KEY_SAVED_SURFACE_SITE_ID)")
+
+        val trim = shellScreenSrc.substringAfter("onTrimMemory")
+            .substringBefore("registerComponentCallbacks", "")
+        assertWithMessage("the trim-stash call must hand the surface's siteId to stashWebViewState")
+            .that(trim).contains("stashWebViewState(")
+        assertWithMessage("the trim-stash call must hand the surface's siteId to stashWebViewState")
+            .that(trim).contains("siteId")
     }
 
     private fun readSanitized(relativePath: String): String {

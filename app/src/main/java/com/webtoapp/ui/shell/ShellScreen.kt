@@ -474,7 +474,13 @@ fun ShellScreen(
                 val bundle = android.os.Bundle()
                 runCatching { wv.saveState(bundle) }
                 if (!bundle.isEmpty) {
-                    (activity as? ShellActivity)?.stashWebViewState(bundle)
+                    // Tag the stashed surface like onSaveInstanceState does —
+                    // otherwise the restore site check (#1036) is bypassed and
+                    // a multi-web bundle can graft onto the wrong site's view.
+                    (activity as? ShellActivity)?.stashWebViewState(
+                        bundle,
+                        (wv as? com.webtoapp.core.webview.WtaWebView)?.siteId
+                    )
                 }
                 AppLogger.w("ShellScreen", "TRIM_MEMORY_COMPLETE — tearing down WebView, will rebuild on resume")
                 runCatching {
