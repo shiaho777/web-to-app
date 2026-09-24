@@ -6,9 +6,89 @@ import org.junit.Test
 class RuntimePermissionSyncTest {
 
     @Test
-    fun `default web app requires no runtime permissions`() {
+    fun `default web app requires media session permissions`() {
+        // enableMediaSession defaults to true: WebMediaPlaybackService is a
+        // mediaPlayback foreground service that acquires a partial wake lock.
+        // Missing WAKE_LOCK crashed generated APKs with SecurityException (#1034).
         val app = WebApp(name = "Plain", url = "https://example.com")
+        val required = app.featureRequiredRuntimePermissions()
+        assertThat(required).isEqualTo(
+            ApkRuntimePermissions(foregroundService = true, wakeLock = true)
+        )
+    }
+
+    @Test
+    fun `media session disabled requires no runtime permissions`() {
+        val app = WebApp(
+            name = "Plain",
+            url = "https://example.com",
+            webViewConfig = WebViewConfig(enableMediaSession = false)
+        )
         assertThat(app.featureRequiredRuntimePermissions()).isEqualTo(ApkRuntimePermissions())
+    }
+
+    @Test
+    fun `media session disabled manually keeps wake lock when user enabled it`() {
+        val app = WebApp(
+            name = "Plain",
+            url = "https://example.com",
+            webViewConfig = WebViewConfig(enableMediaSession = false),
+            apkExportConfig = ApkExportConfig(
+                runtimePermissions = ApkRuntimePermissions(wakeLock = true)
+            )
+        )
+        val synced = app.withRuntimePermissionsSyncedFromFeatures()
+        assertThat(synced.apkExportConfig?.runtimePermissions?.wakeLock).isTrue()
+    }
+
+    @Test
+    fun `notification feature auto enables wake lock for polling services`() {
+        // NotificationPollingService/WebSocketService hold partial wake locks
+        // while fetching pushes — missing WAKE_LOCK crashes them (#1034).
+        val app = WebApp(
+            name = "Notify",
+            url = "https://example.com",
+            webViewConfig = WebViewConfig(enableMediaSession = false),
+            apkExportConfig = ApkExportConfig(notificationEnabled = true)
+        )
+        val required = app.featureRequiredRuntimePermissions()
+        assertThat(required.notifications).isTrue()
+        assertThat(required.foregroundService).isTrue()
+        assertThat(required.wakeLock).isTrue()
+    }
+
+    @Test
+    fun `scheduled start auto enables wake lock`() {
+        val app = WebApp(
+            name = "Sched",
+            url = "https://example.com",
+            webViewConfig = WebViewConfig(enableMediaSession = false),
+            autoStartConfig = AutoStartConfig(scheduledStartEnabled = true)
+        )
+        assertThat(app.featureRequiredRuntimePermissions().wakeLock).isTrue()
+
+        val reasons = app.featurePermissionReasons()
+        assertThat(reasons["wakeLock"]).contains(PermissionFeatureReason.BOOT_START)
+    }
+
+    @Test
+    fun `media session auto enables wake lock and foreground service`() {
+        val app = WebApp(
+            name = "Media",
+            url = "https://example.com",
+            webViewConfig = WebViewConfig(enableMediaSession = true)
+        )
+        val required = app.featureRequiredRuntimePermissions()
+        assertThat(required.wakeLock).isTrue()
+        assertThat(required.foregroundService).isTrue()
+
+        val synced = app.withRuntimePermissionsSyncedFromFeatures()
+        assertThat(synced.apkExportConfig?.runtimePermissions?.wakeLock).isTrue()
+        assertThat(synced.apkExportConfig?.runtimePermissions?.foregroundService).isTrue()
+
+        val reasons = app.featurePermissionReasons()
+        assertThat(reasons["wakeLock"]).contains(PermissionFeatureReason.MEDIA_SESSION)
+        assertThat(reasons["foregroundService"]).contains(PermissionFeatureReason.MEDIA_SESSION)
     }
 
     @Test

@@ -19,6 +19,7 @@ import androidx.core.app.NotificationCompat
 import com.webtoapp.R
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.util.SafeNotificationChannels
+import com.webtoapp.util.WakeLockCompat
 
 class BackgroundRunService : Service() {
 
@@ -369,21 +370,18 @@ class BackgroundRunService : Service() {
     }
 
     private fun acquireWakeLock() {
-        if (wakeLock == null) {
-            val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
-            wakeLock = powerManager.newWakeLock(
-                PowerManager.PARTIAL_WAKE_LOCK,
-                "WebToApp:BackgroundRunWakeLock"
-            ).apply {
-                setReferenceCounted(false)
-            }
-        }
+        if (wakeLock?.isHeld == true) return
 
-        wakeLock?.let {
-            if (!it.isHeld) {
-                it.acquire(WAKELOCK_TIMEOUT_MS)
-                AppLogger.w(TAG, "WakeLock 已获取 (超时=${WAKELOCK_TIMEOUT_MS}ms)")
-            }
+        // WakeLockCompat returns null when WAKE_LOCK is missing or revoked —
+        // background run degrades to "foreground service without wake lock"
+        // instead of crashing (#1034).
+        wakeLock = WakeLockCompat.acquire(
+            this,
+            "WebToApp:BackgroundRunWakeLock",
+            WAKELOCK_TIMEOUT_MS
+        )
+        if (wakeLock?.isHeld == true) {
+            AppLogger.w(TAG, "WakeLock 已获取 (超时=${WAKELOCK_TIMEOUT_MS}ms)")
         }
     }
 
@@ -398,16 +396,10 @@ class BackgroundRunService : Service() {
     }
 
     private fun releaseWakeLock() {
-        wakeLock?.let {
-            if (it.isHeld) {
-                try {
-                    it.release()
-                    AppLogger.w(TAG, "WakeLock 已释放")
-                } catch (e: Exception) {
-                    AppLogger.e(TAG, "WakeLock 释放异常", e)
-                }
-            }
+        if (wakeLock?.isHeld == true) {
+            AppLogger.w(TAG, "WakeLock 已释放")
         }
+        WakeLockCompat.release(wakeLock)
         wakeLock = null
     }
 }

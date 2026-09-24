@@ -3,9 +3,9 @@ package com.webtoapp.core.autostart
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.os.PowerManager
 import com.webtoapp.WebToAppApplication
 import com.webtoapp.core.logging.AppLogger
+import com.webtoapp.util.WakeLockCompat
 import java.util.Calendar
 
 class ScheduledStartReceiver : BroadcastReceiver() {
@@ -22,10 +22,8 @@ class ScheduledStartReceiver : BroadcastReceiver() {
         AppLogger.d(TAG, "收到定时启动广播")
         val pendingResult = goAsync()
 
-        val pm = context.getSystemService(Context.POWER_SERVICE) as PowerManager
-        val wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, WAKELOCK_TAG).apply {
-            acquire(WAKELOCK_TIMEOUT_MS)
-        }
+        // Null when WAKE_LOCK is missing/revoked — work proceeds unlocked (#1034).
+        val wakeLock = WakeLockCompat.acquire(context, WAKELOCK_TAG, WAKELOCK_TIMEOUT_MS)
 
         try {
             val autoStartManager = AutoStartManager(context)
@@ -54,7 +52,7 @@ class ScheduledStartReceiver : BroadcastReceiver() {
         } catch (e: Exception) {
             AppLogger.e(TAG, "定时启动处理异常", e)
         } finally {
-            try { if (wakeLock.isHeld) wakeLock.release() } catch (_: Exception) {}
+            WakeLockCompat.release(wakeLock)
             try { pendingResult.finish() } catch (_: Exception) {}
         }
     }

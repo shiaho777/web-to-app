@@ -61,11 +61,18 @@ fun featureRequiredRuntimePermissions(
     if (export?.notificationEnabled == true) {
         required = required.copy(
             notifications = true,
-            foregroundService = true
+            foregroundService = true,
+            // Polling/WebSocket notification services hold partial wake locks
+            // while fetching pushes.
+            wakeLock = true
         )
     }
     if (autoStartConfig?.bootStartEnabled == true) {
-        required = required.copy(bootCompleted = true)
+        // BootReceiver holds a wake lock while scheduling the launch.
+        required = required.copy(bootCompleted = true, wakeLock = true)
+    }
+    if (autoStartConfig?.scheduledStartEnabled == true) {
+        required = required.copy(wakeLock = true)
     }
     if (webView.floatingWindowConfig.enabled) {
         // FloatingWindowService is a specialUse foreground service: without FOREGROUND_SERVICE
@@ -89,6 +96,15 @@ fun featureRequiredRuntimePermissions(
         required = required.copy(
             foregroundService = true,
             notifications = true
+        )
+    }
+    if (webView.enableMediaSession) {
+        // WebMediaPlaybackService runs as a mediaPlayback foreground service and
+        // acquires a partial wake lock whenever the page reports playback — a
+        // missing WAKE_LOCK crashed generated APKs with SecurityException (#1034).
+        required = required.copy(
+            foregroundService = true,
+            wakeLock = true
         )
     }
     if (webView.downloadEnabled &&
@@ -161,6 +177,7 @@ enum class PermissionFeatureReason {
     GEOLOCATION,
     FLOATING_WINDOW,
     BGM,
+    MEDIA_SESSION,
     BOOT_START,
     SCREEN_AWAKE,
     CUSTOM_DOWNLOAD
@@ -192,9 +209,14 @@ fun featurePermissionReasons(
     if (export?.notificationEnabled == true) {
         add("notifications", PermissionFeatureReason.NOTIFICATION)
         add("foregroundService", PermissionFeatureReason.NOTIFICATION)
+        add("wakeLock", PermissionFeatureReason.NOTIFICATION)
     }
     if (autoStartConfig?.bootStartEnabled == true) {
         add("bootCompleted", PermissionFeatureReason.BOOT_START)
+        add("wakeLock", PermissionFeatureReason.BOOT_START)
+    }
+    if (autoStartConfig?.scheduledStartEnabled == true) {
+        add("wakeLock", PermissionFeatureReason.BOOT_START)
     }
     if (webView.floatingWindowConfig.enabled) {
         add("systemAlertWindow", PermissionFeatureReason.FLOATING_WINDOW)
@@ -212,6 +234,10 @@ fun featurePermissionReasons(
     if (bgmEnabled) {
         add("foregroundService", PermissionFeatureReason.BGM)
         add("notifications", PermissionFeatureReason.BGM)
+    }
+    if (webView.enableMediaSession) {
+        add("foregroundService", PermissionFeatureReason.MEDIA_SESSION)
+        add("wakeLock", PermissionFeatureReason.MEDIA_SESSION)
     }
     if (webView.downloadEnabled && webView.downloadLocationMode == DownloadLocationMode.CUSTOM) {
         add("writeExternalStorage", PermissionFeatureReason.CUSTOM_DOWNLOAD)

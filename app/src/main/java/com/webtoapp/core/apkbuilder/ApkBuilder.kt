@@ -3855,7 +3855,10 @@ builtins.__import__ = _w2a_import
             permissions += "android.permission.FOREGROUND_SERVICE"
             permissions += "android.permission.FOREGROUND_SERVICE_SPECIAL_USE"
             permissions += "android.permission.FOREGROUND_SERVICE_DATA_SYNC"
-            if (config.bgmEnabled) {
+            // WebMediaPlaybackService (enableMediaSession) and BgmService both run
+            // as mediaPlayback foreground services — without this, startForeground
+            // throws SecurityException on Android 10+.
+            if (config.bgmEnabled || config.enableMediaSession) {
                 permissions += "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
             }
         }

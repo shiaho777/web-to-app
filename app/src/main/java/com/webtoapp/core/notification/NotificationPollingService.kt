@@ -18,6 +18,7 @@ import android.os.SystemClock
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.util.SafeNotificationChannels
+import com.webtoapp.util.WakeLockCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
@@ -508,28 +509,16 @@ class NotificationPollingService : Service() {
 
     private fun acquireWakeLock() {
         synchronized(this) {
-            if (wakeLock == null) {
-                val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
-                wakeLock = powerManager.newWakeLock(
-                    PowerManager.PARTIAL_WAKE_LOCK,
-                    "WebToApp:PollingWakeLock"
-                ).apply { setReferenceCounted(false) }
-            }
-            wakeLock?.let {
-                if (!it.isHeld) {
-                    it.acquire(30_000L)
-                }
-            }
+            if (wakeLock?.isHeld == true) return
+            // Null when WAKE_LOCK is missing/revoked — degrade, never crash (#1034).
+            wakeLock = WakeLockCompat.acquire(this, "WebToApp:PollingWakeLock", 30_000L)
         }
     }
 
     private fun releaseWakeLock() {
         synchronized(this) {
-            wakeLock?.let {
-                if (it.isHeld) {
-                    try { it.release() } catch (_: Exception) {}
-                }
-            }
+            WakeLockCompat.release(wakeLock)
+            wakeLock = null
         }
     }
 

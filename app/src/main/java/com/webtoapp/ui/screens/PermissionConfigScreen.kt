@@ -690,6 +690,7 @@ private fun PermissionFeatureReason.displayLabel(): String = when (this) {
     PermissionFeatureReason.GEOLOCATION -> Strings.geolocationTitle
     PermissionFeatureReason.FLOATING_WINDOW -> Strings.floatingWindowTitle
     PermissionFeatureReason.BGM -> Strings.bgmTitle
+    PermissionFeatureReason.MEDIA_SESSION -> Strings.enableMediaSessionTitle
     PermissionFeatureReason.BOOT_START -> Strings.autoStartSettings
     PermissionFeatureReason.SCREEN_AWAKE -> Strings.screenAwakeModeLabel
     PermissionFeatureReason.CUSTOM_DOWNLOAD -> Strings.downloadLocationCustom
