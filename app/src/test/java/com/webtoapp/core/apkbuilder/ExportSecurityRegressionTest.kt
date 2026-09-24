@@ -155,7 +155,7 @@ class ExportSecurityRegressionTest {
     }
 
     @Test
-        fun `plain web export only injects network permissions by default`() {
+        fun `plain web export injects network and default media session permissions`() {
         val context = ApplicationProvider.getApplicationContext<android.content.Context>()
         val builder = ApkBuilder(context)
         val method = ApkBuilder::class.java.getDeclaredMethod(
@@ -168,6 +168,44 @@ class ExportSecurityRegressionTest {
             url = "https://example.com",
             appType = AppType.WEB,
             webViewConfig = WebViewConfig(downloadEnabled = false),
+            apkExportConfig = ApkExportConfig()
+        ).toApkConfig("com.example.zenbox", context)
+
+        @Suppress("UNCHECKED_CAST")
+        val permissions = method.invoke(builder, config) as List<String>
+
+        // enableMediaSession defaults ON: WebMediaPlaybackService is a
+        // mediaPlayback foreground service holding a wake lock, so the manifest
+        // baseline includes FOREGROUND_SERVICE* + WAKE_LOCK (#1034).
+        assertThat(permissions).containsExactly(
+            "com.example.zenbox.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION",
+            "android.permission.INTERNET",
+            "android.permission.ACCESS_NETWORK_STATE",
+            "android.permission.FOREGROUND_SERVICE",
+            "android.permission.FOREGROUND_SERVICE_SPECIAL_USE",
+            "android.permission.FOREGROUND_SERVICE_DATA_SYNC",
+            "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
+            "android.permission.WAKE_LOCK"
+        ).inOrder()
+    }
+
+    @Test
+    fun `media session disabled keeps permissions to network baseline`() {
+        val context = ApplicationProvider.getApplicationContext<android.content.Context>()
+        val builder = ApkBuilder(context)
+        val method = ApkBuilder::class.java.getDeclaredMethod(
+            "buildRequiredPermissions",
+            ApkConfig::class.java
+        ).apply { isAccessible = true }
+
+        val config = WebApp(
+            name = "Zenbox",
+            url = "https://example.com",
+            appType = AppType.WEB,
+            webViewConfig = WebViewConfig(
+                downloadEnabled = false,
+                enableMediaSession = false
+            ),
             apkExportConfig = ApkExportConfig()
         ).toApkConfig("com.example.zenbox", context)
 
@@ -226,6 +264,8 @@ class ExportSecurityRegressionTest {
         @Suppress("UNCHECKED_CAST")
         val permissions = method.invoke(builder, config) as List<String>
 
+        // enableMediaSession defaults ON, adding the generic foreground-service
+        // block + mediaPlayback type + WAKE_LOCK to the explicitly enabled set.
         assertThat(permissions).containsExactly(
             "com.example.recorder.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION",
             "android.permission.INTERNET",
@@ -236,6 +276,11 @@ class ExportSecurityRegressionTest {
             "android.permission.ACCESS_COARSE_LOCATION",
             "android.permission.ACCESS_FINE_LOCATION",
             "android.permission.POST_NOTIFICATIONS",
+            "android.permission.FOREGROUND_SERVICE",
+            "android.permission.FOREGROUND_SERVICE_SPECIAL_USE",
+            "android.permission.FOREGROUND_SERVICE_DATA_SYNC",
+            "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
+            "android.permission.WAKE_LOCK",
             "android.permission.FOREGROUND_SERVICE_LOCATION",
             "android.permission.FOREGROUND_SERVICE_CAMERA",
             "android.permission.FOREGROUND_SERVICE_MICROPHONE"
