@@ -684,7 +684,6 @@ object Strings {
     val qrCodeNotFound: String get() = StringsA.qrCodeNotFound
     val imageLoadFailed: String get() = StringsA.imageLoadFailed
     val requiresSensitivePermissions: String get() = StringsA.requiresSensitivePermissions
-    val aiDevelop: String get() = StringsA.aiDevelop
     val manualCreate: String get() = StringsA.manualCreate
     val createModule: String get() = StringsA.createModule
     val followSystem: String get() = StringsA.followSystem

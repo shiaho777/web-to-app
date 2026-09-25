@@ -750,7 +750,6 @@ fun AppNavigation() {
                             navController.navigate(Routes.editPlugin(pluginId))
                         }
                     },
-                    onNavigateToAiDeveloper = { navController.navigate(Routes.AGENT) },
                     onNavigateToMarket = { navController.navigate(Routes.pluginMarket(0)) }
                 )
             }

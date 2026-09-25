@@ -54,7 +54,6 @@ fun PluginManagerScreen(
     onNavigateBack: () -> Unit,
     onNavigateToEditor: (String?) -> Unit,
     onNavigateToMarket: () -> Unit = {},
-    onNavigateToAiDeveloper: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -139,43 +138,18 @@ fun PluginManagerScreen(
                     }
                 },
                 actions = {
-                    var showMenu by remember { mutableStateOf(false) }
-                    Box {
-                        IconButton(onClick = { showMenu = true }) {
-                            Icon(Icons.Outlined.MoreVert, contentDescription = Strings.more)
-                        }
-                        DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
-                            DropdownMenuItem(
-                                text = { Text(Strings.pluginImport) },
-                                onClick = { showMenu = false; picker.launch("*/*") },
-                                leadingIcon = { Icon(Icons.Default.FileOpen, null, Modifier.size(20.dp)) }
-                            )
-                            DropdownMenuItem(
-                                text = { Text(Strings.pluginNew) },
-                                onClick = { showMenu = false; onNavigateToEditor(null) },
-                                leadingIcon = { Icon(Icons.Default.Add, null, Modifier.size(20.dp)) }
-                            )
-                            DropdownMenuItem(
-                                text = { Text(Strings.aiDevelop) },
-                                onClick = { showMenu = false; onNavigateToAiDeveloper() },
-                                leadingIcon = { Icon(Icons.Default.AutoAwesome, null, Modifier.size(20.dp)) }
-                            )
-                            DropdownMenuItem(
-                                text = { Text(Strings.communityExtStoreTitle) },
-                                onClick = { showMenu = false; onNavigateToMarket() },
-                                leadingIcon = { Icon(Icons.Default.Storefront, null, Modifier.size(20.dp)) }
-                            )
-                            if (hiddenBuiltIns.isNotEmpty()) {
-                                WtaDivider()
-                                DropdownMenuItem(
-                                    text = { Text(Strings.pluginRestoreBuiltIns) },
-                                    onClick = {
-                                        showMenu = false
-                                        scope.launch { store.restoreBuiltIns() }
-                                    },
-                                    leadingIcon = { Icon(Icons.Default.Restore, null, Modifier.size(20.dp)) }
-                                )
-                            }
+                    IconButton(onClick = { picker.launch("*/*") }) {
+                        Icon(Icons.Outlined.FileOpen, contentDescription = Strings.pluginImport)
+                    }
+                    IconButton(onClick = { onNavigateToEditor(null) }) {
+                        Icon(Icons.Outlined.Add, contentDescription = Strings.pluginNew)
+                    }
+                    IconButton(onClick = { onNavigateToMarket() }) {
+                        Icon(Icons.Outlined.Storefront, contentDescription = Strings.communityExtStoreTitle)
+                    }
+                    if (hiddenBuiltIns.isNotEmpty()) {
+                        IconButton(onClick = { scope.launch { store.restoreBuiltIns() } }) {
+                            Icon(Icons.Outlined.Restore, contentDescription = Strings.pluginRestoreBuiltIns)
                         }
                     }
                 }

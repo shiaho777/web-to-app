@@ -8616,19 +8616,6 @@ object StringsA {
         AppLanguage.KOREAN -> "민감한 권한이 필요합니다"
     }
 
-    val aiDevelop: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "AI 开发"
-        AppLanguage.ENGLISH -> "AI Develop"
-        AppLanguage.ARABIC -> "تطوير AI"
-        AppLanguage.PORTUGUESE -> "Desenvolvimento com IA"
-        AppLanguage.SPANISH -> "Desarrollo con IA"
-        AppLanguage.FRENCH -> "Développement IA"
-        AppLanguage.GERMAN -> "KI-Entwicklung"
-        AppLanguage.RUSSIAN -> "Разработка с ИИ"
-        AppLanguage.JAPANESE -> "AI開発"
-        AppLanguage.KOREAN -> "AI 개발"
-    }
-
     val manualCreate: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "手动创建"
         AppLanguage.ENGLISH -> "Manual Create"
