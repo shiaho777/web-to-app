@@ -11,12 +11,17 @@ import com.webtoapp.core.plugin.PluginManifest
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.core.network.NetworkModule
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import okhttp3.Request
 import java.io.File
 import java.io.IOException
@@ -34,6 +39,13 @@ class ModuleMarketRepository private constructor(
         private const val MODULES_DIR = "modules"
 
         private const val REGISTRY_TTL_MS = 60 * 60 * 1000L
+
+        /**
+         * Hard bound on one [fetchRaw] race. Loser requests keep running on
+         * [raceScope] until their own socket timeout — a blocking OkHttp call
+         * does not honour coroutine cancellation.
+         */
+        private const val FETCH_RACE_TIMEOUT_MS = 20_000L
 
         private const val CACHE_DIR_NAME = "module_market"
         private const val REGISTRY_CACHE_FILE = "registry.json"
@@ -58,6 +70,7 @@ class ModuleMarketRepository private constructor(
 
     private val gson: Gson = GsonBuilder().setLenient().create()
     private val httpClient = NetworkModule.defaultClient
+    private val raceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     private val cacheDir: File by lazy {
         File(context.cacheDir, CACHE_DIR_NAME).apply { mkdirs() }
@@ -281,16 +294,38 @@ class ModuleMarketRepository private constructor(
     val contributingUrl: String =
         "https://github.com/$OWNER/$REPO/blob/$BRANCH/$MODULES_DIR/README.md"
 
-    private fun fetchRaw(relativePath: String): String? {
-        for (base in SOURCES) {
-            val directUrl = "$base/$relativePath"
-            // GitHub hosts get the measured mirror pool; jsDelivr is not a
-            // GitHub host and passes through as a single candidate.
-            for (candidate in com.webtoapp.core.network.GitHubMirror.proxiedCnGitHubHost(directUrl)) {
-                fetchOnce(candidate)?.let { return it }
+    /**
+     * Race every mirror candidate for a catalogue file: the first non-null
+     * body wins. Serial fallback would pay a full connect timeout per dead
+     * proxy before reaching a working route — a real regression on networks
+     * that black-hole GitHub mirrors. Same detached-loser pattern as
+     * UpdateChecker.fetchJsonRaced.
+     */
+    private suspend fun fetchRaw(relativePath: String): String? {
+        // GitHub hosts get the measured mirror pool; jsDelivr is not a
+        // GitHub host and passes through as a single candidate.
+        val candidates = SOURCES
+            .flatMap { base ->
+                com.webtoapp.core.network.GitHubMirror.proxiedCnGitHubHost("$base/$relativePath")
             }
+            .distinct()
+        val results = Channel<Pair<String, String?>>(candidates.size)
+        candidates.forEach { url ->
+            raceScope.launch { results.send(url to fetchOnce(url)) }
         }
-        return null
+        var remaining = candidates.size
+        return withTimeoutOrNull(FETCH_RACE_TIMEOUT_MS) {
+            var winner: String? = null
+            while (remaining > 0 && winner == null) {
+                remaining--
+                val (url, body) = results.receive()
+                if (body != null) {
+                    AppLogger.d(TAG, "fetch $relativePath won via $url")
+                    winner = body
+                }
+            }
+            winner
+        }
     }
 
     private fun fetchOnce(url: String): String? {

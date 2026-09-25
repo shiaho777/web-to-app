@@ -70,6 +70,12 @@ object GitHubMirror {
      * fetches that never touch a release asset: `api.github.com` for update
      * checks and `raw.githubusercontent.com` for the module catalogue.
      *
+     * Uses [CnMirrorProbe.peekChannels] — never blocks. A cold probe would
+     * cost up to [CnMirrorProbe]'s full probe budget before the first byte of
+     * a payload that is itself only a few KB; instead callers get the curated
+     * declaration order immediately while a background probe re-measures for
+     * the next call. Callers race or fall through the candidates themselves.
+     *
      * Kept separate from [proxiedCn] on purpose. Release downloads are the
      * paths that were measured and shipped; widening that function's host
      * match would quietly change where they fetch from. Anything that is not
@@ -77,7 +83,7 @@ object GitHubMirror {
      */
     fun proxiedCnGitHubHost(url: String): List<String> {
         if (!isGitHubHost(url)) return listOf(url)
-        val ordered = CnMirrorProbe.orderedChannels()
+        val ordered = CnMirrorProbe.peekChannels()
         return (ordered.map { it.rewrite(url) } + url).distinct()
     }
 
