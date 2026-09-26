@@ -435,6 +435,25 @@ class ApkBuilder(private val context: Context) {
                     ?: com.webtoapp.core.linux.PerformanceOptimizer.OptimizeConfig()
             } else null
 
+            // 功能栈: each off flag physically drops its assets/feature_stacks/<id>.dex
+            // from the template copy below (and gates the Cronet native injection).
+            val featureStack = webApp.apkExportConfig?.featureStack
+                ?: com.webtoapp.data.model.FeatureStackConfig()
+            val disabledFeatureStacks = buildSet {
+                if (!featureStack.googleSignIn) {
+                    add(com.webtoapp.core.featurestack.FeatureStackLoader.STACK_GOOGLE_SIGN_IN)
+                }
+                if (!featureStack.fcm) {
+                    add(com.webtoapp.core.featurestack.FeatureStackLoader.STACK_FCM)
+                }
+                if (!featureStack.http3Engine) {
+                    add(com.webtoapp.core.featurestack.FeatureStackLoader.STACK_CRONET)
+                }
+            }
+            if (disabledFeatureStacks.isNotEmpty()) {
+                logger.logKeyValue("disabledFeatureStacks", disabledFeatureStacks.sorted().joinToString(","))
+            }
+
             logger.section("WebApp Config")
             logger.logKeyValue("appName", webApp.name)
             logger.logKeyValue("appType", webApp.appType)
@@ -800,7 +819,8 @@ class ApkBuilder(private val context: Context) {
                 val ensured = ExportRuntimeEnsure.ensure(
                     context,
                     appTypeEnum,
-                    cronetNeededForExport(config),
+                    cronetNeededForExport(config) &&
+                        com.webtoapp.core.featurestack.FeatureStackLoader.STACK_CRONET !in disabledFeatureStacks,
                     neededAbis = architecture.abiFilters
                 )
                 logger.logKeyValue("exportRuntimeEnsure", ensured)
@@ -908,7 +928,8 @@ class ApkBuilder(private val context: Context) {
                 nativeLibsFingerprint = runtimeAssetsFingerprint(
                     webApp.appType,
                     config.engineType,
-                    cronetNeededForExport(config),
+                    cronetNeededForExport(config) &&
+                        com.webtoapp.core.featurestack.FeatureStackLoader.STACK_CRONET !in disabledFeatureStacks,
                     architecture.abiFilters
                 ),
                 hostVersionCode = hostVersionCode,
@@ -921,7 +942,7 @@ class ApkBuilder(private val context: Context) {
                 // Export-level performance options are not part of ApkConfig but change
                 // output bytes (resource stripping / perf script injection).
                 perfFingerprint = webApp.apkExportConfig?.let { ec ->
-                    "opt=${ec.performanceOptimization}|cfg=${ec.performanceConfig}"
+                    "opt=${ec.performanceOptimization}|cfg=${ec.performanceConfig}|stacks=${ec.featureStack}"
                 },
                 // Encrypted builds embed the signing cert hash in the metadata, so the
                 // unsigned bytes depend on which identity signs. Key it explicitly.
@@ -991,7 +1012,8 @@ class ApkBuilder(private val context: Context) {
                             announcementIconPath = announcementIconPath,
                             perfConfig = perfConfig,
                             mode = ModifyApkMode.CONTENT_OVERLAY,
-                            signingCertHash = signingCertHash
+                            signingCertHash = signingCertHash,
+                            disabledFeatureStacks = disabledFeatureStacks
                         ) { progress, stageMessage ->
                             if (stageMessage.isNotBlank()) {
                                 progressMessage.set(stageMessage)
@@ -1033,7 +1055,8 @@ class ApkBuilder(private val context: Context) {
                             announcementIconPath = announcementIconPath,
                             perfConfig = perfConfig,
                             mode = ModifyApkMode.FULL,
-                            signingCertHash = signingCertHash
+                            signingCertHash = signingCertHash,
+                            disabledFeatureStacks = disabledFeatureStacks
                         ) { progress, stageMessage ->
                             if (stageMessage.isNotBlank()) {
                                 progressMessage.set(stageMessage)
@@ -1078,7 +1101,8 @@ class ApkBuilder(private val context: Context) {
                         announcementIconPath = announcementIconPath,
                         perfConfig = perfConfig,
                         mode = ModifyApkMode.FULL,
-                        signingCertHash = signingCertHash
+                        signingCertHash = signingCertHash,
+                        disabledFeatureStacks = disabledFeatureStacks
                     ) { progress, stageMessage ->
                         if (stageMessage.isNotBlank()) {
                             progressMessage.set(stageMessage)
@@ -1413,6 +1437,7 @@ class ApkBuilder(private val context: Context) {
         encryptionConfig: EncryptionConfig = EncryptionConfig.DISABLED,
         encryptionKey: SecretKey? = null,
         abiFilters: List<String> = emptyList(),
+        disabledFeatureStacks: Set<String> = emptySet(),
         wordPressProjectDir: File? = null,
         nodejsProjectDir: File? = null,
         frontendProjectDir: File? = null,
@@ -1506,6 +1531,20 @@ class ApkBuilder(private val context: Context) {
                                     entry.name.endsWith(".DSA") || entry.name == "META-INF/MANIFEST.MF") -> {
                             }
                             buildCache.isContentReplaceableEntry(entry.name) -> {
+                            }
+                            // Build-time residue that may persist in caches produced by
+                            // older templates; never part of the shipped content set.
+                            entry.name.startsWith("kotlin/") ||
+                                entry.name == "DebugProbesKt.bin" ||
+                                isPackagingResidue(entry.name) -> {
+                            }
+                            // 功能栈 switch off → the stack's dex asset is dropped
+                            // from the generated APK entirely. The Cronet native
+                            // lib has no dex to pair with, so it drops too.
+                            isDisabledFeatureStackEntry(entry.name, disabledFeatureStacks) ||
+                                (isCronetLibEntry(entry.name) &&
+                                    com.webtoapp.core.featurestack.FeatureStackLoader.STACK_CRONET in disabledFeatureStacks) -> {
+                                AppLogger.d("ApkBuilder", "Feature stack disabled, stripped: ${entry.name}")
                             }
                             // The injection phase below re-embeds the runtime native libs for the
                             // device ABI on every build regardless of mode; copying the cached
@@ -1622,8 +1661,15 @@ class ApkBuilder(private val context: Context) {
                             }
                         }
 
-                        entry.name.startsWith("kotlin/") || entry.name == "DebugProbesKt.bin" -> {
+                        entry.name.startsWith("kotlin/") || entry.name == "DebugProbesKt.bin" ||
+                            isPackagingResidue(entry.name) -> {
 
+                        }
+
+                        isDisabledFeatureStackEntry(entry.name, disabledFeatureStacks) ||
+                            (isCronetLibEntry(entry.name) &&
+                                com.webtoapp.core.featurestack.FeatureStackLoader.STACK_CRONET in disabledFeatureStacks) -> {
+                            AppLogger.d("ApkBuilder", "Feature stack disabled, stripped: ${entry.name}")
                         }
 
                         isEditorOnlyAsset(entry.name, config.appType, config.engineType) -> {
@@ -1862,7 +1908,9 @@ class ApkBuilder(private val context: Context) {
                 // The Cronet upstream (forced HTTP/3 and/or ECH on the system engine)
                 // needs the native lib inside the APK; cronetNeededForExport mirrors the
                 // runtime activation condition (SOCKS wins and disables both).
-                if (mode == ModifyApkMode.FULL && cronetNeededForExport(config)) {
+                if (mode == ModifyApkMode.FULL && cronetNeededForExport(config) &&
+                    com.webtoapp.core.featurestack.FeatureStackLoader.STACK_CRONET !in disabledFeatureStacks
+                ) {
                     onProgress(98, "Injecting HTTP/3 runtime...")
                     logger.section("Inject Cronet Runtime (forced HTTP/3 / ECH)")
                     injectCronetNativeLib(zipOut)
@@ -3645,6 +3693,43 @@ builtins.__import__ = _w2a_import
     private fun isOptimizableAsset(entryName: String): Boolean {
         val ext = entryName.substringAfterLast('.', "").lowercase()
         return ext in setOf("png", "jpg", "jpeg", "js", "css", "svg")
+    }
+
+    /**
+     * Jar/AAR packaging residue that serves no runtime purpose in generated APKs.
+     * The shell template already excludes these via packaging.resources; this is
+     * the export-side sweep so REUSE_UNSIGNED / overlay builds over older bases
+     * shed them too. The META-INF services subtree is deliberately NOT matched —
+     * ServiceLoader entries (coroutines MainDispatcherFactory, Cronet impls) are
+     * load-bearing.
+     */
+    /**
+     * Feature-stack dex assets (`assets/feature_stacks/<id>.dex`) whose stack was
+     * disabled in the export config — dropped so the generated APK never carries
+     * the implementation at all.
+     */
+    private fun isDisabledFeatureStackEntry(entryName: String, disabled: Set<String>): Boolean {
+        if (disabled.isEmpty()) return false
+        val stackId = com.webtoapp.core.featurestack.FeatureStackLoader.stackIdForAsset(entryName)
+        return stackId != null && stackId in disabled
+    }
+
+    /** `lib/<abi>/libcronet.<ver>.so` — the injected Cronet runtime payload. */
+    private fun isCronetLibEntry(entryName: String): Boolean =
+        entryName.startsWith("lib/") && entryName.substringAfterLast('/').startsWith("libcronet.")
+
+    private fun isPackagingResidue(entryName: String): Boolean {
+        if (entryName.endsWith(".kotlin_module")) return true
+        if (entryName.startsWith("META-INF/")) {
+            if (entryName.endsWith(".version")) return true
+            if (entryName == "META-INF/version-control-info.textproto") return true
+            if (entryName.startsWith("META-INF/com/android/")) return true
+        }
+        if (entryName.startsWith("google/protobuf/") && entryName.endsWith(".proto")) return true
+        if (entryName.startsWith("org/bouncycastle/") &&
+            entryName.substringAfterLast('/').startsWith("CertPathReviewerMessages")
+        ) return true
+        return false
     }
 
     private fun runtimeAssetsRequiredFor(appType: String): List<String> = when (appType) {

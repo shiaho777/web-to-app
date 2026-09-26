@@ -183,6 +183,21 @@ android {
             // Django gettext sources (~5.9M raw): the Python runtime only reads
             // compiled .mo files, .po never ships in a working install.
             excludes += "**/*.po"
+            // Packaging residue: build-time metadata that never serves at runtime.
+            // META-INF/services/** must survive (coroutines / Cronet ServiceLoader),
+            // so these patterns deliberately target only leaf artifacts.
+            excludes += "**/*.kotlin_module"
+            excludes += "**/*.version"
+            excludes += "**/version-control-info.textproto"
+            excludes += "**/app-metadata.properties"
+            excludes += "kotlin/**"
+            excludes += "DebugProbesKt.bin"
+            // protobuf schema descriptors — ProtoLite reads generated classes,
+            // never the .proto resources. firebase ships a few at the jar root.
+            excludes += "google/protobuf/*.proto"
+            excludes += "*.proto"
+            // BouncyCastle PKIX i18n message bundles; unused error text.
+            excludes += "**/CertPathReviewerMessages*.properties"
         }
 
         jniLibs {
@@ -562,6 +577,10 @@ protobuf {
 
 dependencies {
 
+    // Feature-stack impls live on the host classpath so preview uses them
+    // directly; for generated APKs the same classes ship as dex assets.
+    implementation(project(":feature-stacks"))
+
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("androidx.core:core-splashscreen:1.0.1")
@@ -614,7 +633,6 @@ dependencies {
     implementation("androidx.datastore:datastore-preferences:1.0.0")
 
     implementation("org.apache.commons:commons-compress:1.26.0")
-    implementation("org.tukaani:xz:1.9")
 
     implementation("com.android.tools.build:apksig:8.3.0")
 

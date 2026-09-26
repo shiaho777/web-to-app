@@ -29,13 +29,6 @@ import android.webkit.WebView
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
-import androidx.credentials.CredentialManager
-import androidx.credentials.CustomCredential
-import androidx.credentials.GetCredentialRequest
-import androidx.credentials.exceptions.GetCredentialCancellationException
-import androidx.credentials.exceptions.GetCredentialException
-import com.google.android.libraries.identity.googleid.GetGoogleIdOption
-import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.webtoapp.core.background.BackgroundRunService
@@ -1643,59 +1636,22 @@ NativeBridge.googleSignIn('sign-in-' + Date.now());
             }
         }.getOrNull()
 
-        scope.launch(Dispatchers.Main) {
-            try {
-                val credentialManager = CredentialManager.create(activity)
-                val googleIdOption = GetGoogleIdOption.Builder()
-                    .setFilterByAuthorizedAccounts(false)
-                    .setServerClientId(capabilities.googleSignInClientId)
-                    .setAutoSelectEnabled(false)
-                    .build()
-                val request = GetCredentialRequest.Builder()
-                    .addCredentialOption(googleIdOption)
-                    .build()
-
-                val response = credentialManager.getCredential(activity, request)
-                val credential = response.credential
-                if (credential is CustomCredential &&
-                    credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
-                ) {
-                    val googleCredential = GoogleIdTokenCredential.createFrom(credential.data)
-                    val payload = org.json.JSONObject().apply {
-                        put("ok", true)
-                        put("idToken", googleCredential.idToken)
-                        put("displayName", googleCredential.displayName ?: "")
-                        put("profilePictureUri", googleCredential.profilePictureUri?.toString() ?: "")
-                        put("googleUserId", googleCredential.id)
-                    }
-                    dispatchGoogleSignInResult(requestId, payload, callerOrigin)
-                } else {
-                    dispatchGoogleSignInResult(
-                        requestId,
-                        googleSignInError("UNSUPPORTED_CREDENTIAL", "Unexpected credential type: ${credential.type}"),
-                        callerOrigin
-                    )
+        val handled = com.webtoapp.core.featurestack.GoogleSignInBridge.signIn(
+            activity = activity,
+            requestId = requestId,
+            clientId = capabilities.googleSignInClientId,
+            callback = object : com.webtoapp.core.featurestack.api.SignInCallback {
+                override fun onResult(id: String, payload: org.json.JSONObject) {
+                    dispatchGoogleSignInResult(id, payload, callerOrigin)
                 }
-            } catch (e: GetCredentialCancellationException) {
-                dispatchGoogleSignInResult(requestId, googleSignInError("CANCELLED", "The user dismissed the account picker"), callerOrigin)
-            } catch (e: GetCredentialException) {
-                AppLogger.w("NativeBridge", "Google sign-in failed: ${e.type}", e)
-                dispatchGoogleSignInResult(
-                    requestId,
-                    googleSignInError(
-                        "CREDENTIAL_ERROR",
-                        "Google sign-in failed (${e.type}): ${e.message ?: e::class.java.simpleName}"
-                    ),
-                    callerOrigin
-                )
-            } catch (e: Exception) {
-                AppLogger.e("NativeBridge", "Google sign-in failed", e)
-                dispatchGoogleSignInResult(
-                    requestId,
-                    googleSignInError("UNAVAILABLE", e.message ?: e::class.java.simpleName),
-                    callerOrigin
-                )
             }
+        )
+        if (!handled) {
+            dispatchGoogleSignInResult(
+                requestId,
+                googleSignInError("UNAVAILABLE", "Google sign-in is unavailable in this build"),
+                callerOrigin
+            )
         }
     }
 

@@ -1,63 +1,43 @@
 package com.webtoapp.core.notification
 
-import com.google.firebase.messaging.FirebaseMessagingService
-import com.google.firebase.messaging.RemoteMessage
-import com.webtoapp.core.i18n.Strings
+import android.app.Service
+import android.content.Intent
+import android.os.IBinder
+import com.webtoapp.core.featurestack.FeatureStackLoader
+import com.webtoapp.core.featurestack.api.FcmStack
 import com.webtoapp.core.logging.AppLogger
 
-class NotificationFcmService : FirebaseMessagingService() {
+/**
+ * Proxy service for FCM delivery. Firebase classes live in the optional
+ * `feature_stacks/fcm.dex` archive (so builds can leave the stack out entirely);
+ * this service keeps the same manifest identity and forwards raw intents to the
+ * dex implementation. When the stack is absent the intent is dropped and the
+ * service stops — nothing crashes.
+ */
+class NotificationFcmService : Service() {
 
     companion object {
         private const val TAG = "NotificationFcmService"
         const val CHANNEL_ID = "fcm_notification_channel"
     }
 
-    override fun onNewToken(token: String) {
-        super.onNewToken(token)
-        AppLogger.i(TAG, "FCM onNewToken")
-        NotificationFcmManager.onNewToken(applicationContext, token)
-    }
+    override fun onBind(intent: Intent?): IBinder? = null
 
-    override fun onMessageReceived(message: RemoteMessage) {
-        super.onMessageReceived(message)
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         try {
-            PushNotificationHelper.ensureChannel(
-                context = this,
-                channelId = CHANNEL_ID,
-                channelName = Strings.fcmNotificationChannelName,
-                channelDescription = Strings.fcmNotificationChannelDescription
-            )
-            val data = message.data
-            val notification = message.notification
-            val title = notification?.title
-                ?.ifBlank { null }
-                ?: data["title"]
-                ?: data["subject"]
-                ?: NotificationFcmManager.getAppName(this).ifBlank { Strings.genericNotificationLabel }
-            val body = notification?.body
-                ?.ifBlank { null }
-                ?: data["body"]
-                ?: data["message"]
-                ?: data["content"]
-                ?: ""
-            val clickUrl = data["url"]
-                ?: data["clickUrl"]
-                ?: data["link"]
-                ?: NotificationFcmManager.getClickUrl(this)
-            if (title.isBlank() && body.isBlank()) {
-                AppLogger.w(TAG, "Empty FCM payload, skip")
-                return
+            if (intent != null) {
+                val stack = FeatureStackLoader.load<FcmStack>(this, FeatureStackLoader.STACK_FCM)
+                if (stack == null) {
+                    AppLogger.d(TAG, "FCM stack unavailable, dropping messaging event")
+                } else {
+                    stack.onMessagingEvent(intent, NotificationFcmManager.eventSink(applicationContext))
+                }
             }
-            PushNotificationHelper.show(
-                context = this,
-                channelId = CHANNEL_ID,
-                title = title,
-                body = body,
-                clickUrl = clickUrl
-            )
-            AppLogger.d(TAG, "Displayed FCM notification: $title")
         } catch (e: Exception) {
-            AppLogger.e(TAG, "Failed to handle FCM message", e)
+            AppLogger.e(TAG, "Failed to dispatch FCM event", e)
+        } finally {
+            stopSelf(startId)
         }
+        return START_NOT_STICKY
     }
 }

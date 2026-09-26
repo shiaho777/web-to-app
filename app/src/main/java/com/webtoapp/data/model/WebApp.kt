@@ -1326,7 +1326,31 @@ data class ApkExportConfig(
      * cost of a downgrade install failing on devices that already have a higher
      * versionCode. Build-invocation only; never serialized into the shell config.
      */
-    val autoVersionBump: Boolean = true
+    val autoVersionBump: Boolean = true,
+
+    /**
+     * 功能栈 (feature stacks): heavyweight optional dependency stacks packaged as
+     * `assets/feature_stacks/<id>.dex` in the shell template. Every flag defaults to
+     * true; turning one off makes ApkBuilder leave that dex out of the generated
+     * APK entirely — a physical size reduction, not just a runtime gate. Runtime
+     * code fails soft when the asset is absent.
+     */
+    val featureStack: FeatureStackConfig = FeatureStackConfig()
+)
+
+/**
+ * Per-stack switches for optional dependency bundles inside generated APKs.
+ * All default on — disabling trades the feature for a smaller APK.
+ */
+data class FeatureStackConfig(
+    /** Native Google sign-in (Credential Manager + Google ID token bridge). */
+    val googleSignIn: Boolean = true,
+
+    /** FCM push delivery (Firebase Messaging; developer-supplied project config). */
+    val fcm: Boolean = true,
+
+    /** Cronet/HTTP/3 upstream for forced-QUIC fingerprint browsing. */
+    val http3Engine: Boolean = true
 )
 
 data class NetworkTrustConfig(

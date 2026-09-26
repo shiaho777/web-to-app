@@ -3,6 +3,7 @@ package com.webtoapp.core.webview
 import android.content.Context
 import android.os.Build
 import com.webtoapp.core.download.DependencyDownloadEngine
+import com.webtoapp.core.featurestack.api.CronetSpec
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.util.SafeZip
 import kotlinx.coroutines.Dispatchers
@@ -26,13 +27,13 @@ object CronetDependencyManager {
 
     private const val TAG = "CronetDependencyManager"
 
-    /** Gradle artifact version (app/shell build.gradle.kts must match). */
-    const val CRONET_ARTIFACT_VERSION = "143.7445.0"
+    /** Gradle artifact version (app/shell/feature-stacks build.gradle.kts must match). */
+    const val CRONET_ARTIFACT_VERSION = CronetSpec.ARTIFACT_VERSION
 
     /** Native library version baked inside the artifact (differs from the artifact version). */
-    const val CRONET_LIB_VERSION = "143.0.7445.0"
+    const val CRONET_LIB_VERSION = CronetSpec.LIB_VERSION
 
-    const val LIB_FILE_NAME = "libcronet.$CRONET_LIB_VERSION.so"
+    const val LIB_FILE_NAME = CronetSpec.LIB_FILE_NAME
 
     private const val MAX_RETRY_PER_URL = 2
     private const val RETRY_DELAY_MS = 2000L
@@ -43,23 +44,9 @@ object CronetDependencyManager {
     // anti-censorship feature whose audience skews exactly there — so the Aliyun
     // mirror (globally reachable, CDN-backed) goes first and Google Maven is the
     // fallback for the rare case Aliyun is down or stale.
-    /** Google Maven — canonical source, kept as the fallback (see [downloadUrls]). */
-    private val PRIMARY_URL =
-        "https://maven.google.com/org/chromium/net/cronet-embedded/$CRONET_ARTIFACT_VERSION/cronet-embedded-$CRONET_ARTIFACT_VERSION.aar"
+    private fun downloadUrls(): List<String> = CronetSpec.downloadUrls
 
-    // Aliyun's Google-Maven mirror.
-    private val CN_MIRROR_URL =
-        "https://maven.aliyun.com/repository/google/org/chromium/net/cronet-embedded/$CRONET_ARTIFACT_VERSION/cronet-embedded-$CRONET_ARTIFACT_VERSION.aar"
-
-    private fun downloadUrls(): List<String> = listOf(CN_MIRROR_URL, PRIMARY_URL)
-
-    /**
-     * SHA-256 of cronet-embedded-$CRONET_ARTIFACT_VERSION.aar (canonical bytes
-     * from Google Maven; Aliyun mirrors the same artifact). Recompute when
-     * bumping CRONET_ARTIFACT_VERSION — mismatches fail the download loudly.
-     */
-    private const val CRONET_AAR_SHA256 =
-        "afdd7af7568e9758e3690c3a4a228f30993ac3e4ef0f94c72bb68503c0167697"
+    private const val CRONET_AAR_SHA256 = CronetSpec.AAR_SHA256
 
     fun getDepsDir(context: Context): File =
         File(context.filesDir, "cronet_deps").also { it.mkdirs() }

@@ -1,9 +1,9 @@
 package com.webtoapp.core.notification
 
 import android.content.Context
-import com.google.firebase.FirebaseApp
-import com.google.firebase.FirebaseOptions
-import com.google.firebase.messaging.FirebaseMessaging
+import com.webtoapp.core.featurestack.FeatureStackLoader
+import com.webtoapp.core.featurestack.api.FcmEventSink
+import com.webtoapp.core.featurestack.api.FcmStack
 import com.webtoapp.core.logging.AppLogger
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -135,6 +135,12 @@ object NotificationFcmManager {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().clear().apply()
     }
 
+    /**
+     * Starts FCM for this app: persists the config, initializes Firebase inside the
+     * `fcm` feature stack (when present) and fetches the current token. When the
+     * stack was disabled at build time the config is still persisted so the UI
+     * state is preserved, but no Firebase machinery runs.
+     */
     fun start(context: Context, config: FcmConfig) {
         val resolved = resolveConfig(config)
         if (!isConfigured(resolved)) {
@@ -142,20 +148,36 @@ object NotificationFcmManager {
             return
         }
         persist(context, resolved)
+        val stack = FeatureStackLoader.load<FcmStack>(context, FeatureStackLoader.STACK_FCM)
+        if (stack == null) {
+            AppLogger.w(TAG, "FCM feature stack unavailable; push delivery disabled for this build")
+            return
+        }
         try {
-            initializeFirebase(context, resolved)
-            FirebaseMessaging.getInstance().token
-                .addOnSuccessListener { token ->
-                    saveToken(context, token)
-                    registerToken(context, token)
-                    AppLogger.i(TAG, "FCM token ready")
-                }
-                .addOnFailureListener { e ->
-                    AppLogger.e(TAG, "Failed to get FCM token", e)
-                }
+            stack.start(
+                com.webtoapp.core.featurestack.api.FcmConfig(
+                    projectId = resolved.projectId,
+                    applicationId = resolved.applicationId,
+                    apiKey = resolved.apiKey,
+                    senderId = resolved.senderId
+                ),
+                eventSink(context)
+            )
             AppLogger.i(TAG, "FCM initialized for project=${resolved.projectId}")
         } catch (e: Exception) {
             AppLogger.e(TAG, "Failed to start FCM", e)
+        }
+    }
+
+    /** Sink the feature stack reports tokens/events to; bound to [context]'s prefs. */
+    fun eventSink(context: Context): FcmEventSink {
+        val appContext = context.applicationContext
+        return object : FcmEventSink {
+            override fun onToken(token: String) {
+                saveToken(appContext, token)
+                registerToken(appContext, token)
+                AppLogger.i(TAG, "FCM token ready")
+            }
         }
     }
 
@@ -185,31 +207,6 @@ object NotificationFcmManager {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
             .putString(KEY_TOKEN, token)
             .apply()
-    }
-
-    private fun initializeFirebase(context: Context, config: FcmConfig) {
-        val resolved = resolveConfig(config)
-        val options = FirebaseOptions.Builder()
-            .setProjectId(resolved.projectId)
-            .setApplicationId(resolved.applicationId)
-            .setApiKey(resolved.apiKey)
-            .setGcmSenderId(resolved.senderId)
-            .build()
-        val existing = FirebaseApp.getApps(context)
-        if (existing.isEmpty()) {
-            FirebaseApp.initializeApp(context, options)
-        } else {
-            val app = FirebaseApp.getInstance()
-            val current = app.options
-            val same = current.projectId == resolved.projectId &&
-                current.applicationId == resolved.applicationId &&
-                current.apiKey == resolved.apiKey &&
-                current.gcmSenderId == resolved.senderId
-            if (!same) {
-                app.delete()
-                FirebaseApp.initializeApp(context, options)
-            }
-        }
     }
 
     private fun registerToken(context: Context, token: String) {

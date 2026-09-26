@@ -16362,4 +16362,110 @@ object StringsE {
         AppLanguage.KOREAN -> "${count}개 선택됨"
     }
 
+    // ---- Feature stacks (Build APK) ----
+
+    val featureStackTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "功能栈"
+        AppLanguage.ENGLISH -> "Feature stacks"
+        AppLanguage.ARABIC -> "حزم الميزات"
+        AppLanguage.PORTUGUESE -> "Pacotes de recursos"
+        AppLanguage.SPANISH -> "Paquetes de funciones"
+        AppLanguage.FRENCH -> "Piles de fonctionnalités"
+        AppLanguage.GERMAN -> "Feature-Stacks"
+        AppLanguage.RUSSIAN -> "Наборы функций"
+        AppLanguage.JAPANESE -> "機能スタック"
+        AppLanguage.KOREAN -> "기능 스택"
+    }
+
+    val featureStackSummary: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "可选功能打包：关闭可减小生成的 APK 体积"
+        AppLanguage.ENGLISH -> "Optional bundled features — turning one off shrinks the generated APK"
+        AppLanguage.ARABIC -> "ميزات اختيارية مضمّنة — تعطيلها يصغّر حجم APK"
+        AppLanguage.PORTUGUESE -> "Recursos opcionais empacotados — desativar reduz o APK gerado"
+        AppLanguage.SPANISH -> "Funciones opcionales incluidas — desactivarlas reduce el APK"
+        AppLanguage.FRENCH -> "Fonctionnalités embarquées optionnelles — les désactiver réduit l'APK"
+        AppLanguage.GERMAN -> "Optionale gebündelte Funktionen — Deaktivieren verkleinert die APK"
+        AppLanguage.RUSSIAN -> "Необязательные встроенные функции — отключение уменьшает APK"
+        AppLanguage.JAPANESE -> "オプションの同梱機能 — オフにすると生成 APK が小さくなります"
+        AppLanguage.KOREAN -> "선택적 번들 기능 — 끄면 생성되는 APK 크기가 줄어듭니다"
+    }
+
+    val featureStackGoogleSignIn: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Google 原生登录"
+        AppLanguage.ENGLISH -> "Native Google sign-in"
+        AppLanguage.ARABIC -> "تسجيل دخول Google الأصلي"
+        AppLanguage.PORTUGUESE -> "Login nativo do Google"
+        AppLanguage.SPANISH -> "Inicio de sesión nativo de Google"
+        AppLanguage.FRENCH -> "Connexion Google native"
+        AppLanguage.GERMAN -> "Native Google-Anmeldung"
+        AppLanguage.RUSSIAN -> "Нативный вход Google"
+        AppLanguage.JAPANESE -> "Google ネイティブログイン"
+        AppLanguage.KOREAN -> "Google 네이티브 로그인"
+    }
+
+    val featureStackGoogleSignInDesc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Credential Manager + Google ID Token；页面可调用 googleSignIn"
+        AppLanguage.ENGLISH -> "Credential Manager + Google ID token; pages can call googleSignIn"
+        AppLanguage.ARABIC -> "Credential Manager + رمز Google ID؛ يمكن للصفحات استدعاء googleSignIn"
+        AppLanguage.PORTUGUESE -> "Credential Manager + token de ID do Google; páginas podem chamar googleSignIn"
+        AppLanguage.SPANISH -> "Credential Manager + token de ID de Google; las páginas pueden llamar googleSignIn"
+        AppLanguage.FRENCH -> "Credential Manager + jeton d'ID Google ; les pages peuvent appeler googleSignIn"
+        AppLanguage.GERMAN -> "Credential Manager + Google-ID-Token; Seiten können googleSignIn aufrufen"
+        AppLanguage.RUSSIAN -> "Credential Manager + токен Google ID; страницы могут вызывать googleSignIn"
+        AppLanguage.JAPANESE -> "Credential Manager + Google ID トークン。ページから googleSignIn を呼び出せます"
+        AppLanguage.KOREAN -> "Credential Manager + Google ID 토큰; 페이지에서 googleSignIn 호출 가능"
+    }
+
+    val featureStackFcm: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "FCM 推送"
+        AppLanguage.ENGLISH -> "FCM push"
+        AppLanguage.ARABIC -> "إشعارات FCM"
+        AppLanguage.PORTUGUESE -> "Push FCM"
+        AppLanguage.SPANISH -> "Push FCM"
+        AppLanguage.FRENCH -> "Notifications FCM"
+        AppLanguage.GERMAN -> "FCM-Push"
+        AppLanguage.RUSSIAN -> "FCM push"
+        AppLanguage.JAPANESE -> "FCM プッシュ"
+        AppLanguage.KOREAN -> "FCM 푸시"
+    }
+
+    val featureStackFcmDesc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Firebase Cloud Messaging；通知渠道选择 FCM 时需要"
+        AppLanguage.ENGLISH -> "Firebase Cloud Messaging; required when the notification channel is FCM"
+        AppLanguage.ARABIC -> "Firebase Cloud Messaging؛ مطلوب عند اختيار قناة الإشعارات FCM"
+        AppLanguage.PORTUGUESE -> "Firebase Cloud Messaging; necessário quando o canal de notificação é FCM"
+        AppLanguage.SPANISH -> "Firebase Cloud Messaging; necesario cuando el canal de notificación es FCM"
+        AppLanguage.FRENCH -> "Firebase Cloud Messaging ; requis si le canal de notification est FCM"
+        AppLanguage.GERMAN -> "Firebase Cloud Messaging; benötigt, wenn der Benachrichtigungskanal FCM ist"
+        AppLanguage.RUSSIAN -> "Firebase Cloud Messaging; необходимо при выборе канала уведомлений FCM"
+        AppLanguage.JAPANESE -> "Firebase Cloud Messaging。通知チャンネルに FCM を選ぶ場合に必要"
+        AppLanguage.KOREAN -> "Firebase Cloud Messaging; 알림 채널을 FCM으로 선택할 때 필요"
+    }
+
+    val featureStackHttp3: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "HTTP/3 引擎 (Cronet)"
+        AppLanguage.ENGLISH -> "HTTP/3 engine (Cronet)"
+        AppLanguage.ARABIC -> "محرك HTTP/3 (Cronet)"
+        AppLanguage.PORTUGUESE -> "Motor HTTP/3 (Cronet)"
+        AppLanguage.SPANISH -> "Motor HTTP/3 (Cronet)"
+        AppLanguage.FRENCH -> "Moteur HTTP/3 (Cronet)"
+        AppLanguage.GERMAN -> "HTTP/3-Engine (Cronet)"
+        AppLanguage.RUSSIAN -> "Движок HTTP/3 (Cronet)"
+        AppLanguage.JAPANESE -> "HTTP/3 エンジン (Cronet)"
+        AppLanguage.KOREAN -> "HTTP/3 엔진 (Cronet)"
+    }
+
+    val featureStackHttp3Desc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Chromium QUIC 上行引擎；仅在使用强制 HTTP/3 时需要"
+        AppLanguage.ENGLISH -> "Chromium QUIC upstream engine; only needed when forced HTTP/3 is used"
+        AppLanguage.ARABIC -> "محرك Chromium QUIC؛ مطلوب فقط عند استخدام HTTP/3 الإجباري"
+        AppLanguage.PORTUGUESE -> "Motor upstream Chromium QUIC; necessário apenas com HTTP/3 forçado"
+        AppLanguage.SPANISH -> "Motor upstream Chromium QUIC; solo necesario con HTTP/3 forzado"
+        AppLanguage.FRENCH -> "Moteur Chromium QUIC en amont ; requis uniquement pour HTTP/3 forcé"
+        AppLanguage.GERMAN -> "Chromium-QUIC-Upstream; nur bei erzwungenem HTTP/3 nötig"
+        AppLanguage.RUSSIAN -> "Chromium QUIC upstream; нужен только при принудительном HTTP/3"
+        AppLanguage.JAPANESE -> "Chromium QUIC アップストリーム。強制 HTTP/3 使用時のみ必要"
+        AppLanguage.KOREAN -> "Chromium QUIC 업스트림 엔진; 강제 HTTP/3 사용 시에만 필요"
+    }
+
 }

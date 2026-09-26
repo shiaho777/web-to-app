@@ -5186,6 +5186,15 @@ object Strings {
     val pluginAdd: String get() = StringsE.pluginAdd
     val pluginSelectTitle: String get() = StringsE.pluginSelectTitle
     fun pluginSelectedCount(count: Int): String = StringsE.pluginSelectedCount(count)
+
+    val featureStackTitle: String get() = StringsE.featureStackTitle
+    val featureStackSummary: String get() = StringsE.featureStackSummary
+    val featureStackGoogleSignIn: String get() = StringsE.featureStackGoogleSignIn
+    val featureStackGoogleSignInDesc: String get() = StringsE.featureStackGoogleSignInDesc
+    val featureStackFcm: String get() = StringsE.featureStackFcm
+    val featureStackFcmDesc: String get() = StringsE.featureStackFcmDesc
+    val featureStackHttp3: String get() = StringsE.featureStackHttp3
+    val featureStackHttp3Desc: String get() = StringsE.featureStackHttp3Desc
 }
 
 

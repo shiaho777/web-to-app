@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Impls run inside DexClassLoader-loaded archives; they must not declare
+     components (manifest entries cannot point at dex-only classes). -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" />
