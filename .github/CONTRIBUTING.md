@@ -218,6 +218,8 @@ an hour as authoritative; the refresh button always bypasses the cache.
 ### Pull requests
 
 - Branch from `main`. Keep PRs focused — one logical change per PR.
+- Name branches `type/slug` (`fix/…`, `feat/…`, `refactor/…`, `docs/…`) —
+  no tool/agent namespaces like `codex/…`.
 - **Write Issues and PRs in English** — titles, bodies, and review threads.
 - Describe the user-visible effect in the PR body, not just the code change.
 - The standard loop is Issue → branch → PR (`Fixes #N`) → green CI → merge.

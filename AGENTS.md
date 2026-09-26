@@ -94,6 +94,8 @@ Default target: [shiaho777/web-to-app](https://github.com/shiaho777/web-to-app).
 
 When the user asks to deliver a change, run the Issue → branch → PR → CI → merge loop end-to-end. Do not close the Issue until the PR is merged and CI is green.
 
+**Branch naming:** use plain `type/slug` names — `fix/…`, `feat/…`, `refactor/…`, `docs/…`, `perf/…`, `chore/…`. Do not use tool/agent namespaces (`codex/…`, `devin/…`, etc.); the branch belongs to the repo, not the agent.
+
 ---
 
 ## Shell template and runtime sync
