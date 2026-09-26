@@ -36,6 +36,15 @@
     "html_url": "https://github.com/shiaho777/LuaXIDE"
   },
   {
+    "name": "revx",
+    "description": "Rust reverse-engineering toolkit with CLI and local MCP server.",
+    "stargazers_count": 8,
+    "forks_count": 0,
+    "language": "Rust",
+    "pushed_at": "2026-09-17T08:50:31Z",
+    "html_url": "https://github.com/shiaho777/revx"
+  },
+  {
     "name": "NexFiles",
     "description": "An open source Material Design file manager, for Android 5.0+.",
     "stargazers_count": 8,
@@ -59,17 +68,8 @@
     "stargazers_count": 7,
     "forks_count": 2,
     "language": "Kotlin",
-    "pushed_at": "2026-09-25T12:58:36Z",
+    "pushed_at": "2026-09-26T06:17:46Z",
     "html_url": "https://github.com/shiaho777/andmx"
-  },
-  {
-    "name": "revx",
-    "description": "Rust reverse-engineering toolkit with CLI and local MCP server.",
-    "stargazers_count": 7,
-    "forks_count": 0,
-    "language": "Rust",
-    "pushed_at": "2026-09-17T08:50:31Z",
-    "html_url": "https://github.com/shiaho777/revx"
   },
   {
     "name": "wgsql",
@@ -79,6 +79,15 @@
     "language": "Rust",
     "pushed_at": "2026-09-17T06:30:59Z",
     "html_url": "https://github.com/shiaho777/wgsql"
+  },
+  {
+    "name": "anthropic-ui-skill",
+    "description": "A Skill that allows AI to generate the UI design style of Anthropic Company. Its aesthetics are very good.",
+    "stargazers_count": 6,
+    "forks_count": 1,
+    "language": null,
+    "pushed_at": "2026-05-28T08:50:31Z",
+    "html_url": "https://github.com/shiaho777/anthropic-ui-skill"
   },
   {
     "name": "MacBottle",
@@ -99,21 +108,12 @@
     "html_url": "https://github.com/shiaho777/echomind"
   },
   {
-    "name": "anthropic-ui-skill",
-    "description": "A Skill that allows AI to generate the UI design style of Anthropic Company. Its aesthetics are very good.",
-    "stargazers_count": 5,
-    "forks_count": 1,
-    "language": null,
-    "pushed_at": "2026-05-28T08:50:31Z",
-    "html_url": "https://github.com/shiaho777/anthropic-ui-skill"
-  },
-  {
     "name": "qsyy",
     "description": "汽水音乐第三方 Web 播放器 · 全端可用 · 本地缓存直读 / 在线播放 / 逐字歌词 / 音效 / 下载",
     "stargazers_count": 4,
     "forks_count": 0,
     "language": "JavaScript",
-    "pushed_at": "2026-09-22T08:43:09Z",
+    "pushed_at": "2026-09-26T01:27:46Z",
     "html_url": "https://github.com/shiaho777/qsyy"
   },
   {
@@ -167,7 +167,7 @@
     "stargazers_count": 1,
     "forks_count": 0,
     "language": "Python",
-    "pushed_at": "2026-09-25T22:01:18Z",
+    "pushed_at": "2026-09-26T12:06:15Z",
     "html_url": "https://github.com/shiaho777/pyj-j"
   },
   {
@@ -221,7 +221,7 @@
     "stargazers_count": 0,
     "forks_count": 0,
     "language": "Kotlin",
-    "pushed_at": "2026-09-25T15:09:38Z",
+    "pushed_at": "2026-09-26T01:20:25Z",
     "html_url": "https://github.com/shiaho777/LogSleuth"
   },
   {
