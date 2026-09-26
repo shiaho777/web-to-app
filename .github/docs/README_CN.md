@@ -69,28 +69,28 @@
 
 <table>
   <tr>
-    <td align="center"><img src="../assets/screenshots/01-home-empty.png" width="200" alt="「我的应用」主页"><br><sub><b>主页</b> —— 应用项目一览</sub></td>
-    <td align="center"><img src="../assets/screenshots/02-app-types.png" width="200" alt="12 种应用类型创建面板"><br><sub><b>创建</b> —— 12 种应用类型任选</sub></td>
-    <td align="center"><img src="../assets/screenshots/03-create-web.png" width="200" alt="Web 应用编辑器"><br><sub><b>Web 应用</b> —— 名称、URL、站点分析</sub></td>
-    <td align="center"><img src="../assets/screenshots/04-import-html.png" width="200" alt="HTML 项目导入"><br><sub><b>HTML 应用</b> —— 文件、ZIP 或写代码</sub></td>
+    <td align="center" width="25%"><img src="../assets/screenshots/01-home-empty.png" width="200" alt="「我的应用」主页"><br><sub><b>主页</b> —— 应用项目一览</sub></td>
+    <td align="center" width="25%"><img src="../assets/screenshots/02-app-types.png" width="200" alt="12 种应用类型创建面板"><br><sub><b>创建</b> —— 12 种应用类型任选</sub></td>
+    <td align="center" width="25%"><img src="../assets/screenshots/03-create-web.png" width="200" alt="Web 应用编辑器"><br><sub><b>Web 应用</b> —— 名称、URL、站点分析</sub></td>
+    <td align="center" width="25%"><img src="../assets/screenshots/04-import-html.png" width="200" alt="HTML 项目导入"><br><sub><b>HTML 应用</b> —— 文件、ZIP 或写代码</sub></td>
   </tr>
   <tr>
-    <td align="center"><img src="../assets/screenshots/05-editor-basic.png" width="200" alt="编辑器基本信息卡"><br><sub><b>编辑器</b> —— 图标、名称与核心开关</sub></td>
-    <td align="center"><img src="../assets/screenshots/06-editor-toggles.png" width="200" alt="编辑器功能开关"><br><sub><b>编辑器</b> —— 启动屏、音乐、翻译等</sub></td>
-    <td align="center"><img src="../assets/screenshots/07-editor-advanced.png" width="200" alt="编辑器高级与导出设置"><br><sub><b>编辑器</b> —— 高级与导出设置</sub></td>
-    <td align="center"><img src="../assets/screenshots/08-app-actions.png" width="200" alt="单应用操作菜单"><br><sub><b>操作菜单</b> —— 构建、分享、导出等</sub></td>
+    <td align="center" width="25%"><img src="../assets/screenshots/05-editor-basic.png" width="200" alt="编辑器基本信息卡"><br><sub><b>编辑器</b> —— 图标、名称与核心开关</sub></td>
+    <td align="center" width="25%"><img src="../assets/screenshots/06-editor-toggles.png" width="200" alt="编辑器功能开关"><br><sub><b>编辑器</b> —— 启动屏、音乐、翻译等</sub></td>
+    <td align="center" width="25%"><img src="../assets/screenshots/07-editor-advanced.png" width="200" alt="编辑器高级与导出设置"><br><sub><b>编辑器</b> —— 高级与导出设置</sub></td>
+    <td align="center" width="25%"><img src="../assets/screenshots/08-app-actions.png" width="200" alt="单应用操作菜单"><br><sub><b>操作菜单</b> —— 构建、分享、导出等</sub></td>
   </tr>
   <tr>
-    <td align="center"><img src="../assets/screenshots/09-toolbox.png" width="200" alt="主工具箱菜单"><br><sub><b>工具箱</b> —— Agent、模块、端口、引擎</sub></td>
-    <td align="center"><img src="../assets/screenshots/10-preview.png" width="200" alt="带浏览器工具栏的应用预览"><br><sub><b>预览</b> —— 与导出产物同一运行时</sub></td>
-    <td align="center"><img src="../assets/screenshots/11-build-options.png" width="200" alt="构建 APK 对话框选项"><br><sub><b>构建</b> —— 引擎与加固选项</sub></td>
-    <td align="center"><img src="../assets/screenshots/12-build-result.png" width="200" alt="构建摘要与 APK 体积分析"><br><sub><b>产物</b> —— 签名 APK、体积分析</sub></td>
+    <td align="center" width="25%"><img src="../assets/screenshots/09-toolbox.png" width="200" alt="主工具箱菜单"><br><sub><b>工具箱</b> —— Agent、模块、端口、引擎</sub></td>
+    <td align="center" width="25%"><img src="../assets/screenshots/10-preview.png" width="200" alt="带浏览器工具栏的应用预览"><br><sub><b>预览</b> —— 与导出产物同一运行时</sub></td>
+    <td align="center" width="25%"><img src="../assets/screenshots/11-build-options.png" width="200" alt="构建 APK 对话框选项"><br><sub><b>构建</b> —— 引擎与加固选项</sub></td>
+    <td align="center" width="25%"><img src="../assets/screenshots/12-build-result.png" width="200" alt="构建摘要与 APK 体积分析"><br><sub><b>产物</b> —— 签名 APK、体积分析</sub></td>
   </tr>
   <tr>
-    <td align="center"><img src="../assets/screenshots/13-generated-app.png" width="200" alt="生成应用运行效果"><br><sub><b>成品</b> —— 生成应用安装运行</sub></td>
-    <td align="center"><img src="../assets/screenshots/14-about.png" width="200" alt="关于页"><br><sub><b>关于</b> —— 版本与社区链接</sub></td>
-    <td align="center"><img src="../assets/screenshots/15-agent.png" width="200" alt="Agent 界面与建议卡片"><br><sub><b>Agent</b> —— 描述需求,AI 来构建</sub></td>
-    <td align="center"><img src="../assets/screenshots/16-languages.png" width="200" alt="语言选择对话框"><br><sub><b>多语言</b> —— 10 种界面语言,含 RTL</sub></td>
+    <td align="center" width="25%"><img src="../assets/screenshots/13-generated-app.png" width="200" alt="生成应用运行效果"><br><sub><b>成品</b> —— 生成应用安装运行</sub></td>
+    <td align="center" width="25%"><img src="../assets/screenshots/14-about.png" width="200" alt="关于页"><br><sub><b>关于</b> —— 版本与社区链接</sub></td>
+    <td align="center" width="25%"><img src="../assets/screenshots/15-agent.png" width="200" alt="Agent 界面与建议卡片"><br><sub><b>Agent</b> —— 描述需求,AI 来构建</sub></td>
+    <td align="center" width="25%"><img src="../assets/screenshots/16-languages.png" width="200" alt="语言选择对话框"><br><sub><b>多语言</b> —— 10 种界面语言,含 RTL</sub></td>
   </tr>
 </table>
 
