@@ -2,7 +2,7 @@
   {
     "name": "WebToApp",
     "description": "Turn any website into an installable app across iOS, Android, Windows, macOS and Linux, and generate a sharing link.",
-    "stargazers_count": 102,
+    "stargazers_count": 103,
     "forks_count": 25,
     "language": "Python",
     "pushed_at": "2026-09-14T14:42:06Z",
@@ -32,7 +32,7 @@
     "stargazers_count": 9,
     "forks_count": 0,
     "language": "C",
-    "pushed_at": "2026-09-25T12:40:39Z",
+    "pushed_at": "2026-09-25T13:01:11Z",
     "html_url": "https://github.com/shiaho777/LuaXIDE"
   },
   {
@@ -59,7 +59,7 @@
     "stargazers_count": 7,
     "forks_count": 2,
     "language": "Kotlin",
-    "pushed_at": "2026-09-22T10:38:37Z",
+    "pushed_at": "2026-09-25T12:58:36Z",
     "html_url": "https://github.com/shiaho777/andmx"
   },
   {
@@ -162,6 +162,15 @@
     "html_url": "https://github.com/shiaho777/bitx"
   },
   {
+    "name": "pyj-j",
+    "description": "J as a tensor engine inside Python — zero-copy numpy bridge, reverse-mode autodiff written in J, tape-to-J compiler",
+    "stargazers_count": 1,
+    "forks_count": 0,
+    "language": "Python",
+    "pushed_at": "2026-09-25T22:01:18Z",
+    "html_url": "https://github.com/shiaho777/pyj-j"
+  },
+  {
     "name": "stratum",
     "description": "Pure-C transformer inference engine for Apple Silicon — wired memory independent of model size (mmap streaming, NEON/Metal)",
     "stargazers_count": 1,
@@ -169,15 +178,6 @@
     "language": "C",
     "pushed_at": "2026-09-25T11:29:25Z",
     "html_url": "https://github.com/shiaho777/stratum"
-  },
-  {
-    "name": "pyj-j",
-    "description": "J as a tensor engine inside Python — zero-copy numpy bridge, reverse-mode autodiff written in J, tape-to-J compiler",
-    "stargazers_count": 1,
-    "forks_count": 0,
-    "language": "Python",
-    "pushed_at": "2026-09-25T05:45:48Z",
-    "html_url": "https://github.com/shiaho777/pyj-j"
   },
   {
     "name": "browser-engine-shia",
@@ -221,7 +221,7 @@
     "stargazers_count": 0,
     "forks_count": 0,
     "language": "Kotlin",
-    "pushed_at": "2026-09-25T12:40:19Z",
+    "pushed_at": "2026-09-25T15:09:38Z",
     "html_url": "https://github.com/shiaho777/LogSleuth"
   },
   {
