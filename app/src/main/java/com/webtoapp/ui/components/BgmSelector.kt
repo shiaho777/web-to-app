@@ -455,8 +455,12 @@ fun BgmSelectorDialog(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(Strings.playMode, style = MaterialTheme.typography.bodyMedium)
-                        Row(horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small)) {
+                        Text(Strings.playMode, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        FlowRow(
+                            modifier = Modifier.weight(1f),
+                            horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small, Alignment.End),
+                            verticalArrangement = Arrangement.spacedBy(WtaSpacing.Tiny)
+                        ) {
                             WtaChip(
                                 selected = playMode == BgmPlayMode.LOOP,
                                 onClick = { playMode = BgmPlayMode.LOOP },

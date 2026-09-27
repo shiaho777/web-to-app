@@ -7417,29 +7417,29 @@ object StringsC {
     }
 
     val quickExperienceFrontend: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "快速体验前端项目导入"
-        AppLanguage.ENGLISH -> "Quick experience frontend project import"
-        AppLanguage.ARABIC -> "تجربة سريعة لاستيراد مشروع الواجهة الأمامية"
-        AppLanguage.PORTUGUESE -> "Experimente rapidamente a importação de projeto frontend"
-        AppLanguage.SPANISH -> "Prueba rápida de importación de proyecto frontend"
-        AppLanguage.FRENCH -> "Essayez rapidement l'importation de projet frontend"
-        AppLanguage.GERMAN -> "Schnelles Ausprobieren des Frontend-Projektimports"
-        AppLanguage.RUSSIAN -> "Быстрый опыт импорта фронтенд-проекта"
-        AppLanguage.JAPANESE -> "フロントエンドプロジェクトのインポートを手軽に体験"
-        AppLanguage.KOREAN -> "프론트엔드 프로젝트 가져오기 빠른 체험"
+        AppLanguage.CHINESE -> "一键导入前端示例"
+        AppLanguage.ENGLISH -> "Import a frontend sample to try"
+        AppLanguage.ARABIC -> "استيراد مثال واجهة أمامية"
+        AppLanguage.PORTUGUESE -> "Importe um exemplo frontend"
+        AppLanguage.SPANISH -> "Importa un ejemplo frontend"
+        AppLanguage.FRENCH -> "Importez un exemple frontend"
+        AppLanguage.GERMAN -> "Frontend-Beispiel importieren"
+        AppLanguage.RUSSIAN -> "Импорт фронтенд-примера"
+        AppLanguage.JAPANESE -> "フロントエンドサンプルをインポート"
+        AppLanguage.KOREAN -> "프론트엔드 샘플 가져오기"
     }
 
     val quickExperience: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "快速体验"
-        AppLanguage.ENGLISH -> "Quick Experience"
-        AppLanguage.ARABIC -> "تجربة سريعة"
-        AppLanguage.PORTUGUESE -> "Experiência Rápida"
-        AppLanguage.SPANISH -> "Experiencia Rápida"
-        AppLanguage.FRENCH -> "Expérience Rapide"
-        AppLanguage.GERMAN -> "Schnell ausprobieren"
-        AppLanguage.RUSSIAN -> "Быстрый опыт"
-        AppLanguage.JAPANESE -> "クイック体験"
-        AppLanguage.KOREAN -> "빠른 체험"
+        AppLanguage.ENGLISH -> "Try Now"
+        AppLanguage.ARABIC -> "تجربة"
+        AppLanguage.PORTUGUESE -> "Testar"
+        AppLanguage.SPANISH -> "Probar"
+        AppLanguage.FRENCH -> "Essayer"
+        AppLanguage.GERMAN -> "Testen"
+        AppLanguage.RUSSIAN -> "Демо"
+        AppLanguage.JAPANESE -> "体験"
+        AppLanguage.KOREAN -> "체험"
     }
 
     val run: String get() = when (Strings.lang) {

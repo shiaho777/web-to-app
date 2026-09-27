@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.webtoapp.core.appearance.BrowserDisguiseConfig
 import com.webtoapp.core.appearance.BrowserDisguisePreset
@@ -154,7 +155,10 @@ fun BrowserDisguiseConfigCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Box(
                         modifier = Modifier
                             .size(40.dp)
@@ -182,19 +186,25 @@ fun BrowserDisguiseConfigCard(
                     Column {
                         Text(
                             Strings.browserDisguiseTitle,
-                            style = MaterialTheme.typography.titleMedium
+                            style = MaterialTheme.typography.titleMedium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                         if (enabled) {
                             Text(
                                 "${level} · ${"%.0f".format(coverage * 100)}% ${Strings.browserDisguiseCoverage}",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = levelColor
+                                color = levelColor,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         } else {
                             Text(
                                 Strings.notEnabled,
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                     }

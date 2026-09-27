@@ -13,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
@@ -113,8 +114,9 @@ fun IconPickerWithLibrary(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
 
                 if (canFetchFavicon) {
@@ -151,7 +153,7 @@ fun IconPickerWithLibrary(
                             )
                         }
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text(Strings.fetchWebsiteIcon, style = MaterialTheme.typography.labelMedium)
+                        Text(Strings.fetchWebsiteIcon, style = MaterialTheme.typography.labelMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
                 }
 
@@ -166,7 +168,7 @@ fun IconPickerWithLibrary(
                         modifier = Modifier.size(16.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text(Strings.iconLibrary, style = MaterialTheme.typography.labelMedium)
+                    Text(Strings.iconLibrary, style = MaterialTheme.typography.labelMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
             }
         }

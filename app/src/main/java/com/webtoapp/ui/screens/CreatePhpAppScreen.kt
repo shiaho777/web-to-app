@@ -153,6 +153,7 @@ fun CreatePhpAppScreen(
 
     val downloadState by WordPressDependencyManager.downloadState.collectAsStateWithLifecycle()
     var showDownloadDialog by remember { mutableStateOf(false) }
+    var downloadCancelled by remember { mutableStateOf(false) }
 
     val processProjectDir: suspend (File) -> Unit = processProject@{ inputDir ->
 
@@ -228,7 +229,8 @@ fun CreatePhpAppScreen(
             val success = WordPressDependencyManager.downloadAllDependencies(context)
             showDownloadDialog = false
             if (!success) {
-                errorMessage = Strings.wpDownloadFailed
+                if (!downloadCancelled) errorMessage = Strings.wpDownloadFailed
+                downloadCancelled = false
                 isCreating = false
                 return@processProject
             }
@@ -670,7 +672,16 @@ fun CreatePhpAppScreen(
                     }
                 }
             },
-            confirmButton = {}
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        downloadCancelled = true
+                        WordPressDependencyManager.cancelDownload()
+                        showDownloadDialog = false
+                        isCreating = false
+                    }
+                ) { Text(Strings.btnCancel) }
+            }
         )
     }
         }

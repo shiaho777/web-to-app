@@ -98,6 +98,7 @@ fun CreateWordPressAppScreen(
 
     val downloadState by WordPressDependencyManager.downloadState.collectAsStateWithLifecycle()
     var showDownloadDialog by remember { mutableStateOf(false) }
+    var downloadCancelled by remember { mutableStateOf(false) }
 
     val iconPickerLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent()
@@ -120,7 +121,8 @@ fun CreateWordPressAppScreen(
                         val success = WordPressDependencyManager.downloadAllDependencies(context)
                         showDownloadDialog = false
                         if (!success) {
-                            errorMessage = Strings.wpDownloadFailed
+                            if (!downloadCancelled) errorMessage = Strings.wpDownloadFailed
+                            downloadCancelled = false
                             isCreating = false
                             return@launch
                         }
@@ -173,7 +175,8 @@ fun CreateWordPressAppScreen(
                     val success = WordPressDependencyManager.downloadAllDependencies(context)
                     showDownloadDialog = false
                     if (!success) {
-                        errorMessage = Strings.wpDownloadFailed
+                        if (!downloadCancelled) errorMessage = Strings.wpDownloadFailed
+                        downloadCancelled = false
                         isCreating = false
                         return@launch
                     }
@@ -274,7 +277,8 @@ fun CreateWordPressAppScreen(
                                         val success = WordPressDependencyManager.downloadAllDependencies(context)
                                         showDownloadDialog = false
                                         if (!success) {
-                                            errorMessage = Strings.wpDownloadFailed
+                                            if (!downloadCancelled) errorMessage = Strings.wpDownloadFailed
+                                            downloadCancelled = false
                                             isCreating = false
                                             return@onSuccess
                                         }
@@ -582,7 +586,16 @@ fun CreateWordPressAppScreen(
                     )
                 }
             },
-            confirmButton = {}
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        downloadCancelled = true
+                        WordPressDependencyManager.cancelDownload()
+                        showDownloadDialog = false
+                        isCreating = false
+                    }
+                ) { Text(Strings.btnCancel) }
+            }
         )
     }
 }

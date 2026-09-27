@@ -18,6 +18,7 @@ import java.io.File
 import java.io.FileOutputStream
 import java.security.MessageDigest
 import java.util.Locale
+import java.util.concurrent.atomic.AtomicBoolean
 
 object NodeDependencyManager {
 
@@ -69,6 +70,15 @@ object NodeDependencyManager {
 
     private val _downloadState = MutableStateFlow<DownloadState>(DownloadState.Idle)
     val downloadState: StateFlow<DownloadState> = _downloadState
+
+    private val downloadCancelled = AtomicBoolean(false)
+
+    /** Abort the in-flight download; the .tmp partial file is kept for a later resume. */
+    fun cancelDownload() {
+        downloadCancelled.set(true)
+        DependencyDownloadEngine.cancel()
+        _downloadState.value = DownloadState.Idle
+    }
     private val runtimeDownloadMutex = Mutex()
 
     private var _userMirrorRegion: MirrorRegion? = null
@@ -268,6 +278,7 @@ object NodeDependencyManager {
                 DependencyDownloadEngine.state.collect { syncEngineState() }
             }
             try {
+                downloadCancelled.set(false)
                 runtimeDownloadMutex.withLock {
                     DependencyDownloadNotification.getInstance(context)
                     if (isNodeReady(context)) {
@@ -433,7 +444,9 @@ object NodeDependencyManager {
                 )
             }
             is DependencyDownloadEngine.State.Error -> {
-                _downloadState.value = DownloadState.Error(es.message)
+                if (!downloadCancelled.get()) {
+                    _downloadState.value = DownloadState.Error(es.message)
+                }
             }
             else -> {}
         }
@@ -445,6 +458,10 @@ object NodeDependencyManager {
     }
 
     private fun markError(message: String, retryable: Boolean = true) {
+        if (downloadCancelled.get()) {
+            _downloadState.value = DownloadState.Idle
+            return
+        }
         _downloadState.value = DownloadState.Error(message, retryable = retryable)
         DependencyDownloadEngine.publishState(DependencyDownloadEngine.State.Error(message))
     }

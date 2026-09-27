@@ -97,6 +97,7 @@ fun CreatePythonAppScreen(
     var errorThrowable by remember { mutableStateOf<Throwable?>(null) }
     val downloadState by PythonDependencyManager.downloadState.collectAsStateWithLifecycle()
     var showDownloadDialog by remember { mutableStateOf(false) }
+    var downloadCancelled by remember { mutableStateOf(false) }
 
     LaunchedEffect(existingAppId) {
         if (existingAppId > 0L) {
@@ -307,7 +308,8 @@ fun CreatePythonAppScreen(
                             val success = PythonDependencyManager.downloadPythonRuntime(context)
                             showDownloadDialog = false
                             if (!success) {
-                                errorMessage = Strings.pythonRuntimeDownloadFailed
+                                if (!downloadCancelled) errorMessage = Strings.pythonRuntimeDownloadFailed
+                                downloadCancelled = false
                                 isCreating = false
                                 return@withContext
                             }
@@ -413,7 +415,8 @@ fun CreatePythonAppScreen(
                                             val success = PythonDependencyManager.downloadPythonRuntime(context)
                                             showDownloadDialog = false
                                             if (!success) {
-                                                errorMessage = Strings.pythonRuntimeDownloadFailed
+                                                if (!downloadCancelled) errorMessage = Strings.pythonRuntimeDownloadFailed
+                                                downloadCancelled = false
                                                 return@withContext
                                             }
                                         }
@@ -675,7 +678,16 @@ fun CreatePythonAppScreen(
                     }
                 }
             },
-            confirmButton = {}
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        downloadCancelled = true
+                        PythonDependencyManager.cancelDownload()
+                        showDownloadDialog = false
+                        isCreating = false
+                    }
+                ) { Text(Strings.btnCancel) }
+            }
         )
     }
 }
