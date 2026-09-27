@@ -1304,6 +1304,32 @@ object StringsB {
         AppLanguage.JAPANESE -> "1"
         AppLanguage.KOREAN -> "1"
     }
+    val saepPolicyTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "静态 SAEP 策略"
+        AppLanguage.ENGLISH -> "Static SAEP policy"
+        AppLanguage.ARABIC -> "سياسة SAEP ثابتة"
+        AppLanguage.PORTUGUESE -> "Política SAEP estática"
+        AppLanguage.SPANISH -> "Política SAEP estática"
+        AppLanguage.FRENCH -> "Politique SAEP statique"
+        AppLanguage.GERMAN -> "Statische SAEP-Richtlinie"
+        AppLanguage.RUSSIAN -> "Статическая политика SAEP"
+        AppLanguage.JAPANESE -> "静的 SAEP ポリシー"
+        AppLanguage.KOREAN -> "정적 SAEP 정책"
+    }
+
+    val saepPolicyHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "可选：声明无额外限制。不授予权限，也不保证智能体支持。默认关闭：省略元数据，并非拒绝访问。"
+        AppLanguage.ENGLISH -> "Optional: declares no additional restrictions. Does not grant permissions or guarantee agent support. Off by default: omits metadata, not a denial of access."
+        AppLanguage.ARABIC -> "اختياري: يعلن عدم وجود قيود إضافية. لا يمنح أذونات ولا يضمن دعم الوكلاء. معطل افتراضيًا: تُحذف البيانات الوصفية، وليس رفضًا للوصول."
+        AppLanguage.PORTUGUESE -> "Opcional: declara que não há restrições adicionais. Não concede permissões nem garante suporte de agentes. Desativado por padrão: omite metadados, não nega acesso."
+        AppLanguage.SPANISH -> "Opcional: declara que no hay restricciones adicionales. No otorga permisos ni garantiza compatibilidad con agentes. Desactivado por defecto: omite metadatos, no deniega el acceso."
+        AppLanguage.FRENCH -> "Facultatif : déclare aucune restriction supplémentaire. N'accorde aucune permission et ne garantit pas la prise en charge par les agents. Désactivé par défaut : omet les métadonnées, sans refuser l'accès."
+        AppLanguage.GERMAN -> "Optional: erklärt, dass keine zusätzlichen Einschränkungen gelten. Erteilt keine Berechtigungen und garantiert keine Agentenunterstützung. Standardmäßig aus: Metadaten entfallen, kein Zugriffsverbot."
+        AppLanguage.RUSSIAN -> "Необязательно: заявляет об отсутствии дополнительных ограничений. Не предоставляет разрешений и не гарантирует поддержку агентами. По умолчанию выключено: метаданные отсутствуют, это не запрет доступа."
+        AppLanguage.JAPANESE -> "任意：追加の制限がないことを宣言します。権限を付与せず、エージェントの対応も保証しません。既定はオフ：メタデータを省略するだけで、アクセス拒否ではありません。"
+        AppLanguage.KOREAN -> "선택 사항: 추가 제한이 없음을 선언합니다. 권한을 부여하거나 에이전트 지원을 보장하지 않습니다. 기본값은 꺼짐: 메타데이터를 생략하며 접근 거부를 뜻하지 않습니다."
+    }
+
     val autoVersionBump: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "自动提升版本号"
         AppLanguage.ENGLISH -> "Auto-bump version"
@@ -12104,4 +12130,3 @@ object StringsB {
         AppLanguage.KOREAN -> "WebSocket 가로채기"
     }
 }
-

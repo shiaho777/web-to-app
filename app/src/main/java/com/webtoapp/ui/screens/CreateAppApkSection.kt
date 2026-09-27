@@ -226,6 +226,23 @@ fun ApkExportSection(
                 }
         }
 
+        WtaSettingCard {
+            WtaToggleRow(
+                title = Strings.saepPolicyTitle,
+                checked = config.saepEnabled,
+                onCheckedChange = { onConfigChange(config.copy(saepEnabled = it)) }
+            )
+            Text(
+                text = Strings.saepPolicyHint,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(
+                    horizontal = WtaSpacing.RowHorizontal,
+                    vertical = WtaSpacing.ContentGap
+                )
+            )
+        }
+
         if (onOpenPermissionConfig != null) {
             PermissionSummaryCard(
                 permissions = config.runtimePermissions,

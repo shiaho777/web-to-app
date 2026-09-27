@@ -183,6 +183,12 @@
             android:name="com.webtoapp.WTA_APP_MARKER"
             android:value="true" />
 
+        <!-- Inert resource reservation. ApkBuilder removes this entry when SAEP is
+             off, or renames it to the platform key after validating the raw resource. -->
+        <meta-data
+            android:name="com.webtoapp.SAEP_POLICY_TEMPLATE"
+            android:resource="@raw/agent_saep_policy" />
+
         
         <property
             android:name="android.app.property.PAGE_SIZE_COMPATIBILITY"

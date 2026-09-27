@@ -1288,6 +1288,8 @@ data class ApkExportConfig(
     val notificationEnabled: Boolean = false,
     val notificationConfig: NotificationExportConfig = NotificationExportConfig(),
     val loggingEnabled: Boolean = false,
+    /** Optional static policy metadata; false omits metadata rather than declaring deny. */
+    val saepEnabled: Boolean = false,
     /**
      * Override the generated APK's `targetSdkVersion` (manifest `<uses-sdk>`).
      *

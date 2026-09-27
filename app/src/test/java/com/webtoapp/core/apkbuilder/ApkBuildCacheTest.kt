@@ -92,6 +92,45 @@ class ApkBuildCacheTest {
     }
 
     @Test
+    fun `SAEP toggle forces full rebuild both ways while unchanged policy reuses cache`() {
+        val context = RuntimeEnvironment.getApplication()
+        val cache = ApkBuildCache(context)
+        val app = com.webtoapp.data.model.WebApp(id = 98765, name = "SAEP", url = "https://example.com")
+        val config = ApkConfig(meta = MetaBlock(
+            appName = "SAEP", packageName = "org.example.saep", targetUrl = app.url,
+            versionCode = 1, versionName = "1.0", appType = "WEB"
+        ))
+        val template = File(context.cacheDir, "saep-template.apk").apply { writeBytes(byteArrayOf(1, 2)) }
+        val unsigned = File(context.cacheDir, "saep-unsigned.apk").apply { writeBytes(byteArrayOf(3, 4)) }
+        fun plan(enabled: Boolean) = cache.plan(
+            webApp = app.copy(apkExportConfig = com.webtoapp.data.model.ApkExportConfig(saepEnabled = enabled)),
+            packageName = config.packageName, config = config, templateApk = template,
+            encryptionEnabled = false, abiFilters = emptyList(), projectDirs = emptyList(),
+            mediaContentPath = null, splashMediaPath = null, bgmPlaylistPaths = emptyList(),
+            htmlFiles = emptyList(), galleryItems = emptyList(), errorPageMediaPath = null,
+            forceFullRebuild = false
+        )
+        fun save(plan: IncrementalPlan) = cache.saveUnsigned(
+            app, config.packageName, unsigned, plan.identityFingerprint,
+            plan.contentFingerprint, plan.shellTemplateId
+        )
+        cache.clear(app, config.packageName)
+        try {
+            save(plan(false))
+            assertThat(plan(false).mode).isEqualTo(IncrementalBuildMode.REUSE_UNSIGNED)
+            val enabled = plan(true)
+            assertThat(enabled.mode).isEqualTo(IncrementalBuildMode.FULL)
+            assertThat(enabled.reason).isEqualTo("identityChanged")
+            save(enabled)
+            assertThat(plan(true).mode).isEqualTo(IncrementalBuildMode.REUSE_UNSIGNED)
+            assertThat(plan(false).mode).isEqualTo(IncrementalBuildMode.FULL)
+            assertThat(cache.isContentReplaceableEntry("res/a.json")).isFalse()
+        } finally {
+            cache.clear(app, config.packageName)
+        }
+    }
+
+    @Test
     fun `save and load unsigned enables reuse plan`() {
         val context = RuntimeEnvironment.getApplication()
         val cache = ApkBuildCache(context)

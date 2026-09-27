@@ -125,7 +125,8 @@ class ApkBuildCache(private val context: Context) {
             iconPath = webApp.iconPath,
             nativeLibsFingerprint = nativeLibsFingerprint,
             hostVersionCode = hostVersionCode,
-            manifestFingerprint = manifestFingerprint,
+            manifestFingerprint = manifestFingerprint.orEmpty() +
+                "|saep=${webApp.apkExportConfig?.saepEnabled == true}:${SaepPolicy.VERSION}",
             perfFingerprint = perfFingerprint,
             signingFingerprint = signingFingerprint
         )

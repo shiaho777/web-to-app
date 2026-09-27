@@ -1173,6 +1173,8 @@ object Strings {
     val versionCode: String get() = StringsB.versionCode
     val apkVersionCodePlaceholder: String get() = StringsB.apkVersionCodePlaceholder
     val autoVersionBump: String get() = StringsB.autoVersionBump
+    val saepPolicyTitle: String get() = StringsB.saepPolicyTitle
+    val saepPolicyHint: String get() = StringsB.saepPolicyHint
     val autoVersionBumpHint: String get() = StringsB.autoVersionBumpHint
     val updateApkGuide: String get() = StringsB.updateApkGuide
     val selectTheme: String get() = StringsB.selectTheme

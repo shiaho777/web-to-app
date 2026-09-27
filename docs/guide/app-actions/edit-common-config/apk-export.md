@@ -20,6 +20,12 @@ Packaging and identity settings for the generated APK. This is the export drawer
 
 - Permissions are derived from the enabled features (feature-driven), and unused permissions are pruned from the template manifest at build time.
 
+## Static SAEP policy
+
+The optional **Static SAEP policy** switch is saved per app (`ApkExportConfig.saepEnabled`) in the export drawer and Build APK screen. It defaults to **OFF**, including for older saved configurations: OFF omits SAEP metadata, rather than declaring a deny policy. ON declares **no additional restrictions** through static policy metadata. It does not grant Android permissions, bypass authorization, or guarantee that an agent supports SAEP.
+
+This applies only to generated APKs, not the builder host. Export writes `com.obric.agentrobots.POLICY_JSON` as an Android resource reference, binds the policy to the final package name, and keeps it readable even with resource encryption enabled. Changing the switch forces a full rebuild. A newly built shell template is required; enabling SAEP with an older template fails explicitly instead of emitting a broken declaration. System/agent support and successful automation must still be verified on a compatible device. See the [official SAEP demo](https://github.com/bytedance/SAEP-demo).
+
 ## Network trust
 
 - **Client Certificate Authentication (mTLS)** — when a server requests a client certificate, the generated app opens Android's system certificate picker and uses the selected device-installed identity. This is separate from trusting a server CA. The selected identity is reused for later connections to the same server.

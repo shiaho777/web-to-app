@@ -13,6 +13,13 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.Implementation
+import org.robolectric.annotation.Implements
+import org.robolectric.annotation.RealObject
+import org.robolectric.shadows.ShadowApplicationPackageManager
+import org.robolectric.util.reflector.Direct
+import org.robolectric.util.reflector.ForType
+import org.robolectric.util.reflector.Reflector.reflector
 
 /**
  * End-to-end smoke test for the whole export pipeline: template → AXML/ARSC patch →
@@ -25,8 +32,33 @@ import org.robolectric.annotation.Config
  * itself instead of failing.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34])
+@Config(sdk = [34], shadows = [DemoApkExportTest.ArchivePackageManager::class])
 class DemoApkExportTest {
+
+    // Robolectric's package-name shortcut returns host Resources for the shell
+    // archive (both are com.webtoapp). Use Android's real archive-path handling
+    // for external APKs, retaining the usual shadow for installed applications.
+    @Implements(className = "android.app.ApplicationPackageManager")
+    class ArchivePackageManager : ShadowApplicationPackageManager() {
+        @RealObject lateinit var realPackageManager: android.content.pm.PackageManager
+
+        @Implementation
+        override fun getResourcesForApplication(app: android.content.pm.ApplicationInfo): android.content.res.Resources {
+            val host = ApplicationProvider.getApplicationContext<android.content.Context>()
+            val source = app.sourceDir
+            if (source != null && source != host.applicationInfo.sourceDir && File(source).isFile) {
+                return reflector(DirectPackageManager::class.java, realPackageManager)
+                    .getResourcesForApplication(app)
+            }
+            return super.getResourcesForApplication(app)
+        }
+    }
+
+    @ForType(className = "android.app.ApplicationPackageManager")
+    interface DirectPackageManager {
+        @Direct
+        fun getResourcesForApplication(app: android.content.pm.ApplicationInfo): android.content.res.Resources
+    }
 
     private fun templateAssetPresent(context: android.content.Context): Boolean = runCatching {
         context.assets.open("template/webview_shell.apk").use { it.read() >= 0 }
@@ -82,6 +114,56 @@ class DemoApkExportTest {
         }
 
         assertThat(destApk.exists()).isTrue()
+    }
+
+    @Test
+    @Suppress("DEPRECATION")
+    fun `SAEP export resolves real plaintext raw resource including encrypted builds`() = runBlocking {
+        val context = ApplicationProvider.getApplicationContext<android.content.Context>()
+        assumeTrue("shell template missing - run ':app:syncShellTemplateApk' first", templateAssetPresent(context))
+        for ((enabled, encrypted) in listOf(false to false, true to false, true to true)) {
+            val packageName = "org.example.saepexport.e${enabled}.c${encrypted}"
+            val app = WebApp(
+                // Distinct archive paths prevent Android's ApkAssets path cache
+                // from returning the previous case after its APK is overwritten.
+                name = "SAEP export test $enabled $encrypted", url = "https://example.com",
+                apkExportConfig = ApkExportConfig(
+                    customPackageName = packageName, saepEnabled = enabled,
+                    encryptionConfig = com.webtoapp.data.model.ApkEncryptionConfig(
+                        enabled = encrypted, keyMode = "EMBEDDED"
+                    )
+                )
+            )
+            val result = ApkBuilder(context).buildApk(app, forceFullRebuild = true) { _, _ -> }
+            assertThat(result).isInstanceOf(BuildResult.Success::class.java)
+            val apk = (result as BuildResult.Success).apkFile
+            val pm = context.packageManager
+            val info = checkNotNull(pm.getPackageArchiveInfo(apk.absolutePath,
+                android.content.pm.PackageManager.GET_META_DATA or android.content.pm.PackageManager.GET_ACTIVITIES))
+            assertThat(info.packageName).isEqualTo(packageName)
+            val appInfo = android.content.pm.ApplicationInfo(checkNotNull(info.applicationInfo)).apply {
+                sourceDir = apk.absolutePath
+                publicSourceDir = apk.absolutePath
+            }
+            assertThat(appInfo.metaData?.containsKey(SaepPolicy.TEMPLATE_METADATA) == true).isFalse()
+            val id = appInfo.metaData?.getInt(SaepPolicy.POLICY_METADATA, 0) ?: 0
+            if (!enabled) {
+                assertThat(id).isEqualTo(0)
+            } else {
+                assertThat(id).isNotEqualTo(0)
+                val resources = pm.getResourcesForApplication(appInfo)
+                assertThat(resources.getResourceTypeName(id)).isEqualTo("raw")
+                val bytes = resources.openRawResource(id).use { it.readBytes() }
+                assertThat(bytes.size).isAtMost(SaepPolicy.MAX_BYTES)
+                val policy = com.google.gson.JsonParser.parseString(bytes.toString(Charsets.UTF_8)).asJsonObject
+                assertThat(policy.get("package").asString).isEqualTo(info.packageName)
+                val activities = policy.getAsJsonObject("scope").getAsJsonObject("activities").keySet()
+                assertThat(info.activities.orEmpty().map { it.name }).containsAtLeastElementsIn(activities)
+                assertThat(activities).containsExactly(SaepPolicy.SHELL_ACTIVITY)
+                val outDir = File(System.getProperty("wta.demoOutDir") ?: "build/outputs/demo").apply { mkdirs() }
+                apk.copyTo(File(outDir, "WebToApp-SAEP-encrypted-$encrypted.apk"), overwrite = true)
+            }
+        }
     }
 
     @Test

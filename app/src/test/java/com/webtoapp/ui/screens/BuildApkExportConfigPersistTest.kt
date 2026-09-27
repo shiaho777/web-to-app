@@ -122,4 +122,20 @@ class BuildApkExportConfigPersistTest {
 
         assertThat(dao.getCount()).isEqualTo(0)
     }
+
+    @Test
+    fun `SAEP selection survives reopening and can be disabled without affecting another app`() = runTest {
+        val config = ApkExportConfig(customVersionCode = 7)
+        val first = dao.insert(WebApp(name = "A", url = "https://a.com", apkExportConfig = config))
+        val second = dao.insert(WebApp(name = "B", url = "https://b.com", apkExportConfig = config))
+
+        persistBuildScreenExportConfig(repository, first, config.copy(saepEnabled = true))
+        val reopened = dao.getWebAppById(first)!!.apkExportConfig!!
+        assertThat(reopened.saepEnabled).isTrue()
+        assertThat(reopened.customVersionCode).isEqualTo(7)
+        assertThat(dao.getWebAppById(second)!!.apkExportConfig!!.saepEnabled).isFalse()
+
+        persistBuildScreenExportConfig(repository, first, reopened.copy(saepEnabled = false))
+        assertThat(dao.getWebAppById(first)!!.apkExportConfig).isEqualTo(config)
+    }
 }

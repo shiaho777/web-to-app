@@ -1012,6 +1012,7 @@ class ApkBuilder(private val context: Context) {
                             announcementIconPath = announcementIconPath,
                             perfConfig = perfConfig,
                             mode = ModifyApkMode.CONTENT_OVERLAY,
+                            saepEnabled = webApp.apkExportConfig?.saepEnabled == true,
                             signingCertHash = signingCertHash,
                             disabledFeatureStacks = disabledFeatureStacks
                         ) { progress, stageMessage ->
@@ -1055,6 +1056,7 @@ class ApkBuilder(private val context: Context) {
                             announcementIconPath = announcementIconPath,
                             perfConfig = perfConfig,
                             mode = ModifyApkMode.FULL,
+                            saepEnabled = webApp.apkExportConfig?.saepEnabled == true,
                             signingCertHash = signingCertHash,
                             disabledFeatureStacks = disabledFeatureStacks
                         ) { progress, stageMessage ->
@@ -1101,6 +1103,7 @@ class ApkBuilder(private val context: Context) {
                         announcementIconPath = announcementIconPath,
                         perfConfig = perfConfig,
                         mode = ModifyApkMode.FULL,
+                        saepEnabled = webApp.apkExportConfig?.saepEnabled == true,
                         signingCertHash = signingCertHash,
                         disabledFeatureStacks = disabledFeatureStacks
                     ) { progress, stageMessage ->
@@ -1450,6 +1453,7 @@ class ApkBuilder(private val context: Context) {
         announcementIconPath: String? = null,
         perfConfig: com.webtoapp.core.linux.PerformanceOptimizer.OptimizeConfig? = null,
         mode: ModifyApkMode = ModifyApkMode.FULL,
+        saepEnabled: Boolean = false,
         signingCertHash: () -> ByteArray = { signer.getCertificateSignatureHash() },
         onProgress: (Int, String) -> Unit
     ) {
@@ -1492,6 +1496,15 @@ class ApkBuilder(private val context: Context) {
         val assetEncryptor = if (encryptionConfig.enabled && encryptionKey != null) {
             AssetEncryptor(encryptionKey)
         } else null
+
+        // Policy changes are structural cache identities: overlays preserve the same
+        // already-written policy. Encrypted exports always take the FULL path.
+        val saepResource = if (mode == ModifyApkMode.FULL && saepEnabled) {
+            SaepPolicy.resolveTemplate(context, sourceApk)
+        } else null
+        val saepBytes = saepResource?.let {
+            SaepPolicy.generate(config.packageName, it.activity, System.currentTimeMillis())
+        }
 
         ZipFile(sourceApk).use { zipIn ->
             ZipOutputStream(FileOutputStream(outputApk)).use { zipOut ->
@@ -1574,9 +1587,14 @@ class ApkBuilder(private val context: Context) {
 
                         entry.name == "AndroidManifest.xml" -> {
                             val originalData = zipIn.getInputStream(entry).readBytes()
+                            // Resolve the template marker before package rewriting: its
+                            // com.webtoapp prefix is otherwise renamed with the app ID.
+                            val policyAdjustedData = axmlRebuilder.rewriteSaepPolicyMetadata(
+                                originalData, saepResource?.id
+                            )
 
                             val modifiedData = axmlRebuilder.expandAndModifyFull(
-                                originalData,
+                                policyAdjustedData,
                                 originalPackageName,
                                 config.packageName,
                                 config.versionCode,
@@ -1590,6 +1608,12 @@ class ApkBuilder(private val context: Context) {
                                 openWithEnabled = config.openWithEnabled
                             )
                             writeEntryDeflated(zipOut, entry.name, modifiedData)
+                        }
+
+                        // Replace the resolved raw resource before any generic optimizer;
+                        // the platform must read this policy without the app's decryption key.
+                        saepResource != null && entry.name == saepResource.path -> {
+                            writeEntryDeflated(zipOut, entry.name, checkNotNull(saepBytes))
                         }
 
                         entry.name == "resources.arsc" -> {

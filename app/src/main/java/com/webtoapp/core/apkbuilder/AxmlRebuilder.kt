@@ -1326,6 +1326,83 @@ class AxmlRebuilder {
         }
     }
 
+    /**
+     * Activates the template's real raw resource reference, or removes the opt-in.
+     * Never manufacture an ID or substitute an android:value string for android:resource.
+     */
+    internal fun rewriteSaepPolicyMetadata(axmlData: ByteArray, resourceId: Int?): ByteArray {
+        val parsed = checkNotNull(parseAxml(axmlData)) { "SAEP: invalid AndroidManifest.xml" }
+        val strings = parsed.stringPool.strings
+        val resourceMap = parsed.resourceMap ?: intArrayOf()
+        val androidNs = strings.indexOf("http://schemas.android.com/apk/res/android")
+        val matches = mutableListOf<Pair<Int, Int>>() // chunk index, android:name offset
+        var depth = 0
+        var inApplication = false
+
+        parsed.chunks.forEachIndexed { index, chunk ->
+            if (chunk.type == CHUNK_START_ELEMENT) {
+                check(chunk.data.size >= 36) { "SAEP: malformed manifest element" }
+                val buffer = ByteBuffer.wrap(chunk.data).order(ByteOrder.LITTLE_ENDIAN)
+                val element = strings.getOrNull(buffer.getInt(20))
+                if (depth == 1 && element == "application") inApplication = true
+                if (inApplication && depth == 2 && element == "meta-data") {
+                    val start = 16 + (buffer.getShort(24).toInt() and 0xFFFF)
+                    val size = buffer.getShort(26).toInt() and 0xFFFF
+                    val count = buffer.getShort(28).toInt() and 0xFFFF
+                    check(start >= 36 && size >= 20 &&
+                        start.toLong() + size.toLong() * count <= chunk.data.size
+                    ) { "SAEP: malformed metadata attributes" }
+                    fun attribute(id: Int): Int? = (0 until count)
+                        .map { start + it * size }
+                        .firstOrNull { offset ->
+                            androidNs >= 0 && buffer.getInt(offset) == androidNs &&
+                                resourceMap.getOrNull(buffer.getInt(offset + 4)) == id
+                        }
+                    val nameOffset = attribute(ATTR_NAME)
+                    val name = if (nameOffset != null &&
+                        buffer.get(nameOffset + 15).toInt() and 0xFF == 0x03
+                    ) strings.getOrNull(buffer.getInt(nameOffset + 16)) else null
+                    if (name == SaepPolicy.TEMPLATE_METADATA || name == SaepPolicy.POLICY_METADATA) {
+                        val end = parsed.chunks.getOrNull(index + 1)
+                        check(end != null && end.type == CHUNK_END_ELEMENT && end.data.size >= 24 &&
+                            ByteBuffer.wrap(end.data).order(ByteOrder.LITTLE_ENDIAN).getInt(20) == buffer.getInt(20)
+                        ) { "SAEP: policy metadata must have no child elements" }
+                        if (resourceId != null) {
+                            val refOffset = attribute(android.R.attr.resource)
+                            check(resourceId != 0 && refOffset != null &&
+                                buffer.get(refOffset + 15).toInt() and 0xFF == 0x01 &&
+                                buffer.getInt(refOffset + 16) == resourceId
+                            ) { "SAEP: policy metadata must contain the expected android:resource reference" }
+                            check(attribute(android.R.attr.value) == null) { "SAEP: ambiguous policy metadata" }
+                        }
+                        matches += index to checkNotNull(nameOffset)
+                    }
+                }
+                depth++
+            } else if (chunk.type == CHUNK_END_ELEMENT) {
+                if (depth == 2 && inApplication) inApplication = false
+                depth--
+            }
+        }
+
+        if (resourceId == null) {
+            if (matches.isEmpty()) return axmlData
+            matches.asReversed().forEach { (index, _) ->
+                parsed.chunks.removeAt(index + 1)
+                parsed.chunks.removeAt(index)
+            }
+        } else {
+            check(matches.size == 1) { "SAEP: expected exactly one policy resource marker; rebuild the shell template" }
+            val (index, nameOffset) = matches.single()
+            val nameIndex = getOrAddString(parsed.stringPool, SaepPolicy.POLICY_METADATA)
+            ByteBuffer.wrap(parsed.chunks[index].data).order(ByteOrder.LITTLE_ENDIAN).apply {
+                putInt(nameOffset + 8, nameIndex)
+                putInt(nameOffset + 16, nameIndex)
+            }
+        }
+        return rebuildAxml(parsed)
+    }
+
     private fun modifyVersionInfo(parsed: ParsedAxml, versionCode: Int, versionName: String) {
         val resourceMap = parsed.resourceMap ?: return
 

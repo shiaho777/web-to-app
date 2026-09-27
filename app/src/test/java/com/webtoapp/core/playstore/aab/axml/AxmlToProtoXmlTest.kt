@@ -159,7 +159,7 @@ class AxmlToProtoXmlTest {
     }
 }
 
-private class AxmlBuilder {
+internal class AxmlBuilder {
     private val chunks = mutableListOf<ByteArray>()
     private var stringPoolBytes: ByteArray? = null
     private var resourceMapBytes: ByteArray? = null

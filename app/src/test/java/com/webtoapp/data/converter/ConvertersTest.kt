@@ -135,6 +135,25 @@ class ConvertersTest {
     }
 
     @Test
+    fun `static SAEP defaults off and legacy json remains compatible`() {
+        assertThat(ApkExportConfig().saepEnabled).isFalse()
+        val decoded = converters.toApkExportConfig("""{"engineType":"GECKOVIEW"}""")
+        assertThat(decoded?.saepEnabled).isFalse()
+        assertThat(decoded?.engineType).isEqualTo("GECKOVIEW")
+        assertThat(converters.toApkExportConfig("{}")?.saepEnabled).isFalse()
+    }
+
+    @Test
+    fun `static SAEP on and off survive persisted json without changing permissions`() {
+        for (enabled in listOf(true, false)) {
+            val config = ApkExportConfig(saepEnabled = enabled)
+            val decoded = converters.toApkExportConfig(converters.fromApkExportConfig(config))
+            assertThat(decoded?.saepEnabled).isEqualTo(enabled)
+            assertThat(decoded?.runtimePermissions).isEqualTo(ApkExportConfig().runtimePermissions)
+        }
+    }
+
+    @Test
     fun `legacy export config json without forceFullRebuild decodes as false`() {
         val decoded = converters.toApkExportConfig("""{"engineType":"GECKOVIEW"}""")
 

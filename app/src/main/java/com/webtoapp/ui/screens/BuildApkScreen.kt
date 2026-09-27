@@ -203,6 +203,9 @@ private fun BuildApkContent(
     var perAppSigningEnabled by remember(webApp.id) {
         mutableStateOf(webApp.apkExportConfig?.perAppSigningEnabled ?: false)
     }
+    var saepEnabled by remember(webApp.id) {
+        mutableStateOf(webApp.apkExportConfig?.saepEnabled ?: false)
+    }
     // Resolve the package exactly the way the builder does. That rule used to
     // live inside ApkBuilder, so the screen could not reproduce a derived
     // package name, never found the installed app, and never bumped the version.
@@ -247,6 +250,7 @@ private fun BuildApkContent(
             featureStack = featureStackConfig,
             engineType = selectedEngineType,
             perAppSigningEnabled = perAppSigningEnabled,
+            saepEnabled = saepEnabled,
             forceFullRebuild = forceFullRebuild
         )
     }
@@ -665,6 +669,13 @@ private fun BuildApkContent(
                             subtitle = Strings.perAppSigningHint,
                             checked = perAppSigningEnabled,
                             onCheckedChange = { perAppSigningEnabled = it }
+                        )
+                        WtaSectionDivider()
+                        WtaToggleRow(
+                            title = Strings.saepPolicyTitle,
+                            subtitle = Strings.saepPolicyHint,
+                            checked = saepEnabled,
+                            onCheckedChange = { saepEnabled = it }
                         )
                         WtaSectionDivider()
                         Row(
