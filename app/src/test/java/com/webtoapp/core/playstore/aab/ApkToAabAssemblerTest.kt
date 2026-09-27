@@ -8,7 +8,9 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import java.io.File
+import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
+import java.util.zip.ZipOutputStream
 
 class ApkToAabAssemblerTest {
 
@@ -23,8 +25,25 @@ class ApkToAabAssemblerTest {
             template.exists()
         )
 
+        // AGP may omit its plain-text tools:keep marker in a rebuilt template.
+        // Supply one explicitly so issue #272 is covered regardless of shrinker output.
+        val keepMarker = "res/test_tools_keep.xml"
+        val input = temp.newFile("template-with-keep-marker.apk")
+        ZipFile(template).use { source ->
+            ZipOutputStream(input.outputStream()).use { target ->
+                source.entries().asSequence().forEach { entry ->
+                    target.putNextEntry(ZipEntry(entry.name))
+                    source.getInputStream(entry).use { it.copyTo(target) }
+                    target.closeEntry()
+                }
+                target.putNextEntry(ZipEntry(keepMarker))
+                target.write("""<resources xmlns:tools="http://schemas.android.com/tools" tools:keep="@layout/*"/>""".toByteArray())
+                target.closeEntry()
+            }
+        }
+
         val output = temp.newFile("out.aab")
-        val stats = ApkToAabAssembler().assemble(template, output)
+        val stats = ApkToAabAssembler().assemble(input, output)
 
         assertThat(stats.outputBytes).isGreaterThan(1_000_000L)
         assertThat(stats.manifestConverted).isEqualTo(1)
@@ -32,9 +51,8 @@ class ApkToAabAssemblerTest {
         assertThat(stats.resourceXmlConverted).isGreaterThan(50)
         assertThat(stats.dexCount).isAtLeast(1)
 
-        // Regression for issue #272: the template ships a plain-text res/*.xml (the AGP
-        // resource-shrinker's tools:keep marker, emitted alongside Firebase). It must be
-        // skipped, not fed to the binary AXML parser.
+        // Regression for issue #272: plain-text resource XML must be skipped,
+        // not fed to the binary AXML parser.
         assertThat(stats.resourceXmlPlainTextSkipped).isAtLeast(1)
         assertThat(stats.nativeLibCount).isGreaterThan(0)
         assertThat(stats.abis).isNotEmpty()
@@ -42,9 +60,7 @@ class ApkToAabAssemblerTest {
         val entryNames = ZipFile(output).use { zip ->
             zip.entries().toList().map { it.name }.toSet()
         }
-        // The plain-text tools:keep file (res/qF.xml in the template) must NOT appear as a
-        // base/res/ proto entry in the AAB.
-        assertThat(entryNames).doesNotContain("base/res/qF.xml")
+        assertThat(entryNames).doesNotContain("base/$keepMarker")
         assertThat(entryNames).contains("BundleConfig.pb")
         assertThat(entryNames).contains("base/manifest/AndroidManifest.xml")
         assertThat(entryNames).contains("base/resources.pb")
