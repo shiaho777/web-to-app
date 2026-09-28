@@ -138,7 +138,10 @@ fun BoxScope.ShellScaffoldLayout(
         contentWindowInsets = if (hideToolbar && !showToolbar) {
             WindowInsets(0, 0, 0, 0)
         } else {
-            ScaffoldDefaults.contentWindowInsets
+            // #1075: the window-level IME padding already lifts the layout above
+            // the keyboard, so the navigation-bar inset must not stack on top of
+            // it — the double inset rendered as a black band above the IME.
+            ScaffoldDefaults.contentWindowInsets.exclude(WindowInsets.ime)
         },
         modifier = Modifier,
         topBar = {

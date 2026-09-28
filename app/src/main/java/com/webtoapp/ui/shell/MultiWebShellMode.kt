@@ -267,9 +267,12 @@ private fun TabsMode(
                     color = MaterialTheme.colorScheme.surface,
                     // contentWindowInsets(0) leaves the bar under the gesture
                     // nav strip — lift it so the last row stays tappable.
+                    // #1075: but not while the IME is open — the window-level
+                    // IME padding already sits the bar above the keyboard, and
+                    // a second nav-bar inset would leave a dead band in between.
                     modifier = Modifier
                         .fillMaxWidth()
-                        .windowInsetsPadding(WindowInsets.navigationBars)
+                        .windowInsetsPadding(WindowInsets.navigationBars.exclude(WindowInsets.ime))
                 ) {
                     // 站点少时每个 tab 平分整条底栏（对称布局，回归 #597 报告的行为）；
                     // 平分后不足 72dp（站点多）则保持 #283 的最小宽度 + 横向滚动。
@@ -953,7 +956,12 @@ private fun DrawerMode(
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
-            ModalDrawerSheet(modifier = Modifier.width(300.dp)) {
+            // #1075: the IME padding at window level already lifts the sheet
+            // above the keyboard — keep the nav inset from double-stacking.
+            ModalDrawerSheet(
+                modifier = Modifier.width(300.dp),
+                windowInsets = DrawerDefaults.windowInsets.exclude(WindowInsets.ime)
+            ) {
                 Column(
                     modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.primaryContainer).padding(24.dp)
                 ) {

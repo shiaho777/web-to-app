@@ -759,7 +759,9 @@ fun ShellGalleryVideoPlayer(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 8.dp)
-                        .navigationBarsPadding()
+                        // #1075: nav-bar lift only — the window-level IME padding
+                        // already raises overlays above the keyboard.
+                        .windowInsetsPadding(WindowInsets.navigationBars.exclude(WindowInsets.ime))
                 ) {
 
                     Row(
@@ -870,7 +872,9 @@ private fun ShellThumbnailBar(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(vertical = 8.dp)
-                .navigationBarsPadding(),
+                // #1075: nav-bar lift only — the window-level IME padding
+                // already raises overlays above the keyboard.
+                .windowInsetsPadding(WindowInsets.navigationBars.exclude(WindowInsets.ime)),
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             contentPadding = PaddingValues(horizontal = 16.dp)
         ) {

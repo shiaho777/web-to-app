@@ -3218,7 +3218,10 @@ fun WebViewScreen(
     Box(modifier = Modifier.fillMaxSize()) {
     Scaffold(
 
-        contentWindowInsets = if (hideToolbar && !showToolbarInPreview) WindowInsets(0) else if (hideToolbar && showToolbarInPreview) WindowInsets(0) else ScaffoldDefaults.contentWindowInsets,
+        // #1075: exclude the IME-covered region — WindowHelper's manual IME
+        // padding already lifts the layout, and the nav-bar inset must not
+        // double-stack above the keyboard (same contract as ShellScaffoldLayout).
+        contentWindowInsets = if (hideToolbar && !showToolbarInPreview) WindowInsets(0) else if (hideToolbar && showToolbarInPreview) WindowInsets(0) else ScaffoldDefaults.contentWindowInsets.exclude(WindowInsets.ime),
         modifier = if (hideToolbar && !showToolbarInPreview) Modifier.fillMaxSize() else if (hideToolbar) Modifier.fillMaxSize() else Modifier,
         topBar = {
             if (shouldShowTopBar) {
