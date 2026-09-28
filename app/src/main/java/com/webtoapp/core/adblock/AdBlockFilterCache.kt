@@ -88,6 +88,22 @@ object AdBlockFilterCache {
         }
     }
 
+    /**
+     * Evict the 24h URL cache entry for a source. Must run on source removal
+     * (issue #1076): without it, delete-and-re-add of the same URL silently
+     * restored the stale cached copy within the TTL window.
+     */
+    suspend fun removeUrlContent(context: Context, url: String) = withContext(Dispatchers.IO) {
+        try {
+            val urlHash = md5(url)
+            val cacheDir = File(context.filesDir, "$CACHE_DIR/$URL_CACHE_DIR")
+            File(cacheDir, "$urlHash.txt").delete()
+            File(cacheDir, "$urlHash.meta").delete()
+        } catch (e: Exception) {
+            AppLogger.e(TAG, "Failed to remove URL cache", e)
+        }
+    }
+
     suspend fun saveCompiledState(
         context: Context,
         exactHosts: Set<String>,

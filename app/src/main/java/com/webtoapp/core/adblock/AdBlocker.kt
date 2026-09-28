@@ -1244,6 +1244,12 @@ class AdBlocker {
             sourceRuleCounts.remove(sourceKey)
             customSourceNames.remove(sourceKey)
             AdBlockFilterCache.removeSourceContent(context, sourceKey)
+            if (sourceKey.startsWith("http://") || sourceKey.startsWith("https://")) {
+                // Issue #1076: the 24h URL cache outlives the source registry —
+                // evict it so a re-added link downloads fresh instead of
+                // restoring the deleted snapshot.
+                AdBlockFilterCache.removeUrlContent(context, sourceKey)
+            }
             rebuildHostsFromSourceContents(context)
             saveSourcesRegistry(context)
             invalidateCache()
