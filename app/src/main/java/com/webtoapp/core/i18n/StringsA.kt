@@ -8759,6 +8759,32 @@ object StringsA {
         AppLanguage.KOREAN -> "Android에서 가장 기능이 풍부한 Web-to-APK 유틸리티 앱."
     }
 
+    val showDescriptions: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "显示说明文字"
+        AppLanguage.ENGLISH -> "Show descriptions"
+        AppLanguage.ARABIC -> "إظهار الأوصاف"
+        AppLanguage.PORTUGUESE -> "Mostrar descrições"
+        AppLanguage.SPANISH -> "Mostrar descripciones"
+        AppLanguage.FRENCH -> "Afficher les descriptions"
+        AppLanguage.GERMAN -> "Beschreibungen anzeigen"
+        AppLanguage.RUSSIAN -> "Показывать описания"
+        AppLanguage.JAPANESE -> "説明文を表示"
+        AppLanguage.KOREAN -> "설명 텍스트 표시"
+    }
+
+    val showDescriptionsHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "在功能标题下方显示辅助说明小字"
+        AppLanguage.ENGLISH -> "Show helper text under feature titles"
+        AppLanguage.ARABIC -> "إظهار النص التوضيحي أسفل عناوين الميزات"
+        AppLanguage.PORTUGUESE -> "Mostrar texto auxiliar sob os títulos"
+        AppLanguage.SPANISH -> "Mostrar texto auxiliar bajo los títulos"
+        AppLanguage.FRENCH -> "Afficher le texte d'aide sous les titres"
+        AppLanguage.GERMAN -> "Hilfetext unter Funktionstiteln anzeigen"
+        AppLanguage.RUSSIAN -> "Показывать подсказки под заголовками"
+        AppLanguage.JAPANESE -> "機能タイトルの下に補足説明を表示"
+        AppLanguage.KOREAN -> "기능 제목 아래에 보조 설명 표시"
+    }
+
     val updateCheckTitle: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "检查更新"
         AppLanguage.ENGLISH -> "Check for Updates"

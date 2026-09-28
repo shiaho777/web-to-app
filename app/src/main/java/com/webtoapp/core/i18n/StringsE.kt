@@ -5293,30 +5293,6 @@ object StringsE {
         AppLanguage.KOREAN -> "맞춤 설정 적용"
     }
 
-    val proxySectionTitle: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "代理配置"
-        AppLanguage.ENGLISH -> "Proxy Configuration"
-        AppLanguage.ARABIC -> "إعدادات الوكيل"
-        AppLanguage.PORTUGUESE -> "Configuração de Proxy"
-        AppLanguage.SPANISH -> "Configuración de Proxy"
-        AppLanguage.FRENCH -> "Configuration du Proxy"
-        AppLanguage.GERMAN -> "Proxy-Konfiguration"
-        AppLanguage.RUSSIAN -> "Конфигурация прокси"
-        AppLanguage.JAPANESE -> "プロキシ設定"
-        AppLanguage.KOREAN -> "프록시 설정"
-    }
-    val proxySectionSubtitle: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "支持 PAC 自动配置脚本 / 固定代理服务器"
-        AppLanguage.ENGLISH -> "PAC auto-config script / Static proxy server"
-        AppLanguage.ARABIC -> "دعم سكربت التكوين التلقائي PAC / خادم وكيل ثابت"
-        AppLanguage.PORTUGUESE -> "Script de autoconfiguração PAC / Servidor proxy estático"
-        AppLanguage.SPANISH -> "Script de autoconfiguración PAC / Servidor proxy estático"
-        AppLanguage.FRENCH -> "Script d'auto-configuration PAC / Serveur proxy statique"
-        AppLanguage.GERMAN -> "PAC-Auto-Konfigurationsskript / Statischer Proxy-Server"
-        AppLanguage.RUSSIAN -> "Скрипт автонастройки PAC / Статический прокси-сервер"
-        AppLanguage.JAPANESE -> "PAC 自動設定スクリプト / 静的プロキシサーバー"
-        AppLanguage.KOREAN -> "PAC 자동 설정 스크립트 / 고정 프록시 서버"
-    }
     val tlsFingerprintTitle: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "TLS 指纹伪装"
         AppLanguage.ENGLISH -> "TLS Fingerprint Spoofing"
@@ -5420,18 +5396,6 @@ object StringsE {
         AppLanguage.KOREAN -> "웹 동영상이 전체 화면 재생에 들어가면 상태 표시줄을 자동으로 숨기고 종료 시 복원합니다(기본적으로 켜짐)"
     }
 
-    val tlsFingerprintSubtitle: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "伪装 TLS 握手指纹，绕过 JA3/JA4 检测"
-        AppLanguage.ENGLISH -> "Spoof TLS handshake fingerprint to bypass JA3/JA4 detection"
-        AppLanguage.ARABIC -> "انتحال بصمة مصافحة TLS لتجاوز كشف JA3/JA4"
-        AppLanguage.PORTUGUESE -> "Falsificar a impressão digital do handshake TLS para contornar a detecção JA3/JA4"
-        AppLanguage.SPANISH -> "Falsificar la huella del handshake TLS para evadir la detección JA3/JA4"
-        AppLanguage.FRENCH -> "Usurper l'empreinte de la poignée de main TLS pour contourner la détection JA3/JA4"
-        AppLanguage.GERMAN -> "TLS-Handshake-Fingerabdruck fälschen, um JA3/JA4-Erkennung zu umgehen"
-        AppLanguage.RUSSIAN -> "Подменить отпечаток рукопожатия TLS для обхода обнаружения JA3/JA4"
-        AppLanguage.JAPANESE -> "TLS ハンドシェイクのフィンガープリントを偽装して JA3/JA4 検出を回避"
-        AppLanguage.KOREAN -> "TLS 핸드셰이크 핑거프린트를 위장하여 JA3/JA4 탐지를 우회"
-    }
     val tlsFingerprintDescription: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "通过本地 MITM 桥终止并重新发起 TLS 握手，模拟目标浏览器的 TLS 指纹。会增加约 50-100ms 连接延迟。"
         AppLanguage.ENGLISH -> "Terminates and re-initiates TLS handshake via a local MITM bridge to simulate the target browser's TLS fingerprint. Adds ~50-100ms connection latency."
@@ -11473,18 +11437,6 @@ object StringsE {
         AppLanguage.JAPANESE -> "Google Play 向けの署名済み AAB をパッケージ化"
         AppLanguage.KOREAN -> "Google Play용 서명된 AAB 패키징"
     }
-    val playStoreSelectApp: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "选择要审核的应用"
-        AppLanguage.ENGLISH -> "Select an app to audit"
-        AppLanguage.ARABIC -> "اختر تطبيقًا للتدقيق"
-        AppLanguage.PORTUGUESE -> "Selecione um app para auditar"
-        AppLanguage.SPANISH -> "Selecciona una app para auditar"
-        AppLanguage.FRENCH -> "Sélectionnez une app à auditer"
-        AppLanguage.GERMAN -> "App zur Prüfung auswählen"
-        AppLanguage.RUSSIAN -> "Выберите приложение для проверки"
-        AppLanguage.JAPANESE -> "監査するアプリを選択"
-        AppLanguage.KOREAN -> "감사할 앱 선택"
-    }
     val playStoreNoAppsHint: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "你还没有创建任何应用。请先在主页创建一个应用。"
         AppLanguage.ENGLISH -> "You haven't created any apps yet. Create one on the home screen first."
@@ -11825,43 +11777,6 @@ object StringsE {
         AppLanguage.KOREAN -> "정보"
     }
 
-    val playStoreSummaryTitle: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "审核结果"
-        AppLanguage.ENGLISH -> "Audit Results"
-        AppLanguage.ARABIC -> "نتائج التدقيق"
-        AppLanguage.PORTUGUESE -> "Resultados da auditoria"
-        AppLanguage.SPANISH -> "Resultados de la auditoría"
-        AppLanguage.FRENCH -> "Résultats de l'audit"
-        AppLanguage.GERMAN -> "Prüfungsergebnisse"
-        AppLanguage.RUSSIAN -> "Результаты проверки"
-        AppLanguage.JAPANESE -> "監査結果"
-        AppLanguage.KOREAN -> "감사 결과"
-    }
-    val playStoreFixHintLabel: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "修复建议"
-        AppLanguage.ENGLISH -> "How to fix"
-        AppLanguage.ARABIC -> "كيفية الإصلاح"
-        AppLanguage.PORTUGUESE -> "Como corrigir"
-        AppLanguage.SPANISH -> "Cómo corregir"
-        AppLanguage.FRENCH -> "Comment corriger"
-        AppLanguage.GERMAN -> "So beheben"
-        AppLanguage.RUSSIAN -> "Как исправить"
-        AppLanguage.JAPANESE -> "修正方法"
-        AppLanguage.KOREAN -> "수정 방법"
-    }
-    val playStorePolicyAreaLabel: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "相关政策"
-        AppLanguage.ENGLISH -> "Policy"
-        AppLanguage.ARABIC -> "السياسة"
-        AppLanguage.PORTUGUESE -> "Política"
-        AppLanguage.SPANISH -> "Política"
-        AppLanguage.FRENCH -> "Politique"
-        AppLanguage.GERMAN -> "Richtlinie"
-        AppLanguage.RUSSIAN -> "Политика"
-        AppLanguage.JAPANESE -> "ポリシー"
-        AppLanguage.KOREAN -> "정책"
-    }
-
     val playStoreAdviceTitle: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "Play 合规建议"
         AppLanguage.ENGLISH -> "Play Policy Advice"
@@ -11898,6 +11813,18 @@ object StringsE {
         AppLanguage.JAPANESE -> "%d 件のアプリ"
         AppLanguage.KOREAN -> "앱 %d개"
     }.let { String.format(it, total) }
+    val playStoreChangeApp: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "更换应用"
+        AppLanguage.ENGLISH -> "Change app"
+        AppLanguage.ARABIC -> "تغيير التطبيق"
+        AppLanguage.PORTUGUESE -> "Trocar app"
+        AppLanguage.SPANISH -> "Cambiar app"
+        AppLanguage.FRENCH -> "Changer d'app"
+        AppLanguage.GERMAN -> "App wechseln"
+        AppLanguage.RUSSIAN -> "Сменить приложение"
+        AppLanguage.JAPANESE -> "アプリを変更"
+        AppLanguage.KOREAN -> "앱 변경"
+    }
     val playStoreNoMatch: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "没有匹配的应用"
         AppLanguage.ENGLISH -> "No matching apps"

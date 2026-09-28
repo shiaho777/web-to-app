@@ -606,29 +606,16 @@ object StringsB {
     }
 
     val sectionWebEngine: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "引擎"
-        AppLanguage.ENGLISH -> "Engine"
-        AppLanguage.ARABIC -> "المحرك"
-        AppLanguage.PORTUGUESE -> "Mecanismo"
-        AppLanguage.SPANISH -> "Motor"
-        AppLanguage.FRENCH -> "Moteur"
-        AppLanguage.GERMAN -> "Web-Engine"
-        AppLanguage.RUSSIAN -> "Движок"
-        AppLanguage.JAPANESE -> "エンジン"
-        AppLanguage.KOREAN -> "엔진"
-    }
-
-    val sectionContentDisplay: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "内容与显示"
-        AppLanguage.ENGLISH -> "Content & Display"
-        AppLanguage.ARABIC -> "المحتوى والعرض"
-        AppLanguage.PORTUGUESE -> "Conteúdo & Exibição"
-        AppLanguage.SPANISH -> "Contenido & Visualización"
-        AppLanguage.FRENCH -> "Contenu & Affichage"
-        AppLanguage.GERMAN -> "Inhalt & Anzeige"
-        AppLanguage.RUSSIAN -> "Содержимое и отображение"
-        AppLanguage.JAPANESE -> "コンテンツと表示"
-        AppLanguage.KOREAN -> "콘텐츠 및 표시"
+        AppLanguage.CHINESE -> "引擎与显示"
+        AppLanguage.ENGLISH -> "Engine & Display"
+        AppLanguage.ARABIC -> "المحرك والعرض"
+        AppLanguage.PORTUGUESE -> "Motor & Exibição"
+        AppLanguage.SPANISH -> "Motor & Visualización"
+        AppLanguage.FRENCH -> "Moteur & Affichage"
+        AppLanguage.GERMAN -> "Engine & Anzeige"
+        AppLanguage.RUSSIAN -> "Движок и отображение"
+        AppLanguage.JAPANESE -> "エンジンと表示"
+        AppLanguage.KOREAN -> "엔진 및 표시"
     }
 
     val sectionNavigation: String get() = when (Strings.lang) {
@@ -645,29 +632,16 @@ object StringsB {
     }
 
     val sectionOfflinePerformance: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "离线与性能"
-        AppLanguage.ENGLISH -> "Offline & Performance"
-        AppLanguage.ARABIC -> "غير متصل والأداء"
-        AppLanguage.PORTUGUESE -> "Offline & Desempenho"
-        AppLanguage.SPANISH -> "Sin Conexión & Rendimiento"
-        AppLanguage.FRENCH -> "Hors Ligne & Performance"
-        AppLanguage.GERMAN -> "Offline & Leistung"
-        AppLanguage.RUSSIAN -> "Офлайн и производительность"
-        AppLanguage.JAPANESE -> "オフラインとパフォーマンス"
-        AppLanguage.KOREAN -> "오프라인 및 성능"
-    }
-
-    val sectionAutoRefresh: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "自动刷新"
-        AppLanguage.ENGLISH -> "Auto Refresh"
-        AppLanguage.ARABIC -> "التحديث التلقائي"
-        AppLanguage.PORTUGUESE -> "Atualização Automática"
-        AppLanguage.SPANISH -> "Actualización Automática"
-        AppLanguage.FRENCH -> "Actualisation Auto"
-        AppLanguage.GERMAN -> "Auto-Aktualisierung"
-        AppLanguage.RUSSIAN -> "Автообновление"
-        AppLanguage.JAPANESE -> "自動更新"
-        AppLanguage.KOREAN -> "자동 새로고침"
+        AppLanguage.CHINESE -> "网络与离线"
+        AppLanguage.ENGLISH -> "Network & Offline"
+        AppLanguage.ARABIC -> "الشبكة وعدم الاتصال"
+        AppLanguage.PORTUGUESE -> "Rede & Offline"
+        AppLanguage.SPANISH -> "Red & Sin Conexión"
+        AppLanguage.FRENCH -> "Réseau & Hors Ligne"
+        AppLanguage.GERMAN -> "Netzwerk & Offline"
+        AppLanguage.RUSSIAN -> "Сеть и офлайн"
+        AppLanguage.JAPANESE -> "ネットワークとオフライン"
+        AppLanguage.KOREAN -> "네트워크 및 오프라인"
     }
 
     val sectionDeveloper: String get() = when (Strings.lang) {
@@ -2773,17 +2747,17 @@ object StringsB {
         AppLanguage.KOREAN -> "사용 가능한 음악이 없습니다"
     }
 
-    val clickToUploadMusic: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "点击上方按钮上传音乐"
-        AppLanguage.ENGLISH -> "Click button above to upload music"
-        AppLanguage.ARABIC -> "انقر على الزر أعلاه لرفع الموسيقى"
-        AppLanguage.PORTUGUESE -> "Clique no botão acima para carregar música"
-        AppLanguage.SPANISH -> "Haga clic en el botón de arriba para subir música"
-        AppLanguage.FRENCH -> "Cliquez sur le bouton ci-dessus pour téléverser de la musique"
-        AppLanguage.GERMAN -> "Auf den Button oben tippen, um Musik hochzuladen"
-        AppLanguage.RUSSIAN -> "Нажмите кнопку выше, чтобы загрузить музыку"
-        AppLanguage.JAPANESE -> "上のボタンをクリックして音楽をアップロード"
-        AppLanguage.KOREAN -> "위 버튼을 클릭하여 음악을 업로드하세요"
+    val bgmEmptyHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "上传本地音频，或在线搜索下载"
+        AppLanguage.ENGLISH -> "Upload local audio, or search online"
+        AppLanguage.ARABIC -> "ارفع ملفًا صوتيًا محليًا أو ابحث عبر الإنترنت"
+        AppLanguage.PORTUGUESE -> "Envie áudio local ou pesquise online"
+        AppLanguage.SPANISH -> "Sube audio local o busca en línea"
+        AppLanguage.FRENCH -> "Téléversez un audio local ou cherchez en ligne"
+        AppLanguage.GERMAN -> "Lokale Audiodatei hochladen oder online suchen"
+        AppLanguage.RUSSIAN -> "Загрузите локальное аудио или найдите онлайн"
+        AppLanguage.JAPANESE -> "ローカル音声をアップロード、またはオンライン検索"
+        AppLanguage.KOREAN -> "로컬 오디오 업로드 또는 온라인 검색"
     }
 
     val noMusicWithTag: String get() = when (Strings.lang) {
@@ -2877,18 +2851,6 @@ object StringsB {
         AppLanguage.KOREAN -> "가사 표시"
     }
 
-    val lyricsTheme: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "字幕主题"
-        AppLanguage.ENGLISH -> "Lyrics Theme"
-        AppLanguage.ARABIC -> "سمة كلمات الأغنية"
-        AppLanguage.PORTUGUESE -> "Tema de Letras"
-        AppLanguage.SPANISH -> "Tema de Letras"
-        AppLanguage.FRENCH -> "Thème des Paroles"
-        AppLanguage.GERMAN -> "Liedtext-Theme"
-        AppLanguage.RUSSIAN -> "Тема текста песни"
-        AppLanguage.JAPANESE -> "歌詞テーマ"
-        AppLanguage.KOREAN -> "가사 테마"
-    }
 
     val allTag: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "全部"
@@ -2942,18 +2904,6 @@ object StringsB {
         AppLanguage.KOREAN -> "가사 미리보기"
     }
 
-    val hasLyrics: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "已有歌词"
-        AppLanguage.ENGLISH -> "Has Lyrics"
-        AppLanguage.ARABIC -> "يحتوي على كلمات"
-        AppLanguage.PORTUGUESE -> "Possui Letras"
-        AppLanguage.SPANISH -> "Tiene Letras"
-        AppLanguage.FRENCH -> "A des Paroles"
-        AppLanguage.GERMAN -> "Hat Liedtexte"
-        AppLanguage.RUSSIAN -> "Есть текст песни"
-        AppLanguage.JAPANESE -> "歌詞あり"
-        AppLanguage.KOREAN -> "가사 있음"
-    }
 
     val aiGenerateLyrics: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "AI生成歌词"

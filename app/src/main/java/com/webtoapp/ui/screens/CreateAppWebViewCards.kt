@@ -45,6 +45,7 @@ import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
 import com.webtoapp.R
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.ui.theme.ifDescriptionsShown
 import com.webtoapp.data.model.*
 import com.webtoapp.ui.components.*
 import com.webtoapp.ui.design.*
@@ -968,30 +969,21 @@ fun BrowserAdvancedConfigCard(
                             WtaSectionDivider()
                             WtaToggleRow(
                                 title = Strings.domStorageSetting,
-                                subtitle = Strings.domStorageSettingHint,
+                                subtitle = Strings.domStorageSettingHint.ifDescriptionsShown(),
                                 checked = config.domStorageEnabled,
                                 onCheckedChange = { onConfigChange(config.copy(domStorageEnabled = it)) }
                             )
                             WtaSectionDivider()
                             WtaToggleRow(
                                 title = Strings.crossOriginIsolationSetting,
-                                subtitle = Strings.crossOriginIsolationSettingHint,
+                                subtitle = Strings.crossOriginIsolationSettingHint.ifDescriptionsShown(),
                                 checked = config.enableCrossOriginIsolation,
                                 onCheckedChange = { onConfigChange(config.copy(enableCrossOriginIsolation = it)) }
                             )
-                        }
-                    }
-
-                    WtaSection(
-                        title = Strings.sectionContentDisplay,
-                        headerStyle = WtaSectionHeaderStyle.Quiet,
-                        collapsible = true,
-                        initiallyExpanded = false
-                    ) {
-                        Column(modifier = Modifier.fillMaxWidth()) {
+                            WtaSectionDivider()
                             WtaToggleRow(
                                 title = Strings.zoomSetting,
-                                subtitle = Strings.zoomSettingHint,
+                                subtitle = Strings.zoomSettingHint.ifDescriptionsShown(),
                                 checked = config.zoomEnabled,
                                 onCheckedChange = { onConfigChange(config.copy(zoomEnabled = it)) }
                             )
@@ -1002,7 +994,7 @@ fun BrowserAdvancedConfigCard(
                             var pageZoomDialogOpen by remember { mutableStateOf(false) }
                             WtaChoiceRow(
                                 title = Strings.pageZoomSettingLabel,
-                                subtitle = Strings.pageZoomSettingHint,
+                                subtitle = Strings.pageZoomSettingHint.ifDescriptionsShown(),
                                 value = "${if (config.pageZoomPercent <= 0) 100 else config.pageZoomPercent}%",
                                 onClick = { pageZoomDialogOpen = true }
                             )
@@ -1022,7 +1014,7 @@ fun BrowserAdvancedConfigCard(
                             WtaSectionDivider()
                             WtaToggleRow(
                                 title = Strings.fullscreenVideoSetting,
-                                subtitle = Strings.fullscreenVideoSettingHint,
+                                subtitle = Strings.fullscreenVideoSettingHint.ifDescriptionsShown(),
                                 checked = config.fullscreenEnabled,
                                 onCheckedChange = { onConfigChange(config.copy(fullscreenEnabled = it)) }
                             )
@@ -1039,7 +1031,7 @@ fun BrowserAdvancedConfigCard(
                         Column(modifier = Modifier.fillMaxWidth()) {
                             WtaToggleRow(
                                 title = Strings.swipeRefreshSetting,
-                                subtitle = Strings.swipeRefreshSettingHint,
+                                subtitle = Strings.swipeRefreshSettingHint.ifDescriptionsShown(),
                                 checked = config.swipeRefreshEnabled,
                                 onCheckedChange = { onConfigChange(config.copy(swipeRefreshEnabled = it)) }
                             )
@@ -1100,21 +1092,21 @@ fun BrowserAdvancedConfigCard(
                             WtaSectionDivider()
                             WtaToggleRow(
                                 title = Strings.externalLinksSetting,
-                                subtitle = Strings.externalLinksSettingHint,
+                                subtitle = Strings.externalLinksSettingHint.ifDescriptionsShown(),
                                 checked = config.openExternalLinks,
                                 onCheckedChange = { onConfigChange(config.copy(openExternalLinks = it)) }
                             )
                             WtaSectionDivider()
                             WtaToggleRow(
                                 title = Strings.popupBlockerSetting,
-                                subtitle = Strings.popupBlockerSettingHint,
+                                subtitle = Strings.popupBlockerSettingHint.ifDescriptionsShown(),
                                 checked = config.popupBlockerEnabled,
                                 onCheckedChange = { onConfigChange(config.copy(popupBlockerEnabled = it)) }
                             )
                             WtaSectionDivider()
                             WtaToggleRow(
                                 title = Strings.showFloatingBackButtonLabel,
-                                subtitle = Strings.showFloatingBackButtonHint,
+                                subtitle = Strings.showFloatingBackButtonHint.ifDescriptionsShown(),
                                 checked = config.showFloatingBackButton,
                                 onCheckedChange = { onConfigChange(config.copy(showFloatingBackButton = it)) }
                             )
@@ -1157,19 +1149,10 @@ fun BrowserAdvancedConfigCard(
                                     showSelectedCheck = false
                                 )
                             }
-                        }
-                    }
-
-                    WtaSection(
-                        title = Strings.sectionAutoRefresh,
-                        headerStyle = WtaSectionHeaderStyle.Quiet,
-                        collapsible = true,
-                        initiallyExpanded = false
-                    ) {
-                        Column(modifier = Modifier.fillMaxWidth()) {
+                            WtaSectionDivider()
                             WtaToggleRow(
                                 title = Strings.autoRefreshSettingLabel,
-                                subtitle = Strings.autoRefreshSettingDesc,
+                                subtitle = Strings.autoRefreshSettingDesc.ifDescriptionsShown(),
                                 checked = config.autoRefreshEnabled,
                                 onCheckedChange = { onConfigChange(config.copy(autoRefreshEnabled = it)) }
                             )
@@ -1207,7 +1190,7 @@ fun BrowserAdvancedConfigCard(
                                     WtaSectionDivider()
                                     WtaToggleRow(
                                         title = Strings.autoRefreshShowCountdownLabel,
-                                        subtitle = Strings.autoRefreshShowCountdownDesc,
+                                        subtitle = Strings.autoRefreshShowCountdownDesc.ifDescriptionsShown(),
                                         checked = config.autoRefreshShowCountdown,
                                         onCheckedChange = { onConfigChange(config.copy(autoRefreshShowCountdown = it)) }
                                     )
@@ -1225,7 +1208,7 @@ fun BrowserAdvancedConfigCard(
                         Column(modifier = Modifier.fillMaxWidth()) {
                             WtaToggleRow(
                                 title = Strings.freshSessionModeTitle,
-                                subtitle = Strings.freshSessionModeDesc,
+                                subtitle = Strings.freshSessionModeDesc.ifDescriptionsShown(),
                                 checked = config.clearBrowsingDataOnLaunch,
                                 onCheckedChange = {
                                     onConfigChange(
@@ -1239,7 +1222,7 @@ fun BrowserAdvancedConfigCard(
                             WtaSectionDivider()
                             WtaToggleRow(
                                 title = Strings.pwaOfflineTitle,
-                                subtitle = Strings.pwaOfflineSubtitle,
+                                subtitle = Strings.pwaOfflineSubtitle.ifDescriptionsShown(),
                                 checked = config.pwaOfflineEnabled,
                                 onCheckedChange = {
                                     onConfigChange(
@@ -1301,7 +1284,7 @@ fun BrowserAdvancedConfigCard(
                             WtaSectionDivider()
                             WtaToggleRow(
                                 title = Strings.staticAssetPackTitle,
-                                subtitle = Strings.staticAssetPackSubtitle,
+                                subtitle = Strings.staticAssetPackSubtitle.ifDescriptionsShown(),
                                 checked = config.staticAssetPackEnabled,
                                 onCheckedChange = { onConfigChange(config.copy(staticAssetPackEnabled = it)) }
                             )
@@ -1353,34 +1336,6 @@ fun BrowserAdvancedConfigCard(
                             config = config.errorPageConfig,
                             onConfigChange = { onConfigChange(config.copy(errorPageConfig = it)) }
                         )
-                    }
-
-                    WtaSection(
-                        title = Strings.sectionDeveloper,
-                        headerStyle = WtaSectionHeaderStyle.Quiet,
-                        collapsible = true,
-                        initiallyExpanded = false
-                    ) {
-                        KeyboardAdjustModeCard(
-                            mode = config.keyboardAdjustMode,
-                            onModeChange = { onConfigChange(config.copy(keyboardAdjustMode = it)) }
-                        )
-
-                        UserScriptsSection(
-                            scripts = config.injectScripts,
-                            onScriptsChange = { onConfigChange(config.copy(injectScripts = it)) },
-                            useCard = false
-                        )
-                    }
-
-                    WtaSection(
-                        title = Strings.proxySectionTitle,
-                        description = Strings.proxySectionSubtitle,
-                        headerStyle = WtaSectionHeaderStyle.Quiet,
-                        collapsible = true,
-                        initiallyExpanded = false
-                    ) {
-
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -1664,19 +1619,10 @@ fun BrowserAdvancedConfigCard(
                                 }
                             }
                         }
-                    }
-
-                    WtaSection(
-                        title = Strings.tlsFingerprintTitle,
-                        description = Strings.tlsFingerprintSubtitle,
-                        headerStyle = WtaSectionHeaderStyle.Quiet,
-                        collapsible = true,
-                        initiallyExpanded = false
-                    ) {
                         Column(modifier = Modifier.fillMaxWidth()) {
                             WtaToggleRow(
                                 title = Strings.tlsFingerprintTitle,
-                                subtitle = Strings.tlsFingerprintDescription,
+                                subtitle = Strings.tlsFingerprintDescription.ifDescriptionsShown(),
                                 icon = Icons.Outlined.Security,
                                 checked = config.tlsFingerprintEnabled,
                                 onCheckedChange = { onConfigChange(config.copy(tlsFingerprintEnabled = it)) }
@@ -1757,7 +1703,7 @@ fun BrowserAdvancedConfigCard(
 
                                     WtaToggleRow(
                                         title = Strings.forceHttp3Title,
-                                        subtitle = Strings.forceHttp3Description,
+                                        subtitle = Strings.forceHttp3Description.ifDescriptionsShown(),
                                         icon = Icons.Outlined.Bolt,
                                         checked = config.forceHttp3,
                                         onCheckedChange = { onConfigChange(config.copy(forceHttp3 = it)) }
@@ -1786,6 +1732,24 @@ fun BrowserAdvancedConfigCard(
                                 }
                             }
                         }
+                    }
+
+                    WtaSection(
+                        title = Strings.sectionDeveloper,
+                        headerStyle = WtaSectionHeaderStyle.Quiet,
+                        collapsible = true,
+                        initiallyExpanded = false
+                    ) {
+                        KeyboardAdjustModeCard(
+                            mode = config.keyboardAdjustMode,
+                            onModeChange = { onConfigChange(config.copy(keyboardAdjustMode = it)) }
+                        )
+
+                        UserScriptsSection(
+                            scripts = config.injectScripts,
+                            onScriptsChange = { onConfigChange(config.copy(injectScripts = it)) },
+                            useCard = false
+                        )
                     }
                 }
             }
@@ -1841,67 +1805,6 @@ fun ApkExportSettingsCard(
     canOverrideTargetSdk: Boolean = false
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(WtaSpacing.SectionGap)) {
-
-        WtaSection(
-            title = Strings.sectionNavigation,
-            headerStyle = WtaSectionHeaderStyle.Quiet,
-            collapsible = true,
-            initiallyExpanded = false
-        ) {
-            Column(modifier = Modifier.fillMaxWidth()) {
-                WtaToggleRow(
-                    title = Strings.deepLinkSetting,
-                    subtitle = Strings.deepLinkSettingHint,
-                    icon = Icons.Outlined.Link,
-                    checked = config.deepLinkEnabled,
-                    onCheckedChange = { onConfigChange(config.copy(deepLinkEnabled = it)) }
-                )
-
-                AnimatedVisibility(
-                    visible = config.deepLinkEnabled,
-                    enter = CardExpandTransition,
-                    exit = CardCollapseTransition
-                ) {
-                    var customHostsText by remember(config.customDeepLinkHosts) {
-                        mutableStateOf(config.customDeepLinkHosts.joinToString("\n"))
-                    }
-                    Column(
-                        modifier = Modifier.padding(
-                            horizontal = WtaSpacing.RowHorizontal,
-                            vertical = WtaSpacing.ContentGap
-                        )
-                    ) {
-                        Text(
-                            text = Strings.deepLinkCustomHostsLabel,
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(bottom = 4.dp)
-                        )
-                        Text(
-                            text = Strings.deepLinkCustomHostsHint,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(bottom = 4.dp)
-                        )
-                        PremiumTextField(
-                            value = customHostsText,
-                            onValueChange = { newText ->
-                                customHostsText = newText
-                                val hosts = newText.split("\n", ",", " ")
-                                    .map { it.trim() }
-                                    .filter { it.isNotBlank() }
-                                onConfigChange(config.copy(customDeepLinkHosts = hosts))
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            placeholder = { Text("api.example.com\ncdn.example.com") },
-                            minLines = 2,
-                            maxLines = 4,
-                            textStyle = MaterialTheme.typography.bodySmall
-                        )
-                    }
-                }
-            }
-        }
 
         ApkExportSection(
             config = config,
@@ -2252,7 +2155,7 @@ fun BrowserToolbarCard(
                 WtaSectionDivider()
                 WtaToggleRow(
                     title = Strings.toolbarShowTitleLabel,
-                    subtitle = Strings.toolbarShowTitleHint,
+                    subtitle = Strings.toolbarShowTitleHint.ifDescriptionsShown(),
                     checked = webViewConfig.toolbarShowTitle,
                     onCheckedChange = {
                         onWebViewConfigChange(webViewConfig.copy(toolbarShowTitle = it))
@@ -2261,7 +2164,7 @@ fun BrowserToolbarCard(
                 WtaSectionDivider()
                 WtaToggleRow(
                     title = Strings.toolbarShowUrlLabel,
-                    subtitle = Strings.toolbarShowUrlHint,
+                    subtitle = Strings.toolbarShowUrlHint.ifDescriptionsShown(),
                     checked = webViewConfig.toolbarShowUrl,
                     onCheckedChange = {
                         onWebViewConfigChange(webViewConfig.copy(toolbarShowUrl = it))
@@ -2346,14 +2249,14 @@ fun FullscreenModeCard(
                 WtaSectionDivider()
                 WtaToggleRow(
                     title = Strings.showStatusBar,
-                    subtitle = Strings.showStatusBarHint,
+                    subtitle = Strings.showStatusBarHint.ifDescriptionsShown(),
                     checked = showStatusBar,
                     onCheckedChange = onShowStatusBarChange
                 )
                 WtaSectionDivider()
                 WtaToggleRow(
                     title = Strings.showNavigationBar,
-                    subtitle = Strings.showNavigationBarHint,
+                    subtitle = Strings.showNavigationBarHint.ifDescriptionsShown(),
                     checked = showNavigationBar,
                     onCheckedChange = onShowNavigationBarChange
                 )
@@ -2361,7 +2264,7 @@ fun FullscreenModeCard(
                 WtaSectionDivider()
                 WtaSliderRow(
                     title = Strings.fullscreenContentPadding,
-                    subtitle = Strings.fullscreenContentPaddingHint,
+                    subtitle = Strings.fullscreenContentPaddingHint.ifDescriptionsShown(),
                     value = webViewConfig.fullscreenContentPaddingDp.toFloat(),
                     onValueChange = {
                         onWebViewConfigChange(
@@ -2556,7 +2459,7 @@ private fun ShareReceiveRows(
         WtaToggleRow(
             icon = Icons.Outlined.Share,
             title = Strings.receiveShare,
-            subtitle = Strings.receiveShareHint,
+            subtitle = Strings.receiveShareHint.ifDescriptionsShown(),
             checked = enabled,
             onCheckedChange = { on ->
                 // The master switch is a convenience over the two filters: turning it on
@@ -2580,7 +2483,7 @@ private fun ShareReceiveRows(
                 WtaSectionDivider()
                 WtaToggleRow(
                     title = Strings.receiveShareImages,
-                    subtitle = Strings.receiveShareImagesHint,
+                    subtitle = Strings.receiveShareImagesHint.ifDescriptionsShown(),
                     checked = receiveImages,
                     onCheckedChange = {
                         onWebViewConfigChange(webViewConfig.copy(receiveShareImages = it))
@@ -2590,7 +2493,7 @@ private fun ShareReceiveRows(
                 WtaSectionDivider()
                 WtaToggleRow(
                     title = Strings.receiveShareText,
-                    subtitle = Strings.receiveShareTextHint,
+                    subtitle = Strings.receiveShareTextHint.ifDescriptionsShown(),
                     checked = receiveText,
                     onCheckedChange = {
                         onWebViewConfigChange(webViewConfig.copy(receiveShareText = it))
@@ -2674,7 +2577,7 @@ private fun ShareReceiveRows(
                     WtaSectionDivider()
                     WtaToggleRow(
                         title = Strings.receiveSharePromptBeforeUse,
-                        subtitle = Strings.receiveSharePromptBeforeUseHint,
+                        subtitle = Strings.receiveSharePromptBeforeUseHint.ifDescriptionsShown(),
                         checked = webViewConfig.sharePromptBeforeUse,
                         onCheckedChange = {
                             onWebViewConfigChange(webViewConfig.copy(sharePromptBeforeUse = it))
@@ -2701,7 +2604,7 @@ private fun ShareReceiveRows(
         WtaToggleRow(
             icon = Icons.Outlined.FileOpen,
             title = Strings.openWithTitle,
-            subtitle = Strings.openWithHint,
+            subtitle = Strings.openWithHint.ifDescriptionsShown(),
             checked = webViewConfig.openWithEnabled,
             onCheckedChange = {
                 onWebViewConfigChange(webViewConfig.copy(openWithEnabled = it))
@@ -2842,7 +2745,7 @@ fun LandscapeModeCard(
                             OrientationModeItem(
                                 icon = Icons.Outlined.StayCurrentPortrait,
                                 title = Strings.orientationReversePortrait,
-                                subtitle = Strings.orientationReversePortraitDesc,
+                                subtitle = Strings.orientationReversePortraitDesc.ifDescriptionsShown(),
                                 selected = orientationMode == com.webtoapp.data.model.OrientationMode.REVERSE_PORTRAIT,
                                 onClick = { onOrientationModeChange(com.webtoapp.data.model.OrientationMode.REVERSE_PORTRAIT) }
                             )
@@ -2850,7 +2753,7 @@ fun LandscapeModeCard(
                             OrientationModeItem(
                                 icon = Icons.Outlined.StayCurrentLandscape,
                                 title = Strings.orientationReverseLandscape,
-                                subtitle = Strings.orientationReverseLandscapeDesc,
+                                subtitle = Strings.orientationReverseLandscapeDesc.ifDescriptionsShown(),
                                 selected = orientationMode == com.webtoapp.data.model.OrientationMode.REVERSE_LANDSCAPE,
                                 onClick = { onOrientationModeChange(com.webtoapp.data.model.OrientationMode.REVERSE_LANDSCAPE) }
                             )
@@ -2870,7 +2773,7 @@ fun LandscapeModeCard(
                             OrientationModeItem(
                                 icon = Icons.Outlined.StayCurrentPortrait,
                                 title = Strings.orientationSensorPortrait,
-                                subtitle = Strings.orientationSensorPortraitDesc,
+                                subtitle = Strings.orientationSensorPortraitDesc.ifDescriptionsShown(),
                                 selected = orientationMode == com.webtoapp.data.model.OrientationMode.SENSOR_PORTRAIT,
                                 onClick = { onOrientationModeChange(com.webtoapp.data.model.OrientationMode.SENSOR_PORTRAIT) }
                             )
@@ -2878,7 +2781,7 @@ fun LandscapeModeCard(
                             OrientationModeItem(
                                 icon = Icons.Outlined.StayCurrentLandscape,
                                 title = Strings.orientationSensorLandscape,
-                                subtitle = Strings.orientationSensorLandscapeDesc,
+                                subtitle = Strings.orientationSensorLandscapeDesc.ifDescriptionsShown(),
                                 selected = orientationMode == com.webtoapp.data.model.OrientationMode.SENSOR_LANDSCAPE,
                                 onClick = { onOrientationModeChange(com.webtoapp.data.model.OrientationMode.SENSOR_LANDSCAPE) }
                             )
@@ -2920,13 +2823,13 @@ fun LandscapeModeCard(
 private fun OrientationModeItem(
     icon: ImageVector,
     title: String,
-    subtitle: String,
+    subtitle: String?,
     selected: Boolean,
     onClick: () -> Unit
 ) {
     WtaSettingRow(
         title = title,
-        subtitle = subtitle.takeIf { it.isNotEmpty() },
+        subtitle = subtitle,
         icon = icon,
         onClick = onClick
     ) {
@@ -2958,7 +2861,7 @@ fun KeepScreenOnCard(
         val mode: com.webtoapp.data.model.ScreenAwakeMode,
         val icon: ImageVector,
         val title: String,
-        val subtitle: String
+        val subtitle: String?
     )
 
     val modeOptions = listOf(
@@ -2966,19 +2869,19 @@ fun KeepScreenOnCard(
             mode = com.webtoapp.data.model.ScreenAwakeMode.OFF,
             icon = Icons.Outlined.BedtimeOff,
             title = Strings.screenAwakeOff,
-            subtitle = Strings.screenAwakeOffDesc
+            subtitle = Strings.screenAwakeOffDesc.ifDescriptionsShown()
         ),
         AwakeModeOption(
             mode = com.webtoapp.data.model.ScreenAwakeMode.ALWAYS,
             icon = Icons.Outlined.LightMode,
             title = Strings.screenAwakeAlways,
-            subtitle = Strings.screenAwakeAlwaysDesc
+            subtitle = Strings.screenAwakeAlwaysDesc.ifDescriptionsShown()
         ),
         AwakeModeOption(
             mode = com.webtoapp.data.model.ScreenAwakeMode.TIMED,
             icon = Icons.Outlined.Timer,
             title = Strings.screenAwakeTimed,
-            subtitle = Strings.screenAwakeTimedDesc
+            subtitle = Strings.screenAwakeTimedDesc.ifDescriptionsShown()
         )
     )
 
@@ -3236,7 +3139,7 @@ fun ErrorPageConfigCard(
     Column(modifier = Modifier.fillMaxWidth()) {
         WtaToggleRow(
             title = Strings.errorPageTitle,
-            subtitle = Strings.errorPageSubtitle,
+            subtitle = Strings.errorPageSubtitle.ifDescriptionsShown(),
             checked = isCustomized,
             onCheckedChange = { checked ->
                 if (checked) {
@@ -3323,7 +3226,7 @@ fun ErrorPageConfigCard(
 
                             WtaToggleRow(
                                 title = Strings.errorPageMiniGameLabel,
-                                subtitle = Strings.errorPageMiniGameDesc,
+                                subtitle = Strings.errorPageMiniGameDesc.ifDescriptionsShown(),
                                 checked = config.showMiniGame,
                                 onCheckedChange = { onConfigChange(config.copy(showMiniGame = it)) }
                             )
@@ -3482,7 +3385,7 @@ fun SpecialSettingsCard(
                         Column(modifier = Modifier.fillMaxWidth()) {
                             WtaToggleRow(
                                 title = Strings.imageRepairTitle,
-                                subtitle = Strings.imageRepairDesc,
+                                subtitle = Strings.imageRepairDesc.ifDescriptionsShown(),
                                 icon = Icons.Outlined.Image,
                                 checked = config.enableImageRepair,
                                 onCheckedChange = { onConfigChange(config.copy(enableImageRepair = it)) }
@@ -3490,7 +3393,7 @@ fun SpecialSettingsCard(
                             WtaSectionDivider()
                             WtaToggleRow(
                                 title = Strings.scrollMemoryTitle,
-                                subtitle = Strings.scrollMemoryDesc,
+                                subtitle = Strings.scrollMemoryDesc.ifDescriptionsShown(),
                                 icon = Icons.Outlined.BookmarkBorder,
                                 checked = config.enableScrollMemory,
                                 onCheckedChange = { onConfigChange(config.copy(enableScrollMemory = it)) }
@@ -3498,7 +3401,7 @@ fun SpecialSettingsCard(
                             WtaSectionDivider()
                             WtaToggleRow(
                                 title = Strings.backStatePreservationTitle,
-                                subtitle = Strings.backStatePreservationDesc,
+                                subtitle = Strings.backStatePreservationDesc.ifDescriptionsShown(),
                                 icon = Icons.Outlined.History,
                                 checked = config.enableBackStatePreservation,
                                 onCheckedChange = { onConfigChange(config.copy(enableBackStatePreservation = it)) }
@@ -3506,7 +3409,7 @@ fun SpecialSettingsCard(
                             WtaSectionDivider()
                             WtaToggleRow(
                                 title = Strings.followSystemDarkModeTitle,
-                                subtitle = Strings.followSystemDarkModeDesc,
+                                subtitle = Strings.followSystemDarkModeDesc.ifDescriptionsShown(),
                                 icon = Icons.Outlined.DarkMode,
                                 checked = config.followSystemDarkMode,
                                 onCheckedChange = { onConfigChange(config.copy(followSystemDarkMode = it)) }
@@ -3514,7 +3417,7 @@ fun SpecialSettingsCard(
                             WtaSectionDivider()
                             WtaToggleRow(
                                 title = Strings.cookiePersistenceTitle,
-                                subtitle = Strings.cookiePersistenceDesc,
+                                subtitle = Strings.cookiePersistenceDesc.ifDescriptionsShown(),
                                 icon = Icons.Outlined.Save,
                                 checked = config.enableCookiePersistence,
                                 onCheckedChange = { onConfigChange(config.copy(enableCookiePersistence = it)) }
@@ -3522,7 +3425,7 @@ fun SpecialSettingsCard(
                             WtaSectionDivider()
                             WtaToggleRow(
                                 title = Strings.databaseStorageTitle,
-                                subtitle = Strings.databaseStorageDesc,
+                                subtitle = Strings.databaseStorageDesc.ifDescriptionsShown(),
                                 icon = Icons.Outlined.Storage,
                                 checked = config.databaseEnabled,
                                 onCheckedChange = { onConfigChange(config.copy(databaseEnabled = it)) }
@@ -3530,7 +3433,7 @@ fun SpecialSettingsCard(
                             WtaSectionDivider()
                             WtaToggleRow(
                                 title = Strings.clipboardPolyfillTitle,
-                                subtitle = Strings.clipboardPolyfillDesc,
+                                subtitle = Strings.clipboardPolyfillDesc.ifDescriptionsShown(),
                                 icon = Icons.Outlined.ContentPaste,
                                 checked = config.enableClipboardPolyfill,
                                 onCheckedChange = { onConfigChange(config.copy(enableClipboardPolyfill = it)) }
@@ -3538,7 +3441,7 @@ fun SpecialSettingsCard(
                             WtaSectionDivider()
                             WtaToggleRow(
                                 title = Strings.notificationPolyfillTitle,
-                                subtitle = Strings.notificationPolyfillDesc,
+                                subtitle = Strings.notificationPolyfillDesc.ifDescriptionsShown(),
                                 icon = Icons.Outlined.Notifications,
                                 checked = config.enableNotificationPolyfill,
                                 onCheckedChange = { onConfigChange(config.copy(enableNotificationPolyfill = it)) }
@@ -3546,7 +3449,7 @@ fun SpecialSettingsCard(
                             WtaSectionDivider()
                             WtaToggleRow(
                                 title = Strings.orientationPolyfillTitle,
-                                subtitle = Strings.orientationPolyfillDesc,
+                                subtitle = Strings.orientationPolyfillDesc.ifDescriptionsShown(),
                                 icon = Icons.Outlined.ScreenRotation,
                                 checked = config.enableOrientationPolyfill,
                                 onCheckedChange = { onConfigChange(config.copy(enableOrientationPolyfill = it)) }
@@ -3554,7 +3457,7 @@ fun SpecialSettingsCard(
                             WtaSectionDivider()
                             WtaToggleRow(
                                 title = Strings.compatPolyfillsTitle,
-                                subtitle = Strings.compatPolyfillsDesc,
+                                subtitle = Strings.compatPolyfillsDesc.ifDescriptionsShown(),
                                 icon = Icons.Outlined.Build,
                                 checked = config.enableCompatPolyfills,
                                 onCheckedChange = { onConfigChange(config.copy(enableCompatPolyfills = it)) }
@@ -3562,7 +3465,7 @@ fun SpecialSettingsCard(
                             WtaSectionDivider()
                             WtaToggleRow(
                                 title = Strings.antiCaptureTitle,
-                                subtitle = Strings.antiCaptureDesc,
+                                subtitle = Strings.antiCaptureDesc.ifDescriptionsShown(),
                                 icon = Icons.Outlined.Shield,
                                 checked = config.antiCapture,
                                 onCheckedChange = { onConfigChange(config.copy(antiCapture = it)) }
@@ -3570,7 +3473,7 @@ fun SpecialSettingsCard(
                             WtaSectionDivider()
                             WtaToggleRow(
                                 title = Strings.hideStatusBarInVideoFullscreenTitle,
-                                subtitle = Strings.hideStatusBarInVideoFullscreenDesc,
+                                subtitle = Strings.hideStatusBarInVideoFullscreenDesc.ifDescriptionsShown(),
                                 icon = Icons.Outlined.HideImage,
                                 checked = config.hideStatusBarInVideoFullscreen,
                                 onCheckedChange = { onConfigChange(config.copy(hideStatusBarInVideoFullscreen = it)) }
@@ -3579,7 +3482,7 @@ fun SpecialSettingsCard(
                             WtaSectionDivider()
                             WtaToggleRow(
                                 title = Strings.appReturnTitle,
-                                subtitle = Strings.appReturnDesc,
+                                subtitle = Strings.appReturnDesc.ifDescriptionsShown(),
                                 icon = Icons.Outlined.Link,
                                 checked = config.enableAppReturn,
                                 onCheckedChange = { onConfigChange(config.copy(enableAppReturn = it)) }
@@ -3645,7 +3548,7 @@ fun SpecialSettingsCard(
 
                         SpecialAdvancedRow(
                             title = Strings.decodeBase64DeepLinksTitle,
-                            subtitle = Strings.decodeBase64DeepLinksDesc,
+                            subtitle = Strings.decodeBase64DeepLinksDesc.ifDescriptionsShown(),
                             icon = Icons.Outlined.Link,
                             checked = config.decodeBase64DeepLinks,
                             onCheckedChange = { onConfigChange(config.copy(decodeBase64DeepLinks = it)) }
@@ -3663,7 +3566,7 @@ fun SpecialSettingsCard(
 
                         SpecialAdvancedRow(
                             title = Strings.jsCanOpenWindowsTitle,
-                            subtitle = Strings.jsCanOpenWindowsDesc,
+                            subtitle = Strings.jsCanOpenWindowsDesc.ifDescriptionsShown(),
                             icon = Icons.Outlined.OpenInBrowser,
                             checked = config.javaScriptCanOpenWindows,
                             onCheckedChange = { onConfigChange(config.copy(javaScriptCanOpenWindows = it)) }
@@ -3683,7 +3586,7 @@ fun SpecialSettingsCard(
                         Column(modifier = Modifier.fillMaxWidth()) {
                             WtaToggleRow(
                                 title = Strings.mediaAutoplayTitle,
-                                subtitle = Strings.mediaAutoplayDesc,
+                                subtitle = Strings.mediaAutoplayDesc.ifDescriptionsShown(),
                                 icon = Icons.Outlined.PlayCircle,
                                 checked = config.mediaAutoplayEnabled,
                                 onCheckedChange = { onConfigChange(config.copy(mediaAutoplayEnabled = it)) }
@@ -3692,7 +3595,7 @@ fun SpecialSettingsCard(
 
                         SpecialAdvancedRow(
                             title = Strings.kernelDisguiseTitle,
-                            subtitle = Strings.kernelDisguiseDesc,
+                            subtitle = Strings.kernelDisguiseDesc.ifDescriptionsShown(),
                             icon = Icons.Outlined.Security,
                             checked = config.enableKernelDisguise,
                             onCheckedChange = { onConfigChange(config.copy(enableKernelDisguise = it)) }
@@ -3711,7 +3614,7 @@ fun SpecialSettingsCard(
 
                         SpecialAdvancedRow(
                             title = Strings.cloudflareCompatTitle,
-                            subtitle = Strings.cloudflareCompatDesc,
+                            subtitle = Strings.cloudflareCompatDesc.ifDescriptionsShown(),
                             icon = Icons.Outlined.VerifiedUser,
                             checked = config.enableCloudflareCompat,
                             onCheckedChange = { onConfigChange(config.copy(enableCloudflareCompat = it)) }
@@ -3729,7 +3632,7 @@ fun SpecialSettingsCard(
 
                         SpecialAdvancedRow(
                             title = Strings.mixedContentTitle,
-                            subtitle = Strings.mixedContentDesc,
+                            subtitle = Strings.mixedContentDesc.ifDescriptionsShown(),
                             icon = Icons.Outlined.Http,
                             checked = config.allowMixedContent,
                             onCheckedChange = { onConfigChange(config.copy(allowMixedContent = it)) }
@@ -3748,7 +3651,7 @@ fun SpecialSettingsCard(
 
                         SpecialAdvancedRow(
                             title = Strings.privateNetworkBridgeTitle,
-                            subtitle = Strings.privateNetworkBridgeDesc,
+                            subtitle = Strings.privateNetworkBridgeDesc.ifDescriptionsShown(),
                             icon = Icons.Outlined.Lan,
                             checked = config.enablePrivateNetworkBridge,
                             onCheckedChange = { onConfigChange(config.copy(enablePrivateNetworkBridge = it)) }
@@ -3766,7 +3669,7 @@ fun SpecialSettingsCard(
 
                         SpecialAdvancedRow(
                             title = Strings.corsBypassTitle,
-                            subtitle = Strings.corsBypassDesc,
+                            subtitle = Strings.corsBypassDesc.ifDescriptionsShown(),
                             icon = Icons.Outlined.Security,
                             checked = config.enableCorsBypass,
                             onCheckedChange = { onConfigChange(config.copy(enableCorsBypass = it)) }
@@ -3780,7 +3683,7 @@ fun SpecialSettingsCard(
 
                         SpecialAdvancedRow(
                             title = Strings.thirdPartyCookiesTitle,
-                            subtitle = Strings.thirdPartyCookiesDesc,
+                            subtitle = Strings.thirdPartyCookiesDesc.ifDescriptionsShown(),
                             icon = Icons.Outlined.Cookie,
                             checked = config.acceptThirdPartyCookies,
                             onCheckedChange = { onConfigChange(config.copy(acceptThirdPartyCookies = it)) }
@@ -3799,7 +3702,7 @@ fun SpecialSettingsCard(
 
                         SpecialAdvancedRow(
                             title = Strings.nativeBridgeTitle,
-                            subtitle = Strings.nativeBridgeDesc,
+                            subtitle = Strings.nativeBridgeDesc.ifDescriptionsShown(),
                             icon = Icons.Outlined.Api,
                             checked = config.enableNativeBridge,
                             onCheckedChange = { onConfigChange(config.copy(enableNativeBridge = it)) }
@@ -3970,7 +3873,7 @@ fun SpecialSettingsCard(
                         Column(modifier = Modifier.fillMaxWidth()) {
                             WtaToggleRow(
                                 title = Strings.cameraAccessTitle,
-                                subtitle = Strings.cameraAccessDesc,
+                                subtitle = Strings.cameraAccessDesc.ifDescriptionsShown(),
                                 icon = Icons.Outlined.PhotoCamera,
                                 checked = runtimePermissions.camera,
                                 onCheckedChange = { checked ->
@@ -3982,7 +3885,7 @@ fun SpecialSettingsCard(
                         Column(modifier = Modifier.fillMaxWidth()) {
                             WtaToggleRow(
                                 title = Strings.microphoneAccessTitle,
-                                subtitle = Strings.microphoneAccessDesc,
+                                subtitle = Strings.microphoneAccessDesc.ifDescriptionsShown(),
                                 icon = Icons.Outlined.Mic,
                                 checked = runtimePermissions.microphone,
                                 onCheckedChange = { checked ->
@@ -3993,7 +3896,7 @@ fun SpecialSettingsCard(
 
                         SpecialAdvancedRow(
                             title = Strings.geolocationTitle,
-                            subtitle = Strings.geolocationDesc,
+                            subtitle = Strings.geolocationDesc.ifDescriptionsShown(),
                             icon = Icons.Outlined.LocationOn,
                             checked = config.geolocationEnabled,
                             onCheckedChange = { onConfigChange(config.copy(geolocationEnabled = it)) }
@@ -4021,7 +3924,7 @@ fun SpecialSettingsCard(
 
                         SpecialAdvancedRow(
                             title = Strings.blobDownloadTitle,
-                            subtitle = Strings.blobDownloadDesc,
+                            subtitle = Strings.blobDownloadDesc.ifDescriptionsShown(),
                             icon = Icons.Outlined.CloudDownload,
                             checked = config.enableBlobDownloadInterception,
                             onCheckedChange = { onConfigChange(config.copy(enableBlobDownloadInterception = it)) }
@@ -4079,7 +3982,7 @@ fun SpecialSettingsCard(
 
                         SpecialAdvancedRow(
                             title = Strings.enablePrintBridgeTitle,
-                            subtitle = Strings.enablePrintBridgeDesc,
+                            subtitle = Strings.enablePrintBridgeDesc.ifDescriptionsShown(),
                             icon = Icons.Outlined.Print,
                             checked = config.enablePrintBridge,
                             onCheckedChange = { onConfigChange(config.copy(enablePrintBridge = it)) }
@@ -4087,7 +3990,7 @@ fun SpecialSettingsCard(
 
                         SpecialAdvancedRow(
                             title = Strings.enableMediaSessionTitle,
-                            subtitle = Strings.enableMediaSessionDesc,
+                            subtitle = Strings.enableMediaSessionDesc.ifDescriptionsShown(),
                             icon = Icons.Outlined.PlayCircle,
                             checked = config.enableMediaSession,
                             onCheckedChange = { onConfigChange(config.copy(enableMediaSession = it)) }
@@ -4095,7 +3998,7 @@ fun SpecialSettingsCard(
 
                         SpecialAdvancedRow(
                             title = Strings.primeUserActivationTitle,
-                            subtitle = Strings.primeUserActivationDesc,
+                            subtitle = Strings.primeUserActivationDesc.ifDescriptionsShown(),
                             icon = Icons.Outlined.TouchApp,
                             checked = config.primeUserActivation,
                             onCheckedChange = { onConfigChange(config.copy(primeUserActivation = it)) }
@@ -4123,7 +4026,7 @@ fun SpecialSettingsCard(
 
                         SpecialAdvancedRow(
                             title = Strings.fullscreenVideoOrientationTitle,
-                            subtitle = Strings.fullscreenVideoOrientationDesc,
+                            subtitle = Strings.fullscreenVideoOrientationDesc.ifDescriptionsShown(),
                             icon = Icons.Outlined.ScreenRotation,
                             checked = config.fullscreenVideoOrientation != com.webtoapp.data.model.FullscreenVideoOrientation.KEEP_CURRENT,
                             onCheckedChange = { enabled ->
@@ -4169,7 +4072,7 @@ fun SpecialSettingsCard(
                         Column(modifier = Modifier.fillMaxWidth()) {
                             WtaToggleRow(
                                 title = Strings.showHttp4xxErrorUiTitle,
-                                subtitle = Strings.showHttp4xxErrorUiDesc,
+                                subtitle = Strings.showHttp4xxErrorUiDesc.ifDescriptionsShown(),
                                 icon = Icons.Outlined.ErrorOutline,
                                 checked = config.errorPageConfig.showHttp4xxErrorUi,
                                 onCheckedChange = { onConfigChange(config.copy(errorPageConfig = config.errorPageConfig.copy(showHttp4xxErrorUi = it))) }
@@ -4177,7 +4080,7 @@ fun SpecialSettingsCard(
                             WtaSectionDivider()
                             WtaToggleRow(
                                 title = Strings.showHttp5xxErrorUiTitle,
-                                subtitle = Strings.showHttp5xxErrorUiDesc,
+                                subtitle = Strings.showHttp5xxErrorUiDesc.ifDescriptionsShown(),
                                 icon = Icons.Outlined.CloudOff,
                                 checked = config.errorPageConfig.showHttp5xxErrorUi,
                                 onCheckedChange = { onConfigChange(config.copy(errorPageConfig = config.errorPageConfig.copy(showHttp5xxErrorUi = it))) }
@@ -4185,7 +4088,7 @@ fun SpecialSettingsCard(
                             WtaSectionDivider()
                             WtaToggleRow(
                                 title = Strings.showNetworkErrorUiTitle,
-                                subtitle = Strings.showNetworkErrorUiDesc,
+                                subtitle = Strings.showNetworkErrorUiDesc.ifDescriptionsShown(),
                                 icon = Icons.Outlined.WifiOff,
                                 checked = config.errorPageConfig.showNetworkErrorUi,
                                 onCheckedChange = { onConfigChange(config.copy(errorPageConfig = config.errorPageConfig.copy(showNetworkErrorUi = it))) }
@@ -4201,7 +4104,7 @@ fun SpecialSettingsCard(
                             WtaSectionDivider()
                             WtaToggleRow(
                                 title = Strings.ignoreSslErrorsTitle,
-                                subtitle = Strings.ignoreSslErrorsDesc,
+                                subtitle = Strings.ignoreSslErrorsDesc.ifDescriptionsShown(),
                                 icon = Icons.Outlined.GppBad,
                                 checked = config.errorPageConfig.ignoreSslErrors,
                                 onCheckedChange = { onConfigChange(config.copy(errorPageConfig = config.errorPageConfig.copy(ignoreSslErrors = it))) }
@@ -4209,7 +4112,7 @@ fun SpecialSettingsCard(
                             WtaSectionDivider()
                             WtaToggleRow(
                                 title = Strings.showRenderCrashErrorUiTitle,
-                                subtitle = Strings.showRenderCrashErrorUiDesc,
+                                subtitle = Strings.showRenderCrashErrorUiDesc.ifDescriptionsShown(),
                                 icon = Icons.Outlined.BrokenImage,
                                 checked = config.errorPageConfig.showRenderCrashErrorUi,
                                 onCheckedChange = { onConfigChange(config.copy(errorPageConfig = config.errorPageConfig.copy(showRenderCrashErrorUi = it))) }
@@ -4226,7 +4129,7 @@ fun SpecialSettingsCard(
 @Composable
 private fun SpecialAdvancedRow(
     title: String,
-    subtitle: String,
+    subtitle: String?,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
@@ -4322,7 +4225,7 @@ private fun FailoverAdvancedRow(
 
     SpecialAdvancedRow(
         title = Strings.failoverTitle,
-        subtitle = Strings.failoverDesc,
+        subtitle = Strings.failoverDesc.ifDescriptionsShown(),
         icon = Icons.Outlined.SwapHoriz,
         checked = config.failoverEnabled,
         onCheckedChange = { onConfigChange(config.copy(failoverEnabled = it)) }

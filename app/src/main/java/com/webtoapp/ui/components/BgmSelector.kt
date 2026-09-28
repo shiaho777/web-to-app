@@ -4,7 +4,6 @@ import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.ui.design.WtaAlertDialog
 import com.webtoapp.ui.design.WtaChip
 import com.webtoapp.ui.design.WtaSpacing
-import com.webtoapp.ui.design.WtaSwitch
 import android.content.Context
 import android.media.MediaPlayer
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -20,6 +19,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -62,16 +62,6 @@ fun BgmSelectorDialog(
 
     var selectedPlaylist by remember { mutableStateOf(currentConfig.playlist) }
 
-    var playMode by remember { mutableStateOf(currentConfig.playMode) }
-
-    var volume by remember { mutableFloatStateOf(currentConfig.volume) }
-
-    var autoPlay by remember { mutableStateOf(currentConfig.autoPlay) }
-
-    var showLyrics by remember { mutableStateOf(currentConfig.showLyrics) }
-
-    var selectedTheme by remember { mutableStateOf(currentConfig.lrcTheme ?: PresetLrcThemes.themes.first()) }
-
     var previewingBgm by remember { mutableStateOf<BgmItem?>(null) }
     var mediaPlayer by remember { mutableStateOf<MediaPlayer?>(null) }
 
@@ -82,8 +72,6 @@ fun BgmSelectorDialog(
     var selectedTagFilter by remember { mutableStateOf<BgmTag?>(null) }
 
     var editingTagsBgm by remember { mutableStateOf<BgmItem?>(null) }
-
-    var showThemeDialog by remember { mutableStateOf(false) }
 
     var showLrcPreviewDialog by remember { mutableStateOf(false) }
     var previewLrcBgm by remember { mutableStateOf<BgmItem?>(null) }
@@ -146,7 +134,7 @@ fun BgmSelectorDialog(
                     } else {
                         setDataSource(bgm.path)
                     }
-                    setVolume(volume, volume)
+                    setVolume(currentConfig.volume, currentConfig.volume)
                     setOnCompletionListener {
                         previewingBgm = null
                     }
@@ -192,15 +180,10 @@ fun BgmSelectorDialog(
                     actions = {
                         TextButton(
                             onClick = {
-                                onConfirm(BgmConfig(
+                                onConfirm(currentConfig.copy(
                                     playlist = selectedPlaylist.mapIndexed { index, item ->
                                         item.copy(sortOrder = index)
-                                    },
-                                    playMode = playMode,
-                                    volume = volume,
-                                    autoPlay = autoPlay,
-                                    showLyrics = showLyrics,
-                                    lrcTheme = if (showLyrics) selectedTheme else null
+                                    }
                                 ))
                             }
                         ) {
@@ -228,8 +211,8 @@ fun BgmSelectorDialog(
                             )
                             Text(
                                 Strings.clickArrowToReorder,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                             )
                         }
                         Spacer(modifier = Modifier.height(8.dp))
@@ -285,14 +268,16 @@ fun BgmSelectorDialog(
                         Spacer(modifier = Modifier.height(16.dp))
                     }
 
+                    if (availableBgm.isNotEmpty()) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            Strings.availableMusic,
-                            style = MaterialTheme.typography.labelMedium
+                            "${Strings.availableMusic} (${availableBgm.size})",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary
                         )
                         Row {
 
@@ -317,28 +302,31 @@ fun BgmSelectorDialog(
                             }
                         }
                     }
+                    }
 
-                    LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        item {
-                            WtaChip(
-                                selected = selectedTagFilter == null,
-                                onClick = { selectedTagFilter = null },
-                                label = Strings.allTag,
-                                showSelectedCheck = false
-                            )
-                        }
-                        items(BgmTag.entries.take(10)) { tag ->
-                            WtaChip(
-                                selected = selectedTagFilter == tag,
-                                onClick = {
-                                    selectedTagFilter = if (selectedTagFilter == tag) null else tag
-                                },
-                                label = tag.displayName,
-                                showSelectedCheck = false
-                            )
+                    if (availableBgm.isNotEmpty()) {
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            item {
+                                WtaChip(
+                                    selected = selectedTagFilter == null,
+                                    onClick = { selectedTagFilter = null },
+                                    label = Strings.allTag,
+                                    showSelectedCheck = false
+                                )
+                            }
+                            items(BgmTag.entries.take(10)) { tag ->
+                                WtaChip(
+                                    selected = selectedTagFilter == tag,
+                                    onClick = {
+                                        selectedTagFilter = if (selectedTagFilter == tag) null else tag
+                                    },
+                                    label = tag.displayName,
+                                    showSelectedCheck = false
+                                )
+                            }
                         }
                     }
 
@@ -351,24 +339,59 @@ fun BgmSelectorDialog(
                                 .weight(weight = 1f, fill = true),
                             contentAlignment = Alignment.Center
                         ) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Icon(
-                                    Icons.Outlined.MusicNote,
-                                    null,
-                                    modifier = Modifier.size(48.dp),
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(72.dp)
+                                        .clip(CircleShape)
+                                        .background(
+                                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        Icons.Outlined.MusicNote,
+                                        null,
+                                        modifier = Modifier.size(32.dp),
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(16.dp))
                                 Text(
                                     Strings.noMusicAvailable,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    style = MaterialTheme.typography.titleSmall,
+                                    color = MaterialTheme.colorScheme.onSurface
                                 )
+                                Spacer(modifier = Modifier.height(4.dp))
                                 Text(
-                                    Strings.clickToUploadMusic,
+                                    Strings.bgmEmptyHint,
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
+                                Spacer(modifier = Modifier.height(20.dp))
+                                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                    FilledTonalButton(onClick = { showUploadDialog = true }) {
+                                        Icon(
+                                            Icons.Outlined.Add,
+                                            null,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(Strings.uploadMusic)
+                                    }
+                                    OutlinedButton(onClick = { showOnlineMusicDialog = true }) {
+                                        Icon(
+                                            Icons.Outlined.CloudDownload,
+                                            null,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(Strings.onlineMusic)
+                                    }
+                                }
                             }
                         }
                     } else {
@@ -441,103 +464,6 @@ fun BgmSelectorDialog(
                     }
                 }
 
-                HorizontalDivider()
-                Column(
-                    modifier = Modifier
-                        .weight(weight = 1f, fill = false)
-                        .verticalScroll(rememberScrollState())
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(Strings.playMode, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        FlowRow(
-                            modifier = Modifier.weight(1f),
-                            horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small, Alignment.End),
-                            verticalArrangement = Arrangement.spacedBy(WtaSpacing.Tiny)
-                        ) {
-                            WtaChip(
-                                selected = playMode == BgmPlayMode.LOOP,
-                                onClick = { playMode = BgmPlayMode.LOOP },
-                                label = Strings.loopMode,
-                                showSelectedCheck = false
-                            )
-                            WtaChip(
-                                selected = playMode == BgmPlayMode.SEQUENTIAL,
-                                onClick = { playMode = BgmPlayMode.SEQUENTIAL },
-                                label = Strings.sequentialMode,
-                                showSelectedCheck = false
-                            )
-                            WtaChip(
-                                selected = playMode == BgmPlayMode.SHUFFLE,
-                                onClick = { playMode = BgmPlayMode.SHUFFLE },
-                                label = Strings.shuffleMode,
-                                showSelectedCheck = false
-                            )
-                        }
-                    }
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(Strings.volume, style = MaterialTheme.typography.bodyMedium)
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Slider(
-                            value = volume,
-                            onValueChange = { volume = it },
-                            modifier = Modifier.weight(weight = 1f, fill = true)
-                        )
-                        Text(
-                            "${(volume * 100).toInt()}%",
-                            style = MaterialTheme.typography.labelMedium,
-                            modifier = Modifier.width(40.dp)
-                        )
-                    }
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(Strings.autoPlay, style = MaterialTheme.typography.bodyMedium)
-                        WtaSwitch(checked = autoPlay, onCheckedChange = { autoPlay = it })
-                    }
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(Strings.showLyrics, style = MaterialTheme.typography.bodyMedium)
-                        WtaSwitch(checked = showLyrics, onCheckedChange = { showLyrics = it })
-                    }
-
-                    if (showLyrics) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { showThemeDialog = true },
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column {
-                                Text(Strings.lyricsTheme, style = MaterialTheme.typography.bodyMedium)
-                                Text(
-                                    selectedTheme.name,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                            Icon(Icons.Default.ChevronRight, null)
-                        }
-                    }
-                }
                 }
 
                 SnackbarHost(
@@ -598,17 +524,6 @@ fun BgmSelectorDialog(
                     if (it.path == updatedBgm.path) updatedBgm else it
                 }
                 editingTagsBgm = null
-            }
-        )
-    }
-
-    if (showThemeDialog) {
-        LrcThemeDialog(
-            currentTheme = selectedTheme,
-            onDismiss = { showThemeDialog = false },
-            onSelect = { theme ->
-                selectedTheme = theme
-                showThemeDialog = false
             }
         )
     }
@@ -746,6 +661,46 @@ private fun SelectedBgmItem(
     }
 }
 
+private data class BgmMenuAction(
+    val icon: androidx.compose.ui.graphics.vector.ImageVector,
+    val label: String,
+    val danger: Boolean = false,
+    val onClick: () -> Unit
+)
+
+@Composable
+private fun BgmRowOverflowMenu(actions: List<BgmMenuAction?>) {
+    val items = actions.filterNotNull()
+    if (items.isEmpty()) return
+    var expanded by remember { mutableStateOf(false) }
+    Box {
+        IconButton(onClick = { expanded = true }, modifier = Modifier.size(32.dp)) {
+            Icon(
+                Icons.Default.MoreVert,
+                contentDescription = Strings.moreOptions,
+                modifier = Modifier.size(18.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            items.forEach { action ->
+                val tint = if (action.danger) MaterialTheme.colorScheme.error
+                else MaterialTheme.colorScheme.onSurface
+                DropdownMenuItem(
+                    text = { Text(action.label, color = tint) },
+                    leadingIcon = {
+                        Icon(action.icon, null, modifier = Modifier.size(18.dp), tint = tint)
+                    },
+                    onClick = {
+                        expanded = false
+                        action.onClick()
+                    }
+                )
+            }
+        }
+    }
+}
+
 @Composable
 private fun SelectedBgmItemWithReorder(
     bgm: BgmItem,
@@ -822,50 +777,32 @@ private fun SelectedBgmItemWithReorder(
                 }
             }
 
-            if (bgm.lrcData != null && onPreviewLrc != null) {
-                IconButton(onClick = onPreviewLrc, modifier = Modifier.size(32.dp)) {
-                    Icon(
-                        Icons.Outlined.Subtitles,
-                        contentDescription = Strings.previewLyrics,
-                        modifier = Modifier.size(18.dp),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
-            } else if (bgm.lrcData != null) {
-                Icon(
-                    Icons.Outlined.Subtitles,
-                    contentDescription = Strings.hasLyrics,
-                    modifier = Modifier.size(16.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            }
-            IconButton(onClick = onGenerateLrc, modifier = Modifier.size(32.dp)) {
-                Icon(
-                    com.webtoapp.ui.icons.LrcAlignIcon,
-                    contentDescription = Strings.aiGenerateLyrics,
-                    modifier = Modifier.size(18.dp),
-                    tint = MaterialTheme.colorScheme.secondary
-                )
-            }
-            IconButton(onClick = onEditTags, modifier = Modifier.size(32.dp)) {
-                Icon(
-                    Icons.Outlined.Label,
-                    contentDescription = Strings.editTags,
-                    modifier = Modifier.size(18.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            IconButton(onClick = onPlay) {
+            IconButton(onClick = onPlay, modifier = Modifier.size(32.dp)) {
                 Icon(
                     if (isPlaying) Icons.Default.Stop else Icons.Default.PlayArrow,
                     contentDescription = if (isPlaying) Strings.stop else Strings.play,
+                    modifier = Modifier.size(20.dp),
                     tint = MaterialTheme.colorScheme.primary
                 )
             }
-            IconButton(onClick = onRemove) {
+            BgmRowOverflowMenu(
+                listOf(
+                    onPreviewLrc?.let {
+                        BgmMenuAction(Icons.Outlined.Subtitles, Strings.previewLyrics, onClick = it)
+                    },
+                    BgmMenuAction(
+                        com.webtoapp.ui.icons.LrcAlignIcon,
+                        Strings.aiGenerateLyrics,
+                        onClick = onGenerateLrc
+                    ),
+                    BgmMenuAction(Icons.Outlined.Label, Strings.editTags, onClick = onEditTags)
+                )
+            )
+            IconButton(onClick = onRemove, modifier = Modifier.size(32.dp)) {
                 Icon(
                     Icons.Default.Close,
                     contentDescription = Strings.remove,
+                    modifier = Modifier.size(18.dp),
                     tint = MaterialTheme.colorScheme.error
                 )
             }
@@ -922,47 +859,30 @@ private fun AvailableBgmItem(
                 )
             }
 
-            if (bgm.lrcData != null && onPreviewLrc != null) {
-                IconButton(onClick = onPreviewLrc, modifier = Modifier.size(32.dp)) {
-                    Icon(
-                        Icons.Outlined.Subtitles,
-                        contentDescription = Strings.previewLyrics,
-                        modifier = Modifier.size(18.dp),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
-            } else if (bgm.lrcData != null) {
-                Icon(
-                    Icons.Outlined.Subtitles,
-                    contentDescription = Strings.hasLyrics,
-                    modifier = Modifier.size(16.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            }
-            IconButton(onClick = onGenerateLrc, modifier = Modifier.size(32.dp)) {
-                Icon(
-                    com.webtoapp.ui.icons.LrcAlignIcon,
-                    contentDescription = Strings.aiGenerateLyrics,
-                    modifier = Modifier.size(18.dp),
-                    tint = MaterialTheme.colorScheme.secondary
-                )
-            }
-            IconButton(onClick = onPlay) {
+            IconButton(onClick = onPlay, modifier = Modifier.size(32.dp)) {
                 Icon(
                     if (isPlaying) Icons.Default.Stop else Icons.Default.PlayArrow,
                     contentDescription = if (isPlaying) Strings.stop else Strings.preview,
+                    modifier = Modifier.size(20.dp),
                     tint = if (isPlaying) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            if (onDelete != null) {
-                IconButton(onClick = onDelete) {
-                    Icon(
-                        Icons.Outlined.Delete,
-                        contentDescription = Strings.btnDelete,
-                        tint = MaterialTheme.colorScheme.error
-                    )
-                }
-            }
+            BgmRowOverflowMenu(
+                listOf(
+                    onPreviewLrc?.let {
+                        BgmMenuAction(Icons.Outlined.Subtitles, Strings.previewLyrics, onClick = it)
+                    },
+                    BgmMenuAction(
+                        com.webtoapp.ui.icons.LrcAlignIcon,
+                        Strings.aiGenerateLyrics,
+                        onClick = onGenerateLrc
+                    ),
+                    BgmMenuAction(Icons.Outlined.Label, Strings.editTags, onClick = onEditTags),
+                    onDelete?.let {
+                        BgmMenuAction(Icons.Outlined.Delete, Strings.btnDelete, danger = true, onClick = it)
+                    }
+                )
+            )
         }
     }
 }
@@ -1249,7 +1169,7 @@ private fun EditTagsDialog(
 }
 
 @Composable
-private fun LrcThemeDialog(
+internal fun LrcThemeDialog(
     currentTheme: LrcTheme,
     onDismiss: () -> Unit,
     onSelect: (LrcTheme) -> Unit

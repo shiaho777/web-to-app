@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.ui.theme.ifDescriptionsShown
 import com.webtoapp.data.model.FloatingBorderStyle
 import com.webtoapp.data.model.FloatingWindowAspectRatioMode
 import com.webtoapp.data.model.FloatingWindowConfig
@@ -287,7 +288,7 @@ fun FloatingWindowConfigCard(
 
                     ToggleRow(
                         title = Strings.fwMinimizedIconEdgeDocking,
-                        subtitle = Strings.fwMinimizedIconEdgeDockingDesc,
+                        subtitle = Strings.fwMinimizedIconEdgeDockingDesc.ifDescriptionsShown(),
                         checked = config.minimizedIconEdgeDocking,
                         onCheckedChange = { onConfigChange(config.copy(minimizedIconEdgeDocking = it)) }
                     )
@@ -303,7 +304,7 @@ fun FloatingWindowConfigCard(
 
                     ToggleRow(
                         title = Strings.floatingWindowShowTitleBar,
-                        subtitle = Strings.floatingWindowShowTitleBarDesc,
+                        subtitle = Strings.floatingWindowShowTitleBarDesc.ifDescriptionsShown(),
                         checked = config.showTitleBar,
                         onCheckedChange = { onConfigChange(config.copy(showTitleBar = it)) }
                     )
@@ -315,7 +316,7 @@ fun FloatingWindowConfigCard(
                     ) {
                         ToggleRow(
                             title = Strings.fwAutoHideTitleBar,
-                            subtitle = Strings.fwAutoHideTitleBarDesc,
+                            subtitle = Strings.fwAutoHideTitleBarDesc.ifDescriptionsShown(),
                             checked = config.autoHideTitleBar,
                             onCheckedChange = { onConfigChange(config.copy(autoHideTitleBar = it)) },
                             modifier = Modifier.padding(start = 16.dp)
@@ -324,14 +325,14 @@ fun FloatingWindowConfigCard(
 
                     ToggleRow(
                         title = Strings.fwEdgeSnapping,
-                        subtitle = Strings.fwEdgeSnappingDesc,
+                        subtitle = Strings.fwEdgeSnappingDesc.ifDescriptionsShown(),
                         checked = config.edgeSnapping,
                         onCheckedChange = { onConfigChange(config.copy(edgeSnapping = it)) }
                     )
 
                     ToggleRow(
                         title = Strings.fwResizeHandle,
-                        subtitle = Strings.fwResizeHandleDesc,
+                        subtitle = Strings.fwResizeHandleDesc.ifDescriptionsShown(),
                         checked = config.showResizeHandle,
                         onCheckedChange = { onConfigChange(config.copy(showResizeHandle = it)) }
                     )
@@ -379,21 +380,21 @@ fun FloatingWindowConfigCard(
 
                             ToggleRow(
                                 title = Strings.floatingWindowStartMinimized,
-                                subtitle = Strings.floatingWindowStartMinimizedDesc,
+                                subtitle = Strings.floatingWindowStartMinimizedDesc.ifDescriptionsShown(),
                                 checked = config.startMinimized,
                                 onCheckedChange = { onConfigChange(config.copy(startMinimized = it)) }
                             )
 
                             ToggleRow(
                                 title = Strings.floatingWindowRememberPosition,
-                                subtitle = Strings.floatingWindowRememberPositionDesc,
+                                subtitle = Strings.floatingWindowRememberPositionDesc.ifDescriptionsShown(),
                                 checked = config.rememberPosition,
                                 onCheckedChange = { onConfigChange(config.copy(rememberPosition = it)) }
                             )
 
                             ToggleRow(
                                 title = Strings.fwLockPosition,
-                                subtitle = Strings.fwLockPositionDesc,
+                                subtitle = Strings.fwLockPositionDesc.ifDescriptionsShown(),
                                 checked = config.lockPosition,
                                 onCheckedChange = { onConfigChange(config.copy(lockPosition = it)) }
                             )
@@ -548,7 +549,7 @@ private fun SliderWithLabel(
 @Composable
 private fun ToggleRow(
     title: String,
-    subtitle: String,
+    subtitle: String?,
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier
@@ -565,12 +566,14 @@ private fun ToggleRow(
                 title,
                 style = MaterialTheme.typography.bodyMedium
             )
-            Spacer(Modifier.height(1.dp))
-            Text(
-                subtitle,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            if (!subtitle.isNullOrBlank()) {
+                Spacer(Modifier.height(1.dp))
+                Text(
+                    subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
         WtaSwitch(
             checked = checked,

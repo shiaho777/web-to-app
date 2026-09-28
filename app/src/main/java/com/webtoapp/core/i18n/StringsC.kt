@@ -6987,57 +6987,48 @@ object StringsC {
         AppLanguage.KOREAN -> "외 %d곡..."
     }
 
-    val loopPlayback: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "循环播放"
-        AppLanguage.ENGLISH -> "Loop Playback"
-        AppLanguage.ARABIC -> "تشغيل متكرر"
-        AppLanguage.PORTUGUESE -> "Reprodução em Loop"
-        AppLanguage.SPANISH -> "Reproducción en Bucle"
-        AppLanguage.FRENCH -> "Lecture en Boucle"
-        AppLanguage.GERMAN -> "Schleifenwiedergabe"
-        AppLanguage.RUSSIAN -> "Повтор воспроизведения"
-        AppLanguage.JAPANESE -> "ループ再生"
-        AppLanguage.KOREAN -> "루프 재생"
+    val bgmLibraryTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "音乐库"
+        AppLanguage.ENGLISH -> "Music Library"
+        AppLanguage.ARABIC -> "مكتبة الموسيقى"
+        AppLanguage.PORTUGUESE -> "Biblioteca de Música"
+        AppLanguage.SPANISH -> "Biblioteca de Música"
+        AppLanguage.FRENCH -> "Bibliothèque Musicale"
+        AppLanguage.GERMAN -> "Musikbibliothek"
+        AppLanguage.RUSSIAN -> "Медиатека"
+        AppLanguage.JAPANESE -> "ミュージックライブラリ"
+        AppLanguage.KOREAN -> "음악 라이브러리"
     }
 
-    val sequentialPlayback: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "Sequential play"
-        AppLanguage.ENGLISH -> "Sequential Playback"
-        AppLanguage.ARABIC -> "تشغيل متسلسل"
-        AppLanguage.PORTUGUESE -> "Reprodução Sequencial"
-        AppLanguage.SPANISH -> "Reproducción Secuencial"
-        AppLanguage.FRENCH -> "Lecture Séquentielle"
-        AppLanguage.GERMAN -> "Sequentielle Wiedergabe"
-        AppLanguage.RUSSIAN -> "Последовательное воспроизведение"
-        AppLanguage.JAPANESE -> "連続再生"
-        AppLanguage.KOREAN -> "순차 재생"
+    val bgmTrackCount: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "%d 首"
+        AppLanguage.ENGLISH -> "%d tracks"
+        AppLanguage.ARABIC -> "%d مقاطع"
+        AppLanguage.PORTUGUESE -> "%d faixas"
+        AppLanguage.SPANISH -> "%d pistas"
+        AppLanguage.FRENCH -> "%d morceaux"
+        AppLanguage.GERMAN -> "%d Titel"
+        AppLanguage.RUSSIAN -> "%d треков"
+        AppLanguage.JAPANESE -> "%d 曲"
+        AppLanguage.KOREAN -> "%d곡"
     }
 
-    val shufflePlayback: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "Shuffle play"
-        AppLanguage.ENGLISH -> "Shuffle Playback"
-        AppLanguage.ARABIC -> "تشغيل عشوائي"
-        AppLanguage.PORTUGUESE -> "Reprodução Aleatória"
-        AppLanguage.SPANISH -> "Reproducción Aleatoria"
-        AppLanguage.FRENCH -> "Lecture Aléatoire"
-        AppLanguage.GERMAN -> "Zufallswiedergabe"
-        AppLanguage.RUSSIAN -> "Случайное воспроизведение"
-        AppLanguage.JAPANESE -> "シャッフル再生"
-        AppLanguage.KOREAN -> "셔플 재생"
+    val moreOptions: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "更多选项"
+        AppLanguage.ENGLISH -> "More options"
+        AppLanguage.ARABIC -> "خيارات أكثر"
+        AppLanguage.PORTUGUESE -> "Mais opções"
+        AppLanguage.SPANISH -> "Más opciones"
+        AppLanguage.FRENCH -> "Plus d'options"
+        AppLanguage.GERMAN -> "Mehr Optionen"
+        AppLanguage.RUSSIAN -> "Ещё"
+        AppLanguage.JAPANESE -> "その他のオプション"
+        AppLanguage.KOREAN -> "더 많은 옵션"
     }
 
-    val modifyConfig: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "修改配置"
-        AppLanguage.ENGLISH -> "Modify Config"
-        AppLanguage.ARABIC -> "تعديل الإعدادات"
-        AppLanguage.PORTUGUESE -> "Modificar Configuração"
-        AppLanguage.SPANISH -> "Modificar Configuración"
-        AppLanguage.FRENCH -> "Modifier la Configuration"
-        AppLanguage.GERMAN -> "Konfiguration ändern"
-        AppLanguage.RUSSIAN -> "Изменить конфигурацию"
-        AppLanguage.JAPANESE -> "設定を変更"
-        AppLanguage.KOREAN -> "구성 수정"
-    }
+
+
+
 
     val extensionModuleTitle: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "Extension module"
@@ -7585,6 +7576,32 @@ object StringsC {
         AppLanguage.KOREAN -> "APK 내보내기 구성"
     }
 
+    val apkIdentityBuildSection: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "应用标识与构建"
+        AppLanguage.ENGLISH -> "Identity & Build"
+        AppLanguage.ARABIC -> "الهوية والبناء"
+        AppLanguage.PORTUGUESE -> "Identidade & Build"
+        AppLanguage.SPANISH -> "Identidad & Compilación"
+        AppLanguage.FRENCH -> "Identité & Compilation"
+        AppLanguage.GERMAN -> "Identität & Build"
+        AppLanguage.RUSSIAN -> "Идентификатор и сборка"
+        AppLanguage.JAPANESE -> "アプリIDとビルド"
+        AppLanguage.KOREAN -> "앱 ID 및 빌드"
+    }
+
+    val signingSectionTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "签名"
+        AppLanguage.ENGLISH -> "Signing"
+        AppLanguage.ARABIC -> "التوقيع"
+        AppLanguage.PORTUGUESE -> "Assinatura"
+        AppLanguage.SPANISH -> "Firma"
+        AppLanguage.FRENCH -> "Signature"
+        AppLanguage.GERMAN -> "Signierung"
+        AppLanguage.RUSSIAN -> "Подпись"
+        AppLanguage.JAPANESE -> "署名"
+        AppLanguage.KOREAN -> "서명"
+    }
+
     val apkArchitecture: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "APK 架构"
         AppLanguage.ENGLISH -> "APK Architecture"
@@ -7661,19 +7678,6 @@ object StringsC {
         AppLanguage.RUSSIAN -> "targetSdk сгенерированного APK повышен. Среда выполнения адаптирована (тёмный режим, разрешение на уведомления, фоновые службы). Для Google Play всё равно используйте экспорт AAB; это — для sideload или сторонних каналов."
         AppLanguage.JAPANESE -> "生成された APK の targetSdk を引き上げました。ランタイムは適応済み（ダークモード、通知権限、フォアグラウンドサービス）。Google Play 公開には引き続き AAB エクスポートを使用してください。こちらはサイドロードやサードパーティ配布向けです。"
         AppLanguage.KOREAN -> "생성된 APK의 targetSdk가 올라갔습니다. 런타임이 적응되었습니다 (다크 모드, 알림 권한, 포그라운드 서비스). Google Play 배포에는 여전히 AAB 내보내기를 사용하세요. 이 옵션은 사이드로드 또는 타사 배포용입니다."
-    }
-
-    val currentSigningStatus: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "当前签名状态"
-        AppLanguage.ENGLISH -> "Current Signing Status"
-        AppLanguage.ARABIC -> "حالة التوقيع الحالية"
-        AppLanguage.PORTUGUESE -> "Status de Assinatura Atual"
-        AppLanguage.SPANISH -> "Estado de Firma Actual"
-        AppLanguage.FRENCH -> "Statut de Signature Actuel"
-        AppLanguage.GERMAN -> "Aktueller Signaturstatus"
-        AppLanguage.RUSSIAN -> "Текущий статус подписи"
-        AppLanguage.JAPANESE -> "現在の署名状態"
-        AppLanguage.KOREAN -> "현재 서명 상태"
     }
 
     val signingTypeAutoGenerated: String get() = when (Strings.lang) {

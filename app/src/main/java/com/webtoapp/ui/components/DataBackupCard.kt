@@ -44,6 +44,8 @@ import com.webtoapp.ui.design.WtaIconTitle
 import com.webtoapp.ui.design.WtaMotion
 import com.webtoapp.ui.design.WtaStatusBanner
 import com.webtoapp.ui.design.WtaStatusTone
+import com.webtoapp.ui.theme.LocalShowDescriptions
+import com.webtoapp.ui.theme.ifDescriptionsShown
 import kotlinx.coroutines.launch
 
 @Composable
@@ -180,7 +182,7 @@ fun DataBackupCard() {
         WtaIconTitle(
             icon = Icons.Outlined.Inventory2,
             title = Strings.dataBackupTitle,
-            subtitle = Strings.dataBackupDesc
+            subtitle = Strings.dataBackupDesc.ifDescriptionsShown()
         )
 
         Spacer(Modifier.height(16.dp))
@@ -232,7 +234,7 @@ fun DataBackupCard() {
         }
 
         AnimatedVisibility(
-            visible = !isBusy,
+            visible = !isBusy && LocalShowDescriptions.current,
             enter = fadeIn(WtaMotion.enterTween()),
             exit = fadeOut(WtaMotion.exitTween())
         ) {

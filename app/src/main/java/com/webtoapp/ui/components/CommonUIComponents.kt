@@ -36,7 +36,7 @@ import com.webtoapp.ui.design.WtaToggleRow
 @Composable
 fun SettingsSwitch(
     title: String,
-    subtitle: String,
+    subtitle: String?,
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier

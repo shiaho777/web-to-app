@@ -43,6 +43,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.ui.theme.ifDescriptionsShown
 import com.webtoapp.data.model.*
 import com.webtoapp.ui.components.ActivationCodeCard
 import com.webtoapp.ui.components.AppNameTextField
@@ -622,12 +623,19 @@ private fun ExportAndPermissionDrawer(
                         canOverrideTargetSdk = !appType.requiresProcessExec
                     )
 
-                    PermissionConfigPanel(
-                        permissions = exportConfig.runtimePermissions,
-                        onPermissionsTransform = onRuntimePermissionsTransform,
-                        showDescription = false,
-                        featureReasons = featureReasons
-                    )
+                    WtaSection(
+                        title = Strings.capabilityPermissions,
+                        headerStyle = WtaSectionHeaderStyle.Quiet,
+                        collapsible = true,
+                        initiallyExpanded = false
+                    ) {
+                        PermissionConfigPanel(
+                            permissions = exportConfig.runtimePermissions,
+                            onPermissionsTransform = onRuntimePermissionsTransform,
+                            showDescription = false,
+                            featureReasons = featureReasons
+                        )
+                    }
                 }
             }
         }
@@ -1381,7 +1389,7 @@ fun TranslateCard(
                 WtaToggleRow(
                     icon = Icons.Outlined.SmartButton,
                     title = Strings.showTranslateButton,
-                    subtitle = Strings.showTranslateButtonHint,
+                    subtitle = Strings.showTranslateButtonHint.ifDescriptionsShown(),
                     checked = config.showFloatingButton,
                     onCheckedChange = { onConfigChange(config.copy(showFloatingButton = it)) }
                 )
@@ -1390,7 +1398,7 @@ fun TranslateCard(
                 WtaToggleRow(
                     icon = Icons.Outlined.Sync,
                     title = Strings.autoTranslateOnLoad,
-                    subtitle = Strings.autoTranslateOnLoadHint,
+                    subtitle = Strings.autoTranslateOnLoadHint.ifDescriptionsShown(),
                     checked = config.autoTranslateOnLoad,
                     onCheckedChange = { onConfigChange(config.copy(autoTranslateOnLoad = it)) }
                 )

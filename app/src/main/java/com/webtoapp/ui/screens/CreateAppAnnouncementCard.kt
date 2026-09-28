@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.ui.theme.ifDescriptionsShown
 import com.webtoapp.data.model.*
 import com.webtoapp.ui.components.*
 import com.webtoapp.ui.components.announcement.AnnouncementDialog
@@ -124,7 +125,7 @@ fun AnnouncementCard(
                 WtaToggleRow(
                     icon = Icons.Outlined.Image,
                     title = Strings.announcementShowIcon,
-                    subtitle = Strings.announcementShowIconHint,
+                    subtitle = Strings.announcementShowIconHint.ifDescriptionsShown(),
                     checked = announcement.showIcon,
                     onCheckedChange = {
                         onAnnouncementChange(announcement.copy(showIcon = it))
@@ -237,7 +238,7 @@ fun AnnouncementCard(
                 WtaToggleRow(
                     icon = Icons.Outlined.Code,
                     title = Strings.announcementContentHtml,
-                    subtitle = Strings.announcementContentHtmlDesc,
+                    subtitle = Strings.announcementContentHtmlDesc.ifDescriptionsShown(),
                     checked = announcement.contentIsHtml,
                     onCheckedChange = {
                         onAnnouncementChange(announcement.copy(contentIsHtml = it))
@@ -331,7 +332,7 @@ private fun AnnouncementTriggerSection(
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             WtaToggleRow(
                 title = Strings.announcementTriggerOnLaunch,
-                subtitle = Strings.announcementTriggerOnLaunchHint,
+                subtitle = Strings.announcementTriggerOnLaunchHint.ifDescriptionsShown(),
                 icon = Icons.Outlined.RocketLaunch,
                 checked = announcement.triggerOnLaunch,
                 onCheckedChange = {
@@ -341,7 +342,7 @@ private fun AnnouncementTriggerSection(
 
             WtaToggleRow(
                 title = Strings.announcementTriggerOnNoNetwork,
-                subtitle = Strings.announcementTriggerOnNoNetworkHint,
+                subtitle = Strings.announcementTriggerOnNoNetworkHint.ifDescriptionsShown(),
                 icon = Icons.Outlined.CloudOff,
                 checked = announcement.triggerOnNoNetwork,
                 onCheckedChange = {
@@ -354,7 +355,7 @@ private fun AnnouncementTriggerSection(
 
             WtaSettingRow(
                 title = Strings.announcementTriggerInterval,
-                subtitle = Strings.announcementTriggerIntervalHint,
+                subtitle = Strings.announcementTriggerIntervalHint.ifDescriptionsShown(),
                 icon = Icons.Outlined.Timer
             ) {
                 ExposedDropdownMenuBox(
@@ -483,7 +484,7 @@ private fun AnnouncementAdvancedSection(
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             WtaToggleRow(
                 title = Strings.announcementRequireConfirmLabel,
-                subtitle = Strings.announcementRequireConfirmHint,
+                subtitle = Strings.announcementRequireConfirmHint.ifDescriptionsShown(),
                 icon = Icons.Outlined.TaskAlt,
                 checked = announcement.requireConfirmation,
                 onCheckedChange = {
@@ -493,7 +494,7 @@ private fun AnnouncementAdvancedSection(
 
             WtaToggleRow(
                 title = Strings.announcementAllowNeverShowLabel,
-                subtitle = Strings.announcementAllowNeverShowHint,
+                subtitle = Strings.announcementAllowNeverShowHint.ifDescriptionsShown(),
                 icon = Icons.Outlined.VisibilityOff,
                 checked = announcement.allowNeverShow,
                 onCheckedChange = {
