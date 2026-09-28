@@ -222,6 +222,10 @@
 -dontwarn org.brotli.dec.**
 # snakeyaml rides in transitively via GeckoView; its java.beans introspection
 # references don't exist on Android but those code paths are never hit.
+# Names must be kept: R8 would otherwise repackage its classes into the root
+# package, where TypeDescription.<clinit>'s getPackage().getName() NPEs and
+# GeckoRuntime.create dies on every launch of a generated app (#1090).
+-keep class org.yaml.snakeyaml.** { *; }
 -dontwarn org.yaml.snakeyaml.**
 
 # ============================================================

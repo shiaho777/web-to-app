@@ -257,6 +257,9 @@
 -dontwarn org.apache.commons.compress.**
 -dontwarn org.tukaani.xz.**
 -dontwarn org.brotli.dec.**
+# Names kept for the same reason as the shell: root-package repackaging makes
+# TypeDescription.<clinit> NPE (Package.getName on null) in GeckoRuntime.create.
+-keep class org.yaml.snakeyaml.** { *; }
 -dontwarn org.yaml.snakeyaml.**
 
 # ============================================================
