@@ -346,6 +346,11 @@ private fun WebView.setupWebView(
         javaScriptCanOpenWindowsAutomatically = true
 
         databaseEnabled = true
+
+        // Local HTML preview: allow gesture-free media playback so <audio>/<video>
+        // (including data: sources and scripted play()) behaves like the app
+        // preview in WebViewActivity, which forces this off for HTML apps.
+        mediaPlaybackRequiresUserGesture = false
     }
 
     webViewClient = object : WebViewClient() {
