@@ -22,6 +22,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.ui.theme.ifDescriptionsShown
 import com.webtoapp.data.model.*
@@ -32,6 +34,7 @@ import com.webtoapp.ui.animation.CardCollapseTransition
 import com.webtoapp.util.AppConstants
 import com.webtoapp.util.ConfigPresetStorage
 import com.webtoapp.util.NetworkTrustStorage
+import com.webtoapp.util.SavedNetworkTrustPreset
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 
@@ -533,7 +536,12 @@ private fun NetworkTrustConfigPanel(
     onImportCertificate: () -> Unit
 ) {
     val context = LocalContext.current
-    var presets by remember { mutableStateOf(ConfigPresetStorage.loadNetworkTrust(context)) }
+    // Load presets off the composition thread (#1095): getSharedPreferences + Gson
+    // parse on the main thread used to ride inside the first expand frame.
+    var presets by remember { mutableStateOf<List<SavedNetworkTrustPreset>>(emptyList()) }
+    LaunchedEffect(Unit) {
+        presets = withContext(Dispatchers.IO) { ConfigPresetStorage.loadNetworkTrust(context) }
+    }
     var showSavePresetDialog by remember { mutableStateOf(false) }
     var presetName by remember { mutableStateOf("") }
 

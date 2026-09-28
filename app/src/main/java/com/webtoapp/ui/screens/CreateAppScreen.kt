@@ -20,6 +20,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import com.webtoapp.ui.animation.CardExpandTransition
 import com.webtoapp.ui.animation.CardCollapseTransition
+import com.webtoapp.ui.animation.WtaPersistentExpandedContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.relocation.BringIntoViewRequester
@@ -602,11 +603,10 @@ private fun ExportAndPermissionDrawer(
                 onClick = { expanded = !expanded }
             )
 
-            AnimatedVisibility(
-                visible = expanded,
-                enter = CardExpandTransition,
-                exit = CardCollapseTransition
-            ) {
+            // Persistent container (#1095): AnimatedVisibility would dispose the whole
+            // export-config subtree on collapse and pay full recomposition on every
+            // cold open; keeping it composed makes each open a pure layout animation.
+            WtaPersistentExpandedContent(expanded = expanded) {
                 Column(
                     modifier = Modifier.padding(
                         horizontal = WtaSpacing.RowHorizontal,
