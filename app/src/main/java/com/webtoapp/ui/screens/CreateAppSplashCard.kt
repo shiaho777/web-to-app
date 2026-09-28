@@ -23,6 +23,7 @@ import com.webtoapp.R
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.ui.theme.ifDescriptionsShown
 import com.webtoapp.data.model.*
 import com.webtoapp.ui.components.*
 import com.webtoapp.ui.design.*
@@ -282,7 +283,7 @@ fun SplashScreenCard(
 
                         WtaToggleRow(
                             title = Strings.allowSkip,
-                            subtitle = Strings.allowSkipHint,
+                            subtitle = Strings.allowSkipHint.ifDescriptionsShown(),
                             icon = Icons.Outlined.TouchApp,
                             checked = splashConfig.clickToSkip,
                             onCheckedChange = onClickToSkipChange
@@ -290,7 +291,7 @@ fun SplashScreenCard(
 
                         WtaToggleRow(
                             title = Strings.splashShowCountdownLabel,
-                            subtitle = Strings.splashShowCountdownHint,
+                            subtitle = Strings.splashShowCountdownHint.ifDescriptionsShown(),
                             icon = Icons.Outlined.Timer,
                             checked = splashConfig.showCountdown,
                             onCheckedChange = onShowCountdownChange
@@ -298,7 +299,7 @@ fun SplashScreenCard(
 
                         WtaToggleRow(
                             title = Strings.landscapeDisplay,
-                            subtitle = Strings.landscapeDisplayHint,
+                            subtitle = Strings.landscapeDisplayHint.ifDescriptionsShown(),
                             icon = Icons.Outlined.ScreenRotation,
                             checked = splashConfig.orientation == SplashOrientation.LANDSCAPE,
                             onCheckedChange = { isLandscape ->
@@ -311,7 +312,7 @@ fun SplashScreenCard(
 
                         WtaToggleRow(
                             title = Strings.fillScreen,
-                            subtitle = Strings.fillScreenHint,
+                            subtitle = Strings.fillScreenHint.ifDescriptionsShown(),
                             icon = Icons.Outlined.AspectRatio,
                             checked = splashConfig.fillScreen,
                             onCheckedChange = onFillScreenChange
@@ -325,7 +326,7 @@ fun SplashScreenCard(
                             Column {
                                 WtaToggleRow(
                                     title = Strings.enableAudio,
-                                    subtitle = Strings.enableAudioHint,
+                                    subtitle = Strings.enableAudioHint.ifDescriptionsShown(),
                                     icon = Icons.AutoMirrored.Outlined.VolumeUp,
                                     checked = splashConfig.enableAudio,
                                     onCheckedChange = onEnableAudioChange

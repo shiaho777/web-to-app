@@ -12,18 +12,17 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Android
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.outlined.Autorenew
 import androidx.compose.material.icons.outlined.Build
 import androidx.compose.material.icons.outlined.Cached
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.DeleteSweep
 import androidx.compose.material.icons.outlined.GetApp
-import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.PieChart
 import androidx.compose.material.icons.outlined.PlayCircleOutline
 import androidx.compose.material.icons.outlined.Share
-import androidx.compose.material.icons.outlined.SystemUpdateAlt
 import androidx.compose.material.icons.outlined.VerifiedUser
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -54,14 +53,12 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.webtoapp.WebToAppApplication
 import com.webtoapp.core.apkbuilder.ApkBuilder
 import com.webtoapp.core.apkbuilder.ApkExportPreflight
-import com.webtoapp.core.apkbuilder.ApkExportPreflightReport
 import com.webtoapp.core.apkbuilder.BuildResult
 import com.webtoapp.core.apkbuilder.ExportRuntimeEnsure
 import com.webtoapp.core.i18n.Strings
@@ -69,10 +66,9 @@ import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.data.model.AppType
 import com.webtoapp.data.model.WebApp
 import com.webtoapp.data.model.withRuntimePermissionsSyncedFromFeatures
-import com.webtoapp.ui.components.ApkExportPreflightPanel
 import com.webtoapp.ui.components.BackgroundRunConfigCard
 import com.webtoapp.ui.components.EncryptionConfigCard
-import com.webtoapp.ui.components.FeatureStackConfigCard
+import com.webtoapp.ui.components.EnhancedElevatedCard
 import com.webtoapp.ui.components.IsolationConfigCard
 import com.webtoapp.ui.components.NotificationConfigCard
 import com.webtoapp.ui.components.PremiumButton
@@ -84,8 +80,9 @@ import com.webtoapp.ui.design.WtaCardTone
 import com.webtoapp.ui.design.WtaLoadingState
 import com.webtoapp.ui.design.WtaRadius
 import com.webtoapp.ui.design.WtaScreen
-import com.webtoapp.ui.design.WtaSectionDivider
-import com.webtoapp.ui.design.WtaToggleRow
+import com.webtoapp.ui.design.WtaSettingRow
+import com.webtoapp.ui.design.WtaSpacing
+import com.webtoapp.ui.design.WtaSwitch
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -156,7 +153,6 @@ private fun BuildApkContent(
     var progressText by remember(webApp.id) { mutableStateOf(Strings.preparing) }
     var analysisReport by remember(webApp.id) { mutableStateOf<com.webtoapp.core.apkbuilder.ApkAnalyzer.AnalysisReport?>(null) }
     var buildFailureReport by remember(webApp.id) { mutableStateOf<BuildFailureReport?>(null) }
-    var preflightReport by remember(webApp.id) { mutableStateOf<ApkExportPreflightReport?>(null) }
     var isEnsuringRuntime by remember(webApp.id) { mutableStateOf(false) }
     var ensureRuntimeText by remember(webApp.id) { mutableStateOf<String?>(null) }
     // Runtime downloads under the ensure step report through the shared engine;
@@ -190,10 +186,6 @@ private fun BuildApkContent(
     }
     var notificationConfig by remember(webApp.id) {
         mutableStateOf(webApp.apkExportConfig?.notificationConfig ?: com.webtoapp.data.model.NotificationExportConfig())
-    }
-
-    var featureStackConfig by remember(webApp.id) {
-        mutableStateOf(webApp.apkExportConfig?.featureStack ?: com.webtoapp.data.model.FeatureStackConfig())
     }
 
     var selectedEngineType by remember(webApp.id) {
@@ -247,7 +239,6 @@ private fun BuildApkContent(
             backgroundRunConfig = backgroundRunConfig,
             notificationEnabled = notificationEnabled,
             notificationConfig = notificationConfig,
-            featureStack = featureStackConfig,
             engineType = selectedEngineType,
             perAppSigningEnabled = perAppSigningEnabled,
             saepEnabled = saepEnabled,
@@ -339,9 +330,20 @@ private fun BuildApkContent(
                 isBuilding = false
                 return@launch
             }
-            val nextPreflight = ApkExportPreflight.check(context, webAppWithConfig)
-            preflightReport = nextPreflight
-            if (nextPreflight.hasErrors) {
+            // Preflight still gates the build, but without the removed on-screen panel
+            // a silent abort would leave no feedback — blocking issues go through the
+            // same failure dialog as real build errors instead.
+            val preflight = withContext(Dispatchers.IO) {
+                ApkExportPreflight.check(context, webAppWithConfig)
+            }
+            if (preflight.hasErrors) {
+                buildFailureReport = buildActionFailureReport(
+                    title = Strings.apkExportPreflightTitle,
+                    stage = "export_preflight",
+                    webApp = webAppWithConfig,
+                    summary = Strings.apkExportPreflightBlocked.format(preflight.errors.size),
+                    extraLines = preflight.issues.map { it.summary() }
+                )
                 isBuilding = false
                 return@launch
             }
@@ -423,9 +425,6 @@ private fun BuildApkContent(
             ensureRuntimeText = null
             isEnsuringRuntime = false
         }
-        preflightReport = withContext(Dispatchers.IO) {
-            ApkExportPreflight.check(context, config)
-        }
     }
 
     val listState = androidx.compose.foundation.lazy.rememberLazyListState()
@@ -490,7 +489,7 @@ private fun BuildApkContent(
                             Text(
                                 when {
                                     builtApk != null -> Strings.install
-                                    buildFailureReport != null || preflightReport?.hasErrors == true -> Strings.btnRetry
+                                    buildFailureReport != null -> Strings.btnRetry
                                     else -> Strings.btnStartBuild
                                 },
                                 maxLines = 1,
@@ -631,13 +630,6 @@ private fun BuildApkContent(
                 )
             }
 
-            item {
-                FeatureStackConfigCard(
-                    config = featureStackConfig,
-                    onConfigChange = { featureStackConfig = it }
-                )
-            }
-
             // GeckoView is offered for WEB and MULTI_WEB: multi-web surfaces share
             // one GeckoRuntime across per-site GeckoSessions (#1035).
             if (webApp.appType == AppType.WEB || webApp.appType == AppType.MULTI_WEB) {
@@ -654,117 +646,78 @@ private fun BuildApkContent(
 
             if (analysisReport == null && !isBuilding) {
                 item {
-                    WtaCard(contentPadding = PaddingValues(vertical = 4.dp)) {
-                        WtaToggleRow(
-                            icon = Icons.Outlined.Cached,
-                            title = Strings.forceFullRebuild,
-                            subtitle = Strings.forceFullRebuildDesc,
-                            checked = forceFullRebuild,
-                            onCheckedChange = { forceFullRebuild = it }
-                        )
-                        WtaSectionDivider()
-                        WtaToggleRow(
-                            icon = Icons.Outlined.VerifiedUser,
-                            title = Strings.perAppSigningTitle,
-                            subtitle = Strings.perAppSigningHint,
-                            checked = perAppSigningEnabled,
-                            onCheckedChange = { perAppSigningEnabled = it }
-                        )
-                        WtaSectionDivider()
-                        WtaToggleRow(
-                            title = Strings.saepPolicyTitle,
-                            subtitle = Strings.saepPolicyHint,
-                            checked = saepEnabled,
-                            onCheckedChange = { saepEnabled = it }
-                        )
-                        WtaSectionDivider()
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
+                    EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
                         ) {
-                            TextButton(
+                            Text(
+                                text = Strings.buildOptionsSection,
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            WtaSettingRow(
+                                icon = Icons.Outlined.Cached,
+                                title = Strings.forceFullRebuild,
+                                subtitle = Strings.forceFullRebuildDesc,
+                                active = forceFullRebuild,
+                                contentPadding = PaddingValues(horizontal = 0.dp, vertical = 6.dp),
+                                onClick = { forceFullRebuild = !forceFullRebuild }
+                            ) {
+                                WtaSwitch(
+                                    checked = forceFullRebuild,
+                                    onCheckedChange = { forceFullRebuild = it }
+                                )
+                            }
+                            WtaSettingRow(
+                                icon = Icons.Outlined.VerifiedUser,
+                                title = Strings.perAppSigningTitle,
+                                subtitle = Strings.perAppSigningHint,
+                                active = perAppSigningEnabled,
+                                contentPadding = PaddingValues(horizontal = 0.dp, vertical = 6.dp),
+                                onClick = { perAppSigningEnabled = !perAppSigningEnabled }
+                            ) {
+                                WtaSwitch(
+                                    checked = perAppSigningEnabled,
+                                    onCheckedChange = { perAppSigningEnabled = it }
+                                )
+                            }
+                            WtaSettingRow(
+                                icon = Icons.Outlined.VerifiedUser,
+                                title = Strings.saepPolicyTitle,
+                                subtitle = Strings.saepPolicyHint,
+                                active = saepEnabled,
+                                contentPadding = PaddingValues(horizontal = 0.dp, vertical = 6.dp),
+                                onClick = { saepEnabled = !saepEnabled }
+                            ) {
+                                WtaSwitch(
+                                    checked = saepEnabled,
+                                    onCheckedChange = { saepEnabled = it }
+                                )
+                            }
+                            WtaSettingRow(
+                                icon = Icons.Outlined.DeleteSweep,
+                                title = Strings.clearIncrementalCache,
+                                contentPadding = PaddingValues(horizontal = 0.dp, vertical = 6.dp),
                                 onClick = {
                                     apkBuilderState?.clearIncrementalCache(currentBuildConfig())
                                     cacheMessage = Strings.incrementalCacheCleared
-                                },
-                                contentPadding = PaddingValues(horizontal = 8.dp)
+                                }
                             ) {
-                                Icon(
-                                    Icons.Outlined.DeleteSweep,
-                                    null,
-                                    modifier = Modifier.size(18.dp),
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Spacer(Modifier.width(6.dp))
-                                Text(
-                                    Strings.clearIncrementalCache,
-                                    style = MaterialTheme.typography.labelMedium
-                                )
-                            }
-                            cacheMessage?.let { msg ->
-                                WtaBadge(
-                                    text = msg,
-                                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            if (analysisReport == null) {
-                item {
-                    WtaCard {
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Icon(
-                                    Icons.Outlined.Info,
-                                    null,
-                                    modifier = Modifier.size(18.dp),
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                                Text(
-                                    Strings.buildApkForApp.replace("%s", webApp.name),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.Medium
-                                )
-                            }
-
-                            Text(
-                                Strings.buildCompleteInstallHint,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-
-                            if (suggestedVersion != null) {
-                                Surface(
-                                    shape = RoundedCornerShape(WtaRadius.Control),
-                                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.55f)
-                                ) {
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(12.dp),
-                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                                    ) {
-                                        Icon(
-                                            Icons.Outlined.SystemUpdateAlt,
-                                            null,
-                                            modifier = Modifier.size(18.dp),
-                                            tint = MaterialTheme.colorScheme.primary
-                                        )
-                                        Text(
-                                            Strings.updateApkGuide.replace("%s", resolvedPackageName)
-                                                .replace("%d", (suggestedVersion?.first ?: baseVersionCode).toString()),
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                                        )
-                                    }
+                                if (cacheMessage != null) {
+                                    WtaBadge(
+                                        text = cacheMessage!!,
+                                        compact = true,
+                                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                    )
+                                } else {
+                                    Icon(
+                                        Icons.Default.ChevronRight,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(18.dp)
+                                    )
                                 }
                             }
                         }
@@ -815,14 +768,6 @@ private fun BuildApkContent(
                                 }
                             }
                         }
-                    }
-                }
-            }
-
-            if (!isEnsuringRuntime) {
-                preflightReport?.let { report ->
-                    item {
-                        ApkExportPreflightPanel(report = report)
                     }
                 }
             }
@@ -1300,14 +1245,6 @@ fun EngineSelectionCard(
                         color = if (isGeckoDownloaded) MaterialTheme.colorScheme.onSurface
                                 else MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    if (isGeckoDownloaded) {
-                        Spacer(Modifier.width(6.dp))
-                        WtaBadge(
-                            text = Strings.engineReady,
-                            containerColor = MaterialTheme.colorScheme.primaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                    }
                 }
                 if (!isGeckoDownloaded) {
                     Text(

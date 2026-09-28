@@ -20,6 +20,9 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -27,9 +30,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
+import kotlin.math.roundToInt
 import com.webtoapp.ui.design.WtaMotion
 import kotlinx.coroutines.delay
 
@@ -144,6 +150,44 @@ val CardCollapseTransition: ExitTransition = shrinkVertically(
     shrinkTowards = androidx.compose.ui.Alignment.Top,
     clip = true
 ) + fadeOut(animationSpec = WtaMotion.exitTween(WtaMotion.DurationQuick))
+
+/**
+ * Expand/collapse container that keeps [content] composed while collapsed.
+ *
+ * Unlike [AnimatedVisibility], collapsing never disposes the subtree, so
+ * re-opening is a pure layout animation with zero recomposition cost — and the
+ * first composition happens while the (zero-height) content is still invisible
+ * instead of inside the click frame. Prefer this for large expandable sections
+ * whose cold-open composition is expensive enough to drop frames (#1095).
+ */
+@Composable
+fun WtaPersistentExpandedContent(
+    expanded: Boolean,
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    val progress by animateFloatAsState(
+        targetValue = if (expanded) 1f else 0f,
+        animationSpec = if (expanded) WtaMotion.settleSpring() else WtaMotion.snapSpring(),
+        label = "wtaExpandedProgress"
+    )
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .clipToBounds()
+            .graphicsLayer { alpha = progress }
+            .layout { measurable, constraints ->
+                val placeable = measurable.measure(constraints)
+                layout(
+                    placeable.width,
+                    (placeable.height * progress).roundToInt()
+                ) {
+                    placeable.place(0, 0)
+                }
+            },
+        content = content
+    )
+}
 
 data class RippleAnimState(
     val isActive: Boolean = false,

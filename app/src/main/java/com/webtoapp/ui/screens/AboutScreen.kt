@@ -49,6 +49,7 @@ import androidx.compose.material.icons.outlined.RestartAlt
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.Send
 import androidx.compose.material.icons.outlined.Star
+import androidx.compose.material.icons.outlined.Subtitles
 import androidx.compose.material.icons.outlined.Sync
 import androidx.compose.material.icons.outlined.Tag
 import androidx.compose.material3.CircularProgressIndicator
@@ -86,6 +87,8 @@ import com.webtoapp.core.i18n.Strings
 import com.webtoapp.ui.components.DataBackupCard
 import com.webtoapp.ui.design.WtaCard
 import com.webtoapp.ui.design.WtaCardTone
+import com.webtoapp.ui.design.WtaSettingRow
+import com.webtoapp.ui.design.WtaSwitch
 import com.webtoapp.ui.design.WtaRadius
 import com.webtoapp.ui.design.WtaScreen
 import com.webtoapp.ui.design.WtaSection
@@ -94,6 +97,9 @@ import com.webtoapp.ui.design.WtaSpacing
 import com.webtoapp.ui.design.rememberHapticClick
 import com.webtoapp.ui.design.wtaPressScale
 import com.webtoapp.ui.theme.LocalIsDarkTheme
+import com.webtoapp.ui.theme.LocalShowDescriptions
+import com.webtoapp.ui.theme.ThemeManager
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
 
 @Composable
@@ -126,6 +132,8 @@ fun AboutScreen(onBack: () -> Unit) {
 
             ContactGrid()
 
+            DescriptionsToggleCard()
+
             WtaSection(
                 title = Strings.dataBackupTitle,
                 headerStyle = WtaSectionHeaderStyle.Quiet
@@ -139,6 +147,35 @@ fun AboutScreen(onBack: () -> Unit) {
 
             MadeWithLoveFooter()
         }
+    }
+}
+
+@Composable
+private fun DescriptionsToggleCard() {
+    val context = LocalContext.current
+    val themeManager = remember { ThemeManager.getInstance(context) }
+    val showDescriptions by themeManager.showDescriptionsFlow.collectAsStateWithLifecycle()
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+
+    WtaCard(
+        modifier = Modifier.fillMaxWidth(),
+        tone = WtaCardTone.Elevated,
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)
+    ) {
+        WtaSettingRow(
+            icon = Icons.Outlined.Subtitles,
+            title = Strings.showDescriptions,
+            subtitle = Strings.showDescriptionsHint,
+            onClick = { scope.launch { themeManager.setShowDescriptions(!showDescriptions) } },
+            trailing = {
+                WtaSwitch(
+                    checked = showDescriptions,
+                    onCheckedChange = {
+                        scope.launch { themeManager.setShowDescriptions(it) }
+                    }
+                )
+            }
+        )
     }
 }
 
@@ -285,24 +322,28 @@ private fun AuthorHeroCard(
                 textAlign = TextAlign.Center
             )
 
-            Spacer(Modifier.height(4.dp))
+            AnimatedVisibility(visible = LocalShowDescriptions.current) {
+                Column {
+                    Spacer(Modifier.height(4.dp))
 
-            Text(
-                text = byLine,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center
-            )
+                    Text(
+                        text = byLine,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center
+                    )
 
-            Spacer(Modifier.height(12.dp))
+                    Spacer(Modifier.height(12.dp))
 
-            Text(
-                text = Strings.aboutAppDescription,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(horizontal = 8.dp)
-            )
+                    Text(
+                        text = Strings.aboutAppDescription,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(horizontal = 8.dp)
+                    )
+                }
+            }
 
             Spacer(Modifier.height(18.dp))
 
@@ -576,14 +617,16 @@ private fun GitHubRepoCard(onClick: () -> Unit) {
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                Text(
-                    text = "github.com/shiaho777/web-to-app",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontFamily = FontFamily.Monospace,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+                AnimatedVisibility(visible = LocalShowDescriptions.current) {
+                    Text(
+                        text = "github.com/shiaho777/web-to-app",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontFamily = FontFamily.Monospace,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
             }
             Spacer(Modifier.width(8.dp))
             Box(
@@ -645,13 +688,15 @@ private fun SwiftproxySponsorCard() {
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                Text(
-                    text = Strings.sponsorSwiftproxyDesc,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
+                AnimatedVisibility(visible = LocalShowDescriptions.current) {
+                    Text(
+                        text = Strings.sponsorSwiftproxyDesc,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
             }
             Spacer(Modifier.width(8.dp))
             Box(
@@ -1833,15 +1878,17 @@ private fun RepoCard(
                 )
             }
 
-            Text(
-                text = repo.description.ifBlank { repoNoDescription() },
-                style = MaterialTheme.typography.bodySmall,
-                color = if (repo.description.isBlank()) MaterialTheme.colorScheme.outline
-                else MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(start = 44.dp)
-            )
+            AnimatedVisibility(visible = LocalShowDescriptions.current) {
+                Text(
+                    text = repo.description.ifBlank { repoNoDescription() },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (repo.description.isBlank()) MaterialTheme.colorScheme.outline
+                    else MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(start = 44.dp)
+                )
+            }
 
             Row(
                 modifier = Modifier.padding(start = 44.dp),

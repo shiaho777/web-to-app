@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.sp
 import com.webtoapp.core.activation.ActivationCode
 import com.webtoapp.core.activation.ActivationCodeType
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.ui.theme.ifDescriptionsShown
 import java.util.concurrent.TimeUnit
 
 private data class CodeTypeTheme(
@@ -507,14 +508,14 @@ private fun RemoteActivationSection(
 
         WtaToggleRow(
             title = Strings.remoteActivationDeliverUrlTitle,
-            subtitle = Strings.remoteActivationDeliverUrlHint,
+            subtitle = Strings.remoteActivationDeliverUrlHint.ifDescriptionsShown(),
             checked = remoteConfig.deliverUrl,
             onCheckedChange = { onRemoteConfigChange(remoteConfig.copy(deliverUrl = it)) }
         )
 
         WtaToggleRow(
             title = Strings.remoteActivationDeviceBoundTitle,
-            subtitle = Strings.remoteActivationDeviceBoundHint,
+            subtitle = Strings.remoteActivationDeviceBoundHint.ifDescriptionsShown(),
             checked = remoteConfig.deviceBound,
             onCheckedChange = { onRemoteConfigChange(remoteConfig.copy(deviceBound = it)) }
         )
@@ -527,7 +528,7 @@ private fun RemoteActivationSection(
             Column(verticalArrangement = Arrangement.spacedBy(WtaSpacing.ContentGap)) {
                 WtaToggleRow(
                     title = Strings.remoteActivationEncryptUrlTitle,
-                    subtitle = Strings.remoteActivationEncryptUrlHint,
+                    subtitle = Strings.remoteActivationEncryptUrlHint.ifDescriptionsShown(),
                     checked = remoteConfig.encryptUrl,
                     onCheckedChange = { onRemoteConfigChange(remoteConfig.copy(encryptUrl = it)) }
                 )

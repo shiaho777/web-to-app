@@ -122,19 +122,8 @@
 # 项目自身代码 — 防收缩，但允许混淆重命名
 # （开源 + 重反射：类全量保留；字段名固定以保护未注解的 Gson 字段）
 # ============================================================
-# Feature-stack bridge layer: classes in feature_stacks/*.dex are loaded by
-# DexClassLoader and reference this contract plus MainFeatureRuntime BY NAME —
-# it must stay fully unrenamed and unshrunk or dex calls resolve to nothing.
--keep class com.webtoapp.core.featurestack.** { *; }
 -keep,allowobfuscation class com.webtoapp.** { *; }
 -keepclassmembers class com.webtoapp.** { <fields>; }
-
-# Feature dexes reference kotlin-stdlib / coroutines by their source names
-# (e.g. kotlin.jvm.internal.Intrinsics, kotlinx.coroutines.Dispatchers). Pin the
-# names of whatever survives shrinking in the main dex so cross-dex calls
-# resolve; unused classes may still shrink.
--keepnames class kotlin.**
--keepnames class kotlinx.**
 
 # data class 的合成构造器（含默认参数）— Gson 反序列化必须
 -keepclassmembers class com.webtoapp.data.model.** {
@@ -176,10 +165,9 @@
 
 # ============================================================
 # OkHttp / Okio — Platform 反射检测 OS 安全栈
-# keepnames: 允许收缩未用类；存活类保留类名（Platform 按名反射探测）
 # ============================================================
--keepnames class okhttp3.internal.platform.**
--keepnames class okhttp3.internal.publicsuffix.**
+-keep class okhttp3.internal.platform.** { *; }
+-keep class okhttp3.internal.publicsuffix.** { *; }
 -dontwarn okhttp3.**
 -dontwarn okio.**
 -dontwarn org.conscrypt.**
@@ -187,12 +175,12 @@
 -dontwarn org.openjsse.**
 
 # ============================================================
-# Coil — fetcher / decoder / mapper 走组件注册，允许收缩未用实现
+# Coil — ServiceLoader 加载 fetcher / decoder / mapper
 # ============================================================
--keepnames class coil.util.**
--keepnames class coil.fetch.**
--keepnames class coil.decode.**
--keepnames class coil.map.**
+-keep class coil.util.** { *; }
+-keep class coil.fetch.** { *; }
+-keep class coil.decode.** { *; }
+-keep class coil.map.** { *; }
 -dontwarn coil.**
 
 # ============================================================
@@ -210,36 +198,45 @@
 
 # ============================================================
 # Credentials API + GoogleId — 反射解析 ID Token
-# keepnames: AAR 自带 consumer rules 管成员级反射，这里只保类名并允许收缩
 # ============================================================
--keepnames class androidx.credentials.**
--keepnames class com.google.android.libraries.identity.**
--keepnames class com.google.android.gms.auth.api.identity.**
+-keep class androidx.credentials.** { *; }
+-keep class com.google.android.libraries.identity.** { *; }
+-keep class com.google.android.gms.auth.api.identity.** { *; }
 -dontwarn androidx.credentials.**
 -dontwarn com.google.android.libraries.identity.**
 
 # ============================================================
-# DataStore Preferences — 无反射，允许收缩未用类
+# DataStore Preferences
 # ============================================================
--keepnames class androidx.datastore.**
+-keep class androidx.datastore.** { *; }
 -dontwarn androidx.datastore.**
 
 # ============================================================
-# Compress / xz — 按名解析格式的类名保留；未用到的归档格式实现允许收缩
+# Compress / xz — ServiceLoader 加载格式
 # ============================================================
--keepnames class org.apache.commons.compress.**
--keepnames class org.tukaani.xz.**
+-keep class org.apache.commons.compress.compressors.FileNameUtil { *; }
+-keep class org.apache.commons.compress.archivers.** { *; }
+-keep class org.tukaani.xz.** { *; }
 -dontwarn org.apache.commons.compress.**
 -dontwarn org.tukaani.xz.**
 -dontwarn org.brotli.dec.**
 # snakeyaml rides in transitively via GeckoView; its java.beans introspection
 # references don't exist on Android but those code paths are never hit.
+# Names must be kept: R8 would otherwise repackage its classes into the root
+# package, where TypeDescription.<clinit>'s getPackage().getName() NPEs and
+# GeckoRuntime.create dies on every launch of a generated app (#1090).
+-keep class org.yaml.snakeyaml.** { *; }
 -dontwarn org.yaml.snakeyaml.**
 
 # ============================================================
 # Compose Runtime — 已有 consumer rules，仅压制 warn
 # ============================================================
 -dontwarn androidx.compose.**
+
+# ============================================================
+# Material / AppCompat — 已有 consumer rules，仅兜底
+# ============================================================
+-dontwarn com.google.android.material.**
 
 # Node.js JNI output bridge (R8 may rename onOutput otherwise)
 -keep class com.webtoapp.core.nodejs.NodeBridge { *; }
@@ -249,11 +246,8 @@
 }
 
 # Firebase / FCM
-# keepnames 而非全量 keep：gms 全家桶（auth/fido/common.api 等 ~4MB dex）
-# 此前被该规则整包锚定为 shrink 种子；改为存活类保名、死类可收缩。
-# FCM / Credential 的反射面由各库自带 consumer rules 兜底。
--keepnames class com.google.firebase.**
--keepnames class com.google.android.gms.**
+-keep class com.google.firebase.** { *; }
+-keep class com.google.android.gms.** { *; }
 -dontwarn com.google.firebase.**
 -dontwarn com.google.android.gms.**
 

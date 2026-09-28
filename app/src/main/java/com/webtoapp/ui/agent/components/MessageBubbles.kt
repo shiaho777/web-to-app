@@ -81,6 +81,7 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.gson.JsonParser
@@ -1412,8 +1413,8 @@ private fun AttachmentList(paths: List<String>) {
 
 @Composable
 private fun UserAttachmentList(attachments: List<UserAttachment>) {
-    Row(horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small)) {
-        attachments.take(8).forEach { att ->
+    LazyRow(horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small)) {
+        items(attachments.take(8), key = { "uatt-${it.path}" }) { att ->
             Surface(
                 shape = MaterialTheme.shapes.small,
                 color = MaterialTheme.colorScheme.secondaryContainer
@@ -1440,7 +1441,9 @@ private fun UserAttachmentList(attachments: List<UserAttachment>) {
                         text = att.displayName,
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSecondaryContainer,
-                        maxLines = 1
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.widthIn(max = 160.dp)
                     )
                 }
             }

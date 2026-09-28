@@ -13,6 +13,7 @@ import com.webtoapp.core.appearance.DeviceDisguiseConfig
 import com.webtoapp.core.appearance.DeviceType
 import com.webtoapp.core.appearance.DevicePresets
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.ui.theme.ifDescriptionsShown
 import com.webtoapp.ui.animation.CardExpandTransition
 import com.webtoapp.ui.animation.CardCollapseTransition
 import com.webtoapp.ui.design.WtaSettingCard
@@ -147,7 +148,7 @@ fun DeviceDisguiseCard(
                 ) {
                     SettingsSwitch(
                         title = Strings.deviceDesktopViewport,
-                        subtitle = Strings.deviceDesktopViewportHint,
+                        subtitle = Strings.deviceDesktopViewportHint.ifDescriptionsShown(),
                         checked = config.isDesktopViewport,
                         onCheckedChange = {
                             onConfigChange(config.copy(isDesktopViewport = it))
@@ -157,7 +158,7 @@ fun DeviceDisguiseCard(
 
                 SettingsSwitch(
                     title = Strings.deviceCustomDevice,
-                    subtitle = Strings.deviceCustomDeviceHint,
+                    subtitle = Strings.deviceCustomDeviceHint.ifDescriptionsShown(),
                     checked = showCustomDevice || config.isCustomDevice,
                     onCheckedChange = {
                         showCustomDevice = it
@@ -262,7 +263,7 @@ fun DeviceDisguiseCard(
 
                 SettingsSwitch(
                     title = Strings.deviceCustomUA,
-                    subtitle = Strings.deviceCustomUAHint,
+                    subtitle = Strings.deviceCustomUAHint.ifDescriptionsShown(),
                     checked = showCustomUA || !config.customUserAgent.isNullOrBlank(),
                     onCheckedChange = {
                         showCustomUA = it

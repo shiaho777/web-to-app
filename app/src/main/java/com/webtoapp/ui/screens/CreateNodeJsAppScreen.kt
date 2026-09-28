@@ -138,6 +138,7 @@ fun CreateNodeJsAppScreen(
 
     val downloadState by NodeDependencyManager.downloadState.collectAsStateWithLifecycle()
     var showDownloadDialog by remember { mutableStateOf(false) }
+    var downloadCancelled by remember { mutableStateOf(false) }
 
     val accentColor = MaterialTheme.colorScheme.onSurface
 
@@ -305,7 +306,8 @@ fun CreateNodeJsAppScreen(
                             val success = NodeDependencyManager.downloadNodeRuntime(context)
                             showDownloadDialog = false
                             if (!success) {
-                                errorMessage = Strings.njsDownloadFailed
+                                if (!downloadCancelled) errorMessage = Strings.njsDownloadFailed
+                                downloadCancelled = false
                                 isCreating = false
                                 return@withContext
                             }
@@ -594,7 +596,8 @@ fun CreateNodeJsAppScreen(
                                                 val success = NodeDependencyManager.downloadNodeRuntime(context)
                                                 showDownloadDialog = false
                                                 if (!success) {
-                                                    errorMessage = Strings.njsDownloadFailed
+                                                    if (!downloadCancelled) errorMessage = Strings.njsDownloadFailed
+                                                    downloadCancelled = false
                                                     isCreating = false
                                                     return@withContext
                                                 }
@@ -992,7 +995,16 @@ fun CreateNodeJsAppScreen(
                     }
                 }
             },
-            confirmButton = {}
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        downloadCancelled = true
+                        NodeDependencyManager.cancelDownload()
+                        showDownloadDialog = false
+                        isCreating = false
+                    }
+                ) { Text(Strings.btnCancel) }
+            }
         )
     }
 }
@@ -1240,7 +1252,10 @@ private fun NodeJsScriptsCard(
                                     text = name,
                                     style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                                    color = if (isSelected) accentColor else MaterialTheme.colorScheme.onSurface
+                                    color = if (isSelected) accentColor else MaterialTheme.colorScheme.onSurface,
+                                    modifier = Modifier.weight(1f, fill = false),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
 
                                 if (name == "start" || name == "dev") {

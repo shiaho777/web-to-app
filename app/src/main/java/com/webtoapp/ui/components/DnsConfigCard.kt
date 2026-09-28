@@ -30,6 +30,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.ui.theme.ifDescriptionsShown
 import com.webtoapp.data.model.DnsConfig
 import com.webtoapp.data.model.DnsProvider
 import com.webtoapp.ui.design.WtaAlpha
@@ -123,7 +124,7 @@ fun DnsConfigCard(
 
                     WtaSettingRow(
                         title = Strings.dnsBypassSystemDns,
-                        subtitle = Strings.dnsBypassSystemDnsDesc,
+                        subtitle = Strings.dnsBypassSystemDnsDesc.ifDescriptionsShown(),
                         titleStyle = MaterialTheme.typography.bodyMedium,
                         onClick = {
                             onDnsConfigChange(dnsConfig.copy(bypassSystemDns = !dnsConfig.bypassSystemDns))
@@ -140,7 +141,7 @@ fun DnsConfigCard(
 
                     WtaSettingRow(
                         title = Strings.dnsEchLabel,
-                        subtitle = Strings.dnsEchDesc,
+                        subtitle = Strings.dnsEchDesc.ifDescriptionsShown(),
                         icon = Icons.Outlined.Shield,
                         titleStyle = MaterialTheme.typography.bodyMedium,
                         onClick = { toggleEch(!dnsConfig.echEnabled) },

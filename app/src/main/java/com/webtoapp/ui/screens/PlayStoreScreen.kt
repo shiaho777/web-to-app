@@ -5,7 +5,9 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -19,6 +21,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Block
@@ -34,7 +37,6 @@ import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -52,6 +54,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
@@ -76,6 +79,7 @@ import com.webtoapp.ui.design.WtaCardTone
 import com.webtoapp.ui.design.WtaColors
 import com.webtoapp.ui.design.WtaScreen
 import com.webtoapp.ui.design.WtaTextField
+import com.webtoapp.ui.theme.ifDescriptionsShown
 import com.webtoapp.ui.viewmodel.MainViewModel
 import java.io.File
 import java.text.DateFormat
@@ -104,6 +108,7 @@ fun PlayStoreScreen(
     var report by remember { mutableStateOf<PlayPolicyChecker.Report?>(null) }
     var exportState by remember { mutableStateOf<ExportState>(ExportState.Idle) }
     var policyExpanded by rememberSaveable { mutableStateOf(true) }
+    var pickerExpanded by rememberSaveable { mutableStateOf(false) }
     var exportJob by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
     var appQuery by rememberSaveable { mutableStateOf("") }
     var showWarningConfirm by remember { mutableStateOf(false) }
@@ -270,37 +275,30 @@ fun PlayStoreScreen(
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             item {
-                AppSelectionCard(
+                ExportAppCard(
+                    app = selectedApp,
                     apps = filteredApps,
                     totalCount = webApps.size,
                     query = appQuery,
                     onQueryChange = { appQuery = it },
                     selectedAppId = selectedAppId,
+                    pickerExpanded = pickerExpanded,
+                    onTogglePicker = { pickerExpanded = !pickerExpanded },
                     onSelectApp = { id ->
                         selectedAppId = id
+                        pickerExpanded = false
                         if (exportState !is ExportState.Running) {
                             exportState = ExportState.Idle
                         }
-                    }
+                    },
+                    hasBuiltApk = hasBuiltApk,
+                    blockers = report?.blockerCount ?: 0,
+                    isRunning = exportState is ExportState.Running,
+                    onExport = { selectedApp?.let { requestExport(it) } }
                 )
             }
 
             if (selectedApp != null) {
-                item {
-                    val blockers = report?.blockerCount ?: 0
-                    val warnings = report?.warningCount ?: 0
-                    val infos = report?.infoCount ?: 0
-                    ExportActionCard(
-                        app = selectedApp,
-                        hasBuiltApk = hasBuiltApk,
-                        blockers = blockers,
-                        warnings = warnings,
-                        infos = infos,
-                        isRunning = exportState is ExportState.Running,
-                        onExport = { requestExport(selectedApp) }
-                    )
-                }
-
                 if (exportState !is ExportState.Idle) {
                     item {
                         ExportStateCard(
@@ -338,87 +336,152 @@ fun PlayStoreScreen(
 }
 
 @Composable
-private fun AppSelectionCard(
+private fun ExportAppCard(
+    app: WebApp?,
     apps: List<WebApp>,
     totalCount: Int,
     query: String,
     onQueryChange: (String) -> Unit,
     selectedAppId: Long?,
-    onSelectApp: (Long) -> Unit
+    pickerExpanded: Boolean,
+    onTogglePicker: () -> Unit,
+    onSelectApp: (Long) -> Unit,
+    hasBuiltApk: Boolean,
+    blockers: Int,
+    isRunning: Boolean,
+    onExport: () -> Unit
 ) {
     WtaCard(tone = WtaCardTone.Surface) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    Icons.Outlined.PlayCircleOutline,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(24.dp)
-                )
-                Spacer(modifier = Modifier.width(12.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = Strings.playStoreSelectApp,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    if (totalCount > 0) {
-                        Text(
-                            text = Strings.playStoreAppCount(totalCount),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
-
-            if (totalCount == 0) {
+            if (app == null) {
                 Text(
                     text = Strings.playStoreNoAppsHint,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             } else {
-                if (totalCount > 6) {
-                    WtaTextField(
-                        value = query,
-                        onValueChange = onQueryChange,
+                // Selected app doubles as the picker toggle when alternatives exist
+                Surface(
+                    onClick = onTogglePicker,
+                    enabled = totalCount > 1,
+                    shape = RoundedCornerShape(12.dp),
+                    color = Color.Transparent
+                ) {
+                    Row(
                         modifier = Modifier.fillMaxWidth(),
-                        placeholder = Strings.search,
-                        leadingIcon = Icons.Outlined.Search,
-                        singleLine = true,
-                        trailingIcon = if (query.isNotEmpty()) {
-                            {
-                                IconButton(onClick = { onQueryChange("") }) {
-                                    Icon(Icons.Outlined.Clear, contentDescription = Strings.clear)
-                                }
-                            }
-                        } else null
-                    )
-                }
-
-                if (apps.isEmpty()) {
-                    Text(
-                        text = Strings.playStoreNoMatch,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                } else {
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .heightIn(max = 280.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        items(apps, key = { it.id }) { app ->
-                            AppRow(
-                                app = app,
-                                isSelected = app.id == selectedAppId,
-                                onClick = { onSelectApp(app.id) }
+                        WtaAppIcon(app, size = 44.dp)
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = app.name,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            val subtitle = app.url.ifBlank { app.appType.name }
+                            if (subtitle.isNotBlank()) {
+                                Text(
+                                    text = subtitle,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                        }
+                        if (totalCount > 1) {
+                            Text(
+                                text = Strings.playStoreAppCount(totalCount),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Icon(
+                                if (pickerExpanded) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,
+                                contentDescription = Strings.playStoreChangeApp,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(22.dp)
                             )
                         }
                     }
                 }
+
+                AnimatedVisibility(
+                    visible = pickerExpanded && totalCount > 1,
+                    enter = expandVertically() + fadeIn(),
+                    exit = shrinkVertically() + fadeOut()
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        if (totalCount > 6) {
+                            WtaTextField(
+                                value = query,
+                                onValueChange = onQueryChange,
+                                modifier = Modifier.fillMaxWidth(),
+                                placeholder = Strings.search,
+                                leadingIcon = Icons.Outlined.Search,
+                                singleLine = true,
+                                trailingIcon = if (query.isNotEmpty()) {
+                                    {
+                                        IconButton(onClick = { onQueryChange("") }) {
+                                            Icon(Icons.Outlined.Clear, contentDescription = Strings.clear)
+                                        }
+                                    }
+                                } else null
+                            )
+                        }
+                        if (apps.isEmpty()) {
+                            Text(
+                                text = Strings.playStoreNoMatch,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        } else {
+                            LazyColumn(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(max = 280.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                items(apps, key = { it.id }) { item ->
+                                    AppRow(
+                                        app = item,
+                                        isSelected = item.id == selectedAppId,
+                                        onClick = { onSelectApp(item.id) }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Text(
+                    text = if (hasBuiltApk) Strings.playStoreHasApkHint else Strings.playStoreNoApkHint,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                if (blockers > 0) {
+                    Text(
+                        text = Strings.playStoreExportBlockedHint,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+
+                WtaButton(
+                    onClick = onExport,
+                    text = when {
+                        isRunning -> Strings.playStoreExportRunning
+                        blockers > 0 -> Strings.playStoreFixBeforeExport
+                        else -> Strings.playStoreExportAabButton
+                    },
+                    variant = if (blockers > 0) WtaButtonVariant.Outlined else WtaButtonVariant.Primary,
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !isRunning && blockers == 0,
+                    leadingIcon = Icons.Outlined.PlayCircleOutline
+                )
             }
         }
     }
@@ -485,86 +548,6 @@ private fun AppRow(
     }
 }
 
-@Composable
-private fun ExportActionCard(
-    app: WebApp,
-    hasBuiltApk: Boolean,
-    blockers: Int,
-    warnings: Int,
-    infos: Int,
-    isRunning: Boolean,
-    onExport: () -> Unit
-) {
-    WtaCard(tone = WtaCardTone.Surface) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                WtaAppIcon(app, size = 40.dp)
-                Spacer(modifier = Modifier.width(10.dp))
-                Text(
-                    text = app.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f)
-                )
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (blockers > 0) {
-                    StatusChip(
-                        label = Strings.playStoreSeverityBlocker + " $blockers",
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
-                if (warnings > 0) {
-                    StatusChip(
-                        label = Strings.playStoreSeverityWarning + " $warnings",
-                        color = WtaColors.semantic.warning
-                    )
-                }
-                if (infos > 0) {
-                    StatusChip(
-                        label = Strings.playStoreSeverityInfo + " $infos",
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-                if (blockers == 0 && warnings == 0) {
-                    StatusChip(
-                        label = Strings.playStoreReportClean,
-                        color = WtaColors.semantic.success
-                    )
-                }
-            }
-
-            Text(
-                text = if (hasBuiltApk) Strings.playStoreHasApkHint else Strings.playStoreNoApkHint,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            if (blockers > 0) {
-                Text(
-                    text = Strings.playStoreExportBlockedHint,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error
-                )
-            }
-
-            WtaButton(
-                onClick = onExport,
-                text = when {
-                    isRunning -> Strings.playStoreExportRunning
-                    blockers > 0 -> Strings.playStoreFixBeforeExport
-                    else -> Strings.playStoreExportAabButton
-                },
-                variant = if (blockers > 0) WtaButtonVariant.Outlined else WtaButtonVariant.Primary,
-                modifier = Modifier.fillMaxWidth(),
-                enabled = !isRunning && blockers == 0,
-                leadingIcon = Icons.Outlined.PlayCircleOutline
-            )
-        }
-    }
-}
 
 @Composable
 private fun StatusChip(label: String, color: Color) {
@@ -590,12 +573,7 @@ private fun RecentAabCard(
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )
-            files.forEachIndexed { index, file ->
-                if (index > 0) {
-                    HorizontalDivider(
-                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
-                    )
-                }
+            files.forEach { file ->
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -642,6 +620,7 @@ private fun PolicyAdviceCard(
     report: PlayPolicyChecker.Report?,
     webApp: WebApp
 ) {
+    val rpt = report ?: PlayPolicyChecker.check(webApp)
     WtaCard(tone = WtaCardTone.Surface) {
         Column(modifier = Modifier.padding(16.dp)) {
             Surface(
@@ -653,23 +632,49 @@ private fun PolicyAdviceCard(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        Icons.Outlined.Policy,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(22.dp)
-                    )
-                    Spacer(modifier = Modifier.width(10.dp))
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.Outlined.Policy,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = Strings.playStoreAdviceTitle,
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold
                         )
-                        Text(
-                            text = Strings.playStoreAdviceSubtitle,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    when {
+                        rpt.blockerCount > 0 -> StatusChip(
+                            label = Strings.playStoreSeverityBlocker + " ${rpt.blockerCount}",
+                            color = MaterialTheme.colorScheme.error
+                        )
+                        rpt.warningCount > 0 -> StatusChip(
+                            label = Strings.playStoreSeverityWarning + " ${rpt.warningCount}",
+                            color = WtaColors.semantic.warning
+                        )
+                        rpt.infoCount > 0 -> StatusChip(
+                            label = Strings.playStoreSeverityInfo + " ${rpt.infoCount}",
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        else -> Icon(
+                            Icons.Outlined.CheckCircle,
+                            contentDescription = Strings.playStoreReportClean,
+                            tint = WtaColors.semantic.success,
+                            modifier = Modifier.size(20.dp)
                         )
                     }
                     Icon(
@@ -686,12 +691,21 @@ private fun PolicyAdviceCard(
                 enter = expandVertically() + fadeIn(),
                 exit = shrinkVertically() + fadeOut()
             ) {
-                val rpt = report ?: PlayPolicyChecker.check(webApp)
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    ReportSummaryCard(report = rpt)
-                    rpt.violations.forEach { violation ->
-                        ViolationCard(violation = violation)
+                Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Strings.playStoreAdviceSubtitle.ifDescriptionsShown()?.let { subtitle ->
+                        Text(
+                            text = subtitle,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    if (rpt.isClean) {
+                        PolicyCleanRow()
+                    } else {
+                        rpt.violations.forEach { violation ->
+                            ViolationRow(violation = violation)
+                        }
                     }
                 }
             }
@@ -700,52 +714,32 @@ private fun PolicyAdviceCard(
 }
 
 @Composable
-private fun ReportSummaryCard(report: PlayPolicyChecker.Report) {
-    val summary = when {
-        report.isClean -> ReportSummary(
-            icon = Icons.Outlined.CheckCircle,
-            tone = WtaCardTone.Highlighted,
-            headlineColor = WtaColors.semantic.success,
-            headline = Strings.playStoreReportClean
-        )
-        report.blockerCount > 0 -> ReportSummary(
-            icon = Icons.Outlined.Block,
-            tone = WtaCardTone.Critical,
-            headlineColor = MaterialTheme.colorScheme.error,
-            headline = String.format(Strings.playStoreReportBlocked, report.blockerCount)
-        )
-        else -> ReportSummary(
-            icon = Icons.Outlined.Warning,
-            tone = WtaCardTone.Elevated,
-            headlineColor = WtaColors.semantic.warning,
-            headline = String.format(Strings.playStoreReportWarning, report.warningCount)
-        )
-    }
-
-    WtaCard(tone = summary.tone) {
-        Column(modifier = Modifier.padding(14.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    summary.icon,
-                    contentDescription = null,
-                    tint = summary.headlineColor,
-                    modifier = Modifier.size(22.dp)
-                )
-                Spacer(modifier = Modifier.width(10.dp))
-                Text(
-                    text = summary.headline,
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = summary.headlineColor
-                )
-            }
-            Spacer(modifier = Modifier.height(8.dp))
+private fun PolicyCleanRow() {
+    Row(verticalAlignment = Alignment.Top) {
+        Box(
+            modifier = Modifier
+                .size(32.dp)
+                .clip(CircleShape)
+                .background(WtaColors.semantic.success.copy(alpha = 0.12f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                Icons.Outlined.CheckCircle,
+                contentDescription = null,
+                tint = WtaColors.semantic.success,
+                modifier = Modifier.size(16.dp)
+            )
+        }
+        Spacer(modifier = Modifier.width(10.dp))
+        Column {
             Text(
-                text = if (report.isClean) {
-                    Strings.playStoreReportCleanDesc
-                } else {
-                    Strings.playStoreSummaryTitle
-                },
+                text = Strings.playStoreReportClean,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = Strings.playStoreReportCleanDesc,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -754,7 +748,7 @@ private fun ReportSummaryCard(report: PlayPolicyChecker.Report) {
 }
 
 @Composable
-private fun ViolationCard(violation: PlayPolicyChecker.Violation) {
+private fun ViolationRow(violation: PlayPolicyChecker.Violation) {
     val resolved = PlayPolicyChecker.resolveViolation(violation)
     val severityColor = when (violation.severity) {
         PlayPolicyChecker.Severity.BLOCKER -> MaterialTheme.colorScheme.error
@@ -772,60 +766,43 @@ private fun ViolationCard(violation: PlayPolicyChecker.Violation) {
         PlayPolicyChecker.Severity.INFO -> Strings.playStoreSeverityInfo
     }
 
-    WtaCard(tone = WtaCardTone.Elevated) {
-        Column(modifier = Modifier.padding(14.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                WtaBadge(
-                    text = severityLabel,
-                    icon = severityIcon,
-                    containerColor = severityColor.copy(alpha = 0.12f),
-                    contentColor = severityColor
-                )
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
+    Row(verticalAlignment = Alignment.Top) {
+        Box(
+            modifier = Modifier
+                .size(32.dp)
+                .clip(CircleShape)
+                .background(severityColor.copy(alpha = 0.12f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                severityIcon,
+                contentDescription = severityLabel,
+                tint = severityColor,
+                modifier = Modifier.size(16.dp)
+            )
+        }
+        Spacer(modifier = Modifier.width(10.dp))
+        Column {
             Text(
                 text = resolved.featurePath,
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold
             )
-            Spacer(modifier = Modifier.height(4.dp))
-            Row(verticalAlignment = Alignment.Top) {
-                Text(
-                    text = Strings.playStorePolicyAreaLabel + ": ",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = resolved.policyArea,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            Spacer(modifier = Modifier.height(12.dp))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(2.dp))
             Text(
-                text = Strings.playStoreFixHintLabel,
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.primary
+                text = resolved.policyArea,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(6.dp))
             Text(
                 text = resolved.fixHint,
-                style = MaterialTheme.typography.bodyMedium
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface
             )
         }
     }
 }
-
-private data class ReportSummary(
-    val icon: androidx.compose.ui.graphics.vector.ImageVector,
-    val tone: WtaCardTone,
-    val headlineColor: Color,
-    val headline: String
-)
 
 internal sealed interface ExportState {
     data object Idle : ExportState

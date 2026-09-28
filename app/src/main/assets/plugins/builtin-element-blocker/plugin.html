@@ -29,6 +29,11 @@
 (function() {
     'use strict';
 
+    // updatePluginPayloads re-injects every phase when the store resolves
+    // late — make the whole script a no-op on re-entry.
+    if (window.__wtaEbInit) return;
+    window.__wtaEbInit = true;
+
     var ACT = {};
     // Feedback goes to the page toast AND the panel toast — whichever is visible.
     function toast(m) { hcj.toast(m); hcj.panel.send({ type: 'toast', msg: String(m) }); }
@@ -44,10 +49,15 @@
             blocked: '已屏蔽元素',
             unblocked: '已取消屏蔽',
             selected: '已选中',
-            tapAgainToBlock: '再次点按即可屏蔽',
+            tapAgainToBlock: '再次点按或点「屏蔽」确认',
             selectMode: '选择模式：点按选择元素，再次点按屏蔽',
             clearedAll: '已清除所有屏蔽',
             selectElement: '选择要屏蔽的元素',
+            confirmBlock: '屏蔽',
+            cancel: '取消',
+            minimize: '收起',
+            expandBar: '展开选择栏',
+            pickHint: '点按页面元素进行选择',
             blockedCount: '已屏蔽 {0} 个元素',
             delete: '删除',
             copyRule: '复制规则',
@@ -60,10 +70,15 @@
             blocked: 'Element blocked',
             unblocked: 'Unblocked',
             selected: 'Selected',
-            tapAgainToBlock: 'tap again to block',
+            tapAgainToBlock: 'tap again or press Block',
             selectMode: 'Select mode: tap to select, tap again to block',
             clearedAll: 'All blocks cleared',
             selectElement: 'Select element to block',
+            confirmBlock: 'Block',
+            cancel: 'Cancel',
+            minimize: 'Minimize',
+            expandBar: 'Expand picker bar',
+            pickHint: 'Tap an element to select it',
             blockedCount: '{0} elements blocked',
             delete: 'Delete',
             copyRule: 'Copy rule',
@@ -76,10 +91,15 @@
             blocked: 'تم حظر العنصر',
             unblocked: 'تم إلغاء الحظر',
             selected: 'محدد',
-            tapAgainToBlock: 'انقر مرة أخرى للحظر',
+            tapAgainToBlock: 'انقر مرة أخرى أو اضغط حظر',
             selectMode: 'وضع التحديد: انقر للتحديد، انقر مرة أخرى للحظر',
             clearedAll: 'تم مسح جميع الحظر',
             selectElement: 'حدد العنصر للحظر',
+            confirmBlock: 'حظر',
+            cancel: 'إلغاء',
+            minimize: 'تصغير',
+            expandBar: 'توسيع شريط الاختيار',
+            pickHint: 'انقر على عنصر لتحديده',
             blockedCount: 'تم حظر {0} عنصر',
             delete: 'حذف',
             copyRule: 'نسخ القاعدة',
@@ -96,6 +116,9 @@
     let selectedElement = null;
     let highlightOverlay = null;
     let escHandler = null;
+    let pickerBar = null;
+    let pickerChip = null;
+    let applyAttempts = 0;
 
     // Create高亮覆盖层
     function createOverlay() {
@@ -136,7 +159,13 @@
     // App屏蔽规则
     function applyBlockedRules() {
         const parent = document.head || document.documentElement;
-        if (!parent) return;
+        if (!parent) {
+            // document_start: the parser may not have emitted a root yet.
+            // Retry on the next frames so the style lands before first paint.
+            if (applyAttempts++ < 120) requestAnimationFrame(applyBlockedRules);
+            return;
+        }
+        applyAttempts = 0;
         let styleEl = document.getElementById('wta-blocked-styles');
         if (!styleEl) {
             styleEl = document.createElement('style');
@@ -214,7 +243,7 @@
 
     function pickElement(x, y) {
         const el = document.elementFromPoint(x, y);
-        if (!el || el === highlightOverlay || el === document.body || el === document.documentElement) return null;
+        if (!el || el === highlightOverlay || inPickerUi(el) || el === document.body || el === document.documentElement) return null;
         return el;
     }
 
@@ -228,11 +257,104 @@
         highlightOverlay.style.height = rect.height + 'px';
     }
 
+    // ---- Floating confirm bar (issue #1088) -----------------------------
+    // Double-tapping a small or moving element to confirm is unreliable;
+    // Brave/uBO/AdGuard all offer a floating confirm button instead. The bar
+    // is additive: tap-twice / double-click still block directly.
+    function inPickerUi(el) {
+        return !!(el && el.closest && el.closest('#wta-picker-bar,#wta-picker-chip'));
+    }
+
+    function ensurePickerStyle() {
+        if (document.getElementById('wta-picker-style')) return;
+        const st = document.createElement('style');
+        st.id = 'wta-picker-style';
+        st.textContent =
+            '#wta-picker-bar{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:2147483647;display:flex;align-items:center;gap:8px;background:rgba(17,24,39,.95);color:#fff;border-radius:14px;padding:8px 10px 8px 14px;box-shadow:0 4px 18px rgba(0,0,0,.35);font:13px/1.4 system-ui,sans-serif;max-width:calc(100vw - 24px)}' +
+            '#wta-picker-info{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:monospace;font-size:12px;opacity:.9}' +
+            '.wta-pk-btn{border:none;border-radius:10px;padding:9px 13px;font-size:14px;font-weight:600;cursor:pointer;color:#fff;line-height:1}' +
+            '.wta-pk-block{background:#ef4444}' +
+            '.wta-pk-block[disabled]{opacity:.45}' +
+            '.wta-pk-ghost{background:rgba(255,255,255,.14);padding:9px 10px}' +
+            '#wta-picker-chip{position:fixed;right:14px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:2147483647;width:44px;height:44px;border-radius:22px;border:none;background:rgba(17,24,39,.95);color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,.35);cursor:pointer}';
+        (document.head || document.documentElement).appendChild(st);
+    }
+
+    function updatePickerBar() {
+        if (!pickerBar) return;
+        const info = pickerBar.querySelector('#wta-picker-info');
+        const btn = pickerBar.querySelector('#wta-picker-block');
+        btn.textContent = T.confirmBlock;
+        if (selectedElement) {
+            info.textContent = getSelector(selectedElement) || selectedElement.tagName.toLowerCase();
+            btn.disabled = false;
+        } else {
+            info.textContent = T.pickHint;
+            btn.disabled = true;
+        }
+    }
+
+    function setBarMinimized(min) {
+        if (pickerBar) pickerBar.style.display = min ? 'none' : 'flex';
+        if (pickerChip) pickerChip.style.display = min ? 'flex' : 'none';
+    }
+
+    function onConfirmBlock(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!selectedElement) return;
+        const selector = getSelector(selectedElement);
+        if (selector) { blockElement(selector); exitSelectMode(); }
+    }
+
+    function createPickerBar() {
+        removePickerBar();
+        ensurePickerStyle();
+        pickerBar = document.createElement('div');
+        pickerBar.id = 'wta-picker-bar';
+        pickerBar.innerHTML =
+            '<span id="wta-picker-info"></span>' +
+            '<button type="button" id="wta-picker-block" class="wta-pk-btn wta-pk-block"></button>' +
+            '<button type="button" id="wta-picker-min" class="wta-pk-btn wta-pk-ghost" title="' + T.minimize + '"><svg style="display:block" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h14"/></svg></button>' +
+            '<button type="button" id="wta-picker-cancel" class="wta-pk-btn wta-pk-ghost" title="' + T.cancel + '"><svg style="display:block" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12"/><path d="M18 6L6 18"/></svg></button>';
+        pickerBar.querySelector('#wta-picker-block').addEventListener('click', onConfirmBlock);
+        pickerBar.querySelector('#wta-picker-min').addEventListener('click', function(e) {
+            e.preventDefault(); e.stopPropagation(); setBarMinimized(true);
+        });
+        pickerBar.querySelector('#wta-picker-cancel').addEventListener('click', function(e) {
+            e.preventDefault(); e.stopPropagation(); exitSelectMode();
+        });
+        document.body.appendChild(pickerBar);
+
+        pickerChip = document.createElement('button');
+        pickerChip.id = 'wta-picker-chip';
+        pickerChip.type = 'button';
+        pickerChip.title = T.expandBar;
+        pickerChip.innerHTML = '<svg style="display:block" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></svg>';
+        pickerChip.addEventListener('click', function(e) {
+            e.preventDefault(); e.stopPropagation(); setBarMinimized(false);
+        });
+        document.body.appendChild(pickerChip);
+
+        setBarMinimized(false);
+        updatePickerBar();
+    }
+
+    function removePickerBar() {
+        if (pickerBar) { pickerBar.remove(); pickerBar = null; }
+        if (pickerChip) { pickerChip.remove(); pickerChip = null; }
+    }
+    // --------------------------------------------------------------------
+
     // Desktop hover preview (mousemove doesn't fire on touchscreens)
     function onMouseMove(e) {
         if (!selectMode) return;
         const el = pickElement(e.clientX, e.clientY);
-        if (!el) { if (highlightOverlay) highlightOverlay.style.display = 'none'; return; }
+        if (!el) {
+            // Hovering picker UI or dead space — keep the selection highlight.
+            if (highlightOverlay && !selectedElement) highlightOverlay.style.display = 'none';
+            return;
+        }
         highlight(el);
     }
 
@@ -241,6 +363,8 @@
     // desktop.
     function onTap(e) {
         if (!selectMode) return;
+        // Taps on the confirm bar/chip must fall through to their own buttons.
+        if (inPickerUi(e.target)) return;
         let el = e.target;
         if (!el || el === highlightOverlay || el === document.body || el === document.documentElement) {
             el = (e.clientX || e.clientY) ? pickElement(e.clientX, e.clientY) : null;
@@ -255,12 +379,14 @@
         } else {
             selectedElement = el;
             highlight(el);
+            updatePickerBar();
             toast(T.selected + ': ' + el.tagName.toLowerCase() + ' — ' + T.tapAgainToBlock);
         }
     }
 
     function onDblClick(e) {
         if (!selectMode) return;
+        if (inPickerUi(e.target)) return;
         const el = e.target;
         if (!el || el === highlightOverlay) return;
         e.preventDefault();
@@ -275,6 +401,7 @@
         selectMode = true;
         selectedElement = null;
         createOverlay();
+        createPickerBar();
         document.addEventListener('mousemove', onMouseMove, true);
         document.addEventListener('click', onTap, true);
         document.addEventListener('touchend', onTap, true);
@@ -294,6 +421,7 @@
         if (!selectMode) return;
         selectMode = false;
         selectedElement = null;
+        removePickerBar();
         if (highlightOverlay) highlightOverlay.style.display = 'none';
         document.removeEventListener('mousemove', onMouseMove, true);
         document.removeEventListener('click', onTap, true);
@@ -350,6 +478,11 @@
     hcj.on('action', function () { hcj.panel.open(); });
 
     applyBlockedRules();
+    // document_start runs before/while the parser builds the tree — re-apply
+    // once the DOM settles in case the first attempt landed before <head>.
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', applyBlockedRules);
+    }
 })();
 </script>
 </head>

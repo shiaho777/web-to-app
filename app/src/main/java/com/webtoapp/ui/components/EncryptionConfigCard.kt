@@ -1,24 +1,27 @@
 package com.webtoapp.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
+import com.webtoapp.ui.design.WtaChip
+import com.webtoapp.ui.design.WtaSpacing
 import com.webtoapp.ui.design.WtaSwitch
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.WarningAmber
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.data.model.ApkEncryptionConfig
-import androidx.compose.ui.graphics.Color
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun EncryptionConfigCard(
     config: ApkEncryptionConfig,
@@ -40,6 +43,7 @@ fun EncryptionConfigCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(
+                    modifier = Modifier.weight(1f),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
@@ -65,12 +69,16 @@ fun EncryptionConfigCard(
                         Text(
                             text = Strings.resourceEncryption,
                             style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Medium
+                            fontWeight = FontWeight.Medium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                         Text(
                             text = if (config.enabled) Strings.encryptionEnabled else Strings.notEnabled,
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
@@ -84,154 +92,92 @@ fun EncryptionConfigCard(
             }
 
             AnimatedVisibility(visible = config.enabled) {
-                Column(modifier = Modifier.padding(top = 16.dp)) {
-                    Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = if (com.webtoapp.ui.theme.LocalIsDarkTheme.current) Color.White.copy(alpha = 0.10f) else Color.White.copy(alpha = 0.72f)
-                        )
+                Column(
+                    modifier = Modifier.padding(top = WtaSpacing.RowHorizontal),
+                    verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
+                ) {
+                    Text(
+                        text = Strings.encryptionKeyMode,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    val keyMode = config.keyMode ?: ApkEncryptionConfig.KEY_MODE_SIGNATURE
+                    FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small),
+                        verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
                     ) {
+                        WtaChip(
+                            selected = keyMode == ApkEncryptionConfig.KEY_MODE_SIGNATURE,
+                            onClick = {
+                                onConfigChange(config.copy(keyMode = ApkEncryptionConfig.KEY_MODE_SIGNATURE))
+                            },
+                            label = Strings.encryptionKeyModeSignature
+                        )
+                        WtaChip(
+                            selected = keyMode == ApkEncryptionConfig.KEY_MODE_EMBEDDED,
+                            onClick = {
+                                onConfigChange(config.copy(keyMode = ApkEncryptionConfig.KEY_MODE_EMBEDDED))
+                            },
+                            label = Strings.encryptionKeyModeEmbedded
+                        )
+                    }
+                    // Signature-bound keys silently stop decrypting after any re-sign;
+                    // surface the warning only while that risky mode is selected.
+                    if (keyMode == ApkEncryptionConfig.KEY_MODE_SIGNATURE) {
                         Row(
-                            modifier = Modifier.padding(12.dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalAlignment = Alignment.Top
                         ) {
                             Icon(
-                                Icons.Default.Info,
+                                Icons.Outlined.WarningAmber,
                                 contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(20.dp)
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier
+                                    .size(16.dp)
+                                    .padding(top = 1.dp)
                             )
                             Text(
-                                text = Strings.encryptionDescription,
+                                text = Strings.encryptionKeyModeHint,
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Text(
-                        text = Strings.encryptionKeyMode,
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Medium
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    val keyModeOptions = listOf(
-                        ApkEncryptionConfig.KEY_MODE_SIGNATURE to Strings.encryptionKeyModeSignature,
-                        ApkEncryptionConfig.KEY_MODE_EMBEDDED to Strings.encryptionKeyModeEmbedded
-                    )
-                    var keyModeExpanded by remember { mutableStateOf(false) }
-                    val selectedKeyModeLabel = keyModeOptions
-                        .firstOrNull { it.first == (config.keyMode ?: ApkEncryptionConfig.KEY_MODE_SIGNATURE) }
-                        ?.second ?: Strings.encryptionKeyModeSignature
-
-                    ExposedDropdownMenuBox(
-                        expanded = keyModeExpanded,
-                        onExpandedChange = { keyModeExpanded = it }
-                    ) {
-                        OutlinedTextField(
-                            value = selectedKeyModeLabel,
-                            onValueChange = {},
-                            readOnly = true,
-                            trailingIcon = {
-                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = keyModeExpanded)
-                            },
-                            modifier = Modifier
-                                .menuAnchor()
-                                .fillMaxWidth()
-                        )
-                        ExposedDropdownMenu(
-                            expanded = keyModeExpanded,
-                            onDismissRequest = { keyModeExpanded = false }
-                        ) {
-                            keyModeOptions.forEach { (mode, label) ->
-                                DropdownMenuItem(
-                                    text = { Text(label) },
-                                    onClick = {
-                                        onConfigChange(config.copy(keyMode = mode))
-                                        keyModeExpanded = false
-                                    }
-                                )
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = Strings.encryptionKeyModeHint,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Text(
-                        text = Strings.runtimeProtection,
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Medium
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = Strings.runtimeProtectionDesc,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-
                     Text(
                         text = Strings.threatResponse,
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Medium
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(top = WtaSpacing.Tiny)
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    val responseOptions = listOf(
-                        ApkEncryptionConfig.ThreatResponse.LOG_ONLY to Strings.threatResponseLogOnly,
-                        ApkEncryptionConfig.ThreatResponse.SILENT_EXIT to Strings.threatResponseSilentExit,
-                        ApkEncryptionConfig.ThreatResponse.CRASH_RANDOM to Strings.threatResponseCrashRandom
-                    )
-                    var expanded by remember { mutableStateOf(false) }
-                    val selectedLabel = responseOptions.firstOrNull { it.first == config.threatResponse }?.second
-                        ?: Strings.threatResponseLogOnly
-
-                    ExposedDropdownMenuBox(
-                        expanded = expanded,
-                        onExpandedChange = { expanded = it }
+                    FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small),
+                        verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
                     ) {
-                        OutlinedTextField(
-                            value = selectedLabel,
-                            onValueChange = {},
-                            readOnly = true,
-                            trailingIcon = {
-                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+                        WtaChip(
+                            selected = config.threatResponse == ApkEncryptionConfig.ThreatResponse.LOG_ONLY,
+                            onClick = {
+                                onConfigChange(config.copy(threatResponse = ApkEncryptionConfig.ThreatResponse.LOG_ONLY))
                             },
-                            modifier = Modifier
-                                .menuAnchor()
-                                .fillMaxWidth()
+                            label = Strings.threatResponseLogOnly
                         )
-                        ExposedDropdownMenu(
-                            expanded = expanded,
-                            onDismissRequest = { expanded = false }
-                        ) {
-                            responseOptions.forEach { (response, label) ->
-                                DropdownMenuItem(
-                                    text = { Text(label) },
-                                    onClick = {
-                                        onConfigChange(config.copy(threatResponse = response))
-                                        expanded = false
-                                    }
-                                )
-                            }
-                        }
+                        WtaChip(
+                            selected = config.threatResponse == ApkEncryptionConfig.ThreatResponse.SILENT_EXIT,
+                            onClick = {
+                                onConfigChange(config.copy(threatResponse = ApkEncryptionConfig.ThreatResponse.SILENT_EXIT))
+                            },
+                            label = Strings.threatResponseSilentExit
+                        )
+                        WtaChip(
+                            selected = config.threatResponse == ApkEncryptionConfig.ThreatResponse.CRASH_RANDOM,
+                            onClick = {
+                                onConfigChange(config.copy(threatResponse = ApkEncryptionConfig.ThreatResponse.CRASH_RANDOM))
+                            },
+                            label = Strings.threatResponseCrashRandom
+                        )
                     }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = Strings.runtimeProtectionResponseHint,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
                 }
             }
         }

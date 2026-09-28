@@ -247,9 +247,10 @@ fun AutoStartCard(
                                 modifier = Modifier.padding(bottom = 8.dp)
                             )
 
-                            Row(
+                            FlowRow(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceEvenly
+                                horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+                                verticalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
                                 val dayNames = listOf(
                                     Strings.dayMon, Strings.dayTue, Strings.dayWed,

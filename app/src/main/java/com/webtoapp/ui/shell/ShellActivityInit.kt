@@ -90,9 +90,9 @@ object ShellActivityInit {
                     appName = config.appName,
                     notificationTitle = bgConfig?.notificationTitle?.ifEmpty { null },
                     notificationContent = bgConfig?.notificationContent?.ifEmpty { null },
-                    showNotification = bgConfig?.showNotification ?: true,
                     keepCpuAwake = bgConfig?.keepCpuAwake ?: true
                 )
+                com.webtoapp.core.background.BackgroundRunService.maybeRequestBatteryExemption(activity)
                 AppLogger.d("ShellActivity", "后台运行服务已启动")
                 com.webtoapp.core.shell.ShellLogger.i("ShellActivity", "后台运行服务已启动")
             } catch (e: Exception) {

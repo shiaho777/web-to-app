@@ -17,6 +17,7 @@ import java.io.File
 import java.io.FileOutputStream
 import java.security.MessageDigest
 import java.util.Locale
+import java.util.concurrent.atomic.AtomicBoolean
 
 object WordPressDependencyManager {
 
@@ -108,6 +109,15 @@ object WordPressDependencyManager {
     private val _downloadState = MutableStateFlow<DownloadState>(DownloadState.Idle)
     val downloadState: StateFlow<DownloadState> = _downloadState
 
+    private val downloadCancelled = AtomicBoolean(false)
+
+    /** Abort the in-flight download; .tmp partial files are kept for a later resume. */
+    fun cancelDownload() {
+        downloadCancelled.set(true)
+        DependencyDownloadEngine.cancel()
+        _downloadState.value = DownloadState.Idle
+    }
+
     private var _userMirrorRegion: MirrorRegion? = null
 
     fun setMirrorRegion(region: MirrorRegion?) {
@@ -182,6 +192,7 @@ object WordPressDependencyManager {
                 DependencyDownloadEngine.state.collect { syncEngineState() }
             }
             try {
+                downloadCancelled.set(false)
                 _downloadState.value = DownloadState.Idle
 
                 DependencyDownloadNotification.getInstance(context)
@@ -222,6 +233,7 @@ object WordPressDependencyManager {
                 DependencyDownloadEngine.state.collect { syncEngineState() }
             }
             try {
+                downloadCancelled.set(false)
                 if (isPhpReady(context)) {
                     DependencyDownloadNotification.getInstance(context)
                     markComplete()
@@ -475,7 +487,9 @@ object WordPressDependencyManager {
                 )
             }
             is DependencyDownloadEngine.State.Error -> {
-                _downloadState.value = DownloadState.Error(es.message)
+                if (!downloadCancelled.get()) {
+                    _downloadState.value = DownloadState.Error(es.message)
+                }
             }
             else -> {}
         }
@@ -487,6 +501,10 @@ object WordPressDependencyManager {
     }
 
     private fun markError(message: String, retryable: Boolean = true) {
+        if (downloadCancelled.get()) {
+            _downloadState.value = DownloadState.Idle
+            return
+        }
         _downloadState.value = DownloadState.Error(message, retryable = retryable)
         DependencyDownloadEngine.publishState(DependencyDownloadEngine.State.Error(message))
     }

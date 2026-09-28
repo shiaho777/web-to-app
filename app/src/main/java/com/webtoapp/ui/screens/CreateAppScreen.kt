@@ -20,6 +20,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import com.webtoapp.ui.animation.CardExpandTransition
 import com.webtoapp.ui.animation.CardCollapseTransition
+import com.webtoapp.ui.animation.WtaPersistentExpandedContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.relocation.BringIntoViewRequester
@@ -43,6 +44,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.ui.theme.ifDescriptionsShown
 import com.webtoapp.data.model.*
 import com.webtoapp.ui.components.ActivationCodeCard
 import com.webtoapp.ui.components.AppNameTextField
@@ -601,11 +603,10 @@ private fun ExportAndPermissionDrawer(
                 onClick = { expanded = !expanded }
             )
 
-            AnimatedVisibility(
-                visible = expanded,
-                enter = CardExpandTransition,
-                exit = CardCollapseTransition
-            ) {
+            // Persistent container (#1095): AnimatedVisibility would dispose the whole
+            // export-config subtree on collapse and pay full recomposition on every
+            // cold open; keeping it composed makes each open a pure layout animation.
+            WtaPersistentExpandedContent(expanded = expanded) {
                 Column(
                     modifier = Modifier.padding(
                         horizontal = WtaSpacing.RowHorizontal,
@@ -622,12 +623,19 @@ private fun ExportAndPermissionDrawer(
                         canOverrideTargetSdk = !appType.requiresProcessExec
                     )
 
-                    PermissionConfigPanel(
-                        permissions = exportConfig.runtimePermissions,
-                        onPermissionsTransform = onRuntimePermissionsTransform,
-                        showDescription = false,
-                        featureReasons = featureReasons
-                    )
+                    WtaSection(
+                        title = Strings.capabilityPermissions,
+                        headerStyle = WtaSectionHeaderStyle.Quiet,
+                        collapsible = true,
+                        initiallyExpanded = false
+                    ) {
+                        PermissionConfigPanel(
+                            permissions = exportConfig.runtimePermissions,
+                            onPermissionsTransform = onRuntimePermissionsTransform,
+                            showDescription = false,
+                            featureReasons = featureReasons
+                        )
+                    }
                 }
             }
         }
@@ -1381,7 +1389,7 @@ fun TranslateCard(
                 WtaToggleRow(
                     icon = Icons.Outlined.SmartButton,
                     title = Strings.showTranslateButton,
-                    subtitle = Strings.showTranslateButtonHint,
+                    subtitle = Strings.showTranslateButtonHint.ifDescriptionsShown(),
                     checked = config.showFloatingButton,
                     onCheckedChange = { onConfigChange(config.copy(showFloatingButton = it)) }
                 )
@@ -1390,7 +1398,7 @@ fun TranslateCard(
                 WtaToggleRow(
                     icon = Icons.Outlined.Sync,
                     title = Strings.autoTranslateOnLoad,
-                    subtitle = Strings.autoTranslateOnLoadHint,
+                    subtitle = Strings.autoTranslateOnLoadHint.ifDescriptionsShown(),
                     checked = config.autoTranslateOnLoad,
                     onCheckedChange = { onConfigChange(config.copy(autoTranslateOnLoad = it)) }
                 )

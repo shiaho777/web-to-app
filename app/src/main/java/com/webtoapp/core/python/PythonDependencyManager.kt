@@ -15,6 +15,7 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 import java.util.Locale
+import java.util.concurrent.atomic.AtomicBoolean
 
 object PythonDependencyManager {
 
@@ -154,6 +155,15 @@ object PythonDependencyManager {
     private val _downloadState = MutableStateFlow<DownloadState>(DownloadState.Idle)
     val downloadState: StateFlow<DownloadState> = _downloadState
 
+    private val downloadCancelled = AtomicBoolean(false)
+
+    /** Abort the in-flight download; the .tmp partial file is kept for a later resume. */
+    fun cancelDownload() {
+        downloadCancelled.set(true)
+        DependencyDownloadEngine.cancel()
+        _downloadState.value = DownloadState.Idle
+    }
+
     private var _userMirrorRegion: MirrorRegion? = null
 
     fun setMirrorRegion(region: MirrorRegion?) {
@@ -281,6 +291,7 @@ object PythonDependencyManager {
                 DependencyDownloadEngine.state.collect { syncEngineState() }
             }
             try {
+                downloadCancelled.set(false)
                 _downloadState.value = DownloadState.Idle
                 DependencyDownloadNotification.getInstance(context)
                 DependencyDownloadEngine.reset()
@@ -1277,7 +1288,9 @@ sys.exit(main())
                 )
             }
             is DependencyDownloadEngine.State.Error -> {
-                _downloadState.value = DownloadState.Error(es.message)
+                if (!downloadCancelled.get()) {
+                    _downloadState.value = DownloadState.Error(es.message)
+                }
             }
             else -> {}
         }
@@ -1289,6 +1302,10 @@ sys.exit(main())
     }
 
     private fun markError(message: String) {
+        if (downloadCancelled.get()) {
+            _downloadState.value = DownloadState.Idle
+            return
+        }
         _downloadState.value = DownloadState.Error(message)
         DependencyDownloadEngine.publishState(DependencyDownloadEngine.State.Error(message))
     }

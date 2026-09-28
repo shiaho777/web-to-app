@@ -85,12 +85,33 @@ class GeckoEngineDownloader(
                         "Downloading GeckoView (${index + 1}/${versionCandidates.size})..."
                     )
 
-                    val downloadSuccess = downloadFile(aarUrl, tempAar) { progress ->
+                    var lastSampleTime = 0L
+                    var lastSampleBytes = 0L
+                    var smoothedSpeed = 0.0  // bytes/sec, EMA-smoothed
+                    var lastEmitTime = 0L
+
+                    val downloadSuccess = downloadFile(aarUrl, tempAar) { progress, downloaded, total ->
                         if (!cancelRequested) {
-                            _downloadState.value = DownloadState.Downloading(
-                                progress * 0.8f,
-                                "Downloading... " + (progress * 100).toInt() + "%"
-                            )
+                            val now = System.nanoTime()
+                            if (lastSampleTime != 0L) {
+                                val dtSec = (now - lastSampleTime) / 1e9
+                                if (dtSec > 0) {
+                                    val instant = (downloaded - lastSampleBytes) / dtSec
+                                    smoothedSpeed = if (smoothedSpeed <= 0) instant
+                                        else smoothedSpeed * 0.7 + instant * 0.3
+                                }
+                            }
+                            lastSampleTime = now
+                            lastSampleBytes = downloaded
+                            // Throttle state emissions: the read loop fires per 8KB
+                            // chunk, far faster than the UI needs.
+                            if (now - lastEmitTime >= 200_000_000L || progress >= 1f) {
+                                lastEmitTime = now
+                                _downloadState.value = DownloadState.Downloading(
+                                    progress * 0.8f,
+                                    buildDownloadMessage(progress, downloaded, total, smoothedSpeed)
+                                )
+                            }
                         }
                     }
 
@@ -162,10 +183,35 @@ class GeckoEngineDownloader(
         return MAVEN_BASE_URL + "/" + artifactName + "/" + version + "/" + artifactName + "-" + version + ".aar"
     }
 
+    private fun buildDownloadMessage(
+        progress: Float,
+        downloaded: Long,
+        total: Long,
+        bytesPerSec: Double
+    ): String {
+        val msg = StringBuilder("Downloading... " + (progress * 100).toInt() + "%")
+        if (total > 0) msg.append(" · ").append(formatSize(downloaded))
+            .append('/').append(formatSize(total))
+        if (bytesPerSec > 0) msg.append(" · ").append(formatSpeed(bytesPerSec))
+        return msg.toString()
+    }
+
+    private fun formatSize(bytes: Long): String = when {
+        bytes < 1024 -> "$bytes B"
+        bytes < 1024 * 1024 -> "${bytes / 1024} KB"
+        else -> "%.1f MB".format(bytes / (1024.0 * 1024.0))
+    }
+
+    private fun formatSpeed(bytesPerSec: Double): String = when {
+        bytesPerSec < 1024 -> "${bytesPerSec.toLong()} B/s"
+        bytesPerSec < 1024 * 1024 -> "%.0f KB/s".format(bytesPerSec / 1024.0)
+        else -> "%.1f MB/s".format(bytesPerSec / (1024.0 * 1024.0))
+    }
+
     private fun downloadFile(
         url: String,
         destFile: File,
-        onProgress: ((Float) -> Unit)? = null
+        onProgress: ((progress: Float, downloadedBytes: Long, totalBytes: Long) -> Unit)? = null
     ): Boolean {
         try {
             val request = Request.Builder()
@@ -200,9 +246,11 @@ class GeckoEngineDownloader(
                     }
                     output.write(buffer, 0, bytesRead)
                     totalBytesRead += bytesRead
-                    if (contentLength > 0) {
-                        onProgress?.invoke(totalBytesRead.toFloat() / contentLength)
-                    }
+                    onProgress?.invoke(
+                        if (contentLength > 0) totalBytesRead.toFloat() / contentLength else 0f,
+                        totalBytesRead,
+                        contentLength
+                    )
                 }
             } finally {
                 output.close()

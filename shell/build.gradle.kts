@@ -91,15 +91,8 @@ android {
                 "build/generated/shellRuntimeSrc",
                 "build/generated/shellStrings",
             )
-            // Shell-local res first: values/shell_theme_compat.xml declares the
-            // Material3 color attrs / theme parents the shared app themes.xml
-            // needs, so the material library can stay out of the template.
-            res.srcDirs("src/main/res", "../app/src/main/res")
-            assets.srcDirs(
-                "src/main/assets",
-                "build/generated/shellRuntimeAssets",
-                "../feature-stacks/build/generated/feature_dexes"
-            )
+            res.srcDirs("../app/src/main/res")
+            assets.srcDirs("src/main/assets", "build/generated/shellRuntimeAssets")
         }
     }
 
@@ -150,22 +143,6 @@ android {
             excludes += "assets/omni.ja"
             excludes += "**/omni.ja"
             excludes += "**/org/bouncycastle/pqc/**"
-            // Packaging residue: build-time metadata that never serves the runtime.
-            // META-INF/services/** must survive (coroutines + Cronet ServiceLoader),
-            // so these patterns deliberately target only leaf artifacts.
-            excludes += "**/*.kotlin_module"
-            excludes += "**/*.version"
-            excludes += "**/version-control-info.textproto"
-            excludes += "**/app-metadata.properties"
-            excludes += "kotlin/**"
-            excludes += "DebugProbesKt.bin"
-            // protobuf schema descriptors — ProtoLite reads generated classes,
-            // never the .proto resources. firebase ships a few at the jar root.
-            excludes += "google/protobuf/*.proto"
-            excludes += "*.proto"
-            // BouncyCastle PKIX i18n message bundles (~180KB); code paths that
-            // would format them are unused.
-            excludes += "**/CertPathReviewerMessages*.properties"
         }
         jniLibs {
             useLegacyPackaging = true
@@ -217,11 +194,6 @@ val syncShellRuntimeSources by tasks.registering(Sync::class) {
 
     from("../app/src/main/java")
 
-    // Feature-stack API lives in :feature-stacks so both sides share one file.
-    from("../feature-stacks/src/main/java") {
-        include("**/core/featurestack/api/**")
-    }
-
     include(
 
         "**/ui/shell/**",
@@ -267,7 +239,6 @@ val syncShellRuntimeSources by tasks.registering(Sync::class) {
         "**/core/frontend/**",
         "**/core/kernel/**",
         "**/core/share/**",
-        "**/core/featurestack/**",
 
         "com/webtoapp/data/model/**",
         "com/webtoapp/data/converter/**",
@@ -329,10 +300,6 @@ val syncShellRuntimeSources by tasks.registering(Sync::class) {
 // Explicit wiring (no tasks.matching scan, which breaks configuration cache):
 // generated sources must exist before any compilation.
 tasks.named("preBuild") { dependsOn(syncShellRuntimeSources) }
-
-// Feature-stack dex assets (feature_stacks/*.dex under the generated assets dir
-// wired into sourceSets above) must exist before mergeAssets.
-tasks.named("preBuild") { dependsOn(":feature-stacks:generateFeatureStackDexes") }
 
 /**
  * Emits reduced Strings.kt / StringsA-E.kt into build/generated/shellStrings:
@@ -566,11 +533,12 @@ dependencies {
     implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
     implementation("androidx.documentfile:documentfile:1.0.1")
 
-    // Native Google sign-in (Credential Manager), FCM and the Cronet HTTP/3
-    // upstream live in per-feature dex assets built by :feature-stacks — the
-    // classes are intentionally NOT in the main dex so ApkBuilder can strip a
-    // stack from generated APKs via the 功能栈 build options.
+    // Native Google sign-in through the Jetpack Credential Manager (NativeBridge).
+    implementation("androidx.credentials:credentials:1.5.0")
+    implementation("androidx.credentials:credentials-play-services-auth:1.5.0")
+    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
 
+    implementation("com.google.android.material:material:1.10.0")
     implementation("androidx.activity:activity-compose:1.8.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.2")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.6.2")
@@ -596,6 +564,9 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.squareup.okhttp3:okhttp-dnsoverhttps:4.12.0")
 
+    implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
+    implementation("com.google.firebase:firebase-messaging")
+
     implementation("org.bouncycastle:bcpkix-jdk15to18:1.78.1")
     implementation("org.bouncycastle:bcprov-jdk15to18:1.78.1")
 
@@ -604,8 +575,13 @@ dependencies {
     implementation("androidx.datastore:datastore-preferences:1.0.0")
 
     implementation("org.apache.commons:commons-compress:1.26.0")
+    implementation("org.tukaani:xz:1.9")
 
     implementation("org.mozilla.geckoview:geckoview-arm64-v8a:142.0.20250827004350")
+
+    // Forced HTTP/3 upstream (see app/build.gradle.kts): classes only, natives are
+    // injected into exported APKs by ApkBuilder when 强制 HTTP/3 is enabled.
+    implementation("org.chromium.net:cronet-embedded:143.7445.0")
 
     implementation("androidx.media:media:1.7.0")
 }

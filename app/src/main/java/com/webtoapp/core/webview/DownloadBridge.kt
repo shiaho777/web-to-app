@@ -656,7 +656,8 @@ class DownloadBridge(
 
                 AppLogger.d("DownloadBridge", "Chunked download complete, saving file: ${download.filename}")
 
-                if (com.webtoapp.util.MediaSaver.isMediaFile(download.mimeType, download.filename)) {
+                if (downloadLocationMode == DownloadLocationMode.SYSTEM_DOWNLOAD &&
+                    com.webtoapp.util.MediaSaver.isMediaFile(download.mimeType, download.filename)) {
 
                     val result = com.webtoapp.util.MediaSaver.saveFromFile(
                         context, download.file, download.mimeType
@@ -741,7 +742,8 @@ class DownloadBridge(
 
                 val safeFilename = sanitizeFilename(filename)
 
-                if (com.webtoapp.util.MediaSaver.isMediaFile(mimeType, safeFilename)) {
+                if (downloadLocationMode == DownloadLocationMode.SYSTEM_DOWNLOAD &&
+                    com.webtoapp.util.MediaSaver.isMediaFile(mimeType, safeFilename)) {
 
                     val result = com.webtoapp.util.MediaSaver.saveFromBytes(
                         context, decodedBytes, safeFilename, mimeType

@@ -64,6 +64,7 @@ class ThemeManager(private val context: Context) {
         private val KEY_ANIMATION_SPEED = stringPreferencesKey("animation_speed")
         private val KEY_FONT_SIZE = stringPreferencesKey("font_size")
         private val KEY_CORNER_STYLE = stringPreferencesKey("corner_style")
+        private val KEY_SHOW_DESCRIPTIONS = booleanPreferencesKey("show_descriptions")
 
         @Volatile
         private var instance: ThemeManager? = null
@@ -187,6 +188,14 @@ class ThemeManager(private val context: Context) {
         initialValue = true
     )
 
+    val showDescriptionsFlow: StateFlow<Boolean> = context.themeDataStore.data.map { prefs ->
+        prefs[KEY_SHOW_DESCRIPTIONS] ?: true
+    }.stateIn(
+        scope = scope,
+        started = SharingStarted.Eagerly,
+        initialValue = true
+    )
+
     val animationSpeedFlow: StateFlow<AnimationSpeed> = context.themeDataStore.data.map { prefs ->
         val speedName = prefs[KEY_ANIMATION_SPEED] ?: AnimationSpeed.NORMAL.name
         try {
@@ -276,6 +285,12 @@ class ThemeManager(private val context: Context) {
     suspend fun setEnableSound(enabled: Boolean) {
         context.themeDataStore.edit { prefs ->
             prefs[KEY_ENABLE_SOUND] = enabled
+        }
+    }
+
+    suspend fun setShowDescriptions(enabled: Boolean) {
+        context.themeDataStore.edit { prefs ->
+            prefs[KEY_SHOW_DESCRIPTIONS] = enabled
         }
     }
 

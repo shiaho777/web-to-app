@@ -6987,57 +6987,48 @@ object StringsC {
         AppLanguage.KOREAN -> "외 %d곡..."
     }
 
-    val loopPlayback: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "循环播放"
-        AppLanguage.ENGLISH -> "Loop Playback"
-        AppLanguage.ARABIC -> "تشغيل متكرر"
-        AppLanguage.PORTUGUESE -> "Reprodução em Loop"
-        AppLanguage.SPANISH -> "Reproducción en Bucle"
-        AppLanguage.FRENCH -> "Lecture en Boucle"
-        AppLanguage.GERMAN -> "Schleifenwiedergabe"
-        AppLanguage.RUSSIAN -> "Повтор воспроизведения"
-        AppLanguage.JAPANESE -> "ループ再生"
-        AppLanguage.KOREAN -> "루프 재생"
+    val bgmLibraryTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "音乐库"
+        AppLanguage.ENGLISH -> "Music Library"
+        AppLanguage.ARABIC -> "مكتبة الموسيقى"
+        AppLanguage.PORTUGUESE -> "Biblioteca de Música"
+        AppLanguage.SPANISH -> "Biblioteca de Música"
+        AppLanguage.FRENCH -> "Bibliothèque Musicale"
+        AppLanguage.GERMAN -> "Musikbibliothek"
+        AppLanguage.RUSSIAN -> "Медиатека"
+        AppLanguage.JAPANESE -> "ミュージックライブラリ"
+        AppLanguage.KOREAN -> "음악 라이브러리"
     }
 
-    val sequentialPlayback: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "Sequential play"
-        AppLanguage.ENGLISH -> "Sequential Playback"
-        AppLanguage.ARABIC -> "تشغيل متسلسل"
-        AppLanguage.PORTUGUESE -> "Reprodução Sequencial"
-        AppLanguage.SPANISH -> "Reproducción Secuencial"
-        AppLanguage.FRENCH -> "Lecture Séquentielle"
-        AppLanguage.GERMAN -> "Sequentielle Wiedergabe"
-        AppLanguage.RUSSIAN -> "Последовательное воспроизведение"
-        AppLanguage.JAPANESE -> "連続再生"
-        AppLanguage.KOREAN -> "순차 재생"
+    val bgmTrackCount: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "%d 首"
+        AppLanguage.ENGLISH -> "%d tracks"
+        AppLanguage.ARABIC -> "%d مقاطع"
+        AppLanguage.PORTUGUESE -> "%d faixas"
+        AppLanguage.SPANISH -> "%d pistas"
+        AppLanguage.FRENCH -> "%d morceaux"
+        AppLanguage.GERMAN -> "%d Titel"
+        AppLanguage.RUSSIAN -> "%d треков"
+        AppLanguage.JAPANESE -> "%d 曲"
+        AppLanguage.KOREAN -> "%d곡"
     }
 
-    val shufflePlayback: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "Shuffle play"
-        AppLanguage.ENGLISH -> "Shuffle Playback"
-        AppLanguage.ARABIC -> "تشغيل عشوائي"
-        AppLanguage.PORTUGUESE -> "Reprodução Aleatória"
-        AppLanguage.SPANISH -> "Reproducción Aleatoria"
-        AppLanguage.FRENCH -> "Lecture Aléatoire"
-        AppLanguage.GERMAN -> "Zufallswiedergabe"
-        AppLanguage.RUSSIAN -> "Случайное воспроизведение"
-        AppLanguage.JAPANESE -> "シャッフル再生"
-        AppLanguage.KOREAN -> "셔플 재생"
+    val moreOptions: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "更多选项"
+        AppLanguage.ENGLISH -> "More options"
+        AppLanguage.ARABIC -> "خيارات أكثر"
+        AppLanguage.PORTUGUESE -> "Mais opções"
+        AppLanguage.SPANISH -> "Más opciones"
+        AppLanguage.FRENCH -> "Plus d'options"
+        AppLanguage.GERMAN -> "Mehr Optionen"
+        AppLanguage.RUSSIAN -> "Ещё"
+        AppLanguage.JAPANESE -> "その他のオプション"
+        AppLanguage.KOREAN -> "더 많은 옵션"
     }
 
-    val modifyConfig: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "修改配置"
-        AppLanguage.ENGLISH -> "Modify Config"
-        AppLanguage.ARABIC -> "تعديل الإعدادات"
-        AppLanguage.PORTUGUESE -> "Modificar Configuração"
-        AppLanguage.SPANISH -> "Modificar Configuración"
-        AppLanguage.FRENCH -> "Modifier la Configuration"
-        AppLanguage.GERMAN -> "Konfiguration ändern"
-        AppLanguage.RUSSIAN -> "Изменить конфигурацию"
-        AppLanguage.JAPANESE -> "設定を変更"
-        AppLanguage.KOREAN -> "구성 수정"
-    }
+
+
+
 
     val extensionModuleTitle: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "Extension module"
@@ -7417,29 +7408,29 @@ object StringsC {
     }
 
     val quickExperienceFrontend: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "快速体验前端项目导入"
-        AppLanguage.ENGLISH -> "Quick experience frontend project import"
-        AppLanguage.ARABIC -> "تجربة سريعة لاستيراد مشروع الواجهة الأمامية"
-        AppLanguage.PORTUGUESE -> "Experimente rapidamente a importação de projeto frontend"
-        AppLanguage.SPANISH -> "Prueba rápida de importación de proyecto frontend"
-        AppLanguage.FRENCH -> "Essayez rapidement l'importation de projet frontend"
-        AppLanguage.GERMAN -> "Schnelles Ausprobieren des Frontend-Projektimports"
-        AppLanguage.RUSSIAN -> "Быстрый опыт импорта фронтенд-проекта"
-        AppLanguage.JAPANESE -> "フロントエンドプロジェクトのインポートを手軽に体験"
-        AppLanguage.KOREAN -> "프론트엔드 프로젝트 가져오기 빠른 체험"
+        AppLanguage.CHINESE -> "一键导入前端示例"
+        AppLanguage.ENGLISH -> "Import a frontend sample to try"
+        AppLanguage.ARABIC -> "استيراد مثال واجهة أمامية"
+        AppLanguage.PORTUGUESE -> "Importe um exemplo frontend"
+        AppLanguage.SPANISH -> "Importa un ejemplo frontend"
+        AppLanguage.FRENCH -> "Importez un exemple frontend"
+        AppLanguage.GERMAN -> "Frontend-Beispiel importieren"
+        AppLanguage.RUSSIAN -> "Импорт фронтенд-примера"
+        AppLanguage.JAPANESE -> "フロントエンドサンプルをインポート"
+        AppLanguage.KOREAN -> "프론트엔드 샘플 가져오기"
     }
 
     val quickExperience: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "快速体验"
-        AppLanguage.ENGLISH -> "Quick Experience"
-        AppLanguage.ARABIC -> "تجربة سريعة"
-        AppLanguage.PORTUGUESE -> "Experiência Rápida"
-        AppLanguage.SPANISH -> "Experiencia Rápida"
-        AppLanguage.FRENCH -> "Expérience Rapide"
-        AppLanguage.GERMAN -> "Schnell ausprobieren"
-        AppLanguage.RUSSIAN -> "Быстрый опыт"
-        AppLanguage.JAPANESE -> "クイック体験"
-        AppLanguage.KOREAN -> "빠른 체험"
+        AppLanguage.ENGLISH -> "Try Now"
+        AppLanguage.ARABIC -> "تجربة"
+        AppLanguage.PORTUGUESE -> "Testar"
+        AppLanguage.SPANISH -> "Probar"
+        AppLanguage.FRENCH -> "Essayer"
+        AppLanguage.GERMAN -> "Testen"
+        AppLanguage.RUSSIAN -> "Демо"
+        AppLanguage.JAPANESE -> "体験"
+        AppLanguage.KOREAN -> "체험"
     }
 
     val run: String get() = when (Strings.lang) {
@@ -7585,6 +7576,32 @@ object StringsC {
         AppLanguage.KOREAN -> "APK 내보내기 구성"
     }
 
+    val apkIdentityBuildSection: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "应用标识与构建"
+        AppLanguage.ENGLISH -> "Identity & Build"
+        AppLanguage.ARABIC -> "الهوية والبناء"
+        AppLanguage.PORTUGUESE -> "Identidade & Build"
+        AppLanguage.SPANISH -> "Identidad & Compilación"
+        AppLanguage.FRENCH -> "Identité & Compilation"
+        AppLanguage.GERMAN -> "Identität & Build"
+        AppLanguage.RUSSIAN -> "Идентификатор и сборка"
+        AppLanguage.JAPANESE -> "アプリIDとビルド"
+        AppLanguage.KOREAN -> "앱 ID 및 빌드"
+    }
+
+    val signingSectionTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "签名"
+        AppLanguage.ENGLISH -> "Signing"
+        AppLanguage.ARABIC -> "التوقيع"
+        AppLanguage.PORTUGUESE -> "Assinatura"
+        AppLanguage.SPANISH -> "Firma"
+        AppLanguage.FRENCH -> "Signature"
+        AppLanguage.GERMAN -> "Signierung"
+        AppLanguage.RUSSIAN -> "Подпись"
+        AppLanguage.JAPANESE -> "署名"
+        AppLanguage.KOREAN -> "서명"
+    }
+
     val apkArchitecture: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "APK 架构"
         AppLanguage.ENGLISH -> "APK Architecture"
@@ -7661,19 +7678,6 @@ object StringsC {
         AppLanguage.RUSSIAN -> "targetSdk сгенерированного APK повышен. Среда выполнения адаптирована (тёмный режим, разрешение на уведомления, фоновые службы). Для Google Play всё равно используйте экспорт AAB; это — для sideload или сторонних каналов."
         AppLanguage.JAPANESE -> "生成された APK の targetSdk を引き上げました。ランタイムは適応済み（ダークモード、通知権限、フォアグラウンドサービス）。Google Play 公開には引き続き AAB エクスポートを使用してください。こちらはサイドロードやサードパーティ配布向けです。"
         AppLanguage.KOREAN -> "생성된 APK의 targetSdk가 올라갔습니다. 런타임이 적응되었습니다 (다크 모드, 알림 권한, 포그라운드 서비스). Google Play 배포에는 여전히 AAB 내보내기를 사용하세요. 이 옵션은 사이드로드 또는 타사 배포용입니다."
-    }
-
-    val currentSigningStatus: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "当前签名状态"
-        AppLanguage.ENGLISH -> "Current Signing Status"
-        AppLanguage.ARABIC -> "حالة التوقيع الحالية"
-        AppLanguage.PORTUGUESE -> "Status de Assinatura Atual"
-        AppLanguage.SPANISH -> "Estado de Firma Actual"
-        AppLanguage.FRENCH -> "Statut de Signature Actuel"
-        AppLanguage.GERMAN -> "Aktueller Signaturstatus"
-        AppLanguage.RUSSIAN -> "Текущий статус подписи"
-        AppLanguage.JAPANESE -> "現在の署名状態"
-        AppLanguage.KOREAN -> "현재 서명 상태"
     }
 
     val signingTypeAutoGenerated: String get() = when (Strings.lang) {
@@ -9509,19 +9513,6 @@ object StringsC {
         AppLanguage.KOREAN -> "앱이 백그라운드에서 계속 실행되도록 유지"
     }
 
-    val backgroundRunShowNotification: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "显示通知"
-        AppLanguage.ENGLISH -> "Show Notification"
-        AppLanguage.ARABIC -> "عرض الإشعار"
-        AppLanguage.PORTUGUESE -> "Mostrar notificação"
-        AppLanguage.SPANISH -> "Mostrar notificación"
-        AppLanguage.FRENCH -> "Afficher la notification"
-        AppLanguage.GERMAN -> "Benachrichtigung anzeigen"
-        AppLanguage.RUSSIAN -> "Показать уведомление"
-        AppLanguage.JAPANESE -> "通知を表示"
-        AppLanguage.KOREAN -> "알림 표시"
-    }
-
     val backgroundRunKeepCpuAwake: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "保持CPU唤醒"
         AppLanguage.ENGLISH -> "Keep CPU Awake"
@@ -9533,6 +9524,19 @@ object StringsC {
         AppLanguage.RUSSIAN -> "Держать CPU активным"
         AppLanguage.JAPANESE -> "CPUをウェイク状態に維持"
         AppLanguage.KOREAN -> "CPU를 깨어있게 유지"
+    }
+
+    val backgroundRunKeepCpuAwakeDesc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "屏幕关闭后继续运行，耗电增加"
+        AppLanguage.ENGLISH -> "Keeps running while the screen is off; higher battery drain"
+        AppLanguage.ARABIC -> "يستمر التشغيل عند إطفاء الشاشة؛ استهلاك أعلى للبطارية"
+        AppLanguage.PORTUGUESE -> "Continua executando com a tela desligada; maior consumo de bateria"
+        AppLanguage.SPANISH -> "Sigue ejecutándose con la pantalla apagada; mayor consumo de batería"
+        AppLanguage.FRENCH -> "Continue de fonctionner écran éteint ; consommation accrue"
+        AppLanguage.GERMAN -> "Läuft bei ausgeschaltetem Bildschirm weiter; höherer Akkuverbrauch"
+        AppLanguage.RUSSIAN -> "Продолжает работу при выключенном экране; выше расход батареи"
+        AppLanguage.JAPANESE -> "画面オフ時も実行を継続（バッテリー消費増）"
+        AppLanguage.KOREAN -> "화면이 꺼져도 계속 실행됩니다 (배터리 소모 증가)"
     }
 
     val backgroundRunNotificationTitle: String get() = when (Strings.lang) {
@@ -9600,30 +9604,43 @@ object StringsC {
         AppLanguage.KOREAN -> "중지"
     }
 
-    val backgroundRunBatteryOptimization: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "电池优化"
-        AppLanguage.ENGLISH -> "Battery Optimization"
-        AppLanguage.ARABIC -> "تحسين البطارية"
-        AppLanguage.PORTUGUESE -> "Otimização de bateria"
-        AppLanguage.SPANISH -> "Optimización de batería"
-        AppLanguage.FRENCH -> "Optimisation de la batterie"
-        AppLanguage.GERMAN -> "Akkuoptimierung"
-        AppLanguage.RUSSIAN -> "Оптимизация батареи"
-        AppLanguage.JAPANESE -> "バッテリー最適化"
-        AppLanguage.KOREAN -> "배터리 최적화"
+    val backgroundRunBatteryAutoHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "生成的应用首次启动时会请求一次电池优化豁免，防止后台服务被系统回收"
+        AppLanguage.ENGLISH -> "The generated app asks once on first launch to be exempted from battery optimization, preventing the system from reclaiming it"
+        AppLanguage.ARABIC -> "يطلب التطبيق المُنشأ مرة واحدة عند أول تشغيل إعفاءه من تحسين البطارية لمنع النظام من إنهائه"
+        AppLanguage.PORTUGUESE -> "O app gerado solicita uma vez, no primeiro arranque, isenção da otimização de bateria para evitar que o sistema o encerre"
+        AppLanguage.SPANISH -> "La app generada solicita una vez, en el primer inicio, la exención de optimización de batería para evitar que el sistema la cierre"
+        AppLanguage.FRENCH -> "L'app générée demande une fois, au premier lancement, l'exemption d'optimisation de batterie pour éviter que le système ne la tue"
+        AppLanguage.GERMAN -> "Die generierte App fragt beim ersten Start einmalig nach einer Akkuoptimierungs-Ausnahme, damit das System den Dienst nicht beendet"
+        AppLanguage.RUSSIAN -> "Сгенерированное приложение при первом запуске один раз запросит исключение из оптимизации батареи, чтобы система не выгружала службу"
+        AppLanguage.JAPANESE -> "生成されたアプリは初回起動時に一度だけバッテリー最適化の除外を求め、システムによる終了を防ぎます"
+        AppLanguage.KOREAN -> "생성된 앱은 첫 실행 시 한 번만 배터리 최적화 제외를 요청하여 시스템이 서비스를 종료하지 않도록 합니다"
     }
 
-    val backgroundRunBatteryOptimizationDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "将应用加入电池优化白名单，防止系统杀死后台服务"
-        AppLanguage.ENGLISH -> "Add app to battery optimization whitelist to prevent system from killing background service"
-        AppLanguage.ARABIC -> "أضف التطبيق إلى القائمة البيضاء لتحسين البطارية لمنع النظام من إنهاء الخدمة الخلفية"
-        AppLanguage.PORTUGUESE -> "Adicionar o aplicativo à lista de permissões de otimização de bateria para evitar que o sistema encerre o serviço em segundo plano"
-        AppLanguage.SPANISH -> "Añadir la aplicación a la lista blanca de optimización de batería para evitar que el sistema cierre el servicio en segundo plano"
-        AppLanguage.FRENCH -> "Ajouter l'application à la liste blanche d'optimisation de batterie pour empêcher le système de tuer le service en arrière-plan"
-        AppLanguage.GERMAN -> "App zur Akkuoptimierungs-Whitelist hinzufügen, um zu verhindern, dass das System den Hintergrunddienst beendet"
-        AppLanguage.RUSSIAN -> "Добавить приложение в белый список оптимизации батареи, чтобы система не убивала фоновую службу"
-        AppLanguage.JAPANESE -> "システムがバックグラウンドサービスを強制終了するのを防ぐため、アプリをバッテリー最適化のホワイトリストに追加"
-        AppLanguage.KOREAN -> "시스템이 백그라운드 서비스를 종료하지 않도록 앱을 배터리 최적화 화이트리스트에 추가"
+    val backgroundRunActiveSummary: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "常驻服务 · 划卡自动重启"
+        AppLanguage.ENGLISH -> "Persistent service · auto-restarts"
+        AppLanguage.ARABIC -> "خدمة دائمة · إعادة تشغيل تلقائية"
+        AppLanguage.PORTUGUESE -> "Serviço persistente · reinício automático"
+        AppLanguage.SPANISH -> "Servicio persistente · reinicio automático"
+        AppLanguage.FRENCH -> "Service persistant · redémarrage auto"
+        AppLanguage.GERMAN -> "Persistenter Dienst · Auto-Neustart"
+        AppLanguage.RUSSIAN -> "Постоянная служба · автоперезапуск"
+        AppLanguage.JAPANESE -> "常駐サービス · 自動再起動"
+        AppLanguage.KOREAN -> "상주 서비스 · 자동 재시작"
+    }
+
+    val backgroundRunNotificationSection: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "常驻通知"
+        AppLanguage.ENGLISH -> "Persistent notification"
+        AppLanguage.ARABIC -> "الإشعار الدائم"
+        AppLanguage.PORTUGUESE -> "Notificação persistente"
+        AppLanguage.SPANISH -> "Notificación persistente"
+        AppLanguage.FRENCH -> "Notification persistante"
+        AppLanguage.GERMAN -> "Permanente Benachrichtigung"
+        AppLanguage.RUSSIAN -> "Постоянное уведомление"
+        AppLanguage.JAPANESE -> "常駐通知"
+        AppLanguage.KOREAN -> "상주 알림"
     }
 
     val notificationConfigTitle: String get() = when (Strings.lang) {
@@ -9650,6 +9667,19 @@ object StringsC {
         AppLanguage.RUSSIAN -> "Тип уведомления"
         AppLanguage.JAPANESE -> "通知タイプ"
         AppLanguage.KOREAN -> "알림 유형"
+    }
+
+    val notificationSelectChannel: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "请选择推送通道"
+        AppLanguage.ENGLISH -> "Choose a push channel"
+        AppLanguage.ARABIC -> "اختر قناة الدفع"
+        AppLanguage.PORTUGUESE -> "Escolha um canal de push"
+        AppLanguage.SPANISH -> "Elige un canal de push"
+        AppLanguage.FRENCH -> "Choisir un canal de push"
+        AppLanguage.GERMAN -> "Push-Kanal wählen"
+        AppLanguage.RUSSIAN -> "Выберите канал push"
+        AppLanguage.JAPANESE -> "プッシュチャネルを選択"
+        AppLanguage.KOREAN -> "푸시 채널 선택"
     }
 
     val notificationTypeWebApi: String get() = when (Strings.lang) {
@@ -9691,16 +9721,16 @@ object StringsC {
         AppLanguage.KOREAN -> "WebSocket 푸시"
     }
     val notificationWebApiDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "启用标准 Web Notification API，网页中的 new Notification() 将直接映射为 Android 系统通知。适用于自行开发的网站或 HTML 项目。"
-        AppLanguage.ENGLISH -> "Enable standard Web Notification API. new Notification() in web pages will map directly to Android system notifications. Suitable for self-developed websites or HTML projects."
-        AppLanguage.ARABIC -> "تمكين واجهة إشعارات الويب القياسية. سيتم تعيين new Notification() مباشرة إلى إشعارات نظام Android. مناسب للمواقع أو مشاريع HTML المطورة ذاتيًا."
-        AppLanguage.PORTUGUESE -> "Ativar API padrão de Web Notification. new Notification() em páginas da web será mapeado diretamente para notificações do sistema Android. Adequado para sites ou projetos HTML desenvolvidos por conta própria."
-        AppLanguage.SPANISH -> "Habilitar API estándar de Web Notification. new Notification() en páginas web se mapeará directamente a notificaciones del sistema Android. Adecuado para sitios web o proyectos HTML auto-desarrollados."
-        AppLanguage.FRENCH -> "Activer l'API standard Web Notification. new Notification() dans les pages web sera mappé directement aux notifications système Android. Convient aux sites web ou projets HTML auto-développés."
-        AppLanguage.GERMAN -> "Standard-Web Notification API aktivieren. new Notification() auf Webseiten wird direkt auf Android-Systembenachrichtigungen abgebildet. Geeignet für selbstentwickelte Websites oder HTML-Projekte."
-        AppLanguage.RUSSIAN -> "Включить стандартный Web Notification API. new Notification() на веб-страницах будет напрямую сопоставляться с системными уведомлениями Android. Подходит для саморазрабатываемых сайтов или HTML-проектов."
-        AppLanguage.JAPANESE -> "標準の Web Notification API を有効化。ウェブページ内の new Notification() は Android システム通知に直接マッピングされます。自作のウェブサイトや HTML プロジェクトに適しています。"
-        AppLanguage.KOREAN -> "표준 Web Notification API 활성화. 웹 페이지의 new Notification()은 Android 시스템 알림에 직접 매핑됩니다. 자체 개발한 웹사이트나 HTML 프로젝트에 적합합니다."
+        AppLanguage.CHINESE -> "网页里的 new Notification() 直接映射为系统通知"
+        AppLanguage.ENGLISH -> "new Notification() in pages maps directly to system notifications"
+        AppLanguage.ARABIC -> "يتم تعيين new Notification() في الصفحات مباشرة إلى إشعارات النظام"
+        AppLanguage.PORTUGUESE -> "new Notification() nas páginas mapeia diretamente para notificações do sistema"
+        AppLanguage.SPANISH -> "new Notification() en páginas se mapea directamente a notificaciones del sistema"
+        AppLanguage.FRENCH -> "new Notification() dans les pages correspond directement aux notifications système"
+        AppLanguage.GERMAN -> "new Notification() in Seiten wird direkt auf Systembenachrichtigungen abgebildet"
+        AppLanguage.RUSSIAN -> "new Notification() на страницах напрямую превращается в системные уведомления"
+        AppLanguage.JAPANESE -> "ページ内の new Notification() がシステム通知に直接マッピングされます"
+        AppLanguage.KOREAN -> "페이지의 new Notification()이 시스템 알림으로 직접 매핑됩니다"
     }
 
     val notificationTypeFcm: String get() = when (Strings.lang) {
@@ -9742,16 +9772,16 @@ object StringsC {
     }
 
     val notificationWebsocketDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "通过可配置的 WebSocket 服务端实时接收推送，原生系统通知展示，点击可跳转到指定页面。可选 Token 注册接口，不绑定特定推送厂商。"
-        AppLanguage.ENGLISH -> "Receive real-time push via a configurable WebSocket server. Shows native system notifications and can open a target page on tap. Optional token registration endpoint; not tied to a specific vendor."
-        AppLanguage.ARABIC -> "استقبل الإشعارات الفورية عبر خادم WebSocket قابل للتهيئة. يعرض إشعارات النظام الأصلية ويمكن فتح صفحة عند النقر. نقطة تسجيل رمز اختيارية دون الارتباط بمورد محدد."
-        AppLanguage.PORTUGUESE -> "Receba push em tempo real via um servidor WebSocket configurável. Exibe notificações nativas e pode abrir uma página ao tocar. Endpoint opcional de registro de token, sem vínculo a um fornecedor."
-        AppLanguage.SPANISH -> "Recibe push en tiempo real mediante un servidor WebSocket configurable. Muestra notificaciones nativas y puede abrir una página al tocar. Endpoint opcional de registro de token, sin atarse a un proveedor."
-        AppLanguage.FRENCH -> "Recevez des push en temps réel via un serveur WebSocket configurable. Affiche des notifications natives et peut ouvrir une page au clic. Endpoint d’enregistrement de jeton optionnel, sans fournisseur imposé."
-        AppLanguage.GERMAN -> "Empfangen Sie Echtzeit-Push über einen konfigurierbaren WebSocket-Server. Zeigt native Systembenachrichtigungen und kann beim Tippen eine Seite öffnen. Optionaler Token-Registrierungsendpunkt, anbieterunabhängig."
-        AppLanguage.RUSSIAN -> "Получайте push в реальном времени через настраиваемый WebSocket-сервер. Показывает системные уведомления и может открыть страницу по нажатию. Опциональная регистрация токена, без привязки к вендору."
-        AppLanguage.JAPANESE -> "設定可能な WebSocket サーバーからリアルタイムでプッシュを受信します。ネイティブ通知を表示し、タップで指定ページを開けます。任意のトークン登録エンドポイントがあり、特定ベンダーに依存しません。"
-        AppLanguage.KOREAN -> "구성 가능한 WebSocket 서버로 실시간 푸시를 수신합니다. 네이티브 시스템 알림을 표시하며 탭 시 지정 페이지를 열 수 있습니다. 선택적 토큰 등록 엔드포인트, 특정 업체에 종속되지 않습니다."
+        AppLanguage.CHINESE -> "连接自定义 WebSocket 服务实时收推送，可选 Token 注册接口"
+        AppLanguage.ENGLISH -> "Real-time push from your own WebSocket server, optional token register endpoint"
+        AppLanguage.ARABIC -> "دفع فوري من خادم WebSocket الخاص بك، مع نقطة تسجيل رمز اختيارية"
+        AppLanguage.PORTUGUESE -> "Push em tempo real do seu próprio servidor WebSocket, endpoint de registro de token opcional"
+        AppLanguage.SPANISH -> "Push en tiempo real desde tu propio servidor WebSocket, con endpoint de registro de token opcional"
+        AppLanguage.FRENCH -> "Push en temps réel depuis votre serveur WebSocket, endpoint d'enregistrement de jeton optionnel"
+        AppLanguage.GERMAN -> "Echtzeit-Push von Ihrem eigenen WebSocket-Server, optionaler Token-Registrierungsendpunkt"
+        AppLanguage.RUSSIAN -> "Push в реальном времени с вашего WebSocket-сервера, опциональный endpoint регистрации токена"
+        AppLanguage.JAPANESE -> "独自の WebSocket サーバーからリアルタイムにプッシュを受信。トークン登録エンドポイントは任意"
+        AppLanguage.KOREAN -> "자체 WebSocket 서버에서 실시간 푸시 수신, 선택적 토큰 등록 엔드포인트"
     }
     val notificationWsUrl: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "WebSocket URL"
@@ -9887,16 +9917,16 @@ object StringsC {
     }
 
     val notificationFcmDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "使用你自己的 Firebase 项目接收 FCM 推送。可粘贴 google-services.json 自动填充，或手动填写 Project ID / App ID / API Key / Sender ID。Token 可通过注册接口回传到你的服务器。需要 Google 服务支持。"
-        AppLanguage.ENGLISH -> "Receive FCM push with your own Firebase project. Paste google-services.json to auto-fill, or enter Project ID / App ID / API Key / Sender ID manually. Tokens can be posted to your register URL. Requires Google services."
-        AppLanguage.ARABIC -> "استقبل دفع FCM بمشروع Firebase الخاص بك. الصق google-services.json للتعبئة التلقائية أو أدخل المعرفات يدويًا. يمكن إرسال الرمز إلى خادمك. يتطلب خدمات Google."
-        AppLanguage.PORTUGUESE -> "Receba push FCM com seu próprio projeto Firebase. Cole o google-services.json para preencher automaticamente ou informe os IDs manualmente. Tokens podem ser enviados à sua URL de registro. Requer serviços Google."
-        AppLanguage.SPANISH -> "Recibe push FCM con tu propio proyecto Firebase. Pega google-services.json para autocompletar o introduce los IDs manualmente. Los tokens se pueden enviar a tu URL de registro. Requiere servicios de Google."
-        AppLanguage.FRENCH -> "Recevez des push FCM avec votre projet Firebase. Collez google-services.json pour remplir automatiquement, ou saisissez les IDs manuellement. Les jetons peuvent être envoyés à votre URL d’enregistrement. Nécessite les services Google."
-        AppLanguage.GERMAN -> "Empfangen Sie FCM-Push mit Ihrem eigenen Firebase-Projekt. google-services.json einfügen zum Autofill oder IDs manuell eingeben. Tokens können an Ihre Register-URL gesendet werden. Benötigt Google-Dienste."
-        AppLanguage.RUSSIAN -> "Получайте FCM push через свой Firebase-проект. Вставьте google-services.json для автозаполнения или укажите ID вручную. Токен можно отправить на ваш register URL. Требуются сервисы Google."
-        AppLanguage.JAPANESE -> "独自の Firebase プロジェクトで FCM プッシュを受信します。google-services.json を貼り付けて自動入力するか、ID を手動入力できます。トークンは登録 URL に送信可能。Google サービスが必要です。"
-        AppLanguage.KOREAN -> "자체 Firebase 프로젝트로 FCM 푸시를 수신합니다. google-services.json을 붙여 자동 채우거나 ID를 직접 입력하세요. 토큰은 등록 URL로 전송할 수 있습니다. Google 서비스가 필요합니다."
+        AppLanguage.CHINESE -> "使用你自己的 Firebase 项目，粘贴 google-services.json 自动填充凭据"
+        AppLanguage.ENGLISH -> "Use your own Firebase project — paste google-services.json to auto-fill credentials"
+        AppLanguage.ARABIC -> "استخدم مشروع Firebase الخاص بك — الصق google-services.json للتعبئة التلقائية"
+        AppLanguage.PORTUGUESE -> "Use seu próprio projeto Firebase — cole o google-services.json para preencher as credenciais"
+        AppLanguage.SPANISH -> "Usa tu propio proyecto Firebase — pega google-services.json para autocompletar las credenciales"
+        AppLanguage.FRENCH -> "Utilisez votre projet Firebase — collez google-services.json pour remplir les identifiants"
+        AppLanguage.GERMAN -> "Eigenes Firebase-Projekt verwenden — google-services.json einfügen zum Autofill der Zugangsdaten"
+        AppLanguage.RUSSIAN -> "Используйте свой проект Firebase — вставьте google-services.json для автозаполнения данных"
+        AppLanguage.JAPANESE -> "独自の Firebase プロジェクトを使用 — google-services.json を貼ると自動入力されます"
+        AppLanguage.KOREAN -> "자체 Firebase 프로젝트 사용 — google-services.json을 붙여 자격 증명을 자동 채움"
     }
     val notificationFcmGoogleServicesJson: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "google-services.json（可选粘贴）"

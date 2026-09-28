@@ -2,6 +2,7 @@ package com.webtoapp.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -39,6 +40,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.webtoapp.core.ai.CatalogModel
 import com.webtoapp.core.ai.ModelCatalogState
@@ -312,15 +314,21 @@ private fun CatalogModelRow(
                     text = model.name,
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Medium,
-                    maxLines = 1
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
                 Text(
                     text = model.providerName,
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
                 Spacer(Modifier.padding(top = 2.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small)) {
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small),
+                    verticalArrangement = Arrangement.spacedBy(WtaSpacing.Tiny)
+                ) {
                     if (model.supportsVision) CatalogBadge(Strings.aiCatalogBadgeVision)
                     if (model.reasoning) CatalogBadge(Strings.aiCatalogBadgeReasoning)
                     if (model.toolCall) CatalogBadge(Strings.aiCatalogBadgeToolCall)
@@ -358,7 +366,9 @@ private fun CatalogBadge(label: String) {
             text = label,
             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
             style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSecondaryContainer
+            color = MaterialTheme.colorScheme.onSecondaryContainer,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
         )
     }
 }

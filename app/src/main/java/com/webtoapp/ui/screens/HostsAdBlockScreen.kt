@@ -193,7 +193,9 @@ fun HostsAdBlockScreen(onBack: () -> Unit) {
         if (downloadJobs.containsKey(source.url)) return
         val job = scope.launch {
             downloadProgress[source.url] = DownloadProgress(0, 0, 0)
-            val result = adBlocker.importHostsFromUrl(source.url, context) { p ->
+            // User-initiated fetch must bypass the 24h URL cache — otherwise the
+            // refresh button is a no-op until the TTL expires (issue #1076).
+            val result = adBlocker.importHostsFromUrl(source.url, context, forceNetwork = true) { p ->
                 downloadProgress[source.url] = p
             }
             downloadProgress.remove(source.url)
@@ -453,7 +455,9 @@ fun HostsAdBlockScreen(onBack: () -> Unit) {
                         if (importUrl.isBlank() || urlImporting) return@TextButton
                         scope.launch {
                             urlImporting = true
-                            val result = adBlocker.importHostsFromUrl(importUrl.trim(), context)
+                            // Explicit user import fetches current content; a
+                            // warm cache entry would resurrect a just-deleted list.
+                            val result = adBlocker.importHostsFromUrl(importUrl.trim(), context, forceNetwork = true)
                             urlImporting = false
                             result.fold(
                                 onSuccess = { count ->

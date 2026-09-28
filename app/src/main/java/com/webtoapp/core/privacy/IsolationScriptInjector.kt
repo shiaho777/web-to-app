@@ -36,16 +36,24 @@ object IsolationScriptInjector {
             scripts.add(generateFontProtectionScript())
         }
 
+        if (config.spoofLanguage && !config.fingerprintConfig.randomize) {
+            scripts.add(generateLanguageSpoofScript(resolveLanguages(config, fingerprint)))
+        }
+
         if (config.spoofScreen) {
             scripts.add(generateScreenSpoofScript(
                 config.customScreenWidth ?: fingerprint.screenWidth,
                 config.customScreenHeight ?: fingerprint.screenHeight,
+                config.customDevicePixelRatio ?: 1.0f,
                 fingerprint.colorDepth
             ))
         }
 
-        if (config.spoofTimezone) {
-            scripts.add(generateTimezoneSpoofScript(config.customTimezone ?: fingerprint.timezone))
+        if (config.spoofLanguage || config.spoofTimezone) {
+            scripts.add(generateEnvSpoofScript(
+                localeTag = if (config.spoofLanguage) resolveLanguages(config, fingerprint).first else null,
+                timezone = if (config.spoofTimezone) (config.customTimezone ?: fingerprint.timezone) else null
+            ))
         }
 
         if (config.protectCanvas) {
@@ -97,14 +105,29 @@ object IsolationScriptInjector {
         """.trimIndent()
     }
 
+    /** 解析 (primaryTag, languages[]) —— 语言伪装开启时优先用户选定标签，否则取随机指纹值。 */
+    private fun resolveLanguages(config: IsolationConfig, fp: GeneratedFingerprint): Pair<String, List<String>> {
+        val custom = config.customLanguage
+        if (config.spoofLanguage && !custom.isNullOrBlank()) {
+            val tag = custom.trim()
+            return tag to IsolationPresets.languageList(tag)
+        }
+        val primary = fp.language.split(",").first().split(";").first().trim()
+        val arr = fp.language.split(",").map { it.split(";").first().trim() }
+        return primary to arr
+    }
+
+    /** 仅输出 JS 字符串字面量安全的字符，防止配置值破坏注入脚本。 */
+    private fun jsStr(raw: String): String =
+        raw.replace("\\", "\\\\").replace("'", "\\'").replace("\n", " ").replace("\r", " ")
+
     private fun generateNavigatorScript(config: IsolationConfig, fp: GeneratedFingerprint): String {
-        val userAgent = config.fingerprintConfig.customUserAgent ?: fp.userAgent
-        val platform = config.fingerprintConfig.platform ?: fp.platform
-        val vendor = config.fingerprintConfig.vendor ?: fp.vendor
+        val userAgent = jsStr(config.fingerprintConfig.customUserAgent ?: fp.userAgent)
+        val platform = jsStr(config.fingerprintConfig.platform ?: fp.platform)
+        val vendor = jsStr(config.fingerprintConfig.vendor ?: fp.vendor)
         val hardwareConcurrency = config.fingerprintConfig.hardwareConcurrency ?: fp.hardwareConcurrency
         val deviceMemory = config.fingerprintConfig.deviceMemory ?: fp.deviceMemory
-        val primaryLang = fp.language.split(",").first().split(";").first().trim()
-        val langArray = fp.language.split(",").map { it.split(";").first().trim() }
+        val (primaryLang, langArray) = resolveLanguages(config, fp)
 
         val clientHintsJs = if (fp.chUa.isNotEmpty()) {
             """
@@ -152,8 +175,8 @@ object IsolationScriptInjector {
                 vendor: '$vendor',
                 hardwareConcurrency: $hardwareConcurrency,
                 deviceMemory: $deviceMemory,
-                language: '$primaryLang',
-                languages: Object.freeze(${langArray.joinToString(",", "[", "]") { "'$it'" }}),
+                language: '${jsStr(primaryLang)}',
+                languages: Object.freeze(${langArray.joinToString(",", "[", "]") { "'${jsStr(it)}'" }}),
                 maxTouchPoints: ${fp.maxTouchPoints},
                 webdriver: false,
                 doNotTrack: '1',
@@ -463,54 +486,287 @@ object IsolationScriptInjector {
         """.trimIndent()
     }
 
-    private fun generateScreenSpoofScript(width: Int, height: Int, colorDepth: Int): String {
+    private fun generateScreenSpoofScript(
+        width: Int,
+        height: Int,
+        dpr: Float,
+        colorDepth: Int
+    ): String {
         val availHeight = height - 40
-        val innerHeight = height - 100
+        val innerHeight = height - 120
+        val orientation = if (width >= height) "landscape-primary" else "portrait-primary"
+        val dprStr = if (dpr == dpr.toLong().toFloat()) dpr.toLong().toString() else dpr.toString()
         return """
-            // Screen/window dimension spoofing
+            // Screen/window dimension spoofing — coherent screen + viewport + media queries
+            var __wta_scrW__ = $width, __wta_scrH__ = $height, __wta_dpr__ = $dprStr;
+            var __wta_innerH__ = $innerHeight, __wta_availH__ = $availHeight;
             var screenProps = {
-                width: $width, height: $height,
-                availWidth: $width, availHeight: $availHeight,
-                colorDepth: $colorDepth, pixelDepth: $colorDepth
+                width: __wta_scrW__, height: __wta_scrH__,
+                availWidth: __wta_scrW__, availHeight: __wta_availH__,
+                availLeft: 0, availTop: 0,
+                colorDepth: $colorDepth, pixelDepth: $colorDepth,
+                isExtended: false
             };
             Object.keys(screenProps).forEach(function(p){
                 try{Object.defineProperty(screen,p,{get:function(){return screenProps[p];},configurable:true});}catch(e){/* expected */}
             });
-            try{Object.defineProperty(window,'devicePixelRatio',{get:function(){return 1;},configurable:true});}catch(e){/* expected */}
             try{
-                Object.defineProperty(window,'outerWidth',{get:function(){return $width;},configurable:true});
-                Object.defineProperty(window,'outerHeight',{get:function(){return $height;},configurable:true});
+                Object.defineProperty(screen,'orientation',{get:function(){
+                    return {type:'$orientation',angle:0,onchange:null,
+                        lock:function(){return Promise.resolve();},unlock:function(){},
+                        addEventListener:function(){},removeEventListener:function(){}};
+                },configurable:true});
             }catch(e){/* expected */}
+
+            var winProps = {
+                innerWidth: __wta_scrW__, innerHeight: __wta_innerH__,
+                outerWidth: __wta_scrW__, outerHeight: __wta_scrH__,
+                devicePixelRatio: __wta_dpr__,
+                screenX: 0, screenY: 0, screenLeft: 0, screenTop: 0,
+                orientation: 0
+            };
+            Object.keys(winProps).forEach(function(p){
+                try{Object.defineProperty(window,p,{get:function(){return winProps[p];},configurable:true});}catch(e){/* expected */}
+            });
+            try{
+                var fakeVV = {
+                    width: __wta_scrW__, height: __wta_innerH__, scale: 1,
+                    offsetLeft: 0, offsetTop: 0, pageLeft: 0, pageTop: 0,
+                    onresize: null, onscroll: null,
+                    addEventListener: function(){}, removeEventListener: function(){}
+                };
+                Object.defineProperty(window,'visualViewport',{get:function(){return fakeVV;},configurable:true});
+            }catch(e){/* expected */}
+
+            // matchMedia — evaluate dimension/resolution/orientation queries against fake metrics
+            var __wta_origMM__ = window.matchMedia ? window.matchMedia.bind(window) : null;
+            function __wta_mmMetric__(name) {
+                switch (name) {
+                    case 'width': case 'device-width': return __wta_scrW__;
+                    case 'height': case 'device-height': return __wta_scrH__;
+                    case 'resolution': return __wta_dpr__;
+                    case 'aspect-ratio': return __wta_scrW__ / __wta_scrH__;
+                }
+                return null;
+            }
+            function __wta_mmValue__(raw, feature) {
+                raw = raw.trim();
+                if (feature === 'orientation') return raw;
+                if (feature === 'aspect-ratio') {
+                    var ab = raw.split('/');
+                    return ab.length === 2 ? (parseFloat(ab[0]) / parseFloat(ab[1])) : NaN;
+                }
+                if (feature === 'resolution') {
+                    var r = parseFloat(raw);
+                    if (raw.indexOf('dpi') !== -1) return r / 96;
+                    if (raw.indexOf('dpcm') !== -1) return r / 37.795;
+                    return r; // dppx / x
+                }
+                var v = parseFloat(raw);
+                if (raw.indexOf('em') !== -1 || raw.indexOf('rem') !== -1) v *= 16;
+                return v;
+            }
+            function __wta_mmEval__(query) {
+                var orParts = query.split(',');
+                var seen = false;
+                for (var oi = 0; oi < orParts.length; oi++) {
+                    var clause = orParts[oi].trim().toLowerCase();
+                    // Strip media type / modifiers: (not|only)? <type>? and ...
+                    clause = clause.replace(/^\s*(only|not)\s+/, '').replace(/^[a-z-]+\s+and\s+/, '');
+                    var negate = /^not\s+/.test(orParts[oi].trim().toLowerCase());
+                    var conds = clause.match(/\([^)]*\)/g);
+                    if (!conds || conds.length === 0) { if (clause === 'all' || clause === 'screen') { return null; } return null; }
+                    var clauseOk = true;
+                    for (var ci = 0; ci < conds.length; ci++) {
+                        var body = conds[ci].slice(1, -1);
+                        var kv = body.split(':');
+                        var feature = kv[0].trim();
+                        var base = feature.replace(/^(min|max)-/, '');
+                        var metric = __wta_mmMetric__(base);
+                        if (metric === null) return null; // unknown feature → delegate
+                        var dir = feature.indexOf('min-') === 0 ? 'min' : (feature.indexOf('max-') === 0 ? 'max' : 'eq');
+                        var ok;
+                        if (kv.length === 1) { ok = metric !== 0; }
+                        else {
+                            var want = __wta_mmValue__(kv.slice(1).join(':'), base);
+                            if (base === 'orientation') {
+                                ok = (want === 'landscape') === (__wta_scrW__ >= __wta_scrH__);
+                            } else if (typeof metric === 'number' && typeof want === 'number' && !isNaN(want)) {
+                                ok = dir === 'min' ? metric >= want : (dir === 'max' ? metric <= want : Math.abs(metric - want) < 0.001);
+                            } else { return null; }
+                        }
+                        if (!ok) { clauseOk = false; break; }
+                    }
+                    if (negate) clauseOk = !clauseOk;
+                    if (clauseOk) return true;
+                    seen = true;
+                }
+                return seen ? false : false;
+            }
+            if (__wta_origMM__) {
+                window.matchMedia = function(q) {
+                    try {
+                        var res = __wta_mmEval__(String(q));
+                        if (res === null) return __wta_origMM__(q);
+                        return {
+                            matches: res, media: q, onchange: null,
+                            addListener: function(){}, removeListener: function(){},
+                            addEventListener: function(){}, removeEventListener: function(){},
+                            dispatchEvent: function(){ return false; }
+                        };
+                    } catch(e) { return __wta_origMM__(q); }
+                };
+            }
         """.trimIndent()
     }
 
-    private fun generateTimezoneSpoofScript(timezone: String): String {
+    /** 语言伪装（navigator.language/languages 独立块，指纹随机化关闭时也可用）。 */
+    private fun generateLanguageSpoofScript(langs: Pair<String, List<String>>): String {
+        val (primary, arr) = langs
         return """
-            // Timezone spoofing
-            var origDTF = Intl.DateTimeFormat;
-            var WtaDTF = function(locales, options) {
-                options = Object.assign({}, options || {});
-                options.timeZone = '$timezone';
-                return new origDTF(locales, options);
+            // Language spoofing (standalone navigator override)
+            try{Object.defineProperty(navigator,'language',{get:function(){return '${jsStr(primary)}';},configurable:true});}catch(e){/* expected */}
+            try{Object.defineProperty(navigator,'languages',{get:function(){return Object.freeze(${arr.joinToString(",", "[", "]") { "'${jsStr(it)}'" }});},configurable:true});}catch(e){/* expected */}
+        """.trimIndent()
+    }
+
+    /**
+     * 环境伪装核心块：Intl 语言环境注入 + 完整时区伪装。
+     * 时区通过 Intl.formatToParts 按时刻动态求偏移（自动处理夏令时），
+     * 并补齐 Date 本地时间 getter / toString 家族 / 构造函数参数解释，
+     * 使 new Date().toString() 与 getHours() 等全部落在目标时区。
+     */
+    private fun generateEnvSpoofScript(localeTag: String?, timezone: String?): String {
+        val localeLine = localeTag?.let { "var __wta_locale__ = '${jsStr(it)}';" } ?: "var __wta_locale__ = null;"
+        val tzLine = timezone?.let { "var __wta_tz__ = '${jsStr(it)}';" } ?: "var __wta_tz__ = null;"
+
+        val localeJs = if (localeTag != null) """
+            // Locale spoofing — Intl constructors default to spoofed locale
+            var __wta_origNF__ = Intl.NumberFormat;
+            var WtaNF = function(locales, options) {
+                return new __wta_origNF__(locales === undefined ? __wta_locale__ : locales, options);
             };
-            WtaDTF.prototype = origDTF.prototype;
-            WtaDTF.supportedLocalesOf = origDTF.supportedLocalesOf;
+            WtaNF.prototype = __wta_origNF__.prototype;
+            WtaNF.supportedLocalesOf = __wta_origNF__.supportedLocalesOf;
+            Intl.NumberFormat = WtaNF;
+            if (Intl.Collator) {
+                var __wta_origCol__ = Intl.Collator;
+                var WtaCol = function(locales, options) {
+                    return new __wta_origCol__(locales === undefined ? __wta_locale__ : locales, options);
+                };
+                WtaCol.prototype = __wta_origCol__.prototype;
+                WtaCol.supportedLocalesOf = __wta_origCol__.supportedLocalesOf;
+                Intl.Collator = WtaCol;
+            }
+        """ else ""
+
+        val timezoneJs = if (timezone != null) """
+            // Timezone spoofing — DST-aware complete Date patching
+            var __wta_dtf__ = __wta_origDTF__('en-US', {
+                timeZone: __wta_tz__, hourCycle: 'h23', weekday: 'short',
+                year: 'numeric', month: '2-digit', day: '2-digit',
+                hour: '2-digit', minute: '2-digit', second: '2-digit'
+            });
+            var __wta_dtfStr__ = __wta_origDTF__('en-US', {
+                timeZone: __wta_tz__, hourCycle: 'h23', weekday: 'short',
+                year: 'numeric', month: 'short', day: '2-digit',
+                hour: '2-digit', minute: '2-digit', second: '2-digit',
+                timeZoneName: 'short'
+            });
+            var __wta_wdmap__ = {Sun:0,Mon:1,Tue:2,Wed:3,Thu:4,Fri:5,Sat:6};
+            var __wta_monmap__ = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+
+            function __wta_tzparts__(ms) {
+                var p = {};
+                __wta_dtf__.formatToParts(ms).forEach(function(x){ p[x.type] = x.value; });
+                return p;
+            }
+            function __wta_tzstrparts__(ms) {
+                var p = {};
+                __wta_dtfStr__.formatToParts(ms).forEach(function(x){ p[x.type] = x.value; });
+                return p;
+            }
+            // 目标时区墙钟 - UTC，单位毫秒（对具体时刻求值 → 自动含 DST）
+            function __wta_tzoff__(ms) {
+                var p = __wta_tzparts__(ms);
+                var h = +p.hour === 24 ? 0 : +p.hour;
+                var wallAsUtc = __wta_OrigDate__.UTC(+p.year, +p.month - 1, +p.day, h, +p.minute, +p.second);
+                return wallAsUtc - Math.floor(ms / 1000) * 1000;
+            }
+            function __wta_gmtstr__(ms) {
+                var offMin = Math.round(__wta_tzoff__(ms) / 60000);
+                var abs = Math.abs(offMin), sign = offMin < 0 ? '-' : '+';
+                return 'GMT' + sign + ('0' + Math.floor(abs / 60)).slice(-2) + ('0' + (abs % 60)).slice(-2);
+            }
+
+            var __wta_OrigDate__ = Date;
+            Date.prototype.getTimezoneOffset = function() {
+                return -Math.round(__wta_tzoff__(this.getTime()) / 60000);
+            };
+            Date.prototype.getFullYear = function() { return +__wta_tzparts__(this.getTime()).year; };
+            Date.prototype.getYear = function() { return +__wta_tzparts__(this.getTime()).year - 1900; };
+            Date.prototype.getMonth = function() { return +__wta_tzparts__(this.getTime()).month - 1; };
+            Date.prototype.getDate = function() { return +__wta_tzparts__(this.getTime()).day; };
+            Date.prototype.getDay = function() { return __wta_wdmap__[__wta_tzparts__(this.getTime()).weekday]; };
+            Date.prototype.getHours = function() { var h = +__wta_tzparts__(this.getTime()).hour; return h === 24 ? 0 : h; };
+            Date.prototype.getMinutes = function() { return +__wta_tzparts__(this.getTime()).minute; };
+            Date.prototype.getSeconds = function() { return +__wta_tzparts__(this.getTime()).second; };
+            Date.prototype.toString = function() {
+                var ms = this.getTime(), p = __wta_tzstrparts__(ms);
+                var h = +p.hour === 24 ? 0 : +p.hour;
+                return p.weekday + ' ' + p.month + ' ' + p.day + ' ' + p.year + ' ' +
+                    ('0' + h).slice(-2) + ':' + p.minute + ':' + p.second + ' ' +
+                    __wta_gmtstr__(ms) + ' (' + p.timeZoneName + ')';
+            };
+            Date.prototype.toDateString = function() {
+                var p = __wta_tzstrparts__(this.getTime());
+                return p.weekday + ' ' + p.month + ' ' + p.day + ' ' + p.year;
+            };
+            Date.prototype.toTimeString = function() {
+                var ms = this.getTime(), p = __wta_tzstrparts__(ms);
+                var h = +p.hour === 24 ? 0 : +p.hour;
+                return ('0' + h).slice(-2) + ':' + p.minute + ':' + p.second + ' ' +
+                    __wta_gmtstr__(ms) + ' (' + p.timeZoneName + ')';
+            };
+
+            // new Date(y, m, d, ...) 的参数按目标时区墙钟解释
+            var WtaDate = function(y, mo, d, h, mi, s, msec) {
+                if (!(this instanceof WtaDate)) return __wta_OrigDate__.apply(null, arguments);
+                var argc = arguments.length;
+                if (argc === 0) return new __wta_OrigDate__();
+                if (argc === 1) return new __wta_OrigDate__(y);
+                var guess = __wta_OrigDate__.UTC(y, mo, d === undefined ? 1 : d, h || 0, mi || 0, s || 0, msec || 0);
+                var t = guess - __wta_tzoff__(guess);
+                t = guess - __wta_tzoff__(t); // 迭代一次消除 DST 边界误差
+                return new __wta_OrigDate__(t);
+            };
+            WtaDate.prototype = __wta_OrigDate__.prototype;
+            WtaDate.now = __wta_OrigDate__.now;
+            WtaDate.UTC = __wta_OrigDate__.UTC;
+            WtaDate.parse = __wta_OrigDate__.parse;
+            __wta_OrigDate__.prototype.constructor = WtaDate;
+            window.Date = WtaDate;
+        """ else ""
+
+        return """
+            // Environment spoofing — coherent Intl locale + timezone
+            $localeLine
+            $tzLine
+            var __wta_origDTF__ = Intl.DateTimeFormat;
+            var WtaDTF = function(locales, options) {
+                var loc = locales;
+                if (loc === undefined && __wta_locale__) loc = __wta_locale__;
+                var opts = Object.assign({}, options || {});
+                if (__wta_tz__) opts.timeZone = __wta_tz__;
+                return new __wta_origDTF__(loc, opts);
+            };
+            WtaDTF.prototype = __wta_origDTF__.prototype;
+            WtaDTF.supportedLocalesOf = __wta_origDTF__.supportedLocalesOf;
             Intl.DateTimeFormat = WtaDTF;
 
-            // Timezone offset map
-            var tzOffsets = {
-                'Asia/Shanghai':-480,'Asia/Tokyo':-540,'Asia/Seoul':-540,
-                'Asia/Singapore':-480,'Asia/Hong_Kong':-480,'Asia/Taipei':-480,
-                'Asia/Kolkata':-330,
-                'America/New_York':300,'America/Chicago':360,'America/Denver':420,
-                'America/Los_Angeles':480,'America/Toronto':300,'America/Sao_Paulo':180,
-                'Europe/London':0,'Europe/Paris':-60,'Europe/Berlin':-60,'Europe/Moscow':-180,
-                'Australia/Sydney':-660,'Pacific/Auckland':-780
-            };
-            var tzOff = tzOffsets['$timezone'];
-            if (tzOff !== undefined) {
-                Date.prototype.getTimezoneOffset = function() { return tzOff; };
-            }
+            $localeJs
+
+            $timezoneJs
         """.trimIndent()
     }
 

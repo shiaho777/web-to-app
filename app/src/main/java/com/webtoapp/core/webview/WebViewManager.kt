@@ -1727,6 +1727,23 @@ class WebViewManager(
                     }
                 }
 
+                // Isolation fingerprint wins last: its UA is injected into navigator.* by the
+                // page script — unless the real request UA agrees, server-side checks see the
+                // discrepancy instantly. Client hints must move with it for the same reason.
+                try {
+                    val isoUa = com.webtoapp.core.privacy.IsolationManager.getInstance(context).getUserAgent()
+                    if (isoUa != null) {
+                        userAgentString = stripWebViewMarker(isoUa)
+                        com.webtoapp.core.kernel.KernelFlavorMetadata.apply(
+                            webView,
+                            com.webtoapp.core.kernel.UserAgentProfileDeriver.derive(isoUa)
+                        )
+                        AppLogger.d("WebViewManager", "Isolation fingerprint UA applied: ${isoUa.take(60)}...")
+                    }
+                } catch (e: Exception) {
+                    AppLogger.w("WebViewManager", "Isolation UA apply failed", e)
+                }
+
                 if (isDesktopModeRequested) {
                     useWideViewPort = true
                     loadWithOverviewMode = true

@@ -20,4 +20,3 @@ rootProject.name = "WebToApp"
 include(":app")
 include(":shell")
 include(":clone-host")
-include(":feature-stacks")

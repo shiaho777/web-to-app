@@ -369,31 +369,7 @@ object StringsB {
         AppLanguage.KOREAN -> "앞으로"
     }
 
-    val countryRegion: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "国家/地区"
-        AppLanguage.ENGLISH -> "Country/Region"
-        AppLanguage.ARABIC -> "البلد/المنطقة"
-        AppLanguage.PORTUGUESE -> "País/Região"
-        AppLanguage.SPANISH -> "País/Región"
-        AppLanguage.FRENCH -> "Pays/Région"
-        AppLanguage.GERMAN -> "Land/Region"
-        AppLanguage.RUSSIAN -> "Страна/Регион"
-        AppLanguage.JAPANESE -> "国/地域"
-        AppLanguage.KOREAN -> "국가/지역"
-    }
 
-    val countryRegionHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "如：日本、韩国、英国..."
-        AppLanguage.ENGLISH -> "e.g.: Japan, Korea, UK..."
-        AppLanguage.ARABIC -> "مثال: اليابان، كوريا، المملكة المتحدة..."
-        AppLanguage.PORTUGUESE -> "ex.: Japão, Coreia, Reino Unido..."
-        AppLanguage.SPANISH -> "ej.: Japón, Corea, Reino Unido..."
-        AppLanguage.FRENCH -> "ex. : Japon, Corée, Royaume-Uni..."
-        AppLanguage.GERMAN -> "z. B.: Japan, Korea, Großbritannien..."
-        AppLanguage.RUSSIAN -> "напр.: Япония, Корея, Великобритания..."
-        AppLanguage.JAPANESE -> "例: 日本、韓国、イギリス..."
-        AppLanguage.KOREAN -> "예: 일본, 한국, 영국..."
-    }
 
     val moduleNameRequired: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "模块名称 *"
@@ -630,29 +606,16 @@ object StringsB {
     }
 
     val sectionWebEngine: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "引擎"
-        AppLanguage.ENGLISH -> "Engine"
-        AppLanguage.ARABIC -> "المحرك"
-        AppLanguage.PORTUGUESE -> "Mecanismo"
-        AppLanguage.SPANISH -> "Motor"
-        AppLanguage.FRENCH -> "Moteur"
-        AppLanguage.GERMAN -> "Web-Engine"
-        AppLanguage.RUSSIAN -> "Движок"
-        AppLanguage.JAPANESE -> "エンジン"
-        AppLanguage.KOREAN -> "엔진"
-    }
-
-    val sectionContentDisplay: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "内容与显示"
-        AppLanguage.ENGLISH -> "Content & Display"
-        AppLanguage.ARABIC -> "المحتوى والعرض"
-        AppLanguage.PORTUGUESE -> "Conteúdo & Exibição"
-        AppLanguage.SPANISH -> "Contenido & Visualización"
-        AppLanguage.FRENCH -> "Contenu & Affichage"
-        AppLanguage.GERMAN -> "Inhalt & Anzeige"
-        AppLanguage.RUSSIAN -> "Содержимое и отображение"
-        AppLanguage.JAPANESE -> "コンテンツと表示"
-        AppLanguage.KOREAN -> "콘텐츠 및 표시"
+        AppLanguage.CHINESE -> "引擎与显示"
+        AppLanguage.ENGLISH -> "Engine & Display"
+        AppLanguage.ARABIC -> "المحرك والعرض"
+        AppLanguage.PORTUGUESE -> "Motor & Exibição"
+        AppLanguage.SPANISH -> "Motor & Visualización"
+        AppLanguage.FRENCH -> "Moteur & Affichage"
+        AppLanguage.GERMAN -> "Engine & Anzeige"
+        AppLanguage.RUSSIAN -> "Движок и отображение"
+        AppLanguage.JAPANESE -> "エンジンと表示"
+        AppLanguage.KOREAN -> "엔진 및 표시"
     }
 
     val sectionNavigation: String get() = when (Strings.lang) {
@@ -669,29 +632,16 @@ object StringsB {
     }
 
     val sectionOfflinePerformance: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "离线与性能"
-        AppLanguage.ENGLISH -> "Offline & Performance"
-        AppLanguage.ARABIC -> "غير متصل والأداء"
-        AppLanguage.PORTUGUESE -> "Offline & Desempenho"
-        AppLanguage.SPANISH -> "Sin Conexión & Rendimiento"
-        AppLanguage.FRENCH -> "Hors Ligne & Performance"
-        AppLanguage.GERMAN -> "Offline & Leistung"
-        AppLanguage.RUSSIAN -> "Офлайн и производительность"
-        AppLanguage.JAPANESE -> "オフラインとパフォーマンス"
-        AppLanguage.KOREAN -> "오프라인 및 성능"
-    }
-
-    val sectionAutoRefresh: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "自动刷新"
-        AppLanguage.ENGLISH -> "Auto Refresh"
-        AppLanguage.ARABIC -> "التحديث التلقائي"
-        AppLanguage.PORTUGUESE -> "Atualização Automática"
-        AppLanguage.SPANISH -> "Actualización Automática"
-        AppLanguage.FRENCH -> "Actualisation Auto"
-        AppLanguage.GERMAN -> "Auto-Aktualisierung"
-        AppLanguage.RUSSIAN -> "Автообновление"
-        AppLanguage.JAPANESE -> "自動更新"
-        AppLanguage.KOREAN -> "자동 새로고침"
+        AppLanguage.CHINESE -> "网络与离线"
+        AppLanguage.ENGLISH -> "Network & Offline"
+        AppLanguage.ARABIC -> "الشبكة وعدم الاتصال"
+        AppLanguage.PORTUGUESE -> "Rede & Offline"
+        AppLanguage.SPANISH -> "Red & Sin Conexión"
+        AppLanguage.FRENCH -> "Réseau & Hors Ligne"
+        AppLanguage.GERMAN -> "Netzwerk & Offline"
+        AppLanguage.RUSSIAN -> "Сеть и офлайн"
+        AppLanguage.JAPANESE -> "ネットワークとオフライン"
+        AppLanguage.KOREAN -> "네트워크 및 오프라인"
     }
 
     val sectionDeveloper: String get() = when (Strings.lang) {
@@ -1354,19 +1304,6 @@ object StringsB {
         AppLanguage.RUSSIAN -> "Если этот пакет уже установлен с более высоким versionCode, версия сборки повышается, чтобы обновление установилось. Отключите, чтобы всегда использовать указанную выше версию."
         AppLanguage.JAPANESE -> "このパッケージがより高い versionCode で既にインストールされている場合、インストールできるようビルドのバージョンを引き上げます。オフにすると常に上記のバージョンを使用します。"
         AppLanguage.KOREAN -> "이 패키지가 더 높은 versionCode로 이미 설치된 경우 설치할 수 있도록 빌드 버전을 올립니다. 끄면 항상 위에 지정한 버전을 사용합니다."
-    }
-
-    val updateApkGuide: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "将使用相同包名 %s 并把版本号提升到 %d。构建完成后点击安装，Android 会显示正常更新确认。"
-        AppLanguage.ENGLISH -> "Uses the same package %s and raises versionCode to %d. After build, tap Install and Android will show the normal update prompt."
-        AppLanguage.ARABIC -> "سيستخدم نفس الحزمة %s ويرفع versionCode إلى %d. بعد البناء، اضغط تثبيت وسيعرض Android مطالبة التحديث العادية."
-        AppLanguage.PORTUGUESE -> "Usa o mesmo pacote %s e eleva o versionCode para %d. Após o build, toque em Instalar e o Android mostrará o prompt de atualização normal."
-        AppLanguage.SPANISH -> "Usa el mismo paquete %s y eleva el versionCode a %d. Tras el build, toca Instalar y Android mostrará el prompt de actualización normal."
-        AppLanguage.FRENCH -> "Utilise le même package %s et augmente le versionCode à %d. Après le build, appuyez sur Installer et Android affichera l'invite de mise à jour normale."
-        AppLanguage.GERMAN -> "Verwendet dasselbe Paket %s und erhöht den versionCode auf %d. Nach dem Build auf Installieren tippen und Android zeigt die normale Update-Aufforderung."
-        AppLanguage.RUSSIAN -> "Использует тот же пакет %s и повышает versionCode до %d. После сборки нажмите Установить, и Android покажет обычный запрос обновления."
-        AppLanguage.JAPANESE -> "同じパッケージ %s を使用し、versionCode を %d に引き上げます。ビルド後にインストールをタップすると、Android が通常の更新プロンプトを表示します。"
-        AppLanguage.KOREAN -> "동일한 패키지 %s를 사용하고 versionCode를 %d로 올립니다. 빌드 후 설치를 탭하면 Android가 일반 업데이트 프롬프트를 표시합니다."
     }
 
     val selectTheme: String get() = when (Strings.lang) {
@@ -2034,31 +1971,7 @@ object StringsB {
         AppLanguage.KOREAN -> "사전 설정 너비"
     }
 
-    val fingerprintProtection: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "指纹防护"
-        AppLanguage.ENGLISH -> "Fingerprint Protection"
-        AppLanguage.ARABIC -> "حماية البصمة"
-        AppLanguage.PORTUGUESE -> "Proteção de Impressão Digital"
-        AppLanguage.SPANISH -> "Protección de Huella Digital"
-        AppLanguage.FRENCH -> "Protection d'Empreinte Numérique"
-        AppLanguage.GERMAN -> "Fingerabdruck-Schutz"
-        AppLanguage.RUSSIAN -> "Защита отпечатка"
-        AppLanguage.JAPANESE -> "フィンガープリント保護"
-        AppLanguage.KOREAN -> "지문 보호"
-    }
 
-    val networkProtection: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "网络防护"
-        AppLanguage.ENGLISH -> "Network Protection"
-        AppLanguage.ARABIC -> "حماية الشبكة"
-        AppLanguage.PORTUGUESE -> "Proteção de Rede"
-        AppLanguage.SPANISH -> "Protección de Red"
-        AppLanguage.FRENCH -> "Protection Réseau"
-        AppLanguage.GERMAN -> "Netzwerkschutz"
-        AppLanguage.RUSSIAN -> "Защита сети"
-        AppLanguage.JAPANESE -> "ネットワーク保護"
-        AppLanguage.KOREAN -> "네트워크 보호"
-    }
 
     val advancedOptions: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "高级选项"
@@ -2151,44 +2064,8 @@ object StringsB {
         AppLanguage.KOREAN -> "비활성화됨"
     }
 
-    val ipRegion: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "IP 地区"
-        AppLanguage.ENGLISH -> "IP Region"
-        AppLanguage.ARABIC -> "منطقة IP"
-        AppLanguage.PORTUGUESE -> "Região de IP"
-        AppLanguage.SPANISH -> "Región de IP"
-        AppLanguage.FRENCH -> "Région IP"
-        AppLanguage.GERMAN -> "IP-Region"
-        AppLanguage.RUSSIAN -> "Регион IP"
-        AppLanguage.JAPANESE -> "IP リージョン"
-        AppLanguage.KOREAN -> "IP 지역"
-    }
 
-    val supportedCountriesHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "支持：中国、美国、日本、韩国、英国、德国、法国、俄罗斯、巴西、印度、澳大利亚、加拿大、新加坡、香港、台湾、欧洲、亚洲"
-        AppLanguage.ENGLISH -> "Supported: China, USA, Japan, Korea, UK, Germany, France, Russia, Brazil, India, Australia, Canada, Singapore, Hong Kong, Taiwan, Europe, Asia"
-        AppLanguage.ARABIC -> "مدعوم: الصين، الولايات المتحدة، اليابان، كوريا، المملكة المتحدة، ألمانيا، فرنسا، روسيا، البرازيل، الهند، أستراليا، كندا، سنغافورة، هونغ كونغ، تايوان، أوروبا، آسيا"
-        AppLanguage.PORTUGUESE -> "Suportado: China, EUA, Japão, Coreia, Reino Unido, Alemanha, França, Rússia, Brasil, Índia, Austrália, Canadá, Singapura, Hong Kong, Taiwan, Europa, Ásia"
-        AppLanguage.SPANISH -> "Soportado: China, EE.UU., Japón, Corea, Reino Unido, Alemania, Francia, Rusia, Brasil, India, Australia, Canadá, Singapur, Hong Kong, Taiwán, Europa, Asia"
-        AppLanguage.FRENCH -> "Pris en charge : Chine, USA, Japon, Corée, Royaume-Uni, Allemagne, France, Russie, Brésil, Inde, Australie, Canada, Singapour, Hong Kong, Taïwan, Europe, Asie"
-        AppLanguage.GERMAN -> "Unterstützt: China, USA, Japan, Korea, UK, Deutschland, Frankreich, Russland, Brasilien, Indien, Australien, Kanada, Singapur, Hong Kong, Taiwan, Europa, Asien"
-        AppLanguage.RUSSIAN -> "Поддерживается: Китай, США, Япония, Корея, Великобритания, Германия, Франция, Россия, Бразилия, Индия, Австралия, Канада, Сингапур, Гонконг, Тайвань, Европа, Азия"
-        AppLanguage.JAPANESE -> "対応：中国、米国、日本、韓国、英国、ドイツ、フランス、ロシア、ブラジル、インド、オーストラリア、カナダ、シンガポール、香港、台湾、ヨーロッパ、アジア"
-        AppLanguage.KOREAN -> "지원: 중국, 미국, 일본, 한국, 영국, 독일, 프랑스, 러시아, 브라질, 인도, 호주, 캐나다, 싱가포르, 홍콩, 대만, 유럽, 아시아"
-    }
 
-    val isolationDescription: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "为每个应用提供独立浏览器环境，减少追踪和关联。"
-        AppLanguage.ENGLISH -> "Give each app an isolated browser environment to reduce tracking and linkage."
-        AppLanguage.ARABIC -> "تنشئ البيئة المعزولة بيئة متصفح منفصلة لكل تطبيق، بما في ذلك البصمة العشوائية والرؤوس المزيفة وتزييف IP، مما يمنع بشكل فعال تتبع الموقع والكشف. مناسب لسيناريوهات التشغيل المتعدد ومكافحة الارتباط."
-        AppLanguage.PORTUGUESE -> "Oferece a cada app um ambiente de navegador isolado para reduzir rastreamento e vinculação."
-        AppLanguage.SPANISH -> "Ofrece a cada app un entorno de navegador aislado para reducir rastreo y vinculación."
-        AppLanguage.FRENCH -> "Donne à chaque app un environnement de navigateur isolé pour réduire le suivi et la liaison."
-        AppLanguage.GERMAN -> "Gibt jeder App eine isolierte Browser-Umgebung, um Tracking und Verknüpfung zu reduzieren."
-        AppLanguage.RUSSIAN -> "Даёт каждому приложению изолированную среду браузера для уменьшения отслеживания и связывания."
-        AppLanguage.JAPANESE -> "各アプリに独立したブラウザ環境を提供し、トラッキングと関連付けを減らします。"
-        AppLanguage.KOREAN -> "각 앱에 격리된 브라우저 환경을 제공하여 추적 및 연결을 줄입니다."
-    }
 
     val canvasProtection: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "Canvas 防护"
@@ -2203,18 +2080,6 @@ object StringsB {
         AppLanguage.KOREAN -> "Canvas 보호"
     }
 
-    val canvasProtectionHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "防止 Canvas 指纹追踪"
-        AppLanguage.ENGLISH -> "Prevent Canvas fingerprint tracking"
-        AppLanguage.ARABIC -> "منع تتبع بصمة Canvas"
-        AppLanguage.PORTUGUESE -> "Evitar rastreamento por impressão digital Canvas"
-        AppLanguage.SPANISH -> "Evitar rastreo por huella digital Canvas"
-        AppLanguage.FRENCH -> "Empêcher le suivi par empreinte Canvas"
-        AppLanguage.GERMAN -> "Canvas-Fingerabdruck-Tracking verhindern"
-        AppLanguage.RUSSIAN -> "Предотвратить отслеживание по отпечатку Canvas"
-        AppLanguage.JAPANESE -> "Canvas フィンガープリント追跡を防止"
-        AppLanguage.KOREAN -> "Canvas 지문 추적 방지"
-    }
 
     val webglProtection: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "WebGL 防护"
@@ -2229,18 +2094,6 @@ object StringsB {
         AppLanguage.KOREAN -> "WebGL 보호"
     }
 
-    val webglProtectionHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "伪造 WebGL 渲染器信息"
-        AppLanguage.ENGLISH -> "Spoof WebGL renderer information"
-        AppLanguage.ARABIC -> "تزييف معلومات عارض WebGL"
-        AppLanguage.PORTUGUESE -> "Falsificar informações do renderizador WebGL"
-        AppLanguage.SPANISH -> "Falsificar información del renderizador WebGL"
-        AppLanguage.FRENCH -> "Falsifier les informations du rendu WebGL"
-        AppLanguage.GERMAN -> "WebGL-Renderer-Informationen fälschen"
-        AppLanguage.RUSSIAN -> "Подделывать информацию рендерера WebGL"
-        AppLanguage.JAPANESE -> "WebGL レンダラー情報を偽装"
-        AppLanguage.KOREAN -> "WebGL 렌더러 정보 위조"
-    }
 
     val audioProtection: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "Audio 防护"
@@ -2255,18 +2108,6 @@ object StringsB {
         AppLanguage.KOREAN -> "Audio 보호"
     }
 
-    val audioProtectionHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "防止 AudioContext 指纹"
-        AppLanguage.ENGLISH -> "Prevent AudioContext fingerprint"
-        AppLanguage.ARABIC -> "منع بصمة AudioContext"
-        AppLanguage.PORTUGUESE -> "Evitar impressão digital AudioContext"
-        AppLanguage.SPANISH -> "Evitar huella digital AudioContext"
-        AppLanguage.FRENCH -> "Empêcher l'empreinte AudioContext"
-        AppLanguage.GERMAN -> "AudioContext-Fingerabdruck verhindern"
-        AppLanguage.RUSSIAN -> "Предотвратить отпечаток AudioContext"
-        AppLanguage.JAPANESE -> "AudioContext フィンガープリントを防止"
-        AppLanguage.KOREAN -> "AudioContext 지문 방지"
-    }
 
     val webrtcProtection: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "WebRTC 防泄漏"
@@ -2281,70 +2122,10 @@ object StringsB {
         AppLanguage.KOREAN -> "WebRTC 누출 보호"
     }
 
-    val webrtcProtectionHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "阻止真实 IP 通过 WebRTC 泄漏"
-        AppLanguage.ENGLISH -> "Block real IP leakage through WebRTC"
-        AppLanguage.ARABIC -> "منع تسرب IP الحقيقي عبر WebRTC"
-        AppLanguage.PORTUGUESE -> "Bloquear vazamento de IP real por WebRTC"
-        AppLanguage.SPANISH -> "Bloquear fuga de IP real por WebRTC"
-        AppLanguage.FRENCH -> "Bloquer la fuite d'IP réelle via WebRTC"
-        AppLanguage.GERMAN -> "Echte IP-Leckage über WebRTC blockieren"
-        AppLanguage.RUSSIAN -> "Блокировать утечку реального IP через WebRTC"
-        AppLanguage.JAPANESE -> "WebRTC 経由の実 IP リークをブロック"
-        AppLanguage.KOREAN -> "WebRTC를 통한 실제 IP 누출 차단"
-    }
 
-    val headerSpoofing: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "Header 伪造"
-        AppLanguage.ENGLISH -> "Header Spoofing"
-        AppLanguage.ARABIC -> "تزييف الرؤوس"
-        AppLanguage.PORTUGUESE -> "Falsificação de Header"
-        AppLanguage.SPANISH -> "Falsificación de Header"
-        AppLanguage.FRENCH -> "Falsification de Header"
-        AppLanguage.GERMAN -> "Header-Spoofing"
-        AppLanguage.RUSSIAN -> "Подделка заголовков"
-        AppLanguage.JAPANESE -> "Header 偽装"
-        AppLanguage.KOREAN -> "Header 위조"
-    }
 
-    val headerSpoofingHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "伪造 HTTP 请求头"
-        AppLanguage.ENGLISH -> "Spoof HTTP request headers"
-        AppLanguage.ARABIC -> "تزييف رؤوس طلبات HTTP"
-        AppLanguage.PORTUGUESE -> "Falsificar cabeçalhos de requisição HTTP"
-        AppLanguage.SPANISH -> "Falsificar cabeceras de petición HTTP"
-        AppLanguage.FRENCH -> "Falsifier les en-têtes de requête HTTP"
-        AppLanguage.GERMAN -> "HTTP-Anfrage-Header fälschen"
-        AppLanguage.RUSSIAN -> "Подделывать заголовки HTTP-запросов"
-        AppLanguage.JAPANESE -> "HTTP リクエストヘッダーを偽装"
-        AppLanguage.KOREAN -> "HTTP 요청 헤더 위조"
-    }
 
-    val ipSpoofing: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "IP 伪装"
-        AppLanguage.ENGLISH -> "IP Spoofing"
-        AppLanguage.ARABIC -> "تزييف IP"
-        AppLanguage.PORTUGUESE -> "Falsificação de IP"
-        AppLanguage.SPANISH -> "Falsificación de IP"
-        AppLanguage.FRENCH -> "Falsification d'IP"
-        AppLanguage.GERMAN -> "IP-Spoofing"
-        AppLanguage.RUSSIAN -> "Подделка IP"
-        AppLanguage.JAPANESE -> "IP 偽装"
-        AppLanguage.KOREAN -> "IP 위조"
-    }
 
-    val ipSpoofingHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "通过 Header 伪装 IP 地址"
-        AppLanguage.ENGLISH -> "Spoof IP address through headers"
-        AppLanguage.ARABIC -> "تزييف عنوان IP عبر الرؤوس"
-        AppLanguage.PORTUGUESE -> "Falsificar endereço IP via headers"
-        AppLanguage.SPANISH -> "Falsificar dirección IP via cabeceras"
-        AppLanguage.FRENCH -> "Falsifier l'adresse IP via les en-têtes"
-        AppLanguage.GERMAN -> "IP-Adresse über Header fälschen"
-        AppLanguage.RUSSIAN -> "Подделывать IP-адрес через заголовки"
-        AppLanguage.JAPANESE -> "Header で IP アドレスを偽装"
-        AppLanguage.KOREAN -> "Header를 통해 IP 주소 위조"
-    }
 
     val randomFingerprint: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "Random fingerprint"
@@ -2359,18 +2140,6 @@ object StringsB {
         AppLanguage.KOREAN -> "무작위 지문"
     }
 
-    val randomFingerprintHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "生成随机浏览器指纹"
-        AppLanguage.ENGLISH -> "Generate random browser fingerprint"
-        AppLanguage.ARABIC -> "إنشاء بصمة متصفح عشوائية"
-        AppLanguage.PORTUGUESE -> "Gerar impressão digital aleatória do navegador"
-        AppLanguage.SPANISH -> "Generar huella digital aleatoria del navegador"
-        AppLanguage.FRENCH -> "Générer une empreinte numérique aléatoire du navigateur"
-        AppLanguage.GERMAN -> "Zufälligen Browser-Fingerabdruck erzeugen"
-        AppLanguage.RUSSIAN -> "Генерировать случайный отпечаток браузера"
-        AppLanguage.JAPANESE -> "ランダムなブラウザフィンガープリントを生成"
-        AppLanguage.KOREAN -> "무작위 브라우저 지문 생성"
-    }
 
     val fontProtection: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "字体防护"
@@ -2385,44 +2154,8 @@ object StringsB {
         AppLanguage.KOREAN -> "폰트 보호"
     }
 
-    val fontProtectionHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "防止字体指纹检测"
-        AppLanguage.ENGLISH -> "Prevent font fingerprint detection"
-        AppLanguage.ARABIC -> "منع اكتشاف بصمة الخطوط"
-        AppLanguage.PORTUGUESE -> "Evitar detecção de impressão digital de fontes"
-        AppLanguage.SPANISH -> "Evitar detección de huella digital de fuentes"
-        AppLanguage.FRENCH -> "Empêcher la détection d'empreinte de polices"
-        AppLanguage.GERMAN -> "Font-Fingerabdruck-Erkennung verhindern"
-        AppLanguage.RUSSIAN -> "Предотвратить обнаружение отпечатка шрифтов"
-        AppLanguage.JAPANESE -> "フォントフィンガープリント検出を防止"
-        AppLanguage.KOREAN -> "폰트 지문 감지 방지"
-    }
 
-    val storageIsolation: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "存储隔离"
-        AppLanguage.ENGLISH -> "Storage Isolation"
-        AppLanguage.ARABIC -> "عزل التخزين"
-        AppLanguage.PORTUGUESE -> "Isolamento de Armazenamento"
-        AppLanguage.SPANISH -> "Aislamiento de Almacenamiento"
-        AppLanguage.FRENCH -> "Isolation du Stockage"
-        AppLanguage.GERMAN -> "Speicherisolation"
-        AppLanguage.RUSSIAN -> "Изоляция хранилища"
-        AppLanguage.JAPANESE -> "ストレージ分離"
-        AppLanguage.KOREAN -> "스토리지 격리"
-    }
 
-    val storageIsolationHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "独立的 Cookie 和 LocalStorage"
-        AppLanguage.ENGLISH -> "Independent Cookie and LocalStorage"
-        AppLanguage.ARABIC -> "Cookie و LocalStorage مستقلة"
-        AppLanguage.PORTUGUESE -> "Cookie e LocalStorage independentes"
-        AppLanguage.SPANISH -> "Cookie y LocalStorage independientes"
-        AppLanguage.FRENCH -> "Cookie et LocalStorage indépendants"
-        AppLanguage.GERMAN -> "Unabhängige Cookie und LocalStorage"
-        AppLanguage.RUSSIAN -> "Независимые Cookie и LocalStorage"
-        AppLanguage.JAPANESE -> "独立した Cookie と LocalStorage"
-        AppLanguage.KOREAN -> "독립적인 Cookie 및 LocalStorage"
-    }
 
     val timezoneSpoofing: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "时区伪装"
@@ -2437,18 +2170,6 @@ object StringsB {
         AppLanguage.KOREAN -> "시간대 위조"
     }
 
-    val timezoneSpoofingHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "伪装系统时区"
-        AppLanguage.ENGLISH -> "Spoof system timezone"
-        AppLanguage.ARABIC -> "تزييف المنطقة الزمنية للنظام"
-        AppLanguage.PORTUGUESE -> "Falsificar fuso horário do sistema"
-        AppLanguage.SPANISH -> "Falsificar zona horaria del sistema"
-        AppLanguage.FRENCH -> "Falsifier le fuseau horaire du système"
-        AppLanguage.GERMAN -> "System-Zeitzone fälschen"
-        AppLanguage.RUSSIAN -> "Подделывать системный часовой пояс"
-        AppLanguage.JAPANESE -> "システムタイムゾーンを偽装"
-        AppLanguage.KOREAN -> "시스템 시간대 위조"
-    }
 
     val languageSpoofing: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "语言伪装"
@@ -2463,18 +2184,6 @@ object StringsB {
         AppLanguage.KOREAN -> "언어 위조"
     }
 
-    val languageSpoofingHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "伪装浏览器语言"
-        AppLanguage.ENGLISH -> "Spoof browser language"
-        AppLanguage.ARABIC -> "تزييف لغة المتصفح"
-        AppLanguage.PORTUGUESE -> "Falsificar idioma do navegador"
-        AppLanguage.SPANISH -> "Falsificar idioma del navegador"
-        AppLanguage.FRENCH -> "Falsifier la langue du navigateur"
-        AppLanguage.GERMAN -> "Browser-Sprache fälschen"
-        AppLanguage.RUSSIAN -> "Подделывать язык браузера"
-        AppLanguage.JAPANESE -> "ブラウザ言語を偽装"
-        AppLanguage.KOREAN -> "브라우저 언어 위조"
-    }
 
     val resolutionSpoofing: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "分辨率伪装"
@@ -2489,18 +2198,6 @@ object StringsB {
         AppLanguage.KOREAN -> "해상도 위조"
     }
 
-    val resolutionSpoofingHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "伪装屏幕分辨率"
-        AppLanguage.ENGLISH -> "Spoof screen resolution"
-        AppLanguage.ARABIC -> "تزييف دقة الشاشة"
-        AppLanguage.PORTUGUESE -> "Falsificar resolução de tela"
-        AppLanguage.SPANISH -> "Falsificar resolución de pantalla"
-        AppLanguage.FRENCH -> "Falsifier la résolution d'écran"
-        AppLanguage.GERMAN -> "Bildschirmauflösung fälschen"
-        AppLanguage.RUSSIAN -> "Подделывать разрешение экрана"
-        AppLanguage.JAPANESE -> "画面解像度を偽装"
-        AppLanguage.KOREAN -> "화면 해상도 위조"
-    }
 
     val regenerateOnLaunch: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "每次启动重新生成"
@@ -2515,31 +2212,189 @@ object StringsB {
         AppLanguage.KOREAN -> "실행 시 재생성"
     }
 
-    val regenerateOnLaunchHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "每次启动应用时生成新指纹"
-        AppLanguage.ENGLISH -> "Generate new fingerprint on each app launch"
-        AppLanguage.ARABIC -> "إنشاء بصمة جديدة في كل تشغيل للتطبيق"
-        AppLanguage.PORTUGUESE -> "Gerar nova impressão digital a cada inicialização do app"
-        AppLanguage.SPANISH -> "Generar nueva huella digital en cada inicio del app"
-        AppLanguage.FRENCH -> "Générer une nouvelle empreinte à chaque lancement de l'app"
-        AppLanguage.GERMAN -> "Bei jedem App-Start neuen Fingerabdruck erzeugen"
-        AppLanguage.RUSSIAN -> "Генерировать новый отпечаток при каждом запуске приложения"
-        AppLanguage.JAPANESE -> "アプリ起動ごとに新しいフィンガープリントを生成"
-        AppLanguage.KOREAN -> "앱 실행 시마다 새 지문 생성"
+
+    val environmentSpoofing: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "环境伪装"
+        AppLanguage.ENGLISH -> "Environment Spoofing"
+        AppLanguage.ARABIC -> "انتحال البيئة"
+        AppLanguage.PORTUGUESE -> "Falsificação de Ambiente"
+        AppLanguage.SPANISH -> "Falsificación de Entorno"
+        AppLanguage.FRENCH -> "Falsification d'Environnement"
+        AppLanguage.GERMAN -> "Umgebungs-Spoofing"
+        AppLanguage.RUSSIAN -> "Подмена окружения"
+        AppLanguage.JAPANESE -> "環境偽装"
+        AppLanguage.KOREAN -> "환경 위조"
     }
 
-    val encryptionDescription: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "加密后的资源无法被直接查看或提取，可有效保护您的代码和内容。加密基于 AES-256-GCM 算法，密钥与应用签名绑定。"
-        AppLanguage.ENGLISH -> "Encrypted resources cannot be directly viewed or extracted, effectively protecting your code and content. Encryption is based on AES-256-GCM algorithm, with keys bound to app signature."
-        AppLanguage.ARABIC -> "لا يمكن عرض أو استخراج الموارد المشفرة مباشرة، مما يحمي الكود والمحتوى بشكل فعال. يعتمد التشفير على خوارزمية AES-256-GCM، مع ربط المفاتيح بتوقيع التطبيق."
-        AppLanguage.PORTUGUESE -> "Recursos criptografados não podem ser visualizados ou extraídos diretamente, protegendo efetivamente seu código e conteúdo. A criptografia é baseada no algoritmo AES-256-GCM, com chaves vinculadas à assinatura do app."
-        AppLanguage.SPANISH -> "Los recursos cifrados no pueden ser visualizados o extraídos directamente, protegiendo efectivamente su código y contenido. El cifrado se basa en el algoritmo AES-256-GCM, con claves vinculadas a la firma del app."
-        AppLanguage.FRENCH -> "Les ressources chiffrées ne peuvent pas être visualisées ou extraites directement, protégeant efficacement votre code et contenu. Le chiffrement est basé sur l'algorithme AES-256-GCM, avec des clés liées à la signature de l'app."
-        AppLanguage.GERMAN -> "Verschlüsselte Ressourcen können nicht direkt eingesehen oder extrahiert werden, was Code und Inhalte effektiv schützt. Die Verschlüsselung basiert auf dem AES-256-GCM-Algorithmus, mit Schlüsseln, die an die App-Signatur gebunden sind."
-        AppLanguage.RUSSIAN -> "Зашифрованные ресурсы нельзя напрямую просмотреть или извлечь, что эффективно защищает код и содержимое. Шифрование основано на алгоритме AES-256-GCM, ключи привязаны к подписи приложения."
-        AppLanguage.JAPANESE -> "暗号化されたリソースは直接閲覧・抽出できず、コードとコンテンツを効果的に保護します。暗号化は AES-256-GCM アルゴリズムに基づき、鍵はアプリ署名に紐付けられています。"
-        AppLanguage.KOREAN -> "암호화된 리소스는 직접 보거나 추출할 수 없어 코드와 콘텐츠를 효과적으로 보호합니다. 암호화는 AES-256-GCM 알고리즘을 기반으로 하며, 키는 앱 서명에 바인딩됩니다."
+    val followFingerprint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "跟随指纹"
+        AppLanguage.ENGLISH -> "Follow fingerprint"
+        AppLanguage.ARABIC -> "اتباع البصمة"
+        AppLanguage.PORTUGUESE -> "Seguir impressão digital"
+        AppLanguage.SPANISH -> "Seguir huella"
+        AppLanguage.FRENCH -> "Suivre l'empreinte"
+        AppLanguage.GERMAN -> "Fingerabdruck folgen"
+        AppLanguage.RUSSIAN -> "Как у отпечатка"
+        AppLanguage.JAPANESE -> "フィンガープリントに従う"
+        AppLanguage.KOREAN -> "지문 따르기"
     }
+
+    val isolationOff: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "关闭"
+        AppLanguage.ENGLISH -> "Off"
+        AppLanguage.ARABIC -> "إيقاف"
+        AppLanguage.PORTUGUESE -> "Desativado"
+        AppLanguage.SPANISH -> "Desactivado"
+        AppLanguage.FRENCH -> "Désactivé"
+        AppLanguage.GERMAN -> "Aus"
+        AppLanguage.RUSSIAN -> "Выкл."
+        AppLanguage.JAPANESE -> "オフ"
+        AppLanguage.KOREAN -> "끄기"
+    }
+
+    val customOption: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "自定义"
+        AppLanguage.ENGLISH -> "Custom"
+        AppLanguage.ARABIC -> "مخصص"
+        AppLanguage.PORTUGUESE -> "Personalizado"
+        AppLanguage.SPANISH -> "Personalizado"
+        AppLanguage.FRENCH -> "Personnalisé"
+        AppLanguage.GERMAN -> "Benutzerdefiniert"
+        AppLanguage.RUSSIAN -> "Свой вариант"
+        AppLanguage.JAPANESE -> "カスタム"
+        AppLanguage.KOREAN -> "사용자 정의"
+    }
+
+    val customCombination: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "自定义组合"
+        AppLanguage.ENGLISH -> "Custom mix"
+        AppLanguage.ARABIC -> "مزيج مخصص"
+        AppLanguage.PORTUGUESE -> "Combinação personalizada"
+        AppLanguage.SPANISH -> "Combinación personalizada"
+        AppLanguage.FRENCH -> "Combinaison personnalisée"
+        AppLanguage.GERMAN -> "Eigene Kombination"
+        AppLanguage.RUSSIAN -> "Своя комбинация"
+        AppLanguage.JAPANESE -> "カスタム組み合わせ"
+        AppLanguage.KOREAN -> "사용자 조합"
+    }
+
+    val regenerateFingerprint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "换一组"
+        AppLanguage.ENGLISH -> "Shuffle"
+        AppLanguage.ARABIC -> "تبديل"
+        AppLanguage.PORTUGUESE -> "Trocar"
+        AppLanguage.SPANISH -> "Cambiar"
+        AppLanguage.FRENCH -> "Régénérer"
+        AppLanguage.GERMAN -> "Neu würfeln"
+        AppLanguage.RUSSIAN -> "Сменить"
+        AppLanguage.JAPANESE -> "変更"
+        AppLanguage.KOREAN -> "다시 생성"
+    }
+
+    val languageTagLabel: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "语言标签"
+        AppLanguage.ENGLISH -> "Language tag"
+        AppLanguage.ARABIC -> "وسم اللغة"
+        AppLanguage.PORTUGUESE -> "Tag de idioma"
+        AppLanguage.SPANISH -> "Etiqueta de idioma"
+        AppLanguage.FRENCH -> "Tag de langue"
+        AppLanguage.GERMAN -> "Sprach-Tag"
+        AppLanguage.RUSSIAN -> "Тег языка"
+        AppLanguage.JAPANESE -> "言語タグ"
+        AppLanguage.KOREAN -> "언어 태그"
+    }
+
+    val timezoneIdLabel: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "时区 ID（IANA）"
+        AppLanguage.ENGLISH -> "Timezone ID (IANA)"
+        AppLanguage.ARABIC -> "معرّف المنطقة الزمنية (IANA)"
+        AppLanguage.PORTUGUESE -> "ID de fuso horário (IANA)"
+        AppLanguage.SPANISH -> "ID de zona horaria (IANA)"
+        AppLanguage.FRENCH -> "ID de fuseau horaire (IANA)"
+        AppLanguage.GERMAN -> "Zeitzonen-ID (IANA)"
+        AppLanguage.RUSSIAN -> "ID часового пояса (IANA)"
+        AppLanguage.JAPANESE -> "タイムゾーン ID（IANA）"
+        AppLanguage.KOREAN -> "시간대 ID (IANA)"
+    }
+
+    val widthLabel: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "宽"
+        AppLanguage.ENGLISH -> "Width"
+        AppLanguage.ARABIC -> "العرض"
+        AppLanguage.PORTUGUESE -> "Largura"
+        AppLanguage.SPANISH -> "Ancho"
+        AppLanguage.FRENCH -> "Largeur"
+        AppLanguage.GERMAN -> "Breite"
+        AppLanguage.RUSSIAN -> "Ширина"
+        AppLanguage.JAPANESE -> "幅"
+        AppLanguage.KOREAN -> "너비"
+    }
+
+    val heightLabel: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "高"
+        AppLanguage.ENGLISH -> "Height"
+        AppLanguage.ARABIC -> "الارتفاع"
+        AppLanguage.PORTUGUESE -> "Altura"
+        AppLanguage.SPANISH -> "Alto"
+        AppLanguage.FRENCH -> "Hauteur"
+        AppLanguage.GERMAN -> "Höhe"
+        AppLanguage.RUSSIAN -> "Высота"
+        AppLanguage.JAPANESE -> "高さ"
+        AppLanguage.KOREAN -> "높이"
+    }
+
+    val invalidValue: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "无效值"
+        AppLanguage.ENGLISH -> "Invalid value"
+        AppLanguage.ARABIC -> "قيمة غير صالحة"
+        AppLanguage.PORTUGUESE -> "Valor inválido"
+        AppLanguage.SPANISH -> "Valor no válido"
+        AppLanguage.FRENCH -> "Valeur non valide"
+        AppLanguage.GERMAN -> "Ungültiger Wert"
+        AppLanguage.RUSSIAN -> "Недопустимое значение"
+        AppLanguage.JAPANESE -> "無効な値"
+        AppLanguage.KOREAN -> "유효하지 않은 값"
+    }
+
+    val isoLevelBasicSummary: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "指纹随机化 · Canvas 噪音 · WebRTC 屏蔽"
+        AppLanguage.ENGLISH -> "Random fingerprint · Canvas noise · WebRTC shielding"
+        AppLanguage.ARABIC -> "بصمة عشوائية · ضجيج Canvas · حجب WebRTC"
+        AppLanguage.PORTUGUESE -> "Impressão aleatória · Ruído de Canvas · Bloqueio de WebRTC"
+        AppLanguage.SPANISH -> "Huella aleatoria · Ruido de Canvas · Bloqueo de WebRTC"
+        AppLanguage.FRENCH -> "Empreinte aléatoire · Bruit Canvas · Blocage WebRTC"
+        AppLanguage.GERMAN -> "Zufalls-Fingerprint · Canvas-Rauschen · WebRTC-Block"
+        AppLanguage.RUSSIAN -> "Случайный отпечаток · Шум Canvas · Блокировка WebRTC"
+        AppLanguage.JAPANESE -> "ランダムフィンガープリント · Canvas ノイズ · WebRTC 遮断"
+        AppLanguage.KOREAN -> "무작위 지문 · Canvas 노이즈 · WebRTC 차단"
+    }
+
+    val isoLevelStandardSummary: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "完整指纹防护 · 不改变语言/时区/分辨率"
+        AppLanguage.ENGLISH -> "Full fingerprint protection · keeps your locale/timezone/screen"
+        AppLanguage.ARABIC -> "حماية كاملة للبصمة · دون تغيير اللغة/المنطقة/الدقة"
+        AppLanguage.PORTUGUESE -> "Proteção completa · mantém idioma/fuso/resolução"
+        AppLanguage.SPANISH -> "Protección completa · conserva idioma/zona/resolución"
+        AppLanguage.FRENCH -> "Protection complète · conserve langue/fuseau/résolution"
+        AppLanguage.GERMAN -> "Vollschutz · behält Sprache/Zeitzone/Auflösung"
+        AppLanguage.RUSSIAN -> "Полная защита отпечатка · язык/пояс/экран не меняются"
+        AppLanguage.JAPANESE -> "完全なフィンガープリント保護 · 言語/タイムゾーン/解像度は維持"
+        AppLanguage.KOREAN -> "완전한 지문 보호 · 언어/시간대/해상도 유지"
+    }
+
+    val isoLevelMaximumSummary: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "全部防护 + 语言/时区/分辨率伪装 + 每次启动换指纹"
+        AppLanguage.ENGLISH -> "All protections + locale/timezone/screen spoofing + new identity every launch"
+        AppLanguage.ARABIC -> "كل الحمايات + انتحال اللغة/المنطقة/الدقة + هوية جديدة كل تشغيل"
+        AppLanguage.PORTUGUESE -> "Todas as proteções + falsificação de idioma/fuso/resolução + nova identidade a cada início"
+        AppLanguage.SPANISH -> "Todas las protecciones + falsificación de idioma/zona/resolución + nueva identidad cada inicio"
+        AppLanguage.FRENCH -> "Toutes les protections + falsification langue/fuseau/résolution + nouvelle identité à chaque lancement"
+        AppLanguage.GERMAN -> "Alle Schutzmaßnahmen + Sprach-/Zeitzonen-/Auflösungs-Spoofing + neue Identität bei jedem Start"
+        AppLanguage.RUSSIAN -> "Все защиты + подмена языка/пояса/экрана + новый отпечаток при каждом запуске"
+        AppLanguage.JAPANESE -> "全保護 + 言語/タイムゾーン/解像度偽装 + 起動ごとに新しいフィンガープリント"
+        AppLanguage.KOREAN -> "모든 보호 + 언어/시간대/해상도 위조 + 매번 새 지문"
+    }
+
 
     val pbkdf2Iterations: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "PBKDF2 迭代"
@@ -2918,17 +2773,17 @@ object StringsB {
         AppLanguage.KOREAN -> "사용 가능한 음악이 없습니다"
     }
 
-    val clickToUploadMusic: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "点击上方按钮上传音乐"
-        AppLanguage.ENGLISH -> "Click button above to upload music"
-        AppLanguage.ARABIC -> "انقر على الزر أعلاه لرفع الموسيقى"
-        AppLanguage.PORTUGUESE -> "Clique no botão acima para carregar música"
-        AppLanguage.SPANISH -> "Haga clic en el botón de arriba para subir música"
-        AppLanguage.FRENCH -> "Cliquez sur le bouton ci-dessus pour téléverser de la musique"
-        AppLanguage.GERMAN -> "Auf den Button oben tippen, um Musik hochzuladen"
-        AppLanguage.RUSSIAN -> "Нажмите кнопку выше, чтобы загрузить музыку"
-        AppLanguage.JAPANESE -> "上のボタンをクリックして音楽をアップロード"
-        AppLanguage.KOREAN -> "위 버튼을 클릭하여 음악을 업로드하세요"
+    val bgmEmptyHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "上传本地音频，或在线搜索下载"
+        AppLanguage.ENGLISH -> "Upload local audio, or search online"
+        AppLanguage.ARABIC -> "ارفع ملفًا صوتيًا محليًا أو ابحث عبر الإنترنت"
+        AppLanguage.PORTUGUESE -> "Envie áudio local ou pesquise online"
+        AppLanguage.SPANISH -> "Sube audio local o busca en línea"
+        AppLanguage.FRENCH -> "Téléversez un audio local ou cherchez en ligne"
+        AppLanguage.GERMAN -> "Lokale Audiodatei hochladen oder online suchen"
+        AppLanguage.RUSSIAN -> "Загрузите локальное аудио или найдите онлайн"
+        AppLanguage.JAPANESE -> "ローカル音声をアップロード、またはオンライン検索"
+        AppLanguage.KOREAN -> "로컬 오디오 업로드 또는 온라인 검색"
     }
 
     val noMusicWithTag: String get() = when (Strings.lang) {
@@ -3022,18 +2877,6 @@ object StringsB {
         AppLanguage.KOREAN -> "가사 표시"
     }
 
-    val lyricsTheme: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "字幕主题"
-        AppLanguage.ENGLISH -> "Lyrics Theme"
-        AppLanguage.ARABIC -> "سمة كلمات الأغنية"
-        AppLanguage.PORTUGUESE -> "Tema de Letras"
-        AppLanguage.SPANISH -> "Tema de Letras"
-        AppLanguage.FRENCH -> "Thème des Paroles"
-        AppLanguage.GERMAN -> "Liedtext-Theme"
-        AppLanguage.RUSSIAN -> "Тема текста песни"
-        AppLanguage.JAPANESE -> "歌詞テーマ"
-        AppLanguage.KOREAN -> "가사 테마"
-    }
 
     val allTag: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "全部"
@@ -3087,18 +2930,6 @@ object StringsB {
         AppLanguage.KOREAN -> "가사 미리보기"
     }
 
-    val hasLyrics: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "已有歌词"
-        AppLanguage.ENGLISH -> "Has Lyrics"
-        AppLanguage.ARABIC -> "يحتوي على كلمات"
-        AppLanguage.PORTUGUESE -> "Possui Letras"
-        AppLanguage.SPANISH -> "Tiene Letras"
-        AppLanguage.FRENCH -> "A des Paroles"
-        AppLanguage.GERMAN -> "Hat Liedtexte"
-        AppLanguage.RUSSIAN -> "Есть текст песни"
-        AppLanguage.JAPANESE -> "歌詞あり"
-        AppLanguage.KOREAN -> "가사 있음"
-    }
 
     val aiGenerateLyrics: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "AI生成歌词"

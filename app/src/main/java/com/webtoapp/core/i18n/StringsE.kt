@@ -1520,42 +1520,6 @@ object StringsE {
         AppLanguage.JAPANESE -> "パフォーマンス最適化完了"
         AppLanguage.KOREAN -> "성능 최적화 완료"
     }
-    val runtimeProtection: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "运行时保护"
-        AppLanguage.ENGLISH -> "Runtime Protection"
-        AppLanguage.ARABIC -> "الحماية في وقت التشغيل"
-        AppLanguage.PORTUGUESE -> "Proteção de Runtime"
-        AppLanguage.SPANISH -> "Protección de Runtime"
-        AppLanguage.FRENCH -> "Protection du Runtime"
-        AppLanguage.GERMAN -> "Runtime-Schutz"
-        AppLanguage.RUSSIAN -> "Защита во время выполнения"
-        AppLanguage.JAPANESE -> "ランタイム保護"
-        AppLanguage.KOREAN -> "런타임 보호"
-    }
-    val runtimeProtectionDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "启用资源加密后，应用启动时会运行反调试、反 Frida 注入与 DEX 篡改检测。这是抬高动态分析门槛的轻量防护，无法阻止对开源宿主代码的逆向。"
-        AppLanguage.ENGLISH -> "When resource encryption is on, the app runs anti-debug, anti-Frida injection and DEX-tampering checks at launch. This is lightweight protection that raises the bar for dynamic analysis; it cannot stop reverse-engineering of the open-source host code."
-        AppLanguage.ARABIC -> "عند تفعيل تشفير الموارد، يُجري التطبيق عند الإطلاق فحوصات مكافحة التصحيح ومكافحة حقن Frida وكشف العبث بـ DEX. هذه حماية خفيفة ترفع صعوبة التحليل الديناميكي، لكنها لا تمنع الهندسة العكسية لشيفرة المضيف مفتوحة المصدر."
-        AppLanguage.PORTUGUESE -> "Quando a criptografia de recursos está ativada, o app executa verificações anti-debug, anti-injeção Frida e anti-adulteração DEX na inicialização. Esta é uma proteção leve que eleva o nível para análise dinâmica; não pode impedir a engenharia reversa do código hospedeiro open-source."
-        AppLanguage.SPANISH -> "Cuando el cifrado de recursos está activado, la app ejecuta comprobaciones anti-debug, anti-inyección Frida y anti-manipulación DEX al iniciar. Esta es una protección ligera que eleva el listón para el análisis dinámico; no puede detener la ingeniería inversa del código host de código abierto."
-        AppLanguage.FRENCH -> "Lorsque le chiffrement des ressources est activé, l'app exécute des vérifications anti-débogage, anti-injection Frida et anti-falsification DEX au lancement. Cette protection légère relève la barre pour l'analyse dynamique ; elle ne peut pas empêcher l'ingénierie inverse du code hôte open-source."
-        AppLanguage.GERMAN -> "Wenn die Ressourcenverschlüsselung aktiv ist, führt die App beim Start Anti-Debug-, Anti-Frida-Injection- und DEX-Manipulationsprüfungen durch. Dies ist ein leichter Schutz, der die Hürde für dynamische Analyse erhöht; er kann nicht Reverse Engineering des Open-Source-Host-Codes stoppen."
-        AppLanguage.RUSSIAN -> "Когда шифрование ресурсов включено, приложение при запуске выполняет проверки анти-отладки, анти-инъекции Frida и защиты DEX от подделки. Это лёгкая защита, повышающая планку для динамического анализа; она не может остановить реверс-инжиниринг open-source кода хоста."
-        AppLanguage.JAPANESE -> "リソース暗号化がオンの場合、アプリは起動時にアンチデバッグ、アンチFridaインジェクション、DEX改ざん検出を実行します。これは動的分析のハードルを上げる軽量保護であり、オープンソースホストコードのリバースエンジニアリングを阻止することはできません。"
-        AppLanguage.KOREAN -> "리소스 암호화가 켜져 있으면, 앱은 시작 시 안티 디버그, 안티 Frida 인젝션 및 DEX 변조 검사를 실행합니다. 이것은 동적 분석의 장벽을 높이는 가벼운 보호이며, 오픈소스 호스트 코드의 리버스 엔지니어링을 막을 수는 없습니다."
-    }
-    val runtimeProtectionResponseHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "检测到调试器、Frida 或 DEX 篡改等高危威胁时如何响应。「仅记录日志」最安全，不会误伤正常用户。"
-        AppLanguage.ENGLISH -> "How to react to high-risk threats like an attached debugger, Frida, or DEX tampering. \"Log Only\" is safest and never affects normal users."
-        AppLanguage.ARABIC -> "كيفية الاستجابة للتهديدات عالية الخطورة مثل مصحّح مرفق أو Frida أو العبث بـ DEX. \"تسجيل فقط\" هو الأكثر أمانًا ولا يؤثر على المستخدمين العاديين."
-        AppLanguage.PORTUGUESE -> "Como reagir a ameaças de alto risco como um depurador anexado, Frida ou adulteração DEX. \"Apenas Registrar\" é o mais seguro e nunca afeta usuários normais."
-        AppLanguage.SPANISH -> "Cómo reaccionar a amenazas de alto riesgo como un depurador adjunto, Frida o manipulación DEX. \"Solo Registrar\" es lo más seguro y nunca afecta a usuarios normales."
-        AppLanguage.FRENCH -> "Comment réagir aux menaces à haut risque comme un débogueur attaché, Frida ou falsification DEX. \"Journaliser uniquement\" est le plus sûr et n'affecte jamais les utilisateurs normaux."
-        AppLanguage.GERMAN -> "Wie auf hochriskante Bedrohungen wie angehängten Debugger, Frida oder DEX-Manipulation reagiert wird. \"Nur protokollieren\" ist am sichersten und betrifft nie normale Benutzer."
-        AppLanguage.RUSSIAN -> "Как реагировать на угрозы высокого риска, такие как подключённый отладчик, Frida или подделка DEX. \"Только журнал\" — самое безопасное и никогда не затрагивает обычных пользователей."
-        AppLanguage.JAPANESE -> "アタッチされたデバッガー、Frida、DEX改ざんなどの高リスク脅威にどう対応するか。「ログのみ」が最も安全で、通常ユーザーに影響しません。"
-        AppLanguage.KOREAN -> "부착된 디버거, Frida 또는 DEX 변조 같은 고위험 위협에 어떻게 대응할지. \"로그만\"이 가장 안전하며 일반 사용자에게 영향을 주지 않습니다."
-    }
 
     val threatResponse: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "威胁响应策略"
@@ -5329,30 +5293,6 @@ object StringsE {
         AppLanguage.KOREAN -> "맞춤 설정 적용"
     }
 
-    val proxySectionTitle: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "代理配置"
-        AppLanguage.ENGLISH -> "Proxy Configuration"
-        AppLanguage.ARABIC -> "إعدادات الوكيل"
-        AppLanguage.PORTUGUESE -> "Configuração de Proxy"
-        AppLanguage.SPANISH -> "Configuración de Proxy"
-        AppLanguage.FRENCH -> "Configuration du Proxy"
-        AppLanguage.GERMAN -> "Proxy-Konfiguration"
-        AppLanguage.RUSSIAN -> "Конфигурация прокси"
-        AppLanguage.JAPANESE -> "プロキシ設定"
-        AppLanguage.KOREAN -> "프록시 설정"
-    }
-    val proxySectionSubtitle: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "支持 PAC 自动配置脚本 / 固定代理服务器"
-        AppLanguage.ENGLISH -> "PAC auto-config script / Static proxy server"
-        AppLanguage.ARABIC -> "دعم سكربت التكوين التلقائي PAC / خادم وكيل ثابت"
-        AppLanguage.PORTUGUESE -> "Script de autoconfiguração PAC / Servidor proxy estático"
-        AppLanguage.SPANISH -> "Script de autoconfiguración PAC / Servidor proxy estático"
-        AppLanguage.FRENCH -> "Script d'auto-configuration PAC / Serveur proxy statique"
-        AppLanguage.GERMAN -> "PAC-Auto-Konfigurationsskript / Statischer Proxy-Server"
-        AppLanguage.RUSSIAN -> "Скрипт автонастройки PAC / Статический прокси-сервер"
-        AppLanguage.JAPANESE -> "PAC 自動設定スクリプト / 静的プロキシサーバー"
-        AppLanguage.KOREAN -> "PAC 자동 설정 스크립트 / 고정 프록시 서버"
-    }
     val tlsFingerprintTitle: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "TLS 指纹伪装"
         AppLanguage.ENGLISH -> "TLS Fingerprint Spoofing"
@@ -5456,18 +5396,6 @@ object StringsE {
         AppLanguage.KOREAN -> "웹 동영상이 전체 화면 재생에 들어가면 상태 표시줄을 자동으로 숨기고 종료 시 복원합니다(기본적으로 켜짐)"
     }
 
-    val tlsFingerprintSubtitle: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "伪装 TLS 握手指纹，绕过 JA3/JA4 检测"
-        AppLanguage.ENGLISH -> "Spoof TLS handshake fingerprint to bypass JA3/JA4 detection"
-        AppLanguage.ARABIC -> "انتحال بصمة مصافحة TLS لتجاوز كشف JA3/JA4"
-        AppLanguage.PORTUGUESE -> "Falsificar a impressão digital do handshake TLS para contornar a detecção JA3/JA4"
-        AppLanguage.SPANISH -> "Falsificar la huella del handshake TLS para evadir la detección JA3/JA4"
-        AppLanguage.FRENCH -> "Usurper l'empreinte de la poignée de main TLS pour contourner la détection JA3/JA4"
-        AppLanguage.GERMAN -> "TLS-Handshake-Fingerabdruck fälschen, um JA3/JA4-Erkennung zu umgehen"
-        AppLanguage.RUSSIAN -> "Подменить отпечаток рукопожатия TLS для обхода обнаружения JA3/JA4"
-        AppLanguage.JAPANESE -> "TLS ハンドシェイクのフィンガープリントを偽装して JA3/JA4 検出を回避"
-        AppLanguage.KOREAN -> "TLS 핸드셰이크 핑거프린트를 위장하여 JA3/JA4 탐지를 우회"
-    }
     val tlsFingerprintDescription: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "通过本地 MITM 桥终止并重新发起 TLS 握手，模拟目标浏览器的 TLS 指纹。会增加约 50-100ms 连接延迟。"
         AppLanguage.ENGLISH -> "Terminates and re-initiates TLS handshake via a local MITM bridge to simulate the target browser's TLS fingerprint. Adds ~50-100ms connection latency."
@@ -11509,18 +11437,6 @@ object StringsE {
         AppLanguage.JAPANESE -> "Google Play 向けの署名済み AAB をパッケージ化"
         AppLanguage.KOREAN -> "Google Play용 서명된 AAB 패키징"
     }
-    val playStoreSelectApp: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "选择要审核的应用"
-        AppLanguage.ENGLISH -> "Select an app to audit"
-        AppLanguage.ARABIC -> "اختر تطبيقًا للتدقيق"
-        AppLanguage.PORTUGUESE -> "Selecione um app para auditar"
-        AppLanguage.SPANISH -> "Selecciona una app para auditar"
-        AppLanguage.FRENCH -> "Sélectionnez une app à auditer"
-        AppLanguage.GERMAN -> "App zur Prüfung auswählen"
-        AppLanguage.RUSSIAN -> "Выберите приложение для проверки"
-        AppLanguage.JAPANESE -> "監査するアプリを選択"
-        AppLanguage.KOREAN -> "감사할 앱 선택"
-    }
     val playStoreNoAppsHint: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "你还没有创建任何应用。请先在主页创建一个应用。"
         AppLanguage.ENGLISH -> "You haven't created any apps yet. Create one on the home screen first."
@@ -11861,43 +11777,6 @@ object StringsE {
         AppLanguage.KOREAN -> "정보"
     }
 
-    val playStoreSummaryTitle: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "审核结果"
-        AppLanguage.ENGLISH -> "Audit Results"
-        AppLanguage.ARABIC -> "نتائج التدقيق"
-        AppLanguage.PORTUGUESE -> "Resultados da auditoria"
-        AppLanguage.SPANISH -> "Resultados de la auditoría"
-        AppLanguage.FRENCH -> "Résultats de l'audit"
-        AppLanguage.GERMAN -> "Prüfungsergebnisse"
-        AppLanguage.RUSSIAN -> "Результаты проверки"
-        AppLanguage.JAPANESE -> "監査結果"
-        AppLanguage.KOREAN -> "감사 결과"
-    }
-    val playStoreFixHintLabel: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "修复建议"
-        AppLanguage.ENGLISH -> "How to fix"
-        AppLanguage.ARABIC -> "كيفية الإصلاح"
-        AppLanguage.PORTUGUESE -> "Como corrigir"
-        AppLanguage.SPANISH -> "Cómo corregir"
-        AppLanguage.FRENCH -> "Comment corriger"
-        AppLanguage.GERMAN -> "So beheben"
-        AppLanguage.RUSSIAN -> "Как исправить"
-        AppLanguage.JAPANESE -> "修正方法"
-        AppLanguage.KOREAN -> "수정 방법"
-    }
-    val playStorePolicyAreaLabel: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "相关政策"
-        AppLanguage.ENGLISH -> "Policy"
-        AppLanguage.ARABIC -> "السياسة"
-        AppLanguage.PORTUGUESE -> "Política"
-        AppLanguage.SPANISH -> "Política"
-        AppLanguage.FRENCH -> "Politique"
-        AppLanguage.GERMAN -> "Richtlinie"
-        AppLanguage.RUSSIAN -> "Политика"
-        AppLanguage.JAPANESE -> "ポリシー"
-        AppLanguage.KOREAN -> "정책"
-    }
-
     val playStoreAdviceTitle: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "Play 合规建议"
         AppLanguage.ENGLISH -> "Play Policy Advice"
@@ -11934,6 +11813,18 @@ object StringsE {
         AppLanguage.JAPANESE -> "%d 件のアプリ"
         AppLanguage.KOREAN -> "앱 %d개"
     }.let { String.format(it, total) }
+    val playStoreChangeApp: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "更换应用"
+        AppLanguage.ENGLISH -> "Change app"
+        AppLanguage.ARABIC -> "تغيير التطبيق"
+        AppLanguage.PORTUGUESE -> "Trocar app"
+        AppLanguage.SPANISH -> "Cambiar app"
+        AppLanguage.FRENCH -> "Changer d'app"
+        AppLanguage.GERMAN -> "App wechseln"
+        AppLanguage.RUSSIAN -> "Сменить приложение"
+        AppLanguage.JAPANESE -> "アプリを変更"
+        AppLanguage.KOREAN -> "앱 변경"
+    }
     val playStoreNoMatch: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "没有匹配的应用"
         AppLanguage.ENGLISH -> "No matching apps"
@@ -12065,54 +11956,6 @@ object StringsE {
         AppLanguage.RUSSIAN -> "Найдено %d блокирующих проблем. Исправьте их перед запуском сборки."
         AppLanguage.JAPANESE -> "%d 件のブロック問題が見つかりました。ビルド開始前に修正してください。"
         AppLanguage.KOREAN -> "%d개의 차단 문제가 발견되었습니다. 빌드를 시작하기 전에 수정하세요."
-    }
-    val apkExportPreflightWarnings: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "发现 %d 个非阻塞提醒，可以继续构建。"
-        AppLanguage.ENGLISH -> "%d non-blocking notice(s) found. You can still build."
-        AppLanguage.ARABIC -> "تم العثور على %d تنبيهًا غير مانع. لا يزال بإمكانك المتابعة."
-        AppLanguage.PORTUGUESE -> "%d aviso(s) não bloqueante(s) encontrado(s). Você ainda pode compilar."
-        AppLanguage.SPANISH -> "%d aviso(s) no bloqueante(s) encontrado(s). Aún puedes compilar."
-        AppLanguage.FRENCH -> "%d avis(s) non bloquant(s) trouvé(s). Vous pouvez toujours builder."
-        AppLanguage.GERMAN -> "%d nicht-blockierende(r) Hinweis(e) gefunden. Sie können weiterhin bauen."
-        AppLanguage.RUSSIAN -> "Найдено %d неблокирующих уведомлений. Можно продолжить сборку."
-        AppLanguage.JAPANESE -> "%d 件の非ブロック通知が見つかりました。ビルドは可能です。"
-        AppLanguage.KOREAN -> "%d개의 비차단 알림이 발견되었습니다. 계속 빌드할 수 있습니다."
-    }
-    val apkExportPreflightPassed: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "导出前检查通过。"
-        AppLanguage.ENGLISH -> "Preflight check passed."
-        AppLanguage.ARABIC -> "اجتاز فحص ما قبل التصدير."
-        AppLanguage.PORTUGUESE -> "Verificação pré-exportação concluída."
-        AppLanguage.SPANISH -> "Verificación pre-exportación superada."
-        AppLanguage.FRENCH -> "Vérification pré-export réussie."
-        AppLanguage.GERMAN -> "Export-Vorabprüfung bestanden."
-        AppLanguage.RUSSIAN -> "Предэкспортная проверка пройдена."
-        AppLanguage.JAPANESE -> "エクスポート前チェックを通過しました。"
-        AppLanguage.KOREAN -> "내보내기 사전 점검을 통과했습니다."
-    }
-    val apkExportPreflightSeverityBlocking: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "阻塞"
-        AppLanguage.ENGLISH -> "Blocking"
-        AppLanguage.ARABIC -> "مانع"
-        AppLanguage.PORTUGUESE -> "Bloqueante"
-        AppLanguage.SPANISH -> "Bloqueante"
-        AppLanguage.FRENCH -> "Bloquant"
-        AppLanguage.GERMAN -> "Blockierend"
-        AppLanguage.RUSSIAN -> "Блокирует"
-        AppLanguage.JAPANESE -> "ブロック"
-        AppLanguage.KOREAN -> "차단"
-    }
-    val apkExportPreflightSeverityNotice: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "提醒"
-        AppLanguage.ENGLISH -> "Notice"
-        AppLanguage.ARABIC -> "تنبيه"
-        AppLanguage.PORTUGUESE -> "Aviso"
-        AppLanguage.SPANISH -> "Aviso"
-        AppLanguage.FRENCH -> "Avis"
-        AppLanguage.GERMAN -> "Hinweis"
-        AppLanguage.RUSSIAN -> "Уведомление"
-        AppLanguage.JAPANESE -> "通知"
-        AppLanguage.KOREAN -> "알림"
     }
 
     val nEnabledOfTotal: String get() = when (Strings.lang) {
@@ -14198,6 +14041,19 @@ object StringsE {
         AppLanguage.KOREAN -> "$name 캐시를 삭제하시겠습니까?"
     }
 
+    val buildOptionsSection: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "构建选项"
+        AppLanguage.ENGLISH -> "Build options"
+        AppLanguage.ARABIC -> "خيارات البناء"
+        AppLanguage.PORTUGUESE -> "Opções de build"
+        AppLanguage.SPANISH -> "Opciones de compilación"
+        AppLanguage.FRENCH -> "Options de build"
+        AppLanguage.GERMAN -> "Build-Optionen"
+        AppLanguage.RUSSIAN -> "Параметры сборки"
+        AppLanguage.JAPANESE -> "ビルドオプション"
+        AppLanguage.KOREAN -> "빌드 옵션"
+    }
+
     val forceFullRebuild: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "强制完整构建"
         AppLanguage.ENGLISH -> "Force full rebuild"
@@ -15746,16 +15602,16 @@ object StringsE {
     }
 
     val perAppSigningHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "为此包名生成并复用独立的 RSA-3072 证书，与全局签名互不影响；更新时身份保持一致"
-        AppLanguage.ENGLISH -> "Generates and reuses a dedicated RSA-3072 certificate for this package name — independent of the global signer, stable across rebuilds"
-        AppLanguage.ARABIC -> "يُنشئ شهادة RSA-3072 مخصصة لاسم الحزمة هذا ويعيد استخدامها — مستقلة عن الموقّع العام ومستقرة عبر عمليات البناء"
-        AppLanguage.PORTUGUESE -> "Gera e reutiliza um certificado RSA-3072 dedicado a este nome de pacote — independente do signatário global, estável entre builds"
-        AppLanguage.SPANISH -> "Genera y reutiliza un certificado RSA-3072 dedicado a este nombre de paquete — independiente del firmante global, estable entre compilaciones"
-        AppLanguage.FRENCH -> "Génère et réutilise un certificat RSA-3072 dédié à ce nom de package — indépendant du signataire global, stable d'une compilation à l'autre"
-        AppLanguage.GERMAN -> "Erzeugt und verwendet ein eigenes RSA-3072-Zertifikat für diesen Paketnamen — unabhängig vom globalen Signer, stabil über Builds hinweg"
-        AppLanguage.RUSSIAN -> "Создаёт и повторно использует выделенный сертификат RSA-3072 для этого имени пакета — независимо от глобальной подписи, стабильно между сборками"
-        AppLanguage.JAPANESE -> "このパッケージ名専用の RSA-3072 証明書を生成して再利用します — グローバル署名とは独立し、再ビルド間で安定します"
-        AppLanguage.KOREAN -> "이 패키지 이름 전용 RSA-3072 인증서를 생성하고 재사용합니다 — 전역 서명과 독립적이며 빌드 간에 안정적입니다"
+        AppLanguage.CHINESE -> "每个包名独立证书，更新时签名不变"
+        AppLanguage.ENGLISH -> "Dedicated certificate per package name; signing identity stays stable across updates"
+        AppLanguage.ARABIC -> "شهادة مخصصة لكل اسم حزمة؛ تبقى هوية التوقيع ثابتة عبر التحديثات"
+        AppLanguage.PORTUGUESE -> "Certificado dedicado por nome de pacote; identidade de assinatura estável entre atualizações"
+        AppLanguage.SPANISH -> "Certificado dedicado por nombre de paquete; la identidad de firma se mantiene entre actualizaciones"
+        AppLanguage.FRENCH -> "Certificat dédié par nom de package ; l'identité de signature reste stable entre les mises à jour"
+        AppLanguage.GERMAN -> "Eigenes Zertifikat pro Paketname; Signaturidentität bleibt über Updates stabil"
+        AppLanguage.RUSSIAN -> "Отдельный сертификат на имя пакета; подпись стабильна между обновлениями"
+        AppLanguage.JAPANESE -> "パッケージ名ごとに専用証明書。更新間で署名 ID が安定します"
+        AppLanguage.KOREAN -> "패키지 이름별 전용 인증서; 업데이트 간 서명 ID가 유지됩니다"
     }
 
     // ------------------------------------------------------------------
@@ -16360,112 +16216,6 @@ object StringsE {
         AppLanguage.RUSSIAN -> "Выбрано: $count"
         AppLanguage.JAPANESE -> "$count 件選択中"
         AppLanguage.KOREAN -> "${count}개 선택됨"
-    }
-
-    // ---- Feature stacks (Build APK) ----
-
-    val featureStackTitle: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "功能栈"
-        AppLanguage.ENGLISH -> "Feature stacks"
-        AppLanguage.ARABIC -> "حزم الميزات"
-        AppLanguage.PORTUGUESE -> "Pacotes de recursos"
-        AppLanguage.SPANISH -> "Paquetes de funciones"
-        AppLanguage.FRENCH -> "Piles de fonctionnalités"
-        AppLanguage.GERMAN -> "Feature-Stacks"
-        AppLanguage.RUSSIAN -> "Наборы функций"
-        AppLanguage.JAPANESE -> "機能スタック"
-        AppLanguage.KOREAN -> "기능 스택"
-    }
-
-    val featureStackSummary: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "可选功能打包：关闭可减小生成的 APK 体积"
-        AppLanguage.ENGLISH -> "Optional bundled features — turning one off shrinks the generated APK"
-        AppLanguage.ARABIC -> "ميزات اختيارية مضمّنة — تعطيلها يصغّر حجم APK"
-        AppLanguage.PORTUGUESE -> "Recursos opcionais empacotados — desativar reduz o APK gerado"
-        AppLanguage.SPANISH -> "Funciones opcionales incluidas — desactivarlas reduce el APK"
-        AppLanguage.FRENCH -> "Fonctionnalités embarquées optionnelles — les désactiver réduit l'APK"
-        AppLanguage.GERMAN -> "Optionale gebündelte Funktionen — Deaktivieren verkleinert die APK"
-        AppLanguage.RUSSIAN -> "Необязательные встроенные функции — отключение уменьшает APK"
-        AppLanguage.JAPANESE -> "オプションの同梱機能 — オフにすると生成 APK が小さくなります"
-        AppLanguage.KOREAN -> "선택적 번들 기능 — 끄면 생성되는 APK 크기가 줄어듭니다"
-    }
-
-    val featureStackGoogleSignIn: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "Google 原生登录"
-        AppLanguage.ENGLISH -> "Native Google sign-in"
-        AppLanguage.ARABIC -> "تسجيل دخول Google الأصلي"
-        AppLanguage.PORTUGUESE -> "Login nativo do Google"
-        AppLanguage.SPANISH -> "Inicio de sesión nativo de Google"
-        AppLanguage.FRENCH -> "Connexion Google native"
-        AppLanguage.GERMAN -> "Native Google-Anmeldung"
-        AppLanguage.RUSSIAN -> "Нативный вход Google"
-        AppLanguage.JAPANESE -> "Google ネイティブログイン"
-        AppLanguage.KOREAN -> "Google 네이티브 로그인"
-    }
-
-    val featureStackGoogleSignInDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "Credential Manager + Google ID Token；页面可调用 googleSignIn"
-        AppLanguage.ENGLISH -> "Credential Manager + Google ID token; pages can call googleSignIn"
-        AppLanguage.ARABIC -> "Credential Manager + رمز Google ID؛ يمكن للصفحات استدعاء googleSignIn"
-        AppLanguage.PORTUGUESE -> "Credential Manager + token de ID do Google; páginas podem chamar googleSignIn"
-        AppLanguage.SPANISH -> "Credential Manager + token de ID de Google; las páginas pueden llamar googleSignIn"
-        AppLanguage.FRENCH -> "Credential Manager + jeton d'ID Google ; les pages peuvent appeler googleSignIn"
-        AppLanguage.GERMAN -> "Credential Manager + Google-ID-Token; Seiten können googleSignIn aufrufen"
-        AppLanguage.RUSSIAN -> "Credential Manager + токен Google ID; страницы могут вызывать googleSignIn"
-        AppLanguage.JAPANESE -> "Credential Manager + Google ID トークン。ページから googleSignIn を呼び出せます"
-        AppLanguage.KOREAN -> "Credential Manager + Google ID 토큰; 페이지에서 googleSignIn 호출 가능"
-    }
-
-    val featureStackFcm: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "FCM 推送"
-        AppLanguage.ENGLISH -> "FCM push"
-        AppLanguage.ARABIC -> "إشعارات FCM"
-        AppLanguage.PORTUGUESE -> "Push FCM"
-        AppLanguage.SPANISH -> "Push FCM"
-        AppLanguage.FRENCH -> "Notifications FCM"
-        AppLanguage.GERMAN -> "FCM-Push"
-        AppLanguage.RUSSIAN -> "FCM push"
-        AppLanguage.JAPANESE -> "FCM プッシュ"
-        AppLanguage.KOREAN -> "FCM 푸시"
-    }
-
-    val featureStackFcmDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "Firebase Cloud Messaging；通知渠道选择 FCM 时需要"
-        AppLanguage.ENGLISH -> "Firebase Cloud Messaging; required when the notification channel is FCM"
-        AppLanguage.ARABIC -> "Firebase Cloud Messaging؛ مطلوب عند اختيار قناة الإشعارات FCM"
-        AppLanguage.PORTUGUESE -> "Firebase Cloud Messaging; necessário quando o canal de notificação é FCM"
-        AppLanguage.SPANISH -> "Firebase Cloud Messaging; necesario cuando el canal de notificación es FCM"
-        AppLanguage.FRENCH -> "Firebase Cloud Messaging ; requis si le canal de notification est FCM"
-        AppLanguage.GERMAN -> "Firebase Cloud Messaging; benötigt, wenn der Benachrichtigungskanal FCM ist"
-        AppLanguage.RUSSIAN -> "Firebase Cloud Messaging; необходимо при выборе канала уведомлений FCM"
-        AppLanguage.JAPANESE -> "Firebase Cloud Messaging。通知チャンネルに FCM を選ぶ場合に必要"
-        AppLanguage.KOREAN -> "Firebase Cloud Messaging; 알림 채널을 FCM으로 선택할 때 필요"
-    }
-
-    val featureStackHttp3: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "HTTP/3 引擎 (Cronet)"
-        AppLanguage.ENGLISH -> "HTTP/3 engine (Cronet)"
-        AppLanguage.ARABIC -> "محرك HTTP/3 (Cronet)"
-        AppLanguage.PORTUGUESE -> "Motor HTTP/3 (Cronet)"
-        AppLanguage.SPANISH -> "Motor HTTP/3 (Cronet)"
-        AppLanguage.FRENCH -> "Moteur HTTP/3 (Cronet)"
-        AppLanguage.GERMAN -> "HTTP/3-Engine (Cronet)"
-        AppLanguage.RUSSIAN -> "Движок HTTP/3 (Cronet)"
-        AppLanguage.JAPANESE -> "HTTP/3 エンジン (Cronet)"
-        AppLanguage.KOREAN -> "HTTP/3 엔진 (Cronet)"
-    }
-
-    val featureStackHttp3Desc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "Chromium QUIC 上行引擎；仅在使用强制 HTTP/3 时需要"
-        AppLanguage.ENGLISH -> "Chromium QUIC upstream engine; only needed when forced HTTP/3 is used"
-        AppLanguage.ARABIC -> "محرك Chromium QUIC؛ مطلوب فقط عند استخدام HTTP/3 الإجباري"
-        AppLanguage.PORTUGUESE -> "Motor upstream Chromium QUIC; necessário apenas com HTTP/3 forçado"
-        AppLanguage.SPANISH -> "Motor upstream Chromium QUIC; solo necesario con HTTP/3 forzado"
-        AppLanguage.FRENCH -> "Moteur Chromium QUIC en amont ; requis uniquement pour HTTP/3 forcé"
-        AppLanguage.GERMAN -> "Chromium-QUIC-Upstream; nur bei erzwungenem HTTP/3 nötig"
-        AppLanguage.RUSSIAN -> "Chromium QUIC upstream; нужен только при принудительном HTTP/3"
-        AppLanguage.JAPANESE -> "Chromium QUIC アップストリーム。強制 HTTP/3 使用時のみ必要"
-        AppLanguage.KOREAN -> "Chromium QUIC 업스트림 엔진; 강제 HTTP/3 사용 시에만 필요"
     }
 
 }

@@ -179,8 +179,8 @@
 # ============================================================
 # OkHttp / Okio — Platform 反射检测 OS 安全栈
 # ============================================================
--keepnames class okhttp3.internal.platform.**
--keepnames class okhttp3.internal.publicsuffix.**
+-keep class okhttp3.internal.platform.** { *; }
+-keep class okhttp3.internal.publicsuffix.** { *; }
 -dontwarn okhttp3.**
 -dontwarn okio.**
 -dontwarn org.conscrypt.**
@@ -190,10 +190,10 @@
 # ============================================================
 # Coil — ServiceLoader 加载 fetcher / decoder / mapper
 # ============================================================
--keepnames class coil.util.**
--keepnames class coil.fetch.**
--keepnames class coil.decode.**
--keepnames class coil.map.**
+-keep class coil.util.** { *; }
+-keep class coil.fetch.** { *; }
+-keep class coil.decode.** { *; }
+-keep class coil.map.** { *; }
 -dontwarn coil.**
 
 # ============================================================
@@ -223,39 +223,43 @@
 # ============================================================
 # ZXing — 反射查找编码格式 (仅 core，embedded 已移除)
 # ============================================================
--keepnames class com.google.zxing.**
+-keep class com.google.zxing.** { *; }
 -dontwarn com.google.zxing.**
 
 # BillingClient — AIDL stub
 # ============================================================
 -keep class com.android.vending.billing.** { *; }
 -keep class com.android.billingclient.** { *; }
--keepnames class com.google.android.gms.internal.**
+-keep class com.google.android.gms.internal.** { *; }
 -dontwarn com.android.billingclient.**
 
 # ============================================================
 # Credentials API + GoogleId — 反射解析 ID Token
 # ============================================================
--keepnames class androidx.credentials.**
--keepnames class com.google.android.libraries.identity.**
--keepnames class com.google.android.gms.auth.api.identity.**
+-keep class androidx.credentials.** { *; }
+-keep class com.google.android.libraries.identity.** { *; }
+-keep class com.google.android.gms.auth.api.identity.** { *; }
 -dontwarn androidx.credentials.**
 -dontwarn com.google.android.libraries.identity.**
 
 # ============================================================
-# DataStore Preferences — 无反射，允许收缩未用类
+# DataStore Preferences
 # ============================================================
--keepnames class androidx.datastore.**
+-keep class androidx.datastore.** { *; }
 -dontwarn androidx.datastore.**
 
 # ============================================================
 # Compress / xz — ServiceLoader 加载格式
 # ============================================================
--keepnames class org.apache.commons.compress.**
--keepnames class org.tukaani.xz.**
+-keep class org.apache.commons.compress.compressors.FileNameUtil { *; }
+-keep class org.apache.commons.compress.archivers.** { *; }
+-keep class org.tukaani.xz.** { *; }
 -dontwarn org.apache.commons.compress.**
 -dontwarn org.tukaani.xz.**
 -dontwarn org.brotli.dec.**
+# Names kept for the same reason as the shell: root-package repackaging makes
+# TypeDescription.<clinit> NPE (Package.getName on null) in GeckoRuntime.create.
+-keep class org.yaml.snakeyaml.** { *; }
 -dontwarn org.yaml.snakeyaml.**
 
 # ============================================================
@@ -288,10 +292,8 @@
 }
 
 # Firebase / FCM
-# keepnames：gms/firebase 全量 keep 会把依赖 jar 里所有类锚定为收缩种子；
-# 改为存活类保名、死类可收缩，成员级反射由各库 consumer rules 兜底。
--keepnames class com.google.firebase.**
--keepnames class com.google.android.gms.**
+-keep class com.google.firebase.** { *; }
+-keep class com.google.android.gms.** { *; }
 -dontwarn com.google.firebase.**
 -dontwarn com.google.android.gms.**
 
