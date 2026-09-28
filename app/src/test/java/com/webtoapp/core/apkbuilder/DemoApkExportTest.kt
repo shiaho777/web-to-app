@@ -2,6 +2,7 @@ package com.webtoapp.core.apkbuilder
 
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
+import com.webtoapp.data.model.ApkExportConfig
 import com.webtoapp.data.model.WebApp
 import java.io.File
 import java.util.zip.ZipFile
