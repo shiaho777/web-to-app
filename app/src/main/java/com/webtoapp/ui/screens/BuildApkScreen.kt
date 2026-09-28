@@ -1228,14 +1228,6 @@ fun EngineSelectionCard(
                         color = if (isGeckoDownloaded) MaterialTheme.colorScheme.onSurface
                                 else MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    if (isGeckoDownloaded) {
-                        Spacer(Modifier.width(6.dp))
-                        WtaBadge(
-                            text = Strings.engineReady,
-                            containerColor = MaterialTheme.colorScheme.primaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                    }
                 }
                 if (!isGeckoDownloaded) {
                     Text(

@@ -443,8 +443,11 @@ private fun GeckoViewEngineCard(
                 ) {
                     Text(
                         message,
+                        modifier = Modifier.weight(1f),
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                     TextButton(
                         onClick = onCancel,
