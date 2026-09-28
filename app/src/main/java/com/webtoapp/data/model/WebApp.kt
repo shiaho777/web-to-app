@@ -1474,7 +1474,6 @@ data class PerformanceOptimizationConfig(
 data class BackgroundRunExportConfig(
     val notificationTitle: String = "",
     val notificationContent: String = "",
-    val showNotification: Boolean = true,
     val keepCpuAwake: Boolean = true
 )
 

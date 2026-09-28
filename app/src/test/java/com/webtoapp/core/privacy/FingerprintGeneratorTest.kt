@@ -28,23 +28,4 @@ class FingerprintGeneratorTest {
         assertThat(fp.audioNoise).isLessThan(0.0001f)
     }
 
-    @Test
-    fun `generateIpByCountry and random search ip produce valid ipv4`() {
-        val japanIp = FingerprintGenerator.generateIpByCountry("japan")
-        val fallbackIp = FingerprintGenerator.generateRandomIp(IpRange.SEARCH, null)
-        val ipv4Pattern = Regex("""\d{1,3}(\.\d{1,3}){3}""")
-
-        assertThat(ipv4Pattern.matches(japanIp)).isTrue()
-        assertThat(ipv4Pattern.matches(fallbackIp)).isTrue()
-    }
-
-    @Test
-    fun `supported countries include key entries`() {
-        val countries = FingerprintGenerator.getSupportedCountries()
-
-        assertThat(countries).contains("中国")
-        assertThat(countries).contains("美国")
-        assertThat(countries).contains("欧洲")
-        assertThat(countries).contains("亚洲")
-    }
 }

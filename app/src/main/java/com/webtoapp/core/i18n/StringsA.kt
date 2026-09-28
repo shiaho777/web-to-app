@@ -13591,32 +13591,6 @@ object StringsA {
         AppLanguage.KOREAN -> "준비 중..."
     }
 
-    val buildApkForApp: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "将为「%s」构建独立的 APK 安装包。"
-        AppLanguage.ENGLISH -> "Will build standalone APK for \"%s\"."
-        AppLanguage.ARABIC -> "سيتم بناء APK مستقل لـ \"%s\"."
-        AppLanguage.PORTUGUESE -> "Será construído APK autônomo para \"%s\"."
-        AppLanguage.SPANISH -> "Se construirá APK independiente para \"%s\"."
-        AppLanguage.FRENCH -> "Construction d'un APK autonome pour \"%s\"."
-        AppLanguage.GERMAN -> "Standalone-APK für \"%s\" wird erstellt."
-        AppLanguage.RUSSIAN -> "Будет создан автономный APK для \"%s\"."
-        AppLanguage.JAPANESE -> "「%s」のスタンドアロン APK をビルドします。"
-        AppLanguage.KOREAN -> "\"%s\"용 독립 APK를 빌드합니다."
-    }
-
-    val buildCompleteInstallHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "构建完成后可直接安装到设备上，无需创建快捷方式。"
-        AppLanguage.ENGLISH -> "After build, can be installed directly without creating shortcut."
-        AppLanguage.ARABIC -> "بعد البناء، يمكن التثبيت مباشرة دون إنشاء اختصار."
-        AppLanguage.PORTUGUESE -> "Após build, pode ser instalado diretamente sem criar atalho."
-        AppLanguage.SPANISH -> "Tras build, se puede instalar directamente sin crear acceso directo."
-        AppLanguage.FRENCH -> "Après build, installation directe sans créer de raccourci."
-        AppLanguage.GERMAN -> "Nach dem Build direkt installierbar, ohne Verknüpfung zu erstellen."
-        AppLanguage.RUSSIAN -> "После сборки можно установить напрямую без ярлыка."
-        AppLanguage.JAPANESE -> "ビルド後、ショートカットを作成せず直接インストールできます。"
-        AppLanguage.KOREAN -> "빌드 후 바로가기 없이 직접 설치할 수 있습니다."
-    }
-
     val buildSummaryTitle: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "构建摘要"
         AppLanguage.ENGLISH -> "Build Summary"

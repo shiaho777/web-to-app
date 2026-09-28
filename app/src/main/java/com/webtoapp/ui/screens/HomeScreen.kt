@@ -45,9 +45,7 @@ import coil.compose.AsyncImage
 import coil.decode.VideoFrameDecoder
 import coil.request.ImageRequest
 import com.webtoapp.core.apkbuilder.ApkBuilder
-import com.webtoapp.core.apkbuilder.ApkExportPreflight
 import com.webtoapp.core.apkbuilder.ExportRuntimeEnsure
-import com.webtoapp.core.apkbuilder.ApkExportPreflightReport
 import com.webtoapp.core.apkbuilder.BuildResult
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.logging.AppLogger
@@ -58,7 +56,6 @@ import com.webtoapp.data.model.WebApp
 import com.webtoapp.ui.components.CategoryEditorDialog
 import com.webtoapp.ui.components.CategoryTabRow
 import com.webtoapp.ui.components.EnhancedElevatedCard
-import com.webtoapp.ui.components.ApkExportPreflightPanel
 import com.webtoapp.ui.components.PremiumTextField
 import com.webtoapp.ui.components.LanguageSelectorButton
 import com.webtoapp.ui.components.MoveToCategoryDialog

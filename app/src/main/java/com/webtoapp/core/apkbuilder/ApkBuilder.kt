@@ -4688,7 +4688,6 @@ private fun WebApp.buildOptionalServicesBlock(): OptionalServicesBlock = Optiona
         BackgroundRunConfig(
             notificationTitle = it.notificationTitle,
             notificationContent = it.notificationContent,
-            showNotification = it.showNotification,
             keepCpuAwake = it.keepCpuAwake
         )
     },

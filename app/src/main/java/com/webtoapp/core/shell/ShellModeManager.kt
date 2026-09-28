@@ -1756,15 +1756,6 @@ data class IsolationShellConfig(
     @SerializedName("fingerprintConfig")
     val fingerprintConfig: FingerprintShellConfig = FingerprintShellConfig(),
 
-    @SerializedName("headerConfig")
-    val headerConfig: HeaderShellConfig = HeaderShellConfig(),
-
-    @SerializedName("ipSpoofConfig")
-    val ipSpoofConfig: IpSpoofShellConfig = IpSpoofShellConfig(),
-
-    @SerializedName("storageIsolation")
-    val storageIsolation: Boolean = true,
-
     @SerializedName("blockWebRTC")
     val blockWebRTC: Boolean = true,
 
@@ -1799,7 +1790,10 @@ data class IsolationShellConfig(
     val customScreenWidth: Int? = null,
 
     @SerializedName("customScreenHeight")
-    val customScreenHeight: Int? = null
+    val customScreenHeight: Int? = null,
+
+    @SerializedName("customDevicePixelRatio")
+    val customDevicePixelRatio: Float? = null
 ) {
     fun toIsolationConfig(): com.webtoapp.core.privacy.IsolationConfig {
         return com.webtoapp.core.privacy.IsolationConfig(
@@ -1811,36 +1805,6 @@ data class IsolationShellConfig(
                 randomUserAgent = fingerprintConfig.randomUserAgent,
                 fingerprintId = fingerprintConfig.fingerprintId
             ),
-            headerConfig = com.webtoapp.core.privacy.HeaderConfig(
-                enabled = headerConfig.enabled,
-                randomizeOnRequest = headerConfig.randomizeOnRequest,
-                dnt = headerConfig.dnt,
-                spoofClientHints = headerConfig.spoofClientHints,
-                refererPolicy = try {
-                    com.webtoapp.core.privacy.RefererPolicy.valueOf(headerConfig.refererPolicy)
-                } catch (e: Exception) {
-                    com.webtoapp.core.privacy.RefererPolicy.STRICT_ORIGIN
-                }
-            ),
-            ipSpoofConfig = com.webtoapp.core.privacy.IpSpoofConfig(
-                enabled = ipSpoofConfig.enabled,
-                spoofMethod = try {
-                    com.webtoapp.core.privacy.IpSpoofMethod.valueOf(ipSpoofConfig.spoofMethod)
-                } catch (e: Exception) {
-                    com.webtoapp.core.privacy.IpSpoofMethod.HEADER
-                },
-                customIp = ipSpoofConfig.customIp,
-                randomIpRange = try {
-                    com.webtoapp.core.privacy.IpRange.valueOf(ipSpoofConfig.randomIpRange)
-                } catch (e: Exception) {
-                    com.webtoapp.core.privacy.IpRange.GLOBAL
-                },
-                searchKeyword = ipSpoofConfig.searchKeyword,
-                xForwardedFor = ipSpoofConfig.xForwardedFor,
-                xRealIp = ipSpoofConfig.xRealIp,
-                clientIp = ipSpoofConfig.clientIp
-            ),
-            storageIsolation = storageIsolation,
             blockWebRTC = blockWebRTC,
             protectCanvas = protectCanvas,
             protectAudio = protectAudio,
@@ -1852,7 +1816,8 @@ data class IsolationShellConfig(
             customLanguage = customLanguage,
             spoofScreen = spoofScreen,
             customScreenWidth = customScreenWidth,
-            customScreenHeight = customScreenHeight
+            customScreenHeight = customScreenHeight,
+            customDevicePixelRatio = customDevicePixelRatio
         )
     }
 }
@@ -1874,58 +1839,12 @@ data class FingerprintShellConfig(
     val fingerprintId: String = java.util.UUID.randomUUID().toString()
 )
 
-data class HeaderShellConfig(
-    @SerializedName("enabled")
-    val enabled: Boolean = false,
-
-    @SerializedName("randomizeOnRequest")
-    val randomizeOnRequest: Boolean = false,
-
-    @SerializedName("dnt")
-    val dnt: Boolean = true,
-
-    @SerializedName("spoofClientHints")
-    val spoofClientHints: Boolean = true,
-
-    @SerializedName("refererPolicy")
-    val refererPolicy: String = "STRICT_ORIGIN"
-)
-
-data class IpSpoofShellConfig(
-    @SerializedName("enabled")
-    val enabled: Boolean = false,
-
-    @SerializedName("spoofMethod")
-    val spoofMethod: String = "HEADER",
-
-    @SerializedName("customIp")
-    val customIp: String? = null,
-
-    @SerializedName("randomIpRange")
-    val randomIpRange: String = "GLOBAL",
-
-    @SerializedName("searchKeyword")
-    val searchKeyword: String? = null,
-
-    @SerializedName("xForwardedFor")
-    val xForwardedFor: Boolean = true,
-
-    @SerializedName("xRealIp")
-    val xRealIp: Boolean = true,
-
-    @SerializedName("clientIp")
-    val clientIp: Boolean = true
-)
-
 data class BackgroundRunShellConfig(
     @SerializedName("notificationTitle")
     val notificationTitle: String = "",
 
     @SerializedName("notificationContent")
     val notificationContent: String = "",
-
-    @SerializedName("showNotification")
-    val showNotification: Boolean = true,
 
     @SerializedName("keepCpuAwake")
     val keepCpuAwake: Boolean = true

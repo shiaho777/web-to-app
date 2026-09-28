@@ -461,24 +461,6 @@ internal object ApkConfigJsonFactory {
                 "randomUserAgent" to ic.fingerprintConfig.randomUserAgent,
                 "fingerprintId" to ic.fingerprintConfig.fingerprintId
             ),
-            "headerConfig" to linkedMapOf(
-                "enabled" to ic.headerConfig.enabled,
-                "randomizeOnRequest" to ic.headerConfig.randomizeOnRequest,
-                "dnt" to ic.headerConfig.dnt,
-                "spoofClientHints" to ic.headerConfig.spoofClientHints,
-                "refererPolicy" to ic.headerConfig.refererPolicy.name
-            ),
-            "ipSpoofConfig" to linkedMapOf(
-                "enabled" to ic.ipSpoofConfig.enabled,
-                "spoofMethod" to ic.ipSpoofConfig.spoofMethod.name,
-                "customIp" to ic.ipSpoofConfig.customIp,
-                "randomIpRange" to ic.ipSpoofConfig.randomIpRange.name,
-                "searchKeyword" to ic.ipSpoofConfig.searchKeyword,
-                "xForwardedFor" to ic.ipSpoofConfig.xForwardedFor,
-                "xRealIp" to ic.ipSpoofConfig.xRealIp,
-                "clientIp" to ic.ipSpoofConfig.clientIp
-            ),
-            "storageIsolation" to ic.storageIsolation,
             "blockWebRTC" to ic.blockWebRTC,
             "protectCanvas" to ic.protectCanvas,
             "protectAudio" to ic.protectAudio,
@@ -490,7 +472,8 @@ internal object ApkConfigJsonFactory {
             "customLanguage" to ic.customLanguage,
             "spoofScreen" to ic.spoofScreen,
             "customScreenWidth" to ic.customScreenWidth,
-            "customScreenHeight" to ic.customScreenHeight
+            "customScreenHeight" to ic.customScreenHeight,
+            "customDevicePixelRatio" to ic.customDevicePixelRatio
         )
     }
 

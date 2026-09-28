@@ -1,43 +1,33 @@
 package com.webtoapp.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.BatteryStd
-import androidx.compose.material.icons.outlined.PlayArrow
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.material.icons.outlined.Autorenew
+import androidx.compose.material.icons.outlined.BatterySaver
+import androidx.compose.material.icons.outlined.Bolt
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.NotificationsNone
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.webtoapp.core.background.BackgroundRunService
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.data.model.BackgroundRunExportConfig
-import com.webtoapp.ui.design.WtaDivider
-import com.webtoapp.ui.design.WtaFeatureCard
-import com.webtoapp.ui.design.WtaFeatureCardHeader
+import com.webtoapp.ui.animation.CardCollapseTransition
+import com.webtoapp.ui.animation.CardExpandTransition
+import com.webtoapp.ui.design.WtaSettingRow
 import com.webtoapp.ui.design.WtaSpacing
 import com.webtoapp.ui.design.WtaSwitch
+import com.webtoapp.ui.design.WtaTextField
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BackgroundRunConfigCard(
     enabled: Boolean,
@@ -46,111 +36,143 @@ fun BackgroundRunConfigCard(
     onConfigChange: (BackgroundRunExportConfig) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var expanded by remember { mutableStateOf(false) }
-    val context = LocalContext.current
+    val primary = MaterialTheme.colorScheme.primary
 
-    WtaFeatureCard(modifier = modifier) {
-        WtaFeatureCardHeader(
-            icon = Icons.Outlined.PlayArrow,
-            title = Strings.backgroundRunTitle,
-            subtitle = if (!enabled) Strings.notEnabled else null,
-            enabled = enabled,
-            trailing = {
+    EnhancedElevatedCard(modifier = modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+
+            // ── 头部：图标 + 标题 + 状态副标题 + 开关 ──────────────────
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(
+                                if (enabled) primary.copy(alpha = 0.1f)
+                                else MaterialTheme.colorScheme.surfaceVariant
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Autorenew,
+                            contentDescription = null,
+                            tint = if (enabled) primary
+                            else MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                    Column {
+                        Text(
+                            text = Strings.backgroundRunTitle,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Medium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            text = if (enabled) Strings.backgroundRunActiveSummary
+                            else Strings.notEnabled,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+
                 WtaSwitch(
                     checked = enabled,
                     onCheckedChange = onEnabledChange
                 )
             }
-        )
 
-        AnimatedVisibility(visible = enabled) {
-            Column(
-                modifier = Modifier.padding(top = WtaSpacing.Large),
-                verticalArrangement = Arrangement.spacedBy(WtaSpacing.Medium)
+            AnimatedVisibility(
+                visible = enabled,
+                enter = CardExpandTransition,
+                exit = CardCollapseTransition
             ) {
-                WtaDivider()
-                Spacer(modifier = Modifier.height(WtaSpacing.Large))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                Column(
+                    modifier = Modifier.padding(top = WtaSpacing.ContentGap),
+                    verticalArrangement = Arrangement.spacedBy(WtaSpacing.ContentGap)
                 ) {
-                    Text(
-                        Strings.backgroundRunShowNotification,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                    WtaSwitch(
-                        checked = config.showNotification,
-                        onCheckedChange = { onConfigChange(config.copy(showNotification = it)) }
-                    )
-                }
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        Strings.backgroundRunKeepCpuAwake,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                    WtaSwitch(
-                        checked = config.keepCpuAwake,
-                        onCheckedChange = { onConfigChange(config.copy(keepCpuAwake = it)) }
-                    )
-                }
+                    // ── 保持唤醒 ─────────────────────────────────────
+                    WtaSettingRow(
+                        title = Strings.backgroundRunKeepCpuAwake,
+                        subtitle = Strings.backgroundRunKeepCpuAwakeDesc,
+                        icon = Icons.Outlined.Bolt,
+                        active = config.keepCpuAwake,
+                        contentPadding = PaddingValues(horizontal = 0.dp, vertical = 6.dp),
+                        onClick = {
+                            onConfigChange(config.copy(keepCpuAwake = !config.keepCpuAwake))
+                        }
+                    ) {
+                        WtaSwitch(
+                            checked = config.keepCpuAwake,
+                            onCheckedChange = {
+                                onConfigChange(config.copy(keepCpuAwake = it))
+                            }
+                        )
+                    }
 
-                OutlinedButton(
-                    onClick = { BackgroundRunService.requestIgnoreBatteryOptimizations(context) },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(
-                        Icons.Outlined.BatteryStd,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Column {
-                        Text(
-                            Strings.backgroundRunBatteryOptimization,
-                            style = MaterialTheme.typography.labelLarge
+                    // ── 电池优化豁免说明（生成 APK 首启自动请求一次）───
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalAlignment = Alignment.Top,
+                        modifier = Modifier.padding(vertical = 2.dp)
+                    ) {
+                        Icon(
+                            Icons.Outlined.BatterySaver,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier
+                                .size(18.dp)
+                                .padding(top = 1.dp)
                         )
                         Text(
-                            Strings.backgroundRunBatteryOptimizationDesc,
+                            text = Strings.backgroundRunBatteryAutoHint,
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-                }
 
-                TextButton(
-                    onClick = { expanded = !expanded },
-                    modifier = Modifier.align(Alignment.End)
-                ) {
-                    Text(if (expanded) Strings.hideAdvanced else Strings.showAdvanced)
-                }
-
-                AnimatedVisibility(visible = expanded) {
-                    Column(verticalArrangement = Arrangement.spacedBy(WtaSpacing.Medium)) {
-                        PremiumTextField(
-                            value = config.notificationTitle,
-                            onValueChange = { onConfigChange(config.copy(notificationTitle = it)) },
-                            label = { Text(Strings.backgroundRunNotificationTitle) },
-                            placeholder = { Text(Strings.backgroundRunNotificationTitlePlaceholder) },
-                            modifier = Modifier.fillMaxWidth(),
-                            singleLine = true
-                        )
-
-                        PremiumTextField(
-                            value = config.notificationContent,
-                            onValueChange = { onConfigChange(config.copy(notificationContent = it)) },
-                            label = { Text(Strings.backgroundRunNotificationContent) },
-                            placeholder = { Text(Strings.backgroundRunNotificationContentPlaceholder) },
-                            modifier = Modifier.fillMaxWidth(),
-                            singleLine = true
-                        )
-                    }
+                    // ── 常驻通知（前台服务必需，可自定义文案）───────────
+                    Text(
+                        text = Strings.backgroundRunNotificationSection,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = primary
+                    )
+                    WtaTextField(
+                        value = config.notificationTitle,
+                        onValueChange = {
+                            onConfigChange(config.copy(notificationTitle = it))
+                        },
+                        label = Strings.backgroundRunNotificationTitle,
+                        placeholder = Strings.backgroundRunNotificationTitlePlaceholder,
+                        leadingIcon = Icons.Outlined.NotificationsNone,
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    WtaTextField(
+                        value = config.notificationContent,
+                        onValueChange = {
+                            onConfigChange(config.copy(notificationContent = it))
+                        },
+                        label = Strings.backgroundRunNotificationContent,
+                        placeholder = Strings.backgroundRunNotificationContentPlaceholder,
+                        leadingIcon = Icons.Outlined.Info,
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
             }
         }

@@ -3,7 +3,6 @@ package com.webtoapp.core.privacy
 import android.annotation.SuppressLint
 import android.content.Context
 import com.webtoapp.core.logging.AppLogger
-import android.webkit.WebView
 
 @SuppressLint("StaticFieldLeak")
 class IsolationManager(private val context: Context) {
@@ -42,7 +41,7 @@ class IsolationManager(private val context: Context) {
 
         currentFingerprint = if (config.fingerprintConfig.regenerateOnLaunch) {
 
-            generateNewFingerprint(config.fingerprintConfig.fingerprintId)
+            generateNewFingerprint(java.util.UUID.randomUUID().toString())
         } else {
 
             loadFingerprint() ?: generateNewFingerprint(config.fingerprintConfig.fingerprintId)
@@ -92,53 +91,13 @@ class IsolationManager(private val context: Context) {
 
     fun getFingerprint(): GeneratedFingerprint? = currentFingerprint
 
+    /** 独立环境指纹的 UA —— WebViewManager 用它覆盖真实请求的 User-Agent。 */
     fun getUserAgent(): String? {
         val config = currentConfig ?: return null
         if (!config.enabled) return null
 
         return config.fingerprintConfig.customUserAgent
             ?: currentFingerprint?.userAgent
-    }
-
-    fun getCustomHeaders(): Map<String, String> {
-        val config = currentConfig ?: return emptyMap()
-        if (!config.enabled || !config.headerConfig.enabled) return emptyMap()
-
-        val headers = mutableMapOf<String, String>()
-
-        config.headerConfig.customHeaders.forEach { (key, value) ->
-            headers[key] = value
-        }
-
-        config.headerConfig.acceptLanguage?.let {
-            headers["Accept-Language"] = it
-        } ?: currentFingerprint?.language?.let {
-            headers["Accept-Language"] = it
-        }
-
-        if (config.headerConfig.dnt) {
-            headers["DNT"] = "1"
-        }
-
-        if (config.ipSpoofConfig.enabled) {
-            val fakeIp = config.ipSpoofConfig.customIp
-                ?: FingerprintGenerator.generateRandomIp(
-                    config.ipSpoofConfig.randomIpRange,
-                    config.ipSpoofConfig.searchKeyword
-                )
-
-            if (config.ipSpoofConfig.xForwardedFor) {
-                headers["X-Forwarded-For"] = fakeIp
-            }
-            if (config.ipSpoofConfig.xRealIp) {
-                headers["X-Real-IP"] = fakeIp
-            }
-            if (config.ipSpoofConfig.clientIp) {
-                headers["Client-IP"] = fakeIp
-            }
-        }
-
-        return headers
     }
 
     fun generateIsolationScript(): String {
@@ -148,30 +107,6 @@ class IsolationManager(private val context: Context) {
         if (!config.enabled) return ""
 
         return IsolationScriptInjector.generateIsolationScript(config, fingerprint)
-    }
-
-    fun applyToWebView(webView: WebView) {
-        val config = currentConfig ?: return
-        if (!config.enabled) return
-
-        getUserAgent()?.let { ua ->
-            webView.settings.userAgentString = ua
-            AppLogger.w(TAG, "设置 User-Agent: ${ua.take(50)}...")
-        }
-
-        val script = generateIsolationScript()
-        if (script.isNotEmpty()) {
-            webView.evaluateJavascript(script) { result ->
-                AppLogger.w(TAG, "隔离脚本注入完成: $result")
-            }
-        }
-    }
-
-    fun injectOnPageStart(webView: WebView) {
-        val script = generateIsolationScript()
-        if (script.isNotEmpty()) {
-            webView.evaluateJavascript(script, null)
-        }
     }
 
     fun clearData() {

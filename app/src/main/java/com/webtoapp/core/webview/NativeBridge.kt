@@ -1151,7 +1151,6 @@ NativeBridge.googleSignIn('sign-in-' + Date.now());
                 appName = getAppLabel(),
                 notificationTitle = title,
                 notificationContent = body,
-                showNotification = true,
                 keepCpuAwake = true
             )
             true
