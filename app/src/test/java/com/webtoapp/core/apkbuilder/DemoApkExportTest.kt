@@ -113,6 +113,13 @@ class DemoApkExportTest {
     fun `SAEP export resolves real plaintext raw resource including encrypted builds`() = runBlocking {
         val context = ApplicationProvider.getApplicationContext<android.content.Context>()
         assumeTrue("shell template missing - run ':app:syncShellTemplateApk' first", templateAssetPresent(context))
+        // Resolve the placeholder's real path from the template itself so the
+        // drop assertion survives aapt/R8 resource renaming.
+        val templateApk = File(context.cacheDir, "saep-template-src.apk")
+        context.assets.open("template/webview_shell.apk").use { input ->
+            templateApk.outputStream().use { input.copyTo(it) }
+        }
+        val placeholderPath = SaepPolicy.findTemplateResource(context, templateApk)?.path
         for ((enabled, encrypted) in listOf(false to false, true to false, true to true)) {
             val packageName = "org.example.saepexport.e${enabled}.c${encrypted}"
             val app = WebApp(
@@ -141,6 +148,12 @@ class DemoApkExportTest {
             val id = appInfo.metaData?.getInt(SaepPolicy.POLICY_METADATA, 0) ?: 0
             if (!enabled) {
                 assertThat(id).isEqualTo(0)
+                // Disabled exports ship no declaration payload at all.
+                if (placeholderPath != null) {
+                    ZipFile(apk).use { zip ->
+                        assertThat(zip.getEntry(placeholderPath)).isNull()
+                    }
+                }
             } else {
                 assertThat(id).isNotEqualTo(0)
                 val resources = pm.getResourcesForApplication(appInfo)

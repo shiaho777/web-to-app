@@ -16,14 +16,18 @@ internal object SaepPolicy {
     const val MAX_BYTES = 10 * 1024
     const val VERSION = 1
 
-    data class TemplateResource(val id: Int, val path: String, val activity: String)
+    data class TemplateResource(val id: Int, val path: String, val activity: String? = null)
 
-    /** Resolve the compiled resource, including resource paths renamed by aapt/R8. */
+    /**
+     * Locate the template's compiled policy resource, tolerating resource paths
+     * renamed by aapt/R8. Returns null only when the template predates the
+     * marker entirely — every other anomaly still fails loudly.
+     */
     @Suppress("DEPRECATION")
-    fun resolveTemplate(context: Context, apk: File): TemplateResource {
+    fun findTemplateResource(context: Context, apk: File): TemplateResource? {
         val pm = context.packageManager
         val info = checkNotNull(pm.getPackageArchiveInfo(
-            apk.absolutePath, PackageManager.GET_META_DATA or PackageManager.GET_ACTIVITIES
+            apk.absolutePath, PackageManager.GET_META_DATA
         )) { "SAEP: cannot parse shell template" }
         val app = ApplicationInfo(checkNotNull(info.applicationInfo) {
             "SAEP: shell template has no application info"
@@ -32,7 +36,7 @@ internal object SaepPolicy {
             publicSourceDir = apk.absolutePath
         }
         val id = app.metaData?.getInt(TEMPLATE_METADATA, 0) ?: 0
-        check(id != 0) { "SAEP: rebuild the shell template; policy resource marker is missing" }
+        if (id == 0) return null
         val resources = pm.getResourcesForApplication(app)
         check(resources.getResourceTypeName(id) == "raw") { "SAEP: policy must reference a raw resource" }
         val value = TypedValue()
@@ -44,13 +48,30 @@ internal object SaepPolicy {
         ZipFile(apk).use { zip ->
             check(zip.getEntry(path)?.isDirectory == false) { "SAEP: policy resource is absent from APK" }
         }
+        return TemplateResource(id, path)
+    }
+
+    /** Enabled exports additionally require the real enabled shell Activity. */
+    @Suppress("DEPRECATION")
+    fun resolveTemplate(context: Context, apk: File): TemplateResource {
+        val resource = checkNotNull(findTemplateResource(context, apk)) {
+            "SAEP: rebuild the shell template; policy resource marker is missing"
+        }
+        val info = checkNotNull(context.packageManager.getPackageArchiveInfo(
+            apk.absolutePath, PackageManager.GET_ACTIVITIES
+        )) { "SAEP: cannot parse shell template" }
         val activity = checkNotNull(info.activities?.singleOrNull {
             it.name == SHELL_ACTIVITY && it.enabled
         }) { "SAEP: shell activity is missing or disabled" }
-        return TemplateResource(id, path, activity.name)
+        return resource.copy(activity = activity.name)
     }
 
-    fun generate(packageName: String, activityName: String, updatedAt: Long): ByteArray {
+    fun generate(
+        packageName: String,
+        activityName: String,
+        appName: String,
+        updatedAt: Long
+    ): ByteArray {
         require(packageName.matches(Regex("[A-Za-z][A-Za-z0-9_]*(\\.[A-Za-z][A-Za-z0-9_]*)+"))) {
             "SAEP: invalid application ID"
         }
@@ -70,7 +91,7 @@ internal object SaepPolicy {
             "scope" to linkedMapOf(
                 "app" to actions,
                 "activities" to mapOf(activityName to mapOf(
-                    "name" to "Main screen",
+                    "name" to appName.ifBlank { "Main screen" },
                     "page_scope" to actions
                 )),
                 "agent_intents" to linkedMapOf(

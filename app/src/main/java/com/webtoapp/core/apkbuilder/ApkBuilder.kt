@@ -1474,11 +1474,20 @@ class ApkBuilder(private val context: Context) {
 
         // Policy changes are structural cache identities: overlays preserve the same
         // already-written policy. Encrypted exports always take the FULL path.
-        val saepResource = if (mode == ModifyApkMode.FULL && saepEnabled) {
-            SaepPolicy.resolveTemplate(context, sourceApk)
-        } else null
-        val saepBytes = saepResource?.let {
-            SaepPolicy.generate(config.packageName, it.activity, System.currentTimeMillis())
+        // Disabled exports resolve the marker too (best effort) so its inert
+        // placeholder file can be dropped; templates predating it have nothing
+        // to remove and must not fail.
+        val saepResource = when {
+            mode != ModifyApkMode.FULL -> null
+            saepEnabled -> SaepPolicy.resolveTemplate(context, sourceApk)
+            else -> runCatching { SaepPolicy.findTemplateResource(context, sourceApk) }
+                .onFailure { logger.log("SAEP placeholder cleanup skipped: ${it.message}") }
+                .getOrNull()
+        }
+        val saepBytes = saepResource?.activity?.let {
+            SaepPolicy.generate(
+                config.packageName, it, config.appName, System.currentTimeMillis()
+            )
         }
 
         ZipFile(sourceApk).use { zipIn ->
@@ -1551,7 +1560,7 @@ class ApkBuilder(private val context: Context) {
                             // Resolve the template marker before package rewriting: its
                             // com.webtoapp prefix is otherwise renamed with the app ID.
                             val policyAdjustedData = axmlRebuilder.rewriteSaepPolicyMetadata(
-                                originalData, saepResource?.id
+                                originalData, saepBytes?.let { saepResource?.id }
                             )
 
                             val modifiedData = axmlRebuilder.expandAndModifyFull(
@@ -1571,10 +1580,11 @@ class ApkBuilder(private val context: Context) {
                             writeEntryDeflated(zipOut, entry.name, modifiedData)
                         }
 
-                        // Replace the resolved raw resource before any generic optimizer;
-                        // the platform must read this policy without the app's decryption key.
+                        // Enabled: replace the resolved raw resource before any generic
+                        // optimizer — the platform reads this policy without the app's
+                        // decryption key. Disabled: drop the inert placeholder entirely.
                         saepResource != null && entry.name == saepResource.path -> {
-                            writeEntryDeflated(zipOut, entry.name, checkNotNull(saepBytes))
+                            saepBytes?.let { writeEntryDeflated(zipOut, entry.name, it) }
                         }
 
                         entry.name == "resources.arsc" -> {

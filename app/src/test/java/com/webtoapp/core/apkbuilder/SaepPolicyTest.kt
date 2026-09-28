@@ -8,7 +8,9 @@ import org.junit.Test
 class SaepPolicyTest {
     @Test
     fun `policy binds the final application id and actual activity with boolean rules`() {
-        val bytes = SaepPolicy.generate("org.example.custom", SaepPolicy.SHELL_ACTIVITY, 123456L)
+        val bytes = SaepPolicy.generate(
+            "org.example.custom", SaepPolicy.SHELL_ACTIVITY, "My App", 123456L
+        )
         val root = JsonParser.parseString(bytes.toString(Charsets.UTF_8)).asJsonObject
         assertThat(bytes.size).isAtMost(SaepPolicy.MAX_BYTES)
         assertThat(root.get("schema").asString).isEqualTo("AGRP-Policy/1.0")
@@ -21,7 +23,7 @@ class SaepPolicyTest {
         val activities = scope.getAsJsonObject("activities")
         assertThat(activities.keySet()).containsExactly(SaepPolicy.SHELL_ACTIVITY)
         val activity = activities.getAsJsonObject(SaepPolicy.SHELL_ACTIVITY)
-        assertThat(activity.get("name").asString).isNotEmpty()
+        assertThat(activity.get("name").asString).isEqualTo("My App")
         val rules = listOf(
             root.getAsJsonObject("default_policy").getAsJsonObject("app"),
             scope.getAsJsonObject("app"), activity.getAsJsonObject("page_scope")
@@ -43,25 +45,25 @@ class SaepPolicyTest {
     @Test
     fun `json escaping preserves supplied activity and generation is deterministic`() {
         val name = "org.example.Screen\"中文"
-        val bytes = SaepPolicy.generate("org.example.custom", name, 0)
+        val bytes = SaepPolicy.generate("org.example.custom", name, "App", 0)
         val root = JsonParser.parseString(bytes.toString(Charsets.UTF_8)).asJsonObject
         assertThat(root.getAsJsonObject("scope").getAsJsonObject("activities").keySet()).containsExactly(name)
-        assertThat(SaepPolicy.generate("org.example.custom", name, 0)).isEqualTo(bytes)
+        assertThat(SaepPolicy.generate("org.example.custom", name, "App", 0)).isEqualTo(bytes)
     }
 
     @Test
     fun `invalid identity timestamp and oversized utf8 policy are rejected`() {
         assertThrows(IllegalArgumentException::class.java) {
-            SaepPolicy.generate("invalid/package", SaepPolicy.SHELL_ACTIVITY, 0)
+            SaepPolicy.generate("invalid/package", SaepPolicy.SHELL_ACTIVITY, "App", 0)
         }
         assertThrows(IllegalArgumentException::class.java) {
-            SaepPolicy.generate("org.example.test", " ", 0)
+            SaepPolicy.generate("org.example.test", " ", "App", 0)
         }
         assertThrows(IllegalArgumentException::class.java) {
-            SaepPolicy.generate("org.example.test", SaepPolicy.SHELL_ACTIVITY, -1)
+            SaepPolicy.generate("org.example.test", SaepPolicy.SHELL_ACTIVITY, "App", -1)
         }
         assertThrows(IllegalArgumentException::class.java) {
-            SaepPolicy.generate("org.example.test", "界".repeat(4000), 0)
+            SaepPolicy.generate("org.example.test", "界".repeat(4000), "App", 0)
         }
     }
 }
