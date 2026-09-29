@@ -96,7 +96,7 @@ const t = {
       usageStats: 'Usage Stats',
       googlePlay: 'Google Play',
       fileManager: 'File Manager',
-      batchImport: 'Batch Import',
+      dataBackup: 'Data Backup',
       about: 'About',
       config: 'App Configuration',
       configOverview: 'Overview',
@@ -217,7 +217,7 @@ const t = {
       usageStats: '使用统计',
       googlePlay: 'Google Play',
       fileManager: '文件管理',
-      batchImport: '批量导入',
+      dataBackup: '数据备份',
       about: '关于',
       config: '应用配置',
       configOverview: '总览',
@@ -422,7 +422,7 @@ function sidebar(lang: Lang, prefix: string) {
               { text: s.guide.usageStats, link: `${prefix}/guide/more-features/usage-stats` },
               { text: s.guide.googlePlay, link: `${prefix}/guide/more-features/google-play` },
               { text: s.guide.fileManager, link: `${prefix}/guide/more-features/file-manager` },
-              { text: s.guide.batchImport, link: `${prefix}/guide/more-features/batch-import` },
+              { text: s.guide.dataBackup, link: `${prefix}/guide/more-features/data-backup` },
               { text: s.guide.about, link: `${prefix}/guide/more-features/about` }
             ]
           }

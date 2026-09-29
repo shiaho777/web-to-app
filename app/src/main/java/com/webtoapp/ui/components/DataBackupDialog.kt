@@ -8,6 +8,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -35,12 +36,12 @@ import androidx.compose.ui.unit.dp
 import com.webtoapp.WebToAppApplication
 import com.webtoapp.core.backup.DataBackupManager
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.ui.design.WtaAlertDialog
 import com.webtoapp.ui.design.WtaButton
 import com.webtoapp.ui.design.WtaButtonSize
 import com.webtoapp.ui.design.WtaButtonVariant
 import com.webtoapp.ui.design.WtaCard
 import com.webtoapp.ui.design.WtaCardTone
-import com.webtoapp.ui.design.WtaIconTitle
 import com.webtoapp.ui.design.WtaMotion
 import com.webtoapp.ui.design.WtaStatusBanner
 import com.webtoapp.ui.design.WtaStatusTone
@@ -49,7 +50,34 @@ import com.webtoapp.ui.theme.ifDescriptionsShown
 import kotlinx.coroutines.launch
 
 @Composable
-fun DataBackupCard() {
+fun DataBackupDialog(onDismiss: () -> Unit) {
+    WtaAlertDialog(
+        onDismissRequest = onDismiss,
+        icon = Icons.Outlined.Inventory2,
+        title = Strings.dataBackupTitle,
+        confirmButton = {
+            WtaButton(
+                onClick = onDismiss,
+                text = Strings.close,
+                variant = WtaButtonVariant.Text,
+                size = WtaButtonSize.Medium
+            )
+        },
+        content = {
+            Strings.dataBackupDesc.ifDescriptionsShown()?.let { desc ->
+                Text(
+                    text = desc,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            DataBackupControls()
+        }
+    )
+}
+
+@Composable
+private fun ColumnScope.DataBackupControls() {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val backupManager = remember { DataBackupManager(context) }
@@ -178,73 +206,63 @@ fun DataBackupCard() {
         )
     }
 
-    WtaCard(modifier = Modifier.fillMaxWidth()) {
-        WtaIconTitle(
-            icon = Icons.Outlined.Inventory2,
-            title = Strings.dataBackupTitle,
-            subtitle = Strings.dataBackupDesc.ifDescriptionsShown()
+    AnimatedVisibility(
+        visible = isBusy,
+        enter = fadeIn(WtaMotion.enterTween()),
+        exit = fadeOut(WtaMotion.exitTween())
+    ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            LinearProgressIndicator(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(3.dp)
+            )
+            if (progressMessage.isNotBlank()) {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    progressMessage,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Spacer(Modifier.height(14.dp))
+        }
+    }
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        ExportButton(
+            isExporting = isExporting,
+            enabled = !isBusy,
+            onClick = {
+                val fileName = backupManager.generateBackupFileName()
+                exportLauncher.launch(fileName)
+            },
+            modifier = Modifier.weight(1f)
         )
+        ImportButton(
+            isImporting = isImporting,
+            enabled = !isBusy,
+            onClick = {
+                importLauncher.launch(arrayOf("application/zip"))
+            },
+            modifier = Modifier.weight(1f)
+        )
+    }
 
-        Spacer(Modifier.height(16.dp))
-
-        AnimatedVisibility(
-            visible = isBusy,
-            enter = fadeIn(WtaMotion.enterTween()),
-            exit = fadeOut(WtaMotion.exitTween())
-        ) {
-            Column(modifier = Modifier.fillMaxWidth()) {
-                LinearProgressIndicator(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(3.dp)
-                )
-                if (progressMessage.isNotBlank()) {
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        progressMessage,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                Spacer(Modifier.height(14.dp))
-            }
-        }
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            ExportButton(
-                isExporting = isExporting,
-                enabled = !isBusy,
-                onClick = {
-                    val fileName = backupManager.generateBackupFileName()
-                    exportLauncher.launch(fileName)
-                },
-                modifier = Modifier.weight(1f)
+    AnimatedVisibility(
+        visible = !isBusy && LocalShowDescriptions.current,
+        enter = fadeIn(WtaMotion.enterTween()),
+        exit = fadeOut(WtaMotion.exitTween())
+    ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Spacer(Modifier.height(12.dp))
+            WtaStatusBanner(
+                message = Strings.dataBackupNote,
+                tone = WtaStatusTone.Info
             )
-            ImportButton(
-                isImporting = isImporting,
-                enabled = !isBusy,
-                onClick = {
-                    importLauncher.launch(arrayOf("application/zip"))
-                },
-                modifier = Modifier.weight(1f)
-            )
-        }
-
-        AnimatedVisibility(
-            visible = !isBusy && LocalShowDescriptions.current,
-            enter = fadeIn(WtaMotion.enterTween()),
-            exit = fadeOut(WtaMotion.exitTween())
-        ) {
-            Column(modifier = Modifier.fillMaxWidth()) {
-                Spacer(Modifier.height(12.dp))
-                WtaStatusBanner(
-                    message = Strings.dataBackupNote,
-                    tone = WtaStatusTone.Info
-                )
-            }
         }
     }
 }

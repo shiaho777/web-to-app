@@ -23,7 +23,7 @@
 | **使用统计** | [使用统计](/zh/guide/more-features/usage-stats) |
 | **Google Play** | [Google Play](/zh/guide/more-features/google-play) |
 | **文件管理** | [文件管理](/zh/guide/more-features/file-manager) |
-| **批量导入** | [批量导入](/zh/guide/more-features/batch-import) |
+| **数据备份** | [数据备份](/zh/guide/more-features/data-backup) |
 | **关于** | [关于](/zh/guide/more-features/about) |
 
 每一项都在[更多功能](/zh/guide/more-features/agent)中有详细说明。

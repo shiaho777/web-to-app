@@ -55,6 +55,7 @@ import com.webtoapp.data.model.withRuntimePermissionsSyncedFromFeatures
 import com.webtoapp.data.model.WebApp
 import com.webtoapp.ui.components.CategoryEditorDialog
 import com.webtoapp.ui.components.CategoryTabRow
+import com.webtoapp.ui.components.DataBackupDialog
 import com.webtoapp.ui.components.EnhancedElevatedCard
 import com.webtoapp.ui.components.PremiumTextField
 import com.webtoapp.ui.components.LanguageSelectorButton
@@ -156,15 +157,10 @@ fun HomeScreen(
     var showDeleteDialog by remember { mutableStateOf(false) }
     var shareApkFailureReport by remember { mutableStateOf<BuildFailureReport?>(null) }
     var showFabMenu by remember { mutableStateOf(false) }
-    var showBatchImportDialog by remember { mutableStateOf(false) }
+    var showDataBackupDialog by remember { mutableStateOf(false) }
 
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
-    val batchImportService = remember {
-        org.koin.java.KoinJavaComponent.get<com.webtoapp.core.stats.BatchImportService>(
-            com.webtoapp.core.stats.BatchImportService::class.java
-        )
-    }
     val context = LocalContext.current
     LaunchedEffect(uiState) {
         when (uiState) {
@@ -390,9 +386,9 @@ fun HomeScreen(
                                 leadingIcon = { Icon(Icons.Outlined.Folder, null, Modifier.size(20.dp)) }
                             )
                             DropdownMenuItem(
-                                text = { Text(Strings.menuBatchImport) },
-                                onClick = { showMoreMenu = false; showBatchImportDialog = true },
-                                leadingIcon = { Icon(Icons.Outlined.Bookmarks, null, Modifier.size(20.dp)) }
+                                text = { Text(Strings.dataBackupTitle) },
+                                onClick = { showMoreMenu = false; showDataBackupDialog = true },
+                                leadingIcon = { Icon(Icons.Outlined.Inventory2, null, Modifier.size(20.dp)) }
                             )
                             DropdownMenuItem(
                                 text = { Text(Strings.uiConfig) },
@@ -1012,14 +1008,8 @@ fun HomeScreen(
         )
     }
 
-    if (showBatchImportDialog) {
-        BatchImportDialog(
-            importService = batchImportService,
-            onDismiss = { showBatchImportDialog = false },
-            onImport = { entries ->
-                batchImportService.importEntriesDetailed(entries)
-            }
-        )
+    if (showDataBackupDialog) {
+        DataBackupDialog(onDismiss = { showDataBackupDialog = false })
     }
 
 }

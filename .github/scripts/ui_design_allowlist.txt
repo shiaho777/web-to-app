@@ -72,7 +72,6 @@ app/src/main/java/com/webtoapp/ui/components/announcement/AnnouncementTemplates.
 app/src/main/java/com/webtoapp/ui/screens/AboutScreen.kt|raw_corner_shape|1
 app/src/main/java/com/webtoapp/ui/screens/AiSettingsScreen.kt|raw_corner_shape|2
 app/src/main/java/com/webtoapp/ui/screens/AiSettingsScreen.kt|raw_surface|10
-app/src/main/java/com/webtoapp/ui/screens/BatchImportDialog.kt|raw_surface|2
 app/src/main/java/com/webtoapp/ui/screens/CreateAppScreen.kt|raw_corner_shape|2
 app/src/main/java/com/webtoapp/ui/screens/CreateAppScreen.kt|raw_surface|1
 app/src/main/java/com/webtoapp/ui/screens/CreateAppScreen.kt|raw_button|1

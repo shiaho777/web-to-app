@@ -84,7 +84,6 @@ import androidx.compose.ui.unit.dp
 import com.webtoapp.R
 import com.webtoapp.core.i18n.AppLanguage
 import com.webtoapp.core.i18n.Strings
-import com.webtoapp.ui.components.DataBackupCard
 import com.webtoapp.ui.design.WtaCard
 import com.webtoapp.ui.design.WtaCardTone
 import com.webtoapp.ui.design.WtaSettingRow
@@ -133,13 +132,6 @@ fun AboutScreen(onBack: () -> Unit) {
             ContactGrid()
 
             DescriptionsToggleCard()
-
-            WtaSection(
-                title = Strings.dataBackupTitle,
-                headerStyle = WtaSectionHeaderStyle.Quiet
-            ) {
-                DataBackupCard()
-            }
 
             OtherProjectsSection()
 

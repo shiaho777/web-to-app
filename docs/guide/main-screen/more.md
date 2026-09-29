@@ -23,7 +23,7 @@ Grouped with dividers, top to bottom:
 | **Usage Stats** | [Usage Stats](/guide/more-features/usage-stats) |
 | **Google Play** | [Google Play](/guide/more-features/google-play) |
 | **File Manager** | [File Manager](/guide/more-features/file-manager) |
-| **Batch Import** | [Batch Import](/guide/more-features/batch-import) |
+| **Data Backup** | [Data Backup](/guide/more-features/data-backup) |
 | **About** | [About](/guide/more-features/about) |
 
 Each is covered in detail under [More Features](/guide/more-features/agent).
