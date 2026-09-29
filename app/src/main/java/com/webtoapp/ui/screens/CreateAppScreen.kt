@@ -450,9 +450,15 @@ fun CreateAppScreen(
             }
 
             item {
-                if (hasConfiguredLegacyAds(editState)) {
-                    LegacyAdCapabilityWarningCard()
-                }
+                AdsMonetizationCard(
+                    enabled = editState.adsEnabled,
+                    config = editState.adConfig,
+                    onEnabledChange = { viewModel.updateEditState { copy(adsEnabled = it) } },
+                    onConfigChange = { viewModel.updateEditState { copy(adConfig = it) } }
+                )
+            }
+
+            item {
                 AdBlockCard(
                     editState = editState,
                     onEnabledChange = { viewModel.updateEditState { copy(adBlockEnabled = it) } },
@@ -698,42 +704,118 @@ private fun CreateAppBottomBar(
     }
 }
 
-private fun hasConfiguredLegacyAds(editState: EditState): Boolean {
-    val config = editState.adConfig
-    return editState.adsEnabled ||
-        config.bannerId.isNotBlank() ||
-        config.interstitialId.isNotBlank() ||
-        config.splashId.isNotBlank()
+@Composable
+fun AdsMonetizationCard(
+    enabled: Boolean,
+    config: AdConfig,
+    onEnabledChange: (Boolean) -> Unit,
+    onConfigChange: (AdConfig) -> Unit
+) {
+    WtaSettingCard(modifier = Modifier.fillMaxWidth()) {
+        WtaToggleRow(
+            icon = Icons.Outlined.MonetizationOn,
+            title = Strings.adsMonetization,
+            subtitle = "AdMob",
+            checked = enabled,
+            onCheckedChange = onEnabledChange
+        )
+
+        AnimatedVisibility(
+            visible = enabled,
+            enter = CardExpandTransition,
+            exit = CardCollapseTransition
+        ) {
+            Column {
+                WtaSectionDivider()
+                Column(
+                    modifier = Modifier.padding(
+                        horizontal = WtaSpacing.RowHorizontal,
+                        vertical = WtaSpacing.ContentGap
+                    ),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        text = Strings.adsMonetizationHint,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    PremiumTextField(
+                        value = config.appId,
+                        onValueChange = { onConfigChange(config.copy(appId = it.trim())) },
+                        label = { Text(Strings.adMobAppId) },
+                        supportingText = { Text(Strings.adMobAppIdHint) },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    WtaToggleRow(
+                        title = Strings.adTestMode,
+                        subtitle = Strings.adTestModeHint,
+                        checked = config.testMode,
+                        onCheckedChange = { onConfigChange(config.copy(testMode = it)) }
+                    )
+
+                    AdUnitRow(
+                        title = Strings.adBannerAd,
+                        enabled = config.bannerEnabled,
+                        unitId = config.bannerId,
+                        onEnabledChange = { onConfigChange(config.copy(bannerEnabled = it)) },
+                        onUnitIdChange = { onConfigChange(config.copy(bannerId = it.trim())) }
+                    )
+
+                    AdUnitRow(
+                        title = Strings.adInterstitialAd,
+                        enabled = config.interstitialEnabled,
+                        unitId = config.interstitialId,
+                        onEnabledChange = { onConfigChange(config.copy(interstitialEnabled = it)) },
+                        onUnitIdChange = { onConfigChange(config.copy(interstitialId = it.trim())) }
+                    )
+
+                    AdUnitRow(
+                        title = Strings.adSplashAd,
+                        enabled = config.splashEnabled,
+                        unitId = config.splashId,
+                        onEnabledChange = { onConfigChange(config.copy(splashEnabled = it)) },
+                        onUnitIdChange = { onConfigChange(config.copy(splashId = it.trim())) }
+                    )
+                }
+            }
+        }
+    }
 }
 
 @Composable
-private fun LegacyAdCapabilityWarningCard() {
-    EnhancedElevatedCard(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.tertiaryContainer
+private fun AdUnitRow(
+    title: String,
+    enabled: Boolean,
+    unitId: String,
+    onEnabledChange: (Boolean) -> Unit,
+    onUnitIdChange: (String) -> Unit
+) {
+    Column {
+        WtaToggleRow(
+            title = title,
+            checked = enabled,
+            onCheckedChange = onEnabledChange
         )
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(14.dp),
-            verticalAlignment = Alignment.CenterVertically
+        AnimatedVisibility(
+            visible = enabled,
+            enter = CardExpandTransition,
+            exit = CardCollapseTransition
         ) {
-            Icon(
-                Icons.Outlined.Warning,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onTertiaryContainer
-            )
-            Spacer(modifier = Modifier.width(10.dp))
-            Text(
-                text = Strings.adSdkNotIntegrated,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onTertiaryContainer
+            PremiumTextField(
+                value = unitId,
+                onValueChange = onUnitIdChange,
+                label = { Text(Strings.adUnitIdLabel) },
+                placeholder = { Text(Strings.adUnitIdPlaceholder) },
+                singleLine = true,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 8.dp)
             )
         }
     }
-
 }
 
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)

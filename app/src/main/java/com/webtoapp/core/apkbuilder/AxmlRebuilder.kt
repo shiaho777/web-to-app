@@ -1440,11 +1440,22 @@ class AxmlRebuilder {
         vars: Map<String, String>
     ): List<Chunk> {
         val nameIndex = getOrAddString(parsed.stringPool, el.tagName)
-        val attrs = el.attributes
-        val start = buildSimpleStartElement(androidNsIndex, nameIndex, attrs.length)
+        // AXML attribute arrays MUST be sorted by attribute resource id:
+        // PackageParser resolves them via TypedArray's id-indexed lookup and
+        // rejects elements whose android:name isn't found ("<activity> does
+        // not specify android:name"), while lenient readers (aapt2) scan
+        // linearly and never notice the disorder.
+        val attrList = (0 until el.attributes.length)
+            .mapNotNull { el.attributes.item(it) as? org.w3c.dom.Attr }
+            .sortedBy { attr ->
+                if (attr.namespaceURI == ANDROID_NS) {
+                    ANDROID_ATTR_IDS[attr.localName] ?: Int.MAX_VALUE
+                } else Int.MAX_VALUE
+            }
+        val start = buildSimpleStartElement(androidNsIndex, nameIndex, attrList.size)
         val buf = ByteBuffer.wrap(start.data).order(ByteOrder.LITTLE_ENDIAN)
-        for (i in 0 until attrs.length) {
-            val attr = attrs.item(i) as? org.w3c.dom.Attr ?: continue
+        for (i in 0 until attrList.size) {
+            val attr = attrList[i]
             val isAndroid = attr.namespaceURI == ANDROID_NS
             val attrName = if (isAndroid) {
                 attr.localName

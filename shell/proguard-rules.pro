@@ -118,6 +118,10 @@
 # Coroutines 调试 / 异常 hooks
 -keepnames class kotlinx.coroutines.flow.** { *; }
 
+# NOTE: do NOT keepnames kotlin.**/kotlinx.** here — feature stacks bundle
+# their own copies under original names; a renamed/partial template copy
+# would shadow the stack's complete one on the shared PathClassLoader.
+
 # ============================================================
 # 项目自身代码 — 防收缩，但允许混淆重命名
 # （开源 + 重反射：类全量保留；字段名固定以保护未注解的 Gson 字段）

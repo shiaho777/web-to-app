@@ -2,6 +2,7 @@ package com.webtoapp.core.ads
 
 import android.content.Context
 import android.util.Log
+import com.webtoapp.core.ads.api.AdsCompletion
 import com.webtoapp.core.ads.api.AdsFeatureApi
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.data.model.AdConfig
@@ -30,7 +31,7 @@ class AdManager(private val context: Context) {
         if (isInitialized) return
         adConfig = config
         resolveFeature()?.let {
-            it.initialize(context.applicationContext, config.appId, config.testMode)
+            it.initialize(context, config.appId, config.testMode)
         }
         Log.d(
             TAG,
@@ -71,7 +72,10 @@ class AdManager(private val context: Context) {
             onDismissed()
             return
         }
-        api.showInterstitial(activity, config.interstitialId, onDismissed)
+        api.showInterstitial(
+            activity, config.interstitialId,
+            AdsCompletion { onDismissed() }
+        )
     }
 
     fun showSplashAd(
@@ -91,7 +95,7 @@ class AdManager(private val context: Context) {
         }
         api.showSplashAd(
             activity, config.splashId, config.splashDuration,
-            onDone = onFinished
+            AdsCompletion { onFinished() }
         )
     }
 

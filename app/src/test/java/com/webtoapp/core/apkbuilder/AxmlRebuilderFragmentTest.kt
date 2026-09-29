@@ -140,6 +140,40 @@ class AxmlRebuilderFragmentTest {
     }
 
     @Test
+    fun `grafted attributes are sorted by resource id`() {
+        // PackageParser resolves attributes through the id-indexed TypedArray
+        // lookup and rejects elements whose attributes are not ordered by
+        // resource id (real-device INSTALL_PARSE_FAILED_MANIFEST_MALFORMED,
+        // while lenient readers like aapt2 silently accept the disorder).
+        val manifest = merged(
+            """<fragment xmlns:android="http://schemas.android.com/apk/res/android">
+                <application>
+                    <provider
+                        android:name="com.google.android.gms.ads.MobileAdsInitProvider"
+                        android:authorities="${'$'}{applicationId}.mobileadsinitprovider"
+                        android:exported="false"
+                        android:initOrder="100" />
+                    <activity
+                        android:name="com.google.android.gms.ads.AdActivity"
+                        android:configChanges="keyboard|orientation"
+                        android:exported="false"
+                        android:theme="@android:style/Theme.Translucent" />
+                </application>
+            </fragment>""",
+            vars = mapOf("applicationId" to "com.example.app")
+        )
+        val app = children(manifest, "application").single()
+        val injected = children(app, "provider") + children(app, "activity")
+            .filter { it.attr("name")!!.value.startsWith("com.google.android.gms") }
+
+        assertThat(injected).isNotEmpty()
+        injected.forEach { el ->
+            val resIds = el.attributeList.map { it.resourceId }.filter { it != 0 }
+            assertThat(resIds).isInOrder()
+        }
+    }
+
+    @Test
     fun `invalid or non-fragment input leaves bytes untouched`() {
         val base = fixture()
         assertThat(rebuilder.mergeManifestFragment(base, "<oops/>".toByteArray()))

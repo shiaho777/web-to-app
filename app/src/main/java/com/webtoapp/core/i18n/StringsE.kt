@@ -16218,4 +16218,148 @@ object StringsE {
         AppLanguage.KOREAN -> "${count}개 선택됨"
     }
 
+
+    val adsMonetization: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "广告变现"
+        AppLanguage.ENGLISH -> "Monetization"
+        AppLanguage.ARABIC -> "تحقيق الربح"
+        AppLanguage.PORTUGUESE -> "Monetização"
+        AppLanguage.SPANISH -> "Monetización"
+        AppLanguage.FRENCH -> "Monétisation"
+        AppLanguage.GERMAN -> "Monetarisierung"
+        AppLanguage.RUSSIAN -> "Монетизация"
+        AppLanguage.JAPANESE -> "収益化"
+        AppLanguage.KOREAN -> "수익 창출"
+    }
+
+    val adsMonetizationHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "通过 AdMob 在导出的 APK 中展示广告。广告 SDK 仅在此开关打开时注入生成的应用，关闭时 APK 不携带广告代码。"
+        AppLanguage.ENGLISH -> "Show AdMob ads in the exported APK. The ad SDK is injected into the generated app only while this is enabled; disabled exports carry no ad code."
+        AppLanguage.ARABIC -> "اعرض إعلانات AdMob في ملف APK المُصدَّر. تُحقن حزمة SDK الإعلانية في التطبيق المُنشأ فقط عند تفعيل هذا الخيار؛ ولا تحمل النسخ المُصدَّرة المعطَّلة أي كود إعلاني."
+        AppLanguage.PORTUGUESE -> "Exiba anúncios do AdMob no APK exportado. O SDK de anúncios é injetado no app gerado apenas quando isto está ativado; exportações desativadas não carregam código de anúncios."
+        AppLanguage.SPANISH -> "Muestra anuncios de AdMob en el APK exportado. El SDK de anuncios solo se inyecta en la app generada cuando está activado; las exportaciones desactivadas no incluyen código de anuncios."
+        AppLanguage.FRENCH -> "Affichez des publicités AdMob dans l'APK exporté. Le SDK publicitaire n'est injecté dans l'application générée que lorsque cette option est activée ; les exportations désactivées ne contiennent aucun code publicitaire."
+        AppLanguage.GERMAN -> "AdMob-Werbung in der exportierten APK anzeigen. Das Ad-SDK wird nur bei aktivierter Option in die generierte App injiziert; deaktivierte Exporte enthalten keinen Werbecode."
+        AppLanguage.RUSSIAN -> "Показывайте рекламу AdMob в экспортированном APK. Рекламный SDK внедряется в генерируемое приложение только при включении этой опции; отключённые экспорты не содержат рекламного кода."
+        AppLanguage.JAPANESE -> "エクスポートしたAPKでAdMob広告を表示します。広告SDKはこの設定が有効な場合のみ生成アプリに注入され、無効時のAPKには広告コードが含まれません。"
+        AppLanguage.KOREAN -> "보낸 APK에서 AdMob 광고를 표시합니다. 광고 SDK는 이 옵션이 켜져 있을 때만 생성된 앱에 주입되며, 꺼진 상태의 APK에는 광고 코드가 포함되지 않습니다."
+    }
+
+    val adMobAppId: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "AdMob 应用 ID"
+        AppLanguage.ENGLISH -> "AdMob App ID"
+        AppLanguage.ARABIC -> "معرّف تطبيق AdMob"
+        AppLanguage.PORTUGUESE -> "ID do app AdMob"
+        AppLanguage.SPANISH -> "ID de app de AdMob"
+        AppLanguage.FRENCH -> "ID d'application AdMob"
+        AppLanguage.GERMAN -> "AdMob-App-ID"
+        AppLanguage.RUSSIAN -> "ID приложения AdMob"
+        AppLanguage.JAPANESE -> "AdMob アプリ ID"
+        AppLanguage.KOREAN -> "AdMob 앱 ID"
+    }
+
+    val adMobAppIdHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "形如 ca-app-pub-xxx~yyy，在 AdMob 后台的应用设置中查看"
+        AppLanguage.ENGLISH -> "Looks like ca-app-pub-xxx~yyy — find it in your AdMob app settings"
+        AppLanguage.ARABIC -> "بالشكل ca-app-pub-xxx~yyy — تجده في إعدادات تطبيق AdMob"
+        AppLanguage.PORTUGUESE -> "No formato ca-app-pub-xxx~yyy — encontre-o nas configurações do app no AdMob"
+        AppLanguage.SPANISH -> "Con formato ca-app-pub-xxx~yyy — encuéntralo en la configuración de tu app en AdMob"
+        AppLanguage.FRENCH -> "Au format ca-app-pub-xxx~yyy — disponible dans les paramètres de votre application AdMob"
+        AppLanguage.GERMAN -> "Format ca-app-pub-xxx~yyy — zu finden in den AdMob-App-Einstellungen"
+        AppLanguage.RUSSIAN -> "В формате ca-app-pub-xxx~yyy — найдите в настройках приложения AdMob"
+        AppLanguage.JAPANESE -> "ca-app-pub-xxx~yyy の形式 — AdMob のアプリ設定で確認できます"
+        AppLanguage.KOREAN -> "ca-app-pub-xxx~yyy 형식 — AdMob 앱 설정에서 확인하세요"
+    }
+
+    val adTestMode: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "测试模式"
+        AppLanguage.ENGLISH -> "Test mode"
+        AppLanguage.ARABIC -> "وضع الاختبار"
+        AppLanguage.PORTUGUESE -> "Modo de teste"
+        AppLanguage.SPANISH -> "Modo de prueba"
+        AppLanguage.FRENCH -> "Mode test"
+        AppLanguage.GERMAN -> "Testmodus"
+        AppLanguage.RUSSIAN -> "Тестовый режим"
+        AppLanguage.JAPANESE -> "テストモード"
+        AppLanguage.KOREAN -> "테스트 모드"
+    }
+
+    val adTestModeHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "使用 Google 演示广告单元（忽略下方 ID），并强制走欧洲经济区同意弹窗流程"
+        AppLanguage.ENGLISH -> "Uses Google's demo ad units (IDs below are ignored) and forces the EEA consent form path"
+        AppLanguage.ARABIC -> "يستخدم الوحدات الإعلانية التجريبية من Google (يتم تجاهل المعرّفات أدناه) ويفرض مسار نموذج موافقة المنطقة الاقتصادية الأوروبية"
+        AppLanguage.PORTUGUESE -> "Usa as unidades de anúncio de demonstração do Google (IDs abaixo são ignorados) e força o fluxo de consentimento do EEE"
+        AppLanguage.SPANISH -> "Usa las unidades de anuncio de demostración de Google (los IDs se ignoran) y fuerza el flujo de consentimiento del EEE"
+        AppLanguage.FRENCH -> "Utilise les blocs d'annonces de démonstration de Google (les IDs ci-dessous sont ignorés) et force le parcours de consentement EEE"
+        AppLanguage.GERMAN -> "Verwendet Googles Demo-Anzeigenblöcke (IDs unten werden ignoriert) und erzwingt den EWR-Einwilligungsablauf"
+        AppLanguage.RUSSIAN -> "Использует демонстрационные рекламные блоки Google (ID ниже игнорируются) и принудительно включает форму согласия ЕЭЗ"
+        AppLanguage.JAPANESE -> "Googleのデモ広告ユニットを使用し（下のIDは無視）、EEA同意フォームの経路を強制します"
+        AppLanguage.KOREAN -> "Google 데모 광고 단위를 사용하고(아래 ID는 무시됨) EEA 동의 양식 경로를 강제합니다"
+    }
+
+    val adBannerAd: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "横幅广告"
+        AppLanguage.ENGLISH -> "Banner ad"
+        AppLanguage.ARABIC -> "إعلان بانر"
+        AppLanguage.PORTUGUESE -> "Anúncio em banner"
+        AppLanguage.SPANISH -> "Anuncio de banner"
+        AppLanguage.FRENCH -> "Bannière publicitaire"
+        AppLanguage.GERMAN -> "Banner-Werbung"
+        AppLanguage.RUSSIAN -> "Баннерная реклама"
+        AppLanguage.JAPANESE -> "バナー広告"
+        AppLanguage.KOREAN -> "배너 광고"
+    }
+
+    val adInterstitialAd: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "插页广告"
+        AppLanguage.ENGLISH -> "Interstitial ad"
+        AppLanguage.ARABIC -> "إعلان بيني"
+        AppLanguage.PORTUGUESE -> "Anúncio intersticial"
+        AppLanguage.SPANISH -> "Anuncio intersticial"
+        AppLanguage.FRENCH -> "Annonce interstitielle"
+        AppLanguage.GERMAN -> "Interstitial-Werbung"
+        AppLanguage.RUSSIAN -> "Полноэкранная реклама"
+        AppLanguage.JAPANESE -> "インタースティシャル広告"
+        AppLanguage.KOREAN -> "전면 광고"
+    }
+
+    val adSplashAd: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "开屏广告"
+        AppLanguage.ENGLISH -> "App open ad"
+        AppLanguage.ARABIC -> "إعلان عند فتح التطبيق"
+        AppLanguage.PORTUGUESE -> "Anúncio de abertura do app"
+        AppLanguage.SPANISH -> "Anuncio de apertura de app"
+        AppLanguage.FRENCH -> "Annonce à l'ouverture"
+        AppLanguage.GERMAN -> "App-Start-Werbung"
+        AppLanguage.RUSSIAN -> "Реклама при открытии"
+        AppLanguage.JAPANESE -> "アプリ起動時広告"
+        AppLanguage.KOREAN -> "앱 열기 광고"
+    }
+
+    val adUnitIdLabel: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "广告单元 ID"
+        AppLanguage.ENGLISH -> "Ad unit ID"
+        AppLanguage.ARABIC -> "معرّف الوحدة الإعلانية"
+        AppLanguage.PORTUGUESE -> "ID do bloco de anúncios"
+        AppLanguage.SPANISH -> "ID del bloque de anuncios"
+        AppLanguage.FRENCH -> "ID du bloc d'annonces"
+        AppLanguage.GERMAN -> "Anzeigenblock-ID"
+        AppLanguage.RUSSIAN -> "ID рекламного блока"
+        AppLanguage.JAPANESE -> "広告ユニット ID"
+        AppLanguage.KOREAN -> "광고 단위 ID"
+    }
+
+    val adUnitIdPlaceholder: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "ca-app-pub-xxx/yyy"
+        AppLanguage.ENGLISH -> "ca-app-pub-xxx/yyy"
+        AppLanguage.ARABIC -> "ca-app-pub-xxx/yyy"
+        AppLanguage.PORTUGUESE -> "ca-app-pub-xxx/yyy"
+        AppLanguage.SPANISH -> "ca-app-pub-xxx/yyy"
+        AppLanguage.FRENCH -> "ca-app-pub-xxx/yyy"
+        AppLanguage.GERMAN -> "ca-app-pub-xxx/yyy"
+        AppLanguage.RUSSIAN -> "ca-app-pub-xxx/yyy"
+        AppLanguage.JAPANESE -> "ca-app-pub-xxx/yyy"
+        AppLanguage.KOREAN -> "ca-app-pub-xxx/yyy"
+    }
+
 }

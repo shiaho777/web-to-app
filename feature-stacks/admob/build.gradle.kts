@@ -57,6 +57,8 @@ dependencies {
     // ads-lite is a marker POM; the real client lives in play-services-ads-api.
     // Its version still tracks the marker, so we pin both via the marker dep.
     implementation("com.google.android.gms:play-services-ads-lite:24.8.0")
+    // UMP consent (Google EU consent policy): separate artifact from ads.
+    implementation("com.google.android.ump:user-messaging-platform:3.2.0")
 }
 
 // ---------------------------------------------------------------------------
@@ -73,7 +75,14 @@ dependencies {
 //   stack.json         {id, packageId, resPrefix, version}
 // ---------------------------------------------------------------------------
 
-val stackEmbedGroups = listOf("com.google.android.gms")
+// The stack must be self-contained: the shell template's kotlin-stdlib is an
+// R8-processed subset (renamed + inlined helpers like Intrinsics.*), so stack
+// dexes can never link against it — bundle the originals instead.
+val stackEmbedGroups = listOf(
+    "com.google.android.gms",
+    "com.google.android.ump",
+    "org.jetbrains.kotlin"
+)
 
 abstract class BundleFeatureStackTask : DefaultTask() {
 
