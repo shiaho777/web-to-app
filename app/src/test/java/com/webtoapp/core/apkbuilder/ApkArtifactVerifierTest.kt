@@ -451,6 +451,157 @@ class ApkArtifactVerifierTest {
         assertThat(result.passed).isTrue()
     }
 
+    @Test
+    fun `multi web existing site verifies per-site embedded assets`() {
+        // EXISTING site referencing a standalone HTML project: the embedder
+        // writes the source project under assets/multiweb_sites/<siteId>/html/
+        // and the site-id prefix of localFilePath is host-side only.
+        val sourceDir = temp.newFolder("source-project")
+        File(sourceDir, "index.html").writeText("<html>ok</html>")
+        val apk = createApk(
+            ApkTemplate.CONFIG_PATH,
+            "assets/multiweb_sites/site-a/html/index.html"
+        )
+
+        val result = ApkArtifactVerifier.verify(
+            ApkArtifactVerificationRequest(
+                apkFile = apk,
+                config = ApkConfig(
+                    meta = MetaBlock(
+                        appName = "Multi Web",
+                        packageName = "com.example.multiweb",
+                        targetUrl = "",
+                        appType = "MULTI_WEB"
+                    )
+                ),
+                encryptionEnabled = false,
+                multiWebSites = listOf(
+                    MultiWebSite(
+                        id = "site-a",
+                        name = "Existing",
+                        type = "EXISTING",
+                        localFilePath = "site-a/index.html",
+                        sourceProjectId = "source-project",
+                        appType = "HTML"
+                    )
+                ),
+                multiWebSiteSourceDirs = mapOf("site-a" to sourceDir)
+            )
+        )
+
+        assertThat(result.passed).isTrue()
+    }
+
+    @Test
+    fun `multi web html site falls back to shared project dir embed`() {
+        // HTML site without a live source project: the embedder packs the
+        // shared multi-web project dir under the same per-site prefix, keeping
+        // the full project-relative localFilePath.
+        val projectDir = temp.newFolder("multi-web-project")
+        File(projectDir, "site-a/index.html").apply {
+            parentFile?.mkdirs()
+            writeText("<html>ok</html>")
+        }
+        val apk = createApk(
+            ApkTemplate.CONFIG_PATH,
+            "assets/multiweb_sites/site-a/html/site-a/index.html"
+        )
+
+        val result = ApkArtifactVerifier.verify(
+            ApkArtifactVerificationRequest(
+                apkFile = apk,
+                config = ApkConfig(
+                    meta = MetaBlock(
+                        appName = "Multi Web",
+                        packageName = "com.example.multiweb",
+                        targetUrl = "",
+                        appType = "MULTI_WEB"
+                    )
+                ),
+                encryptionEnabled = false,
+                multiWebSites = listOf(
+                    MultiWebSite(
+                        id = "site-a",
+                        name = "Inline",
+                        type = "INLINE_HTML",
+                        localFilePath = "site-a/index.html",
+                        appType = "HTML"
+                    )
+                ),
+                multiWebProjectDir = projectDir
+            )
+        )
+
+        assertThat(result.passed).isTrue()
+    }
+
+    @Test
+    fun `multi web html site reports missing per-site embedded file`() {
+        val sourceDir = temp.newFolder("source-project")
+        File(sourceDir, "index.html").writeText("<html>ok</html>")
+        val apk = createApk(ApkTemplate.CONFIG_PATH)
+
+        val result = ApkArtifactVerifier.verify(
+            ApkArtifactVerificationRequest(
+                apkFile = apk,
+                config = ApkConfig(
+                    meta = MetaBlock(
+                        appName = "Multi Web",
+                        packageName = "com.example.multiweb",
+                        targetUrl = "",
+                        appType = "MULTI_WEB"
+                    )
+                ),
+                encryptionEnabled = false,
+                multiWebSites = listOf(
+                    MultiWebSite(
+                        id = "site-a",
+                        name = "Existing",
+                        type = "EXISTING",
+                        localFilePath = "site-a/index.html",
+                        sourceProjectId = "source-project",
+                        appType = "HTML"
+                    )
+                ),
+                multiWebSiteSourceDirs = mapOf("site-a" to sourceDir)
+            )
+        )
+
+        assertThat(result.passed).isFalse()
+        assertThat(result.issues.map { it.key }).contains("multiWebSites[0]")
+    }
+
+    @Test
+    fun `multi web url site needs no local assets`() {
+        val apk = createApk(ApkTemplate.CONFIG_PATH)
+
+        val result = ApkArtifactVerifier.verify(
+            ApkArtifactVerificationRequest(
+                apkFile = apk,
+                config = ApkConfig(
+                    meta = MetaBlock(
+                        appName = "Multi Web",
+                        packageName = "com.example.multiweb",
+                        targetUrl = "",
+                        appType = "MULTI_WEB"
+                    )
+                ),
+                encryptionEnabled = false,
+                multiWebSites = listOf(
+                    MultiWebSite(
+                        id = "site-url",
+                        name = "URL",
+                        type = "URL",
+                        url = "https://example.com",
+                        appType = "WEB"
+                    )
+                )
+            )
+        )
+
+        assertThat(result.passed).isTrue()
+    }
+
     private fun createApk(vararg entries: String): File {
         val apk = temp.newFile("artifact-${System.nanoTime()}.apk")
         ZipOutputStream(apk.outputStream()).use { zipOut ->

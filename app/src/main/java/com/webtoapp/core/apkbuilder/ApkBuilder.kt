@@ -1150,7 +1150,8 @@ class ApkBuilder(private val context: Context) {
                     goAppProjectDir = goAppProjectDir,
                     frontendProjectDir = frontendProjectDir,
                     multiWebProjectDir = config.multiWebProjectId.takeIf { it.isNotBlank() }
-                        ?.let { File(context.filesDir, "html_projects/$it") }
+                        ?.let { File(context.filesDir, "html_projects/$it") },
+                    multiWebSiteSourceDirs = resolveMultiWebSiteSourceDirs(config)
                 )
             )
             logger.logKeyValue("artifactEntryCount", artifactVerification.entryCount)
@@ -1854,13 +1855,7 @@ class ApkBuilder(private val context: Context) {
                         ?.let { File(context.filesDir, "html_projects/$it") }
                     else -> null
                 }
-                val multiWebSiteSourceDirs = if (config.appType == "MULTI_WEB") {
-                    config.multiWeb.sites.mapNotNull { site ->
-                        val dir = site.sourceProjectId.takeIf { it.isNotBlank() }
-                            ?.let { File(context.filesDir, "html_projects/$it") }
-                        if (dir != null && dir.exists()) site.id to dir else null
-                    }.toMap()
-                } else emptyMap()
+                val multiWebSiteSourceDirs = resolveMultiWebSiteSourceDirs(config)
 
                 val embedder = AppContentEmbedderFactory.create(config.appType)
                 if (embedder != null) {
@@ -2528,6 +2523,21 @@ class ApkBuilder(private val context: Context) {
 
         RuntimeAssetEmbedder.embedProjectFiles(zipOut, projectDir, RuntimeAssetEmbedder.nodeJsConfig(), logger)
         injectNodeJsNativeLibs(zipOut, abiFilters)
+    }
+
+    /**
+     * Maps each multi-web site to its referenced source project directory
+     * (html_projects/<sourceProjectId>) when it exists. Shared between
+     * [MultiWebContentEmbedder] and [ApkArtifactVerifier] so the verifier
+     * checks the exact location the embedder wrote to.
+     */
+    private fun resolveMultiWebSiteSourceDirs(config: ApkConfig): Map<String, File> {
+        if (config.appType != "MULTI_WEB") return emptyMap()
+        return config.multiWeb.sites.mapNotNull { site ->
+            val dir = site.sourceProjectId.takeIf { it.isNotBlank() }
+                ?.let { File(context.filesDir, "html_projects/$it") }
+            if (dir != null && dir.exists()) site.id to dir else null
+        }.toMap()
     }
 
     private fun resolveNodeJsBinary(): File? {

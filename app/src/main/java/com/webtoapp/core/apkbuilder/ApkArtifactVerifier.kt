@@ -20,7 +20,8 @@ internal data class ApkArtifactVerificationRequest(
     val pythonAppProjectDir: File? = null,
     val goAppProjectDir: File? = null,
     val frontendProjectDir: File? = null,
-    val multiWebProjectDir: File? = null
+    val multiWebProjectDir: File? = null,
+    val multiWebSiteSourceDirs: Map<String, File> = emptyMap()
 )
 
 internal data class ApkArtifactVerificationResult(
@@ -199,7 +200,8 @@ internal object ApkArtifactVerifier {
                         entries = entries,
                         checkedEntries = checkedEntries,
                         sites = request.multiWebSites,
-                        projectDir = request.multiWebProjectDir
+                        projectDir = request.multiWebProjectDir,
+                        siteSourceDirs = request.multiWebSiteSourceDirs
                     )
                 }
 
@@ -362,20 +364,77 @@ internal object ApkArtifactVerifier {
         entries: Map<String, java.util.zip.ZipEntry>,
         checkedEntries: MutableSet<String>,
         sites: List<MultiWebSite>,
-        projectDir: File?
+        projectDir: File?,
+        siteSourceDirs: Map<String, File>
     ) {
         val localSites = sites.filter {
             it.enabled && it.localFilePath.isNotBlank()
         }
         if (localSites.isEmpty()) return
 
-        if (projectDir == null) {
-            add(ApkArtifactIssue("multiWebProject", "Multi-web project directory was not resolved"))
-            return
-        }
-
         localSites.forEachIndexed { index, site ->
             val relativePath = normalizeAssetPath(site.localFilePath)
+
+            // Mirror MultiWebContentEmbedder: HTML/FRONTEND sites embed a whole
+            // project directory under assets/multiweb_sites/<siteId>/html/ —
+            // the site's own source project wins over the shared multi-web
+            // project dir. The flat assets/html_projects/ layout is only
+            // written by the legacy fallback when no site takes a per-site
+            // embed.
+            val siteType = site.appType.uppercase()
+            if (siteType == "HTML" || siteType == "FRONTEND") {
+                val siteDir = siteSourceDirs[site.id]
+                val embedDir = siteDir ?: projectDir
+                if (embedDir == null || !embedDir.exists()) {
+                    add(
+                        ApkArtifactIssue(
+                            key = "multiWebSites[$index]",
+                            message = "Multi-web local site source directory is missing",
+                            path = (siteDir ?: projectDir)?.absolutePath
+                        )
+                    )
+                    return@forEachIndexed
+                }
+
+                // A site embedded from its own source project lands at the
+                // project root — the site-id prefix in localFilePath only
+                // exists inside the shared multi-web project directory.
+                val entryRelative = if (siteDir != null) {
+                    relativePath.substringAfter('/', relativePath)
+                } else {
+                    relativePath
+                }
+                val expectedSource = File(embedDir, entryRelative)
+                if (!expectedSource.exists() || !expectedSource.isFile) {
+                    add(
+                        ApkArtifactIssue(
+                            key = "multiWebSites[$index]",
+                            message = "Multi-web local site source file is missing",
+                            path = expectedSource.absolutePath
+                        )
+                    )
+                    return@forEachIndexed
+                }
+
+                requireEntry(
+                    entries = entries,
+                    checkedEntries = checkedEntries,
+                    key = "multiWebSites[$index]",
+                    path = "assets/multiweb_sites/${site.id}/html/$entryRelative",
+                    label = "multi-web local site file"
+                )
+                return@forEachIndexed
+            }
+
+            if (projectDir == null) {
+                add(
+                    ApkArtifactIssue(
+                        key = "multiWebSites[$index]",
+                        message = "Multi-web project directory was not resolved"
+                    )
+                )
+                return@forEachIndexed
+            }
             val expectedSource = File(projectDir, relativePath)
             if (!expectedSource.exists() || !expectedSource.isFile) {
                 add(
