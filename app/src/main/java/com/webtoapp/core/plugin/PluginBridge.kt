@@ -34,6 +34,14 @@ class PluginBridge(
         /** A message from the page script towards this plugin's panel. */
         fun onPanelMessage(pluginId: String, json: String)
         fun onNotify(pluginId: String, title: String, body: String)
+        /** `hcj.share` — host fires a share sheet. */
+        fun onShare(pluginId: String, title: String, text: String, url: String) {}
+        /** `hcj.openExternal` — host opens the URL in an external handler. */
+        fun onOpenExternal(pluginId: String, url: String) {}
+        /** `hcj.clearData` — host wipes browsing data for the page. */
+        fun onClearData(pluginId: String) {}
+        /** `hcj.exitApp` — host finishes the activity. */
+        fun onExitApp(pluginId: String) {}
     }
 
     companion object {
@@ -180,6 +188,32 @@ class PluginBridge(
     fun panelSend(pluginId: String, token: String, json: String) {
         authorize(pluginId, token) ?: return
         host.onPanelMessage(pluginId, json)
+    }
+
+    // -- host actions ---------------------------------------------------------
+
+    @JavascriptInterface
+    fun share(pluginId: String, token: String, title: String, text: String, url: String) {
+        requirePermission(pluginId, token, PluginPermission.SHARE) ?: return
+        host.onShare(pluginId, title, text, url)
+    }
+
+    @JavascriptInterface
+    fun openExternal(pluginId: String, token: String, url: String) {
+        requirePermission(pluginId, token, PluginPermission.OPEN_EXTERNAL) ?: return
+        host.onOpenExternal(pluginId, url)
+    }
+
+    @JavascriptInterface
+    fun clearData(pluginId: String, token: String) {
+        requirePermission(pluginId, token, PluginPermission.CLEAR_DATA) ?: return
+        host.onClearData(pluginId)
+    }
+
+    @JavascriptInterface
+    fun exitApp(pluginId: String, token: String) {
+        requirePermission(pluginId, token, PluginPermission.EXIT_APP) ?: return
+        host.onExitApp(pluginId)
     }
 
     @JavascriptInterface

@@ -299,6 +299,18 @@ class PluginSession(
     /** Chrome popup/options pages are hosted by this factory inside the panel host. */
     var popupWebViewFactory: ((String) -> WebView?)? = null
 
+    /** `hcj.share` — wired by the WebView owner to a system share sheet. */
+    var shareHandler: ((title: String, text: String, url: String) -> Unit)? = null
+
+    /** `hcj.openExternal` — wired by the WebView owner to ACTION_VIEW. */
+    var openExternalHandler: ((url: String) -> Unit)? = null
+
+    /** `hcj.clearData` — wired by the WebView owner to a browsing-data wipe. */
+    var clearDataHandler: (() -> Unit)? = null
+
+    /** `hcj.exitApp` — wired by the WebView owner to finish the host activity. */
+    var exitAppHandler: (() -> Unit)? = null
+
     /**
      * Entry-point tap on a plugin sheet row / pinned icon:
      * panel if it has one, `action` event otherwise; chrome extensions route to
@@ -382,6 +394,22 @@ class PluginSession(
 
         override fun onNotify(pluginId: String, title: String, body: String) {
             notifySink(pluginId, title, body)
+        }
+
+        override fun onShare(pluginId: String, title: String, text: String, url: String) {
+            shareHandler?.invoke(title, text, url)
+        }
+
+        override fun onOpenExternal(pluginId: String, url: String) {
+            openExternalHandler?.invoke(url)
+        }
+
+        override fun onClearData(pluginId: String) {
+            clearDataHandler?.invoke()
+        }
+
+        override fun onExitApp(pluginId: String) {
+            exitAppHandler?.invoke()
         }
     }
 

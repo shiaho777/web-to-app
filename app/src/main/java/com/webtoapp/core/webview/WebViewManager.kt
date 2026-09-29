@@ -27,6 +27,8 @@ import com.webtoapp.data.model.UserAgentMode
 import com.webtoapp.data.model.WebViewConfig
 import com.webtoapp.core.engine.GeckoViewEngine
 import com.webtoapp.core.engine.ProxyConfig
+import com.webtoapp.util.isAllowedUrlScheme
+import com.webtoapp.util.normalizeExternalIntentUrl
 import com.webtoapp.core.errorpage.ErrorPageManager
 import com.webtoapp.core.errorpage.ErrorPageMode
 import java.io.ByteArrayInputStream
@@ -376,6 +378,8 @@ class WebViewManager(
         )
 
         private val BLOCKED_SPECIAL_SCHEMES = setOf("javascript", "data", "file", "content", "about")
+
+        private val PLUGIN_EXTERNAL_SCHEMES = setOf("http", "https")
 
         private const val VIEWPORT_FIT_SCREEN_JS = """(function(){
             'use strict';
@@ -1965,6 +1969,18 @@ class WebViewManager(
                 }
                 session.popupWebViewFactory = { url -> createChromePanelWebView(url) }
                 session.onPanelClosed = { destroyChromePanelWebViews() }
+                session.shareHandler = { title, text, url ->
+                    ShareBridge(context).shareText(title, text, url)
+                }
+                session.openExternalHandler = { url -> openPluginExternalUrl(url) }
+                session.clearDataHandler = {
+                    clearBrowsingData(context, webView)
+                }
+                session.exitAppHandler = {
+                    context.findActivity()?.let { activity ->
+                        if (activity.isTaskRoot) activity.finishAffinity() else activity.finish()
+                    }
+                }
                 session.setPlugins(pluginPayloads)
                 session.attach()
                 addJavascriptInterface(session.bridge, "__hcjBridge")
@@ -3264,6 +3280,27 @@ class WebViewManager(
         primeUserActivationDone.remove(webView)
         failoverCursor.remove(webView)
         cancelFailoverTimeout(webView)
+    }
+
+    /**
+     * `hcj.openExternal` — plugins may only send a page out to a browser; the
+     * scheme allowlist is deliberately narrower than NativeBridge.openUrl's so
+     * a script can never bounce an intent onto tel/sms/geo handlers.
+     */
+    private fun openPluginExternalUrl(url: String) {
+        val safeUrl = normalizeExternalIntentUrl(url)
+        if (safeUrl.isEmpty() || !isAllowedUrlScheme(safeUrl, PLUGIN_EXTERNAL_SCHEMES)) {
+            AppLogger.w("WebViewManager", "Plugin openExternal blocked: $url")
+            return
+        }
+        try {
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(safeUrl)).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(intent)
+        } catch (e: Exception) {
+            AppLogger.e("WebViewManager", "Plugin openExternal failed", e)
+        }
     }
 
     private fun Context.findActivity(): Activity? {

@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Extension
 import androidx.compose.material.icons.filled.FindInPage
 import androidx.compose.material.icons.filled.Insights
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.PlayCircle
@@ -165,6 +166,7 @@ internal fun pluginIcon(icon: String): ImageVector = when (icon) {
     "security", "block", "element_blocker", "block_circle", "ad_block" -> Icons.Filled.Security
     "visibility", "eye" -> Icons.Filled.Visibility
     "palette", "content_enhancer", "auto_awesome" -> Icons.Filled.Palette
+    "menu", "page_menu", "quick_menu", "apps" -> Icons.Filled.Menu
     else -> Icons.Filled.Extension
 }
 

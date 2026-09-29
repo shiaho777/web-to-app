@@ -166,7 +166,15 @@ enum class PluginPermission {
     /** `hcj.clipboard.*` clipboard access. */
     CLIPBOARD,
     /** `hcj.download` file downloads. */
-    DOWNLOAD;
+    DOWNLOAD,
+    /** `hcj.share` system share sheet. */
+    SHARE,
+    /** `hcj.openExternal` opens a URL in an external app/browser. */
+    OPEN_EXTERNAL,
+    /** `hcj.clearData` wipes browsing data (cookies, storage, cache, history). */
+    CLEAR_DATA,
+    /** `hcj.exitApp` finishes the host activity. */
+    EXIT_APP;
 
     companion object {
         fun parse(raw: String?): PluginPermission? =

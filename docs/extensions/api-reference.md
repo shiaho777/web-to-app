@@ -19,6 +19,10 @@ A consolidated reference for the plugin APIs. Status legend:
 | `hcj.panel.open` / `close` / `send` / `onMessage` | ✅ | Hosted in the user-chosen panel surface |
 | `hcj.on('action')` / `hcj.emit` | ✅ | Plugin entry tap / custom events |
 | `hcj.on('navigate')` | ✅ | Fired on every URL change including SPA `pushState` — payload `{url}`; re-arm page hooks there |
+| `hcj.share(title, text, url)` | ✅ | System share sheet, gated by `SHARE` |
+| `hcj.openExternal(url)` | ✅ | Opens `http(s)` URLs in an external handler, gated by `OPEN_EXTERNAL` |
+| `hcj.clearData()` | ✅ | Wipes cookies/storage/cache/history for the page, gated by `CLEAR_DATA` |
+| `hcj.exitApp()` | ✅ | Finishes the host activity, gated by `EXIT_APP` |
 | `hcj.id` / `hcj.manifest` / `hcj.lang` | ✅ | |
 
 ## `hcjPanel.*` (panel side)

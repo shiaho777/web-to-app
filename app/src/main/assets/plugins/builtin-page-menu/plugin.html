@@ -1,0 +1,305 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+</head>
+<body>
+<script type="hcj/page">
+(function() {
+    'use strict';
+
+    if (window.top !== window.self) return;
+
+    var LANG = (hcj.lang || 'en').toLowerCase();
+    LANG = LANG.indexOf('zh') === 0 ? 'zh' : LANG.indexOf('ar') === 0 ? 'ar' : 'en';
+    var I18N = {
+        zh: {
+            refresh: '刷新页面', back: '后退一步', forward: '前进一步', gotoUrl: '跳转网址',
+            share: '分享链接', openExt: '外部打开', clear: '清除数据', hide: '隐藏菜单', exit: '退出应用',
+            urlPlaceholder: '输入网址…', go: '前往', cleared: '浏览数据已清除',
+            hidden: '菜单已隐藏，点击工具栏图标恢复', copied: '链接已复制', badUrl: '网址无效'
+        },
+        en: {
+            refresh: 'Refresh', back: 'Back', forward: 'Forward', gotoUrl: 'Go to URL',
+            share: 'Share link', openExt: 'Open externally', clear: 'Clear data', hide: 'Hide menu', exit: 'Exit app',
+            urlPlaceholder: 'Enter a URL…', go: 'Go', cleared: 'Browsing data cleared',
+            hidden: 'Menu hidden — tap the toolbar icon to restore', copied: 'Link copied', badUrl: 'Invalid URL'
+        },
+        ar: {
+            refresh: 'تحديث الصفحة', back: 'رجوع', forward: 'تقدم', gotoUrl: 'الانتقال إلى رابط',
+            share: 'مشاركة الرابط', openExt: 'فتح خارجياً', clear: 'مسح البيانات', hide: 'إخفاء القائمة', exit: 'إنهاء التطبيق',
+            urlPlaceholder: 'أدخل الرابط…', go: 'انتقال', cleared: 'تم مسح بيانات التصفح',
+            hidden: 'القائمة مخفية — انقر أيقونة شريط الأدوات للاستعادة', copied: 'تم نسخ الرابط', badUrl: 'رابط غير صالح'
+        }
+    };
+    var T = I18N[LANG] || I18N.en;
+
+    var ROOT_ID = 'hcj-page-menu-root';
+    var BALL_ID = 'hcj-page-menu-ball';
+    var MENU_ID = 'hcj-page-menu-card';
+    var Z = 2147483646;
+
+    function root() {
+        var r = document.getElementById(ROOT_ID);
+        if (!r) {
+            r = document.createElement('div');
+            r.id = ROOT_ID;
+            (document.body || document.documentElement).appendChild(r);
+        }
+        return r;
+    }
+
+    // ------------------------------------------------------------------
+    // Floating ball
+    // ------------------------------------------------------------------
+
+    var ballDragging = false, ballMoved = false;
+
+    function ballPos() {
+        var x = hcj.config.get('ballX', null), y = hcj.config.get('ballY', null);
+        if (typeof x === 'number' && typeof y === 'number') return { x: x, y: y };
+        return null; // default: right edge, 40% height
+    }
+
+    function placeBall(el, pos) {
+        var w = window.innerWidth, h = window.innerHeight, s = el.offsetWidth || 48;
+        var x = pos ? pos.x * w : w - s - 12;
+        var y = pos ? pos.y * h : h * 0.4;
+        x = Math.max(4, Math.min(w - s - 4, x));
+        y = Math.max(4, Math.min(h - s - 4, y));
+        el.style.left = x + 'px';
+        el.style.top = y + 'px';
+        return { x: x / w, y: y / h };
+    }
+
+    function createBall() {
+        var old = document.getElementById(BALL_ID);
+        if (old) return old;
+        var el = document.createElement('div');
+        el.id = BALL_ID;
+        el.style.cssText = 'position:fixed;width:48px;height:48px;border-radius:50%;' +
+            'background:rgba(30,30,34,.72);color:#fff;z-index:' + Z + ';' +
+            'display:flex;align-items:center;justify-content:center;' +
+            'box-shadow:0 2px 10px rgba(0,0,0,.35);cursor:pointer;' +
+            'touch-action:none;user-select:none;-webkit-user-select:none;' +
+            'backdrop-filter:blur(4px);font-size:20px;line-height:1;';
+        el.textContent = '☰';
+        var pos = ballPos();
+        var placed = placeBall(el, pos);
+
+        function down(e) {
+            ballDragging = true; ballMoved = false;
+            var p = e.touches ? e.touches[0] : e;
+            el.__ox = p.clientX - el.offsetLeft;
+            el.__oy = p.clientY - el.offsetTop;
+            el.__sx = p.clientX;
+            el.__sy = p.clientY;
+        }
+        function move(e) {
+            if (!ballDragging) return;
+            var p = e.touches ? e.touches[0] : e;
+            if (Math.abs(p.clientX - el.__sx) > 6 || Math.abs(p.clientY - el.__sy) > 6) ballMoved = true;
+            if (!ballMoved) return;
+            var w = window.innerWidth, h = window.innerHeight, s = el.offsetWidth;
+            var nx = Math.max(4, Math.min(w - s - 4, p.clientX - el.__ox));
+            var ny = Math.max(4, Math.min(h - s - 4, p.clientY - el.__oy));
+            el.style.left = nx + 'px';
+            el.style.top = ny + 'px';
+            placed = { x: nx / w, y: ny / h };
+            if (e.cancelable) e.preventDefault();
+        }
+        function up() {
+            if (!ballDragging) return;
+            ballDragging = false;
+            // snap to nearest side edge
+            var s = el.offsetWidth, w = window.innerWidth;
+            var cx = el.offsetLeft + s / 2;
+            var nx = cx < w / 2 ? 6 : w - s - 6;
+            el.style.left = nx + 'px';
+            placed = { x: nx / w, y: el.offsetTop / window.innerHeight };
+            hcj.config.set('ballX', placed.x);
+            hcj.config.set('ballY', placed.y);
+        }
+        el.addEventListener('mousedown', down);
+        el.addEventListener('touchstart', down, { passive: true });
+        document.addEventListener('mousemove', move);
+        document.addEventListener('touchmove', move, { passive: false });
+        document.addEventListener('mouseup', up);
+        document.addEventListener('touchend', up);
+        el.addEventListener('click', function() {
+            if (ballMoved) { ballMoved = false; return; }
+            toggleMenu();
+        });
+        root().appendChild(el);
+        return el;
+    }
+
+    function showBall() {
+        var el = createBall();
+        el.style.display = 'flex';
+        hcj.config.set('hidden', false);
+    }
+
+    function hideBall() {
+        var b = document.getElementById(BALL_ID);
+        if (b) b.style.display = 'none';
+        closeMenu();
+        hcj.config.set('hidden', true);
+        hcj.toast(T.hidden);
+    }
+
+    // ------------------------------------------------------------------
+    // Menu overlay
+    // ------------------------------------------------------------------
+
+    function closeMenu() {
+        var m = document.getElementById(MENU_ID);
+        if (m) m.remove();
+        var b = document.getElementById(MENU_ID + '-backdrop');
+        if (b) b.remove();
+    }
+
+    function toggleMenu() {
+        if (document.getElementById(MENU_ID)) closeMenu();
+        else openMenu();
+    }
+
+    function menuItem(label, fn) {
+        var it = document.createElement('div');
+        it.textContent = label;
+        it.style.cssText = 'padding:14px 18px;font-size:14px;color:#1f2937;cursor:pointer;' +
+            'border-bottom:1px solid #f1f5f9;';
+        it.addEventListener('click', function(e) {
+            e.stopPropagation();
+            closeMenu();
+            fn();
+        });
+        return it;
+    }
+
+    function normalizeUrl(raw) {
+        var u = String(raw || '').trim();
+        if (!u) return null;
+        if (!/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(u)) u = 'https://' + u;
+        return /^https?:\/\//i.test(u) ? u : null;
+    }
+
+    function openMenu() {
+        closeMenu();
+        var card = document.createElement('div');
+        card.id = MENU_ID;
+        card.style.cssText = 'position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);' +
+            'width:240px;max-height:80vh;overflow-y:auto;background:#fff;border-radius:14px;' +
+            'box-shadow:0 8px 32px rgba(0,0,0,.28);z-index:' + Z + ';' +
+            'font-family:system-ui,-apple-system,sans-serif;overflow-x:hidden;' +
+            (LANG === 'ar' ? 'direction:rtl;' : '');
+
+        var backdrop = document.createElement('div');
+        backdrop.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.25);' +
+            'z-index:' + (Z - 1) + ';';
+        backdrop.id = MENU_ID + '-backdrop';
+        backdrop.addEventListener('click', closeMenu);
+
+        card.appendChild(menuItem(T.refresh, function() { location.reload(); }));
+        card.appendChild(menuItem(T.back, function() { history.back(); }));
+        card.appendChild(menuItem(T.forward, function() { history.forward(); }));
+
+        // 跳转网址 — inline input row
+        var goRow = document.createElement('div');
+        goRow.style.cssText = 'display:flex;gap:8px;padding:10px 18px;border-bottom:1px solid #f1f5f9;align-items:center;';
+        var input = document.createElement('input');
+        input.type = 'url';
+        input.placeholder = T.urlPlaceholder;
+        input.value = location.href;
+        input.style.cssText = 'flex:1;min-width:0;border:1px solid #e2e8f0;border-radius:8px;' +
+            'padding:7px 10px;font-size:13px;outline:none;';
+        var goBtn = document.createElement('button');
+        goBtn.textContent = T.go;
+        goBtn.style.cssText = 'border:none;border-radius:8px;padding:7px 14px;font-size:13px;' +
+            'background:#2563eb;color:#fff;cursor:pointer;';
+        function jump() {
+            var u = normalizeUrl(input.value);
+            if (u) { closeMenu(); location.href = u; } else hcj.toast(T.badUrl);
+        }
+        goBtn.addEventListener('click', function(e) { e.stopPropagation(); jump(); });
+        input.addEventListener('keydown', function(e) { if (e.key === 'Enter') jump(); });
+        goRow.appendChild(input);
+        goRow.appendChild(goBtn);
+        card.appendChild(goRow);
+
+        card.appendChild(menuItem(T.share, function() {
+            var title = document.title || location.href;
+            if (hcj.share) { hcj.share(title, '', location.href); return; }
+            if (typeof NativeShareBridge !== 'undefined' && NativeShareBridge.shareText) {
+                NativeShareBridge.shareText(title, '', location.href); return;
+            }
+            try {
+                navigator.clipboard.writeText(location.href).then(function() { hcj.toast(T.copied); });
+            } catch (e) { hcj.toast(location.href); }
+        }));
+
+        card.appendChild(menuItem(T.openExt, function() {
+            if (hcj.openExternal) hcj.openExternal(location.href);
+        }));
+
+        card.appendChild(menuItem(T.clear, function() {
+            try { localStorage.clear(); sessionStorage.clear(); } catch (e) {}
+            try {
+                document.cookie.split(';').forEach(function(c) {
+                    var name = c.split('=')[0].trim();
+                    if (name) document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/';
+                });
+            } catch (e) {}
+            try {
+                if (indexedDB && indexedDB.databases) {
+                    indexedDB.databases().then(function(dbs) {
+                        (dbs || []).forEach(function(d) { if (d.name) indexedDB.deleteDatabase(d.name); });
+                    });
+                }
+            } catch (e) {}
+            try {
+                if (window.caches && caches.keys) {
+                    caches.keys().then(function(keys) { keys.forEach(function(k) { caches.delete(k); }); });
+                }
+            } catch (e) {}
+            if (hcj.clearData) hcj.clearData();
+            hcj.toast(T.cleared);
+            setTimeout(function() { location.reload(); }, 800);
+        }));
+
+        card.appendChild(menuItem(T.hide, hideBall));
+        card.appendChild(menuItem(T.exit, function() { if (hcj.exitApp) hcj.exitApp(); }));
+
+        root().appendChild(backdrop);
+        root().appendChild(card);
+    }
+
+    // ------------------------------------------------------------------
+    // Entry wiring
+    // ------------------------------------------------------------------
+
+    hcj.on('action', function() {
+        var b = document.getElementById(BALL_ID);
+        if (b && b.style.display !== 'none') {
+            toggleMenu();
+        } else {
+            showBall();
+            openMenu();
+        }
+    });
+
+    hcj.on('navigate', function() {
+        // SPA navigations keep the document — the ball survives; re-check in
+        // case a hostile page wiped it.
+        if (!hcj.config.get('hidden', false) && !document.getElementById(BALL_ID)) {
+            createBall();
+        }
+    });
+
+    if (!hcj.config.get('hidden', false)) {
+        createBall();
+    }
+})();
+</script>
+</body>
+</html>

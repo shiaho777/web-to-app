@@ -19,6 +19,10 @@
 | `hcj.panel.open` / `close` / `send` / `onMessage` | ✅ | 由用户选定的面板宿主承载 |
 | `hcj.on('action')` / `hcj.emit` | ✅ | 入口点击 / 自定义事件 |
 | `hcj.on('navigate')` | ✅ | 每次 URL 变化触发（含 SPA pushState），载荷 `{url}`——在此重新绑定页面钩子 |
+| `hcj.share(title, text, url)` | ✅ | 系统分享面板，需 `SHARE` |
+| `hcj.openExternal(url)` | ✅ | 用外部应用打开 `http(s)` 链接，需 `OPEN_EXTERNAL` |
+| `hcj.clearData()` | ✅ | 清除页面的 Cookie/存储/缓存/历史，需 `CLEAR_DATA` |
+| `hcj.exitApp()` | ✅ | 结束宿主 Activity，需 `EXIT_APP` |
 | `hcj.id` / `hcj.manifest` / `hcj.lang` | ✅ | |
 
 ## `hcjPanel.*`（面板侧）

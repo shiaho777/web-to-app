@@ -94,6 +94,10 @@ object PluginInjection {
         },
         on: function(evt, fn) { window.__hcj._on[pid + ':' + evt] = fn; },
         emit: function(evt, data) { window.__hcj._emit(pid, evt, JSON.stringify(data === undefined ? null : data)); },
+        share: function(title, text, url) { B.share(pid, token, String(title || ''), String(text || ''), String(url || '')); },
+        openExternal: function(url) { B.openExternal(pid, token, String(url || '')); },
+        clearData: function() { B.clearData(pid, token); },
+        exitApp: function() { B.exitApp(pid, token); },
         log: function(m) { B.log(pid, token, String(m)); }
       };
       return hcj;

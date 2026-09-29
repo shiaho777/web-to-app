@@ -1,0 +1,21 @@
+{
+  "id": "builtin-page-menu",
+  "name": "Page Menu",
+  "version": "1.0.0",
+  "description": "Floating page tools: refresh, back/forward, jump to URL, share link, open externally, clear data, hide menu, exit.",
+  "author": "WebToApp",
+  "icon": "page_menu",
+  "matches": [
+    "*"
+  ],
+  "runAt": "document_idle",
+  "permissions": [
+    "STORAGE",
+    "SHARE",
+    "OPEN_EXTERNAL",
+    "CLEAR_DATA",
+    "EXIT_APP"
+  ],
+  "toolbar": true,
+  "noframes": true
+}
