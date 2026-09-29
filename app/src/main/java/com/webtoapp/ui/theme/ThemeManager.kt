@@ -196,6 +196,19 @@ class ThemeManager(private val context: Context) {
         initialValue = true
     )
 
+    /**
+     * Flips true once the first DataStore read lands. Compose gates first
+     * content on this so a frame painted with default values never gets
+     * re-laid-out when the user's real theme settings arrive.
+     */
+    val settingsLoadedFlow: StateFlow<Boolean> = context.themeDataStore.data
+        .map { true }
+        .stateIn(
+            scope = scope,
+            started = SharingStarted.Eagerly,
+            initialValue = false
+        )
+
     val animationSpeedFlow: StateFlow<AnimationSpeed> = context.themeDataStore.data.map { prefs ->
         val speedName = prefs[KEY_ANIMATION_SPEED] ?: AnimationSpeed.NORMAL.name
         try {

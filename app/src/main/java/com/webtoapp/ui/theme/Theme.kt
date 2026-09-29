@@ -3,11 +3,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.LocalTextSelectionColors
 import androidx.compose.foundation.text.selection.TextSelectionColors
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -126,6 +128,7 @@ fun WebToAppTheme(
     val fontSize by themeManager.fontSizeFlow.collectAsStateWithLifecycle()
     val cornerStyle by themeManager.cornerStyleFlow.collectAsStateWithLifecycle()
     val showDescriptions by themeManager.showDescriptionsFlow.collectAsStateWithLifecycle()
+    val settingsLoaded by themeManager.settingsLoadedFlow.collectAsStateWithLifecycle()
 
     val useDarkTheme = when (darkModeSetting) {
         ThemeManager.DarkModeSettings.SYSTEM -> darkTheme
@@ -184,9 +187,18 @@ fun WebToAppTheme(
         MaterialTheme(
             colorScheme = colorScheme,
             typography = WtaTypography.withFontScale(fontSize.scale),
-            shapes = themeShapes,
-            content = { content(useDarkTheme) }
-        )
+            shapes = themeShapes
+        ) {
+            if (settingsLoaded) {
+                content(useDarkTheme)
+            } else {
+                // Hold a themed blank surface until the first preference
+                // emission lands; composing with defaults and re-laying-out on
+                // real values produces a visible startup jump (and again on
+                // the post-backup-restart cold start).
+                Surface(modifier = Modifier.fillMaxSize()) {}
+            }
+        }
     }
 }
 

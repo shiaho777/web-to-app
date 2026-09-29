@@ -41,6 +41,7 @@ import com.webtoapp.ui.theme.LocalThemeRevealState
 import com.webtoapp.ui.theme.WebToAppTheme
 import com.webtoapp.ui.theme.rememberThemeRevealState
 import com.webtoapp.ui.webview.WebViewActivity
+import kotlinx.coroutines.flow.map
 
 class MainActivity : ComponentActivity() {
 
@@ -157,7 +158,11 @@ class MainActivity : ComponentActivity() {
 
                 val context = LocalContext.current
                 val languageManager = remember { LanguageManager.getInstance(context) }
-                val hasSelectedLanguage by languageManager.hasSelectedLanguageFlow.collectAsState(initial = true)
+                // Nullable gate: a `true` initial would paint AppNavigation for
+                // one frame, then flip to the language picker on first launch.
+                val hasSelectedLanguage by remember {
+                    languageManager.hasSelectedLanguageFlow.map<Boolean, Boolean?> { it }
+                }.collectAsState(initial = null)
 
                 CompositionLocalProvider(
                     LocalThemeRevealState provides themeRevealState
@@ -168,13 +173,13 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier.fillMaxSize(),
                             color = MaterialTheme.colorScheme.background
                         ) {
-                            if (!hasSelectedLanguage && showLanguageSelection) {
+                            if (hasSelectedLanguage == false && showLanguageSelection) {
                                 FirstLaunchLanguageScreen(
                                     onLanguageSelected = {
                                         showLanguageSelection = false
                                     }
                                 )
-                            } else {
+                            } else if (hasSelectedLanguage != null) {
                                 AppNavigation()
                             }
                         }
