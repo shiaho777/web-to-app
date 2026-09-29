@@ -109,11 +109,23 @@ private fun SiteContent(
     val siteScripts = siteCfg?.webViewConfig?.injectScripts.orEmpty()
     val mergedScripts = siteScripts +
         parentScripts.filter { parent -> siteScripts.none { it.name == parent.name } }
+    // Plugins are an app-level selection the same way: the multi-web editor's
+    // picks live on the parent config's embeddedPlugins/pluginIds, and without
+    // inheriting them every site session starts empty — the floating handle
+    // renders (gated on the parent) but the sheet reports "no enabled plugins".
+    // A site's own baked plugins merge underneath only under sitesUseOwnConfig;
+    // the site wins an id collision so a more specific selection is possible.
+    val sitesUseOwn = config.multiWebConfig?.sitesUseOwnConfig == true
+    val sitePlugins = if (sitesUseOwn) siteCfg?.embeddedPlugins.orEmpty() else emptyList()
+    val mergedPlugins = sitePlugins +
+        config.embeddedPlugins.filter { parent -> sitePlugins.none { it.id == parent.id } }
+    val mergedPluginIds = ((if (sitesUseOwn) siteCfg?.pluginIds.orEmpty() else emptyList()) +
+        config.pluginIds).distinct()
     // Sites contribute content (URL, HTML project, media, module assets), not
     // settings: by default the parent's WebView config governs every site, so
     // app-level fields baked into siteShellConfig can't fight the parent.
     // `sitesUseOwnConfig` opts back into each site keeping its baked config.
-    val baseWvConfig = if (config.multiWebConfig?.sitesUseOwnConfig == true) {
+    val baseWvConfig = if (sitesUseOwn) {
         siteCfg?.webViewConfig
     } else {
         config.webViewConfig
@@ -121,6 +133,11 @@ private fun SiteContent(
     val effectiveConfig = siteCfg?.copy(
         engineType = siteCfg.engineType.takeIf { it.isNotBlank() && it != "SYSTEM_WEBVIEW" }
             ?: config.engineType,
+        pluginsEnabled = config.pluginsEnabled || (sitesUseOwn && siteCfg.pluginsEnabled),
+        pluginIds = mergedPluginIds,
+        embeddedPlugins = mergedPlugins,
+        pluginEntryStyle = config.pluginEntryStyle,
+        pluginPanelStyle = config.pluginPanelStyle,
         webViewConfig = (baseWvConfig ?: config.webViewConfig).copy(
             injectScripts = mergedScripts
         )
@@ -130,6 +147,11 @@ private fun SiteContent(
         targetUrl = site.url,
         packageName = config.packageName,
         engineType = config.engineType,
+        pluginsEnabled = config.pluginsEnabled,
+        pluginIds = config.pluginIds,
+        embeddedPlugins = config.embeddedPlugins,
+        pluginEntryStyle = config.pluginEntryStyle,
+        pluginPanelStyle = config.pluginPanelStyle,
         // A site without baked config (custom URL site, deleted source) still
         // inherits the parent WebView config — same rule as sitesUseOwnConfig.
         webViewConfig = config.webViewConfig.copy(
