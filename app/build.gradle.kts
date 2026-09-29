@@ -238,6 +238,29 @@ tasks.matching { it.name == "preBuild" }.configureEach {
     if (!skipShellTemplateSync.get()) {
         dependsOn("syncShellTemplateApk")
     }
+    if (!skipStackBundlesSync.get()) {
+        dependsOn("syncStackBundles")
+    }
+}
+
+// Optional feature stacks (issue #1115): bundle zips produced by
+// feature-stacks/* modules land in assets/stacks/ and are grafted into
+// generated APKs only for configs that enable them.
+val skipStackBundlesSync = providers.gradleProperty("skipStackBundlesSync").map(String::toBoolean).orElse(false)
+
+// Pre-configure the stack module during this script's configuration phase —
+// deferring it to task-graph resolution trips Gradle's class-loader-scope
+// locking under configuration-on-demand.
+evaluationDependsOn(":feature-stacks:admob")
+
+tasks.register<Copy>("syncStackBundles") {
+    description = "Copies built feature-stack bundles into app assets for optional APK grafting."
+    group = "build"
+    dependsOn(":feature-stacks:admob:bundleAdmobStack")
+    from(rootProject.layout.projectDirectory.dir("feature-stacks/admob/build/outputs/stack")) {
+        include("*.zip")
+    }
+    into(file("src/main/assets/stacks"))
 }
 
 val cloneHostAar = rootProject.layout.projectDirectory.file("clone-host/build/outputs/aar/clone-host-release.aar")
@@ -683,12 +706,29 @@ tasks.register("checkConfigFieldDrift") {
     val shellConfigFile = file("src/main/java/com/webtoapp/core/shell/ShellModeManager.kt")
     val allowlist = rootProject.file("scripts/config_field_drift_allowlist.json")
     // Configuration-cache safe: capture values at configuration time; the doLast action
-    // must not reach through Project.
+    // must not reach through Project or the build-script object. Python resolution is
+    // inlined below — a script-scope function call would serialize a script reference,
+    // while probing at configuration time trips the external-process restriction.
     val rootDir = rootProject.projectDir
     inputs.files(script, payloadFile, apkConfigFile, shellConfigFile, allowlist)
     outputs.upToDateWhen { false }
     doLast {
-        val pb = ProcessBuilder(resolvePython3Command() + script.absolutePath)
+        val isWindows = System.getProperty("os.name").lowercase().contains("windows")
+        val candidates: List<List<String>> = if (isWindows) {
+            listOf(listOf("python3"), listOf("python"), listOf("py", "-3"))
+        } else {
+            listOf(listOf("python3"), listOf("python"))
+        }
+        val python3Cmd = candidates.firstOrNull { candidate ->
+            try {
+                val probe = ProcessBuilder(candidate + "--version").redirectErrorStream(true).start()
+                probe.waitFor() == 0 &&
+                    probe.inputStream.bufferedReader().readText().contains("Python 3")
+            } catch (_: Exception) {
+                false
+            }
+        } ?: listOf("python3")
+        val pb = ProcessBuilder(python3Cmd + script.absolutePath)
         pb.directory(rootDir)
         pb.redirectErrorStream(true)
         val proc = pb.start()

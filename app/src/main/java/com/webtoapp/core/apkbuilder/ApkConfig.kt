@@ -90,6 +90,8 @@ data class ApkConfig(
     val announcementTriggerIntervalMinutes: Int get() = announcement.triggerIntervalMinutes
 
     val adsEnabled: Boolean get() = ads.enabled
+    val adAppId: String get() = ads.appId
+    val adTestMode: Boolean get() = ads.testMode
     val adBannerEnabled: Boolean get() = ads.bannerEnabled
     val adBannerId: String get() = ads.bannerId
     val adInterstitialEnabled: Boolean get() = ads.interstitialEnabled
@@ -468,12 +470,14 @@ data class AnnouncementBlock(
 
 data class AdsBlock(
     val enabled: Boolean = false,
+    val appId: String = "",
     val bannerEnabled: Boolean = false,
     val bannerId: String = "",
     val interstitialEnabled: Boolean = false,
     val interstitialId: String = "",
     val splashEnabled: Boolean = false,
-    val splashId: String = ""
+    val splashId: String = "",
+    val testMode: Boolean = false
 )
 
 data class WebViewBlock(

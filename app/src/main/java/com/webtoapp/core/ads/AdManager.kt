@@ -2,28 +2,52 @@ package com.webtoapp.core.ads
 
 import android.content.Context
 import android.util.Log
+import com.webtoapp.core.ads.api.AdsFeatureApi
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.data.model.AdConfig
 
+/**
+ * Thin gate in front of the injected ad feature stack (issue #1115).
+ *
+ * The real implementation lives in `com.webtoapp.stack.admob.AdsFeature`,
+ * compiled into the `admob` stack DEX and grafted into the generated APK only
+ * when ads are enabled. When the stack DEX is absent (feature off, or the host
+ * preview where no stack is injected) every method degrades to a no-op — the
+ * template carries zero ad-SDK classes.
+ */
 class AdManager(private val context: Context) {
 
     private var isInitialized = false
     private var adConfig: AdConfig? = null
 
+    @Volatile
+    private var feature: AdsFeatureApi? = null
+
+    @Volatile
+    private var featureResolved = false
+
     fun initialize(config: AdConfig) {
         if (isInitialized) return
         adConfig = config
-
-        Log.d(TAG, "AdManager initialized with config: banner=${config.bannerEnabled}, interstitial=${config.interstitialEnabled}, splash=${config.splashEnabled}")
-
+        resolveFeature()?.let {
+            it.initialize(context.applicationContext, config.appId, config.testMode)
+        }
+        Log.d(
+            TAG,
+            "AdManager initialized: banner=${config.bannerEnabled}, " +
+                "interstitial=${config.interstitialEnabled}, " +
+                "splash=${config.splashEnabled}, feature=${feature != null}"
+        )
         isInitialized = true
     }
 
     fun showBannerAd(container: android.view.ViewGroup) {
         val config = adConfig ?: return
         if (!config.bannerEnabled || config.bannerId.isBlank()) return
-
-        Log.d(TAG, "showBannerAd called but ad SDK not integrated, bannerId=${config.bannerId}")
+        val view = resolveFeature()?.createBanner(context, config.bannerId) ?: return
+        container.removeAllViews()
+        container.addView(view)
+        container.visibility = android.view.View.VISIBLE
     }
 
     fun loadInterstitialAd(onLoaded: () -> Unit, onFailed: (String) -> Unit) {
@@ -32,16 +56,22 @@ class AdManager(private val context: Context) {
             onFailed(Strings.interstitialAdNotConfigured)
             return
         }
-
-        Log.d(TAG, "loadInterstitialAd called but ad SDK not integrated")
-        onFailed(Strings.adSdkNotIntegrated)
+        if (resolveFeature() == null) {
+            onFailed(Strings.adSdkNotIntegrated)
+            return
+        }
+        // The stack implementation loads on show; nothing to prefetch here.
+        onLoaded()
     }
 
     fun showInterstitialAd(activity: android.app.Activity, onDismissed: () -> Unit) {
-
-        Log.d(TAG, "showInterstitialAd called but ad SDK not integrated")
-
-        onDismissed()
+        val config = adConfig
+        val api = resolveFeature()
+        if (config == null || !config.interstitialEnabled || api == null) {
+            onDismissed()
+            return
+        }
+        api.showInterstitial(activity, config.interstitialId, onDismissed)
     }
 
     fun showSplashAd(
@@ -54,31 +84,50 @@ class AdManager(private val context: Context) {
             onFinished()
             return
         }
-
-        if (!config.splashEnabled || config.splashId.isBlank()) {
+        val api = resolveFeature()
+        if (!config.splashEnabled || config.splashId.isBlank() || api == null) {
             onFinished()
             return
         }
-
-        Log.d(TAG, "showSplashAd called but ad SDK not integrated, duration=${config.splashDuration}s")
-
-        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-            onFinished()
-        }, (config.splashDuration * 1000).toLong())
+        api.showSplashAd(
+            activity, config.splashId, config.splashDuration,
+            onDone = onFinished
+        )
     }
 
     fun destroy() {
-        Log.d(TAG, "AdManager destroyed")
+        runCatching { feature?.destroy() }
         adConfig = null
         isInitialized = false
     }
 
+    /**
+     * Resolve the injected stack once. The template's `AdsFeatureApi` shadows
+     * the copy inside the stack DEX on the shared PathClassLoader, so the
+     * `as` cast is safe when the DEX is present.
+     */
+    private fun resolveFeature(): AdsFeatureApi? {
+        if (!featureResolved) {
+            featureResolved = true
+            feature = runCatching {
+                Class.forName(STACK_IMPL_CLASS)
+                    .getDeclaredConstructor()
+                    .newInstance() as? AdsFeatureApi
+            }.onFailure {
+                Log.d(TAG, "no ad feature stack injected")
+            }.getOrNull()
+        }
+        return feature
+    }
+
     companion object {
         private const val TAG = "AdManager"
+        private const val STACK_IMPL_CLASS = "com.webtoapp.stack.admob.AdsFeature"
     }
 
     fun isAdReady(adType: AdType): Boolean {
         val config = adConfig ?: return false
+        if (resolveFeature() == null) return false
         return when (adType) {
             AdType.BANNER -> config.bannerEnabled && config.bannerId.isNotBlank()
             AdType.INTERSTITIAL -> config.interstitialEnabled && config.interstitialId.isNotBlank()

@@ -262,6 +262,12 @@ data class ShellConfig(
     @SerializedName("adsEnabled")
     val adsEnabled: Boolean = false,
 
+    @SerializedName("adAppId")
+    val adAppId: String = "",
+
+    @SerializedName("adTestMode")
+    val adTestMode: Boolean = false,
+
     @SerializedName("adBannerEnabled")
     val adBannerEnabled: Boolean = false,
 

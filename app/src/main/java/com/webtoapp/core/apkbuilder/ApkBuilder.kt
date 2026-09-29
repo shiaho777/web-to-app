@@ -275,6 +275,7 @@ class ApkBuilder(private val context: Context) {
     private val signer = JarSigner(context)
     private val axmlRebuilder = AxmlRebuilder()
     private val arscRebuilder = ArscRebuilder()
+    private val featureStackGrafter = FeatureStackGrafter(axmlRebuilder, ArscPackageGrafter())
     private val logger = BuildLogger(context)
     private val encryptedApkBuilder = EncryptedApkBuilder(context)
     private val keyManager = KeyManager.getInstance(context)
@@ -917,7 +918,8 @@ class ApkBuilder(private val context: Context) {
                 // keying it keeps CONTENT_OVERLAY from reusing a cached AndroidManifest
                 // after a change that adds/removes permissions or components.
                 manifestFingerprint = buildRequiredPermissions(config).sorted().joinToString(",") +
-                    "|" + buildRequiredComponents(config).sorted().joinToString(","),
+                    "|" + buildRequiredComponents(config).sorted().joinToString(",") +
+                    "|stacks=" + featureStackFingerprint(config),
                 // Export-level performance options are not part of ApkConfig but change
                 // output bytes (resource stripping / perf script injection).
                 perfFingerprint = webApp.apkExportConfig?.let { ec ->
@@ -1490,6 +1492,22 @@ class ApkBuilder(private val context: Context) {
             )
         }
 
+        // Feature stacks (issue #1115): graft DEX + resource package + manifest
+        // fragment only for features the config enables; disabled features add
+        // zero bytes to the output. CONTENT_OVERLAY reuses the cached base, so
+        // stack state lives in the identity fingerprint (stacks=).
+        val stackBundles = if (mode == ModifyApkMode.FULL) {
+            FeatureStacks.enabledFor(config).mapNotNull { id ->
+                runCatching {
+                    context.assets.open("${FeatureStacks.ASSET_DIR}/$id.zip").use {
+                        FeatureStackBundle.parse(it.readBytes())
+                    }
+                }.onFailure {
+                    logger.log("feature stack '$id' not grafted: ${it.message}")
+                }.getOrNull()
+            }
+        } else emptyList()
+
         ZipFile(sourceApk).use { zipIn ->
             ZipOutputStream(FileOutputStream(outputApk)).use { zipOut ->
 
@@ -1563,7 +1581,7 @@ class ApkBuilder(private val context: Context) {
                                 originalData, saepBytes?.let { saepResource?.id }
                             )
 
-                            val modifiedData = axmlRebuilder.expandAndModifyFull(
+                            var modifiedData = axmlRebuilder.expandAndModifyFull(
                                 policyAdjustedData,
                                 originalPackageName,
                                 config.packageName,
@@ -1577,6 +1595,12 @@ class ApkBuilder(private val context: Context) {
                                 shareReceiveMimeTypes = config.shareReceiveMimeTypes,
                                 openWithEnabled = config.openWithEnabled
                             )
+                            stackBundles.forEach { bundle ->
+                                modifiedData = featureStackGrafter.graftManifest(
+                                    modifiedData, bundle, config.packageName,
+                                    mapOf("admobAppId" to config.adAppId)
+                                )
+                            }
                             writeEntryDeflated(zipOut, entry.name, modifiedData)
                         }
 
@@ -1589,7 +1613,7 @@ class ApkBuilder(private val context: Context) {
 
                         entry.name == "resources.arsc" -> {
                             val originalData = zipIn.getInputStream(entry).readBytes()
-                            val modifiedData = arscRebuilder.rebuildWithNewAppNameAndIcons(
+                            var modifiedData = arscRebuilder.rebuildWithNewAppNameAndIcons(
                                 originalData,
                                 config.appName,
                                 replaceIcons = true
@@ -1598,6 +1622,11 @@ class ApkBuilder(private val context: Context) {
                             discoveredOldIconPaths = arscRebuilder.getLastDiscoveredIconPaths()
                             discoveredIconSpecs = arscRebuilder.getLastDiscoveredIconSpecs()
                             logger.log("Discovered old icon paths from ARSC: $discoveredOldIconPaths")
+                            stackBundles.forEach { bundle ->
+                                modifiedData = featureStackGrafter.graftResourceTable(
+                                    modifiedData, bundle
+                                )
+                            }
                             writeEntryStored(zipOut, entry.name, modifiedData)
                         }
 
@@ -1742,6 +1771,15 @@ class ApkBuilder(private val context: Context) {
                     logger.log("Perf features: images=${perfConfig.compressImages}, code=${perfConfig.minifyCode}, " +
                         "webp=${perfConfig.convertToWebP}, preload=${perfConfig.injectPreloadHints}, " +
                         "lazy=${perfConfig.injectLazyLoading}, scripts=${perfConfig.optimizeScripts}")
+                }
+
+                if (mode == ModifyApkMode.FULL && stackBundles.isNotEmpty()) {
+                    featureStackGrafter.extraEntries(stackBundles, entryNames)
+                        .forEach { (name, data) -> writeEntryDeflated(zipOut, name, data) }
+                    logger.log(
+                        "feature stacks grafted: " +
+                            stackBundles.joinToString(", ") { it.id }
+                    )
                 }
 
                 if (mode == ModifyApkMode.FULL) {
@@ -3781,6 +3819,21 @@ builtins.__import__ = _w2a_import
         return name.replace(SANITIZE_FILENAME_REGEX, "_").take(50)
     }
 
+    /**
+     * `id:sha256` of every enabled feature-stack bundle (or `missing` when the
+     * asset is absent). Goes into the incremental identity fingerprint so a
+     * stack toggle — or a rebuilt bundle — busts the cached base APK.
+     */
+    private fun featureStackFingerprint(config: ApkConfig): String =
+        FeatureStacks.enabledFor(config).joinToString(",") { id ->
+            val sha = runCatching {
+                context.assets.open("${FeatureStacks.ASSET_DIR}/$id.zip").use {
+                    FeatureStackBundle.parse(it.readBytes()).sha256
+                }
+            }.getOrNull() ?: "missing"
+            "$id:$sha"
+        }.ifEmpty { "none" }
+
     private fun buildRequiredPermissions(config: ApkConfig): List<String> {
 
         val permissions = linkedSetOf<String>()
@@ -4247,12 +4300,14 @@ private fun WebApp.buildAnnouncementBlock(): AnnouncementBlock = AnnouncementBlo
 
 private fun WebApp.buildAdsBlock(): AdsBlock = AdsBlock(
     enabled = adsEnabled,
+    appId = adConfig?.appId ?: "",
     bannerEnabled = adConfig?.bannerEnabled ?: false,
     bannerId = adConfig?.bannerId ?: "",
     interstitialEnabled = adConfig?.interstitialEnabled ?: false,
     interstitialId = adConfig?.interstitialId ?: "",
     splashEnabled = adConfig?.splashEnabled ?: false,
-    splashId = adConfig?.splashId ?: ""
+    splashId = adConfig?.splashId ?: "",
+    testMode = adConfig?.testMode ?: false
 )
 
 private fun com.webtoapp.data.model.WebViewConfig.toWebViewBlock(context: android.content.Context?): WebViewBlock {

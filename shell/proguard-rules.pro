@@ -125,6 +125,11 @@
 -keep,allowobfuscation class com.webtoapp.** { *; }
 -keepclassmembers class com.webtoapp.** { <fields>; }
 
+# Feature-stack 契约（issue #1115）：名字必须原样保留——注入的 stack DEX
+# 按源码名 implements/调用这些接口，改名后接口解析会落到 stack 自带的
+# 副本上，AdManager 的 `as?` 转型静默为 null，广告永远不显示。
+-keep class com.webtoapp.core.ads.api.** { *; }
+
 # data class 的合成构造器（含默认参数）— Gson 反序列化必须
 -keepclassmembers class com.webtoapp.data.model.** {
     <init>(...);

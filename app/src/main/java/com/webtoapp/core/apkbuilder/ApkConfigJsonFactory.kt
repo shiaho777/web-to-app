@@ -66,6 +66,8 @@ internal object ApkConfigJsonFactory {
         "announcementShowIcon" to announcement.showIcon,
         "announcementHasCustomIcon" to announcement.hasCustomIcon,
         "adsEnabled" to ads.enabled,
+        "adAppId" to ads.appId,
+        "adTestMode" to ads.testMode,
         "adBannerEnabled" to ads.bannerEnabled,
         "adBannerId" to ads.bannerId,
         "adInterstitialEnabled" to ads.interstitialEnabled,

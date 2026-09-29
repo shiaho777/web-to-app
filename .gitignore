@@ -63,6 +63,7 @@ app/src/main/jniLibs/arm64-v8a/libphp.so
 .idea/encodings.xml
 .idea/scopes/scope_settings.xml
 .idea/vcs.xml
+app/src/main/assets/stacks/
 tmp_apk_inspect/
 bugreport-*.zip
 test-haze.kt

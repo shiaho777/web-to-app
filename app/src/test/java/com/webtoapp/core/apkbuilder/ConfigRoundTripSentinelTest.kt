@@ -125,16 +125,20 @@ class ConfigRoundTripSentinelTest {
         val app = baseApp().copy(
             adsEnabled = true,
             adConfig = AdConfig(
+                appId = "ca-app-pub-SEN~APP",
                 bannerEnabled = true,
                 bannerId = "SEN-BANNER",
                 interstitialEnabled = true,
                 interstitialId = "SEN-INTER",
                 splashEnabled = true,
-                splashId = "SEN-SPLASH"
+                splashId = "SEN-SPLASH",
+                testMode = true
             )
         )
         val shell = roundTrip(app)
         assertThat(shell.adsEnabled).isTrue()
+        assertThat(shell.adAppId).isEqualTo("ca-app-pub-SEN~APP")
+        assertThat(shell.adTestMode).isTrue()
         assertThat(shell.adBannerEnabled).isTrue()
         assertThat(shell.adBannerId).isEqualTo("SEN-BANNER")
         assertThat(shell.adInterstitialEnabled).isTrue()

@@ -95,6 +95,11 @@ class ShellActivity : AppCompatActivity() {
     private var webViewStateBundle: Bundle? = null
     private var shellConfig: com.webtoapp.core.shell.ShellConfig? = null
 
+    // Optional admob feature stack (issue #1115) — null unless the build
+    // config enables ads AND the stack DEX was grafted into this APK.
+    private var adManager: com.webtoapp.core.ads.AdManager? = null
+    private var bannerContainer: android.widget.FrameLayout? = null
+
     /**
      * External-pointer normalizer (#1031): feeds the touch stream so a quirky
      * OEM dispatch that reports the primary mouse button as raw
@@ -452,6 +457,7 @@ class ShellActivity : AppCompatActivity() {
 
         com.webtoapp.core.shell.ShellLogger.i("ShellActivity", "配置加载成功: ${config.appName}")
         shellConfig = config
+        initAdStack(config)
         notificationPolyfillEnabled = config.webViewConfig.enableNotificationPolyfill
         com.webtoapp.core.engine.GeckoViewEngine.applyEnterpriseRootsEnabled(
             config.networkTrustConfig.trustUserCa
@@ -1253,7 +1259,54 @@ class ShellActivity : AppCompatActivity() {
         mediaSessionBridge = null
         geckoMediaAdapter?.runCatching { release() }
         geckoMediaAdapter = null
+        adManager?.destroy()
+        adManager = null
         super.onDestroy()
+    }
+
+    /**
+     * Ad feature stack (issue #1115): initialized only when the exported config
+     * enables ads. When the stack DEX was not grafted into this APK, [AdManager]
+     * resolves no implementation and every call no-ops. The banner docks to the
+     * bottom via a decor-level container; the splash app-open ad runs inside its
+     * own activity, so neither touches the Compose tree.
+     */
+    private fun initAdStack(config: com.webtoapp.core.shell.ShellConfig) {
+        if (!config.adsEnabled) return
+        val manager = com.webtoapp.core.ads.AdManager(this).apply {
+            initialize(
+                com.webtoapp.data.model.AdConfig(
+                    appId = config.adAppId,
+                    bannerEnabled = config.adBannerEnabled,
+                    bannerId = config.adBannerId,
+                    interstitialEnabled = config.adInterstitialEnabled,
+                    interstitialId = config.adInterstitialId,
+                    splashEnabled = config.adSplashEnabled,
+                    splashId = config.adSplashId,
+                    testMode = config.adTestMode
+                )
+            )
+        }
+        adManager = manager
+
+        if (config.adBannerEnabled) {
+            val container = android.widget.FrameLayout(this)
+            bannerContainer = container
+            addContentView(
+                container,
+                android.widget.FrameLayout.LayoutParams(
+                    android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                    android.view.ViewGroup.LayoutParams.WRAP_CONTENT,
+                    android.view.Gravity.BOTTOM
+                )
+            )
+            manager.showBannerAd(container)
+        }
+
+        if (config.adSplashEnabled) {
+            val content = findViewById<ViewGroup>(android.R.id.content)
+            manager.showSplashAd(this, content, onFinished = {}, onSkipped = {})
+        }
     }
 
     private fun showPasswordDialog() {

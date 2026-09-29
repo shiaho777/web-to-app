@@ -14,6 +14,7 @@ Instructions for coding agents working in this repository.
 |------|------|
 | `app/` | Full builder host: editor UI, export pipeline, runtimes, preview. |
 | `shell/` | Runtime template. Built to `app/src/main/assets/template/webview_shell.apk` via `:shell:assembleRelease` + `:app:syncShellTemplateApk`. |
+| `feature-stacks/` | Optional-dependency modules bundled as graftable packages (`dex/` + `stack.arsc` at package-id 0x80+ + `res/` + curated `manifest.xml` fragment + `stack.json`). Built by each module's `bundle*Stack` task, synced to `app/src/main/assets/stacks/` by `:app:syncStackBundles`, injected into generated APKs only when the export config enables the feature (#1115). |
 | `clone-host/` | Host-side APK clone / identity reshape support library. Its DEX asset generation (`syncCloneHostDex`) is deliberately disabled (`enabled = false`, AV false-positive mitigation, e0d2d4d6) — `AppCloner` runs fail-soft without the asset. |
 | `modules/` | Module Market catalog (`registry.json` + per-module folders). |
 | `sample-bundles/` | Heavy sample dependency packs (`python-*-shared.zip` + sha256-pinned `manifest.json`) fetched on demand by `SampleSharedPackManager` — deliberately NOT in `app/assets` (saves ~30MB raw / ~7MB compressed from the host APK). Regenerate via `scripts/build_sample_bundles.py`. |
@@ -64,6 +65,10 @@ Mental model:
 - Notification push channels: Web Notification polyfill, polling, WebSocket, FCM (developer-owned Firebase config). Do not add OEM vendor push SDKs by default.
 - Foreground services and notification helpers must use `SafeNotificationChannels` (or equivalent fail-soft create). Channel creation failures must not crash FGS startup.
 - **One shell template:** `webview_shell.apk` from `:shell` release. Do not introduce a second template APK.
+- **Feature stacks (optional deps, #1115):** heavy optional SDKs (admob, …) live in `feature-stacks/<id>` and graft into the generated APK at export: `FeatureStacks.enabledFor(config)` gates inclusion, `FeatureStackGrafter` appends `classesN.dex` + namespaced `res/` + merges the manifest fragment (`AxmlRebuilder.mergeManifestFragment`) + grafts the stack's `resources.arsc` package (`ArscPackageGrafter`, package-id ≥ 0x80). Disabled stacks cost zero bytes. Rules for new stacks:
+  - The runtime contract (interface + gates) is authored under `app/` so it syncs into the shell; the stack implements it and is reached via `Class.forName` + fail-soft fallback.
+  - Contract types must be name-pinned in `shell/proguard-rules.pro` (`-keep class com.webtoapp.core.ads.api.** { *; }`) — shell R8 renames `com.webtoapp.**`, and a renamed interface resolves to the stack's own copy, silently breaking casts.
+  - Stack ids/registry live in `FeatureStacks`; bundle sha256 feeds the incremental `manifestFingerprint`.
 - Export incremental rebuild lives in `app/.../apkbuilder` (`ApkBuildCache` + `ApkBuilder`):
   - Modes: `FULL` / `CONTENT_OVERLAY` / `REUSE_UNSIGNED`.
   - Template / entry identities must be **content-stable** (no mtime-based keys).
