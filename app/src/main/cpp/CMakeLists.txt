@@ -1,39 +1,15 @@
-# CMakeLists.txt for WebToApp Crypto Engine
+# CMakeLists.txt for WebToApp native components
 
 cmake_minimum_required(VERSION 3.22.1)
 
-project("crypto_engine")
+project("webtoapp_native")
 
 # 设置 C++ 标准
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# 添加编译选项（crypto_engine 专用）
+# 添加编译选项
 # 注意：不使用全局 add_compile_options，因为 node_bridge 需要导出 JNI 符号
-
-# 源文件
-set(CRYPTO_SOURCES
-    crypto_engine.cpp
-    anti_debug.cpp
-    integrity_check.cpp
-    aes_gcm.cpp
-)
-
-# 创建共享库
-add_library(
-    crypto_engine
-    SHARED
-    ${CRYPTO_SOURCES}
-)
-
-# crypto_engine 编译选项：隐藏符号、优化
-target_compile_options(crypto_engine PRIVATE
-    -fvisibility=hidden
-    -ffunction-sections
-    -fdata-sections
-    -O2
-    -DNDEBUG
-)
 
 # ==================== Node.js Bridge ====================
 # JNI 桥接层：通过 dlopen 加载 libnode.so 并调用 node::Start()
@@ -54,49 +30,8 @@ find_library(
     dl
 )
 
-# 链接库
-target_link_libraries(
-    crypto_engine
-    ${log-lib}
-)
-
-# crypto_engine 可以 strip 所有符号
 # ★ 16KB 页面大小对齐：Android 15+ 设备使用 16KB 页面大小，
 # ELF LOAD 段必须对齐到 16KB (16384) 边界，否则应用运行在兼容模式
-set_target_properties(crypto_engine PROPERTIES
-    LINK_FLAGS "-Wl,--gc-sections -Wl,--strip-all -Wl,-z,max-page-size=16384"
-)
-
-# ==================== Optimized Crypto (优化版加密引擎) ====================
-# 修复: 恒定时间 S-Box, 标准 PBKDF2-HMAC-SHA256 (RFC 2898),
-#       HKDF (RFC 5869), HMAC-SHA256 (RFC 2104), 4x CTR 并行
-add_library(
-    crypto_optimized
-    SHARED
-    crypto_optimized.c
-)
-
-set_property(TARGET crypto_optimized PROPERTY C_STANDARD 11)
-
-target_compile_options(crypto_optimized PRIVATE
-    -fvisibility=hidden
-    -ffunction-sections
-    -fdata-sections
-    -O2
-    -DNDEBUG
-    -Wall
-    -Wextra
-)
-
-target_link_libraries(
-    crypto_optimized
-    ${log-lib}
-)
-
-set_target_properties(crypto_optimized PROPERTIES
-    LINK_FLAGS "-Wl,--gc-sections -Wl,--strip-all -Wl,-z,max-page-size=16384"
-)
-
 
 target_link_libraries(
     node_bridge
@@ -186,44 +121,6 @@ target_compile_options(go_exec_loader PRIVATE
 
 set_target_properties(go_exec_loader PROPERTIES
     LINK_FLAGS "-Wl,--gc-sections -Wl,-z,max-page-size=16384"
-)
-
-# ==================== APK Optimizer (APK 体积优化引擎) ====================
-# C 级 ZIP 重压缩 + 条目裁剪，用于极致压缩生成的 APK
-add_library(
-    apk_optimizer
-    SHARED
-    apk_optimizer.c
-)
-
-# 使用 C11 标准
-set_property(TARGET apk_optimizer PROPERTY C_STANDARD 11)
-
-# 查找 zlib (Android NDK 自带)
-find_library(z-lib z)
-
-# 编译选项：体积优化 (-Os) + 隐藏符号 + LTO
-target_compile_options(apk_optimizer PRIVATE
-    -fvisibility=hidden
-    -ffunction-sections
-    -fdata-sections
-    -Os
-    -DNDEBUG
-    -Wall
-    -Wextra
-    -flto
-)
-
-# 链接 zlib (DEFLATE 重压缩) + log (Android 日志)
-target_link_libraries(
-    apk_optimizer
-    ${log-lib}
-    ${z-lib}
-)
-
-# LTO + gc-sections + strip (优化器自身也要小)
-set_target_properties(apk_optimizer PROPERTIES
-    LINK_FLAGS "-Wl,--gc-sections -Wl,--strip-all -flto -Wl,-z,max-page-size=16384"
 )
 
 # ==================== Performance Engine (极致性能优化引擎) ====================

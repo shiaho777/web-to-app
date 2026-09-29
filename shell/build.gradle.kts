@@ -43,8 +43,8 @@ android {
             cmake {
                 cppFlags += "-std=c++17"
                 // Shell natives statically link libc++ so the template can drop
-                // libc++_shared.so (~4.4MB raw across 4 ABIs). Only crypto_engine and
-                // node_bridge used it. The HOST keeps c++_shared: ApkBuilder injects
+                // libc++_shared.so (~4.4MB raw across 4 ABIs). node_bridge is the
+                // only C++ lib. The HOST keeps c++_shared: ApkBuilder injects
                 // the host's libc++_shared.so into NODEJS_APP exports for libnode.so.
                 arguments += "-DANDROID_STL=c++_static"
             }

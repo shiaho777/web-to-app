@@ -23,7 +23,7 @@ class AssetEncryptor(private val secretKey: SecretKey) {
             )
 
             val result = buildEncryptedAsset(encrypted, assetPath)
-            AppLogger.d(TAG, "加密完成: $assetPath (native: ${NativeCryptoOptimized.isAvailable()})")
+            AppLogger.d(TAG, "加密完成: $assetPath")
             result
 
         } catch (e: Exception) {

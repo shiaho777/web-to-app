@@ -1953,11 +1953,11 @@ class ApkBuilder(private val context: Context) {
 
     private fun isRequiredNativeLib(libName: String, appType: String, engineType: String): Boolean {
 
-        if (libName == "libcrypto_engine.so" || libName == "libc++_shared.so") {
+        if (libName == "libc++_shared.so") {
             return true
         }
 
-        if (libName == "libapk_optimizer.so" || libName == "libcrypto_optimized.so" || libName == "libperf_engine.so" || libName == "libbrowser_kernel.so") {
+        if (libName == "libperf_engine.so" || libName == "libbrowser_kernel.so") {
             return false
         }
 
