@@ -209,12 +209,10 @@ private fun WtaSectionHeader(
             }
             if (!description.isNullOrBlank()) {
                 Spacer(modifier = Modifier.height(2.dp))
-                Text(
+                WtaExpandableText(
                     text = description,
-                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
+                    collapsedMaxLines = 2
                 )
             }
         }
@@ -405,14 +403,12 @@ fun WtaSettingRow(
                 )
                 if (!subtitle.isNullOrBlank()) {
                     Spacer(modifier = Modifier.height(2.dp))
-                    Text(
+                    WtaExpandableText(
                         text = subtitle,
-                        style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(
                             alpha = if (enabled) 1f else WtaAlpha.Disabled
                         ),
-                        maxLines = subtitleMaxLines,
-                        overflow = TextOverflow.Ellipsis
+                        collapsedMaxLines = subtitleMaxLines
                     )
                 }
             }
@@ -754,11 +750,9 @@ fun WtaStatusBanner(
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                 }
-                Text(
+                WtaExpandableText(
                     text = message,
-                    style = MaterialTheme.typography.bodySmall,
-                    maxLines = messageMaxLines,
-                    overflow = TextOverflow.Ellipsis
+                    collapsedMaxLines = messageMaxLines
                 )
             }
             if (actionLabel != null && onAction != null) {
@@ -811,6 +805,46 @@ fun WtaBadge(
                 color = contentColor,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+/**
+ * Text clipped to [collapsedMaxLines] with an ellipsis. When the content
+ * actually overflows, an inline expand/collapse affordance reveals the rest,
+ * so long descriptions stay reachable without loosening dense row layouts.
+ */
+@Composable
+fun WtaExpandableText(
+    text: String,
+    modifier: Modifier = Modifier,
+    style: TextStyle = MaterialTheme.typography.bodySmall,
+    color: Color = Color.Unspecified,
+    collapsedMaxLines: Int = 3
+) {
+    var expanded by rememberSaveable(text) { mutableStateOf(false) }
+    var overflows by remember(text) { mutableStateOf(false) }
+    Column(modifier = modifier) {
+        Text(
+            text = text,
+            style = style,
+            color = color,
+            maxLines = if (expanded) Int.MAX_VALUE else collapsedMaxLines,
+            overflow = TextOverflow.Ellipsis,
+            onTextLayout = { result ->
+                if (!expanded) overflows = result.hasVisualOverflow
+            }
+        )
+        if (overflows || expanded) {
+            Text(
+                text = if (expanded) Strings.collapse else Strings.expand,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier
+                    .padding(top = 2.dp)
+                    .clip(RoundedCornerShape(WtaRadius.Control))
+                    .clickable { expanded = !expanded }
             )
         }
     }
