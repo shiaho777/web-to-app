@@ -450,15 +450,6 @@ fun CreateAppScreen(
             }
 
             item {
-                AdsMonetizationCard(
-                    enabled = editState.adsEnabled,
-                    config = editState.adConfig,
-                    onEnabledChange = { viewModel.updateEditState { copy(adsEnabled = it) } },
-                    onConfigChange = { viewModel.updateEditState { copy(adConfig = it) } }
-                )
-            }
-
-            item {
                 AdBlockCard(
                     editState = editState,
                     onEnabledChange = { viewModel.updateEditState { copy(adBlockEnabled = it) } },
@@ -516,7 +507,11 @@ fun CreateAppScreen(
                     onConfigChange = { viewModel.updateEditState { copy(webViewConfig = it) } },
                     runtimePermissions = editState.apkExportConfig?.runtimePermissions
                         ?: com.webtoapp.data.model.ApkRuntimePermissions(),
-                    onRuntimePermissionsTransform = viewModel::updateRuntimePermissions
+                    onRuntimePermissionsTransform = viewModel::updateRuntimePermissions,
+                    adsEnabled = editState.adsEnabled,
+                    adConfig = editState.adConfig,
+                    onAdsEnabledChange = { viewModel.updateEditState { copy(adsEnabled = it) } },
+                    onAdConfigChange = { viewModel.updateEditState { copy(adConfig = it) } }
                 )
             }
 
@@ -704,18 +699,22 @@ private fun CreateAppBottomBar(
     }
 }
 
+/**
+ * AdMob monetization controls. Rendered inside
+ * [SpecialSettingsCard]'s monetization section — no card wrapper here.
+ */
 @Composable
-fun AdsMonetizationCard(
+fun AdsMonetizationSection(
     enabled: Boolean,
     config: AdConfig,
     onEnabledChange: (Boolean) -> Unit,
     onConfigChange: (AdConfig) -> Unit
 ) {
-    WtaSettingCard(modifier = Modifier.fillMaxWidth()) {
+    Column(modifier = Modifier.fillMaxWidth()) {
         WtaToggleRow(
             icon = Icons.Outlined.MonetizationOn,
             title = Strings.adsMonetization,
-            subtitle = "AdMob",
+            subtitle = Strings.adsMonetizationHint.ifDescriptionsShown(),
             checked = enabled,
             onCheckedChange = onEnabledChange
         )
@@ -734,12 +733,6 @@ fun AdsMonetizationCard(
                     ),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Text(
-                        text = Strings.adsMonetizationHint,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
                     PremiumTextField(
                         value = config.appId,
                         onValueChange = { onConfigChange(config.copy(appId = it.trim())) },

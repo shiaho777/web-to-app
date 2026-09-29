@@ -3330,6 +3330,10 @@ fun SpecialSettingsCard(
     onConfigChange: (com.webtoapp.data.model.WebViewConfig) -> Unit,
     runtimePermissions: com.webtoapp.data.model.ApkRuntimePermissions,
     onRuntimePermissionsTransform: ((com.webtoapp.data.model.ApkRuntimePermissions) -> com.webtoapp.data.model.ApkRuntimePermissions) -> Unit,
+    adsEnabled: Boolean,
+    adConfig: com.webtoapp.data.model.AdConfig,
+    onAdsEnabledChange: (Boolean) -> Unit,
+    onAdConfigChange: (com.webtoapp.data.model.AdConfig) -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
     val context = LocalContext.current
@@ -4118,6 +4122,20 @@ fun SpecialSettingsCard(
                                 onCheckedChange = { onConfigChange(config.copy(errorPageConfig = config.errorPageConfig.copy(showRenderCrashErrorUi = it))) }
                             )
                         }
+                    }
+
+                    WtaSection(
+                        title = Strings.adsMonetization,
+                        headerStyle = WtaSectionHeaderStyle.Quiet,
+                        collapsible = true,
+                        initiallyExpanded = false
+                    ) {
+                        AdsMonetizationSection(
+                            enabled = adsEnabled,
+                            config = adConfig,
+                            onEnabledChange = onAdsEnabledChange,
+                            onConfigChange = onAdConfigChange
+                        )
                     }
                 }
             }
