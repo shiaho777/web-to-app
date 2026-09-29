@@ -3,6 +3,8 @@ package com.webtoapp.ui.agent.components
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -155,53 +157,61 @@ fun ChoiceBottomSheet(
                 color = MaterialTheme.colorScheme.onSurface
             )
 
-            request.questions.forEachIndexed { qIdx, q ->
-                Column(verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)) {
-                    Text(
-                        text = q.text,
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    q.options.forEach { opt ->
-                        OptionRow(
-                            label = opt.label,
-                            description = opt.description,
-                            selected = if (q.multiSelect) {
-                                multiSelections[qIdx]?.contains(opt.label) == true
-                            } else {
-                                singleSelections[qIdx] == opt.label
-                            },
-                            multi = q.multiSelect,
-                            onToggle = {
-                                if (q.multiSelect) {
-                                    val current = multiSelections[qIdx] ?: emptySet()
-                                    multiSelections[qIdx] = if (opt.label in current) {
-                                        current - opt.label
-                                    } else {
-                                        current + opt.label
-                                    }.toMutableSet()
+            // Scrollable so long option lists never push the action row off-screen.
+            Column(
+                modifier = Modifier
+                    .weight(1f, fill = false)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(WtaSpacing.Medium)
+            ) {
+                request.questions.forEachIndexed { qIdx, q ->
+                    Column(verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)) {
+                        Text(
+                            text = q.text,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        q.options.forEach { opt ->
+                            OptionRow(
+                                label = opt.label,
+                                description = opt.description,
+                                selected = if (q.multiSelect) {
+                                    multiSelections[qIdx]?.contains(opt.label) == true
                                 } else {
-                                    singleSelections[qIdx] = opt.label
+                                    singleSelections[qIdx] == opt.label
+                                },
+                                multi = q.multiSelect,
+                                onToggle = {
+                                    if (q.multiSelect) {
+                                        val current = multiSelections[qIdx] ?: emptySet()
+                                        multiSelections[qIdx] = if (opt.label in current) {
+                                            current - opt.label
+                                        } else {
+                                            current + opt.label
+                                        }.toMutableSet()
+                                    } else {
+                                        singleSelections[qIdx] = opt.label
+                                    }
                                 }
-                            }
+                            )
+                        }
+                        if (q.allowOther) {
+                            WtaTextField(
+                                value = otherTexts[qIdx].orEmpty(),
+                                onValueChange = { otherTexts[qIdx] = it },
+                                placeholder = Strings.agentChoiceOtherHint,
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    }
+                    if (qIdx < request.questions.lastIndex) {
+                        HorizontalDivider(
+                            color = MaterialTheme.colorScheme.outlineVariant
+                                .copy(alpha = WtaAlpha.Divider)
                         )
                     }
-                    if (q.allowOther) {
-                        WtaTextField(
-                            value = otherTexts[qIdx].orEmpty(),
-                            onValueChange = { otherTexts[qIdx] = it },
-                            placeholder = Strings.agentChoiceOtherHint,
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                }
-                if (qIdx < request.questions.lastIndex) {
-                    HorizontalDivider(
-                        color = MaterialTheme.colorScheme.outlineVariant
-                            .copy(alpha = WtaAlpha.Divider)
-                    )
                 }
             }
 
@@ -273,20 +283,20 @@ private fun OptionRow(
                 modifier = Modifier.size(WtaSize.Icon)
             )
             Spacer(Modifier.width(WtaSpacing.Small))
-            Text(
-                text = label,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-                color = onContainer
-            )
-            if (description.isNotBlank()) {
-                Spacer(Modifier.width(WtaSpacing.Small))
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "— $description",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = onContainer.copy(alpha = WtaAlpha.Strong),
-                    maxLines = 1
+                    text = label,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+                    color = onContainer
                 )
+                if (description.isNotBlank()) {
+                    Text(
+                        text = description,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = onContainer.copy(alpha = WtaAlpha.Strong)
+                    )
+                }
             }
         }
     }
