@@ -199,6 +199,13 @@
         <intent>
             <action android:name="com.webtoapp.action.PORT_RELEASE" />
         </intent>
+
+        <!-- Baseline app-list visibility: every package with a launcher entry.
+             The standard flavor adds QUERY_ALL_PACKAGES for the rest. -->
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
     </queries>
 
     <!--

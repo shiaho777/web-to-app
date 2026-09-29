@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Sideloaded (GitHub) flavor only: the app modifier / agent tools must see
+         every installed package, including ones with no launcher activity.
+         QUERY_ALL_PACKAGES is auto-granted at install on API 30+ but is a
+         Play-restricted permission, so the gplay flavor deliberately relies on
+         the <queries> baseline in src/main instead. -->
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
+
+</manifest>

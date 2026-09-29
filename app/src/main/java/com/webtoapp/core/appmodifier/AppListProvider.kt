@@ -19,10 +19,7 @@ class AppListProvider(private val context: Context) {
         searchQuery: String = ""
     ): List<InstalledAppInfo> = withContext(Dispatchers.IO) {
 
-        val packageNames = getLaunchablePackageNames()
-        val packages = packageNames.mapNotNull { packageName ->
-            getPackageInfoSafely(packageName)
-        }
+        val packages = getVisiblePackages()
 
         packages
             .mapNotNull { packageInfo -> packageInfo.toInstalledAppInfo() }
@@ -116,7 +113,29 @@ class AppListProvider(private val context: Context) {
         }
     }
 
-    private fun getLaunchablePackageNames(): Set<String> {
+    private fun getVisiblePackages(): List<PackageInfo> {
+        val byName = mutableMapOf<String, PackageInfo>()
+        runCatching {
+            val installed = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                packageManager.getInstalledPackages(PackageManager.PackageInfoFlags.of(0))
+            } else {
+                @Suppress("DEPRECATION")
+                packageManager.getInstalledPackages(0)
+            }
+            installed.forEach { byName[it.packageName] = it }
+        }
+        // Union with the launcher query: with QUERY_ALL_PACKAGES (standard flavor)
+        // the set above already covers every package; without it (gplay flavor) the
+        // manifest <queries> block still surfaces launchable apps, and the union
+        // keeps coverage identical if a store/OEM strips the permission.
+        launcherPackageNames()
+            .filter { it !in byName }
+            .forEach { name -> getPackageInfoSafely(name)?.let { byName[name] = it } }
+        getPackageInfoSafely(context.packageName)?.let { byName.putIfAbsent(context.packageName, it) }
+        return byName.values.toList()
+    }
+
+    private fun launcherPackageNames(): Set<String> {
         val intent = Intent(Intent.ACTION_MAIN).apply {
             addCategory(Intent.CATEGORY_LAUNCHER)
         }
@@ -132,6 +151,5 @@ class AppListProvider(private val context: Context) {
         return resolves
             .mapNotNull { it.activityInfo?.packageName }
             .toMutableSet()
-            .apply { add(context.packageName) }
     }
 }
