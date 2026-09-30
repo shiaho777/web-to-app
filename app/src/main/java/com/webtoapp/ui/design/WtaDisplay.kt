@@ -143,12 +143,11 @@ fun WtaIconTitle(
             )
             if (!subtitle.isNullOrBlank()) {
                 Spacer(modifier = Modifier.height(2.dp))
-                Text(
+                WtaExpandableText(
                     text = subtitle,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
+                    collapsedMaxLines = 2
                 )
             }
         }
@@ -198,12 +197,11 @@ fun WtaIconTitle(
             )
             if (!subtitle.isNullOrBlank()) {
                 Spacer(modifier = Modifier.height(2.dp))
-                Text(
+                WtaExpandableText(
                     text = subtitle,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
+                    collapsedMaxLines = 2
                 )
             }
         }
