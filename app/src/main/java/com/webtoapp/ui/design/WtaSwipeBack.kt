@@ -52,16 +52,22 @@ fun WtaSwipeBackContainer(
         Modifier.pointerInput(Unit) {
             var dragStartedFromEdge = false
             var thresholdHapticked = false
+            // Set the moment a dismiss gesture commits: while the slide-out
+            // animation still runs, a second rapid edge swipe would otherwise
+            // cancel the in-flight animateTo (mutator mutex) and let BOTH
+            // coroutines reach onBack() — a double pop that can empty the nav
+            // back stack and strand the app on a blank screen.
+            var dismissed = false
             val tracker = VelocityTracker()
 
             detectHorizontalDragGestures(
                 onDragStart = { start ->
-                    dragStartedFromEdge = start.x <= edgeWidthPx
+                    dragStartedFromEdge = !dismissed && start.x <= edgeWidthPx
                     thresholdHapticked = false
                     tracker.resetTracking()
                 },
                 onHorizontalDrag = { change, dragAmount ->
-                    if (!dragStartedFromEdge) return@detectHorizontalDragGestures
+                    if (!dragStartedFromEdge || dismissed) return@detectHorizontalDragGestures
 
                     if (dragAmount > 0 || offsetX.value > 0) {
                         change.consume()
@@ -76,11 +82,15 @@ fun WtaSwipeBackContainer(
                     }
                 },
                 onDragEnd = {
-                    if (!dragStartedFromEdge) return@detectHorizontalDragGestures
+                    if (!dragStartedFromEdge || dismissed) return@detectHorizontalDragGestures
 
                     val lastVelocity = tracker.calculateVelocity().x
                     val shouldDismiss = offsetX.value > dismissThresholdPx ||
                         lastVelocity > velocityThreshold
+
+                    // Claim the dismissal synchronously before launching — a
+                    // follow-up gesture must not reach this branch twice.
+                    if (shouldDismiss) dismissed = true
 
                     scope.launch {
                         if (shouldDismiss) {
@@ -109,7 +119,7 @@ fun WtaSwipeBackContainer(
                     }
                 },
                 onDragCancel = {
-                    if (dragStartedFromEdge) {
+                    if (dragStartedFromEdge && !dismissed) {
                         scope.launch {
                             offsetX.animateTo(
                                 targetValue = 0f,
