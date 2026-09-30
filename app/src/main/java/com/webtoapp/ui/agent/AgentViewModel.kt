@@ -32,6 +32,7 @@ import com.webtoapp.core.agent.session.PersistedApk
 import com.webtoapp.core.agent.todo.TodoManager
 import com.webtoapp.core.agent.tool.ToolContext
 import com.webtoapp.core.agent.tool.BuiltApkInfo
+import com.webtoapp.core.agent.tool.ToolRegistry
 import com.webtoapp.core.agent.tool.ToolRegistryFactory
 import com.webtoapp.core.agent.prompt.SystemPromptBuilder
 import com.webtoapp.core.i18n.Strings
@@ -121,6 +122,9 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
     private val streamToolArgs = HashMap<String, StringBuilder>()
     private val readFilesThisTurn = mutableSetOf<String>()
     private var lastToolUiPushAt = 0L
+
+    /** One automatic compact+retry budget per user-initiated turn (#1140). */
+    private val overflowAutoRetry = java.util.concurrent.atomic.AtomicBoolean(false)
 
     private val connection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, binder: IBinder?) {
@@ -915,6 +919,7 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
                     )
                 }
 
+                overflowAutoRetry.set(false)
                 dispatchTurn(updated, rawMessage)
             } catch (t: Throwable) {
                 resetTurnUiState()
@@ -1250,6 +1255,7 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
                 val truncated = sessionStore.truncateAt(sid, messageId, keep = false) ?: run {
                     resetTurnUiState(); return@launch
                 }
+                overflowAutoRetry.set(false)
                 dispatchTurn(truncated, precedingUser.content)
             } catch (t: Throwable) {
                 resetTurnUiState()
@@ -1284,34 +1290,8 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
 
         val compactSvc = compactService ?: CompactService(service!!.gateway).also { compactService = it }
         val contextLength = textModel.effectiveContextLength
-        val workingSession = if (compactSvc.shouldCompact(session.messages, contextLength)) {
-            val result = compactSvc.compact(session.messages, textModel, textKey)
-            if (result.didCompact) {
-                sessionStore.replaceMessages(session.id, result.messages)
-                _ui.update { it.copy(info = Strings.agentCompactedAuto) }
-                sessionStore.get(session.id) ?: session
-            } else session
-        } else session
 
-        streamingSessionId = workingSession.id
-        streamText.clear(); streamThinkingSegments.clear(); streamTools.clear(); streamToolArgs.clear(); readFilesThisTurn.clear()
-        val compactSvc2 = compactService ?: CompactService(service!!.gateway).also { compactService = it }
-        val estTokens = compactSvc2.estimateTokens(workingSession.messages)
-        _ui.update {
-            it.copy(
-                phase = AgentUiState.Phase.Connecting,
-                streamingText = "",
-                streamingThinkingSegments = emptyList(),
-                pendingToolCalls = emptyList(),
-                currentActivity = null,
-                error = null,
-                info = null,
-                estimatedContextTokens = estTokens,
-                contextCapacity = textModel.effectiveContextLength
-            )
-        }
-
-        val plan = planManager ?: PlanManager(workingSession.id, files, service!!.permissionChecker).also {
+        val plan = planManager ?: PlanManager(session.id, files, service!!.permissionChecker).also {
             planManager = it
         }
         val factory = registryFactory ?: ToolRegistryFactory(plan, imageRegistry).also {
@@ -1319,10 +1299,10 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         }
         val registry = factory.build(hasImageModel = imageModel != null)
 
-        val projectSummary = files.listAll(workingSession.id).take(40).map { f ->
+        val projectSummary = files.listAll(session.id).take(40).map { f ->
             // Streamed, capped count — a huge upload must not be slurped into a
             // String just to fill a summary row (binary/oversized → -1 = size only).
-            val lines = if (f.isText) files.countLines(workingSession.id, f.relativePath) else -1
+            val lines = if (f.isText) files.countLines(session.id, f.relativePath) else -1
             com.webtoapp.core.agent.prompt.sections.ProjectFilesSection.FileSummary(
                 f.relativePath,
                 lines,
@@ -1338,12 +1318,144 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
             )
         } else null
 
-        val sessionRoot = files.getSessionRoot(workingSession.id).absolutePath
-        val selectedContext = buildSelectedContext(workingSession.config)
+        val sessionRoot = files.getSessionRoot(session.id).absolutePath
+        val selectedContext = buildSelectedContext(session.config)
+
+        // Estimate the ACTUAL wire payload (system prompt + history + tool
+        // declarations), not just the persisted messages — the uncounted envelope
+        // plus the old chars/4 rate is what let oversized requests hit the
+        // provider's context-length 400 (#1140).
+        val modelName = textModel.alias?.takeIf { it.isNotBlank() } ?: textModel.model.name
+        var parts = buildRequestParts(session, prompt, modelName, sessionRoot, selectedContext, projectSummary, planMode, registry)
+        var requestTokens = compactSvc.estimateRequestTokens(
+            parts.systemPrompt, parts.history, parts.userMessage, registry.all
+        )
+        var didAutoCompact = false
+        if (compactSvc.shouldCompactRequest(requestTokens, contextLength)) {
+            val result = compactSvc.compact(session.messages, textModel, textKey)
+            if (result.didCompact) {
+                sessionStore.replaceMessages(session.id, result.messages)
+                val compacted = sessionStore.get(session.id) ?: session
+                parts = buildRequestParts(compacted, prompt, modelName, sessionRoot, selectedContext, projectSummary, planMode, registry)
+                requestTokens = compactSvc.estimateRequestTokens(
+                    parts.systemPrompt, parts.history, parts.userMessage, registry.all
+                )
+                didAutoCompact = true
+            }
+        }
+
+        val workingSession = parts.session
+        streamingSessionId = workingSession.id
+        streamText.clear(); streamThinkingSegments.clear(); streamTools.clear(); streamToolArgs.clear(); readFilesThisTurn.clear()
+        readFilesThisTurn += parts.tailMentions
+        _ui.update {
+            it.copy(
+                phase = AgentUiState.Phase.Connecting,
+                streamingText = "",
+                streamingThinkingSegments = emptyList(),
+                pendingToolCalls = emptyList(),
+                currentActivity = null,
+                error = null,
+                info = if (didAutoCompact) Strings.agentCompactedAuto else null,
+                estimatedContextTokens = requestTokens,
+                contextCapacity = contextLength
+            )
+        }
+
+        val toolCtx = ToolContext(
+            androidContext = ctx,
+            sessionId = workingSession.id,
+            fileManager = files,
+            textModel = textModel,
+            textApiKey = textKey,
+            imageModel = imageModel,
+            imageApiKey = imageKey,
+            prompter = service!!.permissionPrompter,
+            todos = todoManager,
+            appRepository = webAppRepository,
+            readFiles = readFilesThisTurn,
+            activePlanFile = planState.activePlanPath
+        )
+
+        service?.start(
+            AgentService.AgentRequest(
+                sessionId = workingSession.id,
+                systemPrompt = parts.systemPrompt,
+                history = parts.history,
+
+                userMessage = parts.userMessage,
+                toolContext = toolCtx,
+                registry = registry,
+                sessionStore = sessionStore,
+                temperature = session.config.temperature,
+                maxTurns = session.config.maxTurns
+            )
+        )
+    }
+
+    /**
+     * Recovery path for a provider context-overflow rejection (#1140): drop the
+     * failed turn's bubble, compact whatever history remains and re-dispatch the
+     * user's last message. [overflowAutoRetry] is already consumed by the caller,
+     * so a still-oversized retry surfaces the original error instead of looping.
+     */
+    private suspend fun retryAfterContextOverflow(sessionId: String, originalError: String) {
+        suspend fun giveUp() {
+            _ui.update { it.copy(phase = AgentUiState.Phase.Idle, error = originalError) }
+        }
+
+        val session = sessionStore.get(sessionId) ?: run { giveUp(); return }
+        val lastUserIdx = session.messages.indexOfLast { it.role == AgentMessage.Role.USER }
+        if (lastUserIdx < 0) { giveUp(); return }
+        val userMsg = session.messages[lastUserIdx]
+
+        // Discard everything after the last user message — the failed turn's
+        // partial assistant output and error bubble.
+        var kept = session.messages.take(lastUserIdx + 1)
+
+        val models = configManager.savedModelsFlow.first()
+        val keys = configManager.apiKeysFlow.first()
+        val textModel = resolveTextModel(models)
+        val textKey = textModel?.let { m -> keys.firstOrNull { it.id == m.apiKeyId } }
+        val gateway = service?.gateway
+        if (textModel != null && textKey != null && gateway != null) {
+            val svc = compactService ?: CompactService(gateway).also { compactService = it }
+            val result = svc.compact(kept, textModel, textKey)
+            if (result.didCompact) kept = result.messages
+        }
+
+        val saved = sessionStore.replaceMessages(sessionId, kept) ?: run { giveUp(); return }
+        dispatchTurn(saved, userMsg.content)
+    }
+
+    /** Wire payload for one dispatch; rebuilt when auto-compaction rewrites the session. */
+    private data class OutgoingRequest(
+        val session: AgentSession,
+        val systemPrompt: String,
+        val history: List<LlmMessage>,
+        val userMessage: String,
+        val tailMentions: List<String>
+    )
+
+    /**
+     * Everything the engine needs for one dispatch, derived from a session's
+     * message list: system prompt, wire-format history and the effective user
+     * message. Rebuilt after auto-compaction, which rewrites `session.messages`.
+     */
+    private fun buildRequestParts(
+        session: AgentSession,
+        prompt: String,
+        modelName: String,
+        sessionRoot: String,
+        selectedContext: String,
+        projectSummary: List<com.webtoapp.core.agent.prompt.sections.ProjectFilesSection.FileSummary>,
+        planMode: SystemPromptBuilder.PlanMode?,
+        registry: ToolRegistry
+    ): OutgoingRequest {
         val systemPrompt = SystemPromptBuilder.build(
             SystemPromptBuilder.Input(
                 language = Strings.currentLanguage.value,
-                modelName = textModel.alias?.takeIf { it.isNotBlank() } ?: textModel.model.name,
+                modelName = modelName,
                 sessionDir = sessionRoot,
                 tools = registry.all,
                 projectFiles = projectSummary,
@@ -1353,7 +1465,7 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
             )
         )
 
-        val tailMessage = workingSession.messages.lastOrNull()
+        val tailMessage = session.messages.lastOrNull()
         // The tail user message rides inside `history` (not `userMessage`) whenever
         // it carries @mentions or attachments — otherwise its references would
         // silently never reach the model.
@@ -1362,14 +1474,9 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
                 tailMessage.userAttachmentsSafe.isNotEmpty())
 
         val messagesForHistory = if (tailInHistory) {
-            workingSession.messages
+            session.messages
         } else {
-
-            workingSession.messages.dropLast(1)
-        }
-
-        if (tailInHistory) {
-            readFilesThisTurn += tailMessage.mentionedFiles
+            session.messages.dropLast(1)
         }
 
         val history = messagesForHistory.flatMap { m ->
@@ -1381,7 +1488,7 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
                     // still travel as vision input — size-gated to stay under
                     // provider limits and keep a giant image from OOMing the read.
                     val images = m.userAttachmentsSafe.filter { it.isImage }.mapNotNull { att ->
-                        val f = files.resolveSafe(workingSession.id, att.path)
+                        val f = files.resolveSafe(session.id, att.path)
                             ?: return@mapNotNull null
                         if (!f.isFile || f.length() > MAX_INLINE_IMAGE_BYTES) {
                             return@mapNotNull null
@@ -1392,9 +1499,9 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
                     }
                     val note = com.webtoapp.core.agent.session.AttachmentNote.build(
                         m.userAttachmentsSafe
-                    ) { p -> files.resolveSafe(workingSession.id, p) }
+                    ) { p -> files.resolveSafe(session.id, p) }
                     out += LlmMessage(LlmMessage.Role.USER, m.content + note, images = images)
-                    out += synthesiseReadCallsFor(m, workingSession.id)
+                    out += synthesiseReadCallsFor(m, session.id)
                     out
                 }
                 AgentMessage.Role.ASSISTANT -> {
@@ -1432,34 +1539,12 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
 
-        val toolCtx = ToolContext(
-            androidContext = ctx,
-            sessionId = workingSession.id,
-            fileManager = files,
-            textModel = textModel,
-            textApiKey = textKey,
-            imageModel = imageModel,
-            imageApiKey = imageKey,
-            prompter = service!!.permissionPrompter,
-            todos = todoManager,
-            appRepository = webAppRepository,
-            readFiles = readFilesThisTurn,
-            activePlanFile = planState.activePlanPath
-        )
-
-        service?.start(
-            AgentService.AgentRequest(
-                sessionId = workingSession.id,
-                systemPrompt = systemPrompt,
-                history = history,
-
-                userMessage = if (tailInHistory) "" else prompt,
-                toolContext = toolCtx,
-                registry = registry,
-                sessionStore = sessionStore,
-                temperature = session.config.temperature,
-                maxTurns = session.config.maxTurns
-            )
+        return OutgoingRequest(
+            session = session,
+            systemPrompt = systemPrompt,
+            history = history,
+            userMessage = if (tailInHistory) "" else prompt,
+            tailMentions = if (tailInHistory) tailMessage.mentionedFiles else emptyList()
         )
     }
 
@@ -1949,15 +2034,35 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
                 // surface the reason here too so every failure is locatable.
                 streamingSessionId = null
                 streamText.clear(); streamThinkingSegments.clear(); streamTools.clear(); streamToolArgs.clear(); readFilesThisTurn.clear()
-                _ui.update {
-                    it.copy(
-                        phase = AgentUiState.Phase.Idle,
-                        streamingText = "",
-                        streamingThinkingSegments = emptyList(),
-                        pendingToolCalls = emptyList(),
-                        currentActivity = null,
-                        error = ev.message
-                    )
+                // A context-length 400 used to be a dead end: every "continue"
+                // resent the same oversized payload. Compact the history, drop the
+                // failed turn and retry once (#1140); the flag is consumed so a
+                // still-overflowing retry surfaces the original error.
+                if (CompactService.isContextOverflowError(ev.message) &&
+                    overflowAutoRetry.compareAndSet(false, true)
+                ) {
+                    _ui.update {
+                        it.copy(
+                            phase = AgentUiState.Phase.Connecting,
+                            streamingText = "",
+                            streamingThinkingSegments = emptyList(),
+                            pendingToolCalls = emptyList(),
+                            currentActivity = null,
+                            info = Strings.agentContextOverflowCompacting
+                        )
+                    }
+                    viewModelScope.launch { retryAfterContextOverflow(sid, ev.message) }
+                } else {
+                    _ui.update {
+                        it.copy(
+                            phase = AgentUiState.Phase.Idle,
+                            streamingText = "",
+                            streamingThinkingSegments = emptyList(),
+                            pendingToolCalls = emptyList(),
+                            currentActivity = null,
+                            error = ev.message
+                        )
+                    }
                 }
             }
         }

@@ -7636,6 +7636,19 @@ object StringsB {
         AppLanguage.KOREAN -> "압축 건너뜀: %s"
     }
 
+    val agentContextOverflowCompacting: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "上下文超限，正在压缩历史并重试…"
+        AppLanguage.ENGLISH -> "Context limit reached — compacting history and retrying…"
+        AppLanguage.ARABIC -> "تم بلوغ حد السياق — جارٍ ضغط السجل وإعادة المحاولة…"
+        AppLanguage.PORTUGUESE -> "Limite de contexto atingido — compactando histórico e tentando de novo…"
+        AppLanguage.SPANISH -> "Límite de contexto alcanzado — compactando historial y reintentando…"
+        AppLanguage.FRENCH -> "Limite de contexte atteinte — compactage de l'historique et nouvelle tentative…"
+        AppLanguage.GERMAN -> "Kontextlimit erreicht — Verlauf wird komprimiert und erneut versucht…"
+        AppLanguage.RUSSIAN -> "Достигнут лимит контекста — сжимаю историю и повторяю…"
+        AppLanguage.JAPANESE -> "コンテキスト上限に達しました — 履歴を圧縮して再試行します…"
+        AppLanguage.KOREAN -> "컨텍스트 한도 도달 — 기록을 압축하고 다시 시도합니다…"
+    }
+
     val agentContextCapacity: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "上下文容量"
         AppLanguage.ENGLISH -> "Context Capacity"

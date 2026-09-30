@@ -6,6 +6,7 @@ import com.webtoapp.core.agent.llm.LlmGateway
 import com.webtoapp.core.agent.llm.LlmMessage
 import com.webtoapp.core.agent.session.AgentMessage
 import com.webtoapp.core.agent.session.RecordedToolCall
+import com.webtoapp.core.agent.tool.Tool
 import com.webtoapp.data.model.ApiKeyConfig
 import com.webtoapp.data.model.SavedModel
 import com.webtoapp.core.logging.AppLogger
@@ -15,7 +16,7 @@ import kotlinx.coroutines.flow.fold
 class CompactService(
     private val gateway: LlmGateway,
 
-    private val charsPerToken: Float = 4f,
+    private val nonCjkCharsPerToken: Float = 3f,
 
     private val minRecentMessages: Int = 8,
 
@@ -29,6 +30,66 @@ class CompactService(
 
     fun estimateTokens(messages: List<AgentMessage>): Int =
         messages.sumOf { estimateTokens(it) }
+
+    /**
+     * Estimate tokens for the *actual wire payload* — system prompt + wire-format
+     * history + the user message + every tool declaration. The persisted-message
+     * estimate alone misses the fixed envelope (system prompt, schemas, re-injected
+     * mentions) and undercounts badly on CJK/code, which let oversized requests
+     * sail straight into the provider's context-length 400.
+     */
+    fun estimateRequestTokens(
+        systemPrompt: String,
+        history: List<LlmMessage>,
+        userMessage: String,
+        tools: List<Tool>
+    ): Int {
+        var total = estimateTokens(systemPrompt) + estimateTokens(userMessage)
+        history.forEach { total += estimateTokens(it) }
+        tools.forEach { tool ->
+            total += TOOL_DECL_OVERHEAD_TOKENS +
+                estimateTokens(tool.name) +
+                estimateTokens(tool.description) +
+                estimateTokens(tool.parametersSchema.toString())
+        }
+        return total
+    }
+
+    fun shouldCompactRequest(requestTokens: Int, contextLength: Int = 128_000): Boolean =
+        requestTokens >= (contextLength * autoCompactThresholdFraction).toInt()
+
+    fun estimateTokens(m: LlmMessage): Int {
+        var tokens = MESSAGE_OVERHEAD_TOKENS +
+            estimateTokens(m.content) +
+            estimateTokens(m.reasoningContent.orEmpty())
+        m.toolCalls.forEach { tc ->
+            tokens += TOOL_CALL_OVERHEAD_TOKENS + estimateTokens(tc.name) + estimateTokens(tc.argumentsJson)
+        }
+        tokens += m.images.size * IMAGE_ESTIMATE_TOKENS
+        return tokens
+    }
+
+    /**
+     * Heuristic chars→tokens. CJK ideographs/kana/hangul run ~1 token per char on
+     * common tokenizers, so counting them at the legacy chars/4 rate undercounted
+     * Chinese-heavy sessions by ~4x; non-CJK text (code, English) is closer to ~3
+     * chars/token. Slight overestimation is deliberate — compaction firing a bit
+     * early beats a dead-end provider 400.
+     */
+    fun estimateTokens(text: String): Int {
+        if (text.isEmpty()) return 0
+        var cjk = 0
+        for (ch in text) if (isCjkChar(ch)) cjk++
+        return cjk + ((text.length - cjk) / nonCjkCharsPerToken).toInt()
+    }
+
+    private fun isCjkChar(c: Char): Boolean {
+        val v = c.code
+        return v in 0x2E80..0x9FFF ||   // radicals, kana, CJK unified ideographs
+            v in 0xAC00..0xD7AF ||      // Hangul syllables
+            v in 0xF900..0xFAFF ||      // CJK compatibility ideographs
+            v in 0xFF00..0xFFEF         // fullwidth forms
+    }
 
     suspend fun compact(
         messages: List<AgentMessage>,
@@ -170,10 +231,16 @@ class CompactService(
     }
 
     private fun estimateTokens(m: AgentMessage): Int {
-        val charBudget = m.content.length +
-            (m.thinking?.length ?: 0) +
-            m.toolCalls.sumOf { it.argumentsJson.length + it.resultPreview.length + it.name.length }
-        return (charBudget / charsPerToken).toInt()
+        var tokens = MESSAGE_OVERHEAD_TOKENS +
+            estimateTokens(m.content) +
+            estimateTokens(m.thinking.orEmpty())
+        m.toolCalls.forEach { tc ->
+            tokens += TOOL_CALL_OVERHEAD_TOKENS +
+                estimateTokens(tc.argumentsJson) +
+                estimateTokens(tc.resultPreview) +
+                estimateTokens(tc.name)
+        }
+        return tokens
     }
 
     data class Result(
@@ -186,5 +253,33 @@ class CompactService(
 
     companion object {
         private const val TAG = "CompactService"
+
+        /** Envelope cost per wire message (role, ids, JSON framing). */
+        private const val MESSAGE_OVERHEAD_TOKENS = 8
+
+        private const val TOOL_CALL_OVERHEAD_TOKENS = 8
+
+        private const val TOOL_DECL_OVERHEAD_TOKENS = 8
+
+        /** Order-of-magnitude placeholder for an inline image part. */
+        private const val IMAGE_ESTIMATE_TOKENS = 1500
+
+        /**
+         * True when a provider error text means "the request exceeds the model's
+         * context window" — the one failure where compacting and retrying is the
+         * correct response instead of dead-ending the turn.
+         */
+        fun isContextOverflowError(message: String): Boolean {
+            val m = message.lowercase()
+            return m.contains("context length") ||
+                m.contains("context window") ||
+                m.contains("context_length") ||
+                m.contains("maximum context") ||
+                m.contains("too many tokens") ||
+                m.contains("prompt is too long") ||
+                m.contains("reduce the length") ||
+                m.contains("request too large") ||
+                m.contains("token limit")
+        }
     }
 }

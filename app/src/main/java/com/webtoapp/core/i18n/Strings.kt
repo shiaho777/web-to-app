@@ -1656,6 +1656,7 @@ object Strings {
     val agentCompactedManual: String get() = StringsB.agentCompactedManual
     val agentCompactedAuto: String get() = StringsB.agentCompactedAuto
     val agentCompactSkipped: String get() = StringsB.agentCompactSkipped
+    val agentContextOverflowCompacting: String get() = StringsB.agentContextOverflowCompacting
     val agentContextCapacity: String get() = StringsB.agentContextCapacity
     val agentContextCapacityHint: String get() = StringsB.agentContextCapacityHint
     val agentCompactNow: String get() = StringsB.agentCompactNow
