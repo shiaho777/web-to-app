@@ -425,7 +425,14 @@ class GeckoViewEngine(
                 AppLogger.d(TAG, "GeckoView configFilePath set: $configFilePath (ech=${currentDnsConfig?.echEffective == true}, proxy=${currentProxyConfig?.mode ?: "NONE"})")
             }
 
-            return GeckoRuntime.create(context, settingsBuilder.build())
+            // Host APKs carry no gecko natives/omni.ja (downloaded on demand):
+            // graft+preload the downloaded libs and hand Gecko a context whose
+            // getPackageResourcePath() resolves to a packaged-style omnijar
+            // container (assets/omni.ja inside a zip).
+            return GeckoRuntime.create(
+                GeckoRuntimeProvisioner.prepareRuntime(context),
+                settingsBuilder.build()
+            )
         }
 
         private fun clearGeckoProfileDir(context: Context) {

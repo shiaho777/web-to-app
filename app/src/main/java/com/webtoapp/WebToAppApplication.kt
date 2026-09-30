@@ -2,6 +2,7 @@ package com.webtoapp
 
 import android.app.Application
 import android.content.ComponentCallbacks2
+import android.content.Context
 import coil.ImageLoader
 import coil.ImageLoaderFactory
 import com.webtoapp.core.activation.ActivationManager
@@ -50,6 +51,19 @@ class WebToAppApplication : Application(), ImageLoaderFactory {
     val shellModeManager: ShellModeManager by inject()
     val healthMonitor: com.webtoapp.core.stats.AppHealthMonitor by inject()
     val screenshotService: com.webtoapp.core.stats.WebsiteScreenshotService by inject()
+
+    override fun attachBaseContext(base: Context) {
+        super.attachBaseContext(base)
+        // Gecko child processes (:tab*/:gpu/...) get a fresh PathClassLoader and
+        // their service onCreate loads mozglue before any of our code could run
+        // later — the native lib graft has to happen here, in every process.
+        // Gecko children additionally need the dep .so files resident up front.
+        val provisioner = com.webtoapp.core.engine.GeckoRuntimeProvisioner
+        provisioner.ensureNativeLibsVisible(base)
+        if (provisioner.isGeckoChildProcess()) {
+            provisioner.preloadDownloadedLibs(base)
+        }
+    }
 
     override fun onCreate() {
         super.onCreate()

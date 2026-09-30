@@ -5,6 +5,7 @@ Instructions for coding agents working in this repository.
 ## Code style
 
 - Do what you believe is right. Make the change complete and correct, not the smallest possible diff. If a fix calls for refactoring, renaming, or touching multiple files, do it.
+- Fix root causes, not symptoms. Do not paper over a defect with catch-and-swallow, degraded fallbacks, or UI workarounds that leave the underlying behavior broken. Trace the failure to where it originates and repair it there — even when that is harder.
 - Match the patterns and conventions already in the surrounding code.
 - Do not add copyright or license headers unless asked.
 
