@@ -9032,6 +9032,110 @@ object StringsC {
         AppLanguage.KOREAN -> "비밀번호 표시"
     }
 
+    val geckoPromptLeaveTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "离开此页面？"
+        AppLanguage.ENGLISH -> "Leave this page?"
+        AppLanguage.ARABIC -> "مغادرة هذه الصفحة؟"
+        AppLanguage.PORTUGUESE -> "Sair desta página?"
+        AppLanguage.SPANISH -> "¿Salir de esta página?"
+        AppLanguage.FRENCH -> "Quitter cette page ?"
+        AppLanguage.GERMAN -> "Diese Seite verlassen?"
+        AppLanguage.RUSSIAN -> "Покинуть эту страницу?"
+        AppLanguage.JAPANESE -> "このページを離れますか？"
+        AppLanguage.KOREAN -> "이 페이지를 나가시겠습니까?"
+    }
+
+    val geckoPromptLeaveMessage: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "您所做的更改可能不会被保存。"
+        AppLanguage.ENGLISH -> "Changes you made may not be saved."
+        AppLanguage.ARABIC -> "قد لا يتم حفظ التغييرات التي أجريتها."
+        AppLanguage.PORTUGUESE -> "As alterações feitas podem não ser salvas."
+        AppLanguage.SPANISH -> "Es posible que los cambios realizados no se guarden."
+        AppLanguage.FRENCH -> "Les modifications apportées pourraient ne pas être enregistrées."
+        AppLanguage.GERMAN -> "Vorgenommene Änderungen werden möglicherweise nicht gespeichert."
+        AppLanguage.RUSSIAN -> "Внесённые изменения могут не сохраниться."
+        AppLanguage.JAPANESE -> "行った変更は保存されない場合があります。"
+        AppLanguage.KOREAN -> "변경사항이 저장되지 않을 수 있습니다."
+    }
+
+    val geckoPromptBtnLeave: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "离开"
+        AppLanguage.ENGLISH -> "Leave"
+        AppLanguage.ARABIC -> "مغادرة"
+        AppLanguage.PORTUGUESE -> "Sair"
+        AppLanguage.SPANISH -> "Salir"
+        AppLanguage.FRENCH -> "Quitter"
+        AppLanguage.GERMAN -> "Verlassen"
+        AppLanguage.RUSSIAN -> "Покинуть"
+        AppLanguage.JAPANESE -> "離れる"
+        AppLanguage.KOREAN -> "나가기"
+    }
+
+    val geckoPromptRepostTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "重新提交表单？"
+        AppLanguage.ENGLISH -> "Resubmit the form?"
+        AppLanguage.ARABIC -> "إعادة إرسال النموذج؟"
+        AppLanguage.PORTUGUESE -> "Reenviar o formulário?"
+        AppLanguage.SPANISH -> "¿Reenviar el formulario?"
+        AppLanguage.FRENCH -> "Renvoyer le formulaire ?"
+        AppLanguage.GERMAN -> "Formular erneut senden?"
+        AppLanguage.RUSSIAN -> "Отправить форму повторно?"
+        AppLanguage.JAPANESE -> "フォームを再送信しますか？"
+        AppLanguage.KOREAN -> "양식을 다시 제출하시겠습니까?"
+    }
+
+    val geckoPromptRepostMessage: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "页面将重新发送您提交的数据。"
+        AppLanguage.ENGLISH -> "The page will resend the data you submitted."
+        AppLanguage.ARABIC -> "سيتم إعادة إرسال البيانات التي أدخلتها."
+        AppLanguage.PORTUGUESE -> "A página reenviará os dados que você enviou."
+        AppLanguage.SPANISH -> "La página volverá a enviar los datos que enviaste."
+        AppLanguage.FRENCH -> "La page renverra les données que vous avez envoyées."
+        AppLanguage.GERMAN -> "Die Seite sendet die von Ihnen übermittelten Daten erneut."
+        AppLanguage.RUSSIAN -> "Страница повторно отправит введённые данные."
+        AppLanguage.JAPANESE -> "ページが送信したデータを再送信します。"
+        AppLanguage.KOREAN -> "페이지에서 제출한 데이터를 다시 보냅니다."
+    }
+
+    val geckoPromptPickColor: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "选择颜色"
+        AppLanguage.ENGLISH -> "Choose a color"
+        AppLanguage.ARABIC -> "اختر لونًا"
+        AppLanguage.PORTUGUESE -> "Escolha uma cor"
+        AppLanguage.SPANISH -> "Elige un color"
+        AppLanguage.FRENCH -> "Choisir une couleur"
+        AppLanguage.GERMAN -> "Farbe wählen"
+        AppLanguage.RUSSIAN -> "Выберите цвет"
+        AppLanguage.JAPANESE -> "色を選択"
+        AppLanguage.KOREAN -> "색상 선택"
+    }
+
+    val geckoPromptInvalidColor: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "颜色格式无效（应为 #RRGGBB）"
+        AppLanguage.ENGLISH -> "Invalid color format (expected #RRGGBB)"
+        AppLanguage.ARABIC -> "تنسيق اللون غير صالح (المتوقع #RRGGBB)"
+        AppLanguage.PORTUGUESE -> "Formato de cor inválido (esperado #RRGGBB)"
+        AppLanguage.SPANISH -> "Formato de color no válido (se esperaba #RRGGBB)"
+        AppLanguage.FRENCH -> "Format de couleur invalide (#RRGGBB attendu)"
+        AppLanguage.GERMAN -> "Ungültiges Farbformat (#RRGGBB erwartet)"
+        AppLanguage.RUSSIAN -> "Неверный формат цвета (ожидается #RRGGBB)"
+        AppLanguage.JAPANESE -> "色の形式が無効です（#RRGGBB）"
+        AppLanguage.KOREAN -> "색상 형식이 잘못되었습니다 (#RRGGBB)"
+    }
+
+    val geckoPromptPickValue: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "请选择"
+        AppLanguage.ENGLISH -> "Select a value"
+        AppLanguage.ARABIC -> "اختر قيمة"
+        AppLanguage.PORTUGUESE -> "Selecione um valor"
+        AppLanguage.SPANISH -> "Selecciona un valor"
+        AppLanguage.FRENCH -> "Sélectionnez une valeur"
+        AppLanguage.GERMAN -> "Wert auswählen"
+        AppLanguage.RUSSIAN -> "Выберите значение"
+        AppLanguage.JAPANESE -> "値を選択"
+        AppLanguage.KOREAN -> "값 선택"
+    }
+
     val fwSectionSize: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "窗口尺寸"
         AppLanguage.ENGLISH -> "Window Size"

@@ -2737,6 +2737,14 @@ object Strings {
     val httpAuthPassword: String get() = StringsC.httpAuthPassword
     val httpAuthLogin: String get() = StringsC.httpAuthLogin
     val httpAuthShowPassword: String get() = StringsC.httpAuthShowPassword
+    val geckoPromptLeaveTitle: String get() = StringsC.geckoPromptLeaveTitle
+    val geckoPromptLeaveMessage: String get() = StringsC.geckoPromptLeaveMessage
+    val geckoPromptBtnLeave: String get() = StringsC.geckoPromptBtnLeave
+    val geckoPromptRepostTitle: String get() = StringsC.geckoPromptRepostTitle
+    val geckoPromptRepostMessage: String get() = StringsC.geckoPromptRepostMessage
+    val geckoPromptPickColor: String get() = StringsC.geckoPromptPickColor
+    val geckoPromptInvalidColor: String get() = StringsC.geckoPromptInvalidColor
+    val geckoPromptPickValue: String get() = StringsC.geckoPromptPickValue
     val fwSectionSize: String get() = StringsC.fwSectionSize
     val fwWidthLabel: String get() = StringsC.fwWidthLabel
     val fwHeightLabel: String get() = StringsC.fwHeightLabel
