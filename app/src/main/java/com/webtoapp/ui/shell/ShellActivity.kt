@@ -389,7 +389,7 @@ class ShellActivity : AppCompatActivity() {
         // The shell manifest declares configChanges including uiMode, so switching the system
         // dark/light theme does NOT recreate this activity. Compose recomposition already
         // refreshes the chrome (status bar etc.), but the WebView's dark-mode switch
-        // (FORCE_DARK, static, targetSdk 28) must be re-derived from the new uiMode
+        // (FORCE_DARK / algorithmic darkening, static flags) must be re-derived from the new uiMode
         // explicitly — see WebViewManager.refreshSystemDarkMode (#301 / #341 / #485).
         try {
             val config = WebToAppApplication.shellMode.getConfig()

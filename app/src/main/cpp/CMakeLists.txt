@@ -2,11 +2,7 @@
 
 cmake_minimum_required(VERSION 3.22.1)
 
-project("webtoapp_native")
-
-# 设置 C++ 标准
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+project("webtoapp_native" C)
 
 # 查找 Android 日志库
 find_library(

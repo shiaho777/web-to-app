@@ -57,9 +57,9 @@ Android 6.0(API 23)或更高。
 
 通常可以。所有应用类型 —— 网页、多站点、HTML、离线包、前端和画廊 —— 都能导出 Play 级 AAB。例外:开启**绑定签名的资源加密**的构建,以及从旧备份恢复的已移除类型应用。见 [Google Play](/zh/guide/more-features/google-play)。
 
-### 为什么生成的应用 targetSdk 是 28?
+### 生成的应用使用什么 targetSdk?
 
-生成的 APK 保留 `targetSdk` 28 是历史遗留的打包约束,出于兼容性保留。这只是 APK 打包层面的细节 —— AAB 导出器会把 `targetSdk` 重写到 Play 要求的级别,这个低值不会带到 Play。
+生成的 APK 继承 shell 模板的 `targetSdk`(当前 35)。[APK导出配置](/zh/guide/app-actions/edit-common-config/apk-export)中的 **自定义 targetSdk** 选项可为独立 APK 固定其他级别(28/34/35/36)。面向 Play 时,AAB 导出器无论如何都会把 `targetSdk` 重写到 Play 要求的级别。
 
 ### 如何用自己的密钥签名?
 

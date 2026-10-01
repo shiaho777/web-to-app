@@ -17,10 +17,7 @@ import com.webtoapp.core.crypto.EncryptedApkBuilder
 import com.webtoapp.core.crypto.EncryptionConfig
 import com.webtoapp.core.crypto.KeyManager
 import com.webtoapp.core.crypto.toHexString
-import com.webtoapp.core.shell.BgmShellItem
-import com.webtoapp.core.shell.LrcShellTheme
 import com.webtoapp.data.model.ApkRuntimePermissions
-import com.webtoapp.data.model.LrcData
 import com.webtoapp.data.model.AnnouncementTemplateType
 import com.webtoapp.data.model.HtmlLoadMode
 import com.webtoapp.data.model.WebApp
@@ -406,7 +403,6 @@ class ApkBuilder(private val context: Context) {
             logger.logKeyValue("url", webApp.url)
             logger.logKeyValue("iconPath", webApp.iconPath)
             logger.logKeyValue("splashEnabled", webApp.splashEnabled)
-            logger.logKeyValue("bgmEnabled", webApp.bgmEnabled)
             logger.logKeyValue("activationEnabled", webApp.activationEnabled)
             logger.logKeyValue("adBlockEnabled", webApp.adBlockEnabled)
             logger.logKeyValue("translateEnabled", webApp.translateEnabled)
@@ -451,9 +447,6 @@ class ApkBuilder(private val context: Context) {
             logger.logKeyValue("splashConfig.mediaPath", webApp.splashConfig?.mediaPath)
             logger.logKeyValue("splashMediaPath (getSplashMediaPath)", webApp.getSplashMediaPath())
 
-            logger.section("BGM Config")
-            logger.logKeyValue("bgmEnabled", webApp.bgmEnabled)
-            logger.logKeyValue("bgmConfig.playlist.size", webApp.bgmConfig?.playlist?.size ?: 0)
 
             AppLogger.d("ApkBuilder", "Build started - WebApp config:")
             AppLogger.d("ApkBuilder", "  appName=${webApp.name}")
@@ -502,9 +495,6 @@ class ApkBuilder(private val context: Context) {
             data class PreparedResources(
                 val templateApk: File?,
                 val htmlFiles: List<com.webtoapp.data.model.HtmlFile>,
-                val bgmPlaylistPaths: List<String>,
-                val bgmLrcDataList: List<LrcData?>,
-                val bgmCoverPaths: List<String?>,
                 val galleryItems: List<com.webtoapp.data.model.GalleryItem>,
                 val frontendProjectDir: File?,
                 val htmlProjectDir: File?,
@@ -597,9 +587,6 @@ class ApkBuilder(private val context: Context) {
                 val htmlFiles = if (webApp.appType == com.webtoapp.data.model.AppType.HTML ||
                     webApp.appType == com.webtoapp.data.model.AppType.FRONTEND
                 ) webApp.htmlConfig?.files ?: emptyList() else emptyList()
-                val bgmPlaylistPaths = if (webApp.bgmEnabled) webApp.bgmConfig?.playlist?.map { it.path } ?: emptyList() else emptyList()
-                val bgmLrcDataList = if (webApp.bgmEnabled) webApp.bgmConfig?.playlist?.map { it.lrcData } ?: emptyList() else emptyList()
-                val bgmCoverPaths = if (webApp.bgmEnabled) webApp.bgmConfig?.playlist?.map { it.coverPath } ?: emptyList() else emptyList()
                 val galleryItems = if (webApp.appType == com.webtoapp.data.model.AppType.GALLERY) webApp.galleryConfig?.items ?: emptyList() else emptyList()
                 val htmlProjectId = webApp.htmlConfig?.projectId?.takeIf { it.isNotBlank() }
                 val htmlProjectDir = if (webApp.appType == com.webtoapp.data.model.AppType.HTML) {
@@ -612,9 +599,6 @@ class ApkBuilder(private val context: Context) {
                 PreparedResources(
                     templateApk = templateDeferred.await(),
                     htmlFiles = htmlFiles,
-                    bgmPlaylistPaths = bgmPlaylistPaths,
-                    bgmLrcDataList = bgmLrcDataList,
-                    bgmCoverPaths = bgmCoverPaths,
                     galleryItems = galleryItems,
                     frontendProjectDir = frontendProjectDir,
                     htmlProjectDir = htmlProjectDir,
@@ -644,9 +628,6 @@ class ApkBuilder(private val context: Context) {
             logger.logKeyValue("templateSize", "${templateApk.length() / 1024} KB")
 
             val htmlFiles = prepared.htmlFiles
-            val bgmPlaylistPaths = prepared.bgmPlaylistPaths
-            val bgmLrcDataList = prepared.bgmLrcDataList
-            val bgmCoverPaths = prepared.bgmCoverPaths
             val galleryItems = prepared.galleryItems
             val frontendProjectDir = prepared.frontendProjectDir
             val htmlProjectDir = prepared.htmlProjectDir
@@ -659,7 +640,6 @@ class ApkBuilder(private val context: Context) {
                 val exists = File(file.path).exists()
                 logger.log("  html[$index]: name=${file.name}, path=${file.path}, exists=$exists")
             }
-            logger.logKeyValue("bgmPlaylistPaths.size", bgmPlaylistPaths.size)
             logger.logKeyValue("galleryItems.size", galleryItems.size)
             logger.logKeyValue("frontendProjectDir", frontendProjectDir?.absolutePath)
             logger.logKeyValue("frontendProjectDir.exists", frontendProjectDir?.exists())
@@ -747,7 +727,6 @@ class ApkBuilder(private val context: Context) {
                     staticPackDir
                 ),
                 splashMediaPath = webApp.getSplashMediaPath(),
-                bgmPlaylistPaths = bgmPlaylistPaths,
                 htmlFiles = htmlFiles,
                 galleryItems = galleryItems,
                 errorPageMediaPath = errorPageMediaPath,
@@ -812,9 +791,6 @@ class ApkBuilder(private val context: Context) {
                             config = config,
                             iconPath = webApp.iconPath,
                             splashMediaPath = webApp.getSplashMediaPath(),
-                            bgmPlaylistPaths = bgmPlaylistPaths,
-                            bgmLrcDataList = bgmLrcDataList,
-                            bgmCoverPaths = bgmCoverPaths,
                             htmlFiles = htmlFiles,
                             galleryItems = galleryItems,
                             multiWebSiteGalleryItems = mwSiteMedia.galleryItems,
@@ -848,9 +824,6 @@ class ApkBuilder(private val context: Context) {
                             config = config,
                             iconPath = webApp.iconPath,
                             splashMediaPath = webApp.getSplashMediaPath(),
-                            bgmPlaylistPaths = bgmPlaylistPaths,
-                            bgmLrcDataList = bgmLrcDataList,
-                            bgmCoverPaths = bgmCoverPaths,
                             htmlFiles = htmlFiles,
                             galleryItems = galleryItems,
                             multiWebSiteGalleryItems = mwSiteMedia.galleryItems,
@@ -887,9 +860,6 @@ class ApkBuilder(private val context: Context) {
                         config = config,
                         iconPath = webApp.iconPath,
                         splashMediaPath = webApp.getSplashMediaPath(),
-                        bgmPlaylistPaths = bgmPlaylistPaths,
-                        bgmLrcDataList = bgmLrcDataList,
-                        bgmCoverPaths = bgmCoverPaths,
                         htmlFiles = htmlFiles,
                         galleryItems = galleryItems,
                         multiWebSiteGalleryItems = mwSiteMedia.galleryItems,
@@ -1023,7 +993,7 @@ class ApkBuilder(private val context: Context) {
             try {
                 signer.sign(
                     unsignedApk, signedApk,
-                    targetSdk = config.targetSdkOverride ?: 28,
+                    targetSdk = config.targetSdkOverride ?: 35,
                     identity = perAppIdentity?.toSigningIdentity()
                 )
             } catch (e: Exception) {
@@ -1224,9 +1194,6 @@ class ApkBuilder(private val context: Context) {
         config: ApkConfig,
         iconPath: String?,
         splashMediaPath: String?,
-        bgmPlaylistPaths: List<String> = emptyList(),
-        bgmLrcDataList: List<LrcData?> = emptyList(),
-        bgmCoverPaths: List<String?> = emptyList(),
         htmlFiles: List<com.webtoapp.data.model.HtmlFile> = emptyList(),
         galleryItems: List<com.webtoapp.data.model.GalleryItem> = emptyList(),
         multiWebSiteGalleryItems: Map<String, List<com.webtoapp.data.model.GalleryItem>> = emptyMap(),
@@ -1484,13 +1451,13 @@ class ApkBuilder(private val context: Context) {
                         }
 
                         perfConfig != null && perfConfig.removeUnusedResources &&
-                        com.webtoapp.core.linux.PerformanceOptimizer.getRemovableEntries(entry.name, config.appType) -> {
+                        com.webtoapp.core.linux.PerformanceOptimizerApk.getRemovableEntries(entry.name, config.appType) -> {
                             AppLogger.d("ApkBuilder", "Perf: removed unused resource: ${entry.name}")
                         }
 
                         perfConfig != null && entry.name.startsWith("assets/") && isOptimizableAsset(entry.name) -> {
                             val originalData = zipIn.getInputStream(entry).readBytes()
-                            val optimizedData = com.webtoapp.core.linux.PerformanceOptimizer.optimizeBytesForApk(
+                            val optimizedData = com.webtoapp.core.linux.PerformanceOptimizerApk.optimizeBytesForApk(
                                 context, entry.name.substringAfterLast("/"), originalData, perfConfig
                             )
                             writeEntryDeflated(zipOut, entry.name, optimizedData)
@@ -1620,11 +1587,6 @@ class ApkBuilder(private val context: Context) {
                     addFloatingWindowMinimizedIconToAssets(zipOut, config.floatingWindowMinimizedIconPath!!)
                 }
 
-                if (config.bgmEnabled && bgmPlaylistPaths.isNotEmpty()) {
-                    logger.log("Embedding BGM: ${bgmPlaylistPaths.size} files")
-                    addBgmToAssets(zipOut, bgmPlaylistPaths, bgmLrcDataList, bgmCoverPaths, assetEncryptor, encryptionConfig)
-                }
-
                 addCustomCaCertsToAssets(zipOut, config.networkTrustConfig.customCaCertificates)
 
                 val projectDir = when (config.appType) {
@@ -1717,10 +1679,6 @@ class ApkBuilder(private val context: Context) {
     }
 
     private fun isRequiredNativeLib(libName: String, config: ApkConfig): Boolean {
-
-        if (libName == "libc++_shared.so") {
-            return true
-        }
 
         if (libName == "libperf_engine.so" || libName == "libbrowser_kernel.so") {
             return false
@@ -2164,17 +2122,6 @@ class ApkBuilder(private val context: Context) {
     }
 
 
-    /**
-     * Fingerprint of the native libs that would be injected into a NODEJS_APP export
-     * (libnode.so, libnode_bridge.so, libc++_shared.so). Fed into the incremental build
-     * cache's identity fingerprint so a host upgrade that ships a new/realigned libnode.so
-     * invalidates the cached unsigned APK — otherwise REUSE_UNSIGNED serves a stale lib
-     * that dlopen rejects on Android 15+ (16KB-page) devices.
-     *
-     * Returns null for non-Node.js apps (no native lib injection), which is treated as
-     * "not applicable" by the cache and does not affect other app types' cache keys.
-     */
-
     @Volatile
     private var cachedHostVersionCode: Int? = null
 
@@ -2250,8 +2197,8 @@ class ApkBuilder(private val context: Context) {
 
     /**
      * Forced HTTP/3 embeds the Cronet native library so the generated app's bridge can
-     * route through Chromium's own QUIC stack. Mirrors injectNodeJsNativeLibs: a missing
-     * runtime fails the build instead of shipping a silently degraded app.
+     * route through Chromium's own QUIC stack. A missing runtime fails the build instead
+     * of shipping a silently degraded app.
      */
     private fun injectCronetNativeLib(zipOut: ZipOutputStream) {
         val cronet = com.webtoapp.core.webview.CronetDependencyManager
@@ -2301,121 +2248,6 @@ class ApkBuilder(private val context: Context) {
 
     private fun isTextFile(fileName: String): Boolean {
         return TextFileClassifier.isTextFile(fileName)
-    }
-
-    private fun addBgmToAssets(
-        zipOut: ZipOutputStream,
-        bgmPaths: List<String>,
-        lrcDataList: List<LrcData?>,
-        coverPaths: List<String?> = emptyList(),
-        encryptor: AssetEncryptor? = null,
-        encryptionConfig: EncryptionConfig = EncryptionConfig.DISABLED
-    ) {
-        AppLogger.d("ApkBuilder", "Preparing to embed ${bgmPaths.size} BGM files, encrypt=${encryptionConfig.enabled}")
-
-        bgmPaths.forEachIndexed { index, bgmPath ->
-            try {
-                val assetName = "bgm/bgm_$index.mp3"
-                var bgmBytes: ByteArray? = null
-
-                val bgmFile = File(bgmPath)
-                if (!bgmFile.exists()) {
-                    if (bgmPath.startsWith("asset:///")) {
-                        val assetPath = bgmPath.removePrefix("asset:///")
-                        bgmBytes = context.assets.open(assetPath).use { it.readBytes() }
-                    } else {
-                        AppLogger.e("ApkBuilder", "BGM file does not exist: $bgmPath")
-                        return@forEachIndexed
-                    }
-                } else {
-                    if (!bgmFile.canRead()) {
-                        AppLogger.e("ApkBuilder", "BGM file cannot be read: $bgmPath")
-                        return@forEachIndexed
-                    }
-
-                    bgmBytes = bgmFile.readBytes()
-                    if (bgmBytes.isEmpty()) {
-                        AppLogger.e("ApkBuilder", "BGM file is empty: $bgmPath")
-                        return@forEachIndexed
-                    }
-                }
-
-                if (bgmBytes != null) {
-                    if (encryptionConfig.enabled && encryptor != null) {
-                        val encryptedData = encryptor.encrypt(bgmBytes, assetName)
-                        writeEntryDeflated(zipOut, "assets/${assetName}.enc", encryptedData)
-                        AppLogger.d("ApkBuilder", "BGM encrypted and embedded: assets/${assetName}.enc (${encryptedData.size} bytes)")
-                    } else {
-                        writeEntryStoredSimple(zipOut, "assets/$assetName", bgmBytes)
-                        AppLogger.d("ApkBuilder", "BGM embedded(STORED): assets/$assetName (${bgmBytes.size} bytes)")
-                    }
-                }
-
-                val lrcData = lrcDataList.getOrNull(index)
-                if (lrcData != null && lrcData.lines.isNotEmpty()) {
-                    val lrcContent = convertLrcDataToLrcString(lrcData)
-                    val lrcAssetName = "bgm/bgm_$index.lrc"
-                    val lrcBytes = lrcContent.toByteArray(Charsets.UTF_8)
-
-                    if (encryptionConfig.enabled && encryptor != null) {
-                        val encryptedLrc = encryptor.encrypt(lrcBytes, lrcAssetName)
-                        writeEntryDeflated(zipOut, "assets/${lrcAssetName}.enc", encryptedLrc)
-                        AppLogger.d("ApkBuilder", "LRC encrypted and embedded: assets/${lrcAssetName}.enc")
-                    } else {
-                        writeEntryDeflated(zipOut, "assets/$lrcAssetName", lrcBytes)
-                        AppLogger.d("ApkBuilder", "LRC embedded: assets/$lrcAssetName")
-                    }
-                }
-
-                val coverPath = coverPaths.getOrNull(index)
-                val coverAssetName = resolveBgmCoverAssetName(index, coverPath)
-                if (coverAssetName != null && !coverPath.isNullOrBlank()) {
-                    val coverBytes = loadBgmCoverBytes(coverPath)
-                    if (coverBytes != null && coverBytes.isNotEmpty()) {
-                        if (encryptionConfig.enabled && encryptor != null) {
-                            val encryptedCover = encryptor.encrypt(coverBytes, coverAssetName)
-                            writeEntryDeflated(zipOut, "assets/${coverAssetName}.enc", encryptedCover)
-                            AppLogger.d("ApkBuilder", "BGM cover encrypted and embedded: assets/${coverAssetName}.enc")
-                        } else {
-                            writeEntryStoredSimple(zipOut, "assets/$coverAssetName", coverBytes)
-                            AppLogger.d("ApkBuilder", "BGM cover embedded: assets/$coverAssetName (${coverBytes.size} bytes)")
-                        }
-                    }
-                }
-            } catch (e: Exception) {
-                AppLogger.e("ApkBuilder", "Failed to embed BGM: $bgmPath", e)
-            }
-        }
-    }
-
-    private fun resolveBgmCoverAssetName(index: Int, coverPath: String?): String? {
-        if (coverPath.isNullOrBlank()) return null
-        val rawExt = when {
-            coverPath.startsWith("asset:///") -> coverPath.substringAfterLast('.', "jpg")
-            else -> File(coverPath).extension
-        }.lowercase().ifBlank { "jpg" }
-        val ext = when (rawExt) {
-            "jpeg", "jpe", "jfif" -> "jpg"
-            "png", "jpg", "webp", "gif", "bmp", "heic", "heif" -> rawExt
-            else -> "jpg"
-        }
-        return "bgm/bgm_$index.$ext"
-    }
-
-    private fun loadBgmCoverBytes(coverPath: String): ByteArray? {
-        return try {
-            if (coverPath.startsWith("asset:///")) {
-                val assetPath = coverPath.removePrefix("asset:///")
-                context.assets.open(assetPath).use { it.readBytes() }
-            } else {
-                val file = File(coverPath)
-                if (!file.exists() || !file.canRead() || file.length() == 0L) null
-                else file.readBytes()
-            }
-        } catch (e: Exception) {
-            AppLogger.e("ApkBuilder", "Failed to load BGM cover: $coverPath", e)
-            null
-        }
     }
 
 
@@ -2745,28 +2577,6 @@ class ApkBuilder(private val context: Context) {
         } catch (e: Exception) {
             "UTF-8"
         }
-    }
-
-    private fun convertLrcDataToLrcString(lrcData: LrcData): String {
-        val sb = StringBuilder()
-
-        lrcData.title?.let { sb.appendLine("[ti:$it]") }
-        lrcData.artist?.let { sb.appendLine("[ar:$it]") }
-        lrcData.album?.let { sb.appendLine("[al:$it]") }
-        sb.appendLine()
-
-        lrcData.lines.forEach { line ->
-            val minutes = line.startTime / 60000
-            val seconds = (line.startTime % 60000) / 1000
-            val centiseconds = (line.startTime % 1000) / 10
-            sb.appendLine("[%02d:%02d.%02d]%s".format(minutes, seconds, centiseconds, line.text))
-
-            line.translation?.let { translation ->
-                sb.appendLine("[%02d:%02d.%02d]%s".format(minutes, seconds, centiseconds, translation))
-            }
-        }
-
-        return sb.toString()
     }
 
     private fun debugApkStructure(apkFile: File): Boolean {
@@ -3108,10 +2918,10 @@ class ApkBuilder(private val context: Context) {
             permissions += "android.permission.FOREGROUND_SERVICE"
             permissions += "android.permission.FOREGROUND_SERVICE_SPECIAL_USE"
             permissions += "android.permission.FOREGROUND_SERVICE_DATA_SYNC"
-            // WebMediaPlaybackService (enableMediaSession) and BgmService both run
-            // as mediaPlayback foreground services — without this, startForeground
-            // throws SecurityException on Android 10+.
-            if (config.bgmEnabled || config.enableMediaSession) {
+            // WebMediaPlaybackService (enableMediaSession) runs as a mediaPlayback
+            // foreground service — without this, startForeground throws
+            // SecurityException on Android 10+.
+            if (config.enableMediaSession) {
                 permissions += "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
             }
         }
@@ -3326,7 +3136,6 @@ fun WebApp.toApkConfig(packageName: String, context: android.content.Context? = 
         splash = buildSplashBlock(),
         html = buildHtmlBlock(),
         gallery = buildGalleryBlock(),
-        bgm = buildBgmBlock(),
         translate = buildTranslateBlock(),
         plugin = buildPluginBlock(context),
         autoStart = buildAutoStartBlock(),
@@ -3832,51 +3641,6 @@ private fun WebApp.buildGalleryBlock(): GalleryBlock {
         gridColumns = galleryConfig?.gridColumns ?: 3,
         sortOrder = galleryConfig?.sortOrder?.name ?: "CUSTOM",
         rememberPosition = galleryConfig?.rememberPosition ?: true
-    )
-}
-
-private fun WebApp.buildBgmBlock(): BgmBlock {
-    val playlist = bgmConfig?.playlist?.mapIndexed { index, item ->
-        val coverExt = item.coverPath?.let { path ->
-            val raw = when {
-                path.startsWith("asset:///") -> path.substringAfterLast('.', "jpg")
-                else -> java.io.File(path).extension
-            }.lowercase().ifBlank { "jpg" }
-            when (raw) {
-                "jpeg", "jpe", "jfif" -> "jpg"
-                "png", "jpg", "webp", "gif", "bmp", "heic", "heif" -> raw
-                else -> "jpg"
-            }
-        }
-        BgmShellItem(
-            id = item.id,
-            name = item.name,
-            assetPath = "bgm/bgm_$index.mp3",
-            lrcAssetPath = if (item.lrcData != null) "bgm/bgm_$index.lrc" else null,
-            coverAssetPath = coverExt?.let { "bgm/bgm_$index.$it" },
-            sortOrder = item.sortOrder
-        )
-    } ?: emptyList()
-    val theme = bgmConfig?.lrcTheme?.let {
-        LrcShellTheme(
-            id = it.id,
-            name = it.name,
-            fontSize = it.fontSize,
-            textColor = it.textColor,
-            highlightColor = it.highlightColor,
-            backgroundColor = it.backgroundColor,
-            animationType = it.animationType.name,
-            position = it.position.name
-        )
-    }
-    return BgmBlock(
-        enabled = bgmEnabled,
-        playlist = playlist,
-        playMode = bgmConfig?.playMode?.name ?: "LOOP",
-        volume = bgmConfig?.volume ?: 0.5f,
-        autoPlay = bgmConfig?.autoPlay ?: true,
-        showLyrics = bgmConfig?.showLyrics ?: true,
-        lrcTheme = theme
     )
 }
 

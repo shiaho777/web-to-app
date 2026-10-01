@@ -1587,4 +1587,4 @@ private fun TargetSdkOverrideRows(
 
 private const val TARGET_SDK_OVERRIDE_DEFAULT = 35
 
-private val TARGET_SDK_OVERRIDE_CHOICES = listOf(34, 35, 36)
+private val TARGET_SDK_OVERRIDE_CHOICES = listOf(28, 34, 35, 36)

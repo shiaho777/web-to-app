@@ -4,7 +4,7 @@ import java.io.File
 
 /**
  * Launch fork+exec runtimes with the right channel for the current build:
- * plain ProcessBuilder when execve works (generated APKs, targetSdk 28), or
+ * plain ProcessBuilder when execve works (older shells), or
  * the user-mode exec loader under host W^X (targetSdk>=29).
  */
 object HostProcessLauncher {

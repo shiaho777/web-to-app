@@ -4,7 +4,7 @@
 
 ## 哪些应用可以上架
 
-当前所有应用类型都基于 WebView,所以 AAB 路径覆盖构建器能创建的全部类型。生成 APK 的低 `targetSdk` 只是 APK 打包层面的细节,不会带到 Play —— 你上传的是 AAB,导出器会给它写入符合 Play 要求的 `targetSdk`(当前 36)。
+当前所有应用类型都基于 WebView,所以 AAB 路径覆盖构建器能创建的全部类型。独立 APK 的 `targetSdk`(默认 35,或被覆盖固定的值)只是 APK 打包层面的细节,不会带到 Play —— 你上传的是 AAB,导出器会给它写入符合 Play 要求的 `targetSdk`(当前 36)。
 
 | 应用类型 | Play AAB |
 | --- | --- |
@@ -37,5 +37,5 @@
 ## 说明
 
 - 你也可以从某个应用的[构建 APK](/zh/guide/app-actions/build-apk) 对话框直接针对该应用启动 AAB 导出。
-- 生成的 APK 为兼容性保持 `targetSdk` 28;只有 AAB 会为 Play 重写。所有应用类型都可在 APK 导出设置中可选地提升独立 APK 的 `targetSdk`;见[构建 APK](/zh/guide/app-actions/build-apk)。
+- 生成的 APK 携带 shell 模板的 `targetSdk` 35;只有 AAB 会为 Play 重写。所有应用类型都可在 APK 导出设置中为独立 APK 固定其他 `targetSdk`;见[构建 APK](/zh/guide/app-actions/build-apk)。
 - 导出前会显示上传前建议和警告。

@@ -173,8 +173,8 @@ fun buildAppCapabilities(editState: EditState): List<AppCapability> = listOf(
         section = AppCapabilitySection.Appearance,
         level = WtaCapabilityLevel.Common,
         icon = Icons.Outlined.Layers,
-        keywords = listOf("外观", "音乐", "bgm", "翻译", "translate", "视觉"),
-        configured = editState.bgmEnabled || editState.translateEnabled || editState.announcementEnabled
+        keywords = listOf("外观", "翻译", "translate", "视觉"),
+        configured = editState.translateEnabled || editState.announcementEnabled
     )
 )
 

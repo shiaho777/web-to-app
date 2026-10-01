@@ -26,7 +26,7 @@
 1. 编辑 `app/` 下的源码(共享运行时)。
 2. 确认该文件被 `syncShellRuntimeSources` 包含。
 3. 若需验证打包,重建 shell 模板。
-4. 保持改动外科手术式精准;shell 有低 `targetSdk` 和精简依赖集。
+4. 保持改动外科手术式精准;shell 的依赖集精简。
 5. 若触及 FGS / 通知渠道创建,通过 `SafeNotificationChannels` 软失败。
 
 ## 4. 添加宿主专属功能(编辑器、市场、工具)

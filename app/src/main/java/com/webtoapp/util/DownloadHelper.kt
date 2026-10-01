@@ -288,8 +288,7 @@ object DownloadHelper {
         // Downloads from the app's own loopback webserver skip the system DownloadManager:
         // it runs out-of-process and adds OEM failure modes (disabled/throttled provider),
         // while the in-app client reaches the embedded server directly with cookies and
-        // headers attached. Generated shells keep targetSdk 28 (legacy storage), so the
-        // in-app writer can still place files in the public Downloads directory.
+        // headers attached.
         if (DocumentDownloadPolicy.isLoopbackUrl(safeUrl) && runsAsGeneratedApp(context)) {
             AppLogger.d(TAG, "Loopback URL routed to in-app downloader: $safeUrl")
             downloadInApp(context, safeUrl, userAgent, fileName, mimeType, scope, downloadLocationMode, customDownloadDirUri)
@@ -411,9 +410,12 @@ object DownloadHelper {
         ) == PackageManager.PERMISSION_GRANTED
     }
 
-    /** Generated shells always target SDK 28 (fork+exec runtimes); the host app targets 36+. */
-    private fun runsAsGeneratedApp(context: Context): Boolean =
-        context.applicationInfo.targetSdkVersion <= 28
+    /** Generated shells carry a shell config in assets; the host app does not. */
+    private fun runsAsGeneratedApp(context: Context): Boolean = try {
+        com.webtoapp.WebToAppApplication.shellMode.isShellMode()
+    } catch (_: Exception) {
+        false
+    }
 
     private fun downloadInApp(
         context: Context,

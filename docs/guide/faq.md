@@ -57,9 +57,9 @@ See [Build APK](/guide/app-actions/build-apk).
 
 Usually yes. Every app type — Web, Multi-Web, HTML, Offline Pack, Frontend, and Gallery — exports a Play-ready AAB. The exceptions: a build with **signature-bound resource encryption** enabled, and apps of discontinued types restored from old backups. See [Google Play](/guide/more-features/google-play).
 
-### Why do generated apps target SDK 28?
+### What targetSdk do generated apps use?
 
-Generated APKs keep `targetSdk` 28 as a legacy packaging constraint, kept for compatibility. It is an APK-packaging detail only — the AAB exporter rewrites `targetSdk` to the Play-required level, so the low value never reaches Play.
+Generated APKs inherit the shell template's `targetSdk` (currently 35). The **Override targetSdk** option in [APK Export Config](/guide/app-actions/edit-common-config/apk-export) can pin a different level (28/34/35/36) for the standalone APK. For Play, the AAB exporter rewrites `targetSdk` to the Play-required level either way.
 
 ### How do I sign with my own key?
 

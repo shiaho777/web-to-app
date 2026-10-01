@@ -37,7 +37,7 @@ app/ 源码
 
 ## 唯一的 shell 模板
 
-只有**一个** shell 模板:来自 `:shell` release 的 `webview_shell.apk`。不要引入第二个模板 APK。生成的应用在 shell 路径上保持较低的 `targetSdk`(28)—— 这是出于兼容性保留的历史约束 —— 不要随意抬高 shell 的 `targetSdk`。
+只有**一个** shell 模板:来自 `:shell` release 的 `webview_shell.apk`。不要引入第二个模板 APK。shell 携带 `targetSdk` 35,同步的运行时已适配其行为(运行时权限、前台服务类型、精确闹钟兜底)—— 若该值再次变动,保持这些路径可用。`ApkExportConfig.targetSdk` 可按应用固定其他值。
 
 ## 配置中心
 
@@ -45,4 +45,4 @@ app/ 源码
 
 ## 依赖政策
 
-除非有强有力的理由,否则避免新增第三方依赖(`app/build.gradle.kts` / `shell/build.gradle.kts`)。优先使用平台 API 和现有模块。shell 有一套精简的依赖和较低的 `targetSdk` —— 保持如此。
+除非有强有力的理由,否则避免新增第三方依赖(`app/build.gradle.kts` / `shell/build.gradle.kts`)。优先使用平台 API 和现有模块。shell 有一套精简的依赖 —— 保持如此。

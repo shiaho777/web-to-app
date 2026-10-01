@@ -71,8 +71,7 @@ android {
 
         externalNativeBuild {
             cmake {
-                cppFlags += "-std=c++17"
-                arguments += "-DANDROID_STL=c++_shared"
+                // All native sources are C; no CXX flags or shared STL needed.
             }
         }
     }

@@ -375,8 +375,6 @@ fun ShellScreen(
         }
     }
 
-    val bgmState = rememberBgmPlayerState(context, config, enabled = isActivated)
-
     val webViewCallbacks = remember {
         createShellWebViewCallbacks(
             context = context,
@@ -566,7 +564,6 @@ fun ShellScreen(
         webViewCallbacks = webViewCallbacks,
         webViewManager = webViewManager,
         deepLinkUrl = deepLinkUrl ?: dynamicUrl,
-        bgmState = bgmState,
         swipeRefreshEnabled = swipeRefreshEnabled,
         isRefreshing = isRefreshing,
         onRefresh = { isRefreshing = true },

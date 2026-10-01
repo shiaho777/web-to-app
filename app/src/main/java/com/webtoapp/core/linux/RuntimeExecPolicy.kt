@@ -47,6 +47,6 @@ object RuntimeExecPolicy {
         " [受 targetSdk≥29 SELinux 限制，无法执行应用数据目录中的本地运行时]"
 
     fun hostPreviewBlockedMessage(runtimeName: String): String =
-        "当前构建 targetSdk≥29，系统安全策略禁止从应用数据目录启动 $runtimeName 运行时，本地服务器预览不可用。" +
-            "导出的 APK（targetSdk 28）不受此限制，可用导出安装验证"
+        "当前构建 targetSdk≥29，系统安全策略禁止从应用数据目录启动 $runtimeName，本地服务器预览不可用。" +
+            "该工具链仅用于宿主侧处理，导出的 APK 不依赖它"
 }

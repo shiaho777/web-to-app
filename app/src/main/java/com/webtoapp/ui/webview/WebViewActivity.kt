@@ -51,7 +51,6 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.lifecycleScope
 import com.webtoapp.ui.components.WebSwipeRefreshLayout
 import com.webtoapp.WebToAppApplication
-import com.webtoapp.core.bgm.BgmPlayer
 import com.webtoapp.core.webview.HtmlRuntimeLoadInspector
 import com.webtoapp.core.port.PortConflictException
 import com.webtoapp.core.port.PortManager
@@ -1362,8 +1361,6 @@ fun WebViewScreen(
     var splashCountdown by remember { mutableIntStateOf(0) }
     var originalOrientation by remember { mutableIntStateOf(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED) }
 
-    val bgmPlayer = remember { BgmPlayer(context) }
-
     var webViewRef by remember { mutableStateOf<WebView?>(null) }
     var browserSurfaceRef by remember { mutableStateOf<BrowserSurface?>(null) }
 
@@ -1676,10 +1673,6 @@ fun WebViewScreen(
                     }
                 }
 
-                if (app.bgmEnabled && app.bgmConfig != null && isActivated) {
-                    bgmPlayer.initialize(app.bgmConfig)
-                }
-
                 (activity as? WebViewActivity)?.fullscreenVideoOrientation =
                     app.webViewConfig.fullscreenVideoOrientation
 
@@ -1765,7 +1758,6 @@ fun WebViewScreen(
         }
 
         onDispose {
-            bgmPlayer.release()
             announcement.stopNetworkMonitoring()
         }
     }

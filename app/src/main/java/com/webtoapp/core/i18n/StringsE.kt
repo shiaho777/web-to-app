@@ -1484,19 +1484,6 @@ object StringsE {
         AppLanguage.KOREAN -> "스크롤 최적화, 메모리 관리, CDN 사전 연결 스크립트 주입"
     }
 
-    val perfOptimizeComplete: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "性能优化完成"
-        AppLanguage.ENGLISH -> "Performance optimization complete"
-        AppLanguage.ARABIC -> "اكتمل تحسين الأداء"
-        AppLanguage.PORTUGUESE -> "Otimização de desempenho concluída"
-        AppLanguage.SPANISH -> "Optimización de rendimiento completa"
-        AppLanguage.FRENCH -> "Optimisation des performances terminée"
-        AppLanguage.GERMAN -> "Leistungsoptimierung abgeschlossen"
-        AppLanguage.RUSSIAN -> "Оптимизация производительности завершена"
-        AppLanguage.JAPANESE -> "パフォーマンス最適化完了"
-        AppLanguage.KOREAN -> "성능 최적화 완료"
-    }
-
     val threatResponse: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "威胁响应策略"
         AppLanguage.ENGLISH -> "Threat Response Strategy"
@@ -3177,30 +3164,6 @@ object StringsE {
         AppLanguage.KOREAN -> "로딩 시간 초과, 재시도하세요"
     }
 
-    val musicChannelLabel: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "音乐渠道"
-        AppLanguage.ENGLISH -> "Music channel"
-        AppLanguage.ARABIC -> "قناة الموسيقى"
-        AppLanguage.PORTUGUESE -> "Canal de música"
-        AppLanguage.SPANISH -> "Canal de música"
-        AppLanguage.FRENCH -> "Canal de musique"
-        AppLanguage.GERMAN -> "Musik-Kanal"
-        AppLanguage.RUSSIAN -> "Музыкальный канал"
-        AppLanguage.JAPANESE -> "音楽チャンネル"
-        AppLanguage.KOREAN -> "음악 채널"
-    }
-    val gettingMusicDetails: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "正在获取音乐详情..."
-        AppLanguage.ENGLISH -> "Getting music details..."
-        AppLanguage.ARABIC -> "جاري الحصول على تفاصيل الموسيقى..."
-        AppLanguage.PORTUGUESE -> "Obtendo detalhes da música..."
-        AppLanguage.SPANISH -> "Obteniendo detalles de la música..."
-        AppLanguage.FRENCH -> "Obtention des détails de la musique..."
-        AppLanguage.GERMAN -> "Musikdetails werden abgerufen..."
-        AppLanguage.RUSSIAN -> "Получение деталей музыки..."
-        AppLanguage.JAPANESE -> "音楽の詳細を取得中..."
-        AppLanguage.KOREAN -> "음악 정보를 가져오는 중..."
-    }
     val getPlayUrlFailed: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "获取播放链接失败"
         AppLanguage.ENGLISH -> "Failed to get play URL"
@@ -3224,30 +3187,6 @@ object StringsE {
         AppLanguage.RUSSIAN -> "URL воспроизведения получен"
         AppLanguage.JAPANESE -> "再生 URL を取得しました"
         AppLanguage.KOREAN -> "재생 URL 획득"
-    }
-    val startDownloadMusic: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "开始下载音乐文件..."
-        AppLanguage.ENGLISH -> "Downloading music file..."
-        AppLanguage.ARABIC -> "جاري تنزيل ملف الموسيقى..."
-        AppLanguage.PORTUGUESE -> "Baixando arquivo de música..."
-        AppLanguage.SPANISH -> "Descargando archivo de música..."
-        AppLanguage.FRENCH -> "Téléchargement du fichier musical..."
-        AppLanguage.GERMAN -> "Musikdatei wird heruntergeladen..."
-        AppLanguage.RUSSIAN -> "Загрузка музыкального файла..."
-        AppLanguage.JAPANESE -> "音楽ファイルをダウンロード中..."
-        AppLanguage.KOREAN -> "음악 파일 다운로드 중..."
-    }
-    val musicDownloading: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "音乐文件下载中..."
-        AppLanguage.ENGLISH -> "Downloading music..."
-        AppLanguage.ARABIC -> "جاري تنزيل الموسيقى..."
-        AppLanguage.PORTUGUESE -> "Baixando música..."
-        AppLanguage.SPANISH -> "Descargando música..."
-        AppLanguage.FRENCH -> "Téléchargement de la musique..."
-        AppLanguage.GERMAN -> "Musik wird heruntergeladen..."
-        AppLanguage.RUSSIAN -> "Загрузка музыки..."
-        AppLanguage.JAPANESE -> "音楽をダウンロード中..."
-        AppLanguage.KOREAN -> "음악 다운로드 중..."
     }
     val downloadingCoverImage: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "正在下载封面图片..."
@@ -5475,18 +5414,6 @@ object StringsE {
         AppLanguage.JAPANESE -> "CDN リソースをダウンロード"
         AppLanguage.KOREAN -> "CDN 리소스 다운로드"
     }
-    val editLrc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "edit lrc"
-        AppLanguage.ENGLISH -> "Edit lrc"
-        AppLanguage.ARABIC -> "edit lrc"
-        AppLanguage.PORTUGUESE -> "Editar LRC"
-        AppLanguage.SPANISH -> "Editar LRC"
-        AppLanguage.FRENCH -> "Modifier le LRC"
-        AppLanguage.GERMAN -> "LRC bearbeiten"
-        AppLanguage.RUSSIAN -> "Редактировать LRC"
-        AppLanguage.JAPANESE -> "LRC を編集"
-        AppLanguage.KOREAN -> "LRC 편집"
-    }
     val engineGeckoviewDesc: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "engine geckoview"
         AppLanguage.ENGLISH -> "Engine geckoview"
@@ -5678,90 +5605,6 @@ object StringsE {
         AppLanguage.RUSSIAN -> "Предупреждение о большом файле"
         AppLanguage.JAPANESE -> "大きなファイルの警告"
         AppLanguage.KOREAN -> "대용량 파일 경고"
-    }
-    val lrcAddLine: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "歌词添加一行"
-        AppLanguage.ENGLISH -> "Lrc add line"
-        AppLanguage.ARABIC -> "إضافة سطر كلمات"
-        AppLanguage.PORTUGUESE -> "Adicionar linha de letra"
-        AppLanguage.SPANISH -> "Añadir línea de letra"
-        AppLanguage.FRENCH -> "Ajouter une ligne de paroles"
-        AppLanguage.GERMAN -> "Liedtextzeile hinzufügen"
-        AppLanguage.RUSSIAN -> "Добавить строку текста"
-        AppLanguage.JAPANESE -> "歌詞行を追加"
-        AppLanguage.KOREAN -> "가사 줄 추가"
-    }
-    val lrcBackward5s: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "歌词后退5秒"
-        AppLanguage.ENGLISH -> "Lrc backward5s"
-        AppLanguage.ARABIC -> "كلمات للخلف ٥ ثوانٍ"
-        AppLanguage.PORTUGUESE -> "Letra retroceder 5s"
-        AppLanguage.SPANISH -> "Letra retroceder 5s"
-        AppLanguage.FRENCH -> "Paroles reculer 5s"
-        AppLanguage.GERMAN -> "Liedtext 5s zurück"
-        AppLanguage.RUSSIAN -> "Текст назад 5с"
-        AppLanguage.JAPANESE -> "歌詞5秒戻る"
-        AppLanguage.KOREAN -> "가사 5초 뒤로"
-    }
-    val lrcForward5s: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "歌词前进5秒"
-        AppLanguage.ENGLISH -> "Lrc forward5s"
-        AppLanguage.ARABIC -> "كلمات للأمام ٥ ثوانٍ"
-        AppLanguage.PORTUGUESE -> "Letra avançar 5s"
-        AppLanguage.SPANISH -> "Letra avanzar 5s"
-        AppLanguage.FRENCH -> "Paroles avancer 5s"
-        AppLanguage.GERMAN -> "Liedtext 5s vor"
-        AppLanguage.RUSSIAN -> "Текст вперёд 5с"
-        AppLanguage.JAPANESE -> "歌詞5秒進む"
-        AppLanguage.KOREAN -> "가사 5초 앞으로"
-    }
-    val lrcMoveDown: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "歌词下移"
-        AppLanguage.ENGLISH -> "Lrc move down"
-        AppLanguage.ARABIC -> "تحريك الكلمات للأسفل"
-        AppLanguage.PORTUGUESE -> "Letra mover para baixo"
-        AppLanguage.SPANISH -> "Letra mover abajo"
-        AppLanguage.FRENCH -> "Paroles déplacer vers le bas"
-        AppLanguage.GERMAN -> "Liedtext nach unten"
-        AppLanguage.RUSSIAN -> "Текст вниз"
-        AppLanguage.JAPANESE -> "歌詞を下に移動"
-        AppLanguage.KOREAN -> "가사 아래로 이동"
-    }
-    val lrcMoveUp: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "歌词上移"
-        AppLanguage.ENGLISH -> "Lrc move up"
-        AppLanguage.ARABIC -> "تحريك الكلمات للأعلى"
-        AppLanguage.PORTUGUESE -> "Letra mover para cima"
-        AppLanguage.SPANISH -> "Letra mover arriba"
-        AppLanguage.FRENCH -> "Paroles déplacer vers le haut"
-        AppLanguage.GERMAN -> "Liedtext nach oben"
-        AppLanguage.RUSSIAN -> "Текст вверх"
-        AppLanguage.JAPANESE -> "歌詞を上に移動"
-        AppLanguage.KOREAN -> "가사 위로 이동"
-    }
-    val lrcSave: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "保存歌词"
-        AppLanguage.ENGLISH -> "Lrc save"
-        AppLanguage.ARABIC -> "حفظ الكلمات"
-        AppLanguage.PORTUGUESE -> "Salvar letra"
-        AppLanguage.SPANISH -> "Guardar letra"
-        AppLanguage.FRENCH -> "Enregistrer les paroles"
-        AppLanguage.GERMAN -> "Liedtext speichern"
-        AppLanguage.RUSSIAN -> "Сохранить текст"
-        AppLanguage.JAPANESE -> "歌詞を保存"
-        AppLanguage.KOREAN -> "가사 저장"
-    }
-    val lrcTimeAdjust: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "歌词时间调整"
-        AppLanguage.ENGLISH -> "Lrc time adjust"
-        AppLanguage.ARABIC -> "ضبط وقت الكلمات"
-        AppLanguage.PORTUGUESE -> "Ajustar tempo da letra"
-        AppLanguage.SPANISH -> "Ajustar tiempo de la letra"
-        AppLanguage.FRENCH -> "Ajuster le temps des paroles"
-        AppLanguage.GERMAN -> "Liedtextzeit anpassen"
-        AppLanguage.RUSSIAN -> "Корректировка времени текста"
-        AppLanguage.JAPANESE -> "歌詞タイミング調整"
-        AppLanguage.KOREAN -> "가사 시간 조정"
     }
     val myOfflineApp: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "我的离线应用"
@@ -7683,90 +7526,6 @@ object StringsE {
         AppLanguage.KOREAN -> "진입 파일을 찾을 수 없습니다"
     }
 
-    val perfScanFiles: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "扫描文件..."
-        AppLanguage.ENGLISH -> "Scanning files..."
-        AppLanguage.ARABIC -> "فحص الملفات..."
-        AppLanguage.PORTUGUESE -> "Escaneando arquivos..."
-        AppLanguage.SPANISH -> "Escaneando archivos..."
-        AppLanguage.FRENCH -> "Analyse des fichiers..."
-        AppLanguage.GERMAN -> "Dateien scannen..."
-        AppLanguage.RUSSIAN -> "Сканирование файлов..."
-        AppLanguage.JAPANESE -> "ファイルをスキャン中..."
-        AppLanguage.KOREAN -> "파일 스캔 중..."
-    }
-    val perfCompressImage: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "压缩图片: %s"
-        AppLanguage.ENGLISH -> "Compressing image: %s"
-        AppLanguage.ARABIC -> "ضغط الصورة: %s"
-        AppLanguage.PORTUGUESE -> "Comprimindo imagem: %s"
-        AppLanguage.SPANISH -> "Comprimiendo imagen: %s"
-        AppLanguage.FRENCH -> "Compression de l'image : %s"
-        AppLanguage.GERMAN -> "Bild komprimieren: %s"
-        AppLanguage.RUSSIAN -> "Сжатие изображения: %s"
-        AppLanguage.JAPANESE -> "画像を圧縮中: %s"
-        AppLanguage.KOREAN -> "이미지 압축 중: %s"
-    }
-    val perfCompressCode: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "压缩代码..."
-        AppLanguage.ENGLISH -> "Compressing code..."
-        AppLanguage.ARABIC -> "ضغط الكود..."
-        AppLanguage.PORTUGUESE -> "Comprimindo código..."
-        AppLanguage.SPANISH -> "Comprimiendo código..."
-        AppLanguage.FRENCH -> "Compression du code..."
-        AppLanguage.GERMAN -> "Code komprimieren..."
-        AppLanguage.RUSSIAN -> "Сжатие кода..."
-        AppLanguage.JAPANESE -> "コードを圧縮中..."
-        AppLanguage.KOREAN -> "코드 압축 중..."
-    }
-    val perfCompressJs: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "压缩 JS: %s"
-        AppLanguage.ENGLISH -> "Compressing JS: %s"
-        AppLanguage.ARABIC -> "ضغط JS: %s"
-        AppLanguage.PORTUGUESE -> "Comprimindo JS: %s"
-        AppLanguage.SPANISH -> "Comprimiendo JS: %s"
-        AppLanguage.FRENCH -> "Compression JS : %s"
-        AppLanguage.GERMAN -> "JS komprimieren: %s"
-        AppLanguage.RUSSIAN -> "Сжатие JS: %s"
-        AppLanguage.JAPANESE -> "JSを圧縮中: %s"
-        AppLanguage.KOREAN -> "JS 압축 중: %s"
-    }
-    val perfCompressCss: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "压缩 CSS: %s"
-        AppLanguage.ENGLISH -> "Compressing CSS: %s"
-        AppLanguage.ARABIC -> "ضغط CSS: %s"
-        AppLanguage.PORTUGUESE -> "Comprimindo CSS: %s"
-        AppLanguage.SPANISH -> "Comprimiendo CSS: %s"
-        AppLanguage.FRENCH -> "Compression CSS : %s"
-        AppLanguage.GERMAN -> "CSS komprimieren: %s"
-        AppLanguage.RUSSIAN -> "Сжатие CSS: %s"
-        AppLanguage.JAPANESE -> "CSSを圧縮中: %s"
-        AppLanguage.KOREAN -> "CSS 압축 중: %s"
-    }
-    val perfOptimizeSvg: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "优化 SVG..."
-        AppLanguage.ENGLISH -> "Optimizing SVG..."
-        AppLanguage.ARABIC -> "تحسين SVG..."
-        AppLanguage.PORTUGUESE -> "Otimizando SVG..."
-        AppLanguage.SPANISH -> "Optimizando SVG..."
-        AppLanguage.FRENCH -> "Optimisation SVG..."
-        AppLanguage.GERMAN -> "SVG optimieren..."
-        AppLanguage.RUSSIAN -> "Оптимизация SVG..."
-        AppLanguage.JAPANESE -> "SVGを最適化中..."
-        AppLanguage.KOREAN -> "SVG 최적화 중..."
-    }
-    val perfOptimizeHtml: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "优化 HTML..."
-        AppLanguage.ENGLISH -> "Optimizing HTML..."
-        AppLanguage.ARABIC -> "تحسين HTML..."
-        AppLanguage.PORTUGUESE -> "Otimizando HTML..."
-        AppLanguage.SPANISH -> "Optimizando HTML..."
-        AppLanguage.FRENCH -> "Optimisation HTML..."
-        AppLanguage.GERMAN -> "HTML optimieren..."
-        AppLanguage.RUSSIAN -> "Оптимизация HTML..."
-        AppLanguage.JAPANESE -> "HTMLを最適化中..."
-        AppLanguage.KOREAN -> "HTML 최적화 중..."
-    }
     val nodeDownloadEsbuild: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "下载 esbuild..."
         AppLanguage.ENGLISH -> "Downloading esbuild..."
@@ -8412,18 +8171,6 @@ object StringsE {
         AppLanguage.KOREAN -> "esbuild가 설치되지 않았습니다"
     }
 
-    val lrcLineCount: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "%d 行歌词"
-        AppLanguage.ENGLISH -> "%d lyric lines"
-        AppLanguage.ARABIC -> "%d سطور كلمات"
-        AppLanguage.PORTUGUESE -> "%d linhas de letra"
-        AppLanguage.SPANISH -> "%d líneas de letra"
-        AppLanguage.FRENCH -> "%d lignes de paroles"
-        AppLanguage.GERMAN -> "%d Lyrics-Zeilen"
-        AppLanguage.RUSSIAN -> "%d строк текста"
-        AppLanguage.JAPANESE -> "%d 行の歌詞"
-        AppLanguage.KOREAN -> "%d줄 가사"
-    }
 
     val signInputValidationFailed: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "签名输入验证失败: input=%s"
@@ -8535,102 +8282,6 @@ object StringsE {
         AppLanguage.KOREAN -> "ZIP 파일이 비어 있습니다"
     }
 
-    val musicCannotGetPlayUrl: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "无法获取播放链接（可能是付费/VIP歌曲）"
-        AppLanguage.ENGLISH -> "Cannot get playback URL (may be a paid/VIP song)"
-        AppLanguage.ARABIC -> "لا يمكن الحصول على رابط التشغيل (قد يكون أغنية مدفوعة/VIP)"
-        AppLanguage.PORTUGUESE -> "Não foi possível obter a URL de reprodução (pode ser uma música paga/VIP)"
-        AppLanguage.SPANISH -> "No se pudo obtener la URL de reproducción (puede ser una canción de pago/VIP)"
-        AppLanguage.FRENCH -> "Impossible d'obtenir l'URL de lecture (peut être un titre payant/VIP)"
-        AppLanguage.GERMAN -> "Wiedergabe-URL kann nicht abgerufen werden (möglicherweise bezog/VIP-Titel)"
-        AppLanguage.RUSSIAN -> "Не удалось получить URL воспроизведения (возможно, платный/VIP-трек)"
-        AppLanguage.JAPANESE -> "再生 URL を取得できません（有料/VIP楽曲の可能性があります）"
-        AppLanguage.KOREAN -> "재생 URL을 가져올 수 없습니다 (유료/VIP 곡일 수 있습니다)"
-    }
-    val musicChannelNotFound: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "渠道不存在: %s"
-        AppLanguage.ENGLISH -> "Channel not found: %s"
-        AppLanguage.ARABIC -> "القناة غير موجودة: %s"
-        AppLanguage.PORTUGUESE -> "Canal não encontrado: %s"
-        AppLanguage.SPANISH -> "Canal no encontrado: %s"
-        AppLanguage.FRENCH -> "Chaîne introuvable : %s"
-        AppLanguage.GERMAN -> "Kanal nicht gefunden: %s"
-        AppLanguage.RUSSIAN -> "Канал не найден: %s"
-        AppLanguage.JAPANESE -> "チャンネルが見つかりません: %s"
-        AppLanguage.KOREAN -> "채널을 찾을 수 없습니다: %s"
-    }
-    val musicGetDetailFailed: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "获取详情失败"
-        AppLanguage.ENGLISH -> "Failed to get track details"
-        AppLanguage.ARABIC -> "فشل الحصول على تفاصيل المسار"
-        AppLanguage.PORTUGUESE -> "Falha ao obter detalhes da faixa"
-        AppLanguage.SPANISH -> "Error al obtener los detalles de la pista"
-        AppLanguage.FRENCH -> "Échec de la récupération des détails du titre"
-        AppLanguage.GERMAN -> "Titeldetails konnten nicht abgerufen werden"
-        AppLanguage.RUSSIAN -> "Не удалось получить детали трека"
-        AppLanguage.JAPANESE -> "トラックの詳細を取得できませんでした"
-        AppLanguage.KOREAN -> "트랙 세부정보를 가져오지 못했습니다"
-    }
-    val musicDataEmpty: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "数据为空"
-        AppLanguage.ENGLISH -> "Data is empty"
-        AppLanguage.ARABIC -> "البيانات فارغة"
-        AppLanguage.PORTUGUESE -> "Os dados estão vazios"
-        AppLanguage.SPANISH -> "Los datos están vacíos"
-        AppLanguage.FRENCH -> "Les données sont vides"
-        AppLanguage.GERMAN -> "Daten sind leer"
-        AppLanguage.RUSSIAN -> "Данные пусты"
-        AppLanguage.JAPANESE -> "データが空です"
-        AppLanguage.KOREAN -> "데이터가 비어 있습니다"
-    }
-    val musicNetworkRequestFailed: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "网络请求失败"
-        AppLanguage.ENGLISH -> "Network request failed"
-        AppLanguage.ARABIC -> "فشل طلب الشبكة"
-        AppLanguage.PORTUGUESE -> "Falha na solicitação de rede"
-        AppLanguage.SPANISH -> "Error en la solicitud de red"
-        AppLanguage.FRENCH -> "Échec de la requête réseau"
-        AppLanguage.GERMAN -> "Netzwerkanfrage fehlgeschlagen"
-        AppLanguage.RUSSIAN -> "Ошибка сетевого запроса"
-        AppLanguage.JAPANESE -> "ネットワークリクエストに失敗しました"
-        AppLanguage.KOREAN -> "네트워크 요청 실패"
-    }
-    val musicCannotGetPlayUrlPaid: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "无法获取播放链接（可能是付费歌曲）"
-        AppLanguage.ENGLISH -> "Cannot get playback URL (may be a paid song)"
-        AppLanguage.ARABIC -> "لا يمكن الحصول على رابط التشغيل (قد تكون أغنية مدفوعة)"
-        AppLanguage.PORTUGUESE -> "Não foi possível obter a URL de reprodução (pode ser uma música paga)"
-        AppLanguage.SPANISH -> "No se pudo obtener la URL de reproducción (puede ser una canción de pago)"
-        AppLanguage.FRENCH -> "Impossible d'obtenir l'URL de lecture (peut être un titre payant)"
-        AppLanguage.GERMAN -> "Wiedergabe-URL kann nicht abgerufen werden (möglicherweise bezahlter Titel)"
-        AppLanguage.RUSSIAN -> "Не удалось получить URL воспроизведения (возможно, платный трек)"
-        AppLanguage.JAPANESE -> "再生 URL を取得できません（有料楽曲の可能性があります）"
-        AppLanguage.KOREAN -> "재생 URL을 가져올 수 없습니다 (유료 곡일 수 있습니다)"
-    }
-    val musicCannotGetPlayUrlShort: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "无法获取播放链接"
-        AppLanguage.ENGLISH -> "Cannot get playback URL"
-        AppLanguage.ARABIC -> "لا يمكن الحصول على رابط التشغيل"
-        AppLanguage.PORTUGUESE -> "Não foi possível obter a URL de reprodução"
-        AppLanguage.SPANISH -> "No se pudo obtener la URL de reproducción"
-        AppLanguage.FRENCH -> "Impossible d'obtenir l'URL de lecture"
-        AppLanguage.GERMAN -> "Wiedergabe-URL kann nicht abgerufen werden"
-        AppLanguage.RUSSIAN -> "Не удалось получить URL воспроизведения"
-        AppLanguage.JAPANESE -> "再生 URL を取得できません"
-        AppLanguage.KOREAN -> "재생 URL을 가져올 수 없습니다"
-    }
-    val musicNoSearchKeyword: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "无搜索关键词"
-        AppLanguage.ENGLISH -> "No search keyword"
-        AppLanguage.ARABIC -> "لا توجد كلمة بحث"
-        AppLanguage.PORTUGUESE -> "Sem palavra-chave de busca"
-        AppLanguage.SPANISH -> "Sin palabra clave de búsqueda"
-        AppLanguage.FRENCH -> "Aucun mot-clé de recherche"
-        AppLanguage.GERMAN -> "Kein Suchbegriff"
-        AppLanguage.RUSSIAN -> "Нет ключевого слова поиска"
-        AppLanguage.JAPANESE -> "検索キーワードがありません"
-        AppLanguage.KOREAN -> "검색 키워드 없음"
-    }
 
     val aiRequestFailed: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "请求失败: %s - %s"
@@ -8787,42 +8438,6 @@ object StringsE {
         AppLanguage.RUSSIAN -> "Не удалось разобрать ответ"
         AppLanguage.JAPANESE -> "レスポンスを解析できません"
         AppLanguage.KOREAN -> "응답을 분석할 수 없습니다"
-    }
-    val musicUnknownArtist: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "未知歌手"
-        AppLanguage.ENGLISH -> "Unknown Artist"
-        AppLanguage.ARABIC -> "فنان غير معروف"
-        AppLanguage.PORTUGUESE -> "Artista desconhecido"
-        AppLanguage.SPANISH -> "Artista desconocido"
-        AppLanguage.FRENCH -> "Artiste inconnu"
-        AppLanguage.GERMAN -> "Unbekannter Künstler"
-        AppLanguage.RUSSIAN -> "Неизвестный исполнитель"
-        AppLanguage.JAPANESE -> "不明なアーティスト"
-        AppLanguage.KOREAN -> "알 수 없는 아티스트"
-    }
-    val musicSearchFailed: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "搜索失败"
-        AppLanguage.ENGLISH -> "Search failed"
-        AppLanguage.ARABIC -> "فشل البحث"
-        AppLanguage.PORTUGUESE -> "Falha na busca"
-        AppLanguage.SPANISH -> "Error en la búsqueda"
-        AppLanguage.FRENCH -> "Échec de la recherche"
-        AppLanguage.GERMAN -> "Suche fehlgeschlagen"
-        AppLanguage.RUSSIAN -> "Ошибка поиска"
-        AppLanguage.JAPANESE -> "検索に失敗しました"
-        AppLanguage.KOREAN -> "검색 실패"
-    }
-    val musicSearchNoResult: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "搜索无结果"
-        AppLanguage.ENGLISH -> "No search results"
-        AppLanguage.ARABIC -> "لا توجد نتائج بحث"
-        AppLanguage.PORTUGUESE -> "Nenhum resultado de busca"
-        AppLanguage.SPANISH -> "Sin resultados de búsqueda"
-        AppLanguage.FRENCH -> "Aucun résultat de recherche"
-        AppLanguage.GERMAN -> "Keine Suchergebnisse"
-        AppLanguage.RUSSIAN -> "Нет результатов поиска"
-        AppLanguage.JAPANESE -> "検索結果なし"
-        AppLanguage.KOREAN -> "검색 결과 없음"
     }
 
     val githubImportTitle: String get() = when (Strings.lang) {
@@ -12585,18 +12200,6 @@ object StringsE {
         AppLanguage.KOREAN -> "AI 아이콘"
     }
 
-    val lrcEmptyLine: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "(空行)"
-        AppLanguage.ENGLISH -> "(empty line)"
-        AppLanguage.ARABIC -> "(سطر فارغ)"
-        AppLanguage.PORTUGUESE -> "(linha vazia)"
-        AppLanguage.SPANISH -> "(línea vacía)"
-        AppLanguage.FRENCH -> "(ligne vide)"
-        AppLanguage.GERMAN -> "(leere Zeile)"
-        AppLanguage.RUSSIAN -> "(пустая строка)"
-        AppLanguage.JAPANESE -> "(空行)"
-        AppLanguage.KOREAN -> "(빈 줄)"
-    }
 
     fun videoTrimSeconds(seconds: Int, tenths: Int): String = when (Strings.lang) {
         AppLanguage.CHINESE -> "$seconds.$tenths 秒"

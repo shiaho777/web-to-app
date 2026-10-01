@@ -1,7 +1,6 @@
 package com.webtoapp.core.apkbuilder
 
 import com.google.common.truth.Truth.assertThat
-import com.webtoapp.core.shell.BgmShellItem
 import com.webtoapp.data.model.GalleryItem
 import com.webtoapp.data.model.GalleryItemType
 import com.webtoapp.data.model.HtmlFile
@@ -74,44 +73,6 @@ class ApkArtifactVerifierTest {
         assertThat(result.checkedEntryCount).isEqualTo(3)
     }
 
-    @Test
-    fun `encrypted bgm export requires encrypted track and lyric assets`() {
-        val apk = createApk(
-            ApkTemplate.CONFIG_PATH,
-            "${ApkTemplate.CONFIG_PATH}.enc",
-            "assets/bgm/bgm_0.mp3.enc",
-            "assets/bgm/bgm_0.lrc.enc"
-        )
-
-        val result = ApkArtifactVerifier.verify(
-            ApkArtifactVerificationRequest(
-                apkFile = apk,
-                config = ApkConfig(
-                    meta = MetaBlock(
-                        appName = "Music",
-                        packageName = "com.example.music",
-                        targetUrl = "https://example.com",
-                        appType = "WEB"
-                    ),
-                    bgm = BgmBlock(
-                        enabled = true,
-                        playlist = listOf(
-                            BgmShellItem(
-                                id = "track-1",
-                                name = "Track",
-                                assetPath = "bgm/bgm_0.mp3",
-                                lrcAssetPath = "bgm/bgm_0.lrc"
-                            )
-                        )
-                    )
-                ),
-                encryptionEnabled = true
-            )
-        )
-
-        assertThat(result.passed).isTrue()
-        assertThat(result.checkedEntryCount).isEqualTo(4)
-    }
 
     @Test
     fun `gallery app reports missing embedded item`() {

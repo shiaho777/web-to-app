@@ -4,7 +4,7 @@ Export a generated app as a Play-ready signed AAB. Open it from [⋮ → Google 
 
 ## Which apps can be published
 
-All current app types are WebView-based, so the AAB path covers everything the builder can create. The generated APK's low `targetSdk` is an APK-packaging detail and never reaches Play — you upload the AAB, and the exporter gives it a Play-compliant `targetSdk` (currently 36).
+All current app types are WebView-based, so the AAB path covers everything the builder can create. The standalone APK's `targetSdk` (35 by default, or the pinned override) is an APK-packaging detail and never reaches Play — you upload the AAB, and the exporter gives it a Play-compliant `targetSdk` (currently 36).
 
 | App type | Play AAB |
 | --- | --- |
@@ -37,5 +37,5 @@ Create, import, and manage the signing keys used for the AAB.
 ## Notes
 
 - You can also launch AAB export for a specific app from its [Build APK](/guide/app-actions/build-apk) dialog.
-- The generated APK keeps `targetSdk` 28 for compatibility; only the AAB is rewritten for Play. All app types can optionally raise the standalone APK's `targetSdk` from the APK export section; see [Build APK](/guide/app-actions/build-apk).
+- The generated APK ships `targetSdk` 35 from the shell template; only the AAB is rewritten for Play. All app types can optionally pin a different `targetSdk` for the standalone APK from the APK export section; see [Build APK](/guide/app-actions/build-apk).
 - A pre-upload advisory and warning are shown before exporting.

@@ -58,8 +58,8 @@ Mental model:
 
 ## Android and packaging constraints
 
-- Generated apps keep `targetSdk` 28 for compatibility (a legacy constraint carried on the shell path). Do not raise shell targetSdk casually.
-- The host app targets SDK 36 (antivirus reputation). Host-side exec of app-data binaries is SELinux W^X-blocked, so downloaded toolchains (esbuild, via `NativeNodeEngine`) must launch through `HostProcessLauncher` (`core/linux`) — it picks ProcessBuilder where exec is allowed or the memfd static exec bridge (`StaticExecProcess`/`RuntimeExecPolicy`) on W^X hosts, and returns a clear error when neither is available. A raw `Runtime.exec`/`ProcessBuilder` on a downloaded binary fails on the host (#795).
+- Generated apps ship `targetSdk` 35 (the shell template's `targetSdk`); `ApkExportConfig.targetSdk` can pin another value and the AAB path forces `DEFAULT_PLAY_TARGET_SDK` (36). The shell runtime is already adapted (POST_NOTIFICATIONS gating, FGS types, exact-alarm fallback, `enableEdgeToEdge`) — keep those paths working if the value moves again.
+- The host app targets SDK 36 (antivirus reputation). Host-side exec of app-data binaries is SELinux W^X-blocked, so downloaded toolchains (esbuild, via `NativeNodeEngine`) must launch through `HostProcessLauncher` (`core/linux`) — it picks ProcessBuilder where exec is allowed or the memfd static exec bridge (`StaticExecProcess`/`RuntimeExecPolicy`) on W^X hosts, and returns a clear error when neither is available. A raw `Runtime.exec`/`ProcessBuilder` on a downloaded binary fails on the host (#795). The exec bridge is host-only — generated APKs exec nothing, and the bridge classes are excluded from the shell sync.
 - Avoid new third-party dependencies unless strongly justified (`app/build.gradle.kts` / `shell/build.gradle.kts`). Prefer platform APIs and existing modules.
 - Notification push channels: Web Notification polyfill, polling, WebSocket, FCM (developer-owned Firebase config). Do not add OEM vendor push SDKs by default.
 - Foreground services and notification helpers must use `SafeNotificationChannels` (or equivalent fail-soft create). Channel creation failures must not crash FGS startup.
@@ -181,7 +181,7 @@ Missing any step usually yields: editor shows the switch, export ignores it, or 
 1. Edit the source under `app/` (shared runtime).
 2. Confirm the file is included by `syncShellRuntimeSources`.
 3. Rebuild shell template if you need to validate packaging.
-4. Keep changes surgical; shell has a low targetSdk and a thin dependency set.
+4. Keep changes surgical; shell ships a thin dependency set and a curated source sync.
 5. If you touch FGS / notification channel creation, fail soft via `SafeNotificationChannels`.
 
 ### 4. Add a host-only feature (editor, market, tooling)
@@ -291,7 +291,7 @@ Hard rules learned the hard way:
 - **Keyboard avoidance below API 30 requires the classic window path.** Android 10 and lower have no native IME-inset dispatch: an edge-to-edge window (`decorFitsSystemWindows = false`) is never resized for the keyboard and reports zero IME insets, so no `softInputMode` value helps there. `WindowHelper.applyImmersiveFullscreen` therefore keeps the decor fitting system windows on the RESIZE keyboard path below API 30 (system `SOFT_INPUT_ADJUST_RESIZE` works) and degrades TRANSPARENT/IMAGE status-bar styles to solid colors on that path. Do not re-enable edge-to-edge unconditionally for those devices (#613; #634 flipped only the softInputMode bits and fixed nothing — its Robolectric test passed because it never asserted the layout flags).
 - **Shared sources are authored in `app/`.** Editing only a file under `shell/src` is usually wrong; it will be overwritten on sync or diverge from host.
 - **Config field names drift.** Editor model, `ApkConfig`, JSON factory, and shell config must stay aligned; Gson silently drops unknown/missing fields. Run `checkConfigFieldDrift`.
-- **Low targetSdk (28) is a kept compatibility constraint** — it constrains "modernize the shell SDK" changes.
+- **Shell `targetSdk` 35 is now the baseline** — behavior differences (runtime perms, FGS types, BAL, exact alarms) are already handled in synced code; keep the audit items green when touching shell startup/notifications.
 - **Incremental export cache** keys must be content-based; mtime and resigned APKs create false hits/misses.
 - **HTML/FRONTEND file access.** Packaged local-file shells must have `allowFileAccess = true` (forced in `buildWebViewBlock` and `ShellWebViewConfig`); do not regress pure file-based HTML loads.
 - **16KB page alignment.** Large ELF natives shipped in exports must be 16KB-aligned (`ElfAligner16k`) for Android 15+ devices.

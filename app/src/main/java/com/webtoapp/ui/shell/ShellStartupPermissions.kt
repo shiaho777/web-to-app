@@ -98,8 +98,10 @@ class ShellStartupPermissions(private val activity: AppCompatActivity) {
     private fun runtimeTargetSdk(): Int = try {
         activity.applicationInfo.targetSdkVersion
     } catch (e: Exception) {
-        AppLogger.w(TAG, "读取 targetSdkVersion 失败，按 28 处理", e)
-        Build.VERSION_CODES.P
+        // Fall back to the template's own target so permission gating still works
+        // if the package info read unexpectedly fails.
+        AppLogger.w(TAG, "读取 targetSdkVersion 失败，按 35 处理", e)
+        Build.VERSION_CODES.VANILLA_ICE_CREAM
     }
 
     private fun buildSpecialQueue(declared: Set<String>, floatingWindowHandlesOverlay: Boolean) {

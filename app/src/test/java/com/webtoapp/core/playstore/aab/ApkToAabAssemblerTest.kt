@@ -124,7 +124,7 @@ class ApkToAabAssemblerTest {
         assertThat(
             com.webtoapp.core.playstore.aab.axml.ProtoManifestRewriter
                 .extractTargetSdkVersion(originalManifest)
-        ).isEqualTo(28)
+        ).isEqualTo(35)
 
         val rewrittenAab = temp.newFile("rewritten.aab")
         ApkToAabAssembler().assemble(

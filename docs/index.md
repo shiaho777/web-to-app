@@ -158,7 +158,7 @@ Clone and rebrand installed APKs, batch-import definitions, export templates.
 
 </div>
 
-The builder does its own binary patching — AXML/ARSC rewriting, permission pruning, AES-256-GCM resource encryption, 16 KB page-aligned native libraries — and keeps a low targetSdk shell for compatibility. The [developer docs](/developer/architecture) cover the full export pipeline.
+The builder does its own binary patching — AXML/ARSC rewriting, permission pruning, AES-256-GCM resource encryption, 16 KB page-aligned native libraries — and ships a `targetSdk` 35 shell runtime. The [developer docs](/developer/architecture) cover the full export pipeline.
 
 <div class="wta-cta">
 

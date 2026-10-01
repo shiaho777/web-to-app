@@ -136,29 +136,6 @@ internal object ApkArtifactVerifier {
                     )
                 }
 
-                if (request.config.bgmEnabled) {
-                    request.config.bgmPlaylist.forEachIndexed { index, item ->
-                        issues.requireAsset(
-                            entries = entries,
-                            checkedEntries = checkedEntries,
-                            key = "bgmPlaylist[$index]",
-                            path = normalizePackagedAssetPath(item.assetPath),
-                            label = "BGM track ${index + 1}",
-                            encrypted = request.encryptionEnabled
-                        )
-                        item.lrcAssetPath?.takeIf { it.isNotBlank() }?.let { lrcPath ->
-                            issues.requireAsset(
-                                entries = entries,
-                                checkedEntries = checkedEntries,
-                                key = "bgmLyrics[$index]",
-                                path = normalizePackagedAssetPath(lrcPath),
-                                label = "BGM lyric ${index + 1}",
-                                encrypted = request.encryptionEnabled
-                            )
-                        }
-                    }
-                }
-
                 ApkArtifactVerificationResult(
                     issues = issues,
                     entryCount = entries.size,

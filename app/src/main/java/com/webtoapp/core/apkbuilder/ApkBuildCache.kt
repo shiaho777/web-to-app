@@ -102,7 +102,6 @@ class ApkBuildCache(private val context: Context) {
         abiFilters: List<String>,
         projectDirs: List<File?>,
         splashMediaPath: String?,
-        bgmPlaylistPaths: List<String>,
         htmlFiles: List<com.webtoapp.data.model.HtmlFile>,
         galleryItems: List<com.webtoapp.data.model.GalleryItem>,
         errorPageMediaPath: String?,
@@ -132,7 +131,6 @@ class ApkBuildCache(private val context: Context) {
             config = config,
             projectDirs = projectDirs,
             splashMediaPath = splashMediaPath,
-            bgmPlaylistPaths = bgmPlaylistPaths,
             htmlFiles = htmlFiles,
             galleryItems = galleryItems,
             errorPageMediaPath = errorPageMediaPath,
@@ -297,7 +295,6 @@ class ApkBuildCache(private val context: Context) {
         if (entryName.startsWith("assets/splash_media.")) return true
         if (entryName.startsWith("assets/error_page_media.")) return true
         if (entryName.startsWith("assets/gallery/")) return true
-        if (entryName.startsWith("assets/bgm/")) return true
         if (entryName.startsWith("assets/html/")) return true
         if (entryName.startsWith("assets/html_projects/")) return true
         if (entryName.startsWith("assets/frontend_app/")) return true
@@ -388,8 +385,8 @@ class ApkBuildCache(private val context: Context) {
         // rejects on Android 15+ (16KB-page) devices.
         parts += "nativeLibs=${nativeLibsFingerprint ?: "none"}"
         // targetSdk override changes the manifest's <uses-sdk>; without this a cached unsigned
-        // APK with targetSdk 28 would be reused after the user raises it, defeating the change.
-        parts += "targetSdk=${config.targetSdkOverride ?: 28}"
+        // APK would be reused after the user changes it, defeating the override.
+        parts += "targetSdk=${config.targetSdkOverride ?: 35}"
         // The derived manifest permission/component set: CONTENT_OVERLAY reuses the
         // cached base's AndroidManifest, so a config change that alters this set without
         // touching any other identity part (e.g. enabling scheduled start →
@@ -411,7 +408,6 @@ class ApkBuildCache(private val context: Context) {
         config: ApkConfig,
         projectDirs: List<File?>,
         splashMediaPath: String?,
-        bgmPlaylistPaths: List<String>,
         htmlFiles: List<com.webtoapp.data.model.HtmlFile>,
         galleryItems: List<com.webtoapp.data.model.GalleryItem>,
         errorPageMediaPath: String?,
@@ -430,9 +426,6 @@ class ApkBuildCache(private val context: Context) {
         parts += "statusBar=${fileFingerprint(statusBarImage)}"
         parts += "statusBarDark=${fileFingerprint(statusBarImageDark)}"
         parts += "floatingIcon=${fileFingerprint(floatingIcon)}"
-        bgmPlaylistPaths.forEachIndexed { index, path ->
-            parts += "bgm[$index]=${fileFingerprint(path)}"
-        }
         htmlFiles.forEachIndexed { index, file ->
             parts += "html[$index]=${file.name}|${fileFingerprint(file.path)}"
         }

@@ -158,7 +158,7 @@ URL 封装、多标签页枢纽、门户与链接流。
 
 </div>
 
-构建器自己做二进制手术 —— AXML/ARSC 重写、权限裁剪、AES-256-GCM 资源加密、16 KB 页对齐的原生库 —— 并让 shell 保持低 targetSdk 以兼容。[开发者文档](/zh/developer/architecture)覆盖了完整的导出管线。
+构建器自己做二进制手术 —— AXML/ARSC 重写、权限裁剪、AES-256-GCM 资源加密、16 KB 页对齐的原生库 —— 并让 shell 携带 `targetSdk` 35。[开发者文档](/zh/developer/architecture)覆盖了完整的导出管线。
 
 <div class="wta-cta">
 

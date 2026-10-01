@@ -1084,7 +1084,7 @@ class JarSigner(private val context: Context) {
     fun sign(
         inputApk: File,
         outputApk: File,
-        targetSdk: Int = 28,
+        targetSdk: Int = 35,
         identity: SigningIdentity? = null
     ): Boolean {
 

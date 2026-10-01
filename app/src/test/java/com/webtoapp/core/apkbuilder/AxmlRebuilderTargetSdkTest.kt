@@ -10,7 +10,7 @@ import java.util.zip.ZipFile
 /**
  * Verifies [AxmlRebuilder.expandAndModifyFull] rewrites the `<uses-sdk
  * android:targetSdkVersion>` attribute on the generated APK's manifest. The shell template
- * ships targetSdk 28; WebView-only app types may raise it (issue #503) and the rewrite must
+ * ships targetSdk 35; exports may pin another value (issue #503) and the rewrite must
  * land in the binary AXML that gets packaged into the APK.
  */
 class AxmlRebuilderTargetSdkTest {
@@ -50,7 +50,7 @@ class AxmlRebuilderTargetSdkTest {
         )
 
         val before = targetSdkOf(original!!)
-        assertThat(before).isEqualTo(28)
+        assertThat(before).isEqualTo(35)
 
         val rewritten = rebuilder.expandAndModifyFull(
             original,
@@ -58,11 +58,11 @@ class AxmlRebuilderTargetSdkTest {
             newPackage = "com.example.raised",
             versionCode = 1,
             versionName = "1.0.0",
-            targetSdk = 35
+            targetSdk = 36
         )
 
         val after = targetSdkOf(rewritten)
-        assertThat(after).isEqualTo(35)
+        assertThat(after).isEqualTo(36)
     }
 
     @Test
@@ -82,7 +82,7 @@ class AxmlRebuilderTargetSdkTest {
             targetSdk = null
         )
 
-        assertThat(targetSdkOf(rewritten)).isEqualTo(28)
+        assertThat(targetSdkOf(rewritten)).isEqualTo(35)
     }
 
     @Test

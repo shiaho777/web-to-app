@@ -15,6 +15,5 @@
 ## 媒体与内容
 
 - [启动动画](/zh/guide/app-actions/edit-common-config/splash) —— 图片/视频启动、跳过、裁剪。
-- [背景音乐](/zh/guide/app-actions/edit-common-config/bgm) —— 播放列表、歌词、样式。
 - [弹窗公告](/zh/guide/app-actions/edit-common-config/announcement) —— 公告模板与时机。
 - [网页自动翻译](/zh/guide/app-actions/edit-common-config/translate) —— 页内翻译叠加层。

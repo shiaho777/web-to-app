@@ -22,7 +22,6 @@ This section documents **every card**, one page each, in the order they appear i
 ## Media & interaction
 
 - [Splash Animation](/guide/app-actions/edit-common-config/splash)
-- [Background Music](/guide/app-actions/edit-common-config/bgm)
 - [Popup Announcement](/guide/app-actions/edit-common-config/announcement)
 - [Webpage Auto Translation](/guide/app-actions/edit-common-config/translate)
 

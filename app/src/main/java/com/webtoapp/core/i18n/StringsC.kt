@@ -3352,102 +3352,6 @@ object StringsC {
         AppLanguage.KOREAN -> "이미지 선택/업로드"
     }
 
-    val lrcThemeDefault: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "默认"
-        AppLanguage.ENGLISH -> "Default"
-        AppLanguage.ARABIC -> "افتراضي"
-        AppLanguage.PORTUGUESE -> "Padrão"
-        AppLanguage.SPANISH -> "Predeterminado"
-        AppLanguage.FRENCH -> "Par défaut"
-        AppLanguage.GERMAN -> "Standard"
-        AppLanguage.RUSSIAN -> "По умолчанию"
-        AppLanguage.JAPANESE -> "デフォルト"
-        AppLanguage.KOREAN -> "기본"
-    }
-    val lrcThemeKaraoke: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "卡拉OK"
-        AppLanguage.ENGLISH -> "Karaoke"
-        AppLanguage.ARABIC -> "كاريوكي"
-        AppLanguage.PORTUGUESE -> "Karaokê"
-        AppLanguage.SPANISH -> "Karaoke"
-        AppLanguage.FRENCH -> "Karaoké"
-        AppLanguage.GERMAN -> "Karaoke"
-        AppLanguage.RUSSIAN -> "Караоке"
-        AppLanguage.JAPANESE -> "カラオケ"
-        AppLanguage.KOREAN -> "노래방"
-    }
-    val lrcThemeNeon: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "霓虹"
-        AppLanguage.ENGLISH -> "Neon"
-        AppLanguage.ARABIC -> "نيون"
-        AppLanguage.PORTUGUESE -> "Neon"
-        AppLanguage.SPANISH -> "Neón"
-        AppLanguage.FRENCH -> "Néon"
-        AppLanguage.GERMAN -> "Neon"
-        AppLanguage.RUSSIAN -> "Неон"
-        AppLanguage.JAPANESE -> "ネオン"
-        AppLanguage.KOREAN -> "네온"
-    }
-    val lrcThemeMinimal: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "极简"
-        AppLanguage.ENGLISH -> "Minimal"
-        AppLanguage.ARABIC -> "بسيط"
-        AppLanguage.PORTUGUESE -> "Minimalista"
-        AppLanguage.SPANISH -> "Minimalista"
-        AppLanguage.FRENCH -> "Minimaliste"
-        AppLanguage.GERMAN -> "Minimalistisch"
-        AppLanguage.RUSSIAN -> "Минимализм"
-        AppLanguage.JAPANESE -> "ミニマル"
-        AppLanguage.KOREAN -> "미니멀"
-    }
-    val lrcThemeClassic: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "经典"
-        AppLanguage.ENGLISH -> "Classic"
-        AppLanguage.ARABIC -> "كلاسيكي"
-        AppLanguage.PORTUGUESE -> "Clássico"
-        AppLanguage.SPANISH -> "Clásico"
-        AppLanguage.FRENCH -> "Classique"
-        AppLanguage.GERMAN -> "Klassisch"
-        AppLanguage.RUSSIAN -> "Классический"
-        AppLanguage.JAPANESE -> "クラシック"
-        AppLanguage.KOREAN -> "클래식"
-    }
-    val lrcThemeDark: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "暗夜"
-        AppLanguage.ENGLISH -> "Dark"
-        AppLanguage.ARABIC -> "داكن"
-        AppLanguage.PORTUGUESE -> "Escuro"
-        AppLanguage.SPANISH -> "Oscuro"
-        AppLanguage.FRENCH -> "Sombre"
-        AppLanguage.GERMAN -> "Dunkel"
-        AppLanguage.RUSSIAN -> "Тёмный"
-        AppLanguage.JAPANESE -> "ダーク"
-        AppLanguage.KOREAN -> "다크"
-    }
-    val lrcThemeRomantic: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "浪漫"
-        AppLanguage.ENGLISH -> "Romantic"
-        AppLanguage.ARABIC -> "رومانسي"
-        AppLanguage.PORTUGUESE -> "Romântico"
-        AppLanguage.SPANISH -> "Romántico"
-        AppLanguage.FRENCH -> "Romantique"
-        AppLanguage.GERMAN -> "Romantisch"
-        AppLanguage.RUSSIAN -> "Романтичный"
-        AppLanguage.JAPANESE -> "ロマンティック"
-        AppLanguage.KOREAN -> "로맨틱"
-    }
-    val lrcThemeEnergetic: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "活力"
-        AppLanguage.ENGLISH -> "Energetic"
-        AppLanguage.ARABIC -> "نشط"
-        AppLanguage.PORTUGUESE -> "Energético"
-        AppLanguage.SPANISH -> "Enérgico"
-        AppLanguage.FRENCH -> "Énergique"
-        AppLanguage.GERMAN -> "Energetisch"
-        AppLanguage.RUSSIAN -> "Энергичный"
-        AppLanguage.JAPANESE -> "エネルギッシュ"
-        AppLanguage.KOREAN -> "에너제틱"
-    }
 
     val testPageBasicHtml: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "基础HTML页面"
@@ -5318,17 +5222,17 @@ object StringsC {
         AppLanguage.KOREAN -> "외관 및 미디어"
     }
 
-    val capabilityAppearanceMediaHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "背景音乐、翻译按钮和视觉配置"
-        AppLanguage.ENGLISH -> "BGM, translate button, and visual settings"
-        AppLanguage.ARABIC -> "الموسيقى الخلفية وزر الترجمة والإعدادات المرئية"
-        AppLanguage.PORTUGUESE -> "BGM, botão de tradução e configurações visuais"
-        AppLanguage.SPANISH -> "BGM, botón de traducción y configuraciones visuales"
-        AppLanguage.FRENCH -> "BGM, bouton de traduction et paramètres visuels"
-        AppLanguage.GERMAN -> "BGM, Übersetzen-Button und visuelle Einstellungen"
-        AppLanguage.RUSSIAN -> "BGM, кнопка перевода и визуальные настройки"
-        AppLanguage.JAPANESE -> "BGM、翻訳ボタン、視覚設定"
-        AppLanguage.KOREAN -> "BGM, 번역 버튼, 시각 설정"
+        val capabilityAppearanceMediaHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "翻译按钮和视觉配置"
+        AppLanguage.ENGLISH -> "Translate button and visual settings"
+        AppLanguage.ARABIC -> "زر الترجمة والإعدادات المرئية"
+        AppLanguage.PORTUGUESE -> "Botão de tradução e configurações visuais"
+        AppLanguage.SPANISH -> "Botón de traducción y configuraciones visuales"
+        AppLanguage.FRENCH -> "Bouton de traduction et paramètres visuels"
+        AppLanguage.GERMAN -> "Übersetzen-Button und visuelle Einstellungen"
+        AppLanguage.RUSSIAN -> "Кнопка перевода и визуальные настройки"
+        AppLanguage.JAPANESE -> "翻訳ボタンと視覚設定"
+        AppLanguage.KOREAN -> "번역 버튼 및 시각 설정"
     }
 
     val networkTrustTitle: String get() = when (Strings.lang) {
@@ -6937,18 +6841,6 @@ object StringsC {
         AppLanguage.KOREAN -> "모델 편집"
     }
 
-    val bgmTitle: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "背景音乐"
-        AppLanguage.ENGLISH -> "Background Music"
-        AppLanguage.ARABIC -> "موسيقى الخلفية"
-        AppLanguage.PORTUGUESE -> "Música de Fundo"
-        AppLanguage.SPANISH -> "Música de Fondo"
-        AppLanguage.FRENCH -> "Musique de Fond"
-        AppLanguage.GERMAN -> "Hintergrundmusik"
-        AppLanguage.RUSSIAN -> "Фоновая музыка"
-        AppLanguage.JAPANESE -> "背景音楽"
-        AppLanguage.KOREAN -> "배경 음악"
-    }
 
     val andMoreTracks: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "还有 %d 首..."
@@ -6963,31 +6855,7 @@ object StringsC {
         AppLanguage.KOREAN -> "외 %d곡..."
     }
 
-    val bgmLibraryTitle: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "音乐库"
-        AppLanguage.ENGLISH -> "Music Library"
-        AppLanguage.ARABIC -> "مكتبة الموسيقى"
-        AppLanguage.PORTUGUESE -> "Biblioteca de Música"
-        AppLanguage.SPANISH -> "Biblioteca de Música"
-        AppLanguage.FRENCH -> "Bibliothèque Musicale"
-        AppLanguage.GERMAN -> "Musikbibliothek"
-        AppLanguage.RUSSIAN -> "Медиатека"
-        AppLanguage.JAPANESE -> "ミュージックライブラリ"
-        AppLanguage.KOREAN -> "음악 라이브러리"
-    }
 
-    val bgmTrackCount: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "%d 首"
-        AppLanguage.ENGLISH -> "%d tracks"
-        AppLanguage.ARABIC -> "%d مقاطع"
-        AppLanguage.PORTUGUESE -> "%d faixas"
-        AppLanguage.SPANISH -> "%d pistas"
-        AppLanguage.FRENCH -> "%d morceaux"
-        AppLanguage.GERMAN -> "%d Titel"
-        AppLanguage.RUSSIAN -> "%d треков"
-        AppLanguage.JAPANESE -> "%d 曲"
-        AppLanguage.KOREAN -> "%d곡"
-    }
 
     val moreOptions: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "更多选项"
@@ -7618,42 +7486,42 @@ object StringsC {
     }
 
     val targetSdkOverrideTitle: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "提升 targetSdk"
-        AppLanguage.ENGLISH -> "Raise targetSdk"
-        AppLanguage.ARABIC -> "رفع targetSdk"
-        AppLanguage.PORTUGUESE -> "Elevar targetSdk"
-        AppLanguage.SPANISH -> "Subir targetSdk"
-        AppLanguage.FRENCH -> "Augmenter targetSdk"
-        AppLanguage.GERMAN -> "targetSdk anheben"
-        AppLanguage.RUSSIAN -> "Повысить targetSdk"
-        AppLanguage.JAPANESE -> "targetSdk を引き上げ"
-        AppLanguage.KOREAN -> "targetSdk 올리기"
+        AppLanguage.CHINESE -> "自定义 targetSdk"
+        AppLanguage.ENGLISH -> "Override targetSdk"
+        AppLanguage.ARABIC -> "تجاوز targetSdk"
+        AppLanguage.PORTUGUESE -> "Substituir targetSdk"
+        AppLanguage.SPANISH -> "Sobrescribir targetSdk"
+        AppLanguage.FRENCH -> "Remplacer targetSdk"
+        AppLanguage.GERMAN -> "targetSdk überschreiben"
+        AppLanguage.RUSSIAN -> "Изменить targetSdk"
+        AppLanguage.JAPANESE -> "targetSdk を上書き"
+        AppLanguage.KOREAN -> "targetSdk 재정의"
     }
 
     val targetSdkOverrideOffHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "默认保持 targetSdk 28。仅对纯 WebView 应用类型可用（Node/PHP/Python/Go/WordPress 等需 fork+exec 的运行时必须保留 28）。上架 Google Play 请改用「更多 → Google Play」的 AAB 导出。"
-        AppLanguage.ENGLISH -> "Keeps targetSdk 28 by default. Only available for WebView-only app types (Node/PHP/Python/Go/WordPress runtimes must stay at 28). For Google Play use the AAB export under More → Google Play."
-        AppLanguage.ARABIC -> "يبقي targetSdk 28 افتراضيًا. متاح فقط لأنواع التطبيقات التي تعتمد على WebView فقط (أوقات تشغيل Node/PHP/Python/Go/WordPress يجب أن تبقى على 28). للنشر على Google Play استخدم تصدير AAB ضمن المزيد → Google Play."
-        AppLanguage.PORTUGUESE -> "Mantém targetSdk 28 por padrão. Disponível apenas para tipos de app baseados em WebView (runtimes Node/PHP/Python/Go/WordPress devem permanecer em 28). Para a Google Play, use a exportação AAB em Mais → Google Play."
-        AppLanguage.SPANISH -> "Mantiene targetSdk 28 por defecto. Solo disponible para tipos de app basados en WebView (los runtimes Node/PHP/Python/Go/WordPress deben permanecer en 28). Para Google Play usa la exportación AAB en Más → Google Play."
-        AppLanguage.FRENCH -> "Garde targetSdk 28 par défaut. Uniquement disponible pour les types d'app basés sur WebView (les runtimes Node/PHP/Python/Go/WordPress doivent rester à 28). Pour Google Play, utilisez l'export AAB dans Plus → Google Play."
-        AppLanguage.GERMAN -> "Behält standardmäßig targetSdk 28 bei. Nur für reine WebView-App-Typen verfügbar (Node/PHP/Python/Go/WordPress-Runtimes müssen bei 28 bleiben). Für Google Play den AAB-Export unter Mehr → Google Play verwenden."
-        AppLanguage.RUSSIAN -> "По умолчанию targetSdk 28. Доступно только для приложений на базе WebView (рантаймы Node/PHP/Python/Go/WordPress должны оставаться на 28). Для Google Play используйте экспорт AAB в разделе Ещё → Google Play."
-        AppLanguage.JAPANESE -> "デフォルトは targetSdk 28 のままです。WebView のみのアプリ種別でのみ利用可能です（Node/PHP/Python/Go/WordPress などのランタイムは 28 のままにする必要があります）。Google Play への公開は「その他 → Google Play」の AAB エクスポートをご利用ください。"
-        AppLanguage.KOREAN -> "기본적으로 targetSdk 28을 유지합니다. WebView 전용 앱 유형에만 사용할 수 있습니다 (Node/PHP/Python/Go/WordPress 런타임은 28을 유지해야 함). Google Play 배포는 '더보기 → Google Play'의 AAB 내보내기를 사용하세요."
+        AppLanguage.CHINESE -> "默认 targetSdk 35（Android 15）。开启后可为生成的 APK 固定其他 API 级别，用于兼容旧设备行为或满足渠道要求。上架 Google Play 请改用「更多 → Google Play」的 AAB 导出。"
+        AppLanguage.ENGLISH -> "Defaults to targetSdk 35 (Android 15). Turn on to pin a different API level for the generated APK — useful for legacy behavior or channel requirements. For Google Play use the AAB export under More → Google Play."
+        AppLanguage.ARABIC -> "الافتراضي targetSdk 35 (Android 15). فعّل هذا لتثبيت مستوى API مختلف للتطبيق المُنشأ — مفيد للسلوك القديم أو متطلبات القنوات. للنشر على Google Play استخدم تصدير AAB ضمن المزيد → Google Play."
+        AppLanguage.PORTUGUESE -> "O padrão é targetSdk 35 (Android 15). Ative para fixar outro nível de API no APK gerado — útil para comportamento legado ou requisitos de canais. Para a Google Play, use a exportação AAB em Mais → Google Play."
+        AppLanguage.SPANISH -> "El valor predeterminado es targetSdk 35 (Android 15). Actívalo para fijar otro nivel de API en el APK generado: útil para comportamiento heredado o requisitos de canales. Para Google Play usa la exportación AAB en Más → Google Play."
+        AppLanguage.FRENCH -> "Par défaut targetSdk 35 (Android 15). Activez pour fixer un autre niveau d'API pour l'APK généré — utile pour un comportement hérité ou des exigences de canal. Pour Google Play, utilisez l'export AAB dans Plus → Google Play."
+        AppLanguage.GERMAN -> "Standard ist targetSdk 35 (Android 15). Aktivieren, um ein anderes API-Level für das generierte APK festzulegen — nützlich für Legacy-Verhalten oder Kanalanforderungen. Für Google Play den AAB-Export unter Mehr → Google Play verwenden."
+        AppLanguage.RUSSIAN -> "По умолчанию targetSdk 35 (Android 15). Включите, чтобы зафиксировать другой уровень API для генерируемого APK — полезно для старого поведения или требований каналов. Для Google Play используйте экспорт AAB в разделе Ещё → Google Play."
+        AppLanguage.JAPANESE -> "デフォルトは targetSdk 35（Android 15）です。オンにすると生成 APK に別の API レベルを固定できます。旧動作との互換や配信チャンネルの要件に便利です。Google Play への公開は「その他 → Google Play」の AAB エクスポートをご利用ください。"
+        AppLanguage.KOREAN -> "기본값은 targetSdk 35(Android 15)입니다. 켜면 생성된 APK에 다른 API 레벨을 고정할 수 있습니다. 레거시 동작이나 채널 요구사항에 유용합니다. Google Play 배포는 '더보기 → Google Play'의 AAB보내기를 사용하세요."
     }
 
     val targetSdkOverrideOnHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "已提升生成的 APK 的 targetSdk。运行时已适配（暗色模式、通知权限、前台服务等）。仍需用 AAB 导出上架 Google Play；此处用于侧载或第三方分发渠道。"
-        AppLanguage.ENGLISH -> "Generated APK's targetSdk is raised. Runtime is adapted (dark mode, notification permission, foreground services). Still use AAB export for Google Play; this is for sideload or third-party distribution."
-        AppLanguage.ARABIC -> "تم رفع targetSdk للتطبيق المُنشأ. تم تكييف وقت التشغيل (الوضع الداكن، إذن الإشعارات، الخدمات الأمامية). لا يزال يلزم تصدير AAB للنشر على Google Play؛ هذا مخصص للتثبيت الجانبي أو قنوات الطرف الثالث."
-        AppLanguage.PORTUGUESE -> "O targetSdk do APK gerado foi elevado. O runtime foi adaptado (modo escuro, permissão de notificação, serviços em primeiro plano). Ainda use a exportação AAB para a Google Play; isto é para sideload ou canais de terceiros."
-        AppLanguage.SPANISH -> "Se elevó el targetSdk del APK generado. El runtime está adaptado (modo oscuro, permiso de notificaciones, servicios en primer plano). Sigue usando la exportación AAB para Google Play; esto es para sideload o canales de terceros."
-        AppLanguage.FRENCH -> "Le targetSdk de l'APK généré a été augmenté. Le runtime est adapté (mode sombre, autorisation de notification, services de premier plan). Utilisez toujours l'export AAB pour Google Play ; ceci est pour le sideload ou la distribution tierce."
-        AppLanguage.GERMAN -> "Das targetSdk des generierten APK wurde angehoben. Die Laufzeit ist angepasst (Dunkelmodus, Benachrichtigungsberechtigung, Vordergrunddienste). Für Google Play weiterhin den AAB-Export verwenden; dies ist für Sideload oder Drittanbieter-Vertrieb."
-        AppLanguage.RUSSIAN -> "targetSdk сгенерированного APK повышен. Среда выполнения адаптирована (тёмный режим, разрешение на уведомления, фоновые службы). Для Google Play всё равно используйте экспорт AAB; это — для sideload или сторонних каналов."
-        AppLanguage.JAPANESE -> "生成された APK の targetSdk を引き上げました。ランタイムは適応済み（ダークモード、通知権限、フォアグラウンドサービス）。Google Play 公開には引き続き AAB エクスポートを使用してください。こちらはサイドロードやサードパーティ配布向けです。"
-        AppLanguage.KOREAN -> "생성된 APK의 targetSdk가 올라갔습니다. 런타임이 적응되었습니다 (다크 모드, 알림 권한, 포그라운드 서비스). Google Play 배포에는 여전히 AAB 내보내기를 사용하세요. 이 옵션은 사이드로드 또는 타사 배포용입니다."
+        AppLanguage.CHINESE -> "生成的 APK 将使用所选 targetSdk。运行时已适配现代 Android 行为（通知权限、前台服务类型、精确闹钟兜底等）。上架 Google Play 请用「更多 → Google Play」的 AAB 导出；此处用于侧载或第三方分发渠道。"
+        AppLanguage.ENGLISH -> "The generated APK will use the selected targetSdk. The runtime already handles modern Android behavior (notification permission, foreground-service types, exact-alarm fallback). Use AAB export for Google Play; this is for sideload or third-party distribution."
+        AppLanguage.ARABIC -> "سيستخدم التطبيق المُنشأ targetSdk المحدد. وقت التشغيل يتعامل مع سلوك Android الحديث (إذن الإشعارات، أنواع الخدمات الأمامية، تراجع المنبه الدقيق). استخدم تصدير AAB لـ Google Play؛ هذا مخصص للتثبيت الجانبي أو قنوات الطرف الثالث."
+        AppLanguage.PORTUGUESE -> "O APK gerado usará o targetSdk selecionado. O runtime já lida com o comportamento moderno do Android (permissão de notificação, tipos de serviço em primeiro plano, fallback de alarme exato). Use a exportação AAB para a Google Play; isto é para sideload ou canais de terceiros."
+        AppLanguage.SPANISH -> "El APK generado usará el targetSdk seleccionado. El runtime ya maneja el comportamiento moderno de Android (permiso de notificaciones, tipos de servicios en primer plano, fallback de alarma exacta). Usa la exportación AAB para Google Play; esto es para sideload o canales de terceros."
+        AppLanguage.FRENCH -> "L'APK généré utilisera le targetSdk sélectionné. Le runtime gère déjà le comportement Android moderne (autorisation de notification, types de services de premier plan, repli d'alarme exacte). Utilisez l'export AAB pour Google Play ; ceci est pour le sideload ou la distribution tierce."
+        AppLanguage.GERMAN -> "Das generierte APK verwendet das gewählte targetSdk. Die Laufzeit behandelt bereits modernes Android-Verhalten (Benachrichtigungsberechtigung, Vordergrunddienst-Typen, Fallback für exakte Alarme). Für Google Play den AAB-Export verwenden; dies ist für Sideload oder Drittanbieter-Vertrieb."
+        AppLanguage.RUSSIAN -> "Сгенерированный APK будет использовать выбранный targetSdk. Среда выполнения уже учитывает современное поведение Android (разрешение на уведомления, типы фоновых служб, резерв для точных будильников). Для Google Play используйте экспорт AAB; это — для sideload или сторонних каналов."
+        AppLanguage.JAPANESE -> "生成される APK は選択した targetSdk を使用します。ランタイムは最新の Android 動作に対応済みです（通知権限、フォアグラウンドサービスの種別、正確なアラームのフォールバック）。Google Play 公開には AAB エクスポートを使用してください。こちらはサイドロードやサードパーティ配布向けです。"
+        AppLanguage.KOREAN -> "생성된 APK가 선택한 targetSdk를 사용합니다. 런타임은 최신 Android 동작을 이미 처리합니다(알림 권한, 포그라운드 서비스 유형, 정확한 알람 폴백). Google Play 배포에는 AAB보내기를 사용하세요. 이 옵션은 사이드로드 또는 타사 배포용입니다."
     }
 
     val signingTypeAutoGenerated: String get() = when (Strings.lang) {

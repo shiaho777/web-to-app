@@ -10,7 +10,7 @@ See the full card-by-card list in [Edit Common Config](/guide/app-actions/edit-c
 
 - [Network & Anti-Censorship](/guide/config/network) — DNS, proxies, TLS fingerprint, CORS, failover.
 - [Privacy & Hardening](/guide/config/privacy) — activation, ad blocking, disguise, encryption.
-- [Appearance](/guide/config/appearance) — toolbar, fullscreen, orientation, splash, BGM.
+- [Appearance](/guide/config/appearance) — toolbar, fullscreen, orientation, splash.
 
 ## Core vs common
 

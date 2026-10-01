@@ -26,7 +26,7 @@ class NoUnboundedBitmapDecodeTest {
         "com/webtoapp/util/FaviconFetcher.kt",
         // Build-time background recompression: output quality requires pixels;
         // OOM there fails one file (caught), never a draw call.
-        "com/webtoapp/core/linux/PerformanceOptimizer.kt"
+        "com/webtoapp/core/linux/PerformanceOptimizerApk.kt"
     )
 
     private val rawDecodeCall = Regex(

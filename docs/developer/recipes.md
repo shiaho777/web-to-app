@@ -26,7 +26,7 @@ See [Config Field Drift](/developer/config-drift).
 1. Edit the source under `app/` (shared runtime).
 2. Confirm the file is included by `syncShellRuntimeSources`.
 3. Rebuild the shell template if you need to validate packaging.
-4. Keep changes surgical; shell has a low `targetSdk` and a thin dependency set.
+4. Keep changes surgical; the shell has a thin dependency set.
 5. If you touch FGS / notification channel creation, fail soft via `SafeNotificationChannels`.
 
 ## 4. Add a host-only feature (editor, market, tooling)

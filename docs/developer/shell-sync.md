@@ -39,7 +39,7 @@ At runtime, a generated APK:
 ## Constraints
 
 - **One shell template.** Do not introduce a second template APK.
-- **Low `targetSdk` (28).** A legacy constraint kept for compatibility. Do not raise it casually.
+- **`targetSdk` 35.** The shell template ships `targetSdk` 35 and the synced runtime is adapted to it (runtime permissions, FGS types, exact-alarm fallback). `ApkExportConfig.targetSdk` can pin a different value per app.
 - **Thin dependency set.** Do not pull host-only deps into `shell/build.gradle.kts`.
 - **Fail-soft notifications.** FGS / notification channel creation must use `SafeNotificationChannels`; channel creation failures must not crash FGS startup.
 - **Configuration-cache safety.** Custom Gradle tasks (`syncCloneHostDex`, etc.) must capture `File`/`Provider` values at configuration time — do not reference `Project`/`android.sdkDirectory` inside task closures.

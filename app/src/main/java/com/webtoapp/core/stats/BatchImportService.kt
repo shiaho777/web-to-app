@@ -226,7 +226,6 @@ class BatchImportService(
             extensionModuleIds = app.pluginIds,
             extensionEnabled = app.pluginsEnabled,
             splashEnabled = app.splashEnabled,
-            bgmEnabled = app.bgmEnabled,
             translateEnabled = app.translateEnabled
         )
         return gson.toJson(template)

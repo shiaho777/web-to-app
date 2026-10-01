@@ -1803,7 +1803,7 @@ class AxmlRebuilder {
 
     /**
      * Rewrites the `<uses-sdk android:targetSdkVersion>` integer attribute in place. The shell
-     * template ships targetSdkVersion = 28; this lets a WebView-only generated APK raise it
+     * template ships targetSdkVersion = 35; this lets a generated APK pin a different value
      * (e.g. to 34+) for Play Store compliance without changing the template.
      */
     private fun modifyTargetSdk(parsed: ParsedAxml, targetSdk: Int) {

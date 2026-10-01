@@ -15,7 +15,7 @@ import java.util.concurrent.atomic.AtomicInteger
  * JNI binding for libstatic_exec.so — the user-mode exec loader that starts
  * static ELFs (pmmp PHP) under SELinux W^X by mapping PT_LOAD segments from
  * an executable memfd, building the AArch64 initial stack, and jumping to
- * e_entry. Host preview only; exported APKs (targetSdk 28) keep execve.
+ * e_entry. Host-side tooling only; generated APKs no longer exec anything.
  */
 internal object StaticExecBridge {
     private var loaded = false

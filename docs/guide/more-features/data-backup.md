@@ -1,6 +1,6 @@
 # Data Backup
 
-Export or import all app data — configs, icons, splash screens, BGM, and other resource files. Open it from [⋮ → Data Backup](/guide/main-screen/more).
+Export or import all app data — configs, icons, splash screens, and other resource files. Open it from [⋮ → Data Backup](/guide/main-screen/more).
 
 ## How it works
 

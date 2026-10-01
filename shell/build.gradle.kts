@@ -22,14 +22,14 @@ android {
         applicationId = "com.webtoapp"
         minSdk = 23
 
-        targetSdk = 28
+        targetSdk = 35
         versionCode = 71
         versionName = "2.6.9"
 
         buildConfigField("boolean", "SHELL_RUNTIME_ONLY", "true")
 
-        // Shell template never ships to Google Play — it is the runtime host for *generated* apps,
-        // which always use targetSdk 28 (fork+exec).
+        // Generated APKs inherit this targetSdk; export can still pin a different
+        // value via `targetSdk` override, and the Play/AAB path forces 36.
 
         vectorDrawables {
             useSupportLibrary = true
@@ -41,12 +41,7 @@ android {
 
         externalNativeBuild {
             cmake {
-                cppFlags += "-std=c++17"
-                // Shell natives statically link libc++ so the template can drop
-                // libc++_shared.so (~4.4MB raw across 4 ABIs). node_bridge is the
-                // only C++ lib. The HOST keeps c++_shared: ApkBuilder injects
-                // the host's libc++_shared.so into NODEJS_APP exports for libnode.so.
-                arguments += "-DANDROID_STL=c++_static"
+                // All native sources are C; no CXX flags or shared STL needed.
             }
         }
     }
@@ -215,7 +210,6 @@ val syncShellRuntimeSources by tasks.registering(Sync::class) {
         "**/core/extension/**",
         "**/core/plugin/**",
         "**/core/notification/**",
-        "**/core/bgm/**",
         "**/core/engine/**",
         "**/core/scraper/**",
         "**/core/script/**",
@@ -278,6 +272,16 @@ val syncShellRuntimeSources by tasks.registering(Sync::class) {
         "**/core/plugin/PluginStore.kt",
         "**/core/plugin/PluginImporter.kt",
         "**/core/plugin/PluginMigrator.kt",
+
+        // core/linux tooling that only runs on the host: the exec bridge serves
+        // esbuild downloads on the W^X host, the esbuild engine and the HTML
+        // optimizer run at export/edit time. Generated APKs never exec.
+        "**/core/linux/HostProcessLauncher.kt",
+        "**/core/linux/StaticExecProcess.kt",
+        "**/core/linux/RuntimeExecPolicy.kt",
+        "**/core/linux/NativeNodeEngine.kt",
+        "**/core/linux/HtmlProjectOptimizer.kt",
+        "**/core/linux/PerformanceOptimizerApk.kt",
 
         // Strings.kt / StringsA-E.kt carry the full 10-language editor surface
         // (~4.3 MB source, mostly editor-only text). Shell gets reduced copies

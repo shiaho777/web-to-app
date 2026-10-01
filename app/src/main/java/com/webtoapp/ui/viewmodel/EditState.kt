@@ -12,7 +12,6 @@ import com.webtoapp.data.model.ApkExportConfig
 import com.webtoapp.data.model.withRuntimePermissionsSyncedFromFeatures
 import com.webtoapp.data.model.AppType
 import com.webtoapp.data.model.AutoStartConfig
-import com.webtoapp.data.model.BgmConfig
 import com.webtoapp.data.model.HtmlConfig
 import com.webtoapp.data.model.MediaConfig
 import com.webtoapp.data.model.SplashConfig
@@ -47,8 +46,6 @@ data class EditState(
     val splashConfig: SplashConfig = SplashConfig(),
     val splashMediaUri: Uri? = null,
     val savedSplashPath: String? = null,
-    val bgmEnabled: Boolean = false,
-    val bgmConfig: BgmConfig = BgmConfig(),
     val apkExportConfig: ApkExportConfig = ApkExportConfig(),
     val themeType: String = "AURORA",
     val translateEnabled: Boolean = false,
@@ -86,8 +83,6 @@ fun WebApp.toEditState(): EditState {
         splashConfig = synced.splashConfig ?: SplashConfig(),
         splashMediaUri = synced.splashConfig?.mediaPath?.let(Uri::parse),
         savedSplashPath = synced.splashConfig?.mediaPath,
-        bgmEnabled = synced.bgmEnabled,
-        bgmConfig = synced.bgmConfig ?: BgmConfig(),
         apkExportConfig = synced.apkExportConfig ?: ApkExportConfig(),
         themeType = synced.themeType,
         translateEnabled = synced.translateEnabled,
@@ -102,8 +97,7 @@ fun WebApp.toEditState(): EditState {
 fun EditState.withRuntimePermissionsSyncedFromFeatures(): EditState {
     val syncedExport = apkExportConfig.withRuntimePermissionsSyncedFromFeatures(
         webViewConfig = webViewConfig,
-        autoStartConfig = autoStartConfig,
-        bgmEnabled = bgmEnabled
+        autoStartConfig = autoStartConfig
     )
     return if (syncedExport === apkExportConfig || syncedExport == apkExportConfig) {
         this

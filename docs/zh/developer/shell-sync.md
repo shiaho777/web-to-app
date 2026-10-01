@@ -39,7 +39,7 @@
 ## 约束
 
 - **唯一的 shell 模板。** 不要引入第二个模板 APK。
-- **低 `targetSdk`(28)。** 出于兼容性保留的历史约束。不要随意抬高。
+- **`targetSdk` 35。** shell 模板携带 `targetSdk` 35,同步的运行时已适配现代行为(运行时权限、前台服务类型、精确闹钟兜底)。`ApkExportConfig.targetSdk` 可按应用固定其他值。
 - **精简依赖集。** 不要把宿主专属依赖拉进 `shell/build.gradle.kts`。
 - **通知失败要软处理。** FGS / 通知渠道创建必须使用 `SafeNotificationChannels`;渠道创建失败不得导致 FGS 启动崩溃。
 - **配置缓存安全。** 自定义 Gradle 任务(`syncCloneHostDex` 等)必须在配置期捕获 `File`/`Provider` 值 —— 不要在任务闭包内引用 `Project`/`android.sdkDirectory`。
