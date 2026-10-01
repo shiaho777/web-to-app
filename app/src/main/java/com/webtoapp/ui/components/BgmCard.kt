@@ -43,7 +43,7 @@ fun BgmCard(
         BgmPlayMode.SHUFFLE -> Strings.shuffleMode
     }
     val summary = when {
-        !enabled -> Strings.notEnabled
+        !enabled -> null
         config.playlist.isEmpty() -> Strings.selectMusic
         else -> Strings.bgmTrackCount.format(config.playlist.size) + " · " + playModeLabel
     }
@@ -87,13 +87,15 @@ fun BgmCard(
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
-                        Text(
-                            text = summary,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
+                        if (summary != null) {
+                            Text(
+                                text = summary,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
                     }
                 }
 

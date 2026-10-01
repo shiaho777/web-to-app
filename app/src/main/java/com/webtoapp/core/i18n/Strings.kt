@@ -1002,7 +1002,6 @@ object Strings {
     val collapse: String get() = StringsB.collapse
     val expandAll: String get() = StringsB.expandAll
     val maximum: String get() = StringsB.maximum
-    val notEnabled: String get() = StringsB.notEnabled
     val canvasProtection: String get() = StringsB.canvasProtection
     val webglProtection: String get() = StringsB.webglProtection
     val audioProtection: String get() = StringsB.audioProtection

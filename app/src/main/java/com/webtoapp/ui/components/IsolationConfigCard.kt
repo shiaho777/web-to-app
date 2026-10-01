@@ -91,21 +91,21 @@ fun IsolationConfigCard(
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
-                        Text(
-                            text = if (config.enabled) {
-                                val levelName = when (config.level()) {
-                                    IsolationLevel.BASIC -> Strings.basic
-                                    IsolationLevel.STANDARD -> Strings.standard
-                                    IsolationLevel.MAXIMUM -> Strings.maximum
-                                    null -> Strings.customCombination
-                                }
-                                Strings.antiDetectionEnabled + " · " + levelName
-                            } else Strings.notEnabled,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
+                        if (config.enabled) {
+                            val levelName = when (config.level()) {
+                                IsolationLevel.BASIC -> Strings.basic
+                                IsolationLevel.STANDARD -> Strings.standard
+                                IsolationLevel.MAXIMUM -> Strings.maximum
+                                null -> Strings.customCombination
+                            }
+                            Text(
+                                text = Strings.antiDetectionEnabled + " · " + levelName,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
                     }
                 }
 

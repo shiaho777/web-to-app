@@ -379,7 +379,7 @@ fun PermissionSummaryCard(
     val enabledCount = countEnabledPermissions(permissions)
     val dangerousEnabledCount = countDangerousEnabledPermissions(permissions)
     val summary = if (enabledCount == 0) {
-        Strings.notEnabled
+        null
     } else {
         buildList {
             add(Strings.permissionEnabledCount.format(enabledCount))

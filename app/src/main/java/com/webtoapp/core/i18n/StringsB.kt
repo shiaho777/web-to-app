@@ -2026,22 +2026,6 @@ object StringsB {
         AppLanguage.KOREAN -> "최대"
     }
 
-    val notEnabled: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "未启用"
-        AppLanguage.ENGLISH -> "Not Enabled"
-        AppLanguage.ARABIC -> "غير مفعل"
-        AppLanguage.PORTUGUESE -> "Não Ativado"
-        AppLanguage.SPANISH -> "No Habilitado"
-        AppLanguage.FRENCH -> "Non Activé"
-        AppLanguage.GERMAN -> "Nicht Aktiviert"
-        AppLanguage.RUSSIAN -> "Не включено"
-        AppLanguage.JAPANESE -> "無効"
-        AppLanguage.KOREAN -> "비활성화됨"
-    }
-
-
-
-
     val canvasProtection: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "Canvas 防护"
         AppLanguage.ENGLISH -> "Canvas Protection"
