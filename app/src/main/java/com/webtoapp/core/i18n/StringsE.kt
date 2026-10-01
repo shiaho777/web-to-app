@@ -13752,4 +13752,56 @@ object StringsE {
         AppLanguage.KOREAN -> "ca-app-pub-xxx/yyy"
     }
 
+    val buildHistoryTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "构建历史"
+        AppLanguage.ENGLISH -> "Build History"
+        AppLanguage.ARABIC -> "سجل البناء"
+        AppLanguage.PORTUGUESE -> "Histórico de builds"
+        AppLanguage.SPANISH -> "Historial de compilación"
+        AppLanguage.FRENCH -> "Historique des builds"
+        AppLanguage.GERMAN -> "Build-Verlauf"
+        AppLanguage.RUSSIAN -> "История сборок"
+        AppLanguage.JAPANESE -> "ビルド履歴"
+        AppLanguage.KOREAN -> "빌드 기록"
+    }
+
+    val buildHistoryFileMissing: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "文件已被清理"
+        AppLanguage.ENGLISH -> "File removed"
+        AppLanguage.ARABIC -> "تمت إزالة الملف"
+        AppLanguage.PORTUGUESE -> "Arquivo removido"
+        AppLanguage.SPANISH -> "Archivo eliminado"
+        AppLanguage.FRENCH -> "Fichier supprimé"
+        AppLanguage.GERMAN -> "Datei entfernt"
+        AppLanguage.RUSSIAN -> "Файл удалён"
+        AppLanguage.JAPANESE -> "ファイルは削除されました"
+        AppLanguage.KOREAN -> "파일이 삭제됨"
+    }
+
+    val buildHistoryDeleteConfirm: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "删除此 APK 及其构建记录？"
+        AppLanguage.ENGLISH -> "Delete this APK and its build record?"
+        AppLanguage.ARABIC -> "حذف ملف APK هذا وسجل البناء؟"
+        AppLanguage.PORTUGUESE -> "Excluir este APK e o registro de build?"
+        AppLanguage.SPANISH -> "¿Eliminar este APK y su registro de compilación?"
+        AppLanguage.FRENCH -> "Supprimer cet APK et son enregistrement de build ?"
+        AppLanguage.GERMAN -> "Diese APK und ihren Build-Eintrag löschen?"
+        AppLanguage.RUSSIAN -> "Удалить этот APK и запись о сборке?"
+        AppLanguage.JAPANESE -> "このAPKとビルド記録を削除しますか？"
+        AppLanguage.KOREAN -> "이 APK와 빌드 기록을 삭제할까요?"
+    }
+
+    val buildHistoryRecordOnly: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "删除此构建记录？"
+        AppLanguage.ENGLISH -> "Delete this build record?"
+        AppLanguage.ARABIC -> "حذف سجل البناء هذا؟"
+        AppLanguage.PORTUGUESE -> "Excluir este registro de build?"
+        AppLanguage.SPANISH -> "¿Eliminar este registro de compilación?"
+        AppLanguage.FRENCH -> "Supprimer cet enregistrement de build ?"
+        AppLanguage.GERMAN -> "Diesen Build-Eintrag löschen?"
+        AppLanguage.RUSSIAN -> "Удалить эту запись о сборке?"
+        AppLanguage.JAPANESE -> "このビルド記録を削除しますか？"
+        AppLanguage.KOREAN -> "이 빌드 기록을 삭제할까요?"
+    }
+
 }

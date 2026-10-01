@@ -17,6 +17,8 @@ import androidx.compose.material.icons.outlined.Autorenew
 import androidx.compose.material.icons.outlined.Build
 import androidx.compose.material.icons.outlined.Cached
 import androidx.compose.material.icons.outlined.ContentCopy
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.DeleteSweep
 import androidx.compose.material.icons.outlined.GetApp
 import androidx.compose.material.icons.outlined.Language
@@ -202,6 +204,24 @@ private fun BuildApkContent(
     // live inside ApkBuilder, so the screen could not reproduce a derived
     // package name, never found the installed app, and never bumped the version.
     val resolvedPackageName = com.webtoapp.core.apkbuilder.ApkBuilder.resolvePackageName(webApp)
+
+    // Build history: every successful build leaves a `<name>.build.json` metadata
+    // sidecar next to the APK (BuildMetadataWriter); the card below joins sidecars
+    // with the APKs still on disk. `historyTick` re-scans after a build or a delete.
+    val buildHistoryReader = remember { com.webtoapp.core.apkbuilder.BuildHistoryReader(context) }
+    var historyTick by remember(webApp.id) { mutableIntStateOf(0) }
+    var buildHistory by remember(webApp.id) {
+        mutableStateOf<List<com.webtoapp.core.apkbuilder.BuildHistoryEntry>>(emptyList())
+    }
+    var entryPendingDelete by remember {
+        mutableStateOf<com.webtoapp.core.apkbuilder.BuildHistoryEntry?>(null)
+    }
+    LaunchedEffect(uiReady, historyTick) {
+        if (!uiReady) return@LaunchedEffect
+        buildHistory = withContext(Dispatchers.IO) {
+            buildHistoryReader.listFor(resolvedPackageName, webApp.name)
+        }
+    }
     val baseVersionCode = webApp.apkExportConfig?.customVersionCode ?: 1
     val autoVersionBump = webApp.apkExportConfig?.autoVersionBump ?: true
     var suggestedVersion by remember(resolvedPackageName) {
@@ -346,6 +366,7 @@ private fun BuildApkContent(
                     analysisReport = result.analysisReport
                     lastBuildMode = result.buildMode
                     lastBuildReason = result.buildReason.takeIf { it.isNotBlank() }
+                    historyTick++
                     progressText = Strings.buildModeUsed.replace(
                         "%s",
                         incrementalBuildModeLabel(result.buildMode)
@@ -778,6 +799,32 @@ private fun BuildApkContent(
                 }
             }
 
+            if (buildHistory.isNotEmpty()) {
+                item {
+                    WtaCard {
+                        BuildHistoryCard(
+                            entries = buildHistory,
+                            onInstall = { entry ->
+                                val file = entry.apkPath?.let { java.io.File(it) }
+                                if (file != null && file.exists()) {
+                                    val started = apkBuilderState?.installApk(file) ?: false
+                                    android.widget.Toast.makeText(
+                                        context,
+                                        if (started) Strings.fileManagerInstallStarted
+                                        else Strings.fileManagerInstallFailed,
+                                        android.widget.Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                            },
+                            onShare = { entry ->
+                                entry.apkPath?.let { openApkWithChooser(context, java.io.File(it)) }
+                            },
+                            onDelete = { entry -> entryPendingDelete = entry }
+                        )
+                    }
+                }
+            }
+
             analysisReport?.let { report ->
                 item {
                     WtaCard {
@@ -919,6 +966,34 @@ private fun BuildApkContent(
                 TextButton(onClick = {
                     showExportAabConfirm = false
                 }) { Text(Strings.btnCancel) }
+            }
+        )
+    }
+
+    entryPendingDelete?.let { entry ->
+        WtaAlertDialog(
+            onDismissRequest = { entryPendingDelete = null },
+            icon = Icons.Outlined.DeleteSweep,
+            title = Strings.btnDelete,
+            text = if (entry.apkExists) Strings.buildHistoryDeleteConfirm
+                   else Strings.buildHistoryRecordOnly,
+            confirmButton = {
+                TextButton(onClick = {
+                    scope.launch(Dispatchers.IO) {
+                        if (entry.apkExists) {
+                            entry.apkPath?.let { apkBuilderState?.deleteApk(java.io.File(it)) }
+                        } else {
+                            buildHistoryReader.deleteRecord(entry)
+                        }
+                        withContext(Dispatchers.Main) {
+                            entryPendingDelete = null
+                            historyTick++
+                        }
+                    }
+                }) { Text(Strings.confirm) }
+            },
+            dismissButton = {
+                TextButton(onClick = { entryPendingDelete = null }) { Text(Strings.btnCancel) }
             }
         )
     }
@@ -1397,4 +1472,146 @@ internal fun BuildFailureReportDialog(
             }
         }
     )
+}
+
+/**
+ * Per-app build history: one row per recorded build output, newest first. Rows whose
+ * APK is still on disk are tappable (install) and offer share + delete; rows whose APK
+ * was pruned while the `.build.json` sidecar survived render dimmed as file-removed
+ * records and can only be dropped via delete.
+ */
+@Composable
+private fun BuildHistoryCard(
+    entries: List<com.webtoapp.core.apkbuilder.BuildHistoryEntry>,
+    onInstall: (com.webtoapp.core.apkbuilder.BuildHistoryEntry) -> Unit,
+    onShare: (com.webtoapp.core.apkbuilder.BuildHistoryEntry) -> Unit,
+    onDelete: (com.webtoapp.core.apkbuilder.BuildHistoryEntry) -> Unit
+) {
+    val dateFormat = remember { java.text.SimpleDateFormat("MM-dd HH:mm", java.util.Locale.getDefault()) }
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Icon(
+                Icons.Outlined.History,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
+            Text(
+                Strings.buildHistoryTitle,
+                style = MaterialTheme.typography.titleSmall,
+                modifier = Modifier.weight(1f)
+            )
+            WtaBadge(
+                text = "${entries.size}",
+                compact = true,
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+        }
+
+        entries.forEach { entry ->
+            val contentAlpha = if (entry.apkExists) 1f else 0.55f
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(WtaRadius.Control))
+                    .clickable(enabled = entry.apkExists) { onInstall(entry) }
+                    .padding(horizontal = 4.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(34.dp)
+                        .clip(RoundedCornerShape(WtaRadius.Control))
+                        .background(
+                            MaterialTheme.colorScheme.primary.copy(
+                                alpha = if (entry.apkExists) 0.10f else 0.05f
+                            )
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Filled.Android,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                        tint = MaterialTheme.colorScheme.primary.copy(alpha = contentAlpha)
+                    )
+                }
+                Spacer(Modifier.width(10.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Text(
+                            text = if (entry.versionName != null) {
+                                "v${entry.versionName}" +
+                                    (entry.versionCode?.let { " ($it)" } ?: "")
+                            } else {
+                                entry.apkFileName
+                            },
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = contentAlpha),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false)
+                        )
+                        entry.buildMode?.let { mode ->
+                            WtaBadge(
+                                text = incrementalBuildModeLabel(mode),
+                                compact = true,
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                    Text(
+                        text = if (entry.apkExists) {
+                            buildList {
+                                entry.sizeBytes?.let {
+                                    add(com.webtoapp.core.download.DependencyDownloadEngine.formatSize(it))
+                                }
+                                add(dateFormat.format(java.util.Date(entry.generatedAtMs)))
+                                entry.durationMs?.let { add("${it / 1000}s") }
+                            }.joinToString(" · ")
+                        } else {
+                            Strings.buildHistoryFileMissing + " · " +
+                                dateFormat.format(java.util.Date(entry.generatedAtMs))
+                        },
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = contentAlpha),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                if (entry.apkExists) {
+                    androidx.compose.material3.IconButton(
+                        onClick = { onShare(entry) },
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            Icons.Outlined.Share,
+                            contentDescription = Strings.shareApk,
+                            modifier = Modifier.size(16.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                androidx.compose.material3.IconButton(
+                    onClick = { onDelete(entry) },
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        Icons.Outlined.Delete,
+                        contentDescription = Strings.btnDelete,
+                        modifier = Modifier.size(16.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+    }
 }

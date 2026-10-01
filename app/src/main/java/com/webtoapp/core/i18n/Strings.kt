@@ -4306,6 +4306,10 @@ object Strings {
     val buildSummaryMode: String get() = StringsE.buildSummaryMode
     val buildSummaryReason: String get() = StringsE.buildSummaryReason
     val buildAgain: String get() = StringsE.buildAgain
+    val buildHistoryTitle: String get() = StringsE.buildHistoryTitle
+    val buildHistoryFileMissing: String get() = StringsE.buildHistoryFileMissing
+    val buildHistoryDeleteConfirm: String get() = StringsE.buildHistoryDeleteConfirm
+    val buildHistoryRecordOnly: String get() = StringsE.buildHistoryRecordOnly
     val shareApkReadyMode: String get() = StringsE.shareApkReadyMode
 
     // Agent UI rework additions

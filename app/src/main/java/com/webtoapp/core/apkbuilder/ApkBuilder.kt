@@ -41,7 +41,7 @@ import com.webtoapp.util.AppConstants
 import com.webtoapp.util.NetworkTrustStorage
 import com.webtoapp.util.TextFileClassifier
 
-private fun resolveOutputDir(context: Context): File {
+internal fun resolveOutputDir(context: Context): File {
     val external = context.getExternalFilesDir(null)
     if (external != null) {
         val dir = File(external, "built_apks")
@@ -3089,6 +3089,10 @@ class ApkBuilder(private val context: Context) {
     }
 
     fun deleteApk(apkFile: File): Boolean {
+        // Drop the release-metadata sidecar with the APK: an explicit delete removes
+        // both file and build record. Retention pruning (cleanOldBuilds) keeps the
+        // sidecar so the history row survives as a "file removed" record.
+        File(apkFile.parentFile, apkFile.nameWithoutExtension + ".build.json").delete()
         return apkFile.delete()
     }
 
