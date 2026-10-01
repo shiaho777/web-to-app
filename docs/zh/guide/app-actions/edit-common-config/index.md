@@ -22,7 +22,6 @@
 ## 媒体与互动
 
 - [启动动画](/zh/guide/app-actions/edit-common-config/splash)
-- [背景音乐](/zh/guide/app-actions/edit-common-config/bgm)
 - [弹窗公告](/zh/guide/app-actions/edit-common-config/announcement)
 - [网页自动翻译](/zh/guide/app-actions/edit-common-config/translate)
 

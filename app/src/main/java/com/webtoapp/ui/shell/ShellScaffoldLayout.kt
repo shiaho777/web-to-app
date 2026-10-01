@@ -55,7 +55,6 @@ fun BoxScope.ShellScaffoldLayout(
     webViewCallbacks: WebViewCallbacks,
     webViewManager: com.webtoapp.core.webview.WebViewManager,
     deepLinkUrl: String?,
-    bgmState: BgmPlayerState,
 
     swipeRefreshEnabled: Boolean,
     isRefreshing: Boolean,
@@ -270,8 +269,6 @@ fun BoxScope.ShellScaffoldLayout(
                 onShowActivationDialog = onShowActivationDialog,
                 onActivityFinish = onActivityFinish
             )
-
-            ShellLyricsOverlay(config = config, bgmState = bgmState)
 
             if (autoRefreshRemaining > 0 && autoRefreshController?.countdownVisible == true) {
                 com.webtoapp.ui.components.AutoRefreshCountdownChip(

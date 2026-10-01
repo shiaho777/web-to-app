@@ -8,7 +8,7 @@ WebToApp 的核心是管理一份**应用定义**列表。每个定义是一条 
 
 - **身份** —— `name`、`url`、`iconPath`、`packageName`,以及一个 `appType`。
 - **类型专属配置** —— `htmlConfig`、`galleryConfig` 或 `multiWebConfig` 之一,取决于类型。(记录中仍保留已移除类型的废弃字段,以便旧数据库照常解码。)
-- **功能开关 + 配置** —— 激活、广告、公告、去广告、WebView 设置、启动画面、背景音乐、翻译、扩展、自启动、伪装,以及用于打包的 `apkExportConfig`。
+- **功能开关 + 配置** —— 激活、广告、公告、去广告、WebView 设置、启动画面、翻译、扩展、自启动、伪装,以及用于打包的 `apkExportConfig`。
 
 当你"构建"一个应用时,构建器取得 shell 模板 APK,修改其身份与资源,把你的 `WebApp` 配置作为 assets JSON 嵌入,并签名。产物是一个可安装或可分享的独立 APK。
 

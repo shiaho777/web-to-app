@@ -7178,44 +7178,8 @@ object StringsA {
         AppLanguage.KOREAN -> "예: FF5722 또는 80FF5722"
     }
 
-    val onlineMusic: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "在线音乐"
-        AppLanguage.ENGLISH -> "Online Music"
-        AppLanguage.ARABIC -> "موسيقى عبر الإنترنت"
-        AppLanguage.PORTUGUESE -> "Música Online"
-        AppLanguage.SPANISH -> "Música Online"
-        AppLanguage.FRENCH -> "Musique en Ligne"
-        AppLanguage.GERMAN -> "Online-Musik"
-        AppLanguage.RUSSIAN -> "Музыка онлайн"
-        AppLanguage.JAPANESE -> "オンライン音楽"
-        AppLanguage.KOREAN -> "온라인 음악"
-    }
 
-    val searchSongName: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "搜索歌曲名称"
-        AppLanguage.ENGLISH -> "Search song name"
-        AppLanguage.ARABIC -> "البحث عن اسم الأغنية"
-        AppLanguage.PORTUGUESE -> "Buscar nome da música"
-        AppLanguage.SPANISH -> "Buscar nombre de canción"
-        AppLanguage.FRENCH -> "Rechercher nom de chanson"
-        AppLanguage.GERMAN -> "Songnamen suchen"
-        AppLanguage.RUSSIAN -> "Поиск названия песни"
-        AppLanguage.JAPANESE -> "曲名で検索"
-        AppLanguage.KOREAN -> "곡명 검색"
-    }
 
-    val musicChannel: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "音乐渠道"
-        AppLanguage.ENGLISH -> "Music Channel"
-        AppLanguage.ARABIC -> "قناة الموسيقى"
-        AppLanguage.PORTUGUESE -> "Canal de Música"
-        AppLanguage.SPANISH -> "Canal de Música"
-        AppLanguage.FRENCH -> "Canal Musical"
-        AppLanguage.GERMAN -> "Musik-Kanal"
-        AppLanguage.RUSSIAN -> "Музыкальный канал"
-        AppLanguage.JAPANESE -> "音楽チャンネル"
-        AppLanguage.KOREAN -> "음악 채널"
-    }
 
     val testAllChannels: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "测试全部"
@@ -7295,31 +7259,7 @@ object StringsA {
         AppLanguage.KOREAN -> "미테스트"
     }
 
-    val searchOnlineMusic: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "搜索在线音乐"
-        AppLanguage.ENGLISH -> "Search online music"
-        AppLanguage.ARABIC -> "البحث عن الموسيقى عبر الإنترنت"
-        AppLanguage.PORTUGUESE -> "Buscar música online"
-        AppLanguage.SPANISH -> "Buscar música online"
-        AppLanguage.FRENCH -> "Rechercher musique en ligne"
-        AppLanguage.GERMAN -> "Online-Musik suchen"
-        AppLanguage.RUSSIAN -> "Поиск музыки онлайн"
-        AppLanguage.JAPANESE -> "オンライン音楽を検索"
-        AppLanguage.KOREAN -> "온라인 음악 검색"
-    }
 
-    val noMusicResults: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "没有搜索结果"
-        AppLanguage.ENGLISH -> "No results found"
-        AppLanguage.ARABIC -> "لا توجد نتائج"
-        AppLanguage.PORTUGUESE -> "Nenhum resultado encontrado"
-        AppLanguage.SPANISH -> "Sin resultados"
-        AppLanguage.FRENCH -> "Aucun résultat trouvé"
-        AppLanguage.GERMAN -> "Keine Ergebnisse gefunden"
-        AppLanguage.RUSSIAN -> "Результатов не найдено"
-        AppLanguage.JAPANESE -> "結果が見つかりません"
-        AppLanguage.KOREAN -> "검색 결과 없음"
-    }
 
     val previewListen: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "试听"
@@ -7334,18 +7274,6 @@ object StringsA {
         AppLanguage.KOREAN -> "미리듣기"
     }
 
-    val downloadToBgm: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "下载为BGM"
-        AppLanguage.ENGLISH -> "Download as BGM"
-        AppLanguage.ARABIC -> "تنزيل كـ BGM"
-        AppLanguage.PORTUGUESE -> "Baixar como BGM"
-        AppLanguage.SPANISH -> "Descargar como BGM"
-        AppLanguage.FRENCH -> "Télécharger comme BGM"
-        AppLanguage.GERMAN -> "Als BGM herunterladen"
-        AppLanguage.RUSSIAN -> "Скачать как BGM"
-        AppLanguage.JAPANESE -> "BGMとしてダウンロード"
-        AppLanguage.KOREAN -> "BGM으로 다운로드"
-    }
 
     val downloadSuccess: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "下载成功"
@@ -7594,18 +7522,6 @@ object StringsA {
         AppLanguage.KOREAN -> "다음"
     }
 
-    val saveLrc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "保存 LRC"
-        AppLanguage.ENGLISH -> "Save LRC"
-        AppLanguage.ARABIC -> "حفظ LRC"
-        AppLanguage.PORTUGUESE -> "Salvar LRC"
-        AppLanguage.SPANISH -> "Guardar LRC"
-        AppLanguage.FRENCH -> "Enregistrer LRC"
-        AppLanguage.GERMAN -> "LRC speichern"
-        AppLanguage.RUSSIAN -> "Сохранить LRC"
-        AppLanguage.JAPANESE -> "LRCを保存"
-        AppLanguage.KOREAN -> "LRC 저장"
-    }
 
     val seconds: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "秒"
@@ -7997,18 +7913,6 @@ object StringsA {
         AppLanguage.KOREAN -> "불투명"
     }
 
-    val inputLyrics: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "输入歌词"
-        AppLanguage.ENGLISH -> "Input Lyrics"
-        AppLanguage.ARABIC -> "إدخال كلمات الأغنية"
-        AppLanguage.PORTUGUESE -> "Inserir Letras"
-        AppLanguage.SPANISH -> "Ingresar Letras"
-        AppLanguage.FRENCH -> "Saisir les paroles"
-        AppLanguage.GERMAN -> "Liedtext eingeben"
-        AppLanguage.RUSSIAN -> "Ввести текст песни"
-        AppLanguage.JAPANESE -> "歌詞を入力"
-        AppLanguage.KOREAN -> "가사 입력"
-    }
 
     val timeAlignment: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "时间对齐"
@@ -8049,31 +7953,7 @@ object StringsA {
         AppLanguage.KOREAN -> "재생 시간"
     }
 
-    val inputLyricsHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "请输入歌词文本，每行一句："
-        AppLanguage.ENGLISH -> "Please enter lyrics text, one line per sentence:"
-        AppLanguage.ARABIC -> "يرجى إدخال نص كلمات الأغنية، سطر واحد لكل جملة:"
-        AppLanguage.PORTUGUESE -> "Insira o texto das letras, uma linha por frase:"
-        AppLanguage.SPANISH -> "Ingrese el texto de las letras, una línea por frase:"
-        AppLanguage.FRENCH -> "Veuillez saisir le texte des paroles, une ligne par phrase :"
-        AppLanguage.GERMAN -> "Bitte Liedtext eingeben, eine Zeile pro Satz:"
-        AppLanguage.RUSSIAN -> "Введите текст песни, по одной строке на предложение:"
-        AppLanguage.JAPANESE -> "歌詞テキストを入力してください、1文1行:"
-        AppLanguage.KOREAN -> "가사 텍스트를 입력하세요, 한 문장당 한 줄:"
-    }
 
-    val lyricsPlaceholder: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "在这里粘贴或输入歌词...\n\n示例：\n前奏\n第一句歌词\n第二句歌词\n间奏\n继续歌词..."
-        AppLanguage.ENGLISH -> "Paste or enter lyrics here...\n\nExample:\nIntro\nFirst line\nSecond line\nInterlude\nContinue lyrics..."
-        AppLanguage.ARABIC -> "الصق أو أدخل كلمات الأغنية هنا...\n\nمثال:\nمقدمة\nالسطر الأول\nالسطر الثاني\nفاصل\nمتابعة الكلمات..."
-        AppLanguage.PORTUGUESE -> "Cole ou insira letras aqui...\n\nExemplo:\nIntro\nPrimeira linha\nSegunda linha\nInterlúdio\nContinuar letras..."
-        AppLanguage.SPANISH -> "Pegue o ingrese letras aquí...\n\nEjemplo:\nIntro\nPrimera línea\nSegunda línea\nInterludio\nContinuar letras..."
-        AppLanguage.FRENCH -> "Collez ou saisissez les paroles ici...\n\nExemple :\nIntro\nPremière ligne\nDeuxième ligne\nInterlude\nContinuer les paroles..."
-        AppLanguage.GERMAN -> "Hier Liedtext einfügen oder eingeben...\n\nBeispiel:\nIntro\nErste Zeile\nZweite Zeile\nZwischenspiel\nLiedtext fortsetzen..."
-        AppLanguage.RUSSIAN -> "Вставьте или введите текст песни здесь...\n\nПример:\nВступление\nПервая строка\nВторая строка\nИнтерлюдия\nПродолжить текст..."
-        AppLanguage.JAPANESE -> "ここに歌詞を貼り付けまたは入力...\n\n例:\nイントロ\n一行目\n二行目\n間奏\n歌詞を続ける..."
-        AppLanguage.KOREAN -> "여기에 가사를 붙여넣거나 입력하세요...\n\n예:\n인트로\n첫 번째 줄\n두 번째 줄\n간주\n가사 계속..."
-    }
 
     val alignmentHint: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "播放音频，在听到每句歌词开始时点击「打点」按钮"

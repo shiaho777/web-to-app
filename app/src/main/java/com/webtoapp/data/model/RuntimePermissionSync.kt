@@ -43,8 +43,7 @@ fun ApkRuntimePermissions.enableFrom(required: ApkRuntimePermissions): ApkRuntim
 fun featureRequiredRuntimePermissions(
     apkExportConfig: ApkExportConfig? = null,
     webViewConfig: WebViewConfig = WebViewConfig(),
-    autoStartConfig: AutoStartConfig? = null,
-    bgmEnabled: Boolean = false
+    autoStartConfig: AutoStartConfig? = null
 ): ApkRuntimePermissions {
     var required = ApkRuntimePermissions()
     val export = apkExportConfig
@@ -92,12 +91,6 @@ fun featureRequiredRuntimePermissions(
     if (webView.geolocationEnabled) {
         required = required.copy(location = true)
     }
-    if (bgmEnabled) {
-        required = required.copy(
-            foregroundService = true,
-            notifications = true
-        )
-    }
     if (webView.enableMediaSession) {
         // WebMediaPlaybackService runs as a mediaPlayback foreground service and
         // acquires a partial wake lock whenever the page reports playback — a
@@ -123,8 +116,7 @@ fun WebApp.featureRequiredRuntimePermissions(): ApkRuntimePermissions =
     featureRequiredRuntimePermissions(
         apkExportConfig = apkExportConfig,
         webViewConfig = webViewConfig,
-        autoStartConfig = autoStartConfig,
-        bgmEnabled = bgmEnabled
+        autoStartConfig = autoStartConfig
     )
 
 fun WebApp.withRuntimePermissionsSyncedFromFeatures(): WebApp {
@@ -154,14 +146,12 @@ fun WebApp.withRuntimePermissionsSyncedFromFeatures(): WebApp {
 
 fun ApkExportConfig.withRuntimePermissionsSyncedFromFeatures(
     webViewConfig: WebViewConfig = WebViewConfig(),
-    autoStartConfig: AutoStartConfig? = null,
-    bgmEnabled: Boolean = false
+    autoStartConfig: AutoStartConfig? = null
 ): ApkExportConfig {
     val required = featureRequiredRuntimePermissions(
         apkExportConfig = this,
         webViewConfig = webViewConfig,
-        autoStartConfig = autoStartConfig,
-        bgmEnabled = bgmEnabled
+        autoStartConfig = autoStartConfig
     )
     val manual = runtimePermissions.manualBeyond(autoEnabledPermissions)
     val merged = manual.enableFrom(required)
@@ -176,7 +166,6 @@ enum class PermissionFeatureReason {
     NOTIFICATION_POLYFILL,
     GEOLOCATION,
     FLOATING_WINDOW,
-    BGM,
     MEDIA_SESSION,
     BOOT_START,
     SCREEN_AWAKE,
@@ -186,8 +175,7 @@ enum class PermissionFeatureReason {
 fun featurePermissionReasons(
     apkExportConfig: ApkExportConfig? = null,
     webViewConfig: WebViewConfig = WebViewConfig(),
-    autoStartConfig: AutoStartConfig? = null,
-    bgmEnabled: Boolean = false
+    autoStartConfig: AutoStartConfig? = null
 ): Map<String, List<PermissionFeatureReason>> {
     val map = linkedMapOf<String, MutableList<PermissionFeatureReason>>()
 
@@ -231,10 +219,6 @@ fun featurePermissionReasons(
     if (webView.geolocationEnabled) {
         add("location", PermissionFeatureReason.GEOLOCATION)
     }
-    if (bgmEnabled) {
-        add("foregroundService", PermissionFeatureReason.BGM)
-        add("notifications", PermissionFeatureReason.BGM)
-    }
     if (webView.enableMediaSession) {
         add("foregroundService", PermissionFeatureReason.MEDIA_SESSION)
         add("wakeLock", PermissionFeatureReason.MEDIA_SESSION)
@@ -253,7 +237,6 @@ fun WebApp.featurePermissionReasons(): Map<String, List<PermissionFeatureReason>
     featurePermissionReasons(
         apkExportConfig = apkExportConfig,
         webViewConfig = webViewConfig,
-        autoStartConfig = autoStartConfig,
-        bgmEnabled = bgmEnabled
+        autoStartConfig = autoStartConfig
     )
 

@@ -17,7 +17,6 @@ data class DraftBuildPayload(
     val mediaConfig: com.webtoapp.data.model.MediaConfig?,
     val htmlConfig: com.webtoapp.data.model.HtmlConfig?,
     val splashConfig: com.webtoapp.data.model.SplashConfig?,
-    val bgmConfig: com.webtoapp.data.model.BgmConfig?,
     val apkExportConfig: ApkExportConfig?,
     val translateConfig: com.webtoapp.data.model.TranslateConfig?,
     val currentThemeType: String,
@@ -61,12 +60,6 @@ fun EditState.toDraftPayload(
         null
     }
 
-    val resolvedBgmConfig = if (bgmEnabled && bgmConfig.playlist.isNotEmpty()) {
-        bgmConfig
-    } else {
-        null
-    }
-
     val resolvedApkExportConfig = apkExportConfig.takeIf { it.isMeaningful() }
     val resolvedTranslateConfig = translateConfig.takeIf { translateEnabled }
 
@@ -77,7 +70,6 @@ fun EditState.toDraftPayload(
         mediaConfig = mediaConfig,
         htmlConfig = htmlConfig,
         splashConfig = resolvedSplashConfig,
-        bgmConfig = resolvedBgmConfig,
         apkExportConfig = resolvedApkExportConfig,
         translateConfig = resolvedTranslateConfig,
         currentThemeType = currentThemeType,
@@ -118,8 +110,6 @@ fun WebApp?.applyDraft(
         webViewConfig = payload.externalizedWebViewConfig,
         splashEnabled = editState.splashEnabled,
         splashConfig = payload.splashConfig,
-        bgmEnabled = editState.bgmEnabled,
-        bgmConfig = payload.bgmConfig,
         apkExportConfig = payload.apkExportConfig,
         themeType = payload.currentThemeType,
         translateEnabled = editState.translateEnabled,
@@ -150,8 +140,6 @@ fun WebApp?.applyDraft(
         webViewConfig = payload.externalizedWebViewConfig,
         splashEnabled = editState.splashEnabled,
         splashConfig = payload.splashConfig,
-        bgmEnabled = editState.bgmEnabled,
-        bgmConfig = payload.bgmConfig,
         apkExportConfig = payload.apkExportConfig,
         themeType = payload.currentThemeType,
         translateEnabled = editState.translateEnabled,

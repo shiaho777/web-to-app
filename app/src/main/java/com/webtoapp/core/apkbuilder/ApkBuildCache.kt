@@ -102,7 +102,6 @@ class ApkBuildCache(private val context: Context) {
         abiFilters: List<String>,
         projectDirs: List<File?>,
         splashMediaPath: String?,
-        bgmPlaylistPaths: List<String>,
         htmlFiles: List<com.webtoapp.data.model.HtmlFile>,
         galleryItems: List<com.webtoapp.data.model.GalleryItem>,
         errorPageMediaPath: String?,
@@ -132,7 +131,6 @@ class ApkBuildCache(private val context: Context) {
             config = config,
             projectDirs = projectDirs,
             splashMediaPath = splashMediaPath,
-            bgmPlaylistPaths = bgmPlaylistPaths,
             htmlFiles = htmlFiles,
             galleryItems = galleryItems,
             errorPageMediaPath = errorPageMediaPath,
@@ -297,7 +295,6 @@ class ApkBuildCache(private val context: Context) {
         if (entryName.startsWith("assets/splash_media.")) return true
         if (entryName.startsWith("assets/error_page_media.")) return true
         if (entryName.startsWith("assets/gallery/")) return true
-        if (entryName.startsWith("assets/bgm/")) return true
         if (entryName.startsWith("assets/html/")) return true
         if (entryName.startsWith("assets/html_projects/")) return true
         if (entryName.startsWith("assets/frontend_app/")) return true
@@ -411,7 +408,6 @@ class ApkBuildCache(private val context: Context) {
         config: ApkConfig,
         projectDirs: List<File?>,
         splashMediaPath: String?,
-        bgmPlaylistPaths: List<String>,
         htmlFiles: List<com.webtoapp.data.model.HtmlFile>,
         galleryItems: List<com.webtoapp.data.model.GalleryItem>,
         errorPageMediaPath: String?,
@@ -430,9 +426,6 @@ class ApkBuildCache(private val context: Context) {
         parts += "statusBar=${fileFingerprint(statusBarImage)}"
         parts += "statusBarDark=${fileFingerprint(statusBarImageDark)}"
         parts += "floatingIcon=${fileFingerprint(floatingIcon)}"
-        bgmPlaylistPaths.forEachIndexed { index, path ->
-            parts += "bgm[$index]=${fileFingerprint(path)}"
-        }
         htmlFiles.forEachIndexed { index, file ->
             parts += "html[$index]=${file.name}|${fileFingerprint(file.path)}"
         }

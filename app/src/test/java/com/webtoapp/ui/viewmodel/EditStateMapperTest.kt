@@ -4,8 +4,6 @@ import android.net.Uri
 import com.google.common.truth.Truth.assertThat
 import com.webtoapp.data.model.Announcement
 import com.webtoapp.data.model.AppType
-import com.webtoapp.data.model.BgmConfig
-import com.webtoapp.data.model.BgmItem
 import com.webtoapp.data.model.GalleryConfig
 import com.webtoapp.data.model.GalleryItem
 import com.webtoapp.data.model.GalleryItemType
@@ -32,9 +30,6 @@ class EditStateMapperTest {
             appType = AppType.WEB,
             htmlConfig = HtmlConfig(entryFile = "index.html"),
             splashConfig = SplashConfig(type = SplashType.IMAGE, mediaPath = "file:///splash.png"),
-            bgmConfig = BgmConfig(
-                playlist = listOf(BgmItem(name = "song", path = "/music.mp3"))
-            ),
             announcement = Announcement(title = "Notice", content = "hello"),
             webViewConfig = WebViewConfig(hideToolbar = true),
             pluginsEnabled = true,

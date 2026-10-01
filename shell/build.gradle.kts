@@ -210,7 +210,6 @@ val syncShellRuntimeSources by tasks.registering(Sync::class) {
         "**/core/extension/**",
         "**/core/plugin/**",
         "**/core/notification/**",
-        "**/core/bgm/**",
         "**/core/engine/**",
         "**/core/scraper/**",
         "**/core/script/**",

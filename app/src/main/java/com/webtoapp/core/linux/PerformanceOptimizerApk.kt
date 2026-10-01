@@ -80,10 +80,6 @@ object PerformanceOptimizerApk {
             return true
         }
 
-        if (entryName.startsWith("assets/bgm/default") && appType != "WEB") {
-            return true
-        }
-
         return false
     }
 

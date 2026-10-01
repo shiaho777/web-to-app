@@ -2670,57 +2670,9 @@ object StringsB {
         AppLanguage.KOREAN -> "작성자 아바타"
     }
 
-    val selectBgm: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "选择背景音乐"
-        AppLanguage.ENGLISH -> "Select Background Music"
-        AppLanguage.ARABIC -> "اختيار موسيقى الخلفية"
-        AppLanguage.PORTUGUESE -> "Selecionar Música de Fundo"
-        AppLanguage.SPANISH -> "Seleccionar Música de Fondo"
-        AppLanguage.FRENCH -> "Sélectionner la Musique de Fond"
-        AppLanguage.GERMAN -> "Hintergrundmusik Auswählen"
-        AppLanguage.RUSSIAN -> "Выбрать фоновую музыку"
-        AppLanguage.JAPANESE -> "BGM を選択"
-        AppLanguage.KOREAN -> "배경 음악 선택"
-    }
 
-    val selectedMusic: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "已选音乐"
-        AppLanguage.ENGLISH -> "Selected Music"
-        AppLanguage.ARABIC -> "الموسيقى المحددة"
-        AppLanguage.PORTUGUESE -> "Música Selecionada"
-        AppLanguage.SPANISH -> "Música Seleccionada"
-        AppLanguage.FRENCH -> "Musique Sélectionnée"
-        AppLanguage.GERMAN -> "Ausgewählte Musik"
-        AppLanguage.RUSSIAN -> "Выбранная музыка"
-        AppLanguage.JAPANESE -> "選択済み音楽"
-        AppLanguage.KOREAN -> "선택된 음악"
-    }
 
-    val availableMusic: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "可用音乐"
-        AppLanguage.ENGLISH -> "Available Music"
-        AppLanguage.ARABIC -> "الموسيقى المتاحة"
-        AppLanguage.PORTUGUESE -> "Música Disponível"
-        AppLanguage.SPANISH -> "Música Disponible"
-        AppLanguage.FRENCH -> "Musique Disponible"
-        AppLanguage.GERMAN -> "Verfügbare Musik"
-        AppLanguage.RUSSIAN -> "Доступная музыка"
-        AppLanguage.JAPANESE -> "利用可能な音楽"
-        AppLanguage.KOREAN -> "사용 가능한 음악"
-    }
 
-    val uploadMusic: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "上传音乐"
-        AppLanguage.ENGLISH -> "Upload Music"
-        AppLanguage.ARABIC -> "رفع موسيقى"
-        AppLanguage.PORTUGUESE -> "Carregar Música"
-        AppLanguage.SPANISH -> "Subir Música"
-        AppLanguage.FRENCH -> "Téléverser de la Musique"
-        AppLanguage.GERMAN -> "Musik Hochladen"
-        AppLanguage.RUSSIAN -> "Загрузить музыку"
-        AppLanguage.JAPANESE -> "音楽をアップロード"
-        AppLanguage.KOREAN -> "음악 업로드"
-    }
 
     val clickArrowToReorder: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "点击箭头调整顺序"
@@ -2735,57 +2687,9 @@ object StringsB {
         AppLanguage.KOREAN -> "화살표를 클릭하여 순서 변경"
     }
 
-    val noMusicAvailable: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "暂无音乐"
-        AppLanguage.ENGLISH -> "No music available"
-        AppLanguage.ARABIC -> "لا توجد موسيقى متاحة"
-        AppLanguage.PORTUGUESE -> "Sem música disponível"
-        AppLanguage.SPANISH -> "Sin música disponible"
-        AppLanguage.FRENCH -> "Aucune musique disponible"
-        AppLanguage.GERMAN -> "Keine Musik verfügbar"
-        AppLanguage.RUSSIAN -> "Нет доступной музыки"
-        AppLanguage.JAPANESE -> "利用可能な音楽がありません"
-        AppLanguage.KOREAN -> "사용 가능한 음악이 없습니다"
-    }
 
-    val bgmEmptyHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "上传本地音频，或在线搜索下载"
-        AppLanguage.ENGLISH -> "Upload local audio, or search online"
-        AppLanguage.ARABIC -> "ارفع ملفًا صوتيًا محليًا أو ابحث عبر الإنترنت"
-        AppLanguage.PORTUGUESE -> "Envie áudio local ou pesquise online"
-        AppLanguage.SPANISH -> "Sube audio local o busca en línea"
-        AppLanguage.FRENCH -> "Téléversez un audio local ou cherchez en ligne"
-        AppLanguage.GERMAN -> "Lokale Audiodatei hochladen oder online suchen"
-        AppLanguage.RUSSIAN -> "Загрузите локальное аудио или найдите онлайн"
-        AppLanguage.JAPANESE -> "ローカル音声をアップロード、またはオンライン検索"
-        AppLanguage.KOREAN -> "로컬 오디오 업로드 또는 온라인 검색"
-    }
 
-    val noMusicWithTag: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "没有此标签的音乐"
-        AppLanguage.ENGLISH -> "No music with this tag"
-        AppLanguage.ARABIC -> "لا توجد موسيقى بهذه العلامة"
-        AppLanguage.PORTUGUESE -> "Sem música com esta tag"
-        AppLanguage.SPANISH -> "Sin música con esta etiqueta"
-        AppLanguage.FRENCH -> "Aucune musique avec ce tag"
-        AppLanguage.GERMAN -> "Keine Musik mit diesem Tag"
-        AppLanguage.RUSSIAN -> "Нет музыки с этим тегом"
-        AppLanguage.JAPANESE -> "このタグの音楽がありません"
-        AppLanguage.KOREAN -> "이 태그의 음악이 없습니다"
-    }
 
-    val playMode: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "播放模式"
-        AppLanguage.ENGLISH -> "Play Mode"
-        AppLanguage.ARABIC -> "وضع التشغيل"
-        AppLanguage.PORTUGUESE -> "Modo de Reprodução"
-        AppLanguage.SPANISH -> "Modo de Reproducción"
-        AppLanguage.FRENCH -> "Mode de Lecture"
-        AppLanguage.GERMAN -> "Wiedergabemodus"
-        AppLanguage.RUSSIAN -> "Режим воспроизведения"
-        AppLanguage.JAPANESE -> "再生モード"
-        AppLanguage.KOREAN -> "재생 모드"
-    }
 
     val loopMode: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "循环"
@@ -2839,18 +2743,6 @@ object StringsB {
         AppLanguage.KOREAN -> "볼륨"
     }
 
-    val showLyrics: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "显示歌词"
-        AppLanguage.ENGLISH -> "Show Lyrics"
-        AppLanguage.ARABIC -> "عرض كلمات الأغنية"
-        AppLanguage.PORTUGUESE -> "Mostrar Letras"
-        AppLanguage.SPANISH -> "Mostrar Letras"
-        AppLanguage.FRENCH -> "Afficher les Paroles"
-        AppLanguage.GERMAN -> "Liedtexte Anzeigen"
-        AppLanguage.RUSSIAN -> "Показать текст песни"
-        AppLanguage.JAPANESE -> "歌詞を表示"
-        AppLanguage.KOREAN -> "가사 표시"
-    }
 
 
     val allTag: String get() = when (Strings.lang) {
@@ -2866,18 +2758,6 @@ object StringsB {
         AppLanguage.KOREAN -> "전체"
     }
 
-    val lyricsSaved: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "[OK] 歌词已保存"
-        AppLanguage.ENGLISH -> "[OK] Lyrics saved"
-        AppLanguage.ARABIC -> "[OK] تم حفظ كلمات الأغنية"
-        AppLanguage.PORTUGUESE -> "[OK] Letras salvas"
-        AppLanguage.SPANISH -> "[OK] Letras guardadas"
-        AppLanguage.FRENCH -> "[OK] Paroles enregistrées"
-        AppLanguage.GERMAN -> "[OK] Liedtexte gespeichert"
-        AppLanguage.RUSSIAN -> "[OK] Текст песни сохранён"
-        AppLanguage.JAPANESE -> "[OK] 歌詞を保存しました"
-        AppLanguage.KOREAN -> "[OK] 가사가 저장되었습니다"
-    }
 
     val lines: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "行"
@@ -2892,32 +2772,8 @@ object StringsB {
         AppLanguage.KOREAN -> "줄"
     }
 
-    val previewLyrics: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "预览歌词"
-        AppLanguage.ENGLISH -> "Preview Lyrics"
-        AppLanguage.ARABIC -> "معاينة كلمات الأغنية"
-        AppLanguage.PORTUGUESE -> "Pré-visualizar Letras"
-        AppLanguage.SPANISH -> "Vista Previa de Letras"
-        AppLanguage.FRENCH -> "Aperçu des Paroles"
-        AppLanguage.GERMAN -> "Liedtexte Vorschau"
-        AppLanguage.RUSSIAN -> "Предпросмотр текста"
-        AppLanguage.JAPANESE -> "歌詞をプレビュー"
-        AppLanguage.KOREAN -> "가사 미리보기"
-    }
 
 
-    val aiGenerateLyrics: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "AI生成歌词"
-        AppLanguage.ENGLISH -> "AI Generate Lyrics"
-        AppLanguage.ARABIC -> "إنشاء كلمات بالذكاء الاصطناعي"
-        AppLanguage.PORTUGUESE -> "Gerar Letras com IA"
-        AppLanguage.SPANISH -> "Generar Letras con IA"
-        AppLanguage.FRENCH -> "Générer des Paroles par IA"
-        AppLanguage.GERMAN -> "KI-Liedtexte Generieren"
-        AppLanguage.RUSSIAN -> "Сгенерировать текст песни ИИ"
-        AppLanguage.JAPANESE -> "AIで歌詞を生成"
-        AppLanguage.KOREAN -> "AI로 가사 생성"
-    }
 
     val editTags: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "编辑标签"
@@ -2971,18 +2827,6 @@ object StringsB {
         AppLanguage.KOREAN -> "아래로 이동"
     }
 
-    val presetMusic: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "预置音乐"
-        AppLanguage.ENGLISH -> "Preset Music"
-        AppLanguage.ARABIC -> "موسيقى مسبقة"
-        AppLanguage.PORTUGUESE -> "Música Predefinida"
-        AppLanguage.SPANISH -> "Música Predefinida"
-        AppLanguage.FRENCH -> "Musique Prédéfinie"
-        AppLanguage.GERMAN -> "Voreingestellte Musik"
-        AppLanguage.RUSSIAN -> "Предустановленная музыка"
-        AppLanguage.JAPANESE -> "プリセット音楽"
-        AppLanguage.KOREAN -> "사전 설정 음악"
-    }
 
     val userUploaded: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "用户上传"
@@ -2997,44 +2841,8 @@ object StringsB {
         AppLanguage.KOREAN -> "사용자 업로드"
     }
 
-    val uploadMusicTitle: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "上传音乐"
-        AppLanguage.ENGLISH -> "Upload Music"
-        AppLanguage.ARABIC -> "رفع موسيقى"
-        AppLanguage.PORTUGUESE -> "Carregar Música"
-        AppLanguage.SPANISH -> "Subir Música"
-        AppLanguage.FRENCH -> "Téléverser de la Musique"
-        AppLanguage.GERMAN -> "Musik Hochladen"
-        AppLanguage.RUSSIAN -> "Загрузить музыку"
-        AppLanguage.JAPANESE -> "音楽をアップロード"
-        AppLanguage.KOREAN -> "음악 업로드"
-    }
 
-    val musicName: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "音乐名称"
-        AppLanguage.ENGLISH -> "Music Name"
-        AppLanguage.ARABIC -> "اسم الموسيقى"
-        AppLanguage.PORTUGUESE -> "Nome da Música"
-        AppLanguage.SPANISH -> "Nombre de la Música"
-        AppLanguage.FRENCH -> "Nom de la Musique"
-        AppLanguage.GERMAN -> "Musikname"
-        AppLanguage.RUSSIAN -> "Название музыки"
-        AppLanguage.JAPANESE -> "音楽名"
-        AppLanguage.KOREAN -> "음악 이름"
-    }
 
-    val selectMusic: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "选择音乐"
-        AppLanguage.ENGLISH -> "Select Music"
-        AppLanguage.ARABIC -> "اختيار موسيقى"
-        AppLanguage.PORTUGUESE -> "Selecionar Música"
-        AppLanguage.SPANISH -> "Seleccionar Música"
-        AppLanguage.FRENCH -> "Sélectionner la Musique"
-        AppLanguage.GERMAN -> "Musik Auswählen"
-        AppLanguage.RUSSIAN -> "Выбрать музыку"
-        AppLanguage.JAPANESE -> "音楽を選択"
-        AppLanguage.KOREAN -> "음악 선택"
-    }
 
     val selectCoverOptional: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "选择封面(可选)"
@@ -3101,70 +2909,10 @@ object StringsB {
         AppLanguage.KOREAN -> "적절한 태그 선택(다중 선택)"
     }
 
-    val selectLyricsTheme: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "选择字幕主题"
-        AppLanguage.ENGLISH -> "Select Lyrics Theme"
-        AppLanguage.ARABIC -> "اختيار سمة كلمات الأغنية"
-        AppLanguage.PORTUGUESE -> "Selecionar Tema de Letras"
-        AppLanguage.SPANISH -> "Seleccionar Tema de Letras"
-        AppLanguage.FRENCH -> "Sélectionner le Thème des Paroles"
-        AppLanguage.GERMAN -> "Liedtext-Theme Auswählen"
-        AppLanguage.RUSSIAN -> "Выбрать тему текста песни"
-        AppLanguage.JAPANESE -> "歌詞テーマを選択"
-        AppLanguage.KOREAN -> "가사 테마 선택"
-    }
 
-    val selectLyricsThemeHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "选择歌词显示的视觉风格"
-        AppLanguage.ENGLISH -> "Select visual style for lyrics display"
-        AppLanguage.ARABIC -> "اختر النمط المرئي لعرض كلمات الأغنية"
-        AppLanguage.PORTUGUESE -> "Selecione o estilo visual para exibição das letras"
-        AppLanguage.SPANISH -> "Seleccione el estilo visual para la visualización de letras"
-        AppLanguage.FRENCH -> "Sélectionnez le style visuel pour l'affichage des paroles"
-        AppLanguage.GERMAN -> "Visuellen Stil für die Liedtextanzeige auswählen"
-        AppLanguage.RUSSIAN -> "Выберите визуальный стиль отображения текста песни"
-        AppLanguage.JAPANESE -> "歌詞表示のビジュアルスタイルを選択"
-        AppLanguage.KOREAN -> "가사 표시의 시각 스타일 선택"
-    }
 
-    val sampleLyricsText: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "示例歌词文本"
-        AppLanguage.ENGLISH -> "Sample Lyrics Text"
-        AppLanguage.ARABIC -> "نص كلمات نموذجي"
-        AppLanguage.PORTUGUESE -> "Texto de Letras de Exemplo"
-        AppLanguage.SPANISH -> "Texto de Letras de Ejemplo"
-        AppLanguage.FRENCH -> "Texte de Paroles d'Exemple"
-        AppLanguage.GERMAN -> "Beispiel-Liedtext"
-        AppLanguage.RUSSIAN -> "Образец текста песни"
-        AppLanguage.JAPANESE -> "サンプル歌詞テキスト"
-        AppLanguage.KOREAN -> "샘플 가사 텍스트"
-    }
 
-    val lyricsPreview: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "歌词预览"
-        AppLanguage.ENGLISH -> "Lyrics Preview"
-        AppLanguage.ARABIC -> "معاينة كلمات الأغنية"
-        AppLanguage.PORTUGUESE -> "Pré-visualização de Letras"
-        AppLanguage.SPANISH -> "Vista Previa de Letras"
-        AppLanguage.FRENCH -> "Aperçu des Paroles"
-        AppLanguage.GERMAN -> "Liedtext-Vorschau"
-        AppLanguage.RUSSIAN -> "Предпросмотр текста песни"
-        AppLanguage.JAPANESE -> "歌詞プレビュー"
-        AppLanguage.KOREAN -> "가사 미리보기"
-    }
 
-    val lyricsUpdated: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "[OK] 歌词已更新"
-        AppLanguage.ENGLISH -> "[OK] Lyrics updated"
-        AppLanguage.ARABIC -> "[OK] تم تحديث كلمات الأغنية"
-        AppLanguage.PORTUGUESE -> "[OK] Letras atualizadas"
-        AppLanguage.SPANISH -> "[OK] Letras actualizadas"
-        AppLanguage.FRENCH -> "[OK] Paroles mises à jour"
-        AppLanguage.GERMAN -> "[OK] Liedtexte aktualisiert"
-        AppLanguage.RUSSIAN -> "[OK] Текст песни обновлён"
-        AppLanguage.JAPANESE -> "[OK] 歌詞を更新しました"
-        AppLanguage.KOREAN -> "[OK] 가사가 업데이트되었습니다"
-    }
 
     val backward10s: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "后退10秒"
@@ -5624,18 +5372,6 @@ object StringsB {
         AppLanguage.KOREAN -> "아이콘 선택"
     }
 
-    val previewLrcHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "预览生成的 LRC 效果，确认无误后保存"
-        AppLanguage.ENGLISH -> "Preview generated LRC effect, save after confirmation"
-        AppLanguage.ARABIC -> "معاينة تأثير LRC المُنشأ، احفظ بعد التأكيد"
-        AppLanguage.PORTUGUESE -> "Pré-visualize o efeito LRC gerado, salve após confirmar"
-        AppLanguage.SPANISH -> "Previsualiza el efecto LRC generado, guarda tras confirmar"
-        AppLanguage.FRENCH -> "Prévisualisez l'effet LRC généré, enregistrez après confirmation"
-        AppLanguage.GERMAN -> "LRC-Effekt vorschauen, nach Bestätigung speichern"
-        AppLanguage.RUSSIAN -> "Предпросмотр LRC, сохраните после подтверждения"
-        AppLanguage.JAPANESE -> "生成された LRC 効果をプレビューし、確認後に保存"
-        AppLanguage.KOREAN -> "생성된 LRC 효과를 미리보고 확인 후 저장"
-    }
 
     val featureIconGeneration: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "图标生成"
