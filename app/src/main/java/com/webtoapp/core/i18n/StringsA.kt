@@ -4363,17 +4363,17 @@ object StringsA {
         AppLanguage.KOREAN -> "HTML은 필수. 페이지가 참조하면 CSS/JS를 추가하세요."
     }
 
-    val featureTip: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "激活码、BGM 等功能可在创建后编辑。"
-        AppLanguage.ENGLISH -> "Add activation codes, BGM, and more after creation."
-        AppLanguage.ARABIC -> "يمكن إضافة ميزات مثل رمز التفعيل والموسيقى الخلفية عبر 'تعديل' في إدارة المشروع بعد الإنشاء."
-        AppLanguage.PORTUGUESE -> "Adicione códigos de ativação, BGM e mais após a criação."
-        AppLanguage.SPANISH -> "Añade códigos de activación, BGM y más tras la creación."
-        AppLanguage.FRENCH -> "Ajoutez codes d'activation, BGM et plus après création."
-        AppLanguage.GERMAN -> "Füge Aktivierungscodes, BGM u. v. m. nach der Erstellung hinzu."
-        AppLanguage.RUSSIAN -> "Добавьте коды активации, фоновую музыку и др. после создания."
-        AppLanguage.JAPANESE -> "作成後にアクティベーションコード、BGMなどを追加できます。"
-        AppLanguage.KOREAN -> "생성 후 활성화 코드, BGM 등을 추가할 수 있습니다."
+        val featureTip: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "激活码、翻译等功能可在创建后编辑。"
+        AppLanguage.ENGLISH -> "Add activation codes, translation, and more after creation."
+        AppLanguage.ARABIC -> "يمكن إضافة ميزات مثل رمز التفعيل والترجمة عبر 'تعديل' في إدارة المشروع بعد الإنشاء."
+        AppLanguage.PORTUGUESE -> "Adicione códigos de ativação, tradução e mais após a criação."
+        AppLanguage.SPANISH -> "Añade códigos de activación, traducción y más tras la creación."
+        AppLanguage.FRENCH -> "Ajoutez codes d'activation, traduction et plus après création."
+        AppLanguage.GERMAN -> "Füge Aktivierungscodes, Übersetzung u. v. m. nach der Erstellung hinzu."
+        AppLanguage.RUSSIAN -> "Добавьте коды активации, перевод и др. после создания."
+        AppLanguage.JAPANESE -> "作成後にアクティベーションコードや翻訳などを追加できます。"
+        AppLanguage.KOREAN -> "생성 후 활성화 코드, 번역 등을 추가할 수 있습니다."
     }
 
     val aboutFileReference: String get() = when (Strings.lang) {

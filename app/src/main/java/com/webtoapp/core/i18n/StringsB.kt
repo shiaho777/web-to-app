@@ -7778,17 +7778,17 @@ object StringsB {
         AppLanguage.KOREAN -> "데이터 백업"
     }
 
-    val dataBackupDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "导出或导入所有应用数据，包括配置、图标、启动画面、BGM等资源文件"
-        AppLanguage.ENGLISH -> "Export or import all app data including config, icons, splash screens, BGM and other resources"
+        val dataBackupDesc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "导出或导入所有应用数据，包括配置、图标、启动画面等资源文件"
+        AppLanguage.ENGLISH -> "Export or import all app data including config, icons, splash screens and other resources"
         AppLanguage.ARABIC -> "تصدير أو استيراد جميع بيانات التطبيق"
-        AppLanguage.PORTUGUESE -> "Exportar ou importar todos os dados do app, incluindo config, ícones, telas splash, BGM e outros recursos"
-        AppLanguage.SPANISH -> "Exportar o importar todos los datos de la app, incluyendo config, iconos, pantallas de inicio, BGM y otros recursos"
-        AppLanguage.FRENCH -> "Exporter ou importer toutes les données de l'app, y compris config, icônes, écrans de démarrage, BGM et autres ressources"
-        AppLanguage.GERMAN -> "Alle App-Daten exportieren oder importieren, inkl. Konfiguration, Icons, Startbildschirme, BGM und andere Ressourcen"
-        AppLanguage.RUSSIAN -> "Экспорт или импорт всех данных приложения, включая конфигурацию, иконки, заставки, BGM и другие ресурсы"
-        AppLanguage.JAPANESE -> "設定、アイコン、スプラッシュ画面、BGMなどのリソースを含むすべてのアプリデータをエクスポート/インポート"
-        AppLanguage.KOREAN -> "설정, 아이콘, 스플래시 화면, BGM 등 리소스를 포함한 모든 앱 데이터 내보내기/가져오기"
+        AppLanguage.PORTUGUESE -> "Exportar ou importar todos os dados do app, incluindo config, ícones, telas splash e outros recursos"
+        AppLanguage.SPANISH -> "Exportar o importar todos los datos de la app, incluyendo config, iconos, pantallas de inicio y otros recursos"
+        AppLanguage.FRENCH -> "Exporter ou importer toutes les données de l'app, y compris config, icônes, écrans de démarrage et autres ressources"
+        AppLanguage.GERMAN -> "Alle App-Daten exportieren oder importieren, inkl. Konfiguration, Icons, Startbildschirme und andere Ressourcen"
+        AppLanguage.RUSSIAN -> "Экспорт или импорт всех данных приложения, включая конфигурацию, иконки, заставки и другие ресурсы"
+        AppLanguage.JAPANESE -> "設定、アイコン、スプラッシュ画面などのリソースを含むすべてのアプリデータをエクスポート/インポート"
+        AppLanguage.KOREAN -> "설정, 아이콘, 스플래시 화면 등 리소스를 포함한 모든 앱 데이터보내기/가져오기"
     }
 
     val dataBackupNote: String get() = when (Strings.lang) {
