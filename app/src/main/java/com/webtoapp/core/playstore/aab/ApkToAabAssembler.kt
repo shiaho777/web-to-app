@@ -106,26 +106,30 @@ class ApkToAabAssembler {
                     AppLogger.d(TAG, "Excluding plaintext res XML from resource table: $plaintextResFiles")
                 }
 
-                val protoTable = ArscToProtoTable.convert(table, plaintextResFiles)
-                writeEntry(out, "base/resources.pb", protoTable.toByteArray())
-
                 val referencedResources = table.collectReferencedResourceFiles()
                 AppLogger.d(TAG, "Resource table references ${referencedResources.size} res/ paths")
 
-                // Validate resource integrity before processing: ensure all referenced resources
-                // (except plaintext XML) exist in the source APK. This prevents bundletool from
-                // rejecting the AAB with "resource table references non-existing files" errors.
+                // An arsc entry can reference a res file that is absent from the payload —
+                // e.g. the SAEP raw placeholder that ApkBuilder drops when the feature is
+                // disabled, or shrinker leftovers in foreign/clone APKs. Bundletool rejects
+                // dangling references outright, so exclude them from the proto table the same
+                // way plaintext res XML is excluded (issue #1160).
                 for (resourcePath in referencedResources) {
                     if (resourcePath in plaintextResFiles) continue
                     if (!hasEntry(zip, resourcePath)) {
                         missingResources.add(resourcePath)
                         AppLogger.w(
                             TAG,
-                            "Missing resource referenced in resources.arsc: $resourcePath."
-                                + " This may be a tools:keep marker file that should be excluded."
+                            "Dropping dangling resource reference absent from source APK:" +
+                                " $resourcePath"
                         )
                     }
                 }
+
+                val protoTable = ArscToProtoTable.convert(
+                    table, plaintextResFiles + missingResources
+                )
+                writeEntry(out, "base/resources.pb", protoTable.toByteArray())
 
                 val entries = zip.entries().toList().sortedBy { it.name }
                 for (entry in entries) {
@@ -261,9 +265,10 @@ class ApkToAabAssembler {
         if (missingResources.isNotEmpty()) {
             AppLogger.w(
                 TAG,
-                "WARNING: ${missingResources.size} missing resource(s) detected in AAB."
-                    + " This may cause Google Play Console to reject the bundle."
-                    + " Missing files: ${missingResources.joinToString(", ")}"  
+                "Dropped ${missingResources.size} dangling resource reference(s) absent" +
+                    " from the source APK: ${missingResources.joinToString(", ")}." +
+                    " If those were real resources the source APK is corrupt; intentional" +
+                    " placeholder drops (e.g. SAEP policy) are safe."
             )
         }
         
