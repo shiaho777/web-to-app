@@ -3352,6 +3352,102 @@ object StringsC {
         AppLanguage.KOREAN -> "이미지 선택/업로드"
     }
 
+    val lrcThemeDefault: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "默认"
+        AppLanguage.ENGLISH -> "Default"
+        AppLanguage.ARABIC -> "افتراضي"
+        AppLanguage.PORTUGUESE -> "Padrão"
+        AppLanguage.SPANISH -> "Predeterminado"
+        AppLanguage.FRENCH -> "Par défaut"
+        AppLanguage.GERMAN -> "Standard"
+        AppLanguage.RUSSIAN -> "По умолчанию"
+        AppLanguage.JAPANESE -> "デフォルト"
+        AppLanguage.KOREAN -> "기본"
+    }
+    val lrcThemeKaraoke: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "卡拉OK"
+        AppLanguage.ENGLISH -> "Karaoke"
+        AppLanguage.ARABIC -> "كاريوكي"
+        AppLanguage.PORTUGUESE -> "Karaokê"
+        AppLanguage.SPANISH -> "Karaoke"
+        AppLanguage.FRENCH -> "Karaoké"
+        AppLanguage.GERMAN -> "Karaoke"
+        AppLanguage.RUSSIAN -> "Караоке"
+        AppLanguage.JAPANESE -> "カラオケ"
+        AppLanguage.KOREAN -> "노래방"
+    }
+    val lrcThemeNeon: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "霓虹"
+        AppLanguage.ENGLISH -> "Neon"
+        AppLanguage.ARABIC -> "نيون"
+        AppLanguage.PORTUGUESE -> "Neon"
+        AppLanguage.SPANISH -> "Neón"
+        AppLanguage.FRENCH -> "Néon"
+        AppLanguage.GERMAN -> "Neon"
+        AppLanguage.RUSSIAN -> "Неон"
+        AppLanguage.JAPANESE -> "ネオン"
+        AppLanguage.KOREAN -> "네온"
+    }
+    val lrcThemeMinimal: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "极简"
+        AppLanguage.ENGLISH -> "Minimal"
+        AppLanguage.ARABIC -> "بسيط"
+        AppLanguage.PORTUGUESE -> "Minimalista"
+        AppLanguage.SPANISH -> "Minimalista"
+        AppLanguage.FRENCH -> "Minimaliste"
+        AppLanguage.GERMAN -> "Minimalistisch"
+        AppLanguage.RUSSIAN -> "Минимализм"
+        AppLanguage.JAPANESE -> "ミニマル"
+        AppLanguage.KOREAN -> "미니멀"
+    }
+    val lrcThemeClassic: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "经典"
+        AppLanguage.ENGLISH -> "Classic"
+        AppLanguage.ARABIC -> "كلاسيكي"
+        AppLanguage.PORTUGUESE -> "Clássico"
+        AppLanguage.SPANISH -> "Clásico"
+        AppLanguage.FRENCH -> "Classique"
+        AppLanguage.GERMAN -> "Klassisch"
+        AppLanguage.RUSSIAN -> "Классический"
+        AppLanguage.JAPANESE -> "クラシック"
+        AppLanguage.KOREAN -> "클래식"
+    }
+    val lrcThemeDark: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "暗夜"
+        AppLanguage.ENGLISH -> "Dark"
+        AppLanguage.ARABIC -> "داكن"
+        AppLanguage.PORTUGUESE -> "Escuro"
+        AppLanguage.SPANISH -> "Oscuro"
+        AppLanguage.FRENCH -> "Sombre"
+        AppLanguage.GERMAN -> "Dunkel"
+        AppLanguage.RUSSIAN -> "Тёмный"
+        AppLanguage.JAPANESE -> "ダーク"
+        AppLanguage.KOREAN -> "다크"
+    }
+    val lrcThemeRomantic: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "浪漫"
+        AppLanguage.ENGLISH -> "Romantic"
+        AppLanguage.ARABIC -> "رومانسي"
+        AppLanguage.PORTUGUESE -> "Romântico"
+        AppLanguage.SPANISH -> "Romántico"
+        AppLanguage.FRENCH -> "Romantique"
+        AppLanguage.GERMAN -> "Romantisch"
+        AppLanguage.RUSSIAN -> "Романтичный"
+        AppLanguage.JAPANESE -> "ロマンティック"
+        AppLanguage.KOREAN -> "로맨틱"
+    }
+    val lrcThemeEnergetic: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "活力"
+        AppLanguage.ENGLISH -> "Energetic"
+        AppLanguage.ARABIC -> "نشط"
+        AppLanguage.PORTUGUESE -> "Energético"
+        AppLanguage.SPANISH -> "Enérgico"
+        AppLanguage.FRENCH -> "Énergique"
+        AppLanguage.GERMAN -> "Energetisch"
+        AppLanguage.RUSSIAN -> "Энергичный"
+        AppLanguage.JAPANESE -> "エネルギッシュ"
+        AppLanguage.KOREAN -> "에너제틱"
+    }
 
     val testPageBasicHtml: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "基础HTML页面"
@@ -6841,6 +6937,18 @@ object StringsC {
         AppLanguage.KOREAN -> "모델 편집"
     }
 
+    val bgmTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "背景音乐"
+        AppLanguage.ENGLISH -> "Background Music"
+        AppLanguage.ARABIC -> "موسيقى الخلفية"
+        AppLanguage.PORTUGUESE -> "Música de Fundo"
+        AppLanguage.SPANISH -> "Música de Fondo"
+        AppLanguage.FRENCH -> "Musique de Fond"
+        AppLanguage.GERMAN -> "Hintergrundmusik"
+        AppLanguage.RUSSIAN -> "Фоновая музыка"
+        AppLanguage.JAPANESE -> "背景音楽"
+        AppLanguage.KOREAN -> "배경 음악"
+    }
 
     val andMoreTracks: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "还有 %d 首..."
@@ -6855,7 +6963,31 @@ object StringsC {
         AppLanguage.KOREAN -> "외 %d곡..."
     }
 
+    val bgmLibraryTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "音乐库"
+        AppLanguage.ENGLISH -> "Music Library"
+        AppLanguage.ARABIC -> "مكتبة الموسيقى"
+        AppLanguage.PORTUGUESE -> "Biblioteca de Música"
+        AppLanguage.SPANISH -> "Biblioteca de Música"
+        AppLanguage.FRENCH -> "Bibliothèque Musicale"
+        AppLanguage.GERMAN -> "Musikbibliothek"
+        AppLanguage.RUSSIAN -> "Медиатека"
+        AppLanguage.JAPANESE -> "ミュージックライブラリ"
+        AppLanguage.KOREAN -> "음악 라이브러리"
+    }
 
+    val bgmTrackCount: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "%d 首"
+        AppLanguage.ENGLISH -> "%d tracks"
+        AppLanguage.ARABIC -> "%d مقاطع"
+        AppLanguage.PORTUGUESE -> "%d faixas"
+        AppLanguage.SPANISH -> "%d pistas"
+        AppLanguage.FRENCH -> "%d morceaux"
+        AppLanguage.GERMAN -> "%d Titel"
+        AppLanguage.RUSSIAN -> "%d треков"
+        AppLanguage.JAPANESE -> "%d 曲"
+        AppLanguage.KOREAN -> "%d곡"
+    }
 
     val moreOptions: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "更多选项"

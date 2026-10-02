@@ -1,5 +1,8 @@
 package com.webtoapp.core.apkbuilder
 
+import com.webtoapp.core.shell.BgmShellItem
+import com.webtoapp.core.shell.LrcShellTheme
+
 data class ApkConfig(
     val meta: MetaBlock,
     val activation: ActivationBlock = ActivationBlock(),
@@ -18,6 +21,7 @@ data class ApkConfig(
     val splash: SplashBlock = SplashBlock(),
     val html: HtmlBlock = HtmlBlock(),
     val gallery: GalleryBlock = GalleryBlock(),
+    val bgm: BgmBlock = BgmBlock(),
     val translate: TranslateBlock = TranslateBlock(),
     val plugin: PluginBlock = PluginBlock(),
     val autoStart: AutoStartBlock = AutoStartBlock(),
@@ -292,6 +296,14 @@ data class ApkConfig(
     val galleryGridColumns: Int get() = gallery.gridColumns
     val gallerySortOrder: String get() = gallery.sortOrder
     val galleryRememberPosition: Boolean get() = gallery.rememberPosition
+
+    val bgmEnabled: Boolean get() = bgm.enabled
+    val bgmPlaylist: List<BgmShellItem> get() = bgm.playlist
+    val bgmPlayMode: String get() = bgm.playMode
+    val bgmVolume: Float get() = bgm.volume
+    val bgmAutoPlay: Boolean get() = bgm.autoPlay
+    val bgmShowLyrics: Boolean get() = bgm.showLyrics
+    val bgmLrcTheme: LrcShellTheme? get() = bgm.lrcTheme
 
     val translateEnabled: Boolean get() = translate.enabled
     val translateTargetLanguage: String get() = translate.targetLanguage
@@ -703,6 +715,16 @@ data class GalleryBlock(
     val gridColumns: Int = 3,
     val sortOrder: String = "CUSTOM",
     val rememberPosition: Boolean = true
+)
+
+data class BgmBlock(
+    val enabled: Boolean = false,
+    val playlist: List<BgmShellItem> = emptyList(),
+    val playMode: String = "LOOP",
+    val volume: Float = 0.5f,
+    val autoPlay: Boolean = true,
+    val showLyrics: Boolean = true,
+    val lrcTheme: LrcShellTheme? = null
 )
 
 data class TranslateBlock(

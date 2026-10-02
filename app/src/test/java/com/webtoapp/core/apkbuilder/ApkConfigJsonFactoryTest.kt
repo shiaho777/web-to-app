@@ -2,6 +2,7 @@ package com.webtoapp.core.apkbuilder
 
 import com.google.common.truth.Truth.assertThat
 import com.google.gson.JsonParser
+import com.webtoapp.core.shell.BgmShellItem
 import com.webtoapp.core.shell.ShellConfig
 import com.webtoapp.data.model.CustomCaCertificate
 import com.webtoapp.data.model.AppType
@@ -71,6 +72,18 @@ class ApkConfigJsonFactoryTest {
                 minimizedIconSizePercent = 70,
                 minimizedIconEdgeDocking = true
             ),
+            bgm = BgmBlock(
+                enabled = true,
+                playlist = listOf(
+                    BgmShellItem(
+                        id = "track\"1",
+                        name = "Night\nDrive",
+                        assetPath = "assets/bgm/night drive.mp3",
+                        lrcAssetPath = "assets/bgm/night drive.lrc",
+                        sortOrder = 3
+                    )
+                )
+            )
         )
 
         val json = ApkConfigJsonFactory.create(config)
@@ -97,6 +110,8 @@ class ApkConfigJsonFactoryTest {
         assertThat(networkTrust.getAsJsonArray("customCaCertificates")[0].asJsonObject.get("sha256").asString)
             .isEqualTo("abc123")
         assertThat(networkTrust.getAsJsonArray("customCaCertificates")[0].asJsonObject.has("filePath")).isFalse()
+        assertThat(root.getAsJsonArray("bgmPlaylist")[0].asJsonObject.get("name").asString)
+            .isEqualTo("Night\nDrive")
     }
 
     @Test

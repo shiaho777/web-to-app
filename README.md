@@ -76,7 +76,7 @@
   </tr>
   <tr>
     <td align="center" width="25%"><img src=".github/assets/screenshots/05-editor-basic.png" width="200" alt="Editor basic info card"><br><sub><b>Editor</b> — icon, name & core toggles</sub></td>
-    <td align="center" width="25%"><img src=".github/assets/screenshots/06-editor-toggles.png" width="200" alt="Editor feature toggles"><br><sub><b>Editor</b> — splash, translate & more</sub></td>
+    <td align="center" width="25%"><img src=".github/assets/screenshots/06-editor-toggles.png" width="200" alt="Editor feature toggles"><br><sub><b>Editor</b> — splash, BGM, translate & more</sub></td>
     <td align="center" width="25%"><img src=".github/assets/screenshots/07-editor-advanced.png" width="200" alt="Editor advanced and export settings"><br><sub><b>Editor</b> — advanced & export settings</sub></td>
     <td align="center" width="25%"><img src=".github/assets/screenshots/08-app-actions.png" width="200" alt="Per-app action menu"><br><sub><b>Actions</b> — build, share, export & more</sub></td>
   </tr>
@@ -179,7 +179,7 @@ WebToApp has a large number of switches. The sections below group them by use ca
 
 - **Browser fingerprint disguise across 50+ vectors** — User-Agent, WebGL, Canvas, AudioContext, ClientRects, timezone, language, memory, media devices, WebRTC, fonts, battery, permissions, performance, storage, notifications, CSS media, iframe propagation, and error-stack cleanup.
 - **Hosts-rule ad blocker** with cosmetic MutationObserver filtering, **20 built-in community filter lists** (EasyList, uBlock Origin, AdGuard, AdAway, plus 8 language-specific lists), per-source enable/disable/delete, named custom filter imports managed as cards and selectable per app, and custom subscription rules bundled into the APK.
-- **Resource encryption** (PBKDF2 + AES-256-GCM) for packaged config, HTML, and media; optional custom encryption password stronger than package/certificate-derived keys.
+- **Resource encryption** (PBKDF2 + AES-256-GCM) for packaged config, HTML, media, and BGM; optional custom encryption password stronger than package/certificate-derived keys.
 - **Runtime hardening** when encryption is on — anti-debug, anti-Frida, DEX-tamper checks; threat response of log-only, silent exit, or randomized crash.
 - **WebView/content isolation** for storage, WebRTC, Canvas, Audio, WebGL, fonts, headers, and IP surfaces.
 - **Activation-code gating** — local verification, or your own HTTPS endpoint signed with EC P-256. See the [remote activation docs](.github/docs/remote-activation.md).
@@ -213,6 +213,7 @@ WebToApp has a large number of switches. The sections below group them by use ca
 <summary><b>📱 App experience</b></summary>
 
 - **Splash screens** — image or video, with skip behavior, trim ranges, and fixed orientation.
+- **Background music** — playlists with synced LRC lyrics, lyric animations, custom font/color/stroke/shadow, and online music search.
 - **Toolbar, status bar (light & dark), navigation, floating-window mode, and long-press menu styles.** The browser toolbar is a master toggle (off by default) with per-item buttons for title/URL/back/forward/refresh plus a native **find-in-page** bottom bar and a **console** panel for on-device debugging. Status bar color can follow theme, a custom color, full transparency, or **PAGE_TOP** (sample the page’s top pixels so the chrome matches the content).
 - **Download location mode** — system Downloads, app-private directory, or a custom SAF folder picked by the user.
 - **Announcement templates** for launch, interval, and no-network moments.

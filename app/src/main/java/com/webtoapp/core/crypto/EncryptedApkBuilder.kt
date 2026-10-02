@@ -3,6 +3,7 @@ package com.webtoapp.core.crypto
 import android.content.Context
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.core.apkbuilder.ApkConfig
+import com.webtoapp.data.model.LrcData
 import java.util.zip.CRC32
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
@@ -102,6 +103,40 @@ class EncryptedApkBuilder(private val context: Context) {
         }
     }
 
+    fun writeEncryptedBgm(
+        zipOut: ZipOutputStream,
+        bgmData: ByteArray,
+        index: Int,
+        lrcData: LrcData?,
+        encryptionConfig: EncryptionConfig,
+        secretKey: SecretKey
+    ) {
+        val bgmPath = "bgm/bgm_$index.mp3"
+
+        if (encryptionConfig.enabled) {
+            AppLogger.d(TAG, "加密 BGM: $bgmPath")
+            val encryptor = AssetEncryptor(secretKey)
+            val encryptedData = encryptor.encrypt(bgmData, bgmPath)
+            writeEntryDeflated(zipOut, "assets/${bgmPath}${CryptoConstants.ENCRYPTED_EXTENSION}", encryptedData)
+        } else {
+            AppLogger.d(TAG, "写入明文 BGM: $bgmPath")
+            writeEntryStored(zipOut, "assets/$bgmPath", bgmData)
+        }
+
+        if (lrcData != null && lrcData.lines.isNotEmpty()) {
+            val lrcContent = convertLrcDataToString(lrcData)
+            val lrcPath = "bgm/bgm_$index.lrc"
+
+            if (encryptionConfig.enabled) {
+                val encryptor = AssetEncryptor(secretKey)
+                val encryptedLrc = encryptor.encryptText(lrcContent, lrcPath)
+                writeEntryDeflated(zipOut, "assets/${lrcPath}${CryptoConstants.ENCRYPTED_EXTENSION}", encryptedLrc)
+            } else {
+                writeEntryDeflated(zipOut, "assets/$lrcPath", lrcContent.toByteArray(Charsets.UTF_8))
+            }
+        }
+    }
+
     fun generateEncryptionKey(packageName: String, encryptionConfig: EncryptionConfig = EncryptionConfig.DISABLED): SecretKey {
         val signatureHash = keyManager.getSignatureHashForBuild()
         return keyManager.generateKeyForPackage(
@@ -157,6 +192,22 @@ class EncryptedApkBuilder(private val context: Context) {
         zipOut.closeEntry()
     }
 
+    private fun convertLrcDataToString(lrcData: LrcData): String {
+        val sb = StringBuilder()
+
+        lrcData.title?.let { sb.appendLine("[ti:$it]") }
+        lrcData.artist?.let { sb.appendLine("[ar:$it]") }
+        lrcData.album?.let { sb.appendLine("[al:$it]") }
+
+        lrcData.lines.forEach { line ->
+            val minutes = line.startTime / 60000
+            val seconds = (line.startTime % 60000) / 1000
+            val millis = (line.startTime % 1000) / 10
+            sb.appendLine("[%02d:%02d.%02d]%s".format(minutes, seconds, millis, line.text))
+        }
+
+        return sb.toString()
+    }
 }
 
 data class EncryptionMetadata(

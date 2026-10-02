@@ -15,5 +15,6 @@ A thematic index of the appearance and UI capabilities. Each is configured by a 
 ## Media & content
 
 - [Splash Animation](/guide/app-actions/edit-common-config/splash) — image/video splash, skip, trim.
+- [Background Music](/guide/app-actions/edit-common-config/bgm) — playlists, lyrics, styling.
 - [Popup Announcement](/guide/app-actions/edit-common-config/announcement) — announcement templates and timing.
 - [Webpage Auto Translation](/guide/app-actions/edit-common-config/translate) — in-page translation overlay.

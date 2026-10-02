@@ -226,9 +226,7 @@ enum class AiFeature(
     AGENT_IMAGE("Image", listOf(ModelCapability.IMAGE_GENERATION)),
     ICON_GENERATION("AutoAwesome", listOf(ModelCapability.IMAGE_GENERATION)),
     MODULE_DEVELOPMENT("Extension", listOf(ModelCapability.TEXT, ModelCapability.MULTIMODAL)),
-    // Retired with the BGM feature; kept only so persisted featureMappings
-    // still decode. Empty capabilities keep it out of every feature picker.
-    LRC_GENERATION("MusicNote", emptyList()),
+    LRC_GENERATION("MusicNote", listOf(ModelCapability.TEXT, ModelCapability.MULTIMODAL)),
     TRANSLATION("Translate", listOf(ModelCapability.TEXT, ModelCapability.MULTIMODAL)),
     GENERAL("Chat", listOf(ModelCapability.TEXT, ModelCapability.MULTIMODAL));
 
@@ -404,6 +402,106 @@ data class AiSettings(
     val savedModels: List<SavedModel> = emptyList(),
     val defaultModelId: String? = null
 )
+
+enum class LrcTaskStatus {
+    PENDING,
+    PROCESSING,
+    COMPLETED,
+    FAILED
+}
+
+data class LrcTask(
+    val id: String = java.util.UUID.randomUUID().toString(),
+    val bgmItemId: String,
+    val bgmName: String,
+    val bgmPath: String,
+    val modelId: String,
+    val status: LrcTaskStatus = LrcTaskStatus.PENDING,
+    val progress: Int = 0,
+    val resultLrc: LrcData? = null,
+    val errorMessage: String? = null,
+    val createdAt: Long = System.currentTimeMillis(),
+    val completedAt: Long? = null
+)
+
+object PresetLrcThemes {
+    val themes = listOf(
+        LrcTheme(
+            id = "default",
+            name = Strings.lrcThemeDefault,
+            textColor = "#FFFFFF",
+            highlightColor = "#FFD700",
+            backgroundColor = "#80000000",
+            animationType = LrcAnimationType.FADE
+        ),
+        LrcTheme(
+            id = "karaoke",
+            name = Strings.lrcThemeKaraoke,
+            textColor = "#FFFFFF",
+            highlightColor = "#FF4081",
+            backgroundColor = "#00000000",
+            strokeColor = "#000000",
+            strokeWidth = 2f,
+            animationType = LrcAnimationType.KARAOKE
+        ),
+        LrcTheme(
+            id = "neon",
+            name = Strings.lrcThemeNeon,
+            textColor = "#00FFFF",
+            highlightColor = "#FF00FF",
+            backgroundColor = "#40000000",
+            shadowEnabled = true,
+            animationType = LrcAnimationType.FADE
+        ),
+        LrcTheme(
+            id = "minimal",
+            name = Strings.lrcThemeMinimal,
+            fontSize = 16f,
+            textColor = "#CCCCCC",
+            highlightColor = "#FFFFFF",
+            backgroundColor = "#00000000",
+            animationType = LrcAnimationType.SLIDE_UP
+        ),
+        LrcTheme(
+            id = "classic",
+            name = Strings.lrcThemeClassic,
+            fontSize = 20f,
+            textColor = "#FFE4B5",
+            highlightColor = "#FFD700",
+            backgroundColor = "#60000000",
+            animationType = LrcAnimationType.TYPEWRITER
+        ),
+        LrcTheme(
+            id = "dark",
+            name = Strings.lrcThemeDark,
+            textColor = "#AAAAAA",
+            highlightColor = "#4FC3F7",
+            backgroundColor = "#E0000000",
+            animationType = LrcAnimationType.SCALE
+        ),
+        LrcTheme(
+            id = "romantic",
+            name = Strings.lrcThemeRomantic,
+            textColor = "#FFB6C1",
+            highlightColor = "#FF69B4",
+            backgroundColor = "#40000000",
+            animationType = LrcAnimationType.FADE
+        ),
+        LrcTheme(
+            id = "energetic",
+            name = Strings.lrcThemeEnergetic,
+            fontSize = 22f,
+            textColor = "#FFEB3B",
+            highlightColor = "#FF5722",
+            backgroundColor = "#00000000",
+            strokeColor = "#000000",
+            strokeWidth = 3f,
+            animationType = LrcAnimationType.SCALE
+        )
+    )
+
+    fun getById(id: String): LrcTheme? = themes.find { it.id == id }
+}
 
 fun AiProvider.getLocalizedDisplayName(): String = displayName
 

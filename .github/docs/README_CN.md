@@ -76,7 +76,7 @@
   </tr>
   <tr>
     <td align="center" width="25%"><img src="../assets/screenshots/05-editor-basic.png" width="200" alt="编辑器基本信息卡"><br><sub><b>编辑器</b> —— 图标、名称与核心开关</sub></td>
-    <td align="center" width="25%"><img src="../assets/screenshots/06-editor-toggles.png" width="200" alt="编辑器功能开关"><br><sub><b>编辑器</b> —— 启动屏、翻译等</sub></td>
+    <td align="center" width="25%"><img src="../assets/screenshots/06-editor-toggles.png" width="200" alt="编辑器功能开关"><br><sub><b>编辑器</b> —— 启动屏、音乐、翻译等</sub></td>
     <td align="center" width="25%"><img src="../assets/screenshots/07-editor-advanced.png" width="200" alt="编辑器高级与导出设置"><br><sub><b>编辑器</b> —— 高级与导出设置</sub></td>
     <td align="center" width="25%"><img src="../assets/screenshots/08-app-actions.png" width="200" alt="单应用操作菜单"><br><sub><b>操作菜单</b> —— 构建、分享、导出等</sub></td>
   </tr>
@@ -179,7 +179,7 @@ WebToApp 的开关非常多。下面按使用场景分组,并用可折叠区段�
 
 - **跨 50+ 维的浏览器指纹伪装** —— User-Agent、WebGL、Canvas、AudioContext、ClientRects、时区、语言、内存、媒体设备、WebRTC、字体、电池、权限、性能、存储、通知、CSS media、iframe 传播和错误栈清理。
 - **hosts 规则广告拦截** + cosmetic MutationObserver 过滤,**内置 20 个社区过滤源**(EasyList、uBlock Origin、AdGuard、AdAway + 8 个语言列表),支持逐源启用/停用/删除,自定义导入的过滤源带名称、以卡片管理并可按应用勾选,以及打包进 APK 的自定义订阅规则。
-- **资源加密**(PBKDF2 + AES-256-GCM)覆盖打包进去的配置、HTML 和媒体;可设置自定义加密密码,比默认的包名/证书派生密钥更能抵御逆向提取。
+- **资源加密**(PBKDF2 + AES-256-GCM)覆盖打包进去的配置、HTML、媒体和 BGM;可设置自定义加密密码,比默认的包名/证书派生密钥更能抵御逆向提取。
 - **运行时加固**(开启加密后可用)—— 反调试、反 Frida、DEX 篡改检测;威胁响应可选只记录、静默退出或随机崩溃。
 - **WebView/内容隔离**覆盖存储、WebRTC、Canvas、Audio、WebGL、字体、请求头和 IP 暴露面。
 - **激活码门控** —— 本地验证,或接入你自己的 HTTPS 接口并用 EC P-256 验签。接口契约见 [remote activation 文档](remote-activation.md)。
@@ -213,6 +213,7 @@ WebToApp 的开关非常多。下面按使用场景分组,并用可折叠区段�
 <summary><b>📱 应用体验</b></summary>
 
 - **启动屏** —— 图片或视频,支持跳过、视频裁剪区间和固定方向。
+- **背景音乐** —— 播放列表 + LRC 同步歌词、歌词动画、自定义字体/颜色/描边/阴影和在线音乐搜索。
 - **工具栏、状态栏(亮色/暗色)、导航栏、悬浮窗模式和长按菜单样式。** 浏览器工具栏是一个主开关(默认关闭),可逐项控制标题/URL/后退/前进/刷新按钮,并带原生 **页内查找** 底栏(工具栏查找按钮)和 **控制台** 面板,便于在设备上调试。状态栏颜色可跟随主题、自定义色、全透明,或 **PAGE_TOP**(采样页面顶部像素,让系统栏跟内容同色)。
 - **下载位置模式** —— 系统 Downloads、应用私有目录,或用户用 SAF 自选文件夹。
 - **公告模板**,可在启动、定时或无网络时触发。

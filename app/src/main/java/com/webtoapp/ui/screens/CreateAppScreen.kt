@@ -50,6 +50,7 @@ import com.webtoapp.ui.components.ActivationCodeCard
 import com.webtoapp.ui.components.AppNameTextField
 import com.webtoapp.ui.design.WtaBackground
 import com.webtoapp.ui.components.AutoStartCard
+import com.webtoapp.ui.components.BgmCard
 import com.webtoapp.ui.components.*
 import com.webtoapp.ui.viewmodel.EditState
 import com.webtoapp.ui.viewmodel.hasPreviewableContent
@@ -414,6 +415,15 @@ fun CreateAppScreen(
             }
 
             item {
+                BgmCard(
+                    enabled = editState.bgmEnabled,
+                    config = editState.bgmConfig,
+                    onEnabledChange = { viewModel.updateEditState { copy(bgmEnabled = it) } },
+                    onConfigChange = { viewModel.updateEditState { copy(bgmConfig = it) } }
+                )
+            }
+
+            item {
                 AnnouncementCard(
                     editState = editState,
                     onEnabledChange = { viewModel.updateEditState { copy(announcementEnabled = it) } },
@@ -517,6 +527,7 @@ fun CreateAppScreen(
                         }
                     },
                     autoStartConfig = editState.autoStartConfig,
+                    bgmEnabled = editState.bgmEnabled,
                     appType = editState.appType
                 )
             }
@@ -564,18 +575,21 @@ private fun ExportAndPermissionDrawer(
     webViewConfig: WebViewConfig,
     onClientCertificateAuthEnabledChange: (Boolean) -> Unit,
     autoStartConfig: AutoStartConfig?,
+    bgmEnabled: Boolean,
     appType: AppType
 ) {
     var expanded by rememberSaveable { mutableStateOf(false) }
     val featureReasons = remember(
         exportConfig,
         webViewConfig,
-        autoStartConfig
+        autoStartConfig,
+        bgmEnabled
     ) {
         featurePermissionReasons(
             apkExportConfig = exportConfig,
             webViewConfig = webViewConfig,
-            autoStartConfig = autoStartConfig
+            autoStartConfig = autoStartConfig,
+            bgmEnabled = bgmEnabled
         )
     }
 

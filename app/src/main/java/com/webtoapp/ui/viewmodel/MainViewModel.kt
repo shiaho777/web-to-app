@@ -738,6 +738,8 @@ class MainViewModel(
                 galleryConfig = galleryConfig,
                 activationEnabled = false,
                 activationCodeList = emptyList(),
+                bgmEnabled = false,
+                bgmConfig = BgmConfig(),
                 themeType = currentThemeType,
                 categoryId = categoryId
             )
@@ -795,6 +797,8 @@ class MainViewModel(
             htmlConfig = savedHtmlConfig,
             activationEnabled = false,
             activationCodeList = emptyList(),
+            bgmEnabled = false,
+            bgmConfig = BgmConfig(),
             themeType = currentThemeType,
             categoryId = categoryId
         )
@@ -842,6 +846,8 @@ class MainViewModel(
             ),
             activationEnabled = false,
             activationCodeList = emptyList(),
+            bgmEnabled = false,
+            bgmConfig = BgmConfig(),
             themeType = currentThemeType,
             categoryId = categoryId
         )
@@ -877,6 +883,8 @@ class MainViewModel(
             ),
             activationEnabled = false,
             activationCodeList = emptyList(),
+            bgmEnabled = false,
+            bgmConfig = BgmConfig(),
             themeType = currentThemeType,
             categoryId = categoryId
         )
@@ -1280,6 +1288,8 @@ class MainViewModel(
                             ),
                             activationEnabled = false,
                             activationCodeList = emptyList(),
+                            bgmEnabled = false,
+                            bgmConfig = BgmConfig(),
                             themeType = currentThemeType,
                             categoryId = categoryId
                         )

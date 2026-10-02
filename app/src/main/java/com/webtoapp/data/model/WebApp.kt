@@ -1146,7 +1146,30 @@ enum class BgmTag {
     WORKOUT,
     SLEEP,
     STUDY,
-    OTHER
+    OTHER;
+
+    val displayName: String get() = when (this) {
+        PURE_MUSIC -> com.webtoapp.core.i18n.Strings.bgmTagPureMusic
+        POP -> com.webtoapp.core.i18n.Strings.bgmTagPop
+        ROCK -> com.webtoapp.core.i18n.Strings.bgmTagRock
+        CLASSICAL -> com.webtoapp.core.i18n.Strings.bgmTagClassical
+        JAZZ -> com.webtoapp.core.i18n.Strings.bgmTagJazz
+        ELECTRONIC -> com.webtoapp.core.i18n.Strings.bgmTagElectronic
+        FOLK -> com.webtoapp.core.i18n.Strings.bgmTagFolk
+        CHINESE_STYLE -> com.webtoapp.core.i18n.Strings.bgmTagChineseStyle
+        ANIME -> com.webtoapp.core.i18n.Strings.bgmTagAnime
+        GAME -> com.webtoapp.core.i18n.Strings.bgmTagGame
+        MOVIE -> com.webtoapp.core.i18n.Strings.bgmTagMovie
+        HEALING -> com.webtoapp.core.i18n.Strings.bgmTagHealing
+        EXCITING -> com.webtoapp.core.i18n.Strings.bgmTagExciting
+        SAD -> com.webtoapp.core.i18n.Strings.bgmTagSad
+        ROMANTIC -> com.webtoapp.core.i18n.Strings.bgmTagRomantic
+        RELAXING -> com.webtoapp.core.i18n.Strings.bgmTagRelaxing
+        WORKOUT -> com.webtoapp.core.i18n.Strings.bgmTagWorkout
+        SLEEP -> com.webtoapp.core.i18n.Strings.bgmTagSleep
+        STUDY -> com.webtoapp.core.i18n.Strings.bgmTagStudy
+        OTHER -> com.webtoapp.core.i18n.Strings.bgmTagOther
+    }
 }
 
 data class LrcLine(
@@ -1181,11 +1204,27 @@ data class LrcTheme(
 )
 
 enum class LrcAnimationType {
-    NONE, FADE, SLIDE_UP, SLIDE_LEFT, SCALE, TYPEWRITER, KARAOKE
+    NONE, FADE, SLIDE_UP, SLIDE_LEFT, SCALE, TYPEWRITER, KARAOKE;
+
+    val displayName: String get() = when (this) {
+        NONE -> com.webtoapp.core.i18n.Strings.lrcAnimNone
+        FADE -> com.webtoapp.core.i18n.Strings.lrcAnimFade
+        SLIDE_UP -> com.webtoapp.core.i18n.Strings.lrcAnimSlideUp
+        SLIDE_LEFT -> com.webtoapp.core.i18n.Strings.lrcAnimSlideLeft
+        SCALE -> com.webtoapp.core.i18n.Strings.lrcAnimScale
+        TYPEWRITER -> com.webtoapp.core.i18n.Strings.lrcAnimTypewriter
+        KARAOKE -> com.webtoapp.core.i18n.Strings.lrcAnimKaraoke
+    }
 }
 
 enum class LrcPosition {
-    TOP, CENTER, BOTTOM
+    TOP, CENTER, BOTTOM;
+
+    val displayName: String get() = when (this) {
+        TOP -> com.webtoapp.core.i18n.Strings.lrcPosTop
+        CENTER -> com.webtoapp.core.i18n.Strings.lrcPosCenter
+        BOTTOM -> com.webtoapp.core.i18n.Strings.lrcPosBottom
+    }
 }
 
 data class BgmItem(

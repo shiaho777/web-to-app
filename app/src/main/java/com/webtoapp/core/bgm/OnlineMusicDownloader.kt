@@ -1,0 +1,199 @@
+package com.webtoapp.core.bgm
+
+import android.content.Context
+import com.webtoapp.core.logging.AppLogger
+import com.webtoapp.data.model.BgmItem
+import com.webtoapp.util.BgmStorage
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import com.webtoapp.core.network.NetworkModule
+import okhttp3.Request
+import java.io.File
+import java.io.FileOutputStream
+
+object OnlineMusicDownloader {
+
+    private const val TAG = "OnlineMusicDownloader"
+
+    private val SAFE_NAME_REGEX = Regex("[^a-zA-Z0-9\u4e00-\u9fa5_-]")
+
+    private val client get() = NetworkModule.downloadClient
+
+    suspend fun downloadMusic(
+        context: Context,
+        track: OnlineMusicTrack,
+        onProgress: ((Float) -> Unit)? = null
+    ): BgmItem? {
+        return withContext(Dispatchers.IO) {
+            try {
+                val bgmDir = BgmStorage.getBgmDir(context)
+                val safeName = generateSafeFileName(track.name, track.id)
+
+                val playUrl = track.playUrl
+                if (playUrl.isNullOrBlank()) {
+                    AppLogger.e(TAG, "无播放链接")
+                    return@withContext null
+                }
+
+                val ext = detectExtension(playUrl)
+                val musicFile = File(bgmDir, "$safeName.$ext")
+
+                if (musicFile.exists() && musicFile.length() > 0) {
+                    AppLogger.i(TAG, "音乐文件已存在: ${musicFile.absolutePath}")
+                    return@withContext createBgmItem(track, musicFile, bgmDir, safeName)
+                }
+
+                AppLogger.i(TAG, "开始下载音乐: $playUrl")
+                val downloadSuccess = downloadFile(playUrl, musicFile) { progress ->
+                    onProgress?.invoke(progress * 0.8f)
+                }
+
+                if (!downloadSuccess) {
+                    AppLogger.e(TAG, "音乐下载失败")
+                    return@withContext null
+                }
+
+                var coverFile: File? = null
+                if (!track.coverUrl.isNullOrBlank()) {
+                    onProgress?.invoke(0.85f)
+                    coverFile = File(bgmDir, "$safeName.jpg")
+                    val coverSuccess = downloadFile(track.coverUrl, coverFile) { progress ->
+                        onProgress?.invoke(0.8f + progress * 0.2f)
+                    }
+                    if (!coverSuccess) {
+                        AppLogger.w(TAG, "封面下载失败，继续使用无封面")
+                        coverFile = null
+                    }
+                }
+
+                if (!track.lrcText.isNullOrBlank()) {
+                    try {
+                        val lrcFile = File(bgmDir, "$safeName.lrc")
+                        lrcFile.writeText(track.lrcText)
+                    } catch (e: Exception) {
+                        AppLogger.w(TAG, "保存歌词失败", e)
+                    }
+                }
+
+                onProgress?.invoke(1.0f)
+                createBgmItem(track, musicFile, bgmDir, safeName, coverFile)
+
+            } catch (e: Exception) {
+                AppLogger.e(TAG, "下载音乐异常", e)
+                null
+            }
+        }
+    }
+
+    private fun downloadFile(
+        url: String,
+        destFile: File,
+        onProgress: ((Float) -> Unit)? = null
+    ): Boolean {
+        return try {
+            val request = Request.Builder()
+                .url(url)
+                .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+                .build()
+
+            val response = client.newCall(request).execute()
+
+            if (!response.isSuccessful) {
+                AppLogger.e(TAG, "下载失败: ${response.code}")
+                return false
+            }
+
+            val body = response.body ?: return false
+            val contentLength = body.contentLength()
+
+            body.byteStream().use { input ->
+                FileOutputStream(destFile).use { output ->
+                    val buffer = ByteArray(8192)
+                    var bytesRead: Int
+                    var totalBytesRead = 0L
+
+                    while (input.read(buffer).also { bytesRead = it } != -1) {
+                        output.write(buffer, 0, bytesRead)
+                        totalBytesRead += bytesRead
+
+                        if (contentLength > 0) {
+                            onProgress?.invoke(totalBytesRead.toFloat() / contentLength)
+                        }
+                    }
+                }
+            }
+
+            destFile.exists() && destFile.length() > 0
+        } catch (e: Exception) {
+            AppLogger.e(TAG, "下载文件异常: $url", e)
+            false
+        }
+    }
+
+    private fun generateSafeFileName(name: String, id: String): String {
+        val safeName = name.replace(SAFE_NAME_REGEX, "_").take(50)
+        val safeId = id.replace(SAFE_NAME_REGEX, "_").take(20)
+        return "${safeName}_$safeId"
+    }
+
+    private fun createBgmItem(
+        track: OnlineMusicTrack,
+        musicFile: File,
+        bgmDir: File,
+        safeName: String,
+        coverFile: File? = null
+    ): BgmItem {
+        val actualCoverFile = coverFile ?: File(bgmDir, "$safeName.jpg").takeIf { it.exists() }
+
+        return BgmItem(
+            name = "${track.name} - ${track.artist}",
+            path = musicFile.absolutePath,
+            coverPath = actualCoverFile?.absolutePath,
+            isAsset = false,
+            tags = emptyList(),
+            sortOrder = 0,
+            lrcData = null,
+            lrcPath = null,
+            duration = track.duration
+        )
+    }
+
+    private fun detectExtension(url: String): String {
+        val path = try {
+            java.net.URL(url).path
+        } catch (_: Exception) {
+            url
+        }
+        return when {
+            path.contains(".m4a", ignoreCase = true) -> "m4a"
+            path.contains(".aac", ignoreCase = true) -> "aac"
+            path.contains(".ogg", ignoreCase = true) -> "ogg"
+            path.contains(".flac", ignoreCase = true) -> "flac"
+            path.contains(".wav", ignoreCase = true) -> "wav"
+            else -> "mp3"
+        }
+    }
+
+    // Shared with the library scanner so a downloaded track is always visible in the
+    // selector, whatever extension detectExtension picked for it.
+    private val MUSIC_EXTENSIONS = BgmStorage.MUSIC_EXTENSIONS
+
+    fun isMusicDownloaded(context: Context, track: OnlineMusicTrack): Boolean {
+        val bgmDir = BgmStorage.getBgmDir(context)
+        val safeName = generateSafeFileName(track.name, track.id)
+        return MUSIC_EXTENSIONS.any { ext ->
+            val file = File(bgmDir, "$safeName.$ext")
+            file.exists() && file.length() > 0
+        }
+    }
+
+    fun getDownloadedMusicPath(context: Context, track: OnlineMusicTrack): String? {
+        val bgmDir = BgmStorage.getBgmDir(context)
+        val safeName = generateSafeFileName(track.name, track.id)
+        for (ext in MUSIC_EXTENSIONS) {
+            val file = File(bgmDir, "$safeName.$ext")
+            if (file.exists()) return file.absolutePath
+        }
+        return null
+    }
+}

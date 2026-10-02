@@ -21,7 +21,7 @@ class ReadAppFileTool : Tool {
         - Image files (png/jpg/gif/webp) are returned as images the model can see (if multimodal).
         - Directories return a recursive file listing.
         - Only app-data directories are readable (html_projects, frontend_builds, scraped_sites,
-          sample_projects, app_icons, media_apps, gallery_apps, splash_media,
+          sample_projects, app_icons, media_apps, gallery_apps, splash_media, bgm,
           extension_modules, extensions, user_scripts). Sensitive dirs (credentials, encrypted,
           caches) are blocked.
         - This tool is read-only and cannot modify app data.
@@ -181,6 +181,7 @@ class ReadAppFileTool : Tool {
             "media_apps/",
             "gallery_apps/",
             "splash_media/",
+            "bgm/",
             "extension_modules/",
             "extensions/",
             "user_scripts/"

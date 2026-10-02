@@ -745,6 +745,27 @@ class DataBackupManager(private val context: Context) {
             }
         }
 
+        app.bgmConfig?.playlist?.forEachIndexed { index, bgmItem ->
+
+            if (!bgmItem.isAsset && File(bgmItem.path).exists()) {
+                val ext = bgmItem.path.substringAfterLast('.', "mp3")
+                resources["${BGM_DIR}${appId}_bgm_$index.$ext"] = bgmItem.path
+            }
+
+            bgmItem.lrcPath?.let { lrcPath ->
+                if (File(lrcPath).exists()) {
+                    resources["${BGM_LRC_DIR}${appId}_bgm_$index.lrc"] = lrcPath
+                }
+            }
+
+            bgmItem.coverPath?.let { coverPath ->
+                if (File(coverPath).exists()) {
+                    val ext = coverPath.substringAfterLast('.', "jpg")
+                    resources["${BGM_COVER_DIR}${appId}_bgm_cover_$index.$ext"] = coverPath
+                }
+            }
+        }
+
         app.webViewConfig.statusBarBackgroundImage?.let { path ->
             if (File(path).exists()) {
                 val ext = path.substringAfterLast('.', "png")
@@ -903,7 +924,17 @@ class DataBackupManager(private val context: Context) {
             splashConfig = app.splashConfig?.copy(
                 mediaPath = findZipPath(app.splashConfig?.mediaPath)
             ),
-            bgmConfig = app.bgmConfig,
+            bgmConfig = app.bgmConfig?.copy(
+                playlist = app.bgmConfig?.playlist?.mapIndexed { index, item ->
+                    if (!item.isAsset) {
+                        item.copy(
+                            path = findZipPath(item.path) ?: item.path,
+                            lrcPath = findZipPath(item.lrcPath),
+                            coverPath = findZipPath(item.coverPath)
+                        )
+                    } else item
+                } ?: emptyList()
+            ),
             htmlConfig = app.htmlConfig?.copy(
                 files = app.htmlConfig?.files?.map { file ->
                     file.copy(path = "${HTML_DIR}${appId}/${file.name}")

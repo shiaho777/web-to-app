@@ -30,6 +30,7 @@ const t = {
       floatingWindow: 'Floating Window',
       longPressMenu: 'Long-press Menu',
       splash: 'Splash Animation',
+      bgm: 'Background Music',
       announcement: 'Popup Announcement',
       translate: 'Auto Translation',
       extensionModules: 'Plugins',
@@ -141,6 +142,7 @@ const t = {
       floatingWindow: '悬浮小窗',
       longPressMenu: '长按菜单',
       splash: '启动动画',
+      bgm: '背景音乐',
       announcement: '弹窗公告',
       translate: '网页自动翻译',
       extensionModules: '插件',
@@ -319,6 +321,7 @@ function sidebar(lang: Lang, prefix: string) {
             collapsed: false,
             items: [
               { text: s.cc.splash, link: `${prefix}/guide/app-actions/edit-common-config/splash` },
+              { text: s.cc.bgm, link: `${prefix}/guide/app-actions/edit-common-config/bgm` },
               { text: s.cc.announcement, link: `${prefix}/guide/app-actions/edit-common-config/announcement` },
               { text: s.cc.translate, link: `${prefix}/guide/app-actions/edit-common-config/translate` }
             ]

@@ -10,7 +10,7 @@
 
 - [网络与反审查](/zh/guide/config/network) —— DNS、代理、TLS 指纹、CORS、故障转移。
 - [隐私与加固](/zh/guide/config/privacy) —— 激活、去广告、伪装、加密。
-- [外观](/zh/guide/config/appearance) —— 工具栏、全屏、方向、启动画面。
+- [外观](/zh/guide/config/appearance) —— 工具栏、全屏、方向、启动画面、BGM。
 
 ## 核心 vs 通用
 

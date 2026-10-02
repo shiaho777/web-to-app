@@ -14,7 +14,11 @@ import com.webtoapp.data.model.AppType
 import com.webtoapp.data.model.ApkExportConfig
 import com.webtoapp.data.model.ApkRuntimePermissions
 import com.webtoapp.data.model.AutoStartConfig
+import com.webtoapp.data.model.BgmConfig
+import com.webtoapp.data.model.BgmItem
+import com.webtoapp.data.model.BgmPlayMode
 import com.webtoapp.data.model.ActivationDialogConfig
+import com.webtoapp.data.model.LrcTheme
 import com.webtoapp.data.model.RemoteActivationConfig
 import com.webtoapp.data.model.RemoteActivationOfflinePolicy
 import com.webtoapp.data.model.SplashConfig
@@ -207,6 +211,52 @@ class ConfigRoundTripSentinelTest {
         assertThat(shell.splashVideoStartMs).isEqualTo(1000L)
         assertThat(shell.splashVideoEndMs).isEqualTo(9000L)
         assertThat(shell.splashLandscape).isFalse()
+    }
+
+    @Test
+    fun `bgm scalar fields round-trip`() {
+        val app = baseApp().copy(
+            bgmEnabled = true,
+            bgmConfig = BgmConfig(
+                playMode = BgmPlayMode.SHUFFLE,
+                volume = 0.25f,
+                autoPlay = false,
+                showLyrics = false
+            )
+        )
+        val shell = roundTrip(app)
+        assertThat(shell.bgmEnabled).isTrue()
+        assertThat(shell.bgmPlayMode).isEqualTo("SHUFFLE")
+        assertThat(shell.bgmVolume).isEqualTo(0.25f)
+        assertThat(shell.bgmAutoPlay).isFalse()
+        assertThat(shell.bgmShowLyrics).isFalse()
+    }
+
+    @Test
+    fun `bgm nested playlist and lrcTheme round-trip via object serialization`() {
+        val app = baseApp().copy(
+            bgmEnabled = true,
+            bgmConfig = BgmConfig(
+                playlist = listOf(
+                    BgmItem(name = "SEN-TRACK-A", path = "/sentinel/a.mp3"),
+                    BgmItem(name = "SEN-TRACK-B", path = "/sentinel/b.mp3")
+                ),
+                lrcTheme = LrcTheme(
+                    id = "sen-lrc",
+                    name = "SEN-LRC-THEME",
+                    textColor = "#SENTEXT",
+                    highlightColor = "#SENHIGH",
+                    fontSize = 24f
+                )
+            )
+        )
+        val shell = roundTrip(app)
+        assertThat(shell.bgmPlaylist).hasSize(2)
+        assertThat(shell.bgmPlaylist[0].name).isEqualTo("SEN-TRACK-A")
+        assertThat(shell.bgmPlaylist[1].name).isEqualTo("SEN-TRACK-B")
+        assertThat(shell.bgmLrcTheme?.textColor).isEqualTo("#SENTEXT")
+        assertThat(shell.bgmLrcTheme?.highlightColor).isEqualTo("#SENHIGH")
+        assertThat(shell.bgmLrcTheme?.fontSize).isEqualTo(24f)
     }
 
     @Test
