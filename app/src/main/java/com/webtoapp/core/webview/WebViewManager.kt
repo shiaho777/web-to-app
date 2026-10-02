@@ -6575,11 +6575,6 @@ class WebViewManager(
 
     private fun injectNotificationPolyfill(webView: WebView) {
         try {
-            val url = webView.url
-            if (shouldMinimizeLocalRuntimeInjection(url)) {
-                AppLogger.d("WebViewManager", "Skip notification polyfill for local runtime page: $url")
-                return
-            }
             val script = getNotificationPolyfillScript()
             webView.evaluateJavascript(script, null)
             AppLogger.d("WebViewManager", "Notification polyfill injected early")
