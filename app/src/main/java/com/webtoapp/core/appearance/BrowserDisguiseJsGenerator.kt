@@ -310,22 +310,17 @@ Object.defineProperty(window,'screenTop',{get:_mn(function(){return 0}),enumerab
 try{document.hasFocus=_mn(function(){return true});}catch(e){}
 
 // ── CSS matchMedia (prefers-color-scheme / prefers-reduced-motion) ──
+// These media queries carry real user signals — follow-system dark mode relies on
+// prefers-color-scheme, and prefers-reduced-motion is an accessibility signal.
+// Hardcoding them made every disguised app permanently "light + motion-allowed":
+// delegate to the real matchMedia (a genuine MediaQueryList is also more authentic
+// than a synthetic stand-in) and keep the stub only as a last-resort fallback.
 try{
 var _omm=window.matchMedia;
 window.matchMedia=_mn(function(q){
     var r=_omm?_omm.call(window,q):null;
-    if(q.indexOf('prefers-color-scheme')!==-1){
-        var isDark=q.indexOf('dark')!==-1;
-        return{matches:!isDark,media:q,onchange:null,
-            addEventListener:_mn(function(){}),removeEventListener:_mn(function(){}),
-            addListener:_mn(function(){}),removeListener:_mn(function(){})};
-    }
-    if(q.indexOf('prefers-reduced-motion')!==-1&&q.indexOf('reduce')!==-1){
-        return{matches:false,media:q,onchange:null,
-            addEventListener:_mn(function(){}),removeEventListener:_mn(function(){}),
-            addListener:_mn(function(){}),removeListener:_mn(function(){})};
-    }
-    return r||{matches:false,media:q,onchange:null,
+    if(r)return r;
+    return{matches:false,media:q,onchange:null,
         addEventListener:_mn(function(){}),removeEventListener:_mn(function(){}),
         addListener:_mn(function(){}),removeListener:_mn(function(){})};
 });
