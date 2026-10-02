@@ -5222,17 +5222,17 @@ object StringsC {
         AppLanguage.KOREAN -> "외관 및 미디어"
     }
 
-        val capabilityAppearanceMediaHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "翻译按钮和视觉配置"
-        AppLanguage.ENGLISH -> "Translate button and visual settings"
-        AppLanguage.ARABIC -> "زر الترجمة والإعدادات المرئية"
-        AppLanguage.PORTUGUESE -> "Botão de tradução e configurações visuais"
-        AppLanguage.SPANISH -> "Botón de traducción y configuraciones visuales"
-        AppLanguage.FRENCH -> "Bouton de traduction et paramètres visuels"
-        AppLanguage.GERMAN -> "Übersetzen-Button und visuelle Einstellungen"
-        AppLanguage.RUSSIAN -> "Кнопка перевода и визуальные настройки"
-        AppLanguage.JAPANESE -> "翻訳ボタンと視覚設定"
-        AppLanguage.KOREAN -> "번역 버튼 및 시각 설정"
+    val capabilityAppearanceMediaHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "背景音乐、翻译按钮和视觉配置"
+        AppLanguage.ENGLISH -> "BGM, translate button, and visual settings"
+        AppLanguage.ARABIC -> "الموسيقى الخلفية وزر الترجمة والإعدادات المرئية"
+        AppLanguage.PORTUGUESE -> "BGM, botão de tradução e configurações visuais"
+        AppLanguage.SPANISH -> "BGM, botón de traducción y configuraciones visuales"
+        AppLanguage.FRENCH -> "BGM, bouton de traduction et paramètres visuels"
+        AppLanguage.GERMAN -> "BGM, Übersetzen-Button und visuelle Einstellungen"
+        AppLanguage.RUSSIAN -> "BGM, кнопка перевода и визуальные настройки"
+        AppLanguage.JAPANESE -> "BGM、翻訳ボタン、視覚設定"
+        AppLanguage.KOREAN -> "BGM, 번역 버튼, 시각 설정"
     }
 
     val networkTrustTitle: String get() = when (Strings.lang) {
