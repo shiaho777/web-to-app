@@ -6,10 +6,13 @@ import com.webtoapp.ui.components.PremiumButton
 import com.webtoapp.ui.components.AutoRefreshCountdownChip
 
 import android.annotation.SuppressLint
+import android.app.Activity
+import android.app.ActivityManager
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import com.webtoapp.core.logging.AppLogger
 import android.view.KeyEvent
@@ -59,6 +62,7 @@ import com.webtoapp.core.webview.LocalHttpServer
 import com.webtoapp.core.webview.LongPressHandler
 import com.webtoapp.core.webview.VideoPosterCompat
 import com.webtoapp.core.webview.WebScrollTracker
+import com.webtoapp.core.host.HostRuntimePrefs
 import com.webtoapp.core.webview.WebViewCallbacks
 import com.webtoapp.core.webview.WebViewManager
 import com.webtoapp.core.i18n.Strings
@@ -96,7 +100,7 @@ private fun isOwnInjectionMarker(message: String): Boolean =
 /** Bounded console buffer: page console spam must not grow state without limit. */
 private const val CONSOLE_LOG_CAP = 500
 
-class WebViewActivity : AppCompatActivity() {
+open class WebViewActivity : AppCompatActivity() {
 
     companion object {
         private const val EXTRA_APP_ID = "app_id"
@@ -108,7 +112,7 @@ class WebViewActivity : AppCompatActivity() {
         fun start(context: Context, appId: Long) {
             HostPreviewMotion.launch(
                 context,
-                Intent(context, WebViewActivity::class.java).apply {
+                buildLaunchIntent(context, documentUri = Uri.parse("webtoapp://webapp/$appId")) {
                     putExtra(EXTRA_APP_ID, appId)
                 }
             )
@@ -117,7 +121,7 @@ class WebViewActivity : AppCompatActivity() {
         fun startWithUrl(context: Context, url: String) {
             HostPreviewMotion.launch(
                 context,
-                Intent(context, WebViewActivity::class.java).apply {
+                buildLaunchIntent(context, documentUri = Uri.parse("webtoapp://url/${url.hashCode()}")) {
                     putExtra(EXTRA_URL, url)
                 }
             )
@@ -126,7 +130,10 @@ class WebViewActivity : AppCompatActivity() {
         fun startPreview(context: Context, webAppJson: String) {
             HostPreviewMotion.launch(
                 context,
-                Intent(context, WebViewActivity::class.java).apply {
+                buildLaunchIntent(
+                    context,
+                    documentUri = Uri.parse("webtoapp://preview/${webAppJson.hashCode()}")
+                ) {
                     putExtra(EXTRA_PREVIEW_APP_JSON, webAppJson)
                 }
             )
@@ -135,11 +142,50 @@ class WebViewActivity : AppCompatActivity() {
         fun startForTest(context: Context, testUrl: String, moduleIds: List<String>) {
             HostPreviewMotion.launch(
                 context,
-                Intent(context, WebViewActivity::class.java).apply {
+                buildLaunchIntent(context, documentUri = Uri.parse("webtoapp://test/${testUrl.hashCode()}")) {
                     putExtra(EXTRA_TEST_URL, testUrl)
                     putStringArrayListExtra(EXTRA_TEST_MODULE_IDS, ArrayList(moduleIds))
                 }
             )
+        }
+
+        /**
+         * Switch off: one singleTask [WebViewActivity], reused via CLEAR_TOP.
+         * Switch on: [WebViewDocumentActivity] with NEW_DOCUMENT, one recents
+         * entry per [documentUri]. The data URI is the document identity and is
+         * cleared when the switch is off so singleTask reuse is not split.
+         */
+        fun buildLaunchIntent(
+            context: Context,
+            separateTasks: Boolean = HostRuntimePrefs.getInstance(context).isSeparateTasksEnabledBlocking(),
+            documentUri: Uri? = null,
+            configure: Intent.() -> Unit
+        ): Intent {
+            val target = if (separateTasks) {
+                WebViewDocumentActivity::class.java
+            } else {
+                WebViewActivity::class.java
+            }
+            return Intent(context, target).apply {
+                action = Intent.ACTION_VIEW
+                configure()
+                if (separateTasks) {
+                    if (documentUri != null) {
+                        data = documentUri
+                    }
+                    addFlags(
+                        Intent.FLAG_ACTIVITY_NEW_DOCUMENT or
+                            Intent.FLAG_ACTIVITY_MULTIPLE_TASK or
+                            Intent.FLAG_ACTIVITY_NEW_TASK
+                    )
+                } else {
+                    data = null
+                    if (context !is Activity) {
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                    addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                }
+            }
         }
     }
 
@@ -832,6 +878,12 @@ class WebViewActivity : AppCompatActivity() {
         savedInstanceState?.let { webViewStateBundle = it }
         launchDirectUrl = directUrl
         launchPreviewApp = previewApp
+        if (this is WebViewDocumentActivity) {
+            val label = previewApp?.name?.takeIf { it.isNotBlank() }
+                ?: directUrl?.let { runCatching { Uri.parse(it).host }.getOrNull()?.takeIf { it.isNotBlank() } }
+                ?: if (appId > 0) "WebApp #$appId" else null
+            if (label != null) applySeparateTaskDescription(label)
+        }
         sessionKey = resumeStore.sessionKey(
             appId = appId,
             directUrl = directUrl,
@@ -896,6 +948,7 @@ class WebViewActivity : AppCompatActivity() {
                 },
                 onSavedAppLoaded = { app ->
                     resolvedSavedApp = app
+                    if (app.name.isNotBlank()) applySeparateTaskDescription(app.name)
                     // App-id launches resolve these from the saved config; the onCreate pass
                     // only covers intent-carried preview apps.
                     if (previewApp == null) {
@@ -1118,6 +1171,21 @@ class WebViewActivity : AppCompatActivity() {
         super.onWindowFocusChanged(hasFocus)
         if (hasFocus) {
             applyImmersiveFullscreen(customView != null || immersiveFullscreenEnabled)
+        }
+    }
+
+    private fun applySeparateTaskDescription(label: String) {
+        if (this !is WebViewDocumentActivity) return
+        try {
+            val description = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                ActivityManager.TaskDescription.Builder().setLabel(label).build()
+            } else {
+                @Suppress("DEPRECATION")
+                ActivityManager.TaskDescription(label)
+            }
+            setTaskDescription(description)
+        } catch (e: Exception) {
+            AppLogger.w("WebViewActivity", "setTaskDescription failed: ${e.message}")
         }
     }
 

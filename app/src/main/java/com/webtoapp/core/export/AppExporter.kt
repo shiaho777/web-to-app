@@ -15,6 +15,7 @@ import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.graphics.drawable.IconCompat
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import com.webtoapp.core.host.HostRuntimePrefs
 import com.webtoapp.data.model.WebApp
 import com.webtoapp.ui.webview.WebViewActivity
 import com.webtoapp.util.threadLocalCompat
@@ -49,11 +50,18 @@ class AppExporter(private val context: Context) {
                 IconCompat.createWithResource(context, android.R.drawable.sym_def_app_icon)
             }
 
-            val launchIntent = Intent(context, WebViewActivity::class.java).apply {
-                action = Intent.ACTION_VIEW
+            val separateTasks = HostRuntimePrefs.getInstance(context).isSeparateTasksEnabledBlocking()
+            // The builder omits NEW_TASK when `context` is an Activity. A pinned
+            // shortcut is fired by the launcher, so the flag has to be on the
+            // intent itself either way.
+            val launchIntent = WebViewActivity.buildLaunchIntent(
+                context = context,
+                separateTasks = separateTasks,
+                documentUri = Uri.parse("webtoapp://webapp/${webApp.id}")
+            ) {
                 putExtra("app_id", webApp.id)
+            }.apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
             }
 
             when {

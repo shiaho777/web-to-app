@@ -303,6 +303,18 @@
             android:windowSoftInputMode="adjustResize"
             android:theme="@style/Theme.WebToApp.Shell" />
 
+        <!-- Separate recents task. Home preview and shortcuts use it when that switch is on. -->
+        <activity
+            android:name=".ui.webview.WebViewDocumentActivity"
+            android:configChanges="orientation|screenSize|keyboardHidden|screenLayout|smallestScreenSize|uiMode"
+            android:exported="false"
+            android:hardwareAccelerated="true"
+            android:launchMode="standard"
+            android:documentLaunchMode="always"
+            android:maxRecents="15"
+            android:windowSoftInputMode="adjustResize"
+            android:theme="@style/Theme.WebToApp.Shell" />
+
         
         
         <activity

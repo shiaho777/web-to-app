@@ -37,6 +37,7 @@ import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.ExpandLess
 import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material.icons.outlined.FilterNone
 import androidx.compose.material.icons.outlined.ForkRight
 import androidx.compose.material.icons.outlined.Forum
 import androidx.compose.material.icons.outlined.Groups
@@ -82,8 +83,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.webtoapp.R
+import com.webtoapp.core.host.HostRuntimePrefs
 import com.webtoapp.core.i18n.AppLanguage
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.ui.webview.WebViewDocumentActivity
 import com.webtoapp.ui.design.WtaCard
 import com.webtoapp.ui.design.WtaCardTone
 import com.webtoapp.ui.design.WtaSettingRow
@@ -133,6 +136,8 @@ fun AboutScreen(onBack: () -> Unit) {
 
             DescriptionsToggleCard()
 
+            SeparateTasksCard()
+
             OtherProjectsSection()
 
             LegalTabContent()
@@ -165,6 +170,42 @@ private fun DescriptionsToggleCard() {
                     onCheckedChange = {
                         scope.launch { themeManager.setShowDescriptions(it) }
                     }
+                )
+            }
+        )
+    }
+}
+
+@Composable
+private fun SeparateTasksCard() {
+    val context = LocalContext.current
+    val hostPrefs = remember { HostRuntimePrefs.getInstance(context) }
+    val separateTasks by hostPrefs.separateTasksFlow.collectAsStateWithLifecycle()
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+
+    fun apply(enabled: Boolean) {
+        scope.launch {
+            hostPrefs.setSeparateTasksEnabled(enabled)
+            if (!enabled) {
+                WebViewDocumentActivity.finishAllDocumentTasks()
+            }
+        }
+    }
+
+    WtaCard(
+        modifier = Modifier.fillMaxWidth(),
+        tone = WtaCardTone.Elevated,
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)
+    ) {
+        WtaSettingRow(
+            icon = Icons.Outlined.FilterNone,
+            title = Strings.webAppSeparateTasks,
+            subtitle = Strings.webAppSeparateTasksDesc,
+            onClick = { apply(!separateTasks) },
+            trailing = {
+                WtaSwitch(
+                    checked = separateTasks,
+                    onCheckedChange = { apply(it) }
                 )
             }
         )

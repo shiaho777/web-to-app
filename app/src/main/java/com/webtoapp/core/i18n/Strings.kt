@@ -2843,6 +2843,8 @@ object Strings {
     val binaryFile: String get() = StringsD.binaryFile
     val hostsAdBlock: String get() = StringsD.hostsAdBlock
     val hostsAdBlockSubtitle: String get() = StringsD.hostsAdBlockSubtitle
+    val webAppSeparateTasks: String get() = StringsD.webAppSeparateTasks
+    val webAppSeparateTasksDesc: String get() = StringsD.webAppSeparateTasksDesc
     val menuHostsAdBlock: String get() = StringsD.menuHostsAdBlock
     val hostsRulesCount: String get() = StringsD.hostsRulesCount
     val importFromUrl: String get() = StringsD.importFromUrl
