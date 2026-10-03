@@ -1,6 +1,7 @@
 package com.webtoapp.core.apkbuilder
 
 import android.content.Context
+import com.webtoapp.core.host.AdvancedAppTypes
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.data.model.AppType
 import com.webtoapp.data.model.WebApp
@@ -37,14 +38,13 @@ object ApkExportPreflight {
 
     fun check(context: Context, webApp: WebApp): ApkExportPreflightReport {
         val issues = mutableListOf<ApkExportPreflightIssue>()
-        if (!webApp.appType.isSupported) {
+        if (!AdvancedAppTypes.isUsable(context, webApp.appType)) {
             issues += ApkExportPreflightIssue(
                 severity = ApkExportPreflightSeverity.Error,
-                key = "appType",
-                title = Strings.appTypeRemoved,
-                message = Strings.appTypeRemoved
+                key = "advanced_features_off",
+                title = Strings.advancedFeatures,
+                message = Strings.advancedFeaturesOff,
             )
-            return ApkExportPreflightReport(issues)
         }
         val inputPreflight = BuildInputPreflight.check(webApp.toBuildInputPreflightRequest(context))
 
@@ -69,12 +69,36 @@ object ApkExportPreflight {
         return BuildInputPreflightRequest(
             appType = appTypeName,
             htmlEntryFile = htmlConfig?.getValidEntryFile() ?: "index.html",
+            mediaContentPath = when (appType) {
+                AppType.IMAGE, AppType.VIDEO -> mediaConfig?.mediaPath ?: url
+                else -> null
+            },
             htmlFiles = when (appType) {
                 AppType.HTML, AppType.FRONTEND -> htmlConfig?.files.orEmpty()
                 else -> emptyList()
             },
             galleryItems = if (appType == AppType.GALLERY) galleryConfig?.items.orEmpty() else emptyList(),
             multiWebSites = if (appType == AppType.MULTI_WEB) multiWebConfig?.sites.orEmpty() else emptyList(),
+            wordPressProjectDir = if (appType == AppType.WORDPRESS) {
+                wordpressConfig?.projectId?.takeIf { it.isNotBlank() }
+                    ?.let { com.webtoapp.core.wordpress.WordPressManager.getProjectDir(context, it) }
+            } else null,
+            nodejsProjectDir = if (appType == AppType.NODEJS_APP) {
+                nodejsConfig?.projectId?.takeIf { it.isNotBlank() }
+                    ?.let { com.webtoapp.core.nodejs.NodeRuntime(context).getProjectDir(it) }
+            } else null,
+            phpAppProjectDir = if (appType == AppType.PHP_APP) {
+                phpAppConfig?.projectId?.takeIf { it.isNotBlank() }
+                    ?.let { com.webtoapp.core.php.PhpAppRuntime(context).getProjectDir(it) }
+            } else null,
+            pythonAppProjectDir = if (appType == AppType.PYTHON_APP) {
+                pythonAppConfig?.projectId?.takeIf { it.isNotBlank() }
+                    ?.let { com.webtoapp.core.python.PythonRuntime(context).getProjectDir(it) }
+            } else null,
+            goAppProjectDir = if (appType == AppType.GO_APP) {
+                goAppConfig?.projectId?.takeIf { it.isNotBlank() }
+                    ?.let { com.webtoapp.core.golang.GoRuntime(context).getProjectDir(it) }
+            } else null,
             frontendProjectDir = if (appType == AppType.FRONTEND) {
                 htmlConfig?.projectId?.takeIf { it.isNotBlank() }
                     ?.let { File(context.filesDir, "html_projects/$it") }
@@ -83,7 +107,22 @@ object ApkExportPreflight {
                 multiWebConfig?.projectId?.takeIf { it.isNotBlank() }
                     ?.let { File(context.filesDir, "html_projects/$it") }
             } else null,
-            networkTrustConfig = apkExportConfig?.networkTrustConfig ?: com.webtoapp.data.model.NetworkTrustConfig()
+            networkTrustConfig = apkExportConfig?.networkTrustConfig ?: com.webtoapp.data.model.NetworkTrustConfig(),
+            phpBinaryPath = if (appType == AppType.PHP_APP || appType == AppType.WORDPRESS) {
+                com.webtoapp.core.wordpress.WordPressDependencyManager.getPhpExecutablePath(context)
+            } else null,
+            nodeBinaryPath = if (appType == AppType.NODEJS_APP) {
+                com.webtoapp.core.nodejs.NodeDependencyManager.getNodeLibraryPath(context)
+            } else null,
+            pythonBinaryPath = if (appType == AppType.PYTHON_APP) {
+                com.webtoapp.core.python.PythonDependencyManager.getPythonExecutablePath(context)
+            } else null,
+            muslLinkerPath = if (appType == AppType.PYTHON_APP) {
+                com.webtoapp.core.python.PythonDependencyManager.getMuslLinkerPath(context)
+            } else null,
+            builderMuslLinkerPath = if (appType == AppType.PYTHON_APP) {
+                com.webtoapp.core.python.PythonDependencyManager.getBuilderMuslLinkerPath(context)
+            } else null
         )
     }
 
@@ -168,6 +207,7 @@ object ApkExportPreflight {
             key.startsWith("galleryItems") -> Strings.preflightGalleryIssue
             key.startsWith("multiWebSites") || key == "multiWebProjectDir" -> Strings.preflightRuntimeProjectIssue
             key.endsWith("ProjectDir") -> Strings.preflightRuntimeProjectIssue
+            key == "mediaContentPath" -> Strings.preflightMediaFileIssue
             else -> Strings.preflightInputIssue
         }
     }

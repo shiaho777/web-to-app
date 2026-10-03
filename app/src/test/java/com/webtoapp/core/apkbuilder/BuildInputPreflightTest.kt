@@ -29,6 +29,20 @@ class BuildInputPreflightTest {
     }
 
     @Test
+    fun `media app requires readable non-empty source file`() {
+        val result = BuildInputPreflight.check(
+            BuildInputPreflightRequest(
+                appType = "IMAGE",
+                mediaContentPath = temp.root.resolve("missing.png").absolutePath
+            )
+        )
+
+        assertThat(result.passed).isFalse()
+        assertThat(result.issues.single().key).isEqualTo("mediaContentPath")
+        assertThat(result.issues.single().message).contains("does not exist")
+    }
+
+    @Test
     fun `html app passes when entry and files are readable`() {
         val index = temp.newFile("index.html").apply {
             writeText("<html></html>")
@@ -90,6 +104,92 @@ class BuildInputPreflightTest {
 
         assertThat(result.passed).isFalse()
         assertThat(result.issues.single().key).isEqualTo("galleryItems[0]")
+    }
+
+    @Test
+    fun `server backed app requires resolved project directory`() {
+        val nodeBinary = temp.newFile("libnode.so").apply {
+            writeBytes(ByteArray(1024 * 1024) { 1 })
+        }
+
+        val result = BuildInputPreflight.check(
+            BuildInputPreflightRequest(
+                appType = "NODEJS_APP",
+                nodejsProjectDir = temp.root.resolve("missing-node-project"),
+                nodeBinaryPath = nodeBinary.absolutePath
+            )
+        )
+
+        assertThat(result.passed).isFalse()
+        assertThat(result.issues.single().key).isEqualTo("nodejsProjectDir")
+        assertThat(result.issues.single().message).contains("does not exist")
+    }
+
+    @Test
+    fun `python app requires both python runtime and musl linker`() {
+        val projectDir = temp.newFolder("python-project")
+
+        val result = BuildInputPreflight.check(
+            BuildInputPreflightRequest(
+                appType = "PYTHON_APP",
+                pythonAppProjectDir = projectDir
+            )
+        )
+
+        assertThat(result.passed).isFalse()
+        assertThat(result.issues.map { it.key })
+            .containsExactly("pythonBinary", "muslLinker")
+            .inOrder()
+        assertThat(result.issues[0].message).contains("sample only provides app code")
+        assertThat(result.issues[1].message).contains("musl linker")
+    }
+
+    @Test
+    fun `python app with requirements and no pypackages also requires build time musl linker`() {
+        val projectDir = temp.newFolder("python-project-prebundle")
+        File(projectDir, "requirements.txt").writeText("django==5.0\n")
+        val pythonBinary = temp.newFile("libpython3.so").apply {
+            writeBytes(ByteArray(1024 * 1024) { 1 })
+        }
+        val muslLinker = temp.newFile("libmusl-linker.so").apply {
+            writeBytes(ByteArray(2048) { 1 })
+        }
+
+        val result = BuildInputPreflight.check(
+            BuildInputPreflightRequest(
+                appType = "PYTHON_APP",
+                pythonAppProjectDir = projectDir,
+                pythonBinaryPath = pythonBinary.absolutePath,
+                muslLinkerPath = muslLinker.absolutePath
+            )
+        )
+
+        assertThat(result.passed).isFalse()
+        assertThat(result.issues.map { it.key }).containsExactly("pythonPrebundleMuslLinker")
+    }
+
+    @Test
+    fun `go app requires prebuilt binary and does not require source files`() {
+        val projectDir = temp.newFolder("go-project")
+        val abiDir = File(projectDir, "build/arm64-v8a").apply { mkdirs() }
+        File(abiDir, "go-project").apply {
+            writeBytes(byteArrayOf(
+                0x7f.toByte(), 'E'.code.toByte(), 'L'.code.toByte(), 'F'.code.toByte(),
+                0x02, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0xB7.toByte(), 0x00
+            ) + ByteArray(2048) { 1 })
+            setExecutable(true)
+        }
+
+        val result = BuildInputPreflight.check(
+            BuildInputPreflightRequest(
+                appType = "GO_APP",
+                goAppProjectDir = projectDir
+            )
+        )
+
+        assertThat(result.passed).isTrue()
+        assertThat(result.issues).isEmpty()
     }
 
     @Test

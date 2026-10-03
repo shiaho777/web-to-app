@@ -15,7 +15,7 @@ app/ sources
 
 Generated APK runtime
   WebToAppApplication → ShellModeManager → load assets JSON config
-  → WebViewManager / content router
+  → WebViewManager / runtime servers (Node/PHP/Python/Go/WordPress)
 ```
 
 | | Host `:app` (preview) | Generated APK (export) |

@@ -13,11 +13,12 @@ Instructions for coding agents working in this repository.
 
 | Path | Role |
 |------|------|
-| `app/` | Full builder host: editor UI, export pipeline, preview. |
+| `app/` | Full builder host: editor UI, export pipeline, runtimes, preview. |
 | `shell/` | Runtime template. Built to `app/src/main/assets/template/webview_shell.apk` via `:shell:assembleRelease` + `:app:syncShellTemplateApk`. |
 | `feature-stacks/` | Optional-dependency modules bundled as graftable packages (`dex/` + `stack.arsc` at package-id 0x80+ + `res/` + curated `manifest.xml` fragment + `stack.json`). Built by each module's `bundle*Stack` task, synced to `app/src/main/assets/stacks/` by `:app:syncStackBundles`, injected into generated APKs only when the export config enables the feature (#1115). |
 | `clone-host/` | Host-side APK clone / identity reshape support library. Its DEX asset generation (`syncCloneHostDex`) is deliberately disabled (`enabled = false`, AV false-positive mitigation, e0d2d4d6) — `AppCloner` runs fail-soft without the asset. |
 | `modules/` | Module Market catalog (`registry.json` + per-module folders). |
+| `sample-bundles/` | Heavy sample dependency packs (`python-*-shared.zip` + sha256-pinned `manifest.json`) fetched on demand by `SampleSharedPackManager` — deliberately NOT in `app/assets` (saves ~30MB raw / ~7MB compressed from the host APK). Regenerate via `scripts/build_sample_bundles.py`. |
 | `docs/` | VitePress documentation site (guide / developer / extensions, EN + ZH), published to https://shiaho777.github.io/web-to-app/ by `.github/workflows/docs-deploy.yml`. Site URL paths map 1:1 to files under `docs/` (`/zh/...` → `docs/zh/...`). |
 | `scripts/` | Build helpers and gates (`check_config_field_drift.py`). |
 
@@ -38,7 +39,7 @@ app/ sources
 
 Generated APK runtime
   WebToAppApplication → ShellModeManager → load assets JSON config
-  → WebViewManager (+ local-site serving for HTML/multi-web content)
+  → WebViewManager / runtime servers (Node/PHP/Python/Go/WordPress)
 ```
 
 Mental model:
@@ -51,7 +52,7 @@ Mental model:
 
 - Host UI strings live under `app/src/main/java/com/webtoapp/core/i18n/` (facade `object Strings` in `Strings.kt`, delegating to `StringsA` … `StringsE`, one file per split object).
 - **All** user-visible strings must be inline `when (Strings.lang)` blocks covering all 10 languages: Chinese, English, Arabic, Portuguese, Spanish, French, German, Russian, Japanese, Korean. `when(lang)` blocks may never use `else ->` — `AppStringsResourceConsistencyTest` and `StringsKtTranslationParityTest` enforce this.
-- **Never** load user-visible text via `context.getString(R.string.*)` / `stringResource(R.string.*)`. `res/values/strings.xml` holds only `translatable="false"` resources (e.g. `app_name`) and no locale `values-*/` directories exist, so a localized resource string could never cover the 10 languages and would silently fall back to the default `values/` (Chinese). Use `Strings.xxx` (or `Strings.funName(arg)` for parameterised strings — see `moduleImportSuccess(name)` for the pattern). Tests gate this: `kotlin source never references R string for user-visible text`, plus `values strings xml only holds non-localised resources` and `no locale values dirs or grouped app strings files exist` which block resurrecting resource-based strings.
+- **Never** load user-visible text via `context.getString(R.string.*)` / `stringResource(R.string.*)`. `res/values/strings.xml` holds only `translatable="false"` resources (e.g. `app_name`) and no locale `values-*/` directories exist, so a localized resource string could never cover the 10 languages and would silently fall back to the default `values/` (Chinese). Use `Strings.xxx` (or `Strings.funName(arg)` for parameterised strings — see `linuxEnvInstalledToast(name)` for the pattern). Tests gate this: `kotlin source never references R string for user-visible text`, plus `values strings xml only holds non-localised resources` and `no locale values dirs or grouped app strings files exist` which block resurrecting resource-based strings.
 - `R.string` is reserved for `translatable="false"` non-localised resources only (e.g. `app_name`).
 - Prefer adding properties on the existing split objects (`StringsA` … `StringsE`, one object per file); match surrounding style.
 - **Shell gets generated string subsets, not the synced files.** `syncShellRuntimeSources` excludes `core/i18n/Strings*.kt`; `generateShellStrings` (→ `scripts/generate_shell_strings.py`) scans the synced runtime sources for `Strings.x` / `StringsX.y` references (aliases `val S = Strings` handled) and emits reduced `Strings.kt` / `StringsA-E.kt` under `shell/build/generated/shellStrings` carrying only referenced members plus the facade infrastructure — editor-only strings never reach the shell template or generated APKs (~0.75 MB compressed saved per APK). Missing references fail the shell compile loudly; nothing fails silently. Author strings in `app/` exactly as before — no extra step needed.
@@ -76,9 +77,12 @@ Mental model:
   - Template / entry identities must be **content-stable** (no mtime-based keys).
   - Encrypted builds always force a full rebuild.
   - Do not feed signed or renamed APKs back into full `modifyApk` as templates.
-- Port coordination: `PortManager` + `PortConflictMode` (`REASSIGN` / `AUTO_KILL` / `ALERT`) with real stop handlers. Local-site serving for multi-web/HTML apps must allocate through PortManager and clean up on stop.
-- Large on-demand downloads (GeckoView native artifacts, the esbuild toolchain, other heavy assets) use `NetworkModule.downloadClient` (extended timeouts), not the default short-lived client.
+- Port coordination: `PortManager` + `PortConflictMode` (`REASSIGN` / `AUTO_KILL` / `ALERT`) with real stop handlers. Local server runtimes must allocate through PortManager and clean up on stop.
+- Local server / Linux env DNS: fork+exec runtimes (Node / PHP / Python / Go / WordPress / Linux env) should wire through `LocalDnsBridgeProxy` when they need host DNS/proxy bridging.
+- Large runtime downloads use `NetworkModule.downloadClient` (extended timeouts), not the default short-lived client.
 - HTML / FRONTEND packaged shells need file-scheme access via `ShellWebViewConfig` (`allowFileAccess` / local-file detection). Do not regress pure file-based HTML loads.
+- Node.js export must embed `libnode_bridge.so`, `libnode.so` (16KB-aligned), and `libc++_shared.so` as native libs. Go export must embed `libgo_exec_loader.so`.
+- **C++ STL asymmetry (deliberate):** shell builds `c++_static` so the template drops `libc++_shared.so` entirely (all shell natives self-contained); the host keeps `c++_shared` because `injectNodeJsNativeLibs` copies `libc++_shared.so` from the host `nativeLibraryDir` into NODEJS_APP exports. Do not "unify" the two without rerouting that injection source.
 - **Shell keeps `com.google.android.material`:** removing the material widgets library from the shell template regressed generated-app launcher icons on Android 16 (rounded source icons rendered as an inner tile over a solid frame; bisected to `7c8bdc2f`, E-good/F-bad/G-good). The shared `app/src/main/res/values/themes.xml` references `Theme.Material3.*` parents and M3 color attrs, which must resolve from the real library at template build time. Do not remove the dep or reintroduce a local compat shim without device-testing generated icons on Android 16.
 - **Shell release is obfuscated** (`shell/proguard-rules.pro`): `com.webtoapp.**` members are kept from shrinking but renamed; field names are pinned (`<fields>` keepclassmembers) so un-annotated Gson model fields keep working. JNI-callback classes and manifest components keep explicit name-preserving rules. Template carries no v1 signature (re-signed at export anyway); `apksigner verify` on the raw template fails on that basis alone — verify with `--min-sdk-version 24`.
 - Gradle custom tasks (`syncCloneHostDex`, etc.) must be configuration-cache safe: capture `File`/`Provider` values at configuration time, do not reference `Project`/`android.sdkDirectory` inside task closures.
@@ -165,7 +169,7 @@ Trace and update **all** of:
    broken" before it ships.
 7. **Shell UI parity (REQUIRED for per-type player screens).** Gallery / media /
    splash-style app types render through DIFFERENT composables in preview
-   (`ui/gallery/`) vs generated APKs (`ui/shell/`). A flag that flows
+   (`ui/gallery/`, `ui/media/`) vs generated APKs (`ui/shell/`). A flag that flows
    end-to-end still does nothing if the shell screen never reads it (gallery
    thumbnail bar shipped config + assets correctly and still rendered nothing,
    #781). `ShellUiParityTest.kt` enforces this: every model field read by host
@@ -217,14 +221,23 @@ Checklist in order:
 4. For adblock: confirm `adBlockEnabled` mapping, host filter rebuild from cached subscriptions, and export rule compile without wiping host state.
 5. Rebuild template after sync changes (stale template is a frequent miss).
 
-### 9. Local-site serving / download path
+### 9. Local server runtime / download path
 
 1. Allocate ports through `PortManager` with the configured conflict policy; implement real stop handlers.
-2. Use `NetworkModule.downloadClient` for large dependency / engine downloads.
+2. Wire fork+exec processes into `LocalDnsBridgeProxy` when they need host DNS/proxy env.
+3. Use `NetworkModule.downloadClient` for large dependency / engine / runtime downloads.
+4. Launch processes through `HostProcessLauncher` (`core/linux`) so W^X hosts (targetSdk ≥ 29) degrade to the user-mode static exec loader instead of crashing.
 
-### 10. Change a feature that has an Agent tool
+### 10. Node.js / Go export
 
-The in-app Agent exposes dozens of built-in tools — base + plan-mode + imagery sets (imagery only load with an image-capable model; see `ToolRegistryFactory.build()`) — that wrap host service classes. When you change a feature, trace the tool chain:
+1. Node.js: ensure `injectNodeJsNativeLibs` embeds `libnode_bridge.so` + `libnode.so` (16KB-aligned via `ElfAligner16k`) + `libc++_shared.so`. Node binary resolution prefers `nativeLibraryDir`, falls back to download cache.
+2. Go: ensure `injectGoExecLoaderNativeLib` embeds `libgo_exec_loader.so`.
+3. Go host-side builds never run the multi-process `go build` driver: `GoDirectBuilder` replays `compile`/`asm`/`link` as single-shot processes through `HostProcessLauncher` (user-mode static exec loader on W^X hosts), with a content-keyed persistent package archive cache (#796).
+4. `NodeService` runs in a dedicated `:nodejs` OS process so V8 lifecycle is isolated from the host.
+
+### 11. Change a feature that has an Agent tool
+
+The in-app Agent exposes up to 57 tools — 52 base + 2 plan-mode + 3 imagery (imagery only load with an image-capable model; see `ToolRegistryFactory.build()`) — that wrap host service classes. When you change a feature, trace the tool chain:
 
 ```text
 LLM response (tool_calls)
@@ -257,7 +270,7 @@ Key paths:
 | Permission prompt (Channel-based) | `app/.../agent/permission/PermissionPrompter.kt` |
 | LLM provider (SSE streaming) | `app/.../agent/llm/OpenAiCompatProvider.kt` |
 
-### 11. Change editor config-card UI (Compose)
+### 12. Change editor config-card UI (Compose)
 
 The editor screens are built from `WtaSettingCard`s that share one visual grammar. The activation-card series (issue #567: PRs #568 → #571 → #573 → #574) took four attempts because each round invented layout instead of copying the neighbours, and each round was only compile-checked. A short prompt like "改一下 XX 卡的 UI" still means: follow these rules.
 
@@ -294,15 +307,17 @@ Hard rules learned the hard way:
 - **Shell `targetSdk` 35 is now the baseline** — behavior differences (runtime perms, FGS types, BAL, exact alarms) are already handled in synced code; keep the audit items green when touching shell startup/notifications.
 - **Incremental export cache** keys must be content-based; mtime and resigned APKs create false hits/misses.
 - **HTML/FRONTEND file access.** Packaged local-file shells must have `allowFileAccess = true` (forced in `buildWebViewBlock` and `ShellWebViewConfig`); do not regress pure file-based HTML loads.
-- **16KB page alignment.** Large ELF natives shipped in exports must be 16KB-aligned (`ElfAligner16k`) for Android 15+ devices.
+- **Node native libs.** Exported NODEJS_APP needs `libnode_bridge.so` + `libnode.so` + `libc++_shared.so`; missing any causes `loadNode` / `loadJniBridge` failure at runtime.
+- **16KB page alignment.** `libnode.so` and other large ELF natives must be 16KB-aligned (`ElfAligner16k`) for Android 15+ devices; `node_bridge.cpp` / `node_launcher.c` enable 16KB app-compat before `dlopen`.
+- **Node JNI output bridge.** `NodeJniOutputBridge` is a stable class referenced by native code; keep its `-keep` proguard rule so R8 does not rename `onOutput`.
 - **Crashing FGS when notification channel creation fails.** Always use `SafeNotificationChannels` for channel creation.
 - **Adblock is wired for preview + export.** Do not wipe host filter state during export; the host AdBlocker serves preview and the compiled rule set ships in the APK.
 - **Runtime permissions are feature-driven.** `RuntimePermissionSync` derives the permission list from enabled features; do not revert to a static template.
 - **Splash preview media path.** Preview reads splash media from the host filesystem (`splashMediaPath`); export packages it into assets. Do not hardcode `assets/splash_media.*` as the only source.
-- **Host player UI ≠ shell player UI.** Preview players (`ui/gallery/`) and generated-APK players (`ui/shell/`) are separate composables sharing only the config. Port every visible behavior across (thumbnail bar, background, keep-screen-on, orientation) and let `ShellUiParityTest` verify the flags; config flowing end-to-end is necessary but not sufficient.
-- **Port conflict policy.** Local-site serving (multi-web/HTML) must allocate through `PortManager` and clean up on stop; do not bind ports directly.
+- **Host player UI ≠ shell player UI.** Preview players (`ui/gallery/`, `ui/media/`) and generated-APK players (`ui/shell/`) are separate composables sharing only the config. Port every visible behavior across (thumbnail bar, background, keep-screen-on, orientation) and let `ShellUiParityTest` verify the flags; config flowing end-to-end is necessary but not sufficient.
+- **Port conflict policy.** Local server runtimes must allocate through `PortManager` and clean up on stop; do not bind ports directly.
 - **Agent tool ↔ service drift.** When a service class API changes, the corresponding Agent tool in `core/agent/tool/builtin/` must be updated in the same PR. A stale tool either fails to compile or silently passes wrong arguments at runtime. Check `ToolRegistryFactory.baseTools()` for the full tool list.
-- **Editor card UI grammar.** Config-screen cards share one layout grammar (recipe 11): rows are full-bleed, non-row content sits in 16dp-padded zones, expansion never toggles the feature, and card UI is verified on the emulator — not just compiled.
+- **Editor card UI grammar.** Config-screen cards share one layout grammar (recipe 12): rows are full-bleed, non-row content sits in 16dp-padded zones, expansion never toggles the feature, and card UI is verified on the emulator — not just compiled.
 
 ---
 
@@ -318,7 +333,8 @@ Hard rules learned the hard way:
 - Committing secrets, keystores, or local machine config
 - Regressing HTML/FRONTEND file access in packaged shells
 - Shipping a host player-screen feature without its shell counterpart (preview-only UI)
-- Skipping 16KB alignment for large ELF natives shipped in exports
+- Shipping NODEJS_APP without `libnode_bridge.so` / `libnode.so` / `libc++_shared.so`
+- Skipping 16KB alignment for large ELF natives
 - Inventing editor card layout/spacing/animations instead of copying the neighbouring cards' patterns, or shipping card UI verified only by compilation
 
 ---
@@ -336,7 +352,7 @@ Use these when you change shell membership, export packaging, or config fields. 
 
 CI note: the PR `check` job compiles only `:shell:compileDebugKotlin` (debug variant) and skips template sync (`-PskipShellTemplateSync=true`). The shell **release** variant (R8 / proguard) and the template pipeline are exercised only by the manual `workflow_dispatch` packaging job — after touching `shell/proguard-rules.pro` or shell packaging, run the first command locally before pushing.
 
-Related focused tests often worth running after nearby edits: `ApkBuildCacheTest`, `AdBlockerHostRuntimeTest`, `AdBlockExportWiringTest`, `PortManagerTest`, `BuildInputPreflightTest`, `RuntimePermissionSyncTest`.
+Related focused tests often worth running after nearby edits: `ApkBuildCacheTest`, `AdBlockerHostRuntimeTest`, `AdBlockExportWiringTest`, `PortManagerTest`, `BuildInputPreflightTest`, `GoBuildEnvironmentTest`, `RuntimePermissionSyncTest`.
 
 ---
 
@@ -348,11 +364,15 @@ Landed:
 - Incremental `ApkBuildCache` (`FULL` / `CONTENT_OVERLAY` / `REUSE_UNSIGNED`); encrypted builds always full
 - Notification channels: polyfill, polling, WebSocket, FCM (BYO Firebase) via existing abstractions
 - `SafeNotificationChannels` fail-soft path for FGS
-- `PortManager` conflict policies + real stop handlers for local-site serving
-- Large on-demand downloads via `NetworkModule.downloadClient`
+- `PortManager` conflict policies + real stop handlers across Node/PHP/Python/Go/WordPress
+- `LocalDnsBridgeProxy` wiring for local server runtimes (including Node.js)
+- Runtime downloads via `NetworkModule.downloadClient`
 - Adblock preview + export wiring restored
 - HTML/FRONTEND file-access for packaged local shells
-- Multi-web: packaged HTML/frontend/gallery site sources embedded into the APK and resolved at runtime; unsupported or nested site sources degrade to a URL instead of aborting the build (#798, #792)
+- Node.js export: `libnode_bridge.so` + 16KB-aligned `libnode.so` + `libc++_shared.so`; 16KB app-compat before dlopen; stable `NodeJniOutputBridge` JNI callback
+- Go export: `libgo_exec_loader.so` embedded; in-app build ENOSPC handling + GOTMPDIR relocation
+- Go host-side builds on W^X hosts: `GoDirectBuilder` replays `compile`/`asm`/`link` as single-shot processes through `HostProcessLauncher` (user-mode static exec loader), with a content-keyed persistent package archive cache (#796)
+- Multi-web: gallery/media site sources embedded into the APK and resolved at runtime; nested site sources degrade to a URL instead of aborting the build (#798, #792)
 - Gallery playback: shuffleOnLoop, rememberPosition, overview grid, thumbnail bar, pinch-to-zoom viewer, with host/shell parity enforced by `ShellUiParityTest` (#781, #786, #801)
 - Untrusted bitmap decodes bounded (oversized-image crash fix) (#788)
 - Backup/restore coverage aligned with the current storage layout; restarts only when local files change, with throttled progress callbacks (#790, #794)
@@ -362,5 +382,5 @@ Landed:
 - Config field drift detection (`checkConfigFieldDrift`)
 - Module Market: Chrome Web Store live search + GreasyFork browse
 - Code editor find-and-replace
-- Security hardening sweep: TLS-fingerprint bridge validates upstream certs (system + custom CAs + hostname) and its local CA is signature-verified with no error-type fallback; JS bridges are caller/origin/scheme-gated (NativeBridge CORS bypass, GM bridge, MV3 `ChromeHostPermissions`); MITM proxy host-allowlisted and CA key wrapped at rest; zip extraction routed through `util/SafeZip`; concurrent exports serialized per package with per-package work dirs; removed-type multi-web site sources degrade to plain URLs; error pages and `TranslateBridge` callbacks JSON-escaped; keystore password sidecars excluded from backups
-- Agent tool system: dozens of built-in tools covering app lifecycle, config templates, ports/engine, hosts ad-block, stats/modifier/import, Play checks, modules, files, and imagery (image-capable models only), with Channel-based permission prompting, per-section SSE parse resilience, and plan mode
+- Security hardening sweep: TLS-fingerprint bridge validates upstream certs (system + custom CAs + hostname) and its local CA is signature-verified with no error-type fallback; JS bridges are caller/origin/scheme-gated (NativeBridge CORS bypass, GM bridge, MV3 `ChromeHostPermissions`); MITM proxy host-allowlisted and CA key wrapped at rest; zip extraction routed through `util/SafeZip`; concurrent exports serialized per package with per-package work dirs; multi-web server-runtime site sources degrade to URL; PHP/Python/WP embed failures fail the build; error pages and `TranslateBridge` callbacks JSON-escaped; keystore password sidecars excluded from backups
+- Agent tool system: up to 57 tools — 52 base + 2 plan-mode + 3 imagery (image-capable models only) — covering app lifecycle, config templates, ports/engine, hosts/runtime, stats/modifier/import, build env/Play, modules, files, and imagery, with Channel-based permission prompting, per-section SSE parse resilience, and plan mode; runtime/build-env tools surface `localExecAllowed` so the LLM knows targetSdk>=29 hosts cannot exec app-storage binaries

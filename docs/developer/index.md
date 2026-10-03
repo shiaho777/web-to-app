@@ -10,7 +10,7 @@ This section is for people working on WebToApp itself — contributors, deep cus
 
 | Path | Role |
 | --- | --- |
-| `app/` | Full builder host: editor UI, export pipeline, preview. The main application module. |
+| `app/` | Full builder host: editor UI, export pipeline, runtimes, preview. The main application module. |
 | `shell/` | Runtime template. Built to `app/src/main/assets/template/webview_shell.apk` via `:shell:assembleRelease` + `:app:syncShellTemplateApk`. |
 | `clone-host/` | Host-side APK clone / identity reshape support library (compiled to a DEX asset). |
 | `modules/` | Module Market catalog (`registry.json` + per-module folders). |
@@ -27,13 +27,13 @@ Runtime Kotlin is authored under `app/` and synced into `shell/` by `syncShellRu
 
 ## Package structure (`app/src/main/java/com/webtoapp`)
 
-- **`core/*`** — ~50 sub-packages of business/runtime logic: `apkbuilder`, `shell`, `webview`, `engine`, `extension`, `crypto`, `linux`, `port`, `dns`, `network`, `adblock`, `agent`, and more.
+- **`core/*`** — ~53 sub-packages of business/runtime logic: `apkbuilder`, `shell`, `webview`, `engine`, `extension`, `crypto`, `nodejs`, `php`, `python`, `golang`, `wordpress`, `linux`, `port`, `dns`, `network`, `adblock`, `agent`, and more.
 - **`data/*`** — persistence: Room DAOs, database, type converters, and the `WebApp` model + nested `*Config` classes.
 - **`ui/*`** — Jetpack Compose screens, components, design system, and the shell UI.
 - **`di/`** — Koin dependency injection.
 - **`util/`** — helpers and constants.
 
-Native C++ lives under `app/src/main/cpp/` (browser kernel, perf engine, sys optimizer, static exec loader).
+Native C++ lives under `app/src/main/cpp/` (crypto, integrity, anti-debug, `node_bridge`, `node_launcher`, `go_exec_loader`).
 
 ## Where to read next
 

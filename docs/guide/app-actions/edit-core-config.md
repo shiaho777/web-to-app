@@ -1,6 +1,6 @@
 # Edit Core Config
 
-Opens an app's **type-specific** settings — its source configuration. Tap ⋮ on an app card, then **Edit Core Config**. Each app type has a different core config; every type page documents its own in a detailed **Core config** section.
+Opens an app's **type-specific** settings — its source and runtime configuration. Tap ⋮ on an app card, then **Edit Core Config**. Each app type has a different core config; every type page documents its own in a detailed **Core config** section.
 
 ## What it edits
 
@@ -12,7 +12,13 @@ The type-specific creation form, reused as an editor. Follow each link to the fu
 | [Multi-Web](/guide/app-types/multi-web) | Sites (name/URL/type/icon/theme/selectors), layout & display, refresh, shared injection |
 | [HTML](/guide/app-types/html) | Source, entry file, load mode & port, capabilities, appearance |
 | [Offline Pack](/guide/app-types/offline-pack) | Crawl scope, filtering, network |
-| [Frontend](/guide/app-types/frontend) | Build output, framework |
+| [Frontend](/guide/app-types/frontend) | Build output, framework, toolchain |
+| [PHP](/guide/app-types/php) | Project, server (port/env), dependencies & extensions |
+| [WordPress](/guide/app-types/wordpress) | Site, admin account, theme & plugins, source & install, server |
+| [Node.js](/guide/app-types/nodejs) | Project, build mode, server (entry/port/env), native addons |
+| [Python](/guide/app-types/python) | Project, entry & server, dependencies & extensions |
+| [Go](/guide/app-types/go) | Project, build (binary/arch), server (port/static/env) |
+| [Media](/guide/app-types/media) | Source, playback, display |
 | [Gallery](/guide/app-types/gallery) | Content, playback, view, display |
 
 ## Notes

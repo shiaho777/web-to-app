@@ -1,0 +1,71 @@
+#include <dlfcn.h>
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
+typedef int (*node_start_func)(int argc, char** argv);
+typedef void (*set_16kb_appcompat_fn)(int enable);
+
+static const char* WTA_NODE_LIB = "WTA_NODE_LIB";
+
+static void enable_16kb_app_compat_if_needed(void) {
+    long page_size = sysconf(_SC_PAGESIZE);
+    if (page_size < 16384L) {
+        return;
+    }
+
+    set_16kb_appcompat_fn fn = NULL;
+
+    // Android 16+ loader 符号（首选）
+    fn = (set_16kb_appcompat_fn)dlsym(RTLD_DEFAULT, "__loader_android_set_16kb_appcompat_mode");
+
+    // Android 15/16 通用符号
+    if (fn == NULL) {
+        fn = (set_16kb_appcompat_fn)dlsym(RTLD_DEFAULT, "android_set_16kb_appcompat_mode");
+    }
+
+    // 极端 fallback（防止符号被移除）
+    if (fn == NULL) {
+        fn = (set_16kb_appcompat_fn)dlsym(RTLD_DEFAULT, "__android_set_16kb_appcompat_mode");
+    }
+
+    if (fn != NULL) {
+        fn(1);  // enable 16KB appcompat
+    }
+}
+
+int main(int argc, char* argv[]) {
+    const char* node_lib_path = getenv(WTA_NODE_LIB);
+    if (node_lib_path == NULL || node_lib_path[0] == '\0') {
+        fprintf(stderr, "%s is not set\n", WTA_NODE_LIB);
+        return 111;
+    }
+
+    struct stat st;
+    if (stat(node_lib_path, &st) != 0) {
+        fprintf(stderr, "Node runtime not found: %s\n", node_lib_path);
+        return 112;
+    }
+
+    signal(SIGPIPE, SIG_IGN);
+    enable_16kb_app_compat_if_needed();
+
+    void* handle = dlopen(node_lib_path, RTLD_NOW | RTLD_GLOBAL);
+    if (handle == NULL) {
+        fprintf(stderr, "dlopen failed: %s\n", dlerror());
+        return 113;
+    }
+
+    void* symbol = dlsym(handle, "node_start");
+    if (symbol == NULL) {
+        symbol = dlsym(handle, "_ZN4node5StartEiPPc");
+    }
+    if (symbol == NULL) {
+        fprintf(stderr, "node::Start symbol not found: %s\n", dlerror());
+        return 114;
+    }
+
+    return ((node_start_func) symbol)(argc, argv);
+}

@@ -12,7 +12,9 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.webtoapp.R
+import com.webtoapp.core.host.HostRuntimePrefs
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.ui.design.WtaScreen
 import com.webtoapp.ui.design.WtaSection
@@ -32,6 +34,9 @@ fun MoreScreen(
     onOpenHostsAdBlock: () -> Unit = {},
     onOpenAppModifier: () -> Unit = {},
     onOpenPlugins: () -> Unit = {},
+    onOpenLinuxEnvironment: () -> Unit = {},
+    onOpenRuntimeDeps: () -> Unit = {},
+    onOpenPortManager: () -> Unit = {},
     onOpenStats: () -> Unit = {},
     onOpenAbout: () -> Unit = {},
     onOpenSettings: () -> Unit = {},
@@ -86,6 +91,9 @@ fun MoreScreen(
                 }
 
                 WtaSection(title = Strings.moreSectionDevTools) {
+                    val advancedFeatures by HostRuntimePrefs.getInstance(LocalContext.current)
+                        .advancedFeaturesFlow
+                        .collectAsStateWithLifecycle()
                     WtaSettingCard {
                         MoreMenuItem(
                             title = Strings.pluginsTitle,
@@ -98,6 +106,26 @@ fun MoreScreen(
                             icon = painterResource(R.drawable.ic_sidebar_app_modifier),
                             onClick = onOpenAppModifier
                         )
+                        if (advancedFeatures) {
+                            WtaSectionDivider()
+                            MoreMenuItem(
+                                title = Strings.menuLinuxEnvironment,
+                                icon = painterResource(R.drawable.ic_sidebar_linux),
+                                onClick = onOpenLinuxEnvironment
+                            )
+                            WtaSectionDivider()
+                            MoreMenuItem(
+                                title = Strings.menuRuntimeDeps,
+                                icon = painterResource(R.drawable.ic_sidebar_runtime),
+                                onClick = onOpenRuntimeDeps
+                            )
+                            WtaSectionDivider()
+                            MoreMenuItem(
+                                title = Strings.menuPortManager,
+                                icon = painterResource(R.drawable.ic_sidebar_port),
+                                onClick = onOpenPortManager
+                            )
+                        }
                     }
                 }
 

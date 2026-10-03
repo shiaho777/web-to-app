@@ -1,6 +1,11 @@
 package com.webtoapp.core.app
 
 import android.content.Context
+import com.webtoapp.core.golang.GoRuntime
+import com.webtoapp.core.nodejs.NodeRuntime
+import com.webtoapp.core.php.PhpAppRuntime
+import com.webtoapp.core.python.PythonRuntime
+import com.webtoapp.core.wordpress.WordPressManager
 import com.webtoapp.data.model.AppType
 import com.webtoapp.data.model.WebApp
 import com.webtoapp.core.logging.AppLogger
@@ -9,18 +14,19 @@ import java.io.File
 /**
  * Deletes the on-disk project directory owned by a [WebApp] when the app is removed.
  *
- * Project-backed app types store their source files under `filesDir/<root>/<projectId>`
- * (e.g. `html_projects/<id>`, `frontend_builds/<id>`). [MainViewModel.deleteApp] previously
- * only dropped the database row, leaving these directories as orphans that accumulated
- * storage.
+ * Each runtime-backed app type stores its source files under `filesDir/<root>/<projectId>`
+ * (e.g. `wordpress_projects/<id>`, `nodejs_projects/<id>`). [MainViewModel.deleteApp] previously
+ * only dropped the database row, leaving these directories as orphans that accumulated storage
+ * (notably the WordPress SQLite DB + wp-content). This resolves the orphaned-project bug reported
+ * when deleting a WordPress app left its files behind.
  *
  * Exported artifacts (built_apks/, built_aabs/) are intentionally NOT touched — those are the
  * user's deliverables and independent of the source project.
  *
- * Safe by design: it only deletes directories it resolves through the stored project id /
- * absolute projectDir, and only when they actually live under the app's private filesDir.
- * It never follows an arbitrary absolute path outside the sandbox, so a corrupted projectDir
- * field cannot cause data loss elsewhere.
+ * Safe by design: it only deletes directories it resolves through the canonical runtime helpers
+ * (or, for HTML, the stored projectId / absolute projectDir), and only when they actually live
+ * under the app's private filesDir. It never follows an arbitrary absolute path outside the
+ * sandbox, so a corrupted projectDir field cannot cause data loss elsewhere.
  */
 object ProjectDirCleaner {
 
@@ -54,6 +60,31 @@ object ProjectDirCleaner {
         }
 
         when (app.appType) {
+            AppType.WORDPRESS -> {
+                app.wordpressConfig?.projectId?.takeIf { it.isNotBlank() }?.let { pid ->
+                    deleteIfSandboxed(WordPressManager.getProjectDir(appContext, pid))
+                }
+            }
+            AppType.NODEJS_APP -> {
+                app.nodejsConfig?.projectId?.takeIf { it.isNotBlank() }?.let { pid ->
+                    deleteIfSandboxed(NodeRuntime(appContext).getProjectDir(pid))
+                }
+            }
+            AppType.PHP_APP -> {
+                app.phpAppConfig?.projectId?.takeIf { it.isNotBlank() }?.let { pid ->
+                    deleteIfSandboxed(PhpAppRuntime(appContext).getProjectDir(pid))
+                }
+            }
+            AppType.PYTHON_APP -> {
+                app.pythonAppConfig?.projectId?.takeIf { it.isNotBlank() }?.let { pid ->
+                    deleteIfSandboxed(PythonRuntime(appContext).getProjectDir(pid))
+                }
+            }
+            AppType.GO_APP -> {
+                app.goAppConfig?.projectId?.takeIf { it.isNotBlank() }?.let { pid ->
+                    deleteIfSandboxed(GoRuntime(appContext).getProjectDir(pid))
+                }
+            }
             AppType.FRONTEND -> {
                 // Frontend projects live under frontend_builds/<projectId>.
                 app.htmlConfig?.projectId?.takeIf { it.isNotBlank() }?.let { pid ->
@@ -83,35 +114,8 @@ object ProjectDirCleaner {
                     }
                 }
             }
-            // Removed server-runtime types no longer produce projects, but old installs may
-            // still carry their on-disk project dirs — deleting the app must not orphan them.
-            AppType.WORDPRESS -> {
-                app.wordpressConfig?.projectId?.takeIf { it.isNotBlank() }?.let { pid ->
-                    deleteIfSandboxed(File(appContext.filesDir, "wordpress_projects/$pid"))
-                }
-            }
-            AppType.NODEJS_APP -> {
-                app.nodejsConfig?.projectId?.takeIf { it.isNotBlank() }?.let { pid ->
-                    deleteIfSandboxed(File(appContext.filesDir, "nodejs_projects/$pid"))
-                }
-            }
-            AppType.PHP_APP -> {
-                app.phpAppConfig?.projectId?.takeIf { it.isNotBlank() }?.let { pid ->
-                    deleteIfSandboxed(File(appContext.filesDir, "php_projects/$pid"))
-                }
-            }
-            AppType.PYTHON_APP -> {
-                app.pythonAppConfig?.projectId?.takeIf { it.isNotBlank() }?.let { pid ->
-                    deleteIfSandboxed(File(appContext.filesDir, "python_projects/$pid"))
-                }
-            }
-            AppType.GO_APP -> {
-                app.goAppConfig?.projectId?.takeIf { it.isNotBlank() }?.let { pid ->
-                    deleteIfSandboxed(File(appContext.filesDir, "go_projects/$pid"))
-                }
-            }
             // WEB / IMAGE / VIDEO / GALLERY have no source project directory on disk.
-            else -> { }
+            AppType.WEB, AppType.IMAGE, AppType.VIDEO, AppType.GALLERY -> { }
         }
 
         return deleted

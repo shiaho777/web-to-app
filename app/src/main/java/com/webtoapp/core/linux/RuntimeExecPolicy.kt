@@ -4,14 +4,19 @@ import android.content.Context
 import java.io.File
 
 /**
- * SELinux W^X policy gate for on-device fork+exec tooling.
+ * SELinux W^X policy gate for on-device fork+exec runtimes.
  *
  * Apps targeting SDK 29+ lose the ability to exec (or exec-map) files in app
- * data storage — which is exactly where on-demand toolchain binaries (esbuild)
- * are downloaded and extracted. execveat on memfds is blocked too
- * (no execute_no_trans on memfd labels, verified on API 35), so memfd-exec
- * loaders do not bypass the gate; [hasStaticExecBridge] rides on the user-mode
- * exec loader instead.
+ * data storage — which is exactly where the on-demand server runtimes (Python /
+ * PHP / WordPress / Go) are downloaded and extracted. execveat on memfds is
+ * blocked too (no execute_no_trans on memfd labels, verified on API 35), so
+ * memfd-exec loaders do not bypass the gate; mmap PROT_EXEC on memfds stays
+ * allowed (same class ART JIT uses), which is what [hasMuslExecBridge] rides on.
+ *
+ * Node.js host previews are unaffected (JNI native lib, no fork+exec).
+ * Server-runtime exports are pinned to targetSdk 28, so inside those APKs the
+ * probe passes and binaries execve directly. WebView exports stay on the
+ * template's 35 and do not start these runtimes.
  */
 object RuntimeExecPolicy {
 
@@ -22,6 +27,17 @@ object RuntimeExecPolicy {
             28
         }
         return target < 29
+    }
+
+    /**
+     * True when the patched musl linker is installed as a native lib. It execs
+     * from nativeLibraryDir (SELinux allows) and bridges exec-mapping of
+     * app_data ELFs through executable memfds, so musl-linked runtimes
+     * (Python) can start even where [canExecAppDataBinaries] is false.
+     */
+    fun hasMuslExecBridge(context: Context): Boolean {
+        val linker = File(context.applicationInfo.nativeLibraryDir, "libmusl-linker.so")
+        return linker.exists() && linker.canExecute()
     }
 
     /**

@@ -2,6 +2,7 @@ package com.webtoapp.core.shell
 
 import com.google.common.truth.Truth.assertWithMessage
 import com.webtoapp.data.model.GalleryConfig
+import com.webtoapp.data.model.MediaConfig
 import org.junit.Test
 import java.io.File
 
@@ -19,6 +20,7 @@ import java.io.File
  *
  * Covered pairs (extend by adding a [ShellUiParityPair], not by editing logic):
  * - Gallery: GalleryPlayerScreen/Activity vs ShellGallery/ShellScreen
+ * - Media: MediaAppActivity vs ShellMediaContent/ShellScreen
  */
 class ShellUiParityTest {
 
@@ -49,6 +51,28 @@ class ShellUiParityTest {
                 "com/webtoapp/ui/shell/ShellScreen.kt"
             ),
             shellQualifiers = listOf("galleryConfig.")
+        ),
+        ShellUiParityPair(
+            name = "media",
+            modelClass = MediaConfig::class.java,
+            hostFiles = listOf(
+                "com/webtoapp/ui/media/MediaAppActivity.kt"
+            ),
+            hostQualifiers = listOf("mediaConfig.", "config."),
+            shellFiles = listOf(
+                "com/webtoapp/ui/shell/ShellMediaContent.kt",
+                "com/webtoapp/ui/shell/ShellScreen.kt"
+            ),
+            shellQualifiers = listOf("mediaConfig."),
+            renames = mapOf(
+                // Export flattens SplashOrientation to a boolean (buildMediaBlock).
+                "orientation" to "landscape"
+            ),
+            allow = mapOf(
+                // Asset path is fixed at export (media_content.*); the shell
+                // mediaPath parameter is host-preview-only.
+                "mediaPath" to "fixed asset path, preview-only parameter"
+            )
         )
     )
 

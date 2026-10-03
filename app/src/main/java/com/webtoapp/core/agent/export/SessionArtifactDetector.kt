@@ -21,6 +21,10 @@ data class DetectedArtifact(
         Html(Target.App),
         FrontendReact(Target.App),
         FrontendVue(Target.App),
+        NodeJs(Target.App),
+        Php(Target.App),
+        Python(Target.App),
+        Go(Target.App),
         MultiWeb(Target.App),
         Gallery(Target.App),
         JsModule(Target.Module),
@@ -46,6 +50,25 @@ class SessionArtifactDetector(
         artifacts += detectChromeExtensions(sessionId, all, sizeByDir, countByDir)
         artifacts += detectJsModules(sessionId, all, sizeByDir, countByDir)
         artifacts += detectUserScripts(all)
+        artifacts += detectNodeJsRoots(all, sizeByDir, countByDir)
+        artifacts += detectByExtension(
+            all, sizeByDir, countByDir,
+            ext = "php",
+            kind = DetectedArtifact.Kind.Php,
+            preferredEntries = listOf("index.php", "public/index.php")
+        )
+        artifacts += detectByExtension(
+            all, sizeByDir, countByDir,
+            ext = "py",
+            kind = DetectedArtifact.Kind.Python,
+            preferredEntries = listOf("app.py", "main.py", "manage.py")
+        )
+        artifacts += detectByExtension(
+            all, sizeByDir, countByDir,
+            ext = "go",
+            kind = DetectedArtifact.Kind.Go,
+            preferredEntries = listOf("main.go")
+        )
         artifacts += detectFileArtifact(
             sessionId = sessionId,
             files = all,
@@ -159,6 +182,92 @@ class SessionArtifactDetector(
                 totalSizeBytes = f.sizeBytes
             )
         }
+
+    private fun detectNodeJsRoots(
+        files: List<ProjectFileManager.FileInfo>,
+        sizeByDir: Map<String, Long>,
+        countByDir: Map<String, Int>
+    ): List<DetectedArtifact> {
+        val out = mutableListOf<DetectedArtifact>()
+        val claimed = mutableSetOf<String>()
+        files.filter {
+            it.relativePath.endsWith("package.json", ignoreCase = true) &&
+                !it.relativePath.contains("/node_modules/") &&
+                it.relativePath.count { c -> c == '/' } < 4
+        }
+            .sortedBy { it.relativePath.count { c -> c == '/' } }
+            .forEach { f ->
+                val dir = f.relativePath.parentDir()
+                if (claimed.any { dir == it || dir.startsWith("$it/") }) return@forEach
+                claimed += dir
+                out += DetectedArtifact(
+                    id = "node:$dir",
+                    kind = DetectedArtifact.Kind.NodeJs,
+                    displayName = dir.lastSegmentOrSession(),
+                    rootPath = dir,
+                    entryFile = f.relativePath,
+                    fileCount = countByDir.descendantCount(dir),
+                    totalSizeBytes = sizeByDir.descendantSize(dir)
+                )
+            }
+
+        if (claimed.isEmpty()) {
+            val stray = files.firstOrNull {
+                it.relativePath.equals("index.js", ignoreCase = true) ||
+                    it.relativePath.equals("server.js", ignoreCase = true)
+            }
+            if (stray != null) {
+                out += DetectedArtifact(
+                    id = "node:",
+                    kind = DetectedArtifact.Kind.NodeJs,
+                    displayName = "Node.js App",
+                    rootPath = "",
+                    entryFile = stray.relativePath,
+                    fileCount = countByDir.descendantCount(""),
+                    totalSizeBytes = sizeByDir.descendantSize("")
+                )
+            }
+        }
+        return out
+    }
+
+    private fun detectByExtension(
+        files: List<ProjectFileManager.FileInfo>,
+        sizeByDir: Map<String, Long>,
+        countByDir: Map<String, Int>,
+        ext: String,
+        kind: DetectedArtifact.Kind,
+        preferredEntries: List<String>
+    ): List<DetectedArtifact> {
+        val out = mutableListOf<DetectedArtifact>()
+        val claimed = mutableSetOf<String>()
+        val candidateDirs = files
+            .filter { it.relativePath.endsWith(".$ext", ignoreCase = true) }
+            .map { it.relativePath.parentDir() }
+            .distinct()
+            .sortedBy { it.count { c -> c == '/' } }
+        candidateDirs.forEach { dir ->
+            if (claimed.any { dir == it || dir.startsWith("$it/") }) return@forEach
+            claimed += dir
+            val entry = preferredEntries
+                .firstOrNull { entry -> files.any { it.relativePath == joinPath(dir, entry) } }
+                ?: files.firstOrNull {
+                    it.relativePath.parentDir() == dir &&
+                        it.relativePath.endsWith(".$ext", ignoreCase = true)
+                }?.relativePath
+                ?: return@forEach
+            out += DetectedArtifact(
+                id = "$ext:$dir",
+                kind = kind,
+                displayName = dir.lastSegmentOrSession(),
+                rootPath = dir,
+                entryFile = entry,
+                fileCount = countByDir.descendantCount(dir),
+                totalSizeBytes = sizeByDir.descendantSize(dir)
+            )
+        }
+        return out
+    }
 
     private fun detectFileArtifact(
         sessionId: String,

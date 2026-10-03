@@ -14,7 +14,8 @@ import org.robolectric.annotation.Config
 
 /**
  * Zip-level proof that multi-web site media lands where the shell players
- * look: gallery sites under assets/multiweb_sites/<siteId>/gallery/.
+ * look: gallery sites under assets/multiweb_sites/<siteId>/gallery/ and
+ * single-media sites under assets/multiweb_sites/<siteId>/media_content.*.
  * Before the fix, site media was never embedded at all (black cells).
  */
 @RunWith(RobolectricTestRunner::class)
@@ -85,6 +86,29 @@ class MultiWebSiteMediaEmbedTest {
             }
             val entries = zipEntries(baos.toByteArray())
             assertThat(entries.keys).contains("assets/gallery/item_0.png")
+        } finally {
+            dir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `site single media embeds under the site prefix`() {
+        val dir = createTempDir("mwmed")
+        try {
+            val builder = ApkBuilder(context)
+            val media = java.io.File(dir, "v.mp4").also { it.writeBytes(byteArrayOf(9, 9, 9)) }
+            val baos = ByteArrayOutputStream()
+            java.util.zip.ZipOutputStream(baos).use { zipOut ->
+                builder.addMediaContentToAssets(
+                    zipOut, media.absolutePath, true, null,
+                    com.webtoapp.core.crypto.EncryptionConfig.DISABLED,
+                    "multiweb_sites/s2/media_content.mp4"
+                )
+            }
+            val entries = zipEntries(baos.toByteArray())
+            assertThat(entries.keys).contains("assets/multiweb_sites/s2/media_content.mp4")
+            assertThat(entries["assets/multiweb_sites/s2/media_content.mp4"])
+                .isEqualTo(byteArrayOf(9, 9, 9))
         } finally {
             dir.deleteRecursively()
         }

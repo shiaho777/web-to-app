@@ -10,12 +10,24 @@ import java.io.File
 data class BuildInputPreflightRequest(
     val appType: String,
     val htmlEntryFile: String = "index.html",
+    val mediaContentPath: String? = null,
     val htmlFiles: List<HtmlFile> = emptyList(),
     val galleryItems: List<GalleryItem> = emptyList(),
     val multiWebSites: List<MultiWebSite> = emptyList(),
+    val wordPressProjectDir: File? = null,
+    val nodejsProjectDir: File? = null,
+    val phpAppProjectDir: File? = null,
+    val pythonAppProjectDir: File? = null,
+    val goAppProjectDir: File? = null,
     val frontendProjectDir: File? = null,
     val multiWebProjectDir: File? = null,
-    val networkTrustConfig: NetworkTrustConfig = NetworkTrustConfig()
+    val networkTrustConfig: NetworkTrustConfig = NetworkTrustConfig(),
+
+    val phpBinaryPath: String? = null,
+    val nodeBinaryPath: String? = null,
+    val pythonBinaryPath: String? = null,
+    val muslLinkerPath: String? = null,
+    val builderMuslLinkerPath: String? = null
 )
 
 data class BuildInputPreflightResult(
@@ -40,6 +52,14 @@ object BuildInputPreflight {
         val issues = mutableListOf<BuildInputIssue>()
 
         when (request.appType) {
+            "IMAGE", "VIDEO" -> {
+                issues.requireReadableFile(
+                    key = "mediaContentPath",
+                    label = "${request.appType.lowercase()} content",
+                    path = request.mediaContentPath,
+                    requireNonEmpty = true
+                )
+            }
             "HTML" -> {
                 issues.requireHtmlFiles(request.htmlEntryFile, request.htmlFiles)
             }
@@ -52,6 +72,99 @@ object BuildInputPreflight {
                         entryFile = request.htmlEntryFile,
                         htmlFiles = request.htmlFiles,
                         label = "Frontend app"
+                    )
+                }
+            }
+            "WORDPRESS" -> {
+                issues.requireReadableDirectory(
+                    key = "wordPressProjectDir",
+                    label = "WordPress project directory",
+                    dir = request.wordPressProjectDir
+                )
+                issues.requireNativeBinary(
+                    key = "phpBinary",
+                    label = "PHP runtime (libphp.so)",
+                    path = request.phpBinaryPath,
+                    minSize = 1024L * 1024L,
+                    hint = "PHP runtime not downloaded — go to Settings → Runtime Engines → PHP 8.4 and tap Download. This is required even for built-in sample projects; the sample only provides app code, the PHP interpreter is a separate component."
+                )
+            }
+            "NODEJS_APP" -> {
+                issues.requireReadableDirectory(
+                    key = "nodejsProjectDir",
+                    label = "Node.js project directory",
+                    dir = request.nodejsProjectDir
+                )
+                issues.requireNativeBinary(
+                    key = "nodeBinary",
+                    label = "Node.js runtime (libnode.so)",
+                    path = request.nodeBinaryPath,
+                    minSize = 1024L * 1024L,
+                    hint = "Node.js runtime not downloaded — go to Settings → Runtime Engines and tap Download for Node.js. This is required even for built-in sample projects; the sample only provides app code, the Node.js interpreter is a separate component."
+                )
+            }
+            "PHP_APP" -> {
+                issues.requireReadableDirectory(
+                    key = "phpAppProjectDir",
+                    label = "PHP app project directory",
+                    dir = request.phpAppProjectDir
+                )
+                issues.requireNativeBinary(
+                    key = "phpBinary",
+                    label = "PHP runtime (libphp.so)",
+                    path = request.phpBinaryPath,
+                    minSize = 1024L * 1024L,
+                    hint = "PHP runtime not downloaded — go to Settings → Runtime Engines → PHP 8.4 and tap Download. This is required even for built-in sample projects; the sample only provides app code, the PHP interpreter is a separate component."
+                )
+            }
+            "PYTHON_APP" -> {
+                issues.requireReadableDirectory(
+                    key = "pythonAppProjectDir",
+                    label = "Python app project directory",
+                    dir = request.pythonAppProjectDir
+                )
+                issues.requireNativeBinary(
+                    key = "pythonBinary",
+                    label = "Python runtime (libpython3.so)",
+                    path = request.pythonBinaryPath,
+                    minSize = 1024L * 1024L,
+                    hint = "Python runtime not downloaded — go to Settings → Runtime Engines and tap Download for Python. This is required even for built-in sample projects; the sample only provides app code, the Python interpreter is a separate component."
+                )
+                issues.requireNativeBinary(
+                    key = "muslLinker",
+                    label = "musl linker (libmusl-linker.so)",
+                    path = request.muslLinkerPath,
+                    minSize = 1024L,
+                    hint = "Python musl linker missing — re-download Python in Settings → Runtime Engines (the musl linker is packaged with the Python runtime). Required even for built-in sample projects."
+                )
+                if (request.pythonAppProjectDir.requiresPythonDependencyPrebundle()) {
+                    issues.requireNativeBinary(
+                        key = "pythonPrebundleMuslLinker",
+                        label = "build-time musl linker (executable)",
+                        path = request.builderMuslLinkerPath,
+                        minSize = 1024L,
+                        hint = "This Python project still needs requirements pre-bundling; the current builder app cannot execute pip safely. Pre-populate .pypackages or use a build with bundled Python runtime."
+                    )
+                }
+            }
+            "GO_APP" -> {
+                issues.requireReadableDirectory(
+                    key = "goAppProjectDir",
+                    label = "Go app project directory",
+                    dir = request.goAppProjectDir
+                )
+                request.goAppProjectDir?.let { dir ->
+                    val binaryName = detectGoBinaryName(dir)
+                    val binaryPath = binaryName?.let {
+                        com.webtoapp.core.golang.GoDependencyManager.findBinaryPath(dir, it)
+                    } ?: com.webtoapp.core.golang.GoDependencyManager.detectAnyCompatibleBinary(dir)?.absolutePath
+
+                    issues.requireNativeBinary(
+                        key = "goBinary",
+                        label = "Go executable binary",
+                        path = binaryPath,
+                        minSize = 1024L,
+                        hint = "GO_APP export now requires a prebuilt binary. Build the target-ABI binary first, then export."
                     )
                 }
             }
@@ -259,6 +372,66 @@ object BuildInputPreflight {
             !file.canRead() -> add(BuildInputIssue(key, "$label cannot be read", file.absolutePath))
             requireNonEmpty && file.length() == 0L -> add(BuildInputIssue(key, "$label is empty", file.absolutePath))
         }
+    }
+
+    private fun MutableList<BuildInputIssue>.requireNativeBinary(
+        key: String,
+        label: String,
+        path: String?,
+        minSize: Long,
+        hint: String
+    ) {
+        val trimmed = path?.trim().orEmpty()
+        if (trimmed.isBlank()) {
+            add(BuildInputIssue(key, "$label not available — $hint"))
+            return
+        }
+        val file = File(trimmed)
+        when {
+            !file.exists() -> add(BuildInputIssue(key, "$label not installed — $hint", file.absolutePath))
+            !file.isFile -> add(BuildInputIssue(key, "$label path is not a file — $hint", file.absolutePath))
+            !file.canRead() -> add(BuildInputIssue(key, "$label cannot be read — $hint", file.absolutePath))
+            file.length() < minSize -> add(
+                BuildInputIssue(
+                    key,
+                    "$label is smaller than expected (${file.length()} bytes); likely corrupted — $hint",
+                    file.absolutePath
+                )
+            )
+        }
+    }
+
+    private fun MutableList<BuildInputIssue>.requireReadableDirectory(
+        key: String,
+        label: String,
+        dir: File?
+    ) {
+        when {
+            dir == null -> add(BuildInputIssue(key, "$label was not resolved"))
+            !dir.exists() -> add(BuildInputIssue(key, "$label does not exist", dir.absolutePath))
+            !dir.isDirectory -> add(BuildInputIssue(key, "$label is not a directory", dir.absolutePath))
+            !dir.canRead() -> add(BuildInputIssue(key, "$label cannot be read", dir.absolutePath))
+        }
+    }
+
+    private fun File?.requiresPythonDependencyPrebundle(): Boolean {
+        if (this == null || !exists() || !isDirectory) return false
+        val requirements = File(this, "requirements.txt")
+        if (!requirements.exists() || !requirements.isFile || !requirements.canRead()) return false
+        return !com.webtoapp.core.python.PythonDependencyManager.hasInstalledPackages(File(this, ".pypackages"))
+    }
+
+    private fun detectGoBinaryName(projectDir: File): String? {
+        val goMod = File(projectDir, "go.mod")
+        if (goMod.exists()) {
+            goMod.readLines().firstOrNull { it.startsWith("module ") }
+                ?.substringAfter("module ")
+                ?.trim()
+                ?.substringAfterLast('/')
+                ?.takeIf { it.isNotBlank() }
+                ?.let { return it }
+        }
+        return projectDir.name.takeIf { it.isNotBlank() }
     }
 
     private fun normalizeAssetPath(value: String): String {

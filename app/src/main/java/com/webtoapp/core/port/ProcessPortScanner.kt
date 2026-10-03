@@ -30,11 +30,19 @@ object ProcessPortScanner {
 
     enum class ServiceType(val color: Long) {
         LOCAL_HTTP(0xFF4CAF50),
+        NODEJS(0xFF8BC34A),
+        PHP(0xFF9C27B0),
+        PYTHON(0xFF2196F3),
+        GO(0xFF00BCD4),
         UNKNOWN(0xFF9E9E9E);
 
         val label: String
             get() = when (this) {
                 LOCAL_HTTP -> com.webtoapp.core.i18n.Strings.portManagerTypeLocalHttp
+                NODEJS -> com.webtoapp.core.i18n.Strings.portManagerTypeNodeJs
+                PHP -> com.webtoapp.core.i18n.Strings.portManagerTypePhp
+                PYTHON -> com.webtoapp.core.i18n.Strings.portManagerTypePython
+                GO -> com.webtoapp.core.i18n.Strings.portManagerTypeGo
                 UNKNOWN -> com.webtoapp.core.i18n.Strings.portManagerTypeUnknown
             }
     }
@@ -79,6 +87,10 @@ object ProcessPortScanner {
 
     private fun getProcessNameFromType(type: ServiceType): String {
         return when (type) {
+            ServiceType.NODEJS -> "node"
+            ServiceType.PHP -> "php"
+            ServiceType.PYTHON -> "python"
+            ServiceType.GO -> "go"
             ServiceType.LOCAL_HTTP -> "http-server"
             ServiceType.UNKNOWN -> ""
         }
@@ -108,6 +120,10 @@ object ProcessPortScanner {
     private fun inferServiceType(owner: String): ServiceType {
         return when {
             owner.startsWith("localhttp:") -> ServiceType.LOCAL_HTTP
+            owner.startsWith("nodejs:") -> ServiceType.NODEJS
+            owner.startsWith("php:") -> ServiceType.PHP
+            owner.startsWith("python:") -> ServiceType.PYTHON
+            owner.startsWith("go:") -> ServiceType.GO
             else -> ServiceType.UNKNOWN
         }
     }

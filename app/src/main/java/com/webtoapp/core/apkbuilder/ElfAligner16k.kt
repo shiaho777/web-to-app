@@ -21,8 +21,8 @@ object ElfAligner16k {
         val alreadyAligned: Boolean
     )
 
-    // Process-lifetime memo: identical inputs recur across builds in one
-    // session. Keyed by identity (path+size+mtime), validated
+    // Process-lifetime memo: host runtime libs (libnode.so etc.) are identical
+    // across builds in one session. Keyed by identity (path+size+mtime), validated
     // by re-inspecting the cached output (header-only read).
     private data class AlignCacheKey(val path: String, val size: Long, val mtime: Long)
     private val alignCache = java.util.concurrent.ConcurrentHashMap<AlignCacheKey, AlignmentResult>()

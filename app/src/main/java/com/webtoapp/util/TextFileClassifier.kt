@@ -12,10 +12,19 @@ object TextFileClassifier {
     )
 
     private val RUNTIME_TEXT_EXTENSIONS: Map<String, Set<String>> = mapOf(
-        "frontend" to setOf(
+        "nodejs" to setOf(
             "mjs", "cjs", "mts", "cts",
             "graphql", "gql", "prisma",
             "ejs", "hbs", "pug", "njk"
+        ),
+        "php" to setOf(
+            "php", "phtml", "twig", "blade"
+        ),
+        "python" to setOf(
+            "py", "pyi", "pyx", "rst"
+        ),
+        "go" to setOf(
+            "go", "mod", "sum", "tmpl", "tpl"
         )
     )
 
@@ -29,6 +38,7 @@ object TextFileClassifier {
             if (runtimeExts != null && ext in runtimeExts) return true
         }
 
+        if (fileName == "requirements.txt" || fileName == "Pipfile") return true
         return false
     }
 }

@@ -52,10 +52,17 @@
 1. 遵循 `modules/README.md` 的目录布局(`registry.json` + 模块文件夹)。
 2. 若随生成 APK 一起发布,运行时消费仍走扩展/shell 路径。
 
-## 8. 本地站点服务 / 下载路径
+## 8. 本地服务运行时 / 下载路径
 
 1. 通过 `PortManager` 以配置的冲突策略分配端口;实现真正的停止处理器。
-2. 大型引擎 / 工具链(如 esbuild)下载使用 `NetworkModule.downloadClient`。
+2. 当 fork+exec 进程需要宿主 DNS/proxy 环境时,接入 `LocalDnsBridgeProxy`。
+3. 大型依赖 / 引擎 / 运行时下载使用 `NetworkModule.downloadClient`。
+
+## 9. Node.js / Go 导出
+
+1. **Node.js:** 确保 `injectNodeJsNativeLibs` 嵌入 `libnode_bridge.so` + `libnode.so`(经 `ElfAligner16k` 16KB 对齐)+ `libc++_shared.so`。Node 二进制解析优先 `nativeLibraryDir`,回退到下载缓存。
+2. **Go:** 确保 `injectGoExecLoaderNativeLib` 嵌入 `libgo_exec_loader.so`。
+3. `NodeService` 运行在独立的 `:nodejs` 操作系统进程中,使 V8 生命周期与宿主隔离。
 
 ## 验证命令
 
@@ -68,4 +75,4 @@ python3 scripts/check_config_field_drift.py
 
 当你改动 shell 成员、导出打包或配置字段时使用这些。对于宿主专属的 UI/字符串工作,通常对 `:app` 做定向编译即可。
 
-附近编辑后常值得运行的聚焦测试:`ApkBuildCacheTest`、`AdBlockerHostRuntimeTest`、`AdBlockExportWiringTest`、`PortManagerTest`、`BuildInputPreflightTest`、`RuntimePermissionSyncTest`。
+附近编辑后常值得运行的聚焦测试:`ApkBuildCacheTest`、`AdBlockerHostRuntimeTest`、`AdBlockExportWiringTest`、`PortManagerTest`、`BuildInputPreflightTest`、`GoBuildEnvironmentTest`、`RuntimePermissionSyncTest`。

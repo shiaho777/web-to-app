@@ -65,22 +65,93 @@ object RuntimeAssetEmbedder {
         return fileCount to totalSize
     }
 
+    fun nodeJsConfig(): EmbedConfig = EmbedConfig(
+        runtimeName = "nodejs",
+        assetPrefix = "assets/nodejs_app",
+        excludeDirs = setOf(".git", ".cache", ".next", ".nuxt", "__pycache__"),
+        runtimeType = "nodejs"
+    )
 
+    fun phpConfig(): EmbedConfig = EmbedConfig(
+        runtimeName = "phpApp",
+        assetPrefix = "assets/php_app",
+        excludeDirs = setOf(".git", "node_modules", ".idea", "__pycache__"),
+        runtimeType = "php"
+    )
 
+    fun pythonConfig(): EmbedConfig = EmbedConfig(
+        runtimeName = "pythonApp",
+        assetPrefix = "assets/python_app",
+        excludeDirs = setOf("venv", ".venv", "__pycache__", ".git", "node_modules", ".mypy_cache", ".pytest_cache"),
+        runtimeType = "python"
+    )
 
+    fun goConfig(): EmbedConfig = EmbedConfig(
+        runtimeName = "goApp",
+        assetPrefix = "assets/go_app",
+        excludeDirs = setOf(".git", "vendor", "node_modules"),
+        runtimeType = "go",
+        fileHook = { zipOut, assetPath, file ->
+
+            if (file.canExecute() && file.length() > 10 * 1024 * 1024) {
+                ZipUtils.writeEntryStoredStreaming(zipOut, assetPath, file)
+                true
+            } else {
+                false
+            }
+        }
+    )
 
     fun frontendConfig(): EmbedConfig = EmbedConfig(
         runtimeName = "frontend",
         assetPrefix = "assets/frontend_app",
         excludeDirs = setOf("node_modules", ".git", ".cache", "__pycache__", ".next", ".nuxt"),
-        runtimeType = "frontend"
+        runtimeType = "nodejs"
     )
 
     fun multiWebConfig(): EmbedConfig = EmbedConfig(
         runtimeName = "multiWeb",
         assetPrefix = "assets/html_projects",
         excludeDirs = setOf("node_modules", ".git", ".cache", "__pycache__", ".next", ".nuxt"),
-        runtimeType = "frontend"
+        runtimeType = "nodejs"
     )
 
+    fun embedPythonStdlib(
+        zipOut: ZipOutputStream,
+        pythonLibDir: File,
+        logger: BuildLogger
+    ): Pair<Int, Long> {
+        if (!pythonLibDir.exists() || !pythonLibDir.isDirectory) {
+            logger.warn("Python standard library not found: ${pythonLibDir.absolutePath}")
+            return 0 to 0L
+        }
+
+        logger.section("Embed Python Standard Library")
+        var fileCount = 0
+        var totalSize = 0L
+        val excludeDirs = setOf("__pycache__", "test", "tests", "idle_test", "idlelib", "tkinter", "turtledemo", "turtle")
+
+        fun addDir(dir: File, assetBasePath: String) {
+            dir.listFiles()?.forEach { file ->
+                if (file.isDirectory && file.name in excludeDirs) return@forEach
+                val entryPath = "$assetBasePath/${file.name}"
+                if (file.isDirectory) {
+                    addDir(file, entryPath)
+                } else {
+                    try {
+                        ZipUtils.writeEntryDeflated(zipOut, entryPath, file.readBytes())
+                        fileCount++
+                        totalSize += file.length()
+                    } catch (e: Exception) {
+                        AppLogger.w("RuntimeAssetEmbedder", "Failed to embed Python lib file: ${file.name}", e)
+                    }
+                }
+            }
+        }
+
+        addDir(pythonLibDir, "assets/python_runtime/lib")
+        logger.logKeyValue("pythonRuntimeFiles", fileCount)
+        logger.logKeyValue("pythonRuntimeSize", "${totalSize / 1024} KB")
+        return fileCount to totalSize
+    }
 }

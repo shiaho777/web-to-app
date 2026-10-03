@@ -18,17 +18,17 @@ No. The entire build — binary patching, signing, and AAB export — happens on
 
 ### How is this different from a URL-wrapper app?
 
-A URL wrapper just opens a website in a WebView. WebToApp additionally packages whole sites and web projects into standalone apps, ships a hardened network stack (DoH, TLS fingerprint, ECH), patches and signs APKs at the binary level, and supports modules/userscripts/MV3 extensions — all without a PC or remote build server.
+A URL wrapper just opens a website in a WebView. WebToApp additionally runs **real server runtimes on-device** (Node.js, PHP, Python, Go, WordPress via fork+exec), ships a hardened network stack (DoH, TLS fingerprint, ECH), patches and signs APKs at the binary level, and supports modules/userscripts/MV3 extensions — all without a PC or remote build server.
 
 ### What app types can I create?
 
-Six: Web, Multi-Web, HTML, Offline Pack, Frontend, and Gallery. See [Create App](/guide/app-types/).
+Twelve: Web, Multi-Web, HTML, Offline Pack, Frontend, PHP, WordPress, Node.js, Python, Go, Media, and Gallery. See [Create App](/guide/app-types/).
 
 ## Creating & editing
 
 ### What's the difference between Edit Core Config and Edit Common Config?
 
-- **Edit Core Config** — the type-specific source settings (different for each app type). See [Edit Core Config](/guide/app-actions/edit-core-config).
+- **Edit Core Config** — the type-specific source/runtime settings (different for each app type). See [Edit Core Config](/guide/app-actions/edit-core-config).
 - **Edit Common Config** — the shared options every app has (appearance, networking, privacy, extensions, export). See [Edit Common Config](/guide/app-actions/edit-common-config/).
 
 Web apps have a single combined **Edit** entry instead of the two.
@@ -55,11 +55,11 @@ See [Build APK](/guide/app-actions/build-apk).
 
 ### Can I publish my app to Google Play?
 
-Usually yes. Every app type — Web, Multi-Web, HTML, Offline Pack, Frontend, and Gallery — exports a Play-ready AAB. The exceptions: a build with **signature-bound resource encryption** enabled, and apps of discontinued types restored from old backups. See [Google Play](/guide/more-features/google-play).
+Usually yes. Web, Multi-Web, HTML, Offline Pack, Frontend, Media, and Gallery apps all export a Play-ready AAB. Two cases cannot: **Node.js / PHP / Python / Go / WordPress** apps, and any build with **resource encryption** enabled. See [Google Play](/guide/more-features/google-play).
 
 ### What targetSdk do generated apps use?
 
-Generated APKs inherit the shell template's `targetSdk` (currently 35). The **Override targetSdk** option in [APK Export Config](/guide/app-actions/edit-common-config/apk-export) can pin a different level (28/34/35/36) for the standalone APK. For Play, the AAB exporter rewrites `targetSdk` to the Play-required level either way.
+Generated APKs inherit the shell template's `targetSdk` (currently 35). Node.js, PHP, Python, Go, and WordPress APKs are pinned to 28 so they can exec bundled binaries; the override does not apply to them. Other types can pin 28/34/35/36 from [APK Export Config](/guide/app-actions/edit-common-config/apk-export). The AAB exporter rewrites `targetSdk` to the Play-required level.
 
 ### How do I sign with my own key?
 
@@ -69,11 +69,23 @@ Create or import a keystore (PKCS12/PFX/JKS/BKS) and choose the signature scheme
 
 In the [File Manager](/guide/more-features/file-manager) — APK builds, AAB exports, app clones, and build logs.
 
-## Local sites & ports
+## Runtimes
+
+### Why does my Node/PHP/Python/Go app download something on first use?
+
+The runtime binaries aren't bundled into the base app to keep it small; they're downloaded once on first use and cached. Manage them in [Runtime Management](/guide/more-features/runtime-management) and the [Linux Environment](/guide/more-features/linux-environment).
+
+### My Node.js app fails with a `loadNode` / `loadJniBridge` error. Why?
+
+The exported APK must embed `libnode_bridge.so`, `libnode.so` (16KB-aligned), and `libc++_shared.so`. A missing native library causes this failure. See the [Node.js](/guide/app-types/nodejs) export requirements.
 
 ### How are ports managed? What if there's a conflict?
 
-Apps that serve local sites (Multi-Web embedded apps, packaged HTML/Frontend apps) allocate ports through the [Port Manager](/guide/more-features/port-manager) with a conflict policy: `REASSIGN` (pick another port), `AUTO_KILL` (stop the conflicting service), or `ALERT` (notify).
+Runtime apps allocate ports through the [Port Manager](/guide/more-features/port-manager) with a conflict policy: `REASSIGN` (pick another port), `AUTO_KILL` (stop the conflicting service), or `ALERT` (notify).
+
+### Why does my runtime app need a DNS bridge?
+
+The packed native binaries (musl-based) can't always reach the system DNS resolver, so a local DNS bridge proxy provides DNS resolution and outbound HTTP. This is wired automatically.
 
 ## Features & config
 
@@ -121,7 +133,7 @@ The build dialog shows a diagnostic report (failure stage, cause, and the build-
 
 ### My exported app can't reach the network. What should I check?
 
-Check the app's [Custom DNS](/guide/app-actions/edit-common-config/custom-dns) and proxy settings under [Advanced Settings](/guide/app-actions/edit-common-config/advanced-settings).
+Check the app's [Custom DNS](/guide/app-actions/edit-common-config/custom-dns) and proxy settings under [Advanced Settings](/guide/app-actions/edit-common-config/advanced-settings). For runtime apps, the local DNS bridge handles resolution automatically.
 
 ## Data & help
 

@@ -90,8 +90,14 @@ internal object ApkConfigJsonFactory {
         "siteAssetBase" to when (meta.appType) {
             "HTML" -> "html"
             "FRONTEND" -> "frontend_app"
+            "NODEJS_APP" -> "nodejs_app"
+            "PHP_APP" -> "php_app"
+            "PYTHON_APP" -> "python_app"
+            "GO_APP" -> "go_app"
+            "WORDPRESS" -> "wordpress"
             else -> ""
         },
+        "mediaConfig" to mediaConfigPayload(),
         "htmlConfig" to htmlConfigPayload(),
         "galleryConfig" to galleryConfigPayload(),
         "bgmEnabled" to bgm.enabled,
@@ -125,9 +131,14 @@ internal object ApkConfigJsonFactory {
         "language" to meta.language,
         "engineType" to meta.engineType,
         "networkTrustConfig" to networkTrustConfigPayload(),
+        "wordpressConfig" to wordpressConfigPayload(),
+        "nodejsConfig" to nodejsConfigPayload(),
         "deepLinkEnabled" to deepLink.enabled,
         "deepLinkHosts" to deepLink.hosts,
         "deepLinkSchemes" to deepLink.schemes,
+        "phpAppConfig" to phpAppConfigPayload(),
+        "pythonAppConfig" to pythonAppConfigPayload(),
+        "goAppConfig" to goAppConfigPayload(),
         "multiWebConfig" to multiWebConfigPayload()
     )
 
@@ -389,6 +400,15 @@ internal object ApkConfigJsonFactory {
         "showRenderCrashErrorUi" to errorPage.showRenderCrashErrorUi
     )
 
+    private fun ApkConfig.mediaConfigPayload(): Map<String, Any?> = linkedMapOf(
+        "enableAudio" to media.enableAudio,
+        "loop" to media.loop,
+        "autoPlay" to media.autoPlay,
+        "fillScreen" to media.fillScreen,
+        "landscape" to media.landscape,
+        "keepScreenOn" to media.keepScreenOn,
+        "backgroundColor" to media.backgroundColor
+    )
 
     private fun ApkConfig.htmlConfigPayload(): Map<String, Any?> = linkedMapOf(
         "entryFile" to html.entryFile,
@@ -478,6 +498,63 @@ internal object ApkConfigJsonFactory {
         "cleartextTrafficPermitted" to meta.networkTrustConfig.cleartextTrafficPermitted
     )
 
+    private fun ApkConfig.wordpressConfigPayload(): Map<String, Any?> = linkedMapOf(
+        "siteTitle" to wordpress.siteTitle,
+        "adminUser" to wordpress.adminUser,
+        "adminEmail" to wordpress.adminEmail,
+        "adminPassword" to wordpress.adminPassword,
+        "themeName" to wordpress.themeName,
+        "plugins" to wordpress.plugins,
+        "activePlugins" to wordpress.activePlugins,
+        "permalinkStructure" to wordpress.permalinkStructure,
+        "siteLanguage" to wordpress.siteLanguage,
+        "autoInstall" to wordpress.autoInstall,
+        "phpPort" to wordpress.phpPort,
+        "portConflictMode" to wordpress.portConflictMode,
+        "customPhpExtensions" to wordpress.customPhpExtensions
+    )
+
+    private fun ApkConfig.nodejsConfigPayload(): Map<String, Any?> = linkedMapOf(
+        "mode" to nodejs.mode,
+        "port" to nodejs.port,
+        "portConflictMode" to nodejs.portConflictMode,
+        "entryFile" to nodejs.entryFile,
+        "envVars" to nodejs.envVars,
+        "customNodeExtensions" to nodejs.customNodeExtensions
+    )
+
+    private fun ApkConfig.phpAppConfigPayload(): Map<String, Any?> = linkedMapOf(
+        "framework" to phpApp.framework,
+        "documentRoot" to phpApp.documentRoot,
+        "entryFile" to phpApp.entryFile,
+        "port" to phpApp.port,
+        "portConflictMode" to phpApp.portConflictMode,
+        "envVars" to phpApp.envVars,
+        "phpExtensions" to phpApp.phpExtensions,
+        "customPhpExtensions" to phpApp.customPhpExtensions
+    )
+
+    private fun ApkConfig.pythonAppConfigPayload(): Map<String, Any?> = linkedMapOf(
+        "framework" to pythonApp.framework,
+        "entryFile" to pythonApp.entryFile,
+        "entryModule" to pythonApp.entryModule,
+        "serverType" to pythonApp.serverType,
+        "port" to pythonApp.port,
+        "portConflictMode" to pythonApp.portConflictMode,
+        "envVars" to pythonApp.envVars,
+        "customPythonExtensions" to pythonApp.customPythonExtensions
+    )
+
+    private fun ApkConfig.goAppConfigPayload(): Map<String, Any?> = linkedMapOf(
+        "framework" to goApp.framework,
+        "binaryName" to goApp.binaryName,
+        "targetArch" to goApp.targetArch,
+        "port" to goApp.port,
+        "portConflictMode" to goApp.portConflictMode,
+        "staticDir" to goApp.staticDir,
+        "envVars" to goApp.envVars
+    )
+
     private fun ApkConfig.multiWebConfigPayload(): Map<String, Any?> = linkedMapOf(
         "sites" to multiWeb.sites,
         "displayMode" to multiWeb.displayMode,
@@ -520,7 +597,14 @@ internal object ApkConfigJsonFactory {
 
 internal object ApkConfigValidator {
     private val serverBackedAppTypes = setOf(
+        "IMAGE",
+        "VIDEO",
         "GALLERY",
+        "WORDPRESS",
+        "NODEJS_APP",
+        "PHP_APP",
+        "PYTHON_APP",
+        "GO_APP",
         "MULTI_WEB"
     )
 

@@ -1,0 +1,16 @@
+{
+  "packs": {
+    "python-django-shared": {
+      "bytes": 6518165,
+      "sha256": "7b90f1ece85aaecd92a6f427af183a9cde63da5492b3b6ce1a083122ccadcd9c"
+    },
+    "python-fastapi-shared": {
+      "bytes": 747242,
+      "sha256": "9048ed9f93de8fc94ea7f681709f6ced7f846a8bfab806650db036e7793ea25e"
+    },
+    "python-flask-shared": {
+      "bytes": 573146,
+      "sha256": "5a386d502ae6b5417720800b8791b4f9d075a6c8defa8ba1c2a71a4238109a7c"
+    }
+  }
+}

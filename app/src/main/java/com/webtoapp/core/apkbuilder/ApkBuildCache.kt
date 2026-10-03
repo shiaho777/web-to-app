@@ -101,6 +101,7 @@ class ApkBuildCache(private val context: Context) {
         encryptionEnabled: Boolean,
         abiFilters: List<String>,
         projectDirs: List<File?>,
+        mediaContentPath: String?,
         splashMediaPath: String?,
         bgmPlaylistPaths: List<String>,
         htmlFiles: List<com.webtoapp.data.model.HtmlFile>,
@@ -113,6 +114,7 @@ class ApkBuildCache(private val context: Context) {
         perfFingerprint: String? = null,
         signingFingerprint: String? = null,
         multiWebSiteGalleryItems: List<com.webtoapp.data.model.GalleryItem> = emptyList(),
+        multiWebSiteMediaPaths: List<String> = emptyList()
     ): IncrementalPlan {
         val shellId = shellTemplateId(templateApk)
         val identity = identityFingerprint(
@@ -131,6 +133,7 @@ class ApkBuildCache(private val context: Context) {
         val content = contentFingerprint(
             config = config,
             projectDirs = projectDirs,
+            mediaContentPath = mediaContentPath,
             splashMediaPath = splashMediaPath,
             bgmPlaylistPaths = bgmPlaylistPaths,
             htmlFiles = htmlFiles,
@@ -140,6 +143,7 @@ class ApkBuildCache(private val context: Context) {
             statusBarImageDark = config.statusBarBackgroundImageDark,
             floatingIcon = config.floatingWindowMinimizedIconPath,
             multiWebSiteGalleryItems = multiWebSiteGalleryItems,
+            multiWebSiteMediaPaths = multiWebSiteMediaPaths
         )
 
         if (forceFullRebuild) {
@@ -296,12 +300,23 @@ class ApkBuildCache(private val context: Context) {
         if (entryName == "assets/floating_window_minimized_icon.png") return true
         if (entryName.startsWith("assets/splash_media.")) return true
         if (entryName.startsWith("assets/error_page_media.")) return true
+        if (entryName.startsWith("assets/media_content.")) return true
         if (entryName.startsWith("assets/gallery/")) return true
         if (entryName.startsWith("assets/bgm/")) return true
         if (entryName.startsWith("assets/html/")) return true
         if (entryName.startsWith("assets/html_projects/")) return true
+        if (entryName.startsWith("assets/nodejs_app/")) return true
+        if (entryName.startsWith("assets/php_app/")) return true
+        if (entryName.startsWith("assets/python/")) return true
+        if (entryName.startsWith("assets/python_app/")) return true
+        // Re-embedded by RuntimeAssetEmbedder.embedPythonStdlib on every build in both
+        // modes; without this entry CONTENT_OVERLAY copies the cached stdlib AND the
+        // embedder writes it again — duplicate entries accumulating on every rebuild.
+        if (entryName.startsWith("assets/python_runtime/")) return true
+        if (entryName.startsWith("assets/go_app/")) return true
         if (entryName.startsWith("assets/frontend_app/")) return true
         if (entryName.startsWith("assets/static_pack/")) return true
+        if (entryName.startsWith("assets/wordpress/")) return true
         if (entryName.startsWith("assets/wta_custom_ca/")) return true
         if (entryName.startsWith("assets/multiweb_sites/")) return true
         if (entryName.startsWith("assets/multi_web/")) return true
@@ -361,8 +376,9 @@ class ApkBuildCache(private val context: Context) {
         // Host app versionCode participates so a host upgrade (which may ship improved
         // packaging/alignment/export logic) invalidates every cached unsigned APK, forcing a
         // FULL rebuild that re-applies the latest logic. Without this, a user who built a
-        // an app on an older host and upgrades would keep hitting REUSE_UNSIGNED and
-        // serving a stale APK built with outdated packaging logic.
+        // NODEJS_APP on an older host and upgrades without re-downloading libnode.so would
+        // keep hitting REUSE_UNSIGNED and serving a stale APK (e.g. one with an unaligned
+        // libnode.so that dlopen rejects on Android 15+/16KB-page devices).
         parts += "hostVc=$hostVersionCode"
         parts += "name=${config.appName}"
         parts += "type=${config.appType}"
@@ -382,8 +398,8 @@ class ApkBuildCache(private val context: Context) {
         parts += "openWith=${config.openWithEnabled}"
         parts += "runtimePerms=${config.runtimePermissions}"
         parts += "networkTrust=${config.networkTrustConfig}"
-        // Native libs (e.g. libcronet.so injected for HTTP/3) must participate
-        // so a host upgrade that ships a new/realigned .so invalidates the cached
+        // Native libs (libnode.so / libnode_bridge.so / libc++_shared.so) must participate
+        // so a host upgrade that ships a new/realigned libnode.so invalidates the cached
         // unsigned APK. Otherwise REUSE_UNSIGNED serves a stale unaligned lib that dlopen
         // rejects on Android 15+ (16KB-page) devices.
         parts += "nativeLibs=${nativeLibsFingerprint ?: "none"}"
@@ -410,6 +426,7 @@ class ApkBuildCache(private val context: Context) {
     private fun contentFingerprint(
         config: ApkConfig,
         projectDirs: List<File?>,
+        mediaContentPath: String?,
         splashMediaPath: String?,
         bgmPlaylistPaths: List<String>,
         htmlFiles: List<com.webtoapp.data.model.HtmlFile>,
@@ -419,12 +436,14 @@ class ApkBuildCache(private val context: Context) {
         statusBarImageDark: String?,
         floatingIcon: String?,
         multiWebSiteGalleryItems: List<com.webtoapp.data.model.GalleryItem> = emptyList(),
+        multiWebSiteMediaPaths: List<String> = emptyList()
     ): String {
         val parts = mutableListOf<String>()
         parts += "configJson=${ApkConfigJsonFactory.create(config)}"
         projectDirs.filterNotNull().forEach { dir ->
             parts += "dir=${dir.absolutePath}|${treeFingerprint(dir)}"
         }
+        parts += "media=${fileFingerprint(mediaContentPath)}"
         parts += "splash=${fileFingerprint(splashMediaPath)}"
         parts += "errorPage=${fileFingerprint(errorPageMediaPath)}"
         parts += "statusBar=${fileFingerprint(statusBarImage)}"
@@ -441,6 +460,9 @@ class ApkBuildCache(private val context: Context) {
         }
         multiWebSiteGalleryItems.forEachIndexed { index, item ->
             parts += "mwGallery[$index]=${item.path}|${fileFingerprint(item.path)}|thumb=${fileFingerprint(item.thumbnailPath)}"
+        }
+        multiWebSiteMediaPaths.forEachIndexed { index, path ->
+            parts += "mwMedia[$index]=${fileFingerprint(path)}"
         }
         return sha256(parts.joinToString("\n"))
     }

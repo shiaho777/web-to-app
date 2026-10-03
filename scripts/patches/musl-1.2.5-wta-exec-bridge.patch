@@ -1,0 +1,71 @@
+Android targetSdk>=29 SELinux W^X denies exec-mapping app_data files, which
+kills every on-device runtime that keeps its ELF libraries in app storage.
+Bridge such fds into an executable memfd (the same permission class ART JIT
+relies on) before mapping. The probe keeps unrestricted environments
+(generated APKs stay at targetSdk 28) on the zero-overhead direct path.
+--- a/ldso/dynlink.c
++++ b/ldso/dynlink.c
+@@ -684,7 +684,11 @@
+ 	}
+ }
+ 
+-static void *map_library(int fd, struct dso *dso)
++#ifndef MFD_EXEC
++#define MFD_EXEC 0x0010U
++#endif
++
++static void *map_library_inner(int fd, struct dso *dso)
+ {
+ 	Ehdr buf[(896+sizeof(Ehdr))/sizeof(Ehdr)];
+ 	void *allocated_buf=0;
+@@ -868,8 +872,50 @@
+ 	if (map!=MAP_FAILED) unmap_library(dso);
+ 	free(allocated_buf);
+ 	return 0;
++}
++
++/* W^X bridge: if the fd cannot be exec-mapped, copy it into an executable
++ * memfd and map from there. Returns fd unchanged when mapping is allowed
++ * or the bridge is unavailable. */
++static int wta_exec_bridge(int fd)
++{
++	void *t = mmap(0, PAGE_SIZE, PROT_READ|PROT_EXEC, MAP_PRIVATE, fd, 0);
++	if (t != MAP_FAILED) {
++		munmap(t, PAGE_SIZE);
++		return fd;
++	}
++	int m = memfd_create("wta-lib", MFD_CLOEXEC | MFD_EXEC);
++	if (m < 0 && errno == EINVAL)
++		m = memfd_create("wta-lib", MFD_CLOEXEC);
++	if (m < 0) return fd;
++	off_t save = lseek(fd, 0, SEEK_CUR);
++	lseek(fd, 0, SEEK_SET);
++	char buf[65536];
++	ssize_t r;
++	while ((r = read(fd, buf, sizeof buf)) > 0) {
++		ssize_t off = 0;
++		while (off < r) {
++			ssize_t w = write(m, buf+off, r-off);
++			if (w < 0) { r = -1; break; }
++			off += w;
++		}
++		if (r < 0) break;
++	}
++	lseek(fd, save == (off_t)-1 ? 0 : save, SEEK_SET);
++	if (r < 0) { close(m); return fd; }
++	lseek(m, 0, SEEK_SET);
++	return m;
+ }
+ 
++static void *map_library(int fd, struct dso *dso)
++{
++	int bfd = wta_exec_bridge(fd);
++	if (bfd == fd) return map_library_inner(fd, dso);
++	void *res = map_library_inner(bfd, dso);
++	close(bfd);
++	return res;
++}
++
+ static int path_open(const char *name, const char *s, char *buf, size_t buf_size)
+ {
+ 	size_t l;

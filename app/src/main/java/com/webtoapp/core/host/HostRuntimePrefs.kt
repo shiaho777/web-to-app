@@ -38,6 +38,9 @@ data class McpSettings(
  *
  * [KEY_MCP_ENABLED] is the About-screen local MCP switch. The token and port
  * travel with it so an external agent can be pointed at 127.0.0.1.
+ *
+ * [KEY_ADVANCED_FEATURES] reveals Node.js, PHP, Python, Go, WordPress, and
+ * image/video. Off by default. The runtimes stay in the app either way.
  */
 @SuppressLint("StaticFieldLeak")
 class HostRuntimePrefs private constructor(private val context: Context) {
@@ -49,6 +52,9 @@ class HostRuntimePrefs private constructor(private val context: Context) {
 
     @Volatile
     private var cachedMcp: McpSettings? = null
+
+    @Volatile
+    private var cachedAdvancedFeatures: Boolean? = null
 
     val separateTasksFlow: StateFlow<Boolean> = context.hostRuntimeDataStore.data.map { prefs ->
         prefs[KEY_SEPARATE_TASKS] ?: false
@@ -66,12 +72,23 @@ class HostRuntimePrefs private constructor(private val context: Context) {
         initialValue = McpSettings(enabled = false, token = "", port = DEFAULT_MCP_PORT)
     )
 
+    val advancedFeaturesFlow: StateFlow<Boolean> = context.hostRuntimeDataStore.data.map { prefs ->
+        prefs[KEY_ADVANCED_FEATURES] ?: false
+    }.stateIn(
+        scope = scope,
+        started = SharingStarted.Eagerly,
+        initialValue = false
+    )
+
     init {
         scope.launch {
             separateTasksFlow.collect { cachedSeparateTasks = it }
         }
         scope.launch {
             mcpFlow.collect { cachedMcp = it }
+        }
+        scope.launch {
+            advancedFeaturesFlow.collect { cachedAdvancedFeatures = it }
         }
     }
 
@@ -102,6 +119,30 @@ class HostRuntimePrefs private constructor(private val context: Context) {
             prefs[KEY_SEPARATE_TASKS] = enabled
         }
         cachedSeparateTasks = enabled
+    }
+
+    fun isAdvancedFeaturesEnabledBlocking(): Boolean {
+        cachedAdvancedFeatures?.let { return it }
+        return if (Looper.myLooper() == Looper.getMainLooper()) {
+            advancedFeaturesFlow.value.also { cachedAdvancedFeatures = it }
+        } else {
+            try {
+                runBlocking {
+                    val value = context.hostRuntimeDataStore.data.first()[KEY_ADVANCED_FEATURES] ?: false
+                    cachedAdvancedFeatures = value
+                    value
+                }
+            } catch (_: Exception) {
+                advancedFeaturesFlow.value.also { cachedAdvancedFeatures = it }
+            }
+        }
+    }
+
+    suspend fun setAdvancedFeaturesEnabled(enabled: Boolean) {
+        context.hostRuntimeDataStore.edit { prefs ->
+            prefs[KEY_ADVANCED_FEATURES] = enabled
+        }
+        cachedAdvancedFeatures = enabled
     }
 
     fun currentMcpBlocking(): McpSettings {
@@ -162,6 +203,7 @@ class HostRuntimePrefs private constructor(private val context: Context) {
         const val DEFAULT_MCP_PORT = 17321
 
         private val KEY_SEPARATE_TASKS = booleanPreferencesKey("webapp_separate_tasks")
+        private val KEY_ADVANCED_FEATURES = booleanPreferencesKey("advanced_features")
         private val KEY_MCP_ENABLED = booleanPreferencesKey("host_mcp_enabled")
         private val KEY_MCP_TOKEN = stringPreferencesKey("host_mcp_token")
         private val KEY_MCP_PORT = intPreferencesKey("host_mcp_port")

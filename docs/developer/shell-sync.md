@@ -34,7 +34,7 @@ At runtime, a generated APK:
 1. `WebToAppApplication` starts.
 2. `ShellModeManager.isShellMode()` checks for `app_config.json` in assets.
 3. If present, `getConfig()` deserializes it (via Gson) into `ShellConfig` — possibly decrypting it first.
-4. `ShellContentRouter` picks the content surface for the configured app type (WebView content or the gallery player); `ShellRuntimeServices` initializes the runtime services (activation, announcements, ad-block).
+4. `ShellServerLauncher` resolves and launches server-backed runtimes; `ShellRuntimeServices` initializes the runtime stack.
 
 ## Constraints
 

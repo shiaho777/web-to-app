@@ -23,3 +23,7 @@ These live under [Advanced Settings](/guide/app-actions/edit-common-config/advan
 ## Browser engine
 
 - The engine (System WebView / GeckoView) is chosen in [Custom DNS](/guide/app-actions/edit-common-config/custom-dns) or [APK Export Config](/guide/app-actions/edit-common-config/apk-export); manage engines in [Browser Kernel](/guide/more-features/browser-kernel).
+
+## Runtimes
+
+- Server-runtime DNS/proxy bridging is covered in [Local Server Runtimes](/guide/config/runtimes).

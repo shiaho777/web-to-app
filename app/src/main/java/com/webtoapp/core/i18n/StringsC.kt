@@ -2630,6 +2630,30 @@ object StringsC {
         AppLanguage.JAPANESE -> "全画面モードを制御"
         AppLanguage.KOREAN -> "전체 화면 모드 제어"
     }
+    val permPip: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "画中画"
+        AppLanguage.ENGLISH -> "Picture-in-Picture"
+        AppLanguage.ARABIC -> "صورة داخل صورة"
+        AppLanguage.PORTUGUESE -> "Imagem na imagem"
+        AppLanguage.SPANISH -> "Imagen en imagen"
+        AppLanguage.FRENCH -> "Image dans l'image"
+        AppLanguage.GERMAN -> "Bild-in-Bild"
+        AppLanguage.RUSSIAN -> "Картинка в картинке"
+        AppLanguage.JAPANESE -> "ピクチャーインピクチャー"
+        AppLanguage.KOREAN -> "화면 속 화면"
+    }
+    val permPipDesc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "启用画中画模式"
+        AppLanguage.ENGLISH -> "Enable picture-in-picture mode"
+        AppLanguage.ARABIC -> "تفعيل وضع الصورة داخل الصورة"
+        AppLanguage.PORTUGUESE -> "Ativar modo picture-in-picture"
+        AppLanguage.SPANISH -> "Activar modo picture-in-picture"
+        AppLanguage.FRENCH -> "Activer le mode picture-in-picture"
+        AppLanguage.GERMAN -> "Bild-in-Bild-Modus aktivieren"
+        AppLanguage.RUSSIAN -> "Включить режим «картинка в картинке»"
+        AppLanguage.JAPANESE -> "ピクチャーインピクチャーモードを有効化"
+        AppLanguage.KOREAN -> "화면 속 화면 모드 활성화"
+    }
     val permScreenCapture: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "屏幕截图"
         AppLanguage.ENGLISH -> "Screen Capture"

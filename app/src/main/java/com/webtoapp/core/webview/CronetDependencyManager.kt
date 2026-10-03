@@ -17,7 +17,7 @@ import java.util.zip.ZipInputStream
  *
  * The `cronet-embedded` Gradle dependency contributes only its Java classes to the
  * host/shell APKs — the .so files are excluded from packaging in both build files,
- * mirroring the GeckoView precedent (heavy natives are never bundled):
+ * mirroring the GeckoView / libnode precedents (heavy natives are never bundled):
  *  - Host preview loads the library from [getDepsDir] via Cronet's LibraryLoader.
  *  - ApkBuilder injects the same file into exported APKs when 强制 HTTP/3 is on,
  *    so generated apps load it straight from their own nativeLibraryDir.

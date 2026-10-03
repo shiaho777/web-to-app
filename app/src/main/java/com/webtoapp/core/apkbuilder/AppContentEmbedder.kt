@@ -16,17 +16,26 @@ class EmbedContext(
     val encryptor: AssetEncryptor?,
     val encryptionConfig: EncryptionConfig,
 
+    val mediaContentPath: String?,
     val htmlFiles: List<com.webtoapp.data.model.HtmlFile>,
     val galleryItems: List<com.webtoapp.data.model.GalleryItem>,
     val projectDir: File?,
     val secondaryProjectDir: File?,
 
+    val fnAddMediaContent: (ZipOutputStream, String, Boolean, AssetEncryptor?, EncryptionConfig, String?) -> Unit,
     val fnAddHtmlFiles: (ZipOutputStream, List<com.webtoapp.data.model.HtmlFile>, AssetEncryptor?, EncryptionConfig) -> Int,
     val fnAddGalleryItems: (ZipOutputStream, List<com.webtoapp.data.model.GalleryItem>, AssetEncryptor?, EncryptionConfig, String) -> Unit,
+    val fnAddWordPressFiles: (ZipOutputStream, File) -> Unit,
+    val fnAddNodeJsFiles: (ZipOutputStream, File) -> Unit,
     val fnAddFrontendFiles: (ZipOutputStream, File, List<com.webtoapp.data.model.HtmlFile>) -> Unit,
+    val fnAddPhpAppFiles: (ZipOutputStream, File) -> Unit,
+    val fnAddPythonAppFiles: (ZipOutputStream, File) -> Unit,
+    val fnAddGoAppFiles: (ZipOutputStream, File) -> Unit,
     val multiWebSiteSourceDirs: Map<String, File> = emptyMap(),
     /** Multi-web GALLERY site id -> source host-path items (embedded under the site prefix). */
-    val multiWebSiteGalleryItems: Map<String, List<com.webtoapp.data.model.GalleryItem>> = emptyMap()
+    val multiWebSiteGalleryItems: Map<String, List<com.webtoapp.data.model.GalleryItem>> = emptyMap(),
+    /** Multi-web IMAGE/VIDEO site id -> source host media path. */
+    val multiWebSiteMediaPaths: Map<String, String> = emptyMap()
 )
 
 data class EmbedResult(
@@ -39,12 +48,29 @@ object AppContentEmbedderFactory {
 
     fun create(appType: String): AppContentEmbedder? {
         return when (appType) {
+            "IMAGE", "VIDEO" -> MediaContentEmbedder()
             "HTML" -> HtmlContentEmbedder()
             "GALLERY" -> GalleryContentEmbedder()
+            "WORDPRESS" -> WordPressContentEmbedder()
+            "NODEJS_APP" -> NodeJsContentEmbedder()
             "FRONTEND" -> FrontendContentEmbedder()
+            "PHP_APP" -> PhpAppContentEmbedder()
+            "PYTHON_APP" -> PythonAppContentEmbedder()
+            "GO_APP" -> GoAppContentEmbedder()
             "MULTI_WEB" -> MultiWebContentEmbedder()
+            "WEB" -> null
             else -> null
         }
+    }
+}
+
+class MediaContentEmbedder : AppContentEmbedder {
+    override fun embed(zipOut: ZipOutputStream, ctx: EmbedContext): EmbedResult {
+        val mediaPath = ctx.mediaContentPath ?: return EmbedResult(false, message = "No media content path")
+        ctx.logger.log("Embedding single media content: $mediaPath")
+        val isVideo = ctx.config.appType == "VIDEO"
+        ctx.fnAddMediaContent(zipOut, mediaPath, isVideo, ctx.encryptor, ctx.encryptionConfig, null)
+        return EmbedResult(true, 1, "Media content embedded")
     }
 }
 
@@ -119,6 +145,32 @@ class GalleryContentEmbedder : AppContentEmbedder {
     }
 }
 
+class WordPressContentEmbedder : AppContentEmbedder {
+    override fun embed(zipOut: ZipOutputStream, ctx: EmbedContext): EmbedResult {
+        val dir = ctx.projectDir
+        if (dir == null || !dir.exists()) {
+            ctx.logger.warn("WordPress app but project directory missing!")
+            return EmbedResult(false, message = "Project directory missing")
+        }
+        ctx.logger.section("Embed WordPress Files")
+        ctx.fnAddWordPressFiles(zipOut, dir)
+        return EmbedResult(true, message = "WordPress files embedded")
+    }
+}
+
+class NodeJsContentEmbedder : AppContentEmbedder {
+    override fun embed(zipOut: ZipOutputStream, ctx: EmbedContext): EmbedResult {
+        val dir = ctx.projectDir
+        if (dir == null || !dir.exists()) {
+            ctx.logger.warn("Node.js app but project directory missing!")
+            return EmbedResult(false, message = "Project directory missing")
+        }
+        ctx.logger.section("Embed Node.js Files")
+        ctx.fnAddNodeJsFiles(zipOut, dir)
+        return EmbedResult(true, message = "Node.js files embedded")
+    }
+}
+
 class FrontendContentEmbedder : AppContentEmbedder {
     override fun embed(zipOut: ZipOutputStream, ctx: EmbedContext): EmbedResult {
         val dir = ctx.projectDir
@@ -135,6 +187,45 @@ class FrontendContentEmbedder : AppContentEmbedder {
             return EmbedResult(count > 0, count, "$count frontend files embedded (fallback)")
         }
         return EmbedResult(false, message = "No frontend project directory or files")
+    }
+}
+
+class PhpAppContentEmbedder : AppContentEmbedder {
+    override fun embed(zipOut: ZipOutputStream, ctx: EmbedContext): EmbedResult {
+        val dir = ctx.projectDir
+        if (dir == null || !dir.exists()) {
+            ctx.logger.warn("PHP app but project directory missing!")
+            return EmbedResult(false, message = "Project directory missing")
+        }
+        ctx.logger.section("Embed PHP App Files")
+        ctx.fnAddPhpAppFiles(zipOut, dir)
+        return EmbedResult(true, message = "PHP app files embedded")
+    }
+}
+
+class PythonAppContentEmbedder : AppContentEmbedder {
+    override fun embed(zipOut: ZipOutputStream, ctx: EmbedContext): EmbedResult {
+        val dir = ctx.projectDir
+        if (dir == null || !dir.exists()) {
+            ctx.logger.warn("Python app but project directory missing!")
+            return EmbedResult(false, message = "Project directory missing")
+        }
+        ctx.logger.section("Embed Python App Files")
+        ctx.fnAddPythonAppFiles(zipOut, dir)
+        return EmbedResult(true, message = "Python app files embedded")
+    }
+}
+
+class GoAppContentEmbedder : AppContentEmbedder {
+    override fun embed(zipOut: ZipOutputStream, ctx: EmbedContext): EmbedResult {
+        val dir = ctx.projectDir
+        if (dir == null || !dir.exists()) {
+            ctx.logger.warn("Go app but project directory missing!")
+            return EmbedResult(false, message = "Project directory missing")
+        }
+        ctx.logger.section("Embed Go App Files")
+        ctx.fnAddGoAppFiles(zipOut, dir)
+        return EmbedResult(true, message = "Go app files embedded")
     }
 }
 
@@ -155,7 +246,7 @@ class MultiWebContentEmbedder : AppContentEmbedder {
                     runtimeName = "multiWebSite_${site.id}",
                     assetPrefix = "assets/multiweb_sites/${site.id}/${site.siteShellConfig?.siteAssetBase?.ifBlank { "html" } ?: "html"}",
                     excludeDirs = setOf("node_modules", ".git", ".cache", "__pycache__", ".next", ".nuxt"),
-                    runtimeType = "frontend"
+                    runtimeType = "nodejs"
                 ),
                 logger = ctx.logger
             )
@@ -176,6 +267,28 @@ class MultiWebContentEmbedder : AppContentEmbedder {
             ctx.fnAddGalleryItems(
                 zipOut, items, ctx.encryptor, ctx.encryptionConfig,
                 multiWebSiteGalleryAssetPrefix(site.id)
+            )
+            embedded.add(site.id)
+        }
+        // Single-media (IMAGE/VIDEO) sites: same gap, same treatment. The
+        // shell media player resolves multiweb_sites/<siteId>/media_content.*
+        // (see ShellContentRouter); without embedding it renders black.
+        sites.forEach { site ->
+            val siteType = site.appType.uppercase()
+            if (siteType != "IMAGE" && siteType != "VIDEO") return@forEach
+            val mediaPath = ctx.multiWebSiteMediaPaths[site.id]?.takeIf { it.isNotBlank() }
+                ?: return@forEach
+            val mediaFile = java.io.File(mediaPath)
+            if (!mediaFile.isFile || !mediaFile.canRead()) {
+                ctx.logger.warn("Multi-web media site ${site.id} (${site.name}) file missing: $mediaPath")
+                return@forEach
+            }
+            val ext = if (siteType == "VIDEO") "mp4" else "png"
+            ctx.logger.section("Embed Multi-Web Media Site ${site.id}")
+            ctx.fnAddMediaContent(
+                zipOut, mediaFile.absolutePath, siteType == "VIDEO",
+                ctx.encryptor, ctx.encryptionConfig,
+                "multiweb_sites/${site.id}/media_content.$ext"
             )
             embedded.add(site.id)
         }

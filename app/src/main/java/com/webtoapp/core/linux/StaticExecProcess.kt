@@ -133,7 +133,11 @@ class StaticExecProcess private constructor(
          * Returns null when the loader is unavailable or the spawn fails; in
          * the latter case [errorMessage] receives a diagnostic. stdin is
          * wired to /dev/null inside the child.
+         *
+         * @JvmStatic so the shell-synced launcher can call this by reflection
+         * without a compile-time dependency. This class stays out of generated APKs.
          */
+        @JvmStatic
         fun start(
             command: List<String>,
             env: Map<String, String>,

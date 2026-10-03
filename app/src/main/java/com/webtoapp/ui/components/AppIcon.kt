@@ -48,11 +48,17 @@ fun WtaAppIcon(
         } else {
             val defaultIconRes = when (app.appType) {
                 AppType.WEB -> R.drawable.ic_type_web
+                AppType.IMAGE -> R.drawable.ic_type_media
+                AppType.VIDEO -> R.drawable.ic_type_media
                 AppType.HTML -> R.drawable.ic_type_html
                 AppType.GALLERY -> R.drawable.ic_type_gallery
                 AppType.FRONTEND -> R.drawable.ic_type_frontend
+                AppType.WORDPRESS -> R.drawable.ic_type_wordpress
+                AppType.NODEJS_APP -> R.drawable.ic_type_nodejs
+                AppType.PHP_APP -> R.drawable.ic_type_php
+                AppType.PYTHON_APP -> R.drawable.ic_type_python
+                AppType.GO_APP -> R.drawable.ic_type_go
                 AppType.MULTI_WEB -> R.drawable.ic_type_multi_web
-                else -> R.drawable.ic_type_web
             }
             Icon(
                 painterResource(defaultIconRes),

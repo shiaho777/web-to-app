@@ -1,0 +1,1100 @@
+package com.webtoapp.ui.screens
+
+import com.webtoapp.ui.components.PremiumButton
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import com.webtoapp.core.i18n.Strings
+import com.webtoapp.core.golang.GoRuntime
+import com.webtoapp.core.golang.GoSampleManager
+import com.webtoapp.data.model.GoAppConfig
+import com.webtoapp.ui.components.TypedSampleProjectsCard
+import com.webtoapp.ui.components.*
+import com.webtoapp.ui.design.WtaChip
+import com.webtoapp.ui.design.WtaSpacing
+import com.webtoapp.ui.screens.create.WtaCreateFlowScaffold
+import com.webtoapp.ui.screens.create.WtaCreateFlowSection
+import com.webtoapp.ui.screens.create.runtime.GoProjectSourceLoader
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.first
+import java.io.File
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@Composable
+fun CreateGoAppScreen(
+    existingAppId: Long = 0L,
+    onBack: () -> Unit,
+    onCreated: (
+        name: String,
+        goAppConfig: GoAppConfig,
+        iconUri: Uri?,
+        themeType: String
+    ) -> Unit
+) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val isEdit = existingAppId > 0L
+
+    var appName by remember { mutableStateOf("") }
+    var appIcon by remember { mutableStateOf<Uri?>(null) }
+
+    var binaryName by remember { mutableStateOf("") }
+    var staticDir by remember { mutableStateOf("") }
+    var serverPort by remember { mutableStateOf(0) }
+    var portConflictMode by remember { mutableStateOf(com.webtoapp.data.model.PortConflictMode.AUTO_KILL) }
+    var envVars by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
+    var newEnvKey by remember { mutableStateOf("") }
+    var newEnvValue by remember { mutableStateOf("") }
+
+    var selectedProjectDir by remember { mutableStateOf<String?>(null) }
+    var buildProjectDir by remember { mutableStateOf<String?>(null) }
+    var detectedFramework by remember { mutableStateOf<String?>(null) }
+    var projectId by remember { mutableStateOf<String?>(null) }
+
+    var goModulePath by remember { mutableStateOf<String?>(null) }
+    var goVersion by remember { mutableStateOf<String?>(null) }
+    var goDeps by remember { mutableStateOf<List<Pair<String, String>>>(emptyList()) }
+    var showAllDeps by remember { mutableStateOf(false) }
+
+    var binarySize by remember { mutableStateOf<Long?>(null) }
+    var binaryDetected by remember { mutableStateOf(false) }
+
+    var goToolchainReady by remember {
+        mutableStateOf(com.webtoapp.core.golang.GoDependencyManager.isGoToolchainReady(context))
+    }
+    val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                goToolchainReady = com.webtoapp.core.golang.GoDependencyManager.isGoToolchainReady(context)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
+    var targetArch by remember { mutableStateOf("arm64") }
+
+    var healthCheckEndpoint by remember { mutableStateOf("/health") }
+
+    var isCreating by remember { mutableStateOf(false) }
+    var creationPhase by remember { mutableStateOf("") }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var errorThrowable by remember { mutableStateOf<Throwable?>(null) }
+
+    LaunchedEffect(existingAppId) {
+        if (existingAppId > 0L) {
+            val existingApp = org.koin.java.KoinJavaComponent.get<com.webtoapp.data.repository.WebAppRepository>(com.webtoapp.data.repository.WebAppRepository::class.java)
+                .getWebAppById(existingAppId).first()
+            existingApp?.let { app ->
+                appName = app.name
+                app.iconPath?.let { appIcon = android.net.Uri.parse(it) }
+                app.goAppConfig?.let { config ->
+                    binaryName = config.binaryName
+                    staticDir = config.staticDir
+                    serverPort = config.serverPort
+                    portConflictMode = config.portConflictMode
+                    envVars = config.envVars.toMutableMap()
+                    detectedFramework = config.framework
+                    projectId = config.projectId
+
+                    val localProjectDir = GoRuntime(context).getProjectDir(config.projectId).absolutePath
+                    selectedProjectDir = localProjectDir
+                    buildProjectDir = localProjectDir
+                    targetArch = config.targetArch
+                    binaryDetected = config.binaryName.isNotBlank()
+                }
+            }
+        }
+    }
+
+    val iconPickerLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri -> uri?.let { appIcon = it } }
+
+    val folderPickerLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocumentTree()
+    ) { uri ->
+        uri?.let { treeUri ->
+            scope.launch {
+                isCreating = true
+                creationPhase = Strings.frameworkDetected
+                errorMessage = null
+
+                try {
+                    withContext(Dispatchers.IO) {
+                        val runtime = GoRuntime(context)
+                        val selectedName = androidx.documentfile.provider.DocumentFile
+                            .fromTreeUri(context, treeUri)
+                            ?.name
+                        creationPhase = Strings.copyingProjectFiles
+                        val newProjectId = java.util.UUID.randomUUID().toString()
+                        val projectDir = GoProjectSourceLoader().copyDocumentTreeToProject(context, treeUri, newProjectId)
+                        selectedProjectDir = selectedName ?: projectDir.absolutePath
+                        buildProjectDir = projectDir.absolutePath
+                        projectId = newProjectId
+                        creationPhase = Strings.frameworkDetected
+
+                        val framework = runtime.detectFramework(projectDir)
+                        detectedFramework = framework
+
+                        binaryDetected = false
+                        binarySize = null
+                        binaryName = ""
+                        goModulePath = null
+                        goVersion = null
+                        goDeps = emptyList()
+                        val detectedBinary = runtime.detectBinary(projectDir)
+                        if (detectedBinary != null) {
+                            binaryName = detectedBinary
+                            binaryDetected = true
+
+                            val searchDirs = listOf(projectDir, File(projectDir, "bin"), File(projectDir, "build"))
+                            for (dir in searchDirs) {
+                                val binFile = File(dir, detectedBinary)
+                                if (binFile.exists()) {
+                                    binarySize = binFile.length()
+                                    break
+                                }
+                            }
+                        }
+
+                        val detectedStaticDir = runtime.detectStaticDir(projectDir)
+                        if (detectedStaticDir.isNotEmpty()) {
+                            staticDir = detectedStaticDir
+                        }
+
+                        val goMod = File(projectDir, "go.mod")
+                        if (goMod.exists()) {
+                            try {
+                                val content = goMod.readText()
+                                val lines = content.lines()
+
+                                lines.firstOrNull { it.startsWith("module ") }?.let { line ->
+                                    goModulePath = line.substringAfter("module ").trim()
+                                    if (appName.isBlank()) appName = goModulePath!!.substringAfterLast("/")
+                                }
+
+                                lines.firstOrNull { it.startsWith("go ") }?.let { line ->
+                                    goVersion = line.substringAfter("go ").trim()
+                                }
+
+                                var inRequire = false
+                                val deps = mutableListOf<Pair<String, String>>()
+                                for (line in lines) {
+                                    val trimmed = line.trim()
+                                    if (trimmed == "require (") {
+                                        inRequire = true
+                                        continue
+                                    }
+                                    if (trimmed == ")") {
+                                        inRequire = false
+                                        continue
+                                    }
+                                    if (inRequire && trimmed.isNotEmpty() && !trimmed.startsWith("//")) {
+                                        if (!trimmed.contains("// indirect")) {
+                                            val parts = trimmed.split(" ", limit = 2)
+                                            if (parts.size == 2) {
+                                                deps.add(parts[0].trim() to parts[1].trim())
+                                            }
+                                        }
+                                    }
+
+                                    if (trimmed.startsWith("require ") && !trimmed.contains("(")) {
+                                        val reqParts = trimmed.removePrefix("require ").trim().split(" ", limit = 2)
+                                        if (reqParts.size == 2) {
+                                            deps.add(reqParts[0].trim() to reqParts[1].trim())
+                                        }
+                                    }
+                                }
+                                goDeps = deps
+                            } catch (e: Exception) { android.util.Log.w("CreateGoApp", "Failed to parse go.mod", e) }
+                        }
+
+                        creationPhase = Strings.goProjectReady
+                    }
+                } catch (e: Exception) {
+                    errorMessage = e.message ?: Strings.projectImportFailed
+                    errorThrowable = e
+                } finally {
+                    isCreating = false
+                }
+            }
+        }
+    }
+
+    val canCreate = projectId != null
+
+    val accentColor = MaterialTheme.colorScheme.onSurface
+
+    WtaCreateFlowScaffold(
+        title = Strings.createGoApp,
+        onBack = onBack,
+        actions = {
+            TextButton(
+                onClick = {
+                    projectId?.let { pid ->
+                        onCreated(
+                            appName.ifBlank { Strings.createGoApp },
+                            GoAppConfig(
+                                projectId = pid,
+                                projectName = appName.ifBlank { Strings.createGoApp },
+                                framework = detectedFramework ?: "raw",
+                                binaryName = binaryName,
+                                targetArch = targetArch,
+                                serverPort = serverPort,
+                                portConflictMode = portConflictMode,
+                                envVars = envVars,
+                                staticDir = staticDir,
+                            ),
+                            appIcon,
+                            "AURORA"
+                        )
+                    }
+                },
+                enabled = canCreate && !isCreating
+            ) {
+                Text(if (isEdit) Strings.btnSave else Strings.btnCreate)
+            }
+        }
+    ) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            WtaCreateFlowSection(title = Strings.importProject) {
+
+            GoHeroSection(
+                detectedFramework = detectedFramework,
+                accentColor = accentColor,
+                goVersion = goVersion
+            )
+
+            if (selectedProjectDir == null) {
+                TypedSampleProjectsCard(
+                    title = Strings.sampleProjects,
+                    subtitle = Strings.sampleGoSubtitle,
+                    samples = remember { GoSampleManager.getSampleProjects() },
+                    onSelectSample = { sample ->
+                        scope.launch {
+                            val result = GoSampleManager.extractSampleProject(context, sample.id)
+                            result.onSuccess { path ->
+                                selectedProjectDir = path
+                                buildProjectDir = null
+                                isCreating = true
+                                creationPhase = Strings.frameworkDetected
+                                try {
+                                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                        val projectDir = java.io.File(path)
+                                        val runtime = GoRuntime(context)
+                                        val framework = runtime.detectFramework(projectDir)
+                                        detectedFramework = framework
+                                        val detectedBinary = runtime.detectBinary(projectDir)
+                                        if (detectedBinary != null) { binaryName = detectedBinary; binaryDetected = true }
+                                        val detectedStaticDir = runtime.detectStaticDir(projectDir)
+                                        if (detectedStaticDir.isNotEmpty()) staticDir = detectedStaticDir
+                                        appName = sample.name
+                                        creationPhase = Strings.copyingProjectFiles
+                                        val newProjectId = java.util.UUID.randomUUID().toString()
+                                        val importedDir = runtime.createProject(newProjectId, projectDir)
+                                        projectId = newProjectId
+                                        buildProjectDir = importedDir.absolutePath
+                                        creationPhase = Strings.goProjectReady
+                                    }
+                                } catch (e: Exception) {
+                                    errorMessage = e.message
+                                    errorThrowable = e
+                                } finally {
+                                    isCreating = false
+                                }
+                            }
+                        }
+                    }
+                )
+            }
+
+            if (!isEdit) {
+            EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    RuntimeSectionHeader(
+                        icon = Icons.Outlined.Settings,
+                        title = Strings.njsBasicConfig
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    PremiumTextField(
+                        value = appName,
+                        onValueChange = { appName = it },
+                        label = { Text(Strings.labelAppName) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+                }
+            }
+
+            RuntimeIconPickerCard(
+                appIcon = appIcon,
+                onSelectIcon = { iconPickerLauncher.launch("image/*") }
+            )
+            }
+
+            EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    RuntimeSectionHeader(
+                        icon = Icons.Outlined.Folder,
+                        title = Strings.goSelectProject
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = Strings.goSupportedFrameworks,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    if (selectedProjectDir != null) {
+                        Surface(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = MaterialTheme.shapes.small,
+                            color = accentColor.copy(alpha = 0.08f)
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Default.CheckCircle, null, tint = accentColor, modifier = Modifier.size(20.dp))
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(Strings.goProjectReady, style = MaterialTheme.typography.bodyMedium, color = accentColor)
+                                }
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    selectedProjectDir!!.substringAfterLast("/"),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                    if (detectedFramework != null && detectedFramework != "raw") {
+                        Text(
+                            "${Strings.frameworkDetected}: $detectedFramework",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    if (binaryName.isNotEmpty()) {
+                        Text(
+                            "${Strings.goSelectBinary}: $binaryName",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+
+                    PremiumButton(
+                        onClick = { folderPickerLauncher.launch(null) },
+                        enabled = !isCreating,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.FolderOpen, null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(Strings.goSelectProject)
+                    }
+                }
+            }
+            }
+
+            WtaCreateFlowSection(title = Strings.appConfig) {
+            if (projectId != null) {
+
+                if (goModulePath != null) {
+                    GoModuleInfoCard(
+                        modulePath = goModulePath!!,
+                        goVersion = goVersion,
+                        depCount = goDeps.size,
+                        accentColor = accentColor
+                    )
+                }
+
+                GoBinaryDetectionCard(
+                    binaryDetected = binaryDetected,
+                    binaryName = binaryName,
+                    binarySize = binarySize,
+                    onBinaryNameChange = { binaryName = it },
+                    accentColor = accentColor,
+
+                    toolchainReady = goToolchainReady,
+                )
+
+                val effectiveBuildProjectDir = buildProjectDir ?: projectId?.let { GoRuntime(context).getProjectDir(it).absolutePath }
+                if (effectiveBuildProjectDir != null) {
+                    GoBuildInAppCard(
+                        projectDir = effectiveBuildProjectDir,
+                        binaryName = binaryName,
+                        appName = appName,
+                        accentColor = accentColor,
+                        toolchainReady = goToolchainReady,
+                        onBuildComplete = { newBinaryName, newBinarySize ->
+                            binaryName = newBinaryName
+                            binarySize = newBinarySize
+                            binaryDetected = true
+                        }
+                    )
+                }
+
+                GoTargetArchCard(
+                    targetArch = targetArch,
+                    onArchChange = { targetArch = it },
+                    accentColor = accentColor
+                )
+
+                GoStaticFilesCard(
+                    staticDir = staticDir,
+                    onStaticDirChange = { staticDir = it }
+                )
+
+                GoHealthCheckCard(
+                    endpoint = healthCheckEndpoint,
+                    onEndpointChange = { healthCheckEndpoint = it }
+                )
+
+                if (goDeps.isNotEmpty()) {
+                    GoDepsCard(
+                        deps = goDeps,
+                        showAll = showAllDeps,
+                        onToggleShowAll = { showAllDeps = !showAllDeps },
+                        accentColor = accentColor
+                    )
+                }
+
+                GoFrameworkTipCard(framework = detectedFramework)
+
+                RuntimeEnvVarsCard(
+                    envVars = envVars,
+                    newEnvKey = newEnvKey,
+                    newEnvValue = newEnvValue,
+                    onNewKeyChange = { newEnvKey = it },
+                    onNewValueChange = { newEnvValue = it },
+                    onAdd = {
+                        if (newEnvKey.isNotBlank()) {
+                            envVars = envVars.toMutableMap().apply { put(newEnvKey.trim(), newEnvValue.trim()) }
+                            newEnvKey = ""; newEnvValue = ""
+                        }
+                    },
+                    onRemove = { key -> envVars = envVars.toMutableMap().apply { remove(key) } }
+                )
+
+                com.webtoapp.ui.components.RuntimePortConfigSection(
+                    port = serverPort,
+                    portConflictMode = portConflictMode,
+                    onPortChange = { serverPort = it },
+                    onPortConflictModeChange = { portConflictMode = it }
+                )
+            }
+            }
+
+            if (isCreating || errorMessage != null) {
+                WtaCreateFlowSection(title = Strings.preview) {
+                    if (isCreating) {
+                        RuntimeLoadingCard(creationPhase)
+                    }
+
+                    errorMessage?.let { error ->
+                        RuntimeErrorCard(error = error, onDismiss = { errorMessage = null; errorThrowable = null }, scope = "Go app create", throwable = errorThrowable)
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
+        }
+    }
+}
+
+@Composable
+private fun GoHeroSection(
+    detectedFramework: String?,
+    accentColor: Color,
+    goVersion: String?
+) {
+    val title = if (detectedFramework != null && detectedFramework != "raw" && detectedFramework != "net_http")
+        "${detectedFramework.replaceFirstChar { it.uppercase() }} ${Strings.goHeroTitle}"
+    else Strings.goHeroTitle
+
+    val tags = buildList {
+        goVersion?.let { add("Go $it" to accentColor) }
+    }
+
+    RuntimeHeroSection(
+        icon = Icons.Outlined.Code,
+        title = title,
+        subtitle = Strings.goHeroDesc,
+        brandColor = accentColor,
+        tags = tags
+    )
+}
+
+@Composable
+private fun GoModuleInfoCard(
+    modulePath: String,
+    goVersion: String?,
+    depCount: Int,
+    accentColor: Color
+) {
+    EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            RuntimeSectionHeader(
+                icon = Icons.Outlined.Info,
+                title = Strings.goModuleInfo,
+                brandColor = accentColor
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(8.dp),
+                color = accentColor.copy(alpha = 0.06f)
+            ) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(Strings.goModulePath, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(modulePath, style = MaterialTheme.typography.bodySmall, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.SemiBold)
+                    }
+                    if (goVersion != null) {
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(Strings.goVersion, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(goVersion, style = MaterialTheme.typography.bodySmall, fontFamily = FontFamily.Monospace)
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(Strings.goDependencyCount, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("$depCount", style = MaterialTheme.typography.bodySmall, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.SemiBold, color = accentColor)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun GoBinaryDetectionCard(
+    binaryDetected: Boolean,
+    binaryName: String,
+    binarySize: Long?,
+    onBinaryNameChange: (String) -> Unit,
+    accentColor: Color,
+    toolchainReady: Boolean,
+) {
+
+    val showManualPrompt = !binaryDetected && !toolchainReady
+
+    EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            RuntimeSectionHeader(
+                icon = Icons.Outlined.Memory,
+                title = Strings.goBinaryDetection
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+
+            val containerColor = when {
+                binaryDetected -> accentColor.copy(alpha = 0.06f)
+                toolchainReady -> accentColor.copy(alpha = 0.04f)
+                else -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+            }
+            val iconTint = when {
+                binaryDetected -> accentColor
+                toolchainReady -> MaterialTheme.colorScheme.onSurfaceVariant
+                else -> MaterialTheme.colorScheme.error
+            }
+            val statusText = when {
+                binaryDetected -> Strings.goBinaryFound
+                toolchainReady -> Strings.goBinaryPendingBuild
+                else -> Strings.goBinaryNotFound
+            }
+            val statusTextColor = when {
+                binaryDetected -> accentColor
+                toolchainReady -> MaterialTheme.colorScheme.onSurface
+                else -> MaterialTheme.colorScheme.error
+            }
+            val statusIcon = when {
+                binaryDetected -> Icons.Outlined.CheckCircle
+                toolchainReady -> Icons.Outlined.Build
+                else -> Icons.Outlined.Warning
+            }
+
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(8.dp),
+                color = containerColor
+            ) {
+                Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        statusIcon,
+                        null,
+                        tint = iconTint,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
+                        Text(
+                            statusText,
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = statusTextColor
+                        )
+                        if (binaryDetected && binarySize != null) {
+                            Text(
+                                "${Strings.goBinarySize}: ${formatFileSize(binarySize)}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        if (binaryDetected && binaryName.isNotBlank()) {
+                            Text(
+                                binaryName,
+                                style = MaterialTheme.typography.bodySmall,
+                                fontFamily = FontFamily.Monospace,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
+
+            if (showManualPrompt) {
+                Spacer(modifier = Modifier.height(8.dp))
+                PremiumTextField(
+                    value = binaryName,
+                    onValueChange = onBinaryNameChange,
+                    label = { Text(Strings.goSelectBinary) },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
+@Composable
+private fun GoTargetArchCard(
+    targetArch: String,
+    onArchChange: (String) -> Unit,
+    accentColor: Color
+) {
+    val architectures = listOf(
+        "arm64" to "ARM64 (aarch64)",
+        "arm" to "ARM (armv7a)",
+        "x86_64" to "x86_64"
+    )
+
+    EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            RuntimeSectionHeader(
+                icon = Icons.Outlined.DeveloperBoard,
+                title = Strings.goTargetArch
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small),
+                verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
+            ) {
+                architectures.forEach { (arch, label) ->
+                    WtaChip(
+                        selected = targetArch == arch,
+                        onClick = { onArchChange(arch) }
+                    ) {
+                        Text(label, fontFamily = FontFamily.Monospace)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun GoStaticFilesCard(
+    staticDir: String,
+    onStaticDirChange: (String) -> Unit
+) {
+    EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            RuntimeSectionHeader(
+                icon = Icons.Outlined.Folder,
+                title = Strings.goStaticFiles
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                Strings.goStaticFilesHint,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            PremiumTextField(
+                value = staticDir,
+                onValueChange = onStaticDirChange,
+                label = { Text(Strings.goStaticFiles) },
+                placeholder = { Text(Strings.goStaticFilesExample) },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+        }
+    }
+}
+
+@Composable
+private fun GoHealthCheckCard(
+    endpoint: String,
+    onEndpointChange: (String) -> Unit
+) {
+    EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            RuntimeSectionHeader(
+                icon = Icons.Outlined.MonitorHeart,
+                title = Strings.goHealthCheck
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            PremiumTextField(
+                value = endpoint,
+                onValueChange = onEndpointChange,
+                label = { Text(Strings.goHealthCheckEndpoint) },
+                placeholder = { Text(Strings.goHealthCheckEndpointExample) },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+        }
+    }
+}
+
+@Composable
+private fun GoDepsCard(
+    deps: List<Pair<String, String>>,
+    showAll: Boolean,
+    onToggleShowAll: () -> Unit,
+    accentColor: Color
+) {
+    EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            RuntimeSectionHeader(
+                icon = Icons.Outlined.Extension,
+                title = Strings.goDirectDeps,
+                brandColor = accentColor
+            ) {
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = accentColor.copy(alpha = 0.1f)
+                ) {
+                    Text(
+                        text = "${deps.size}",
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = accentColor,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+
+            val visibleDeps = if (showAll) deps else deps.take(6)
+            visibleDeps.forEach { (name, version) ->
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        name.substringAfterLast("/"),
+                        style = MaterialTheme.typography.bodySmall,
+                        fontFamily = FontFamily.Monospace,
+                        modifier = Modifier.weight(weight = 1f, fill = true),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        version,
+                        style = MaterialTheme.typography.bodySmall,
+                        fontFamily = FontFamily.Monospace,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+            if (deps.size > 6) {
+                TextButton(onClick = onToggleShowAll, modifier = Modifier.fillMaxWidth()) {
+                    Text(if (showAll) Strings.close else "${Strings.more} (${deps.size - 6})")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun GoFrameworkTipCard(framework: String?) {
+    data class Tip(val tip: String, val color: Color)
+
+    val tipText = Strings.goFrameworkTip(framework)
+    val tipColor = when (framework?.lowercase()) {
+        "gin", "fiber", "echo", "chi", "net_http" -> MaterialTheme.colorScheme.onSurface
+        else -> null
+    }
+    val tipData = if (tipText != null && tipColor != null) Tip(tipText, tipColor) else null
+
+    if (tipData != null) {
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            color = tipData.color.copy(alpha = 0.08f)
+        ) {
+            Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.Top) {
+                Icon(Icons.Outlined.Lightbulb, null, tint = tipData.color, modifier = Modifier.size(20.dp))
+                Spacer(modifier = Modifier.width(12.dp))
+                Column {
+                    Text(
+                        Strings.phpFrameworkTip,
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        color = tipData.color
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        tipData.tip,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+    }
+}
+
+private fun formatFileSize(bytes: Long): String {
+    return when {
+        bytes >= 1024 * 1024 -> String.format(java.util.Locale.getDefault(), "%.1f MB", bytes / (1024.0 * 1024.0))
+        bytes >= 1024 -> String.format(java.util.Locale.getDefault(), "%.1f KB", bytes / 1024.0)
+        else -> "$bytes B"
+    }
+}
+
+@Composable
+private fun GoBuildInAppCard(
+    projectDir: String,
+    binaryName: String,
+    appName: String,
+    accentColor: Color,
+    toolchainReady: Boolean,
+    onBuildComplete: (newBinaryName: String, newBinarySize: Long) -> Unit,
+) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
+    var building by remember { mutableStateOf(false) }
+    val buildLog = remember { androidx.compose.runtime.mutableStateListOf<String>() }
+    var lastResult by remember { mutableStateOf<Pair<Boolean, String?>?>(null) }
+
+    EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            RuntimeSectionHeader(
+                icon = Icons.Outlined.Build,
+                title = Strings.goBuildInAppTitle
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = Strings.goBuildInAppDesc,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+
+            if (!toolchainReady) {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Outlined.Warning, null,
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = Strings.goBuildToolchainNotReady,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+            } else {
+                PremiumButton(
+                    onClick = {
+                        if (building) return@PremiumButton
+                        building = true
+                        buildLog.clear()
+                        lastResult = null
+                        scope.launch {
+                            val projDir = File(projectDir)
+
+                            val rawCandidate = binaryName.ifBlank { appName }.ifBlank { projDir.name }
+                            val targetName = sanitizeGoBinaryName(rawCandidate)
+                            val produced = withContext(Dispatchers.IO) {
+                                com.webtoapp.core.golang.GoBuildEnvironment.buildProject(
+                                    context = context,
+                                    projectDir = projDir,
+                                    binaryName = targetName,
+                                    onOutput = { line ->
+
+                                        scope.launch(Dispatchers.Main.immediate) {
+                                            if (buildLog.size > 200) buildLog.removeAt(0)
+                                            buildLog.add(line)
+                                        }
+                                    }
+                                )
+                            }
+                            building = false
+                            if (produced != null) {
+                                lastResult = true to null
+                                onBuildComplete(produced.name, produced.length())
+                            } else {
+                                val errLine = buildLog.asReversed().firstOrNull {
+                                    it.contains("no space left on device", ignoreCase = true) ||
+                                        it.contains(Strings.goBuildNoSpace.take(12))
+                                } ?: buildLog.asReversed().firstOrNull {
+                                    it.startsWith("[go]") && !it.contains("exit=")
+                                } ?: buildLog.lastOrNull { it.startsWith("[stderr]") }
+                                    ?: buildLog.lastOrNull()
+                                lastResult = false to (errLine?.removePrefix("[go] ")?.removePrefix("[stderr] ") ?: "go build failed")
+                            }
+                        }
+                    },
+                    enabled = !building,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    if (building) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(Strings.goBuildInProgress)
+                    } else {
+                        Icon(Icons.Outlined.Build, null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(Strings.goBuildButtonLabel)
+                    }
+                }
+
+                lastResult?.let { (ok, errMsg) ->
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(8.dp),
+                        color = if (ok) accentColor.copy(alpha = 0.06f)
+                        else MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                if (ok) Icons.Outlined.CheckCircle else Icons.Outlined.Warning,
+                                null,
+                                tint = if (ok) accentColor else MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = if (ok) Strings.goBuildSuccess
+                                else "${Strings.goBuildFailed}${errMsg?.let { ": $it" } ?: ""}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = if (ok) accentColor else MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
+                }
+
+                if (buildLog.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+                    ) {
+
+                        val scrollState = rememberScrollState()
+                        Column(
+                            modifier = Modifier
+                                .padding(12.dp)
+                                .heightIn(max = 280.dp)
+                                .verticalScroll(scrollState)
+                        ) {
+                            buildLog.takeLast(120).forEach { line ->
+                                Text(
+                                    text = line,
+                                    style = MaterialTheme.typography.bodySmall.copy(
+                                        fontFamily = FontFamily.Monospace
+                                    ),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+
+                        LaunchedEffect(buildLog.size) {
+                            if (buildLog.isNotEmpty()) {
+                                scrollState.animateScrollTo(scrollState.maxValue)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+private fun sanitizeGoBinaryName(raw: String): String {
+    if (raw.isBlank()) return "app"
+    val replaced = buildString {
+        raw.forEach { ch ->
+            when {
+                ch in 'a'..'z' || ch in 'A'..'Z' || ch in '0'..'9' -> append(ch)
+                ch == '_' || ch == '-' || ch == '.' -> append(ch)
+                else -> append('_')
+            }
+        }
+    }
+    val collapsed = replaced.replace(Regex("_+"), "_")
+        .trim('_', '-', '.')
+    return collapsed.ifBlank { "app" }
+}

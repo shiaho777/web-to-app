@@ -6,7 +6,7 @@
 
 ### 在手机上把 Web 项目打包成可安装的 Android APK。
 
-**一个运行在设备端的 APK 工作台,远不只是套个 WebView —— 它能把整站和 Web 项目打包成独立应用,内置硬核反审查网络栈,能在设备内签名上架 Google Play 的 AAB,还能跑 MV3 浏览器扩展,全程不需要电脑或远程构建服务器。**
+**一个运行在设备端的 APK 工作台,远不只是套个 WebView —— 它能在手机上 fork+exec 完整的服务端运行时,内置硬核反审查网络栈,能在设备内签名上架 Google Play 的 AAB,还能跑 MV3 浏览器扩展,全程不需要电脑或远程构建服务器。**
 
 [English](../../README.md) · **简体中文**
 
@@ -70,7 +70,7 @@
 <table>
   <tr>
     <td align="center" width="25%"><img src="../assets/screenshots/01-home-empty.png" width="200" alt="「我的应用」主页"><br><sub><b>主页</b> —— 应用项目一览</sub></td>
-    <td align="center" width="25%"><img src="../assets/screenshots/02-app-types.png" width="200" alt="应用类型创建面板"><br><sub><b>创建</b> —— 选择一种应用类型</sub></td>
+    <td align="center" width="25%"><img src="../assets/screenshots/02-app-types.png" width="200" alt="12 种应用类型创建面板"><br><sub><b>创建</b> —— 12 种应用类型任选</sub></td>
     <td align="center" width="25%"><img src="../assets/screenshots/03-create-web.png" width="200" alt="Web 应用编辑器"><br><sub><b>Web 应用</b> —— 名称、URL、站点分析</sub></td>
     <td align="center" width="25%"><img src="../assets/screenshots/04-import-html.png" width="200" alt="HTML 项目导入"><br><sub><b>HTML 应用</b> —— 文件、ZIP 或写代码</sub></td>
   </tr>
@@ -100,7 +100,7 @@
 
 绝大多数「网站转 App」工具到「套一个 WebView」就结束了。WebToApp 更像一个放在手机里的 APK 工作台,而真正难的地方,正是它和那些工具的分界线:
 
-- **打包的是整个站点,不只是链接。** 可以把站点抓取成自包含的离线包、把构建好的 React/Vue/Vite dist 打进 APK、打包媒体画廊,或把多个站点合成一个多网站应用 —— 全部编译进 APK 本身。URL 套壳工具根本做不到。
+- **在设备上跑真实的服务端运行时。** Node.js、PHP、Python、Go、WordPress 以原生二进制的形式直接从 app 存储 fork+exec —— 像 Termux 那样,但被打进一个可安装的 APK。URL 套壳工具根本做不到。
 - **内置硬核、反审查的网络栈。** DNS-over-HTTPS、TLS 指纹伪装(Chrome / Firefox / Safari 的 JA3 模板,经本地 MITM 桥接)、双引擎 ECH(加密 SNI)、每应用代理、以及针对受限 SPA 的 CORS 绕过。
 - **整个构建自包含。** 二进制 AXML/ARSC 修补、权限裁剪、V1/V2/V3 签名、可直接上架 Google Play 的 AAB 导出,全部在 app 内通过 `apksig` 完成 —— 不排远程队列、不需要电脑。
 - **发布后仍可扩展。** 通过 JS/CSS 模块、Tampermonkey 风格油猴脚本,或 MV3 Chrome 扩展(可在应用内实时搜索 Chrome 网上应用店并安装)给应用补能力,不必重新发布宿主。
@@ -114,13 +114,14 @@
 
 | 方向 | 亮点 |
 | --- | --- |
-| **构建目标** | 网页 · 多站点 · HTML · 离线包 · 前端 · 画廊 |
+| **构建目标** | Web · HTML · 前端 · WordPress · Node.js · PHP · Python · Go · 图片 · 视频 · 图库 · 多网站 |
 | **浏览器引擎** | 默认系统 WebView;可选 GeckoView(Firefox)运行时 |
 | **网络与反审查** | DoH(7 个服务商)、TLS 指纹伪装 + MITM 桥、ECH、静态/PAC/SOCKS5 代理、CORS 绕过 |
 | **隐私与加固** | 50+ 维浏览器指纹伪装、资源加密(AES-256-GCM)、反调试、激活码门控 |
+| **本地运行时** | 原生 Node.js 18.20、PHP 8.4 + Composer 2.10、Python 3.14、官方 Go 1.26、WordPress 7.x over SQLite |
 | **扩展能力** | 内置模块、`GM_*` 油猴脚本、MV3 Chrome 扩展、Chrome 网上应用店实时搜索 |
 | **APK/AAB 产物** | 设备端 V1/V2/V3 签名、Google Play AAB 导出(自动改写 targetSdk)、密钥库管理 |
-| **Agent** | 通过数十个内置工具全面操控应用:生成、构建、导出、端口/引擎管理、应用克隆、广告拦截、配置模板等;429/5xx 自动重试 |
+| **Agent** | 通过最多 57 个工具全面操控应用:生成、构建、导出、端口/引擎/运行时管理、应用克隆、广告拦截、配置模板等;429/5xx 自动重试 |
 | **宿主语言** | **10 种界面语言** —— 中文 · English · العربية · Português · Español · Français · Deutsch · Русский · 日本語 · 한국어(阿语 RTL) |
 
 ---
@@ -131,7 +132,9 @@
 | --- | --- | --- |
 | 网站 URL | 基于 WebView 的 APK | 官网、工具、后台、文档、内部系统 |
 | HTML / 静态前端 | 走 localhost 的 APK | React、Vue、Vite、静态构建、离线 Web 应用 |
-| 图片与视频 | 画廊 APK | 相册、课程材料、作品集、离线浏览 |
+| Node.js / PHP / Python / Go | 带设备端本地服务的 APK | 小型服务端应用、管理工具、演示、原型 |
+| WordPress | 本地 PHP + SQLite 承载的 APK | 便携站点、主题/插件演示、本地内容包 |
+| 图片 / 视频 / 图库 | 媒体型 APK | 相册、课程材料、作品集、离线浏览 |
 | 多个网站 | 标签/卡片/信息流/抽屉布局 APK | 导航合集、门户、应用集合 |
 | 已安装 APK | 重命名克隆或桌面快捷方式伪装 | 图标/名称/包名实验、APK 重打包研究 |
 
@@ -142,7 +145,7 @@
 从全新安装到第一个签名 APK,大约一分钟:
 
 1. **安装打包器** —— 从 [GitHub Releases](https://github.com/shiaho777/web-to-app/releases) 下载 APK,装到 Android 6.0(API 23)或更新的设备上。
-2. **创建应用** —— 在「我的应用」点 **创建**,选择一种应用类型(网页 · 多站点 · HTML · 离线包 · 前端 · 画廊)。
+2. **创建应用** —— 在「我的应用」点 **创建**,从 12 种应用类型里选一个(网页 · 多站点 · HTML · 离线包 · 前端 · PHP · WordPress · Node.js · Python · Go · 媒体 · 画廊)。
 3. **填基本信息** —— 应用名、目标 URL(或项目文件)和可选图标,然后 **Save**。编辑器里其余卡片都是可选配置。
 4. **预览** —— 点应用卡片,运行在与导出产物相同的运行时代码里。
 5. **构建** —— 点 **⋮ → Build APK**,选引擎和选项,得到一个可直接安装/分享的签名 APK。要上 Google Play?改用 **⋮ → Google Play** —— 它会自动构建 APK、转换成 Play 可用的签名 AAB(自动改写 `targetSdk`),并在设备端生成 Play 元数据。
@@ -187,13 +190,16 @@ WebToApp 的开关非常多。下面按使用场景分组,并用可折叠区段�
 </details>
 
 <details>
-<summary><b>📦 打包内容与本地站点</b></summary>
+<summary><b>📦 设备端服务器运行时(fork + exec)</b></summary>
 
-- **HTML / 前端应用** —— 本地文件、文件夹或 ZIP 打包进 APK,在应用内直接提供;导入时可选 esbuild 优化(minify/bundle)。
-- **离线包** —— 站点抓取器把整个网站(HTML、CSS、JS、图片、字体、路径改写)拉取成自包含的离线 APK。
-- **画廊** —— 分类媒体合集随 APK 分发,内置网格/列表/时间线播放器。
-- **多站点** —— 把打包好的 HTML/前端/画廊应用作为子站与普通 URL 并排嵌入;每个本地站点分配一个协调过的 loopback 端口。
-- **Port Manager** —— 为本地站点分配端口,带冲突策略(`REASSIGN`/`AUTO_KILL`/`ALERT`),停止时回收。
+- **Node.js**(18.20.x)跑在独立 `:nodejs` OS 进程中,底层由原生 `node_launcher` 加载 `libnode.so`;支持自定义原生 `.node` 扩展。
+- **PHP 8.4** 取自 `pmmp/PHP-Binaries`,首次使用时下载,支持 Composer 2.10.x 和自定义原生扩展(`zend_extension`、`.so`)。
+- **Python 3.14** —— Flask、Django、FastAPI/uvicorn、Tornado、内置 HTTP server;pip 依赖解析到 `.pypackages`,支持自定义原生扩展;二进制名按版本生成,后续升级不必硬编码路径。
+- **Go 1.26** —— 官方 Linux arm64 工具链(`.tar.gz` 来自 `dl.google.com`,国内走 USTC 镜像),设备端 `go build` / `go mod` / `go run`、`vendor/` 离线构建、静态文件服务和原生 `go_exec_loader` 包装层;DNS 与 CA 信任走与 PHP 相同的本机 JVM 桥接。
+- **WordPress 7.x** 跑在本地 PHP 之上,用 `sqlite-database-integration` 接 SQLite,支持主题和插件导入。
+- **Linux Environment** 页面管理 Node、PHP、Python 的工具链和依赖。
+- **Port Manager** 通过广播 receiver 协调不同生成应用之间的运行时端口。
+- **本地 DNS 桥接代理**(运行在 Android JVM 的 HTTP CONNECT)在 musl/打包二进制无法访问系统 DNS 时,为运行时提供可用的 DNS 解析和出站 HTTP。
 
 </details>
 
@@ -205,7 +211,7 @@ WebToApp 的开关非常多。下面按使用场景分组,并用可折叠区段�
 - **MV3 Chrome 扩展运行时**,支持 manifest 内容脚本在 isolated 或 main world 注入,并提供覆盖 runtime、storage、tabs、scripting 和 declarative network request 解析的 `chrome.*` polyfill。
 - **应用内 Chrome 网上应用店搜索** —— 按关键词浏览并安装浏览器扩展(也可粘贴商店链接 / 扩展 ID),离线时回退到手动导入。
 - **分享码**(`WTA1:` gzip + Base64)和 ZXing 二维码传播。
-- **Agent** —— 工具调用型助手,内置数十个工具覆盖应用全部功能:创建/编辑/构建/导出应用、管理端口与浏览器引擎、广告拦截 hosts 规则、通用配置模板、使用统计、应用克隆、批量导入、Play 合规检查、模块开发。计划模式等待用户确认;对 429/5xx 自动退避重试。
+- **Agent** —— 工具调用型助手,内置最多 57 个工具覆盖应用全部功能:创建/编辑/构建/导出应用、管理端口与浏览器引擎、安装/清理运行时、广告拦截 hosts 规则、通用配置模板、使用统计、应用克隆、批量导入、Play 合规检查、模块开发。计划模式等待用户确认;对 429/5xx 自动退避重试。
 
 </details>
 
@@ -231,7 +237,7 @@ WebToApp 的开关非常多。下面按使用场景分组,并用可折叠区段�
 
 - **自定义包名**、`versionName`、`versionCode`、图标、名称、架构目标和导出格式。
 - **按生成 APK 的实际勾选注入权限**,并从模板 manifest 中裁剪未使用权限。
-- **一键 AAB 导出** —— 按需自动构建 APK,转换成可直接上架的签名 AAB(自动把 `targetSdk` 改写到 Play 要求的级别,目前为 36,并在本地生成 protobuf 元数据);支持中途取消。所有应用类型均可用;例外是开启绑定签名资源加密的构建 —— 见[哪些应用可以上架](https://shiaho777.github.io/web-to-app/zh/guide/more-features/google-play)。
+- **一键 AAB 导出** —— 按需自动构建 APK,转换成可直接上架的签名 AAB(自动把 `targetSdk` 改写到 Play 要求的级别,目前为 36,并在本地生成 protobuf 元数据);支持中途取消。除服务端运行时应用类型和开启资源加密的构建外全部可用 —— 见[哪些应用可以上架](https://shiaho777.github.io/web-to-app/zh/guide/more-features/google-play)。
 - **密钥库管理** —— 创建、导入、导出、删除和证书指纹查看;支持 PKCS12/PFX/JKS/BKS 导入,包括 Android Studio upload key 那种 store 密码和 key 密码不同的情况。
 - **签名方案** —— V1、V2、V3 独立控制,可对旧证书兼容性自动回退;自定义 V1 签名文件名,对应 `META-INF/<name>.SF` / `.RSA`。
 - **性能选项** —— 图片压缩、WebP 转换、代码压缩、懒加载、DNS 预取、preload 提示。
@@ -270,19 +276,19 @@ WebToApp 内置了一个 AI Agent(从 **⋮ → Agent** 打开),可以通过自�
 3. Agent 在设备端执行每个工具 —— 只读工具直接运行;写入工具会先弹出权限确认对话框。
 4. 结果回传给 LLM,LLM 继续执行直到任务完成或向你提出澄清问题。
 
-**数十个内置工具,按功能域分组(图像工具仅在配置了图像模型时加载):**
+**最多 57 个内置工具,按功能域分组(3 个图像工具仅在配置了图像模型时加载):**
 
 | 功能域 | 示例 |
 | --- | --- |
 | 文件 | 读取、写入、编辑、删除、列出、glob、grep 项目文件 |
 | 应用 | 列出、查看、创建、更新应用配置 |
-| 配置模板 | 列出、保存、应用、删除通用配置模板 |
 | 应用生命周期 | 构建 APK/AAB、导出、分享、创建快捷方式、复制、删除、移动分类 |
 | 端口与引擎 | 扫描/终止端口,查看/切换/删除浏览器引擎(WebView、GeckoView) |
+| 运行时 | Node.js、PHP、Python、Go、WordPress、Linux 环境的状态查看、安装和缓存清理 |
 | 广告拦截 | 规则数量统计,导入/删除/启用/停用 hosts 订阅 |
 | 统计与健康 | 使用统计、URL 健康检查 |
 | 应用修改器 | 列出已安装应用、克隆/换壳、批量导入、导出模板 |
-| 合规 | Google Play 合规检查 |
+| 构建环境与合规 | 初始化 Linux 构建环境、安装组件、Google Play 合规检查 |
 | 模块 | 列出、创建、更新扩展模块 |
 | 交互 | 向用户提问(多选)、计划模式(提议→批准→执行)、待办跟踪 |
 
@@ -325,18 +331,19 @@ App 会同时拉取 `registry.json` 和 `submissions.json`,只展示两边都存
 
 | 路径 | 作用 |
 | --- | --- |
-| `app/` | 完整构建器宿主:编辑器 UI、导出管线、预览 |
+| `app/` | 完整构建器宿主:编辑器 UI、导出管线、运行时、预览 |
 | `shell/` | 运行时模板 —— 代码从 `app/` 同步,构建出 `webview_shell.apk` |
 | `clone-host/` | 宿主侧 APK 克隆 / 身份重塑支持库 |
 | `modules/` | 模块市场目录(`registry.json` + 各模块文件夹) |
 | `docs/` | VitePress 文档站源码(中英双语) |
-| `scripts/` | 构建辅助与 CI 门禁(配置漂移、shell 字符串) |
+| `scripts/` | 构建辅助与 CI 门禁(配置漂移、shell 字符串、样例包) |
+| `sample-bundles/` | 按需下载的重量级样例依赖包 |
 
 - 仓库有**三个 Gradle 模块**:`app`(完整构建器和宿主)、`shell`(嵌入生成 APK 的运行时宿主)、`clone-host`(应用克隆的宿主代码 —— 编译提取 `classes.jar`,经 d8 转 DEX,作为 asset 供 `AppCloner` 使用)。
 - 运行时代码以 `app` 为唯一事实来源,再同步到 `shell`,所以共享 WebView/运行时行为只维护一份(`core/shell`、`core/webview`、`core/engine`、`core/extension`、`ui/shell` 等)。
 - APK 构建器在二进制 AXML/ARSC 层修补模板 APK,注入配置与资源,裁剪权限,并用 `apksig` 签名。另有独立的加密构建路径(`EncryptedApkBuilder`)提供资源加密、加壳和完整性校验。
-- 生成 APK(经 shell 模板)把 `targetSdk` 保持在 28,这是出于兼容性保留的历史约束。宿主应用自身以 36 为目标(杀毒引擎会把低 targetSdk 构建误判为旧木马)。**这不影响上架 Google Play**:导出的 AAB 会把 `targetSdk` 改写到 Play 要求的级别(当前 36),因此所有应用类型都能正常上架;任何应用也可在 APK 导出面板选择提高独立 APK 的 `targetSdk`(34/35/36)。
-- 可选的 GeckoView 原生库(`.so` + `omni.ja`)和 HTML 优化用的 esbuild 工具链不会打进基础 APK,而是在首次使用时下载;GeckoView 的 API 类来自 gradle 依赖,而体积大的原生制品按需拉取。
+- 生成 APK(经 shell 模板)特意把 `targetSdk` 钉在 28 —— 这是让它们能从 app 存储 `fork`、`exec` 原生运行时(Node.js、PHP、Python、Go、WordPress)的关键,网址转 APK 类工具做不到这点。宿主应用自身以 36 为目标(杀毒引擎会把低 targetSdk 构建误判为旧木马);该级别的 SELinux W^X 会拦截宿主侧基于 exec 的运行时预览,它们会以明确提示优雅降级 —— Node.js 预览(JNI)和所有导出的应用均不受影响。**这不影响上架 Google Play**:导出的 AAB 会把 `targetSdk` 改写到 Play 要求的级别(当前 36),因此除五类服务端运行时应用和开启资源加密的构建外,所有应用类型都能正常上架;只有服务端运行时类型被限定为 APK 分发,因为 Play 要求的目标级别会破坏它们的 fork+exec 运行时。纯 WebView 应用类型(Web/HTML/Frontend/Gallery/Media/MultiWeb)还可在 APK 导出面板选择提高独立 APK 的 `targetSdk`(34/35/36)。
+- 服务端运行时和可选 GeckoView 原生库(`.so` + `omni.ja`)不会打进基础 APK,而是在首次使用时下载;GeckoView 的 API 类来自 gradle 依赖,而体积大的原生制品按需拉取。
 - 配置中心是 `WebApp`(`data/model/WebApp.kt`)及其各 `*Config` 类 —— 所有功能配置的单一事实来源,经一条完整的打包透传链带进生成的 APK。
 
 ## 技术栈
@@ -357,7 +364,7 @@ App 会同时拉取 `registry.json` 和 `submissions.json`,只展示两边都存
 - Vico Compose-M3 绘制图表
 - ZXing 用于二维码分享
 - Apache Commons Compress + xz 用于项目导入和网站爬虫
-- JNI 原生 C++:浏览器内核、性能/系统优化器和静态 exec 加载器
+- JNI 原生 C++ 目标:`node_launcher` 和 `go_exec_loader`
 - Robolectric 单元测试
 
 完整依赖见 [app/build.gradle.kts](../../app/build.gradle.kts)。

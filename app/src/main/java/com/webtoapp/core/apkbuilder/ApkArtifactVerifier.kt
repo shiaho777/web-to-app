@@ -14,6 +14,11 @@ internal data class ApkArtifactVerificationRequest(
     val htmlFiles: List<HtmlFile> = emptyList(),
     val galleryItems: List<GalleryItem> = emptyList(),
     val multiWebSites: List<MultiWebSite> = emptyList(),
+    val wordPressProjectDir: File? = null,
+    val nodejsProjectDir: File? = null,
+    val phpAppProjectDir: File? = null,
+    val pythonAppProjectDir: File? = null,
+    val goAppProjectDir: File? = null,
     val frontendProjectDir: File? = null,
     val multiWebProjectDir: File? = null,
     val multiWebSiteSourceDirs: Map<String, File> = emptyMap()
@@ -83,6 +88,26 @@ internal object ApkArtifactVerifier {
                 }
 
                 when (request.config.appType) {
+                    "IMAGE" -> {
+                        issues.requireAsset(
+                            entries = entries,
+                            checkedEntries = checkedEntries,
+                            key = "mediaContent",
+                            path = "assets/media_content.png",
+                            label = "image media content",
+                            encrypted = request.encryptionEnabled
+                        )
+                    }
+                    "VIDEO" -> {
+                        issues.requireAsset(
+                            entries = entries,
+                            checkedEntries = checkedEntries,
+                            key = "mediaContent",
+                            path = "assets/media_content.mp4",
+                            label = "video media content",
+                            encrypted = request.encryptionEnabled
+                        )
+                    }
                     "HTML" -> {
                         issues.requireAsset(
                             entries = entries,
@@ -127,6 +152,50 @@ internal object ApkArtifactVerifier {
                             )
                         }
                     }
+                    "WORDPRESS" -> issues.requireProjectAssets(
+                        entries = entries,
+                        checkedEntries = checkedEntries,
+                        key = "wordPressProject",
+                        label = "WordPress project",
+                        projectDir = request.wordPressProjectDir,
+                        assetPrefix = "assets/wordpress",
+                        excludeDirs = emptySet(),
+                        allowEmptyAssetPaths = WORDPRESS_ALLOWED_EMPTY_ASSET_PATHS
+                    )
+                    "NODEJS_APP" -> issues.requireProjectAssets(
+                        entries = entries,
+                        checkedEntries = checkedEntries,
+                        key = "nodejsProject",
+                        label = "Node.js project",
+                        projectDir = request.nodejsProjectDir,
+                        config = RuntimeAssetEmbedder.nodeJsConfig()
+                    )
+                    "PHP_APP" -> issues.requireProjectAssets(
+                        entries = entries,
+                        checkedEntries = checkedEntries,
+                        key = "phpAppProject",
+                        label = "PHP app project",
+                        projectDir = request.phpAppProjectDir,
+                        config = RuntimeAssetEmbedder.phpConfig()
+                    )
+                    "PYTHON_APP" -> issues.requireProjectAssets(
+                        entries = entries,
+                        checkedEntries = checkedEntries,
+                        key = "pythonAppProject",
+                        label = "Python app project",
+                        projectDir = request.pythonAppProjectDir,
+                        assetPrefix = RuntimeAssetEmbedder.pythonConfig().assetPrefix,
+                        excludeDirs = RuntimeAssetEmbedder.pythonConfig().excludeDirs,
+                        allowEmptyAssetPaths = PYTHON_ALLOWED_EMPTY_ASSET_PATHS
+                    )
+                    "GO_APP" -> issues.requireProjectAssets(
+                        entries = entries,
+                        checkedEntries = checkedEntries,
+                        key = "goAppProject",
+                        label = "Go app project",
+                        projectDir = request.goAppProjectDir,
+                        config = RuntimeAssetEmbedder.goConfig()
+                    )
                     "MULTI_WEB" -> issues.requireMultiWebAssets(
                         entries = entries,
                         checkedEntries = checkedEntries,
@@ -255,6 +324,7 @@ internal object ApkArtifactVerifier {
                 path = path,
                 label = "$label file",
                 allowEmpty = path in allowEmptyAssetPaths ||
+                    isAllowedEmptyPythonAssetPath(path) ||
                     sourceFile?.length() == 0L
             )
         }
@@ -396,4 +466,55 @@ internal object ApkArtifactVerifier {
         return "assets/$path"
     }
 
+    private fun isAllowedEmptyPythonAssetPath(path: String): Boolean {
+        if (!path.startsWith("assets/python_app/.pypackages/")) return false
+        return path.endsWith("/__init__.py") ||
+            path.endsWith("/__init__.py-tpl") ||
+            path.endsWith("/py.typed") ||
+            path.endsWith("/REQUESTED")
+    }
+
+    private val WORDPRESS_ALLOWED_EMPTY_ASSET_PATHS = setOf(
+        "assets/wordpress/wp-includes/js/swfobject.js",
+        "assets/wordpress/wp-includes/js/swfupload/handlers.js",
+        "assets/wordpress/wp-includes/js/swfupload/handlers.min.js",
+        "assets/wordpress/wp-includes/js/swfupload/license.txt",
+        "assets/wordpress/wp-includes/js/swfupload/swfupload.js"
+    )
+
+    private val PYTHON_ALLOWED_EMPTY_ASSET_PATHS = setOf(
+        "assets/python_app/.pypackages/anyio/_backends/__init__.py",
+        "assets/python_app/.pypackages/anyio/_core/__init__.py",
+        "assets/python_app/.pypackages/anyio/py.typed",
+        "assets/python_app/.pypackages/blinker/py.typed",
+        "assets/python_app/.pypackages/click/py.typed",
+        "assets/python_app/.pypackages/exceptiongroup/py.typed",
+        "assets/python_app/.pypackages/fastapi-0.99.1.dist-info/REQUESTED",
+        "assets/python_app/.pypackages/fastapi/dependencies/__init__.py",
+        "assets/python_app/.pypackages/fastapi/openapi/__init__.py",
+        "assets/python_app/.pypackages/fastapi/py.typed",
+        "assets/python_app/.pypackages/flask/py.typed",
+        "assets/python_app/.pypackages/idna/py.typed",
+        "assets/python_app/.pypackages/itsdangerous/py.typed",
+        "assets/python_app/.pypackages/jinja2/py.typed",
+        "assets/python_app/.pypackages/Django-5.0.dist-info/REQUESTED",
+        "assets/python_app/.pypackages/asgiref/py.typed",
+        "assets/python_app/.pypackages/markupsafe/py.typed",
+        "assets/python_app/.pypackages/packaging/py.typed",
+        "assets/python_app/.pypackages/pydantic-1.10.16.dist-info/REQUESTED",
+        "assets/python_app/.pypackages/pydantic/py.typed",
+        "assets/python_app/.pypackages/sqlparse/py.typed",
+        "assets/python_app/.pypackages/starlette/py.typed",
+        "assets/python_app/.pypackages/gunicorn-21.2.0.dist-info/REQUESTED",
+        "assets/python_app/.pypackages/uvicorn-0.23.2.dist-info/REQUESTED",
+        "assets/python_app/.pypackages/uvicorn/lifespan/__init__.py",
+        "assets/python_app/.pypackages/uvicorn/loops/__init__.py",
+        "assets/python_app/.pypackages/uvicorn/middleware/__init__.py",
+        "assets/python_app/.pypackages/uvicorn/protocols/__init__.py",
+        "assets/python_app/.pypackages/uvicorn/protocols/http/__init__.py",
+        "assets/python_app/.pypackages/uvicorn/protocols/websockets/__init__.py",
+        "assets/python_app/.pypackages/werkzeug/middleware/__init__.py",
+        "assets/python_app/.pypackages/werkzeug/py.typed",
+        "assets/python_app/.pypackages/werkzeug/sansio/__init__.py"
+    )
 }

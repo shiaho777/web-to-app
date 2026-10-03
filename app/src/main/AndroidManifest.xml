@@ -405,6 +405,33 @@
             android:foregroundServiceType="mediaPlayback"
             android:stopWithTask="false" />
 
+        <!--
+            NodeService - Node.js 嵌入式运行时的独立子进程容器。
+            
+            为什么单独开一个 OS 进程：
+              libnode.so 一旦 dlopen + V8 init 就**永远 reset 不了**。如果跑在主进程：
+                1) 用户 server.js 抛 SyntaxError / 调 process.exit 会让宿主进程死
+                2) 切换项目 / 上次崩了想重试都没法做，必须用户从最近任务列表把
+                   App 划掉再重开——非常糟糕的用户体验
+              把它关到 :nodejs 子进程后，V8 死活都关在子进程里，主进程稳如磐石。
+              要重启 V8 时主进程让子进程自杀，Android Framework 自动重建——零感知。
+            
+            android:process=":nodejs"  → 同 APK 内的独立 OS 进程（前导冒号表示
+                                          private process，跟 webtoapp 共享 UID
+                                          但有独立的 zygote-fork 出来的进程）
+            isolatedProcess=false      → 我们要访问 filesDir / nativeLibraryDir，
+                                          isolatedProcess 模式下连这些都拿不到
+            stopWithTask=false         → 用户从最近任务划掉 App 时仍然让子进程
+                                          一起死（true 是默认值，写出来是为了
+                                          清楚——避免误以为子进程会比主进程
+                                          活更久）
+        -->
+        <service
+            android:name=".core.nodejs.NodeService"
+            android:enabled="true"
+            android:exported="false"
+            android:process=":nodejs"
+            android:stopWithTask="true" />
 
         <!--
             BootReceiver / ScheduledStartReceiver

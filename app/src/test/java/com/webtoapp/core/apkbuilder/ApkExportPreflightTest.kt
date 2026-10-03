@@ -11,6 +11,7 @@ import com.webtoapp.data.model.HtmlFileType
 import com.webtoapp.data.model.HtmlLoadMode
 import com.webtoapp.data.model.NetworkTrustConfig
 import com.webtoapp.data.model.WebApp
+import com.webtoapp.data.model.WordPressConfig
 import com.webtoapp.ui.shell.buildPackagedHtmlShellEntryUrl
 import java.io.File
 import org.junit.Rule
@@ -187,6 +188,47 @@ class ApkExportPreflightTest {
         )
     }
 
+    @Test
+    fun `wordpress app exports full runtime configuration`() {
+        val app = WebApp(
+            name = "WordPress",
+            url = "",
+            appType = AppType.WORDPRESS,
+            wordpressConfig = WordPressConfig(
+                projectId = "wp1",
+                projectName = "My WP",
+                siteTitle = "My Site",
+                adminUser = "owner",
+                adminEmail = "owner@example.com",
+                adminPassword = "secret",
+                themeName = "twentytwentyfour",
+                plugins = listOf("woocommerce", "seo"),
+                activePlugins = listOf("woocommerce"),
+                permalinkStructure = "postname",
+                siteLanguage = "zh_CN",
+                autoInstall = true,
+                sourceType = "SAMPLE",
+                phpPort = 8088
+            )
+        )
+
+        val config = app.toApkConfig("com.example.wp", context)
+
+        assertThat(config.targetUrl).isEqualTo("wordpress://localhost")
+        assertThat(config.wordpressSiteTitle).isEqualTo("My Site")
+        assertThat(config.wordpressAdminUser).isEqualTo("owner")
+        assertThat(config.wordpressAdminEmail).isEqualTo("owner@example.com")
+        assertThat(config.wordpressAdminPassword).isEqualTo("secret")
+        assertThat(config.wordpressThemeName).isEqualTo("twentytwentyfour")
+        assertThat(config.wordpressPlugins).containsExactly("woocommerce", "seo").inOrder()
+        assertThat(config.wordpressActivePlugins).containsExactly("woocommerce")
+        assertThat(config.wordpressPermalinkStructure).isEqualTo("postname")
+        assertThat(config.wordpressSiteLanguage).isEqualTo("zh_CN")
+        assertThat(config.wordpressAutoInstall).isTrue()
+        assertThat(config.wordpressPhpPort).isEqualTo(8088)
+    }
+
+    @Test
     fun `network trust without any anchor is blocking error`() {
         val app = WebApp(
             name = "No Trust",

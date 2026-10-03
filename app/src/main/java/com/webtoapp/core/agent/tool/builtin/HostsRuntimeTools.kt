@@ -6,6 +6,10 @@ import com.webtoapp.core.agent.tool.Tool
 import com.webtoapp.core.agent.tool.ToolContext
 import com.webtoapp.core.agent.tool.ToolResult
 import com.webtoapp.core.adblock.AdBlocker
+import com.webtoapp.core.golang.GoToolchainManager
+import com.webtoapp.core.nodejs.NodeDependencyManager
+import com.webtoapp.core.python.PythonDependencyManager
+import com.webtoapp.core.wordpress.WordPressDependencyManager
 import org.koin.java.KoinJavaComponent
 
 class GetAdBlockStatusTool : Tool {
@@ -97,5 +101,101 @@ class ManageHostsRulesTool : Tool {
             }
             else -> ToolResult.error("ManageHostsRules: unknown action `$action`.")
         }
+    }
+}
+
+class GetRuntimeStatusTool : Tool {
+    override val name = "GetRuntimeStatus"
+    override val description = """
+        Check which server runtimes are installed and ready: PHP/WordPress, Node.js, Python, Go.
+        Pass a specific runtime to check just one. "ready" means installed on disk; on host
+        builds with targetSdk >= 29 (SELinux W^X) the exec-based runtimes (PHP/WordPress/
+        Python/Go) still cannot start locally for preview — see localExecAllowed in the
+        output. Node.js (JNI) and every exported APK are unaffected either way.
+    """.trimIndent()
+    override val parametersSchema: JsonElement = jsonSchema {
+        enum("runtime", listOf("php", "wordpress", "node", "python", "go"), "Check a specific runtime only. `php` and `wordpress` both report the PHP/WordPress stack.")
+    }
+    override fun isReadOnly() = true
+    override suspend fun execute(args: JsonObject, ctx: ToolContext): ToolResult {
+        val c = ctx.androidContext
+        // An unrecognized runtime used to fall through and return only the
+        // localExecAllowed line — an error naming the valid values lets the model
+        // recover in one turn instead.
+        val runtime = args.get("runtime")?.asString
+        val valid = setOf("php", "wordpress", "node", "python", "go")
+        if (runtime != null && runtime !in valid) {
+            return ToolResult.error(
+                "GetRuntimeStatus: unknown runtime '$runtime' (valid: ${valid.joinToString("/")})."
+            )
+        }
+        val execAllowed = com.webtoapp.core.linux.RuntimeExecPolicy.canExecAppDataBinaries(c)
+        val lines = buildList {
+            add("localExecAllowed=$execAllowed" + if (execAllowed) "" else " (targetSdk>=29 host: PHP/WordPress/Python/Go cannot start locally for preview; Node.js and exported APKs are unaffected)")
+            if (runtime == null || runtime == "php" || runtime == "wordpress") {
+                add("PHP: ready=${WordPressDependencyManager.isPhpReady(c)}")
+                add("WordPress: ready=${WordPressDependencyManager.isWordPressReady(c)}")
+            }
+            if (runtime == null || runtime == "node") {
+                add("Node.js: ready=${NodeDependencyManager.isNodeReady(c)}")
+            }
+            if (runtime == null || runtime == "python") {
+                add("Python: ready=${PythonDependencyManager.isPythonReady(c)}")
+            }
+            if (runtime == null || runtime == "go") {
+                add("Go: ready=${GoToolchainManager.isGoReady(c)}")
+            }
+        }
+        return ToolResult.ok(lines.joinToString("\n"))
+    }
+}
+
+class InstallRuntimeTool : Tool {
+    override val name = "InstallRuntime"
+    override val description = """
+        Download and install a server runtime (PHP/WordPress, Node.js, Python, or Go).
+        This is a large download. Use GetRuntimeStatus first to check what's needed.
+        On host builds with targetSdk >= 29 (localExecAllowed=false in GetRuntimeStatus),
+        installing PHP/Python/Go still makes sense for building/exporting apps, but their
+        local preview cannot start; do not retry the install to "fix" that.
+    """.trimIndent()
+    override val parametersSchema: JsonElement = jsonSchema {
+        enum("runtime", listOf("php", "node", "python", "go"), "The runtime to install.", required = true)
+    }
+    override fun isReadOnly() = false
+    override fun activityDescription(args: JsonObject): String? =
+        args.get("runtime")?.asString?.let { "Installing runtime $it" }
+    override suspend fun execute(args: JsonObject, ctx: ToolContext): ToolResult {
+        val runtime = args.get("runtime")?.asString ?: return ToolResult.error("InstallRuntime: missing `runtime`.")
+        val c = ctx.androidContext
+        val success = when (runtime) {
+            "php" -> WordPressDependencyManager.downloadAllDependencies(c)
+            "node" -> NodeDependencyManager.downloadNodeRuntime(c)
+            "python" -> PythonDependencyManager.downloadPythonRuntime(c)
+            "go" -> GoToolchainManager.installGoToolchain(c)
+            else -> return ToolResult.error("InstallRuntime: unknown runtime `$runtime`.")
+        }
+        return if (success) ToolResult.ok("$runtime runtime installed successfully.")
+        else ToolResult.error("InstallRuntime: failed to install $runtime. Check the download mirror region and network.")
+    }
+}
+
+class ClearRuntimeCacheTool : Tool {
+    override val name = "ClearRuntimeCache"
+    override val description = "Clear the download cache for one or all runtimes to free disk space."
+    override val parametersSchema: JsonElement = jsonSchema {
+        enum("runtime", listOf("php", "node", "python", "go"), "Clear a specific runtime only (default: all).")
+    }
+    override fun isReadOnly() = false
+    override fun activityDescription(args: JsonObject): String? =
+        "Clearing runtime cache ${args.get("runtime")?.asString ?: "(all)"}"
+    override suspend fun execute(args: JsonObject, ctx: ToolContext): ToolResult {
+        val c = ctx.androidContext
+        val target = args.get("runtime")?.asString
+        if (target == null || target == "php") WordPressDependencyManager.clearCache(c)
+        if (target == null || target == "node") NodeDependencyManager.clearCache(c)
+        if (target == null || target == "python") PythonDependencyManager.clearCache(c)
+        if (target == null || target == "go") GoToolchainManager.clearCache(c)
+        return ToolResult.ok("Cleared ${target ?: "all"} runtime cache(s).")
     }
 }

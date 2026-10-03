@@ -19,7 +19,7 @@ class PlayPolicyCheckerTest {
     }
 
     @Test
-    fun `removed app type produces a BLOCKER violation`() {
+    fun `php type produces a BLOCKER violation`() {
         val app = baseApp(appType = AppType.PHP_APP)
 
         val report = PlayPolicyChecker.check(app)
@@ -32,16 +32,14 @@ class PlayPolicyCheckerTest {
     }
 
     @Test
-    fun `every removed app type is blocked`() {
+    fun `every server-runtime app type is blocked`() {
 
         val blockedTypes = setOf(
             AppType.PHP_APP,
             AppType.NODEJS_APP,
             AppType.PYTHON_APP,
             AppType.GO_APP,
-            AppType.WORDPRESS,
-            AppType.IMAGE,
-            AppType.VIDEO
+            AppType.WORDPRESS
         )
 
         for (type in blockedTypes) {
@@ -52,9 +50,11 @@ class PlayPolicyCheckerTest {
     }
 
     @Test
-    fun `supported types are not blocked by SERVER_RUNTIME_APP_TYPE`() {
+    fun `non-runtime types are not blocked by SERVER_RUNTIME_APP_TYPE`() {
         val nonBlocked = setOf(
             AppType.WEB,
+            AppType.IMAGE,
+            AppType.VIDEO,
             AppType.HTML,
             AppType.GALLERY,
             AppType.FRONTEND,
@@ -101,7 +101,7 @@ class PlayPolicyCheckerTest {
     @Test
     fun `package name impersonation still flagged independently`() {
 
-        val app = baseApp(appType = AppType.WEB).copy(
+        val app = baseApp(appType = AppType.PHP_APP).copy(
             apkExportConfig = com.webtoapp.data.model.ApkExportConfig(
                 customPackageName = "com.evil.fakefacebook"
             )
@@ -110,7 +110,7 @@ class PlayPolicyCheckerTest {
         val report = PlayPolicyChecker.check(app)
 
         assertThat(report.violations.map { it.ruleId })
-            .contains("PACKAGE_NAME_IMPERSONATION")
+            .containsAtLeast("SERVER_RUNTIME_APP_TYPE", "PACKAGE_NAME_IMPERSONATION")
     }
 
     private fun baseApp(

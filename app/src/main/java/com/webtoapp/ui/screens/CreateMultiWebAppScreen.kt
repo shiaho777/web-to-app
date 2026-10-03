@@ -452,11 +452,12 @@ private fun ExistingAppPicker(
     onAddSelected: () -> Unit
 ) {
     val accentColor = MaterialTheme.colorScheme.onSurface
-    // Nested multi-web and removed-type apps cannot be embedded as site sources: the
-    // shell no longer knows how to run them. The build degrades legacy configs to URL
-    // sites; the picker hides them so new ones are never created.
+    // Nested multi-web and server-runtime apps (Node/PHP/Python/Go/WordPress) cannot be
+    // embedded as site sources: their runtimes are not packaged into a multi-web APK, so
+    // such sites would render a broken shell mode in the export. The build degrades
+    // legacy configs to URL sites; the picker hides them so new ones are never created.
     val eligibleApps = existingApps.filter {
-        it.appType != com.webtoapp.data.model.AppType.MULTI_WEB && it.appType.isSupported
+        it.appType != com.webtoapp.data.model.AppType.MULTI_WEB && !it.appType.requiresProcessExec
     }
     val availableTypes = remember(eligibleApps) {
         eligibleApps.map { it.appType.name }.distinct()
@@ -729,7 +730,7 @@ private fun getFilteredAppIds(
     filterCategoryId: Long?
 ): Set<Long> {
     return existingApps
-        .filter { it.appType != com.webtoapp.data.model.AppType.MULTI_WEB && it.appType.isSupported }
+        .filter { it.appType != com.webtoapp.data.model.AppType.MULTI_WEB && !it.appType.requiresProcessExec }
         .filter { app ->
             val typeMatch = filterType == null || app.appType.name == filterType
             val categoryMatch = when {
@@ -984,9 +985,16 @@ private fun SiteItem(
 private fun appTypeFilterInfo(typeName: String): Pair<androidx.compose.ui.graphics.vector.ImageVector, String> {
     return when (typeName) {
         "WEB" -> Icons.Outlined.Public to Strings.appTypeWeb
+        "IMAGE" -> Icons.Outlined.Image to Strings.appTypeImage
+        "VIDEO" -> Icons.Outlined.VideoLibrary to Strings.appTypeVideo
         "HTML" -> Icons.Outlined.Html to Strings.appTypeHtml
         "GALLERY" -> Icons.Outlined.PhotoLibrary to Strings.appTypeGallery
         "FRONTEND" -> Icons.Outlined.Rocket to Strings.appTypeFrontend
+        "WORDPRESS" -> Icons.Outlined.Newspaper to Strings.appTypeWordPress
+        "NODEJS_APP" -> Icons.Outlined.Terminal to Strings.appTypeNodeJs
+        "PHP_APP" -> Icons.Outlined.DataObject to Strings.appTypePhp
+        "PYTHON_APP" -> Icons.Outlined.Psychology to Strings.appTypePython
+        "GO_APP" -> Icons.Outlined.Speed to Strings.appTypeGo
         "MULTI_WEB" -> Icons.Outlined.Language to Strings.appTypeMultiWeb
         else -> Icons.Outlined.Apps to typeName
     }

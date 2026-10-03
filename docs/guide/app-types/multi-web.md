@@ -21,7 +21,7 @@ Each site entry has:
 - **Category** — group sites within the app.
 - **Selectors** — a CSS selector (`cssSelector`) and link selector (`linkSelector`) for content extraction.
 - **Enabled & order** — toggle a site and set its sort index.
-- **Per-site config** — a site can carry its own `webViewConfig` or `htmlConfig`. The record also keeps deprecated slots for removed app types — see Notes.
+- **Per-site config** — a site can carry its own `webViewConfig` or `htmlConfig`. The model also has server-runtime config slots, but a site typed as a server-runtime app is not embeddable — see Notes.
 
 ### Layout & display
 
@@ -39,6 +39,6 @@ Each site entry has:
 ## Notes
 
 - Each site is still a web target, so per-app networking and privacy options apply to the whole multi-web app.
-- Gallery sites have their media embedded at export and resolved at runtime, so they render instead of going black.
-- Only Web, HTML, Frontend, and Gallery apps can be embedded as `EXISTING` sites — the site picker hides everything else, including apps of removed types restored from old backups. A legacy config that still references a removed type degrades to a plain URL site at export.
+- Gallery / single-image / single-video sites have their media embedded at export and resolved at runtime, so they render instead of going black.
+- Server-runtime apps (Node.js / PHP / Python / Go / WordPress) cannot be embedded as sites — their runtimes are not packaged into a multi-web APK. The site picker hides them, and a legacy config that still references one falls back to the site's URL at export.
 - For a single site, use [Web](/guide/app-types/web) instead.

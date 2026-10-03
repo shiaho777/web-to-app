@@ -64,8 +64,8 @@ python3 .github/scripts/ci/validate_modules.py
   approach you have in mind. This is much cheaper than rewriting after review.
 - **Avoid adding new dependencies.** The lists in `app/build.gradle.kts` and
   `shell/build.gradle.kts` are intentionally restrained — the project signs and
-  packages APKs in-process, and the shell template pins `targetSdk = 28` as a
-  legacy compatibility constraint. New
+  packages APKs in-process, and the shell template pins `targetSdk = 28` on
+  purpose because generated apps rely on fork+exec native runtimes. New
   dependencies need a strong justification, and host-only dependencies must
   never leak into the shell template.
 
@@ -105,8 +105,7 @@ template you touched:
 ./gradlew :shell:assembleRelease :app:syncShellTemplateApk --no-configuration-cache
 ```
 
-> Native code under `app/src/main/cpp/` (browser kernel, perf/sys optimizer,
-> static exec loader) builds
+> Native code (`node_launcher`, `go_exec_loader`, the APK optimizer) builds
 > via CMake per-ABI and needs the Android NDK + CMake installed through the
 > SDK Manager. CI installs `cmake;3.22.1` and `ndk;28.2.13676358`.
 
@@ -116,9 +115,10 @@ template you touched:
 | --- | --- |
 | App types & central config (`AppType`, `WebApp`) | `app/src/main/java/com/webtoapp/data/model/` |
 | On-device APK builder / signer | `app/src/main/java/com/webtoapp/core/apkbuilder/` |
+| Server runtimes (Node / PHP / Python / Go / WordPress) | `app/src/main/java/com/webtoapp/core/{nodejs,php,python,golang,wordpress}/` |
 | WebView engine, native bridge, fingerprint disguise | `app/src/main/java/com/webtoapp/core/{webview,engine,appearance}/` |
 | Shell config + generated-APK entry points | `app/src/main/java/com/webtoapp/core/shell/` |
-| Preview players (`ui/gallery/`) vs packaged players (`ui/shell/`) | `app/src/main/java/com/webtoapp/ui/` |
+| Preview players (`ui/gallery/`, `ui/media/`) vs packaged players (`ui/shell/`) | `app/src/main/java/com/webtoapp/ui/` |
 | Extension modules, Module Market, Agent | `app/src/main/java/com/webtoapp/core/{extension,market,agent}/` |
 | Compose UI screens & design system | `app/src/main/java/com/webtoapp/ui/` |
 | DI graph (source of truth) | `app/src/main/java/com/webtoapp/di/AppModule.kt` |
@@ -129,7 +129,7 @@ The host app (preview) and generated APKs (export) run **different code**:
 
 | | Preview (`:app`) | Exported APK |
 | --- | --- | --- |
-| UI | `ui/gallery/`, `WebViewManager` live | `ui/shell/*` synced copy |
+| UI | `ui/gallery/`, `ui/media/`, `WebViewManager` live | `ui/shell/*` synced copy |
 | Config | Editor / in-memory models | JSON assets via `ShellModeManager` |
 
 A feature is done only when it works on **both** paths. Concretely, an editor
@@ -162,7 +162,7 @@ codebase. A few rules worth calling out:
   legacy UI debt against `.github/scripts/ui_design_allowlist.txt`.
 - **Reuse the design tokens** in `ui/design/WtaTokens.kt` for spacing, radius,
   alpha, and elevation. Don't hard-code numbers. Editor config cards share one
-  layout grammar (see `AGENTS.md` recipe 11) — copy the neighbouring cards,
+  layout grammar (see `AGENTS.md` recipe 12) — copy the neighbouring cards,
   don't invent your own, and verify on the emulator, not just by compiling.
 - **Strings must cover all 10 supported languages.** UI copy lives in
   `core/i18n/` (facade `object Strings` in `Strings.kt` + `StringsA`…`StringsE`,
@@ -307,8 +307,8 @@ python3 .github/scripts/ci/validate_modules.py
   类似讨论
 - 较大的改动请先开 issue 说明要解决的问题和方案
 - **谨慎引入新依赖**。`app/build.gradle.kts` 与 `shell/build.gradle.kts` 的依
-  赖列表刻意保持精简——本项目全程在设备内签名打包 APK，shell 模板出于兼容性
-  把 `targetSdk` 保持在 28。新依赖需
+  赖列表刻意保持精简——本项目全程在设备内签名打包 APK，shell 模板也特意把
+  `targetSdk` 锁在 28，因为生成应用依赖 `fork`、`exec` 原生运行时。新依赖需
   要充分理由，且宿主专用依赖绝不能漏进 shell 模板。
 
 **本地环境**
@@ -342,8 +342,7 @@ cd web-to-app
 ./gradlew :shell:assembleRelease :app:syncShellTemplateApk --no-configuration-cache
 ```
 
-> `app/src/main/cpp/` 下的原生代码（浏览器内核、性能/系统优化器、静态 exec
-> 加载器）按 ABI 经 CMake
+> 原生代码（`node_launcher`、`go_exec_loader`、APK 优化器）按 ABI 经 CMake
 > 编译，需要通过 SDK Manager 安装 Android NDK + CMake。CI 安装的是
 > `cmake;3.22.1` 与 `ndk;28.2.13676358`。
 
@@ -353,9 +352,10 @@ cd web-to-app
 | --- | --- |
 | 应用类型与核心配置（`AppType`、`WebApp`） | `app/src/main/java/com/webtoapp/data/model/` |
 | 设备端 APK 打包 / 签名 | `app/src/main/java/com/webtoapp/core/apkbuilder/` |
+| 服务端运行时（Node / PHP / Python / Go / WordPress） | `app/src/main/java/com/webtoapp/core/{nodejs,php,python,golang,wordpress}/` |
 | WebView 引擎、原生桥、指纹伪装 | `app/src/main/java/com/webtoapp/core/{webview,engine,appearance}/` |
 | Shell 配置与生成 APK 入口 | `app/src/main/java/com/webtoapp/core/shell/` |
-| 预览播放器（`ui/gallery/`）vs 打包播放器（`ui/shell/`） | `app/src/main/java/com/webtoapp/ui/` |
+| 预览播放器（`ui/gallery/`、`ui/media/`）vs 打包播放器（`ui/shell/`） | `app/src/main/java/com/webtoapp/ui/` |
 | 扩展模块、模块市场、Agent | `app/src/main/java/com/webtoapp/core/{extension,market,agent}/` |
 | Compose UI 与设计系统 | `app/src/main/java/com/webtoapp/ui/` |
 | DI 依赖图（单一事实来源） | `app/src/main/java/com/webtoapp/di/AppModule.kt` |
@@ -366,7 +366,7 @@ cd web-to-app
 
 | | 预览（`:app`） | 导出的 APK |
 | --- | --- | --- |
-| 界面 | `ui/gallery/`、实时 `WebViewManager` | `ui/shell/*` 的同步副本 |
+| 界面 | `ui/gallery/`、`ui/media/`、实时 `WebViewManager` | `ui/shell/*` 的同步副本 |
 | 配置 | 编辑器 / 内存模型 | 经 `ShellModeManager` 读取的 JSON 资源 |
 
 一个功能只有两边都通才算做完。编辑器开关要影响生成 APK，必须走完整条
@@ -392,7 +392,7 @@ cd web-to-app
   （`.github/scripts/audit_ui_design_system.py`，接进 `build.gradle.kts`）按
   `.github/scripts/ui_design_allowlist.txt` 跟踪历史 UI 债务。
 - 复用 `ui/design/WtaTokens.kt` 里的设计 token（间距、圆角、透明度、高度），
-  别硬编码数字。编辑器配置卡片共用一套排版语法（见 `AGENTS.md` recipe 11）——
+  别硬编码数字。编辑器配置卡片共用一套排版语法（见 `AGENTS.md` recipe 12）——
   照抄相邻卡片，不要自创，跑模拟器验效果，不要只编译。
 - **字符串必须覆盖全部 10 种已支持语言**：文案在 `core/i18n/`
   （facade `object Strings` 在 `Strings.kt` + `StringsA`…`StringsE`，每个拆分对象一个文件，拆分只为常量池）。

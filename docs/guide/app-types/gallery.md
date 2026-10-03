@@ -42,4 +42,4 @@ Backed by `GalleryConfig`.
 
 - Preview launches the gallery player activity directly (not a WebView).
 - The fullscreen image viewer in exported apps supports pinch-to-zoom (1x–5x around the focal point), pan while zoomed, and double-tap to toggle 1x/3x.
-- A single image or video works too — create a gallery with one item.
+- For a single image or video, use [Media](/guide/app-types/media).

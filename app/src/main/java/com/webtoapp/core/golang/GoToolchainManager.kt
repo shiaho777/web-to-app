@@ -1,0 +1,512 @@
+package com.webtoapp.core.golang
+
+import com.webtoapp.core.i18n.Strings
+
+import android.content.Context
+import android.os.Build
+import com.webtoapp.core.download.DependencyDownloadEngine
+import com.webtoapp.core.download.DependencyDownloadNotification
+import com.webtoapp.core.i18n.AppLanguage
+import com.webtoapp.core.logging.AppLogger
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
+import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
+import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream
+import java.io.BufferedInputStream
+import java.io.File
+import java.io.FileOutputStream
+
+object GoToolchainManager {
+
+    private const val TAG = "GoToolchainManager"
+
+    const val GO_VERSION = "1.26.4"
+
+    private const val USTC_GO_ARCHIVE_URL =
+        "https://mirrors.ustc.edu.cn/golang/go${GO_VERSION}.linux-arm64.tar.gz"
+
+    private const val OFFICIAL_GO_ARCHIVE_URL =
+        "https://dl.google.com/go/go${GO_VERSION}.linux-arm64.tar.gz"
+
+    private val CN_GO_ARCHIVE_URLS = listOf(USTC_GO_ARCHIVE_URL)
+
+    private val OFFSHORE_GO_ARCHIVE_URLS = listOf(OFFICIAL_GO_ARCHIVE_URL)
+
+    private const val GO_ARCHIVE_SIZE_BYTES = 63_740_285L
+
+    /**
+     * SHA-256 of go1.26.4.linux-arm64.tar.gz (dl.google.com `.sha256` sidecar;
+     * USTC mirrors the same bytes). Verify against the sidecar when bumping
+     * [GO_VERSION] — mismatches fail the download loudly.
+     */
+    private const val GO_ARCHIVE_SHA256 =
+        "ef758ae7c6cf9267c9c0ef080b8965f453d89ab2d25d9eb22de4405925238768"
+
+    private const val MAX_RETRY_PER_URL = 2
+    private const val RETRY_DELAY_MS = 2_000L
+
+    sealed class DownloadState {
+        object Idle : DownloadState()
+        data class Downloading(
+            val progress: Float,
+            val currentFile: String,
+            val bytesDownloaded: Long,
+            val totalBytes: Long,
+        ) : DownloadState()
+        data class Verifying(val fileName: String) : DownloadState()
+        data class Extracting(val fileName: String) : DownloadState()
+        object Complete : DownloadState()
+        data class Error(val message: String, val retryable: Boolean = true) : DownloadState()
+        data class Paused(
+            val progress: Float,
+            val currentFile: String,
+            val bytesDownloaded: Long,
+            val totalBytes: Long,
+        ) : DownloadState()
+    }
+
+    private val _downloadState = MutableStateFlow<DownloadState>(DownloadState.Idle)
+    val downloadState: StateFlow<DownloadState> = _downloadState
+    private val installMutex = Mutex()
+
+    fun getToolchainRoot(context: Context): File =
+        File(context.filesDir, "go_toolchain").also { it.mkdirs() }
+
+    fun getGoRoot(context: Context): File =
+        File(getToolchainRoot(context), "go")
+
+    fun getGoPath(context: Context): File =
+        File(getToolchainRoot(context), "work").also { it.mkdirs() }
+
+    fun getGoBinary(context: Context): File =
+        File(getGoRoot(context), "bin/go")
+
+    fun getGoFmtBinary(context: Context): File =
+        File(getGoRoot(context), "bin/gofmt")
+
+    fun getModCacheDir(context: Context): File =
+        File(getGoPath(context), "pkg/mod").also { it.mkdirs() }
+
+    fun getBuildCacheDir(context: Context): File =
+        File(getToolchainRoot(context), "build-cache").also { it.mkdirs() }
+
+    fun getTempWorkDir(context: Context): File =
+        File(getToolchainRoot(context), "tmp").also { it.mkdirs() }
+
+    fun usableBytes(dir: File): Long {
+        return runCatching {
+            if (!dir.exists()) dir.mkdirs()
+            dir.usableSpace
+        }.getOrDefault(0L)
+    }
+
+    fun clearBuildArtifactCaches(context: Context): Long {
+        var freed = 0L
+        fun wipe(file: File) {
+            if (!file.exists()) return
+            val size = if (file.isFile) file.length() else directorySize(file)
+            if (file.deleteRecursively()) freed += size
+        }
+
+        wipe(getBuildCacheDir(context))
+        wipe(getTempWorkDir(context))
+        context.cacheDir.listFiles()?.forEach { child ->
+            if (child.name.startsWith("go-build") ||
+                child.name.startsWith("go-link-") ||
+                child.name == "go_tmp"
+            ) {
+                wipe(child)
+            }
+        }
+        context.externalCacheDir?.listFiles()?.forEach { child ->
+            if (child.name.startsWith("go-build") ||
+                child.name.startsWith("go-link-") ||
+                child.name == "go_tmp"
+            ) {
+                wipe(child)
+            }
+        }
+
+        getBuildCacheDir(context).mkdirs()
+        getTempWorkDir(context).mkdirs()
+        AppLogger.i(TAG, "cleared Go build caches, freed≈${freed / 1024}KB")
+        return freed
+    }
+
+    fun selectTempDir(context: Context): File {
+        val candidates = buildList {
+            add(getTempWorkDir(context))
+            context.externalCacheDir?.let { add(File(it, "go_tmp").also { d -> d.mkdirs() }) }
+            add(File(context.cacheDir, "go_tmp").also { it.mkdirs() })
+        }
+        return candidates.maxByOrNull { usableBytes(it) } ?: getTempWorkDir(context)
+    }
+
+    fun prepareForBuild(context: Context): File {
+        context.cacheDir.listFiles()?.forEach { child ->
+            if (child.name.startsWith("go-build") || child.name.startsWith("go-link-")) {
+                child.deleteRecursively()
+            }
+        }
+        val tmp = selectTempDir(context)
+        val free = usableBytes(tmp)
+        val buildCache = getBuildCacheDir(context)
+        if (free < 200L * 1024 * 1024) {
+            clearBuildArtifactCaches(context)
+        } else if (directorySize(buildCache) > 800L * 1024 * 1024) {
+            val size = directorySize(buildCache)
+            if (buildCache.deleteRecursively()) {
+                AppLogger.i(TAG, "pruned large GOCACHE ≈${size / 1024 / 1024}MB")
+            }
+            buildCache.mkdirs()
+        }
+        return selectTempDir(context)
+    }
+
+    private fun directorySize(dir: File): Long {
+        if (!dir.exists()) return 0L
+        return runCatching {
+            dir.walkTopDown().filter { it.isFile }.sumOf { it.length() }
+        }.getOrDefault(0L)
+    }
+
+    fun isGoReady(context: Context): Boolean {
+        val goBin = getGoBinary(context)
+        if (!goBin.exists() || !goBin.canExecute()) return false
+
+        if (goBin.length() < 5L * 1024 * 1024) return false
+        return true
+    }
+
+    fun isGoExecLoaderReady(context: Context): Boolean =
+        GoDependencyManager.isGoExecLoaderReady(context)
+
+    fun getCacheSize(context: Context): Long {
+        return getToolchainRoot(context)
+            .takeIf { it.exists() }
+            ?.walkTopDown()
+            ?.filter { it.isFile }
+            ?.sumOf { it.length() }
+            ?: 0L
+    }
+
+    fun clearCache(context: Context) {
+        getToolchainRoot(context).deleteRecursively()
+        AppLogger.i(TAG, "Go 工具链缓存已清理")
+    }
+
+    suspend fun installGoToolchain(context: Context): Boolean = withContext(Dispatchers.IO) {
+        coroutineScope {
+            // Bridge engine progress into _downloadState for the whole call —
+            // callers' UI otherwise sits on Idle for the entire download since
+            // syncEngineState only ran once at the end.
+            val syncJob = launch {
+                DependencyDownloadEngine.state.collect { syncEngineState() }
+            }
+            try {
+                installMutex.withLock {
+            DependencyDownloadNotification.getInstance(context)
+            if (isGoReady(context)) {
+                AppLogger.i(TAG, "Go 工具链已就绪，跳过下载")
+                markComplete()
+                return@withLock true
+            }
+
+            val abi = GoDependencyManager.getDeviceAbi()
+            if (abi != "arm64-v8a") {
+
+                AppLogger.e(TAG, "Go 工具链当前仅支持 arm64-v8a，设备 ABI: $abi")
+                markError(Strings.goToolchainUnsupportedAbi(abi))
+                return@withLock false
+            }
+
+            try {
+                _downloadState.value = DownloadState.Idle
+                DependencyDownloadEngine.reset()
+
+                val depsDir = getToolchainRoot(context)
+                depsDir.mkdirs()
+                val archiveFile = File(depsDir, "go-${GO_VERSION}.linux-arm64.tar.gz")
+
+                val urlList = selectGoArchiveUrls(resolvePreferChinaMirror(context))
+                val ok = downloadWithFallback(urlList, archiveFile, "Go $GO_VERSION ($abi)", context, GO_ARCHIVE_SHA256)
+                syncEngineState()
+                if (!ok) {
+                    AppLogger.e(TAG, "Go 归档下载失败")
+                    return@withLock false
+                }
+
+                val actual = archiveFile.length()
+                val tolerance = (GO_ARCHIVE_SIZE_BYTES * 0.10).toLong()
+                if (kotlin.math.abs(actual - GO_ARCHIVE_SIZE_BYTES) > tolerance) {
+                    AppLogger.w(
+                        TAG,
+                        "Go 归档体积异常: 实际 $actual 字节，期望 $GO_ARCHIVE_SIZE_BYTES（容差 ±$tolerance）—— 可能镜像变更或下载损坏"
+                    )
+
+                }
+
+                _downloadState.value = DownloadState.Extracting("Go $GO_VERSION")
+                DependencyDownloadEngine.publishState(
+                    DependencyDownloadEngine.State.Extracting("Go $GO_VERSION")
+                )
+
+                val goRoot = getGoRoot(context)
+                goRoot.deleteRecursively()
+                extractGoArchiveToRoot(archiveFile, goRoot)
+                archiveFile.delete()
+
+                fixupExecBits(goRoot)
+                if (!isGoReady(context)) {
+                    val goBin = getGoBinary(context)
+                    AppLogger.e(
+                        TAG,
+                        "解压完成但 go binary 不可用: 路径=${goBin.absolutePath} 存在=${goBin.exists()} 大小=${goBin.length()} 可执行=${goBin.canExecute()}"
+                    )
+                    markError(Strings.goToolchainExtractIncomplete)
+                    return@withLock false
+                }
+
+                // NOTE: no DNS binary-patching here. Stock Go toolchains only
+                // consult /etc/resolv.conf (absent on Android, unpatchable: the
+                // slot fits no app-controlled path), and Go 1.26 no longer
+                // carries the Termux fallback paths the old patcher rewrote.
+                // Network access for toolchain ops goes through
+                // LocalDnsBridgeProxy env (see GoBuildEnvironment.runCommand),
+                // whose JVM side resolves DNS via Android APIs.
+                AppLogger.i(TAG, "Go 工具链已就绪: ${getGoBinary(context).absolutePath}")
+                markComplete()
+                true
+            } catch (e: Exception) {
+                AppLogger.e(TAG, "安装 Go 工具链失败", e)
+                markError(e.message ?: "未知错误")
+                false
+            }
+                }
+            } finally {
+                syncJob.cancel()
+            }
+        }
+    }
+
+    suspend fun verifyGoToolchain(context: Context): Result<String> = withContext(Dispatchers.IO) {
+        if (!isGoReady(context)) {
+            return@withContext Result.failure(IllegalStateException(Strings.goToolchainNotInstalled))
+        }
+        val goBin = getGoBinary(context)
+        try {
+            val env = mutableMapOf<String, String>()
+            env["GOROOT"] = getGoRoot(context).absolutePath
+            env["GOPATH"] = getGoPath(context).absolutePath
+            env["HOME"] = context.filesDir.absolutePath
+            env["TMPDIR"] = context.cacheDir.absolutePath
+            val launch = com.webtoapp.core.linux.HostProcessLauncher.start(
+                context,
+                listOf(goBin.absolutePath, "version"),
+                env,
+                getToolchainRoot(context),
+                "Go"
+            )
+            val proc = launch.process
+                ?: return@withContext Result.failure(
+                    IllegalStateException(launch.error ?: "Go 工具链未安装")
+                )
+            val out = proc.inputStream.bufferedReader().readText().trim()
+            val finished = proc.waitFor()
+            if (finished == 0 && out.isNotBlank()) {
+                AppLogger.i(TAG, "Go verify OK: $out")
+                Result.success(out)
+            } else {
+                AppLogger.e(TAG, "Go verify failed: exit=$finished, output=$out")
+                Result.failure(RuntimeException(out.ifBlank { "exit code=$finished" }))
+            }
+        } catch (e: Exception) {
+            AppLogger.e(TAG, "Go verify 异常", e)
+            Result.failure(e)
+        }
+    }
+
+    private suspend fun downloadWithRetry(
+        url: String,
+        destFile: File,
+        displayName: String,
+        context: Context?,
+        expectedSha256: String? = null
+    ): Boolean = DependencyDownloadEngine.downloadFileWithFallback(
+        listOf(url), destFile, displayName, context, MAX_RETRY_PER_URL, RETRY_DELAY_MS,
+        expectedSha256For = expectedSha256?.let { hash -> { _: String -> hash } }
+    )
+
+    internal fun selectGoArchiveUrls(preferChinaMirror: Boolean): List<String> {
+        return if (preferChinaMirror) {
+            CN_GO_ARCHIVE_URLS + OFFSHORE_GO_ARCHIVE_URLS
+        } else {
+            OFFSHORE_GO_ARCHIVE_URLS
+        }
+    }
+
+    internal fun shouldPreferChinaMirror(appLanguage: AppLanguage): Boolean {
+        if (appLanguage == AppLanguage.CHINESE) return true
+        return runCatching {
+            val locale = java.util.Locale.getDefault()
+            locale.language.equals("zh", ignoreCase = true) ||
+                locale.country.equals("CN", ignoreCase = true) ||
+                locale.country in setOf("HK", "MO", "TW")
+        }.getOrDefault(false)
+    }
+
+    private suspend fun resolvePreferChinaMirror(context: Context): Boolean {
+        val appLang = runCatching {
+            com.webtoapp.core.i18n.LanguageManager.getInstance(context).getCurrentLanguage()
+        }.getOrNull() ?: AppLanguage.CHINESE
+        return shouldPreferChinaMirror(appLang)
+    }
+
+    private suspend fun downloadWithFallback(
+        urls: List<String>,
+        destFile: File,
+        displayName: String,
+        context: Context?,
+        expectedSha256: String? = null
+    ): Boolean {
+        if (urls.isEmpty()) {
+            AppLogger.e(TAG, "$displayName 没有可用的下载源")
+            return false
+        }
+        return DependencyDownloadEngine.downloadFileWithFallback(
+            urls, destFile, displayName, context, MAX_RETRY_PER_URL, RETRY_DELAY_MS,
+            expectedSha256For = expectedSha256?.let { hash -> { _: String -> hash } }
+        )
+    }
+
+    private fun extractGoArchiveToRoot(archiveFile: File, destGoRoot: File) {
+        destGoRoot.mkdirs()
+        val marker = "go/"
+        var copied = 0
+        var skipped = 0
+        val sampleNames = mutableListOf<String>()
+        TarArchiveInputStream(
+            GzipCompressorInputStream(BufferedInputStream(archiveFile.inputStream()))
+        ).use { tar ->
+            var entry = tar.nextTarEntry
+            while (entry != null) {
+                val raw = entry.name
+                if (sampleNames.size < 5) sampleNames += raw
+
+                val name = raw.trimStart('/').removePrefix("./")
+                if (!name.startsWith(marker)) {
+                    skipped++
+                    entry = tar.nextTarEntry
+                    continue
+                }
+                val rel = name.removePrefix(marker)
+                if (rel.isEmpty()) {
+                    entry = tar.nextTarEntry
+                    continue
+                }
+                val out = com.webtoapp.util.SafeZip.safeChild(destGoRoot, rel) ?: run {
+                    skipped++
+                    entry = tar.nextTarEntry
+                    continue
+                }
+                when {
+                    entry.isDirectory -> {
+                        out.mkdirs()
+                    }
+                    entry.isSymbolicLink -> {
+
+                        out.parentFile?.mkdirs()
+                        try {
+                            val target = entry.linkName
+
+                            try {
+                                java.nio.file.Files.createSymbolicLink(
+                                    out.toPath(),
+                                    File(target).toPath()
+                                )
+                            } catch (_: Exception) {
+
+                                AppLogger.d(TAG, "symlink 跳过: $rel -> $target")
+                            }
+                        } catch (e: Exception) {
+                            AppLogger.w(TAG, "symlink 解压失败: $rel -> ${entry.linkName}", e)
+                        }
+                    }
+                    else -> {
+                        out.parentFile?.mkdirs()
+                        FileOutputStream(out).use { fos -> tar.copyTo(fos) }
+
+                        if (entry.mode and 0b001_000_000 != 0) {
+                            out.setExecutable(true, false)
+                        }
+                        out.setReadable(true, false)
+                    }
+                }
+                copied++
+                entry = tar.nextTarEntry
+            }
+        }
+        AppLogger.i(
+            TAG,
+            "Go 归档解压完成: 复制 $copied 项，跳过 $skipped 项（非 GOROOT 内容）。" +
+                "tar 前几条 entry 路径样本: ${sampleNames.joinToString(" | ")}"
+        )
+    }
+
+    private fun fixupExecBits(goRoot: File) {
+        val binDir = File(goRoot, "bin")
+        binDir.listFiles()?.forEach {
+            it.setExecutable(true, false)
+            it.setReadable(true, false)
+        }
+
+        val toolDir = File(goRoot, "pkg/tool")
+        toolDir.walkTopDown()
+            .filter { it.isFile && it.length() > 100 * 1024 }
+            .forEach {
+                it.setExecutable(true, false)
+                it.setReadable(true, false)
+            }
+    }
+
+    private fun syncEngineState() {
+        when (val es = DependencyDownloadEngine.state.value) {
+            is DependencyDownloadEngine.State.Downloading -> {
+                _downloadState.value = DownloadState.Downloading(
+                    progress = es.progress,
+                    currentFile = es.displayName,
+                    bytesDownloaded = es.bytesDownloaded,
+                    totalBytes = es.totalBytes,
+                )
+            }
+            is DependencyDownloadEngine.State.Paused -> {
+                _downloadState.value = DownloadState.Paused(
+                    progress = es.progress,
+                    currentFile = es.displayName,
+                    bytesDownloaded = es.bytesDownloaded,
+                    totalBytes = es.totalBytes,
+                )
+            }
+            is DependencyDownloadEngine.State.Error -> {
+                _downloadState.value = DownloadState.Error(es.message)
+            }
+            else -> {  }
+        }
+    }
+
+    private fun markComplete() {
+        _downloadState.value = DownloadState.Complete
+        DependencyDownloadEngine.publishState(DependencyDownloadEngine.State.Complete)
+    }
+
+    private fun markError(message: String, retryable: Boolean = true) {
+        _downloadState.value = DownloadState.Error(message, retryable = retryable)
+        DependencyDownloadEngine.publishState(DependencyDownloadEngine.State.Error(message))
+    }
+}

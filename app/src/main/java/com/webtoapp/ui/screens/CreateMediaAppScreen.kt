@@ -1,0 +1,995 @@
+package com.webtoapp.ui.screens
+
+import android.net.Uri
+import com.webtoapp.ui.design.WtaChip
+import com.webtoapp.ui.design.WtaSpacing
+import com.webtoapp.ui.design.WtaSwitch
+import android.provider.OpenableColumns
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import com.webtoapp.core.i18n.Strings
+import com.webtoapp.data.model.AppType
+import com.webtoapp.data.model.MediaConfig
+import com.webtoapp.data.model.SplashOrientation
+import com.webtoapp.ui.components.*
+import com.webtoapp.ui.screens.create.WtaCreateFlowScaffold
+import com.webtoapp.ui.screens.create.WtaCreateFlowSection
+import kotlinx.coroutines.flow.first
+import com.webtoapp.ui.components.EnhancedElevatedCard
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@Composable
+fun CreateMediaAppScreen(
+    existingAppId: Long? = null,
+    onBack: () -> Unit,
+    onCreated: (
+        name: String,
+        appType: AppType,
+        mediaUri: Uri?,
+        mediaConfig: MediaConfig?,
+        iconUri: Uri?,
+        themeType: String
+    ) -> Unit
+) {
+    val context = LocalContext.current
+    val isEditMode = existingAppId != null
+
+    var existingApp by remember { mutableStateOf<com.webtoapp.data.model.WebApp?>(null) }
+    LaunchedEffect(existingAppId) {
+        if (existingAppId != null) {
+            existingApp = org.koin.java.KoinJavaComponent.get<com.webtoapp.data.repository.WebAppRepository>(com.webtoapp.data.repository.WebAppRepository::class.java)
+                .getWebAppById(existingAppId)
+                .first()
+        }
+    }
+
+    var appName by remember { mutableStateOf("") }
+    var appIcon by remember { mutableStateOf<Uri?>(null) }
+    var appIconPath by remember { mutableStateOf<String?>(null) }
+
+    var mediaType by remember { mutableStateOf(AppType.IMAGE) }
+
+    var mediaUri by remember { mutableStateOf<Uri?>(null) }
+
+    var enableAudio by remember { mutableStateOf(true) }
+    var loop by remember { mutableStateOf(true) }
+    var autoPlay by remember { mutableStateOf(true) }
+    var fillScreen by remember { mutableStateOf(true) }
+    var orientation by remember { mutableStateOf(SplashOrientation.PORTRAIT) }
+    var backgroundColor by remember { mutableStateOf("#000000") }
+
+    var fileName by remember { mutableStateOf<String?>(null) }
+    var fileSize by remember { mutableStateOf<Long?>(null) }
+    var fileMimeType by remember { mutableStateOf<String?>(null) }
+
+    var brightness by remember { mutableFloatStateOf(1.0f) }
+    var contrast by remember { mutableFloatStateOf(1.0f) }
+    var saturation by remember { mutableFloatStateOf(1.0f) }
+
+    var playbackSpeed by remember { mutableFloatStateOf(1.0f) }
+
+    var keepScreenOn by remember { mutableStateOf(true) }
+
+    var swipeDismiss by remember { mutableStateOf(true) }
+    var doubleTapZoom by remember { mutableStateOf(true) }
+
+    var themeType by remember { mutableStateOf("AURORA") }
+
+    val accentColor = MaterialTheme.colorScheme.onSurface
+    val accentGradient = listOf(
+        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.10f),
+        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
+    )
+
+    LaunchedEffect(existingApp) {
+        existingApp?.let { app ->
+            appName = app.name
+            appIconPath = app.iconPath
+            mediaType = app.appType
+            app.mediaConfig?.let { config ->
+                if (config.mediaPath.isNotBlank()) {
+                    val file = java.io.File(config.mediaPath)
+                    if (file.exists()) {
+                        mediaUri = Uri.fromFile(file)
+                    } else if (config.mediaPath.startsWith("content://") || config.mediaPath.startsWith("file://")) {
+                        mediaUri = Uri.parse(config.mediaPath)
+                    }
+                }
+                enableAudio = config.enableAudio
+                loop = config.loop
+                autoPlay = config.autoPlay
+                fillScreen = config.fillScreen
+                orientation = config.orientation
+                backgroundColor = config.backgroundColor
+                keepScreenOn = config.keepScreenOn
+            }
+            themeType = app.themeType
+        }
+    }
+
+    fun readFileMetadata(uri: Uri) {
+        try {
+            context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+                if (cursor.moveToFirst()) {
+                    val nameIdx = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                    val sizeIdx = cursor.getColumnIndex(OpenableColumns.SIZE)
+                    if (nameIdx >= 0) fileName = cursor.getString(nameIdx)
+                    if (sizeIdx >= 0) fileSize = cursor.getLong(sizeIdx)
+                }
+            }
+            fileMimeType = context.contentResolver.getType(uri)
+        } catch (e: Exception) {
+
+        }
+    }
+
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri -> uri?.let { mediaUri = it; readFileMetadata(it) } }
+
+    val videoPickerLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri -> uri?.let { mediaUri = it; readFileMetadata(it) } }
+
+    val iconPickerLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri -> uri?.let { appIcon = it } }
+
+    val canCreate = mediaUri != null
+
+    WtaCreateFlowScaffold(
+        title = Strings.createMediaAppTitle,
+        onBack = onBack,
+        actions = {
+            TextButton(
+                onClick = {
+                    val finalIconUri = appIconPath?.let { Uri.parse("file://$it") } ?: appIcon
+                    mediaUri?.let { uri ->
+                        onCreated(
+                            appName.ifBlank { Strings.createMediaApp },
+                            mediaType,
+                            uri,
+                            MediaConfig(
+                                mediaPath = uri.toString(),
+                                enableAudio = enableAudio,
+                                loop = loop,
+                                autoPlay = autoPlay,
+                                fillScreen = fillScreen,
+                                orientation = orientation,
+                                backgroundColor = backgroundColor,
+                                keepScreenOn = keepScreenOn
+                            ),
+                            finalIconUri,
+                            themeType
+                        )
+                    }
+                },
+                enabled = canCreate
+            ) {
+                Text(Strings.btnCreate)
+            }
+        }
+    ) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            WtaCreateFlowSection(title = Strings.importProject) {
+
+            MediaHeroSection(
+                mediaType = mediaType,
+                accentColor = accentColor,
+                accentGradient = accentGradient,
+                fileName = fileName,
+                fileSize = fileSize,
+                fileMimeType = fileMimeType
+            )
+
+            EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = Strings.selectMediaType,
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        MediaTypeOption(
+                            icon = Icons.Outlined.Image,
+                            label = Strings.image,
+                            selected = mediaType == AppType.IMAGE,
+                            onClick = {
+                                mediaType = AppType.IMAGE
+                                mediaUri = null
+                                fileName = null
+                                fileSize = null
+                                fileMimeType = null
+                            },
+                            modifier = Modifier.weight(weight = 1f, fill = true)
+                        )
+                        MediaTypeOption(
+                            icon = Icons.Outlined.Videocam,
+                            label = Strings.video,
+                            selected = mediaType == AppType.VIDEO,
+                            onClick = {
+                                mediaType = AppType.VIDEO
+                                mediaUri = null
+                                fileName = null
+                                fileSize = null
+                                fileMimeType = null
+                            },
+                            modifier = Modifier.weight(weight = 1f, fill = true)
+                        )
+                    }
+                }
+            }
+
+            EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier.size(40.dp).clip(RoundedCornerShape(12.dp))
+                                .background(accentColor.copy(alpha = 0.1f)),
+                            contentAlignment = Alignment.Center
+                        ) { Icon(
+                            if (mediaType == AppType.IMAGE) Icons.Outlined.Image else Icons.Outlined.Videocam,
+                            null, tint = accentColor, modifier = Modifier.size(22.dp)
+                        ) }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            text = if (mediaType == AppType.IMAGE) Strings.selectImage else Strings.selectVideo,
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(
+                                if (mediaUri != null) Color.Black
+                                else MaterialTheme.colorScheme.surfaceVariant
+                            )
+                            .border(
+                                width = 2.dp,
+                                color = if (mediaUri != null) accentColor
+                                else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+                                shape = RoundedCornerShape(12.dp)
+                            )
+                            .clickable {
+                                if (mediaType == AppType.IMAGE) {
+                                    imagePickerLauncher.launch("image/*")
+                                } else {
+                                    videoPickerLauncher.launch("video/*")
+                                }
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (mediaUri != null) {
+                            if (mediaType == AppType.IMAGE) {
+                                AsyncImage(
+                                    model = ImageRequest.Builder(context)
+                                        .data(mediaUri)
+                                        .crossfade(true)
+                                        .build(),
+                                    contentDescription = null,
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Crop
+                                )
+                            } else {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    Icon(
+                                        Icons.Filled.PlayCircle, null,
+                                        modifier = Modifier.size(64.dp),
+                                        tint = accentColor
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(
+                                        text = Strings.videoSelected,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = accentColor
+                                    )
+                                }
+                            }
+
+                            fileName?.let { name ->
+                                Box(
+                                    modifier = Modifier
+                                        .align(Alignment.BottomStart)
+                                        .padding(8.dp)
+                                        .background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(4.dp))
+                                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                                ) {
+                                    Text(
+                                        name,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = Color.White,
+                                        fontFamily = FontFamily.Monospace,
+                                        maxLines = 1
+                                    )
+                                }
+                            }
+                        } else {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Icon(
+                                    if (mediaType == AppType.IMAGE) Icons.Outlined.AddPhotoAlternate
+                                    else Icons.Outlined.VideoLibrary,
+                                    null, modifier = Modifier.size(48.dp),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = if (mediaType == AppType.IMAGE) Strings.clickToSelectImage else Strings.clickToSelectVideo,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+
+                    if (mediaUri != null && (fileSize != null || fileMimeType != null)) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        MediaFileInfoRow(
+                            fileSize = fileSize,
+                            mimeType = fileMimeType,
+                            accentColor = accentColor
+                        )
+                    }
+                }
+            }
+            }
+
+            WtaCreateFlowSection(title = Strings.appConfig) {
+            if (!isEditMode) {
+            EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = Strings.labelAppInfo,
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    AppNameTextFieldSimple(
+                        value = appName,
+                        onValueChange = { appName = it },
+                        placeholder = Strings.createMediaApp
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    IconPickerWithLibrary(
+                        iconUri = appIcon,
+                        iconPath = appIconPath,
+                        onSelectFromGallery = { iconPickerLauncher.launch("image/*") },
+                        onSelectFromLibrary = { path ->
+                            appIconPath = path
+                            appIcon = null
+                        }
+                    )
+                }
+            }
+            }
+
+            EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier.size(40.dp).clip(RoundedCornerShape(12.dp))
+                                .background(accentColor.copy(alpha = 0.1f)),
+                            contentAlignment = Alignment.Center
+                        ) { Icon(Icons.Outlined.Tune, null, tint = accentColor, modifier = Modifier.size(22.dp)) }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(Strings.labelDisplaySettings, style = MaterialTheme.typography.titleMedium)
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    SettingsRow(title = Strings.fillScreen, subtitle = Strings.fillScreenHint) {
+                        WtaSwitch(
+                            checked = fillScreen,
+                            onCheckedChange = { fillScreen = it },
+                        )
+                    }
+
+                    if (!isEditMode) {
+                    SettingsRow(title = Strings.landscapeMode, subtitle = Strings.landscapeModeHint) {
+                        WtaSwitch(
+                            checked = orientation == SplashOrientation.LANDSCAPE,
+                            onCheckedChange = {
+                                orientation = if (it) SplashOrientation.LANDSCAPE else SplashOrientation.PORTRAIT
+                            },
+                        )
+                    }
+                    }
+
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+                    SettingsRow(title = Strings.mediaScreenLock, subtitle = Strings.mediaScreenLockHint) {
+                        WtaSwitch(
+                            checked = keepScreenOn,
+                            onCheckedChange = { keepScreenOn = it },
+                        )
+                    }
+
+                    if (mediaType == AppType.VIDEO) {
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+
+                        SettingsRow(title = Strings.enableAudio, subtitle = Strings.enableAudioHint) {
+                            WtaSwitch(
+                                checked = enableAudio,
+                                onCheckedChange = { enableAudio = it },
+                            )
+                        }
+                        SettingsRow(title = Strings.loopPlay, subtitle = Strings.loopPlayHint) {
+                            WtaSwitch(
+                                checked = loop,
+                                onCheckedChange = { loop = it },
+                            )
+                        }
+                        SettingsRow(title = Strings.autoPlay, subtitle = Strings.autoPlayHint) {
+                            WtaSwitch(
+                                checked = autoPlay,
+                                onCheckedChange = { autoPlay = it },
+                            )
+                        }
+                    }
+                }
+            }
+
+            if (mediaType == AppType.VIDEO && mediaUri != null) {
+                MediaPlaybackSpeedCard(
+                    speed = playbackSpeed,
+                    onSpeedChange = { playbackSpeed = it },
+                    accentColor = accentColor
+                )
+            }
+
+            if (mediaType == AppType.IMAGE && mediaUri != null) {
+                MediaImageAdjustCard(
+                    brightness = brightness,
+                    onBrightnessChange = { brightness = it },
+                    contrast = contrast,
+                    onContrastChange = { contrast = it },
+                    saturation = saturation,
+                    onSaturationChange = { saturation = it },
+                    onReset = { brightness = 1.0f; contrast = 1.0f; saturation = 1.0f },
+                    accentColor = accentColor
+                )
+            }
+
+            if (mediaUri != null) {
+                MediaBackgroundColorCard(
+                    selected = backgroundColor,
+                    onSelect = { backgroundColor = it },
+                    accentColor = accentColor
+                )
+            }
+
+            if (mediaUri != null) {
+                MediaGestureCard(
+                    swipeDismiss = swipeDismiss,
+                    onSwipeDismissChange = { swipeDismiss = it },
+                    doubleTapZoom = doubleTapZoom,
+                    onDoubleTapZoomChange = { doubleTapZoom = it },
+                    isImage = mediaType == AppType.IMAGE,
+                    accentColor = accentColor
+                )
+            }
+            }
+
+            WtaCreateFlowSection(title = Strings.preview) {
+            EnhancedElevatedCard(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = accentColor.copy(alpha = 0.08f))
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.Top
+                ) {
+                    Icon(Icons.Outlined.Info, null, modifier = Modifier.size(20.dp), tint = accentColor)
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = Strings.mediaAppHint.replace(
+                            "%s",
+                            if (mediaType == AppType.IMAGE) Strings.fullscreenDisplayImage else Strings.fullscreenPlayVideo
+                        ),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            }
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun MediaHeroSection(
+    mediaType: AppType,
+    accentColor: Color,
+    accentGradient: List<Color>,
+    fileName: String?,
+    fileSize: Long?,
+    fileMimeType: String?
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        color = Color.Transparent
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    brush = Brush.horizontalGradient(colors = accentGradient),
+                    shape = RoundedCornerShape(16.dp)
+                )
+                .padding(20.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Surface(
+                    modifier = Modifier.size(56.dp),
+                    shape = RoundedCornerShape(14.dp),
+                    color = accentColor.copy(alpha = 0.15f)
+                ) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Icon(
+                            if (mediaType == AppType.IMAGE) Icons.Outlined.Image else Icons.Outlined.Videocam,
+                            null, modifier = Modifier.size(32.dp), tint = accentColor
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.width(16.dp))
+                Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
+                    Text(
+                        text = if (mediaType == AppType.IMAGE) Strings.mediaImageInfo else Strings.mediaVideoInfo,
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        color = accentColor
+                    )
+                    Text(
+                        text = if (mediaType == AppType.IMAGE)
+                            Strings.clickToSelectImage
+                        else Strings.clickToSelectVideo,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    if (fileName != null || fileSize != null) {
+                        Spacer(modifier = Modifier.height(6.dp))
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+
+                            fileMimeType?.let { mime ->
+                                val ext = mime.substringAfter("/").uppercase()
+                                Surface(
+                                    shape = RoundedCornerShape(4.dp),
+                                    color = accentColor.copy(alpha = 0.12f)
+                                ) {
+                                    Text(
+                                        text = ext,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = accentColor,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                }
+                            }
+
+                            fileSize?.let { size ->
+                                Surface(
+                                    shape = RoundedCornerShape(4.dp),
+                                    color = accentColor.copy(alpha = 0.12f)
+                                ) {
+                                    Text(
+                                        text = formatFileSize(size),
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = accentColor,
+                                        fontFamily = FontFamily.Monospace
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun MediaFileInfoRow(
+    fileSize: Long?,
+    mimeType: String?,
+    accentColor: Color
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(8.dp),
+        color = accentColor.copy(alpha = 0.06f)
+    ) {
+        FlowRow(
+            modifier = Modifier.padding(10.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            fileSize?.let { size ->
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Outlined.Storage, null, modifier = Modifier.size(14.dp), tint = accentColor)
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        "${Strings.mediaFileSize}: ${formatFileSize(size)}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+            mimeType?.let { mime ->
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Outlined.Description, null, modifier = Modifier.size(14.dp), tint = accentColor)
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        "${Strings.mediaFormat}: ${mime.substringAfter("/")}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun MediaPlaybackSpeedCard(
+    speed: Float,
+    onSpeedChange: (Float) -> Unit,
+    accentColor: Color
+) {
+    val speeds = listOf(0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 2.0f)
+
+    EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier.size(40.dp).clip(RoundedCornerShape(12.dp))
+                        .background(accentColor.copy(alpha = 0.1f)),
+                    contentAlignment = Alignment.Center
+                ) { Icon(Icons.Outlined.Speed, null, tint = accentColor, modifier = Modifier.size(22.dp)) }
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(Strings.mediaPlaybackSpeed, style = MaterialTheme.typography.titleMedium)
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
+            ) {
+                speeds.forEach { s ->
+                    val isSelected = speed == s
+                    WtaChip(
+                        selected = isSelected,
+                        onClick = { onSpeedChange(s) },
+                        modifier = Modifier.weight(weight = 1f, fill = true),
+                        showSelectedCheck = false
+                    ) {
+                        Text(
+                            "${s}x",
+                            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                            fontFamily = FontFamily.Monospace
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MediaImageAdjustCard(
+    brightness: Float,
+    onBrightnessChange: (Float) -> Unit,
+    contrast: Float,
+    onContrastChange: (Float) -> Unit,
+    saturation: Float,
+    onSaturationChange: (Float) -> Unit,
+    onReset: () -> Unit,
+    accentColor: Color
+) {
+    EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier.size(40.dp).clip(RoundedCornerShape(12.dp))
+                        .background(accentColor.copy(alpha = 0.1f)),
+                    contentAlignment = Alignment.Center
+                ) { Icon(Icons.Outlined.Tune, null, tint = accentColor, modifier = Modifier.size(22.dp)) }
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(Strings.mediaImageAdjust, style = MaterialTheme.typography.titleMedium)
+                Spacer(modifier = Modifier.weight(weight = 1f, fill = true))
+                TextButton(onClick = onReset) {
+                    Text(Strings.mediaReset, style = MaterialTheme.typography.labelSmall, color = accentColor)
+                }
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                Strings.mediaImageAdjustHint,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+
+            MediaSliderRow(
+                label = Strings.mediaBrightness,
+                value = brightness,
+                onValueChange = onBrightnessChange,
+                valueRange = 0.5f..2.0f,
+                accentColor = accentColor
+            )
+
+            MediaSliderRow(
+                label = Strings.mediaContrast,
+                value = contrast,
+                onValueChange = onContrastChange,
+                valueRange = 0.5f..2.0f,
+                accentColor = accentColor
+            )
+
+            MediaSliderRow(
+                label = Strings.mediaSaturation,
+                value = saturation,
+                onValueChange = onSaturationChange,
+                valueRange = 0.0f..2.0f,
+                accentColor = accentColor
+            )
+        }
+    }
+}
+
+@Composable
+private fun MediaSliderRow(
+    label: String,
+    value: Float,
+    onValueChange: (Float) -> Unit,
+    valueRange: ClosedFloatingPointRange<Float>,
+    accentColor: Color
+) {
+    Column(modifier = Modifier.padding(vertical = 2.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                String.format(java.util.Locale.getDefault(), "%.1f", value),
+                style = MaterialTheme.typography.labelSmall,
+                fontFamily = FontFamily.Monospace,
+                color = accentColor,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
+        Slider(
+            value = value,
+            onValueChange = onValueChange,
+            valueRange = valueRange,
+            colors = SliderDefaults.colors(
+                thumbColor = accentColor,
+                activeTrackColor = accentColor
+            )
+        )
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun MediaBackgroundColorCard(
+    selected: String,
+    onSelect: (String) -> Unit,
+    accentColor: Color
+) {
+    val colors = listOf(
+        "#000000" to "Black",
+        "#FFFFFF" to "White",
+        "#121212" to "Ink",
+        "#1B1B1B" to "Charcoal",
+        "#2D2D2D" to "Dark Gray",
+        "#444444" to "Mid Gray",
+        "#707070" to "Slate Gray",
+        "#BDBDBD" to "Light Gray"
+    )
+
+    EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier.size(40.dp).clip(RoundedCornerShape(12.dp))
+                        .background(accentColor.copy(alpha = 0.1f)),
+                    contentAlignment = Alignment.Center
+                ) { Icon(Icons.Outlined.Palette, null, tint = accentColor, modifier = Modifier.size(22.dp)) }
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(Strings.mediaBackgroundColor, style = MaterialTheme.typography.titleMedium)
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                colors.forEach { (hex, label) ->
+                    val isSelected = selected == hex
+                    val color = Color(android.graphics.Color.parseColor(hex))
+                    Surface(
+                        modifier = Modifier.size(44.dp),
+                        shape = RoundedCornerShape(10.dp),
+                        color = color,
+                        border = if (isSelected)
+                            androidx.compose.foundation.BorderStroke(3.dp, accentColor)
+                        else
+                            androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                        onClick = { onSelect(hex) }
+                    ) {
+                        if (isSelected) {
+                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                Icon(
+                                    Icons.Default.Check, null,
+                                    modifier = Modifier.size(20.dp),
+                                    tint = if (hex == "#FFFFFF") Color.Black else Color.White
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MediaGestureCard(
+    swipeDismiss: Boolean,
+    onSwipeDismissChange: (Boolean) -> Unit,
+    doubleTapZoom: Boolean,
+    onDoubleTapZoomChange: (Boolean) -> Unit,
+    isImage: Boolean,
+    accentColor: Color
+) {
+    EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier.size(40.dp).clip(RoundedCornerShape(12.dp))
+                        .background(accentColor.copy(alpha = 0.1f)),
+                    contentAlignment = Alignment.Center
+                ) { Icon(Icons.Outlined.TouchApp, null, tint = accentColor, modifier = Modifier.size(22.dp)) }
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(Strings.mediaGestureConfig, style = MaterialTheme.typography.titleMedium)
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+
+            SettingsRow(title = Strings.mediaSwipeDismiss, subtitle = Strings.mediaSwipeDismissHint) {
+                WtaSwitch(
+                    checked = swipeDismiss,
+                    onCheckedChange = onSwipeDismissChange,
+                )
+            }
+
+            if (isImage) {
+                SettingsRow(title = Strings.mediaDoubleTapZoom, subtitle = Strings.mediaDoubleTapZoomHint) {
+                    WtaSwitch(
+                        checked = doubleTapZoom,
+                        onCheckedChange = onDoubleTapZoomChange,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun MediaTypeOption(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier
+            .height(100.dp)
+            .clickable(onClick = onClick),
+        shape = MaterialTheme.shapes.medium,
+        color = if (selected)
+            MaterialTheme.colorScheme.primaryContainer
+        else
+            MaterialTheme.colorScheme.surfaceVariant,
+        border = if (selected)
+            androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+        else
+            null
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                icon, null, modifier = Modifier.size(32.dp),
+                tint = if (selected) MaterialTheme.colorScheme.onPrimaryContainer
+                else MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelLarge,
+                color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer
+                else MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+fun SettingsRow(
+    title: String,
+    subtitle: String,
+    trailing: @Composable () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
+            Text(text = title, style = MaterialTheme.typography.bodyLarge)
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        trailing()
+    }
+}
+
+private fun formatFileSize(bytes: Long): String {
+    return when {
+        bytes < 1024 -> "$bytes B"
+        bytes < 1024 * 1024 -> "${bytes / 1024} KB"
+        bytes < 1024 * 1024 * 1024 -> "${String.format(java.util.Locale.getDefault(), "%.1f", bytes.toDouble() / 1024 / 1024)} MB"
+        else -> "${String.format(java.util.Locale.getDefault(), "%.2f", bytes.toDouble() / 1024 / 1024 / 1024)} GB"
+    }
+}

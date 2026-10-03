@@ -5,7 +5,12 @@ import android.net.Uri
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import com.webtoapp.core.agent.files.ProjectFileManager
+import com.webtoapp.core.golang.GoRuntime
 import com.webtoapp.core.logging.AppLogger
+import com.webtoapp.core.nodejs.NodeRuntime
+import com.webtoapp.core.php.PhpAppRuntime
+import com.webtoapp.core.port.PortManager
+import com.webtoapp.core.python.PythonRuntime
 import com.webtoapp.data.model.AppType
 import com.webtoapp.data.model.GalleryCategory
 import com.webtoapp.data.model.GalleryConfig
@@ -14,9 +19,14 @@ import com.webtoapp.data.model.GalleryItemType
 import com.webtoapp.data.model.GalleryPlayMode
 import com.webtoapp.data.model.GallerySortOrder
 import com.webtoapp.data.model.GalleryViewMode
+import com.webtoapp.data.model.GoAppConfig
 import com.webtoapp.data.model.HtmlConfig
 import com.webtoapp.data.model.MultiWebConfig
 import com.webtoapp.data.model.MultiWebSite
+import com.webtoapp.data.model.NodeJsBuildMode
+import com.webtoapp.data.model.NodeJsConfig
+import com.webtoapp.data.model.PhpAppConfig
+import com.webtoapp.data.model.PythonAppConfig
 import com.webtoapp.data.model.WebApp
 import com.webtoapp.data.repository.WebAppRepository
 import com.webtoapp.util.HtmlProjectHelper
@@ -64,6 +74,11 @@ class SaveSessionAsAppUseCase(
                 DetectedArtifact.Kind.FrontendReact,
                 DetectedArtifact.Kind.FrontendVue ->
                     saveAsHtmlLike(artifactRoot, finalName, savedIconPath, AppType.FRONTEND)
+                DetectedArtifact.Kind.NodeJs ->
+                    saveAsNodeJs(artifactRoot, artifact.entryFile.lastSegment(), finalName, savedIconPath)
+                DetectedArtifact.Kind.Php -> saveAsPhp(artifactRoot, finalName, savedIconPath)
+                DetectedArtifact.Kind.Python -> saveAsPython(artifactRoot, finalName, savedIconPath)
+                DetectedArtifact.Kind.Go -> saveAsGo(artifactRoot, finalName, savedIconPath)
                 DetectedArtifact.Kind.MultiWeb -> saveAsMultiWeb(
                     sessionId, artifact.entryFile, finalName, savedIconPath
                 )
@@ -107,6 +122,122 @@ class SaveSessionAsAppUseCase(
                 projectId = projectId,
                 entryFile = pickEntryHtml(savedFiles.map { it.name }),
                 files = savedFiles
+            ),
+            themeType = DEFAULT_THEME
+        )
+        return Result.Success(repository.createWebApp(app), app.name)
+    }
+
+    private suspend fun saveAsNodeJs(
+        artifactRoot: File,
+        entryHint: String,
+        name: String,
+        iconPath: String?
+    ): Result {
+        val node = NodeRuntime(context)
+        val projectId = newProjectId()
+        val projectDir = node.createProject(projectId = projectId, sourceDir = artifactRoot)
+        val entry = node.detectEntryFile(projectDir) ?: entryHint.ifBlank { "index.js" }
+        val port = PortManager.allocateForNodeJs(projectId)
+        val app = WebApp(
+            name = name,
+            url = "",
+            iconPath = iconPath,
+            appType = AppType.NODEJS_APP,
+            nodejsConfig = NodeJsConfig(
+                projectId = projectId,
+                projectName = name,
+                sourceProjectPath = artifactRoot.absolutePath,
+                entryFile = entry,
+                serverPort = port,
+                buildMode = NodeJsBuildMode.API_BACKEND
+            ),
+            themeType = DEFAULT_THEME
+        )
+        return Result.Success(repository.createWebApp(app), app.name)
+    }
+
+    private suspend fun saveAsPhp(
+        artifactRoot: File,
+        name: String,
+        iconPath: String?
+    ): Result {
+        val php = PhpAppRuntime(context)
+        val projectId = newProjectId()
+        val projectDir = php.createProject(projectId = projectId, sourceDir = artifactRoot)
+        val entry = listOf("index.php", "public/index.php")
+            .firstOrNull { File(projectDir, it).exists() } ?: "index.php"
+        val port = PortManager.allocateForPhp(projectId)
+        val app = WebApp(
+            name = name,
+            url = "",
+            iconPath = iconPath,
+            appType = AppType.PHP_APP,
+            phpAppConfig = PhpAppConfig(
+                projectId = projectId,
+                projectName = name,
+                framework = php.detectFramework(projectDir),
+                documentRoot = if (entry.contains("/")) entry.substringBeforeLast("/") else "",
+                entryFile = entry.substringAfterLast("/"),
+                phpPort = port,
+                hasComposerJson = File(projectDir, "composer.json").exists()
+            ),
+            themeType = DEFAULT_THEME
+        )
+        return Result.Success(repository.createWebApp(app), app.name)
+    }
+
+    private suspend fun saveAsPython(
+        artifactRoot: File,
+        name: String,
+        iconPath: String?
+    ): Result {
+        val py = PythonRuntime(context)
+        val projectId = newProjectId()
+        val projectDir = py.createProject(projectId = projectId, sourceDir = artifactRoot)
+        val framework = py.detectFramework(projectDir)
+        val entry = py.detectEntryFile(projectDir, framework)
+        val port = PortManager.allocateForPython(projectId)
+        val app = WebApp(
+            name = name,
+            url = "",
+            iconPath = iconPath,
+            appType = AppType.PYTHON_APP,
+            pythonAppConfig = PythonAppConfig(
+                projectId = projectId,
+                projectName = name,
+                sourceProjectPath = artifactRoot.absolutePath,
+                framework = framework,
+                entryFile = entry,
+                serverType = "builtin",
+                serverPort = port,
+                hasPipDeps = File(projectDir, "requirements.txt").exists()
+            ),
+            themeType = DEFAULT_THEME
+        )
+        return Result.Success(repository.createWebApp(app), app.name)
+    }
+
+    private suspend fun saveAsGo(
+        artifactRoot: File,
+        name: String,
+        iconPath: String?
+    ): Result {
+        val go = GoRuntime(context)
+        val projectId = newProjectId()
+        go.createProject(projectId = projectId, sourceDir = artifactRoot)
+        val port = PortManager.allocateForGo(projectId)
+        val app = WebApp(
+            name = name,
+            url = "",
+            iconPath = iconPath,
+            appType = AppType.GO_APP,
+            goAppConfig = GoAppConfig(
+                projectId = projectId,
+                projectName = name,
+                framework = "raw",
+                binaryName = projectId,
+                serverPort = port
             ),
             themeType = DEFAULT_THEME
         )
@@ -241,6 +372,8 @@ class SaveSessionAsAppUseCase(
             ?: "index.html"
     }
 
+    private fun newProjectId(): String = UUID.randomUUID().toString().take(8)
+
     companion object {
         private const val TAG = "SaveSessionAsApp"
         private const val DEFAULT_THEME = "AURORA"
@@ -254,3 +387,5 @@ private fun JsonObject.optInt(key: String, default: Int = 0): Int =
     get(key)?.takeIf { !it.isJsonNull && it.isJsonPrimitive }?.let {
         runCatching { it.asInt }.getOrDefault(default)
     } ?: default
+
+private fun String.lastSegment(): String = substringAfterLast('/')

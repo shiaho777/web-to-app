@@ -1,10 +1,20 @@
 # Port Manager
 
-The Port Manager is the built-in coordinator for the local-site ports used by your generated apps — it has no screen of its own and works silently in the background. Multi-Web apps can embed packaged apps (HTML, Frontend, Gallery) as sites, and those sites are served over loopback ports inside the app; the Port Manager allocates those ports so they don't collide.
+Coordinates the local-server ports used by runtime apps across all your generated apps. Open it from [⋮ → Port Manager](/guide/main-screen/more).
+
+## Features
+
+- **Service list** — see which ports are in use, the owning process, and latency.
+- **Kill** — stop a single service, or **kill all**.
+- **Auto-refresh** — keep the list current.
+- **Port ranges** — view the configured port ranges.
+- **Copy port / open** — quick actions per entry.
+- **Filters** — show all services or filter; detects WebToApp apps specifically.
+- **Status** — responding / not responding indicators.
 
 ## Conflict policy
 
-When a local site needs a port that's taken, the configured policy applies:
+When a runtime needs a port that's taken, the configured policy applies:
 
 - `AUTO_KILL` — stop the conflicting service.
 - `ALERT` — notify and let you decide.
@@ -13,4 +23,4 @@ When a local site needs a port that's taken, the configured policy applies:
 
 ## Notes
 
-Local sites allocate through the Port Manager and release their port on stop, so ports don't leak between apps — or between WebToApp-built apps installed side by side.
+Runtimes allocate through the Port Manager and release their port on stop, so ports don't leak between apps.

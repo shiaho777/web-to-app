@@ -15,7 +15,7 @@ app/ 源码
 
 生成 APK 运行时
   WebToAppApplication → ShellModeManager → 加载 assets JSON 配置
-  → WebViewManager / 内容路由器
+  → WebViewManager / 运行时服务器(Node/PHP/Python/Go/WordPress)
 ```
 
 | | 宿主 `:app`(预览) | 生成 APK(导出) |

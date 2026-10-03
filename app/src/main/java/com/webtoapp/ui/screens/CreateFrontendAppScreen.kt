@@ -59,11 +59,18 @@ fun CreateFrontendAppScreen(
         iconUri: Uri?,
         framework: FrontendFramework
     ) -> Unit,
+    @Suppress("UNUSED_PARAMETER")
+    onNavigateToLinuxEnv: () -> Unit = {},
     existingAppId: Long? = null
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val isEditMode = existingAppId != null
+
+    val linuxEnv = remember { LinuxEnvironmentManager.getInstance(context) }
+    val linuxState by linuxEnv.state.collectAsStateWithLifecycle()
+
+    var buildMode by remember { mutableStateOf(BuildMode.IMPORT_DIST) }
 
     var projectPath by remember { mutableStateOf<String?>(null) }
     var folderImportPath by remember { mutableStateOf<String?>(null) }
@@ -94,16 +101,38 @@ fun CreateFrontendAppScreen(
     var isDetecting by remember { mutableStateOf(false) }
 
     val importBuilder = remember { FrontendProjectBuilder(context) }
+    val nodeBuilder = remember { NodeProjectBuilder(context) }
     val githubFetcher = remember { GitHubRepoFetcher(context) }
 
     val importState by importBuilder.buildState.collectAsStateWithLifecycle()
     val importLogs by importBuilder.buildLogs.collectAsStateWithLifecycle()
 
-    val currentBuildState = importState
-    val currentLogs = importLogs
+    val nodeBuildState by nodeBuilder.buildState.collectAsStateWithLifecycle()
+    val nodeBuildLogs by nodeBuilder.buildLogs.collectAsStateWithLifecycle()
+
+    val currentBuildState = if (buildMode == BuildMode.FULL_BUILD) {
+        when (val state = nodeBuildState) {
+            is NodeBuildState.Idle -> BuildState.Idle
+            is NodeBuildState.Analyzing -> BuildState.Scanning
+            is NodeBuildState.CopyingFiles -> BuildState.CopyingProject(state.progress)
+            is NodeBuildState.InstallingDeps -> BuildState.InstallingDependencies(state.progress, state.currentPackage)
+            is NodeBuildState.Building -> BuildState.BuildingProject(state.progress, state.stage)
+            is NodeBuildState.Processing -> BuildState.ProcessingOutput
+            is NodeBuildState.Success -> BuildState.Success(state.outputPath, 0)
+            is NodeBuildState.Error -> BuildState.Error(state.message)
+        }
+    } else {
+        importState
+    }
+
+    val currentLogs = if (buildMode == BuildMode.FULL_BUILD) nodeBuildLogs else importLogs
 
     var showLogsDialog by remember { mutableStateOf(false) }
     var showErrorReportDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        linuxEnv.checkEnvironment()
+    }
 
     val iconPickerLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent()
@@ -189,6 +218,11 @@ fun CreateFrontendAppScreen(
                    detectionResult?.issues?.none { it.severity == IssueSeverity.ERROR } == true &&
                    currentBuildState is BuildState.Idle
 
+    val canBuild = projectPath != null &&
+                  detectionResult != null &&
+                  linuxState is EnvironmentState.Ready &&
+                  currentBuildState is BuildState.Idle
+
     WtaCreateFlowScaffold(
         title = if (isEditMode) Strings.editFrontendApp else Strings.createFrontendApp,
         onBack = onBack,
@@ -220,6 +254,9 @@ fun CreateFrontendAppScreen(
                             isDetecting = true
                             val detection = ProjectDetector.detectProject(result.localPath)
                             detectionResult = detection
+                            if (detection.issues.any { it.type == IssueType.NO_DIST_FOLDER }) {
+                                buildMode = BuildMode.FULL_BUILD
+                            }
                             isDetecting = false
                         }
                     }
@@ -331,6 +368,7 @@ fun CreateFrontendAppScreen(
                                         projectPath = null
                                         detectionResult = null
                                         importBuilder.reset()
+                                        nodeBuilder.reset()
                                     }) {
                                         Icon(Icons.Default.Close, Strings.remove)
                                     }
@@ -499,26 +537,53 @@ fun CreateFrontendAppScreen(
 
                 when (val state = currentBuildState) {
                     is BuildState.Idle -> {
-                        PremiumButton(
-                            onClick = {
-                                scope.launch {
-                                    val result = importBuilder.importProject(projectPath!!)
-                                    result.onSuccess { importResult ->
-                                        onCreated(
-                                            projectName,
-                                            importResult.outputPath,
-                                            appIcon,
-                                            importResult.framework
-                                        )
+                        if (buildMode == BuildMode.IMPORT_DIST) {
+                            PremiumButton(
+                                onClick = {
+                                    scope.launch {
+                                        val result = importBuilder.importProject(projectPath!!)
+                                        result.onSuccess { importResult ->
+                                            onCreated(
+                                                projectName,
+                                                importResult.outputPath,
+                                                appIcon,
+                                                importResult.framework
+                                            )
+                                        }
                                     }
-                                }
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            enabled = canImport
-                        ) {
-                            Icon(Icons.Default.Download, null)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(if (isEditMode) Strings.reimportProject else Strings.importProject)
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                enabled = canImport
+                            ) {
+                                Icon(Icons.Default.Download, null)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(if (isEditMode) Strings.reimportProject else Strings.importProject)
+                            }
+                        } else {
+                            PremiumButton(
+                                onClick = {
+                                    scope.launch {
+                                        val result = nodeBuilder.buildProject(
+                                            projectPath!!,
+                                            NodeBuildConfig(allowBuiltinPackagerFallback = false)
+                                        )
+                                        result.onSuccess { buildResult ->
+                                            onCreated(
+                                                projectName,
+                                                buildResult.outputPath,
+                                                appIcon,
+                                                buildResult.framework
+                                            )
+                                        }
+                                    }
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                enabled = canBuild
+                            ) {
+                                Icon(Icons.Default.Build, null)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(if (isEditMode) Strings.rebuildProject else Strings.buildProject)
+                            }
                         }
                     }
                     is BuildState.Success -> {
@@ -552,6 +617,7 @@ fun CreateFrontendAppScreen(
                             PremiumButton(
                                 onClick = {
                                     importBuilder.reset()
+                                    nodeBuilder.reset()
                                 },
                                 modifier = Modifier.fillMaxWidth()
                             ) {
@@ -565,6 +631,7 @@ fun CreateFrontendAppScreen(
                         PremiumOutlinedButton(
                             onClick = {
                                 importBuilder.reset()
+                                nodeBuilder.reset()
                             },
                             modifier = Modifier.fillMaxWidth()
                         ) {
@@ -589,6 +656,7 @@ fun CreateFrontendAppScreen(
             title = Strings.fullErrorReport,
             summary = currentBuildState.message,
             report = buildFrontendErrorReport(
+                mode = buildMode,
                 projectPath = projectPath,
                 detectionResult = detectionResult,
                 logs = currentLogs,
@@ -645,7 +713,10 @@ private fun BuildModeSelector(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-
+            WtaStatusBanner(
+                message = Strings.builtInEngineReady,
+                tone = WtaStatusTone.Success
+            )
         }
     }
 }
@@ -924,6 +995,7 @@ private fun BuildLogsDialog(
 }
 
 private fun buildFrontendErrorReport(
+    mode: BuildMode,
     projectPath: String?,
     detectionResult: ProjectDetectionResult?,
     logs: List<BuildLogEntry>,
@@ -931,6 +1003,7 @@ private fun buildFrontendErrorReport(
 ): String {
     return buildString {
         appendLine("WebToApp Frontend Build Failure")
+        appendLine("mode: ${mode.name}")
         appendLine("projectPath: ${projectPath ?: "null"}")
         appendLine("framework: ${detectionResult?.framework ?: "unknown"}")
         appendLine("outputDir: ${detectionResult?.outputDir ?: "unknown"}")

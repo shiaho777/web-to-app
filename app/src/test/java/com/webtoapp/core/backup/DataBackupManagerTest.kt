@@ -7,7 +7,7 @@ import com.google.common.truth.Truth.assertThat
 import com.webtoapp.core.stats.AppUsageStats
 import com.webtoapp.data.database.AppDatabase
 import com.webtoapp.data.model.AppType
-import com.webtoapp.data.model.HtmlConfig
+import com.webtoapp.data.model.NodeJsConfig
 import com.webtoapp.data.model.WebApp
 import com.webtoapp.data.repository.WebAppRepository
 import kotlinx.coroutines.flow.first
@@ -62,10 +62,10 @@ class DataBackupManagerTest {
 
     @Test
     @org.junit.Ignore("Flaky under Robolectric: RoomDatabase.close during onTerminate cancels the export coroutine before it finishes")
-    fun `project files survive export and import`() = runBlocking {
+    fun `nodejs project files survive export and import`() = runBlocking {
 
-        val projectId = "proj-html-1"
-        val projectDir = File(context.filesDir, "html_projects/$projectId").apply { mkdirs() }
+        val projectId = "proj-node-1"
+        val projectDir = File(context.filesDir, "nodejs_projects/$projectId").apply { mkdirs() }
         File(projectDir, "server.js").writeText("console.log('hi')")
         File(projectDir, "node_modules/dep/index.js").apply {
             parentFile?.mkdirs()
@@ -75,8 +75,8 @@ class DataBackupManagerTest {
         val app = WebApp(
             name = "My Node App",
             url = "http://127.0.0.1:3000",
-            appType = AppType.HTML,
-            htmlConfig = HtmlConfig(projectId = projectId, entryFile = "index.html")
+            appType = AppType.NODEJS_APP,
+            nodejsConfig = NodeJsConfig(projectId = projectId, projectName = "My Node App")
         )
         repository.createWebApp(app)
 
@@ -87,16 +87,16 @@ class DataBackupManagerTest {
 
         wipeApps()
         projectDir.deleteRecursively()
-        assertThat(File(context.filesDir, "html_projects/$projectId").exists()).isFalse()
+        assertThat(File(context.filesDir, "nodejs_projects/$projectId").exists()).isFalse()
 
         val importResult = manager.importAllData(repository, uri)
         assertThat(importResult.isSuccess).isTrue()
         assertThat(importResult.getOrThrow().importedCount).isEqualTo(1)
 
-        val restored = repository.allWebApps.first().single { it.appType == AppType.HTML }
-        assertThat(restored.htmlConfig?.projectId).isEqualTo(projectId)
+        val restored = repository.allWebApps.first().single { it.appType == AppType.NODEJS_APP }
+        assertThat(restored.nodejsConfig?.projectId).isEqualTo(projectId)
 
-        val restoredProject = File(context.filesDir, "html_projects/$projectId")
+        val restoredProject = File(context.filesDir, "nodejs_projects/$projectId")
         assertThat(File(restoredProject, "server.js").readText()).isEqualTo("console.log('hi')")
         assertThat(File(restoredProject, "node_modules/dep/index.js").exists()).isTrue()
     }

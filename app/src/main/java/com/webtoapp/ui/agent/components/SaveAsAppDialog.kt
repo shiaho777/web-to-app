@@ -266,6 +266,22 @@ private fun KindChip(kind: DetectedArtifact.Kind) {
             Strings.agentKindVue,
             WtaColors.semantic.successContainer, WtaColors.semantic.onSuccessContainer
         )
+        DetectedArtifact.Kind.NodeJs -> Triple(
+            Strings.agentKindNodeJs,
+            WtaColors.semantic.successContainer, WtaColors.semantic.onSuccessContainer
+        )
+        DetectedArtifact.Kind.Php -> Triple(
+            Strings.agentKindPhp,
+            WtaColors.semantic.warningContainer, WtaColors.semantic.onWarningContainer
+        )
+        DetectedArtifact.Kind.Python -> Triple(
+            Strings.agentKindPython,
+            WtaColors.semantic.infoContainer, WtaColors.semantic.onInfoContainer
+        )
+        DetectedArtifact.Kind.Go -> Triple(
+            Strings.agentKindGo,
+            WtaColors.semantic.infoContainer, WtaColors.semantic.onInfoContainer
+        )
         DetectedArtifact.Kind.MultiWeb -> Triple(
             Strings.agentKindMultiWeb,
             WtaColors.semantic.neutralContainer, WtaColors.semantic.onNeutralContainer

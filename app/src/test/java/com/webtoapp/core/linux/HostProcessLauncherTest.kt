@@ -36,10 +36,10 @@ class HostProcessLauncherTest {
         app.applicationInfo.targetSdkVersion = 35
         File(app.applicationInfo.nativeLibraryDir, "libstatic_exec.so").delete()
         val result = HostProcessLauncher.start(
-            app, listOf("sh", "-c", "echo never"), emptyMap(), null, "esbuild"
+            app, listOf("sh", "-c", "echo never"), emptyMap(), null, "WordPress (PHP)"
         )
         assertThat(result.process).isNull()
-        assertThat(result.error).contains("esbuild")
+        assertThat(result.error).contains("WordPress (PHP)")
         assertThat(result.error).contains("targetSdk")
     }
 }

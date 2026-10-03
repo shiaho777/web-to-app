@@ -153,7 +153,7 @@ object PlayPolicyChecker {
             )
         }
 
-        if (!webApp.appType.isSupported) {
+        if (webApp.appType.requiresProcessExec) {
             violations.add(
                 Violation(
                     ruleId = "SERVER_RUNTIME_APP_TYPE",

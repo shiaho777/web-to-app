@@ -84,7 +84,7 @@ class ShellModeManager(private val context: Context) {
                     val entryFile = config.htmlConfig.entryFile
                     entryFile.isNotBlank() && entryFile.substringBeforeLast(".").isNotBlank()
                 }
-                normalizedAppType in listOf("GALLERY", "MULTI_WEB") -> true
+                normalizedAppType in listOf("IMAGE", "VIDEO", "GALLERY", "WORDPRESS", "NODEJS_APP", "PHP_APP", "PYTHON_APP", "GO_APP", "MULTI_WEB") -> true
                 else -> !config?.targetUrl.isNullOrBlank() ||
                     (config?.activationRemoteEnabled == true && config.activationRemoteDeliverUrl)
             }
@@ -325,6 +325,9 @@ data class ShellConfig(
     @SerializedName("appType")
     val appType: String = "WEB",
 
+    @SerializedName("mediaConfig")
+    val mediaConfig: MediaShellConfig = MediaShellConfig(),
+
     @SerializedName("htmlConfig")
     val htmlConfig: HtmlShellConfig = HtmlShellConfig(),
 
@@ -425,6 +428,12 @@ data class ShellConfig(
     @SerializedName("galleryConfig")
     val galleryConfig: GalleryShellConfig = GalleryShellConfig(),
 
+    @SerializedName("wordpressConfig")
+    val wordpressConfig: WordPressShellConfig = WordPressShellConfig(),
+
+    @SerializedName("nodejsConfig")
+    val nodejsConfig: NodeJsShellConfig = NodeJsShellConfig(),
+
     @SerializedName("deepLinkEnabled")
     val deepLinkEnabled: Boolean = false,
 
@@ -433,6 +442,15 @@ data class ShellConfig(
 
     @SerializedName("deepLinkSchemes")
     val deepLinkSchemes: List<String> = emptyList(),
+
+    @SerializedName("phpAppConfig")
+    val phpAppConfig: PhpAppShellConfig = PhpAppShellConfig(),
+
+    @SerializedName("pythonAppConfig")
+    val pythonAppConfig: PythonAppShellConfig = PythonAppShellConfig(),
+
+    @SerializedName("goAppConfig")
+    val goAppConfig: GoAppShellConfig = GoAppShellConfig(),
 
     @SerializedName("multiWebConfig")
     val multiWebConfig: MultiWebShellConfig = MultiWebShellConfig(),
@@ -446,6 +464,8 @@ data class ShellConfig(
     @SerializedName("siteAssetBase")
     val siteAssetBase: String = "",
 
+    @SerializedName("previewMediaPath")
+    val previewMediaPath: String? = null
 )
 
 data class EmbeddedShellPlugin(
@@ -704,11 +724,164 @@ data class GalleryShellItem(
     val thumbnailPath: String? = null
 )
 
+data class MediaShellConfig(
+    @SerializedName("enableAudio")
+    val enableAudio: Boolean = true,
 
+    @SerializedName("loop")
+    val loop: Boolean = true,
 
+    @SerializedName("autoPlay")
+    val autoPlay: Boolean = true,
 
+    @SerializedName("fillScreen")
+    val fillScreen: Boolean = true,
 
+    @SerializedName("landscape")
+    val landscape: Boolean = false,
 
+    @SerializedName("keepScreenOn")
+    val keepScreenOn: Boolean = true,
+
+    @SerializedName("backgroundColor")
+    val backgroundColor: String = "#000000"
+)
+
+data class WordPressShellConfig(
+    @SerializedName("siteTitle")
+    val siteTitle: String = "My Site",
+
+    @SerializedName("adminUser")
+    val adminUser: String = "admin",
+
+    @SerializedName("adminEmail")
+    val adminEmail: String = "",
+
+    @SerializedName("adminPassword")
+    val adminPassword: String = "admin",
+
+    @SerializedName("themeName")
+    val themeName: String = "",
+
+    @SerializedName("plugins")
+    val plugins: List<String> = emptyList(),
+
+    @SerializedName("activePlugins")
+    val activePlugins: List<String> = emptyList(),
+
+    @SerializedName("permalinkStructure")
+    val permalinkStructure: String = "/%postname%/",
+
+    @SerializedName("siteLanguage")
+    val siteLanguage: String = "zh_CN",
+
+    @SerializedName("autoInstall")
+    val autoInstall: Boolean = true,
+
+    @SerializedName("phpPort")
+    val phpPort: Int = 0,
+
+    @SerializedName("portConflictMode")
+    val portConflictMode: String = "AUTO_KILL",
+
+    @SerializedName("customPhpExtensions")
+    val customPhpExtensions: List<com.webtoapp.data.model.CustomPhpExtension> = emptyList()
+)
+
+data class NodeJsShellConfig(
+    @SerializedName("mode")
+    val mode: String = "STATIC",
+
+    @SerializedName("port")
+    val port: Int = 0,
+
+    @SerializedName("portConflictMode")
+    val portConflictMode: String = "AUTO_KILL",
+
+    @SerializedName("entryFile")
+    val entryFile: String = "",
+
+    @SerializedName("envVars")
+    val envVars: Map<String, String> = emptyMap(),
+
+    @SerializedName("customNodeExtensions")
+    val customNodeExtensions: List<com.webtoapp.data.model.CustomNodeExtension> = emptyList()
+)
+
+data class PhpAppShellConfig(
+    @SerializedName("framework")
+    val framework: String = "",
+
+    @SerializedName("documentRoot")
+    val documentRoot: String = "",
+
+    @SerializedName("entryFile")
+    val entryFile: String = "index.php",
+
+    @SerializedName("port")
+    val port: Int = 0,
+
+    @SerializedName("portConflictMode")
+    val portConflictMode: String = "AUTO_KILL",
+
+    @SerializedName("envVars")
+    val envVars: Map<String, String> = emptyMap(),
+
+    @SerializedName("phpExtensions")
+    val phpExtensions: Map<String, Boolean> = emptyMap(),
+
+    @SerializedName("customPhpExtensions")
+    val customPhpExtensions: List<com.webtoapp.data.model.CustomPhpExtension> = emptyList()
+)
+
+data class PythonAppShellConfig(
+    @SerializedName("framework")
+    val framework: String = "",
+
+    @SerializedName("entryFile")
+    val entryFile: String = "app.py",
+
+    @SerializedName("entryModule")
+    val entryModule: String = "",
+
+    @SerializedName("serverType")
+    val serverType: String = "builtin",
+
+    @SerializedName("port")
+    val port: Int = 0,
+
+    @SerializedName("portConflictMode")
+    val portConflictMode: String = "AUTO_KILL",
+
+    @SerializedName("envVars")
+    val envVars: Map<String, String> = emptyMap(),
+
+    @SerializedName("customPythonExtensions")
+    val customPythonExtensions: List<com.webtoapp.data.model.CustomPythonExtension> = emptyList()
+)
+
+data class GoAppShellConfig(
+    @SerializedName("framework")
+    val framework: String = "",
+
+    @SerializedName("binaryName")
+    val binaryName: String = "",
+
+    @SerializedName("targetArch")
+    val targetArch: String = "arm64-v8a",
+
+    @SerializedName("port")
+    val port: Int = 0,
+
+    @SerializedName("portConflictMode")
+    val portConflictMode: String = "AUTO_KILL",
+
+    @SerializedName("staticDir")
+    val staticDir: String = "",
+
+    @SerializedName("envVars")
+    val envVars: Map<String, String> = emptyMap()
+)
 
 data class MultiWebShellConfig(
     @SerializedName("sites")

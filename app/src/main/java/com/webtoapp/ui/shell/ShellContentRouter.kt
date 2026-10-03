@@ -32,6 +32,21 @@ fun ShellContentRouter(
     onActivityFinish: () -> Unit
 ) {
     when {
+        appType == "IMAGE" || appType == "VIDEO" -> {
+
+            // Multi-web embedded sites keep their media under a per-site
+            // prefix (see MultiWebContentEmbedder); host-run preview instead
+            // carries an absolute host path on the site shell config. Null
+            // preserves the legacy hardcoded root asset (standalone export).
+            val isSiteVideo = appType == "VIDEO"
+            MediaContentDisplay(
+                isVideo = isSiteVideo,
+                mediaConfig = config.mediaConfig,
+                mediaPath = config.previewMediaPath?.takeIf { it.isNotBlank() }
+                    ?: "multiweb_sites/${config.siteId}/media_content.${if (isSiteVideo) "mp4" else "png"}"
+                        .takeIf { config.siteId.isNotBlank() }
+            )
+        }
         appType == "GALLERY" -> {
 
             AppLogger.d("ShellScreen", "进入 GALLERY 分支，显示 ShellGalleryPlayer")
@@ -39,6 +54,104 @@ fun ShellContentRouter(
                 galleryConfig = config.galleryConfig,
                 onBack = onActivityFinish,
                 positionKeySuffix = config.siteId.takeIf { it.isNotBlank() }
+            )
+        }
+        appType == "WORDPRESS" -> {
+
+            WordPressShellMode(
+                config = config,
+                webViewRecreationKey = webViewRecreationKey,
+                webViewConfig = webViewConfig,
+                webViewCallbacks = webViewCallbacks,
+                webViewManager = webViewManager,
+                onWebViewCreated = onWebViewCreated,
+                onWebViewRefUpdated = onWebViewRefUpdated,
+                swipeRefreshEnabled = swipeRefreshEnabled,
+                isRefreshing = isRefreshing,
+                onRefresh = onRefresh,
+                onBrowserSurfaceCreated = onBrowserSurfaceCreated
+            )
+        }
+        appType == "NODEJS_APP" -> {
+            val nodejsMode = config.nodejsConfig.mode
+            if (nodejsMode == "STATIC") {
+
+                NodeJsStaticShellMode(
+                    config = config,
+                    webViewRecreationKey = webViewRecreationKey,
+                    webViewConfig = webViewConfig,
+                    webViewCallbacks = webViewCallbacks,
+                    webViewManager = webViewManager,
+                    onWebViewCreated = onWebViewCreated,
+                    onWebViewRefUpdated = onWebViewRefUpdated,
+                    swipeRefreshEnabled = swipeRefreshEnabled,
+                    isRefreshing = isRefreshing,
+                    onRefresh = onRefresh,
+                    onBrowserSurfaceCreated = onBrowserSurfaceCreated
+                )
+            } else {
+
+                NodeJsShellMode(
+                    config = config,
+                    webViewRecreationKey = webViewRecreationKey,
+                    webViewConfig = webViewConfig,
+                    webViewCallbacks = webViewCallbacks,
+                    webViewManager = webViewManager,
+                    onWebViewCreated = onWebViewCreated,
+                onWebViewRefUpdated = onWebViewRefUpdated,
+                    swipeRefreshEnabled = swipeRefreshEnabled,
+                    isRefreshing = isRefreshing,
+                    onRefresh = onRefresh,
+                    onBrowserSurfaceCreated = onBrowserSurfaceCreated
+                )
+            }
+        }
+        appType == "PHP_APP" -> {
+            PhpAppShellMode(
+                config = config,
+                webViewRecreationKey = webViewRecreationKey,
+                webViewConfig = webViewConfig,
+                webViewCallbacks = webViewCallbacks,
+                webViewManager = webViewManager,
+                onWebViewCreated = onWebViewCreated,
+                onWebViewRefUpdated = onWebViewRefUpdated,
+                swipeRefreshEnabled = swipeRefreshEnabled,
+                isRefreshing = isRefreshing,
+                onRefresh = onRefresh,
+                onBrowserSurfaceCreated = onBrowserSurfaceCreated
+            )
+        }
+        appType == "PYTHON_APP" -> {
+            AppLogger.i("ShellScreen", "进入 PYTHON_APP 分支，启动 PythonAppShellMode")
+            AppLogger.i("ShellScreen", "pythonAppConfig: framework=${config.pythonAppConfig.framework}, entry=${config.pythonAppConfig.entryFile}, module=${config.pythonAppConfig.entryModule}, server=${config.pythonAppConfig.serverType}, port=${config.pythonAppConfig.port}")
+            PythonAppShellMode(
+                config = config,
+                webViewRecreationKey = webViewRecreationKey,
+                webViewConfig = webViewConfig,
+                webViewCallbacks = webViewCallbacks,
+                webViewManager = webViewManager,
+                onWebViewCreated = onWebViewCreated,
+                onWebViewRefUpdated = onWebViewRefUpdated,
+                swipeRefreshEnabled = swipeRefreshEnabled,
+                isRefreshing = isRefreshing,
+                onRefresh = onRefresh,
+                onBrowserSurfaceCreated = onBrowserSurfaceCreated
+            )
+        }
+        appType == "GO_APP" -> {
+            AppLogger.i("ShellScreen", "进入 GO_APP 分支，启动 GoAppShellMode")
+            GoAppShellMode(
+                config = config,
+                webViewRecreationKey = webViewRecreationKey,
+                webViewConfig = webViewConfig,
+                webViewCallbacks = webViewCallbacks,
+                webViewManager = webViewManager,
+                onWebViewCreated = onWebViewCreated,
+                onWebViewRefUpdated = onWebViewRefUpdated,
+                swipeRefreshEnabled = swipeRefreshEnabled,
+                isRefreshing = isRefreshing,
+                onRefresh = onRefresh,
+                onBrowserSurfaceCreated = onBrowserSurfaceCreated
             )
         }
         appType == "MULTI_WEB" -> {

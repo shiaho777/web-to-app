@@ -150,7 +150,7 @@ class MainViewModel(
         viewModelScope.launch {
             try {
                 // Fetch the full WebApp before deleting the DB row so we can resolve the project
-                // directory and clean it up (otherwise the project files are orphaned).
+                // directory and clean it up (otherwise wordpress_projects/<id> etc. are orphaned).
                 val webApp = repository.getWebApp(id)
                 repository.deleteWebAppById(id)
                 withContext(Dispatchers.IO) {
@@ -490,8 +490,8 @@ class MainViewModel(
                     com.webtoapp.core.script.UserScriptStorage.deleteScriptsForApp(
                         getApplication(), webApp.id
                     )
-                    // Remove the on-disk project directory (e.g. html_projects/<id>, or a legacy
-                    // runtime project dir for old installs) so sources don't linger as orphans.
+                    // Remove the on-disk project directory (e.g. wordpress_projects/<id>) so the
+                    // source files — including the WordPress SQLite DB — don't linger as orphans.
                     com.webtoapp.core.app.ProjectDirCleaner.deleteForApp(getApplication(), webApp)
                 }
                 _uiState.value = UiState.Success(Strings.appDeleted)
@@ -577,6 +577,11 @@ class MainViewModel(
 
             state.appType == AppType.HTML && (state.htmlConfig?.files?.isEmpty() != false) -> {
                 _uiState.value = UiState.Error(Strings.pleaseSelectHtmlFile)
+                false
+            }
+
+            (state.appType == AppType.IMAGE || state.appType == AppType.VIDEO) && state.url.isBlank() -> {
+                _uiState.value = UiState.Error(Strings.mediaFilePathEmpty)
                 false
             }
             else -> true
@@ -717,6 +722,38 @@ class MainViewModel(
                 _uiState.value = UiState.Error(Strings.updateFailed.replaceFirst("%s", e.message ?: ""))
             }
         }
+    }
+
+    fun saveMediaApp(
+        name: String,
+        appType: AppType,
+        mediaUri: Uri?,
+        mediaConfig: MediaConfig?,
+        iconUri: Uri?,
+        themeType: String = "AURORA"
+    ) = createApp("Media", iconUri) { savedIconPath, currentThemeType, categoryId ->
+        val context = getApplication<Application>()
+        val isVideo = appType == AppType.VIDEO
+        val savedMediaPath = mediaUri?.let { uri ->
+            withContext(Dispatchers.IO) { MediaStorage.saveMedia(context, uri, isVideo) }
+        }
+        if (savedMediaPath == null) {
+            _uiState.value = UiState.Error(Strings.failedSaveMediaFile)
+            return@createApp null
+        }
+        WebApp(
+            name = name.ifBlank { if (isVideo) "Video App" else "Image App" },
+            url = savedMediaPath,
+            iconPath = savedIconPath,
+            appType = appType,
+            mediaConfig = mediaConfig?.copy(mediaPath = savedMediaPath),
+            activationEnabled = false,
+            activationCodeList = emptyList(),
+            bgmEnabled = false,
+            bgmConfig = BgmConfig(),
+            themeType = currentThemeType,
+            categoryId = categoryId
+        )
     }
 
     fun saveGalleryApp(
@@ -887,6 +924,159 @@ class MainViewModel(
             bgmConfig = BgmConfig(),
             themeType = currentThemeType,
             categoryId = categoryId
+        )
+    }
+
+    fun saveWordPressApp(
+        name: String,
+        wordpressConfig: WordPressConfig,
+        iconUri: Uri?,
+        themeType: String = "AURORA"
+    ) = createApp("WordPress", iconUri) { savedIconPath, currentThemeType, categoryId ->
+        WebApp(
+            name = name.ifBlank { "WordPress App" },
+            url = "",
+            iconPath = savedIconPath,
+            appType = AppType.WORDPRESS,
+            wordpressConfig = wordpressConfig,
+            activationEnabled = false,
+            activationCodeList = emptyList(),
+            bgmEnabled = false,
+            bgmConfig = BgmConfig(),
+            themeType = currentThemeType,
+            categoryId = categoryId
+        )
+    }
+
+    fun saveNodeJsApp(
+        name: String,
+        nodejsConfig: NodeJsConfig,
+        iconUri: Uri?,
+        themeType: String = "AURORA"
+    ) = createApp("Node.js", iconUri) { savedIconPath, currentThemeType, categoryId ->
+        WebApp(
+            name = name.ifBlank { "Node.js App" },
+            url = "",
+            iconPath = savedIconPath,
+            appType = AppType.NODEJS_APP,
+            nodejsConfig = nodejsConfig,
+            activationEnabled = false,
+            activationCodeList = emptyList(),
+            bgmEnabled = false,
+            bgmConfig = BgmConfig(),
+            themeType = currentThemeType,
+            categoryId = categoryId
+        )
+    }
+
+    fun updateNodeJsApp(
+        appId: Long,
+        name: String,
+        nodejsConfig: NodeJsConfig,
+        iconUri: Uri?,
+        themeType: String = "AURORA"
+    ) = updateApp(appId, "Node.js", iconUri) { existingApp, savedIconPath ->
+        existingApp.copy(
+            name = name.ifBlank { existingApp.name },
+            iconPath = savedIconPath,
+            nodejsConfig = nodejsConfig,
+            updatedAt = System.currentTimeMillis()
+        )
+    }
+
+    fun savePhpApp(
+        name: String,
+        phpAppConfig: PhpAppConfig,
+        iconUri: Uri?,
+        themeType: String = "AURORA"
+    ) = createApp("PHP", iconUri) { savedIconPath, currentThemeType, categoryId ->
+        WebApp(
+            name = name.ifBlank { "PHP App" },
+            url = "",
+            iconPath = savedIconPath,
+            appType = AppType.PHP_APP,
+            phpAppConfig = phpAppConfig,
+            themeType = currentThemeType,
+            categoryId = categoryId
+        )
+    }
+
+    fun savePythonApp(
+        name: String,
+        pythonAppConfig: PythonAppConfig,
+        iconUri: Uri?,
+        themeType: String = "AURORA"
+    ) = createApp("Python", iconUri) { savedIconPath, currentThemeType, categoryId ->
+        WebApp(
+            name = name.ifBlank { "Python App" },
+            url = "",
+            iconPath = savedIconPath,
+            appType = AppType.PYTHON_APP,
+            pythonAppConfig = pythonAppConfig,
+            themeType = currentThemeType,
+            categoryId = categoryId
+        )
+    }
+
+    fun saveGoApp(
+        name: String,
+        goAppConfig: GoAppConfig,
+        iconUri: Uri?,
+        themeType: String = "AURORA"
+    ) = createApp("Go", iconUri) { savedIconPath, currentThemeType, categoryId ->
+        WebApp(
+            name = name.ifBlank { "Go Service" },
+            url = "",
+            iconPath = savedIconPath,
+            appType = AppType.GO_APP,
+            goAppConfig = goAppConfig,
+            themeType = currentThemeType,
+            categoryId = categoryId
+        )
+    }
+
+    fun updatePhpApp(
+        appId: Long,
+        name: String,
+        phpAppConfig: PhpAppConfig,
+        iconUri: Uri?,
+        themeType: String = "AURORA"
+    ) = updateApp(appId, "PHP", iconUri) { existingApp, savedIconPath ->
+        existingApp.copy(
+            name = name.ifBlank { existingApp.name },
+            iconPath = savedIconPath,
+            phpAppConfig = phpAppConfig,
+            updatedAt = System.currentTimeMillis()
+        )
+    }
+
+    fun updatePythonApp(
+        appId: Long,
+        name: String,
+        pythonAppConfig: PythonAppConfig,
+        iconUri: Uri?,
+        themeType: String = "AURORA"
+    ) = updateApp(appId, "Python", iconUri) { existingApp, savedIconPath ->
+        existingApp.copy(
+            name = name.ifBlank { existingApp.name },
+            iconPath = savedIconPath,
+            pythonAppConfig = pythonAppConfig,
+            updatedAt = System.currentTimeMillis()
+        )
+    }
+
+    fun updateGoApp(
+        appId: Long,
+        name: String,
+        goAppConfig: GoAppConfig,
+        iconUri: Uri?,
+        themeType: String = "AURORA"
+    ) = updateApp(appId, "Go", iconUri) { existingApp, savedIconPath ->
+        existingApp.copy(
+            name = name.ifBlank { existingApp.name },
+            iconPath = savedIconPath,
+            goAppConfig = goAppConfig,
+            updatedAt = System.currentTimeMillis()
         )
     }
 
@@ -1063,6 +1253,32 @@ class MainViewModel(
             name = name.ifBlank { existingApp.name },
             iconPath = savedIconPath,
             htmlConfig = htmlConfig,
+            updatedAt = System.currentTimeMillis()
+        )
+    }
+
+    fun updateMediaApp(
+        appId: Long,
+        name: String,
+        appType: AppType,
+        mediaUri: Uri?,
+        mediaConfig: MediaConfig?,
+        iconUri: Uri?,
+        themeType: String = "AURORA"
+    ) = updateApp(appId, "Media", iconUri) { existingApp, savedIconPath ->
+        val context = getApplication<Application>()
+        val isVideo = appType == AppType.VIDEO
+
+        val savedMediaPath = mediaUri?.let { uri ->
+            withContext(Dispatchers.IO) { MediaStorage.saveMedia(context, uri, isVideo) }
+        } ?: existingApp.url
+
+        existingApp.copy(
+            name = name.ifBlank { existingApp.name },
+            url = savedMediaPath,
+            iconPath = savedIconPath,
+            appType = appType,
+            mediaConfig = mediaConfig?.copy(mediaPath = savedMediaPath) ?: existingApp.mediaConfig,
             updatedAt = System.currentTimeMillis()
         )
     }

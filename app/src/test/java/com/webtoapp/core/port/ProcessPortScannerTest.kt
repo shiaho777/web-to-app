@@ -77,7 +77,7 @@ class ProcessPortScannerTest {
 
     @Test
     fun `killProcess stops registered process and releases port allocation`() = runBlocking {
-        val port = PortManager.allocate(PortManager.PortRange.LOCAL_HTTP, "localhttp:test")
+        val port = PortManager.allocate(PortManager.PortRange.NODEJS, "nodejs:test")
         val process = ProcessBuilder("sh", "-c", "sleep 30").start()
         PortManager.registerProcess(port, process)
         assertThat(process.isAliveCompat()).isTrue()
@@ -91,8 +91,8 @@ class ProcessPortScannerTest {
 
     @Test
     fun `killAllProcesses clears all tracked ports and returns killed count`() = runBlocking {
-        val first = PortManager.allocate(PortManager.PortRange.LOCAL_HTTP, "localhttp:a")
-        val second = PortManager.allocate(PortManager.PortRange.LOCAL_HTTP, "localhttp:b")
+        val first = PortManager.allocate(PortManager.PortRange.PHP, "php:a")
+        val second = PortManager.allocate(PortManager.PortRange.PYTHON, "python:b")
         assertThat(first).isGreaterThan(0)
         assertThat(second).isGreaterThan(0)
 

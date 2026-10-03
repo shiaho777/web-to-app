@@ -10,7 +10,7 @@
 
 | 路径 | 角色 |
 | --- | --- |
-| `app/` | 完整构建器宿主:编辑器 UI、导出管线、预览。主应用模块。 |
+| `app/` | 完整构建器宿主:编辑器 UI、导出管线、运行时、预览。主应用模块。 |
 | `shell/` | 运行时模板。通过 `:shell:assembleRelease` + `:app:syncShellTemplateApk` 构建为 `app/src/main/assets/template/webview_shell.apk`。 |
 | `clone-host/` | 宿主侧 APK 克隆 / 身份重塑支持库(编译为 DEX 资源)。 |
 | `modules/` | 模块市场目录(`registry.json` + 各模块文件夹)。 |
@@ -27,13 +27,13 @@
 
 ## 包结构(`app/src/main/java/com/webtoapp`)
 
-- **`core/*`** —— 约 50 个业务/运行时逻辑子包:`apkbuilder`、`shell`、`webview`、`engine`、`extension`、`crypto`、`linux`、`port`、`dns`、`network`、`adblock`、`agent` 等。
+- **`core/*`** —— 约 53 个业务/运行时逻辑子包:`apkbuilder`、`shell`、`webview`、`engine`、`extension`、`crypto`、`nodejs`、`php`、`python`、`golang`、`wordpress`、`linux`、`port`、`dns`、`network`、`adblock`、`agent` 等。
 - **`data/*`** —— 持久化:Room DAO、数据库、类型转换器,以及 `WebApp` 模型 + 嵌套的 `*Config` 类。
 - **`ui/*`** —— Jetpack Compose 界面、组件、设计系统和 shell UI。
 - **`di/`** —— Koin 依赖注入。
 - **`util/`** —— 辅助工具与常量。
 
-原生 C++ 位于 `app/src/main/cpp/`(浏览器内核、性能引擎、系统优化器、静态 exec 加载器)。
+原生 C++ 位于 `app/src/main/cpp/`(加密、完整性、反调试、`node_bridge`、`node_launcher`、`go_exec_loader`)。
 
 ## 接下来读什么
 

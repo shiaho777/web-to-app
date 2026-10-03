@@ -406,6 +406,14 @@ class ConfigRoundTripSentinelTest {
         assertThat(shellGallery.targetUrl).isEqualTo("gallery://content")
         assertThat(shellGallery.appType).isEqualTo("GALLERY")
 
+        val wordpress = baseApp(appType = AppType.WORDPRESS)
+        val shellWp = roundTrip(wordpress)
+        assertThat(shellWp.targetUrl).isEqualTo("wordpress://localhost")
+        assertThat(shellWp.appType).isEqualTo("WORDPRESS")
+
+        val nodejs = baseApp(appType = AppType.NODEJS_APP)
+        val shellNode = roundTrip(nodejs)
+        assertThat(shellNode.targetUrl).isEqualTo("file:///android_asset/nodejs_app/index.html")
     }
 
     @Test

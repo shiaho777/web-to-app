@@ -621,7 +621,7 @@ private fun ExportAndPermissionDrawer(
                         clientCertificateAuthEnabled = webViewConfig.clientCertificateAuthEnabled,
                         onClientCertificateAuthEnabledChange = onClientCertificateAuthEnabledChange,
                         onOpenPermissionConfig = null,
-                        canOverrideTargetSdk = appType.isSupported
+                        canOverrideTargetSdk = !appType.requiresProcessExec
                     )
 
                     WtaSection(
@@ -895,12 +895,53 @@ fun BasicInfoCard(
                             subtitle = "${Strings.entryFile}: $entryFile · ${Strings.totalFilesCount.replace("%d", fileCount.toString())}"
                         )
                     }
+                    AppType.IMAGE, AppType.VIDEO -> {
+
+                        val mediaPath = editState.url
+                        val isVideo = editState.appType == AppType.VIDEO
+                        val fileName = mediaPath.substringAfterLast("/", Strings.unknownFile)
+
+                        BasicInfoSummaryRow(
+                            icon = if (isVideo) Icons.Outlined.Videocam else Icons.Outlined.Image,
+                            title = if (isVideo) Strings.videoApp else Strings.imageApp,
+                            subtitle = fileName
+                        )
+                    }
+                    AppType.WORDPRESS -> {
+
+                        BasicInfoSummaryRow(
+                            icon = Icons.Outlined.Language,
+                            title = Strings.appTypeWordPress,
+                            subtitle = Strings.runtimePhpSqlite
+                        )
+                    }
                     AppType.GALLERY -> {
 
                         BasicInfoSummaryRow(
                             icon = Icons.Outlined.PhotoLibrary,
                             title = Strings.galleryApp,
                             subtitle = Strings.galleryMediaList
+                        )
+                    }
+                    AppType.NODEJS_APP -> {
+
+                        BasicInfoSummaryRow(
+                            icon = Icons.Outlined.Terminal,
+                            title = Strings.appTypeNodeJs,
+                            subtitle = Strings.runtimeNodeJs
+                        )
+                    }
+                    AppType.PHP_APP, AppType.PYTHON_APP, AppType.GO_APP -> {
+                        val (label, desc) = when (editState.appType) {
+                            AppType.PHP_APP -> Strings.appTypePhp to Strings.runtimePhp
+                            AppType.PYTHON_APP -> Strings.appTypePython to Strings.runtimePython
+                            AppType.GO_APP -> Strings.appTypeGo to Strings.runtimeGoBinary
+                            else -> "" to ""
+                        }
+                        BasicInfoSummaryRow(
+                            icon = Icons.Outlined.Terminal,
+                            title = label,
+                            subtitle = desc
                         )
                     }
                     AppType.MULTI_WEB -> {
@@ -928,9 +969,6 @@ fun BasicInfoCard(
                             )
                         )
                     }
-                    // Removed legacy app types decode for backward compatibility but are
-                    // never creatable here — no editor section exists for them.
-                    else -> {}
                 }
             }
         }

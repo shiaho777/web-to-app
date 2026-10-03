@@ -20,7 +20,8 @@ class ReadAppFileTool : Tool {
         - Text files return content with line numbers (offset/limit supported).
         - Image files (png/jpg/gif/webp) are returned as images the model can see (if multimodal).
         - Directories return a recursive file listing.
-        - Only app-data directories are readable (html_projects, frontend_builds, scraped_sites,
+        - Only app-data directories are readable (html_projects, nodejs_projects, php_projects,
+          python_projects, go_projects, wordpress_projects, frontend_builds, scraped_sites,
           sample_projects, app_icons, media_apps, gallery_apps, splash_media, bgm,
           extension_modules, extensions, user_scripts). Sensitive dirs (credentials, encrypted,
           caches) are blocked.
@@ -175,6 +176,11 @@ class ReadAppFileTool : Tool {
         private val WHITELIST = listOf(
             "html_projects/",
             "frontend_builds/",
+            "nodejs_projects/",
+            "php_projects/",
+            "python_projects/",
+            "go_projects/",
+            "wordpress_projects/",
             "scraped_sites/",
             "sample_projects/",
             "app_icons/",

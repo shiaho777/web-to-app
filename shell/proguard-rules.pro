@@ -247,6 +247,13 @@
 # ============================================================
 -dontwarn com.google.android.material.**
 
+# Node.js JNI output bridge (R8 may rename onOutput otherwise)
+-keep class com.webtoapp.core.nodejs.NodeBridge { *; }
+-keep class com.webtoapp.core.nodejs.NodeJniOutputBridge {
+    <init>(...);
+    public void onOutput(java.lang.String, boolean);
+}
+
 # Firebase / FCM
 -keep class com.google.firebase.** { *; }
 -keep class com.google.android.gms.** { *; }

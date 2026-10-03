@@ -670,6 +670,19 @@ object StringsB {
         AppLanguage.KOREAN -> "카테고리 선택"
     }
 
+    val runTime: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "执行时机"
+        AppLanguage.ENGLISH -> "Run Time"
+        AppLanguage.ARABIC -> "وقت التشغيل"
+        AppLanguage.PORTUGUESE -> "Momento de Execução"
+        AppLanguage.SPANISH -> "Momento de Ejecución"
+        AppLanguage.FRENCH -> "Moment d'Exécution"
+        AppLanguage.GERMAN -> "Ausführungszeitpunkt"
+        AppLanguage.RUSSIAN -> "Время выполнения"
+        AppLanguage.JAPANESE -> "実行タイミング"
+        AppLanguage.KOREAN -> "실행 시점"
+    }
+
     val requiredPermissions: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "所需权限"
         AppLanguage.ENGLISH -> "Required Permissions"
@@ -2012,6 +2025,18 @@ object StringsB {
         AppLanguage.KOREAN -> "모두 펼치기"
     }
 
+    val depClearDone: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "已清除"
+        AppLanguage.ENGLISH -> "Cleared"
+        AppLanguage.ARABIC -> "تم المسح"
+        AppLanguage.PORTUGUESE -> "Limpo"
+        AppLanguage.SPANISH -> "Borrado"
+        AppLanguage.FRENCH -> "Effacé"
+        AppLanguage.GERMAN -> "Geleert"
+        AppLanguage.RUSSIAN -> "Очищено"
+        AppLanguage.JAPANESE -> "クリア済み"
+        AppLanguage.KOREAN -> "삭제됨"
+    }
 
     val maximum: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "最高"
@@ -4789,6 +4814,55 @@ object StringsB {
         AppLanguage.JAPANESE -> "ページ完全読み込み後に実行、後処理とパフォーマンス最適化に適合"
         AppLanguage.KOREAN -> "페이지 완전 로드 후 실행, 후처리 및 성능 최적화에 적합"
     }
+    val runTimeContextMenu: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "右键菜单"
+        AppLanguage.ENGLISH -> "Context Menu"
+        AppLanguage.ARABIC -> "قائمة السياق"
+        AppLanguage.PORTUGUESE -> "Menu de Contexto"
+        AppLanguage.SPANISH -> "Menú Contextual"
+        AppLanguage.FRENCH -> "Menu Contextuel"
+        AppLanguage.GERMAN -> "Kontextmenü"
+        AppLanguage.RUSSIAN -> "Контекстное меню"
+        AppLanguage.JAPANESE -> "コンテキストメニュー"
+        AppLanguage.KOREAN -> "컨텍스트 메뉴"
+    }
+    val runTimeContextMenuDesc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "右键菜单打开时执行"
+        AppLanguage.ENGLISH -> "Execute when context menu opens"
+        AppLanguage.ARABIC -> "التنفيذ عند فتح قائمة السياق"
+        AppLanguage.PORTUGUESE -> "Executar quando o menu de contexto abre"
+        AppLanguage.SPANISH -> "Ejecutar cuando se abre el menú contextual"
+        AppLanguage.FRENCH -> "Exécuter à l'ouverture du menu contextuel"
+        AppLanguage.GERMAN -> "Ausführen, wenn das Kontextmenü öffnet"
+        AppLanguage.RUSSIAN -> "Выполнять при открытии контекстного меню"
+        AppLanguage.JAPANESE -> "コンテキストメニュー表示時に実行"
+        AppLanguage.KOREAN -> "컨텍스트 메뉴가 열릴 때 실행"
+    }
+    val runTimeBeforeUnload: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "页面关闭前"
+        AppLanguage.ENGLISH -> "Before Unload"
+        AppLanguage.ARABIC -> "قبل إغلاق الصفحة"
+        AppLanguage.PORTUGUESE -> "Antes de Descarregar"
+        AppLanguage.SPANISH -> "Antes de Descargar"
+        AppLanguage.FRENCH -> "Avant Déchargement"
+        AppLanguage.GERMAN -> "Vor dem Entladen"
+        AppLanguage.RUSSIAN -> "Перед выгрузкой"
+        AppLanguage.JAPANESE -> "アンロード前"
+        AppLanguage.KOREAN -> "언로드 전"
+    }
+    val runTimeBeforeUnloadDesc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "页面即将关闭时执行，适合保存数据"
+        AppLanguage.ENGLISH -> "Execute before page closes, suitable for saving data"
+        AppLanguage.ARABIC -> "التنفيذ قبل إغلاق الصفحة، مناسب لحفظ البيانات"
+        AppLanguage.PORTUGUESE -> "Executar antes da página fechar, adequado para salvar dados"
+        AppLanguage.SPANISH -> "Ejecutar antes de que cierre la página, adecuado para guardar datos"
+        AppLanguage.FRENCH -> "Exécuter avant la fermeture, adapté à la sauvegarde de données"
+        AppLanguage.GERMAN -> "Ausführen vor dem Schließen, zum Speichern von Daten"
+        AppLanguage.RUSSIAN -> "Выполнять перед закрытием страницы, подходит для сохранения данных"
+        AppLanguage.JAPANESE -> "ページ終了前に実行、データ保存に適合"
+        AppLanguage.KOREAN -> "페이지 닫기 전 실행, 데이터 저장에 적합"
+    }
+
     val colorRed: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "红色"
         AppLanguage.ENGLISH -> "Red"
@@ -6242,6 +6316,54 @@ object StringsB {
         AppLanguage.RUSSIAN -> "Vue"
         AppLanguage.JAPANESE -> "Vue"
         AppLanguage.KOREAN -> "Vue"
+    }
+    val agentKindNodeJs: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Node.js"
+        AppLanguage.ENGLISH -> "Node.js"
+        AppLanguage.ARABIC -> "Node.js"
+        AppLanguage.PORTUGUESE -> "Node.js"
+        AppLanguage.SPANISH -> "Node.js"
+        AppLanguage.FRENCH -> "Node.js"
+        AppLanguage.GERMAN -> "Node.js"
+        AppLanguage.RUSSIAN -> "Node.js"
+        AppLanguage.JAPANESE -> "Node.js"
+        AppLanguage.KOREAN -> "Node.js"
+    }
+    val agentKindPhp: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "PHP"
+        AppLanguage.ENGLISH -> "PHP"
+        AppLanguage.ARABIC -> "PHP"
+        AppLanguage.PORTUGUESE -> "PHP"
+        AppLanguage.SPANISH -> "PHP"
+        AppLanguage.FRENCH -> "PHP"
+        AppLanguage.GERMAN -> "PHP"
+        AppLanguage.RUSSIAN -> "PHP"
+        AppLanguage.JAPANESE -> "PHP"
+        AppLanguage.KOREAN -> "PHP"
+    }
+    val agentKindPython: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Python"
+        AppLanguage.ENGLISH -> "Python"
+        AppLanguage.ARABIC -> "Python"
+        AppLanguage.PORTUGUESE -> "Python"
+        AppLanguage.SPANISH -> "Python"
+        AppLanguage.FRENCH -> "Python"
+        AppLanguage.GERMAN -> "Python"
+        AppLanguage.RUSSIAN -> "Python"
+        AppLanguage.JAPANESE -> "Python"
+        AppLanguage.KOREAN -> "Python"
+    }
+    val agentKindGo: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Go"
+        AppLanguage.ENGLISH -> "Go"
+        AppLanguage.ARABIC -> "Go"
+        AppLanguage.PORTUGUESE -> "Go"
+        AppLanguage.SPANISH -> "Go"
+        AppLanguage.FRENCH -> "Go"
+        AppLanguage.GERMAN -> "Go"
+        AppLanguage.RUSSIAN -> "Go"
+        AppLanguage.JAPANESE -> "Go"
+        AppLanguage.KOREAN -> "Go"
     }
     val agentKindMultiWeb: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "多站点"

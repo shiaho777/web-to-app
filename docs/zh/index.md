@@ -4,7 +4,7 @@ layout: home
 hero:
   name: WebToApp
   text: 在手机上构建 Android APK
-  tagline: 一个远超"网址转 App"的设备端 APK 工坊 —— 打包整站与网页项目、搭载加固网络栈、导出 Play 级安装包,全程无需电脑。
+  tagline: 一个远超"网址转 App"的设备端 APK 工坊 —— fork+exec 真实服务运行时、搭载加固网络栈、导出 Play 级安装包,全程无需电脑。
   image:
     src: /logo.png
     alt: WebToApp
@@ -21,8 +21,8 @@ hero:
 
 features:
   - icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 4v16"/><path d="M4 9h5"/></svg>
-    title: 整站打包
-    details: 本地 HTML 构建、前端产物、抓取的离线包、多站点枢纽与媒体画廊 —— 全部打进 APK,在应用内本地提供。
+    title: 真实的设备端运行时
+    details: Node.js、PHP、Python、Go、WordPress 作为原生二进制直接从应用存储 fork+exec —— 如同 Termux,但打包成可安装的 APK。
   - icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.2 7.6-8 9-4.8-1.4-8-4.5-8-9V6z"/></svg>
     title: 加固网络栈
     details: DNS-over-HTTPS、带本地 MITM 桥的 TLS 指纹伪造、加密客户端 Hello(ECH)、按应用代理,以及针对受限 SPA 的 CORS 绕过。
@@ -48,11 +48,11 @@ features:
 
 1. **选择类型**
 
-   从 [6 种应用类型](/zh/guide/app-types/)里选 —— 普通的 [Web](/zh/guide/app-types/web) 封装、[HTML](/zh/guide/app-types/html) 或 [Frontend](/zh/guide/app-types/frontend) 构建、[离线包](/zh/guide/app-types/offline-pack) 抓取、[多站点](/zh/guide/app-types/multi-web)枢纽,或 [画廊](/zh/guide/app-types/gallery)。
+   从 [12 种应用类型](/zh/guide/app-types/)里选 —— 普通的 [Web](/zh/guide/app-types/web) 封装、[HTML](/zh/guide/app-types/html) 或 [Frontend](/zh/guide/app-types/frontend) 构建,或是设备端运行的 [Node.js](/zh/guide/app-types/nodejs)、[PHP](/zh/guide/app-types/php)、[Python](/zh/guide/app-types/python)、[Go](/zh/guide/app-types/go)、[WordPress](/zh/guide/app-types/wordpress) 服务器。
 
 2. **填写基本信息**
 
-   名称、URL 或项目、图标 —— 保存即可。所有类型共享同一套[配置卡片](/zh/guide/config/):网络、隐私、外观。
+   名称、URL 或项目、图标 —— 保存即可。所有类型共享同一套[配置卡片](/zh/guide/config/):网络、隐私、外观、运行时。
 
 3. **构建并分享**
 
@@ -60,7 +60,7 @@ features:
 
 </div>
 
-## 六种类型,一个构建器
+## 十二种类型,一个构建器
 
 <div class="wta-types">
 
@@ -90,9 +90,25 @@ URL 封装、多标签页枢纽、门户与链接流。
 
 <div class="wta-tile">
 
-[**画廊**](/zh/guide/app-types/gallery)
+[**服务端运行时**](/zh/guide/app-types/nodejs)
 
-相册、作品集与离线媒体查看器,打包成独立应用。
+fork+exec Node.js、PHP、Python、Go 原生二进制,在本地端口提供服务。
+
+</div>
+
+<div class="wta-tile">
+
+[**WordPress**](/zh/guide/app-types/wordpress)
+
+完整的便携 WordPress 站点,PHP 与 SQLite 都跑在设备上。
+
+</div>
+
+<div class="wta-tile">
+
+[**媒体与相册**](/zh/guide/app-types/media)
+
+图片和视频播放器、相册集、作品集,打包成独立应用。
 
 </div>
 
@@ -106,7 +122,7 @@ URL 封装、多标签页枢纽、门户与链接流。
 
 [**Agent**](/zh/guide/more-features/agent)
 
-内置数十个工具的调用式助手,可以构建、编辑、操作整个应用。
+内置最多 57 个工具的调用式助手,可以构建、编辑、操作整个应用。
 
 </div>
 
@@ -128,9 +144,17 @@ URL 封装、多标签页枢纽、门户与链接流。
 
 <div class="wta-tile">
 
+[**Linux 环境**](/zh/guide/more-features/linux-environment)
+
+Termux 风格的设备端环境,带有构建和运行项目所需的真实工具链。
+
+</div>
+
+<div class="wta-tile">
+
 [**端口管理**](/zh/guide/more-features/port-manager)
 
-本地站点的端口协调 —— 冲突策略与停止时的干净释放。
+冲突策略、真实停止处理器,以及所有本地服务运行时的 DNS 桥接。
 
 </div>
 
@@ -148,13 +172,13 @@ URL 封装、多标签页枢纽、门户与链接流。
 
 <div class="wta-stats">
 
-<div class="wta-stat"><b>6</b><span>种应用类型</span></div>
+<div class="wta-stat"><b>12</b><span>种应用类型</span></div>
+
+<div class="wta-stat"><b>57</b><span>个 Agent 工具(上限)</span></div>
 
 <div class="wta-stat"><b>10</b><span>种界面语言</span></div>
 
 <div class="wta-stat"><b>20</b><span>个去广告列表</span></div>
-
-<div class="wta-stat"><b>100%</b><span>设备端构建</span></div>
 
 </div>
 

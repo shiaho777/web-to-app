@@ -14,6 +14,7 @@ import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import com.webtoapp.core.host.AdvancedAppTypes
 import com.webtoapp.core.logging.AppLogger
 import android.view.KeyEvent
 import android.view.MotionEvent
@@ -91,6 +92,11 @@ import com.webtoapp.ui.shell.ConsolePanel
 import com.webtoapp.ui.shell.ShellWebViewNavigation
 import com.webtoapp.ui.shell.GeolocationPermissionsSingleton
 import java.io.File
+import com.webtoapp.core.wordpress.WordPressDependencyManager
+import com.webtoapp.core.wordpress.WordPressPhpRuntime
+import com.webtoapp.core.wordpress.WordPressManager
+import com.webtoapp.data.model.WordPressConfig
+import com.webtoapp.core.php.PhpAppRuntime
 import com.webtoapp.core.stats.AppUsageTracker
 import androidx.compose.ui.text.style.TextOverflow
 import com.webtoapp.ui.components.announcement.toUiTemplate
@@ -1529,6 +1535,31 @@ fun WebViewScreen(
     var statusBarBackgroundImageDark by remember { mutableStateOf<String?>(null) }
     var statusBarBackgroundAlphaDark by remember { mutableFloatStateOf(1.0f) }
 
+    var wordPressPreviewState by remember { mutableStateOf<WordPressPreviewState>(WordPressPreviewState.Idle) }
+    val phpRuntime = remember(webApp?.id) { WordPressPhpRuntime(context) }
+    val wpDownloadState by WordPressDependencyManager.downloadState.collectAsStateWithLifecycle()
+    var wpRetryTrigger by remember { mutableIntStateOf(0) }
+
+    var phpAppPreviewState by remember { mutableStateOf<PhpAppPreviewState>(PhpAppPreviewState.Idle) }
+    val phpAppRuntime = remember(webApp?.id) { PhpAppRuntime(context) }
+    val phpAppDownloadState by WordPressDependencyManager.downloadState.collectAsStateWithLifecycle()
+    var phpAppRetryTrigger by remember { mutableIntStateOf(0) }
+
+    var pythonAppPreviewState by remember { mutableStateOf<PythonAppPreviewState>(PythonAppPreviewState.Idle) }
+    val pythonRuntime = remember(webApp?.id) { com.webtoapp.core.python.PythonRuntime(context) }
+    val pythonHttpServer = remember(webApp?.id) { com.webtoapp.core.webview.LocalHttpServer(context) }
+    var pythonAppRetryTrigger by remember { mutableIntStateOf(0) }
+    var dismissedPythonFallbackBannerUrl by remember { mutableStateOf<String?>(null) }
+
+    var nodeJsAppPreviewState by remember { mutableStateOf<NodeJsAppPreviewState>(NodeJsAppPreviewState.Idle) }
+    val nodeRuntime = remember(webApp?.id) { com.webtoapp.core.nodejs.NodeRuntime(context) }
+    val nodeHttpServer = remember(webApp?.id) { com.webtoapp.core.webview.LocalHttpServer(context) }
+    var nodeJsAppRetryTrigger by remember { mutableIntStateOf(0) }
+
+    var goAppPreviewState by remember { mutableStateOf<GoAppPreviewState>(GoAppPreviewState.Idle) }
+    val goRuntime = remember(webApp?.id) { com.webtoapp.core.golang.GoRuntime(context) }
+    val goHttpServer = remember(webApp?.id) { com.webtoapp.core.webview.LocalHttpServer(context) }
+    var goAppRetryTrigger by remember { mutableIntStateOf(0) }
 
     var autoRefreshController by remember { mutableStateOf<com.webtoapp.core.webview.AutoRefreshController?>(null) }
     val autoRefreshRemaining = autoRefreshController?.remainingSeconds?.collectAsStateWithLifecycle()?.value ?: 0
@@ -1671,6 +1702,11 @@ fun WebViewScreen(
         }
 
         if (previewApp != null) {
+            if (!AdvancedAppTypes.isUsable(context, previewApp.appType)) {
+                Toast.makeText(context, Strings.advancedFeaturesOff, Toast.LENGTH_SHORT).show()
+                activity.finish()
+                return@LaunchedEffect
+            }
             webApp = previewApp
             isActivated = true
             isActivationChecked = true
@@ -1729,6 +1765,11 @@ fun WebViewScreen(
 
         if (appId > 0) {
             val app = repository.getWebApp(appId)
+            if (app != null && !AdvancedAppTypes.isUsable(context, app.appType)) {
+                Toast.makeText(context, Strings.advancedFeaturesOff, Toast.LENGTH_SHORT).show()
+                activity.finish()
+                return@LaunchedEffect
+            }
             webApp = app
             if (app != null) {
 
@@ -1966,6 +2007,739 @@ fun WebViewScreen(
         }
     }
 
+    LaunchedEffect(webApp, isActivated, isActivationChecked, wpRetryTrigger) {
+        val app = webApp ?: return@LaunchedEffect
+        if (app.appType != com.webtoapp.data.model.AppType.WORDPRESS) return@LaunchedEffect
+        if (!isActivated || !isActivationChecked) return@LaunchedEffect
+
+        wordPressPreviewState = WordPressPreviewState.CheckingDeps
+
+        if (!WordPressDependencyManager.isAllReady(context)) {
+            wordPressPreviewState = WordPressPreviewState.Downloading
+            val success = WordPressDependencyManager.downloadAllDependencies(context)
+            if (!success) {
+                wordPressPreviewState = WordPressPreviewState.Error(Strings.wpDownloadFailed)
+                return@LaunchedEffect
+            }
+        }
+
+        var projectId = app.wordpressConfig?.projectId ?: ""
+        val projectDir = if (projectId.isNotEmpty()) {
+            WordPressManager.getProjectDir(context, projectId)
+        } else null
+
+        val needsCreate = projectDir == null ||
+            !projectDir.exists() ||
+            !projectDir.isDirectory ||
+            !File(projectDir, "wp-includes/version.php").exists()
+
+        if (needsCreate) {
+            wordPressPreviewState = WordPressPreviewState.CreatingProject
+            val newId = WordPressManager.createProject(
+                context = context,
+                siteTitle = app.wordpressConfig?.siteTitle ?: "My Site",
+                adminUser = app.wordpressConfig?.adminUser ?: "admin",
+                adminEmail = app.wordpressConfig?.adminEmail ?: ""
+            )
+            if (newId == null) {
+                wordPressPreviewState = WordPressPreviewState.Error(Strings.wpProjectCreateFailed)
+                return@LaunchedEffect
+            }
+            projectId = newId
+
+            val updatedConfig = (app.wordpressConfig ?: WordPressConfig()).copy(projectId = newId)
+            repository.updateWebApp(app.copy(wordpressConfig = updatedConfig))
+            webApp = app.copy(wordpressConfig = updatedConfig)
+        }
+
+        wordPressPreviewState = WordPressPreviewState.StartingServer
+        val wpDir = WordPressManager.getProjectDir(context, projectId)
+
+        if (!wpDir.exists() || !wpDir.isDirectory) {
+            wordPressPreviewState = WordPressPreviewState.Error(
+                Strings.wpProjectDirMissing(wpDir.absolutePath)
+            )
+            return@LaunchedEffect
+        }
+        WordPressManager.ensureDbPhpExists(context, wpDir)
+        val port = phpRuntime.startServer(wpDir.absolutePath, app.wordpressConfig?.phpPort ?: 0, app.wordpressConfig?.portConflictMode ?: com.webtoapp.data.model.PortConflictMode.AUTO_KILL)
+
+        if (port > 0) {
+            val url = "http://127.0.0.1:$port/"
+
+            WordPressManager.autoInstallIfNeeded(
+                baseUrl = "http://127.0.0.1:$port",
+                siteTitle = app.wordpressConfig?.siteTitle?.takeIf { it.isNotBlank() } ?: "My Site",
+                adminUser = app.wordpressConfig?.adminUser?.takeIf { it.isNotBlank() } ?: "admin",
+                adminPassword = app.wordpressConfig?.adminPassword?.takeIf { it.isNotBlank() } ?: "admin",
+                adminEmail = app.wordpressConfig?.adminEmail?.takeIf { it.isNotBlank() } ?: "admin@localhost.local",
+                siteLanguage = app.wordpressConfig?.siteLanguage?.takeIf { it.isNotBlank() } ?: "en_US"
+            )
+            WordPressManager.applyRuntimeConfig(
+                context = context,
+                phpBinary = phpRuntime.getPhpBinaryPath(),
+                projectDir = wpDir,
+                siteTitle = app.wordpressConfig?.siteTitle?.takeIf { it.isNotBlank() } ?: "My Site",
+                permalinkStructure = app.wordpressConfig?.permalinkStructure ?: "/%postname%/",
+                siteLanguage = app.wordpressConfig?.siteLanguage?.takeIf { it.isNotBlank() } ?: "en_US",
+                themeName = app.wordpressConfig?.themeName ?: "",
+                activePlugins = app.wordpressConfig?.activePlugins ?: emptyList()
+            )
+            wordPressPreviewState = WordPressPreviewState.Ready(url)
+            delay(200)
+            loadInBrowser(url)
+        } else {
+            wordPressPreviewState = WordPressPreviewState.Error(Strings.wpServerError)
+        }
+    }
+
+    DisposableEffect(phpRuntime) {
+        onDispose {
+            phpRuntime.stopServer()
+        }
+    }
+
+    LaunchedEffect(webApp, isActivated, isActivationChecked, phpAppRetryTrigger) {
+        val app = webApp ?: return@LaunchedEffect
+        if (app.appType != com.webtoapp.data.model.AppType.PHP_APP) return@LaunchedEffect
+        if (!isActivated || !isActivationChecked) return@LaunchedEffect
+
+        AppLogger.i("PhpAppPreview", "Starting PHP app preview flow, appId=$appId, phpAppConfig=${app.phpAppConfig}")
+
+        val config = app.phpAppConfig
+        if (config == null) {
+            AppLogger.e("PhpAppPreview", "phpAppConfig is null, can't start preview")
+            phpAppPreviewState = PhpAppPreviewState.Error(Strings.phpAppProjectNotFound)
+            return@LaunchedEffect
+        }
+
+        phpAppPreviewState = PhpAppPreviewState.CheckingDeps
+        AppLogger.i("PhpAppPreview", "Checking PHP runtime, isPhpReady=${WordPressDependencyManager.isPhpReady(context)}")
+
+        if (!WordPressDependencyManager.isPhpReady(context)) {
+            phpAppPreviewState = PhpAppPreviewState.Downloading
+            val success = WordPressDependencyManager.downloadPhpDependency(context)
+            if (!success) {
+                phpAppPreviewState = PhpAppPreviewState.Error(Strings.phpAppDownloadFailed)
+                return@LaunchedEffect
+            }
+        }
+
+        val projectId = config.projectId
+        AppLogger.i("PhpAppPreview", "projectId='$projectId', docRoot='${config.documentRoot}', entry='${config.entryFile}'")
+        if (projectId.isBlank()) {
+            AppLogger.e("PhpAppPreview", "projectId is empty")
+            phpAppPreviewState = PhpAppPreviewState.Error(Strings.phpAppProjectNotFound)
+            return@LaunchedEffect
+        }
+        val projectDir = phpAppRuntime.getProjectDir(projectId)
+        AppLogger.i("PhpAppPreview", "Project directory: ${projectDir.absolutePath}, exists=${projectDir.exists()}")
+        if (!projectDir.exists()) {
+            phpAppPreviewState = PhpAppPreviewState.Error(Strings.phpAppProjectNotFound)
+            return@LaunchedEffect
+        }
+
+        projectDir.listFiles()?.take(20)?.forEach { file ->
+            AppLogger.d("PhpAppPreview", "  - ${file.name} (${if (file.isDirectory) "dir" else "${file.length()} bytes"})")
+        }
+
+        var actualDocRoot = config.documentRoot
+        var actualEntryFile = config.entryFile
+
+        var actualProjectDir = projectDir
+        val docRootDir = if (actualDocRoot.isNotBlank()) File(projectDir, actualDocRoot) else projectDir
+        if (!File(docRootDir, actualEntryFile).exists()) {
+            AppLogger.i("PhpAppPreview", "Entry file missing, attempting auto-detection...")
+
+            var detectedFramework = phpAppRuntime.detectFramework(projectDir)
+            var detectedDocRoot = phpAppRuntime.detectDocumentRoot(projectDir, detectedFramework)
+            var detectedEntry = phpAppRuntime.detectEntryFile(projectDir, detectedDocRoot)
+
+            val detectedDocRootDir = if (detectedDocRoot.isNotBlank()) File(projectDir, detectedDocRoot) else projectDir
+            if (!File(detectedDocRootDir, detectedEntry).exists()) {
+                AppLogger.i("PhpAppPreview", "No entry file at root, scanning subdirectories...")
+                val phpSubDir = projectDir.listFiles()
+                    ?.filter { it.isDirectory && it.name != "__MACOSX" && !it.name.startsWith("._") }
+                    ?.firstOrNull { sub -> sub.listFiles()?.any { it.isFile && it.extension == "php" } == true }
+
+                if (phpSubDir != null) {
+                    AppLogger.i("PhpAppPreview", "Found PHP subdirectory: ${phpSubDir.name}")
+                    actualProjectDir = phpSubDir
+                    detectedFramework = phpAppRuntime.detectFramework(phpSubDir)
+                    detectedDocRoot = phpAppRuntime.detectDocumentRoot(phpSubDir, detectedFramework)
+                    detectedEntry = phpAppRuntime.detectEntryFile(phpSubDir, detectedDocRoot)
+                }
+            }
+
+            AppLogger.i("PhpAppPreview", "Auto-detected: framework=$detectedFramework, docRoot='$detectedDocRoot', entry='$detectedEntry', projectDir=${actualProjectDir.name}")
+            actualDocRoot = detectedDocRoot
+            actualEntryFile = detectedEntry
+        }
+
+        phpAppPreviewState = PhpAppPreviewState.StartingServer
+        AppLogger.i("PhpAppPreview", "Starting PHP server: docRoot='$actualDocRoot', entry='$actualEntryFile'")
+        val port = phpAppRuntime.startServer(
+            projectDir = actualProjectDir.absolutePath,
+            documentRoot = actualDocRoot,
+            entryFile = actualEntryFile,
+            port = config.phpPort,
+            portConflictMode = config.portConflictMode,
+            envVars = config.envVars,
+            phpExtensions = config.phpExtensions
+        )
+
+        if (port > 0) {
+            val url = "http://127.0.0.1:$port/"
+            AppLogger.i("PhpAppPreview", "PHP server started: $url")
+            phpAppPreviewState = PhpAppPreviewState.Ready(url)
+            delay(200)
+            loadInBrowser(url)
+        } else {
+            AppLogger.e("PhpAppPreview", "PHP server failed to start, port=$port, serverState=${phpAppRuntime.serverState.value}")
+            val errorDetail = when (val state = phpAppRuntime.serverState.value) {
+                is PhpAppRuntime.ServerState.Error -> state.message
+                else -> Strings.phpAppServerError
+            }
+            phpAppPreviewState = PhpAppPreviewState.Error(errorDetail)
+        }
+    }
+
+    DisposableEffect(phpAppRuntime) {
+        onDispose {
+            phpAppRuntime.stopServer()
+        }
+    }
+
+    LaunchedEffect(webApp, isActivated, isActivationChecked, pythonAppRetryTrigger) {
+        val app = webApp ?: return@LaunchedEffect
+        if (app.appType != com.webtoapp.data.model.AppType.PYTHON_APP) return@LaunchedEffect
+        if (!isActivated || !isActivationChecked) return@LaunchedEffect
+
+        val config = app.pythonAppConfig
+        if (config == null) {
+            AppLogger.e("PythonAppPreview", "pythonAppConfig is null")
+            pythonAppPreviewState = PythonAppPreviewState.Error(Strings.pyProjectNotFound)
+            return@LaunchedEffect
+        }
+
+        AppLogger.i("PythonAppPreview", "Starting Python app preview flow, appId=$appId, config=$config")
+        pythonAppPreviewState = PythonAppPreviewState.Starting
+
+        val projectId = config.projectId
+        AppLogger.i("PythonAppPreview", "projectId='$projectId', framework='${config.framework}', entry='${config.entryFile}'")
+        if (projectId.isBlank()) {
+            AppLogger.e("PythonAppPreview", "projectId is empty")
+            pythonAppPreviewState = PythonAppPreviewState.Error(Strings.pyProjectNotFound)
+            return@LaunchedEffect
+        }
+
+        config.sourceProjectPath
+            .takeIf { it.isNotBlank() }
+            ?.let { srcPath ->
+                val sampleRoot = File(context.filesDir, "sample_projects")
+                val srcFile = File(srcPath)
+                if (srcFile.absolutePath.startsWith(sampleRoot.absolutePath + File.separator)) {
+                    val sampleId = srcFile.name
+                    try {
+                        com.webtoapp.core.sample.SampleProjectExtractor
+                            .extractSampleProject(context, sampleId)
+                        AppLogger.d(
+                            "PythonAppPreview",
+                            "Re-extracted sample $sampleId before sync (cache key checked)"
+                        )
+                    } catch (e: Exception) {
+                        AppLogger.w("PythonAppPreview", "Sample re-extract failed for $sampleId", e)
+                    }
+                }
+            }
+        config.sourceProjectPath
+            .takeIf { it.isNotBlank() }
+            ?.let(pythonRuntime::resolveSourceProjectDir)
+            ?.takeIf { it.absolutePath != pythonRuntime.getProjectDir(projectId).absolutePath }
+            ?.let { sourceDir ->
+                try {
+                    pythonRuntime.syncProjectFromSource(projectId, sourceDir)
+                    AppLogger.i("PythonAppPreview", "Synced Python project from source: ${sourceDir.absolutePath}")
+                } catch (e: Exception) {
+                    AppLogger.w("PythonAppPreview", "Sync source failed: ${sourceDir.absolutePath}", e)
+                }
+            }
+
+        val projectDir = pythonRuntime.getProjectDir(projectId)
+        AppLogger.i("PythonAppPreview", "Project directory: ${projectDir.absolutePath}, exists=${projectDir.exists()}")
+        if (!projectDir.exists()) {
+            pythonAppPreviewState = PythonAppPreviewState.Error(Strings.pyProjectNotFound)
+            return@LaunchedEffect
+        }
+
+        projectDir.listFiles()?.take(20)?.forEach { file ->
+            AppLogger.d("PythonAppPreview", "  - ${file.name} (${if (file.isDirectory) "dir" else "${file.length()} bytes"})")
+        }
+
+        var actualProjectDir = projectDir
+        var actualEntryFile = config.entryFile.ifBlank { "app.py" }
+        var actualFramework = config.framework.ifBlank { "raw" }
+
+        if (!File(actualProjectDir, actualEntryFile).exists()) {
+            AppLogger.i("PythonAppPreview", "Entry file missing: $actualEntryFile, attempting auto-detection...")
+
+            val detectedFramework = pythonRuntime.detectFramework(projectDir)
+            val detectedEntry = pythonRuntime.detectEntryFile(projectDir, detectedFramework)
+
+            if (File(projectDir, detectedEntry).exists()) {
+                AppLogger.i("PythonAppPreview", "Auto-detected: framework=$detectedFramework, entry=$detectedEntry")
+                actualFramework = detectedFramework
+                actualEntryFile = detectedEntry
+            } else {
+
+                AppLogger.i("PythonAppPreview", "No entry file at root, scanning subdirectories...")
+                val pySubDir = projectDir.listFiles()
+                    ?.filter { it.isDirectory && it.name != "__MACOSX" && it.name != "__pycache__" && !it.name.startsWith("._") && it.name != "venv" && it.name != ".venv" && it.name != ".git" }
+                    ?.firstOrNull { sub ->
+                        sub.listFiles()?.any { it.isFile && it.extension == "py" } == true
+                    }
+
+                if (pySubDir != null) {
+                    AppLogger.i("PythonAppPreview", "Found Python subdirectory: ${pySubDir.name}")
+                    actualProjectDir = pySubDir
+                    actualFramework = pythonRuntime.detectFramework(pySubDir)
+                    actualEntryFile = pythonRuntime.detectEntryFile(pySubDir, actualFramework)
+                    AppLogger.i("PythonAppPreview", "Subdirectory detection: framework=$actualFramework, entry=$actualEntryFile")
+                }
+            }
+        }
+
+        AppLogger.i("PythonAppPreview", "Final configuration: projectDir=${actualProjectDir.absolutePath}, framework=$actualFramework, entry=$actualEntryFile")
+
+        try {
+            val entryFileExists = File(actualProjectDir, actualEntryFile).exists()
+
+            if (pythonRuntime.isPythonAvailable() && entryFileExists) {
+
+                AppLogger.i("PythonAppPreview", "Python runtime available, starting backend server")
+                pythonAppPreviewState = PythonAppPreviewState.StartingServer
+
+                val serverPort = pythonRuntime.startServer(
+                    projectDir = actualProjectDir.absolutePath,
+                    entryFile = actualEntryFile,
+                    framework = actualFramework,
+                    port = config.serverPort,
+                    portConflictMode = config.portConflictMode,
+                    envVars = config.envVars,
+                    installDeps = config.hasPipDeps
+                )
+
+                if (serverPort > 0) {
+                    val serverUrl = "http://127.0.0.1:$serverPort"
+                    AppLogger.i("PythonAppPreview", "Python server started: $serverUrl")
+                    pythonAppPreviewState = PythonAppPreviewState.Ready(serverUrl)
+                    delay(200)
+                    loadInBrowser(serverUrl)
+                } else {
+
+                    val errMsg = (pythonRuntime.serverState.value as? com.webtoapp.core.python.PythonRuntime.ServerState.Error)
+                        ?.message
+                        ?: "Python server failed to start"
+                    AppLogger.e("PythonAppPreview", "Python server failed: $errMsg")
+
+                    val url = pythonHttpServer.start(actualProjectDir)
+                    File(actualProjectDir, "_preview_.html").delete()
+                    val previewHtml = pythonRuntime.generatePreviewHtml(
+                        projectDir = actualProjectDir,
+                        framework = actualFramework,
+                        entryFile = actualEntryFile,
+                        startupError = errMsg,
+                    )
+                    val previewFile = File(actualProjectDir, "_preview_.html")
+                    previewFile.writeText(previewHtml)
+                    val targetUrl = "$url/_preview_.html"
+                    pythonAppPreviewState = PythonAppPreviewState.Ready(targetUrl)
+                    delay(200)
+                    loadInBrowser(targetUrl)
+                }
+            } else {
+
+                AppLogger.w(
+                    "PythonAppPreview",
+                    "Static fallback preview: pythonAvailable=${pythonRuntime.isPythonAvailable()}, entryExists=$entryFileExists"
+                )
+                val url = pythonHttpServer.start(actualProjectDir)
+                File(actualProjectDir, "_preview_.html").delete()
+
+                val htmlFiles = actualProjectDir.walkTopDown().filter { it.extension == "html" && it.name != "_preview_.html" }.take(1).toList()
+                if (htmlFiles.isNotEmpty()) {
+                    val relPath = htmlFiles.first().relativeTo(actualProjectDir).path
+                    val targetUrl = "$url/$relPath"
+                    pythonAppPreviewState = PythonAppPreviewState.Ready(targetUrl, staticFallback = true)
+                    delay(200)
+                    loadInBrowser(targetUrl)
+                } else {
+                    val previewHtml = pythonRuntime.generatePreviewHtml(
+                        projectDir = actualProjectDir,
+                        framework = actualFramework,
+                        entryFile = actualEntryFile
+                    )
+                    val previewFile = File(actualProjectDir, "_preview_.html")
+                    previewFile.writeText(previewHtml)
+                    val targetUrl = "$url/_preview_.html"
+                    pythonAppPreviewState = PythonAppPreviewState.Ready(targetUrl, staticFallback = true)
+                    delay(200)
+                    loadInBrowser(targetUrl)
+                }
+            }
+        } catch (e: Exception) {
+            AppLogger.e("PythonAppPreview", "Failed to start preview", e)
+            pythonAppPreviewState = PythonAppPreviewState.Error(e.message ?: Strings.pyPreviewFailed, e)
+        }
+    }
+
+    DisposableEffect(pythonHttpServer) {
+        onDispose {
+            pythonHttpServer.stop()
+            pythonRuntime.stopServer()
+        }
+    }
+
+    LaunchedEffect(webApp, isActivated, isActivationChecked, nodeJsAppRetryTrigger) {
+        val app = webApp ?: return@LaunchedEffect
+        if (app.appType != com.webtoapp.data.model.AppType.NODEJS_APP) return@LaunchedEffect
+        if (!isActivated || !isActivationChecked) return@LaunchedEffect
+
+        val config = app.nodejsConfig
+        if (config == null) {
+            AppLogger.e("NodeJsAppPreview", "nodejsConfig is null")
+            nodeJsAppPreviewState = NodeJsAppPreviewState.Error(Strings.nodeProjectNotFound)
+            return@LaunchedEffect
+        }
+
+        AppLogger.i("NodeJsAppPreview", "Starting Node.js app preview flow, appId=$appId, config=$config")
+        nodeJsAppPreviewState = NodeJsAppPreviewState.Starting
+
+        val projectId = config.projectId
+        AppLogger.i("NodeJsAppPreview", "projectId='$projectId', framework='${config.framework}', entry='${config.entryFile}'")
+        if (projectId.isBlank()) {
+            AppLogger.e("NodeJsAppPreview", "projectId is empty")
+            nodeJsAppPreviewState = NodeJsAppPreviewState.Error(Strings.nodeProjectNotFound)
+            return@LaunchedEffect
+        }
+        val internalProjectPath = nodeRuntime.getProjectDir(projectId).absolutePath
+
+        config.sourceProjectPath
+            .takeIf { it.isNotBlank() }
+            ?.let { srcPath ->
+                val sampleRoot = File(context.filesDir, "sample_projects")
+                val srcFile = File(srcPath)
+                if (srcFile.absolutePath.startsWith(sampleRoot.absolutePath + File.separator)) {
+                    val sampleId = srcFile.name
+                    try {
+                        com.webtoapp.core.sample.SampleProjectExtractor
+                            .extractSampleProject(context, sampleId)
+                        AppLogger.d(
+                            "NodeJsAppPreview",
+                            "Re-extracted sample $sampleId before sync (cache key checked)"
+                        )
+                    } catch (e: Exception) {
+                        AppLogger.w("NodeJsAppPreview", "Sample re-extract failed for $sampleId", e)
+                    }
+                }
+            }
+        config.sourceProjectPath
+            .takeIf { it.isNotBlank() }
+            ?.let(nodeRuntime::resolveSourceProjectDir)
+            ?.takeIf { it.absolutePath != internalProjectPath }
+            ?.let { sourceDir ->
+                try {
+                    nodeRuntime.syncProjectFromSource(projectId, sourceDir)
+                    AppLogger.i("NodeJsAppPreview", "Synced Node.js project from source directory: ${sourceDir.absolutePath}")
+                } catch (e: Exception) {
+                    AppLogger.w("NodeJsAppPreview", "Failed to sync source project: ${sourceDir.absolutePath}", e)
+                }
+            }
+
+        val projectDir = nodeRuntime.getProjectDir(projectId)
+        AppLogger.i("NodeJsAppPreview", "Project directory: ${projectDir.absolutePath}, exists=${projectDir.exists()}")
+        if (!projectDir.exists()) {
+            nodeJsAppPreviewState = NodeJsAppPreviewState.Error(Strings.nodeProjectNotFound)
+            return@LaunchedEffect
+        }
+
+        projectDir.listFiles()?.take(20)?.forEach { file ->
+            AppLogger.d("NodeJsAppPreview", "  - ${file.name} (${if (file.isDirectory) "dir" else "${file.length()} bytes"})")
+        }
+
+        try {
+            // Honor the configured build mode the way the exported shell does
+            // (ShellContentRouter branches on nodejsConfig.mode): only STATIC projects get the
+            // doc-root sniff; API_BACKEND always goes to the Node runtime.
+            val staticMode = config.buildMode == com.webtoapp.data.model.NodeJsBuildMode.STATIC
+            var foundDocRoot: File? = null
+            if (staticMode) {
+                val candidates = listOf("dist", "build", "public", "static", "www", "")
+                for (dir in candidates) {
+                    val candidate = if (dir.isEmpty()) projectDir else File(projectDir, dir)
+                    val hasIndex = File(candidate, "index.html").exists()
+                    AppLogger.d("NodeJsAppPreview", "Checking candidate: '$dir' -> ${candidate.absolutePath}, isDir=${candidate.isDirectory}, hasIndex=$hasIndex")
+                    if (candidate.isDirectory && hasIndex) {
+                        foundDocRoot = candidate
+                        AppLogger.i("NodeJsAppPreview", "Found docRoot: ${candidate.absolutePath}")
+                        break
+                    }
+                }
+            }
+
+            val docRoot = foundDocRoot
+            if (docRoot != null) {
+                val url = nodeHttpServer.start(docRoot)
+                AppLogger.i("NodeJsAppPreview", "LocalHttpServer started: $url")
+                nodeJsAppPreviewState = NodeJsAppPreviewState.Ready(url)
+                delay(200)
+                loadInBrowser(url)
+            } else if (!staticMode && nodeRuntime.isNodeAvailable()) {
+
+                AppLogger.i("NodeJsAppPreview", "Node.js runtime available, starting backend server")
+                nodeJsAppPreviewState = NodeJsAppPreviewState.StartingServer
+
+                val serverPort = nodeRuntime.startServer(
+                    projectDir = projectDir.absolutePath,
+                    entryFile = config.entryFile.ifBlank { "index.js" },
+                    port = config.serverPort,
+                    portConflictMode = config.portConflictMode,
+                    envVars = config.envVars,
+                )
+
+                if (serverPort > 0) {
+                    val serverUrl = "http://127.0.0.1:$serverPort"
+                    AppLogger.i("NodeJsAppPreview", "Node server started: $serverUrl")
+                    nodeJsAppPreviewState = NodeJsAppPreviewState.Ready(serverUrl)
+                    delay(200)
+                    loadInBrowser(serverUrl)
+                } else {
+                    AppLogger.e("NodeJsAppPreview", "Node server failed to start, falling back to preview mode")
+
+                    val url = nodeHttpServer.start(projectDir)
+                    File(projectDir, "_preview_.html").delete()
+                    val previewHtml = nodeRuntime.generatePreviewHtml(
+                        projectDir = projectDir,
+                        framework = config.framework,
+                        entryFile = config.entryFile,
+                    )
+                    val previewFile = File(projectDir, "_preview_.html")
+                    previewFile.writeText(previewHtml)
+                    val targetUrl = "$url/_preview_.html"
+                    nodeJsAppPreviewState = NodeJsAppPreviewState.Ready(targetUrl)
+                    delay(200)
+                    loadInBrowser(targetUrl)
+                }
+            } else {
+
+                AppLogger.w("NodeJsAppPreview", "index.html not found, trying HTTP server at project root")
+                val url = nodeHttpServer.start(projectDir)
+                AppLogger.i("NodeJsAppPreview", "LocalHttpServer started at project root: $url")
+
+                File(projectDir, "_preview_.html").delete()
+
+                val htmlFiles = projectDir.walkTopDown().filter { it.extension == "html" && it.name != "_preview_.html" }.take(1).toList()
+                if (htmlFiles.isNotEmpty()) {
+                    val relPath = htmlFiles.first().relativeTo(projectDir).path
+                    val targetUrl = "$url/$relPath"
+                    AppLogger.i("NodeJsAppPreview", "Found HTML file: $relPath, URL=$targetUrl")
+                    nodeJsAppPreviewState = NodeJsAppPreviewState.Ready(targetUrl)
+                    delay(200)
+                    loadInBrowser(targetUrl)
+                } else {
+
+                    AppLogger.i("NodeJsAppPreview", "No static HTML, generating project preview page")
+                    val previewHtml = nodeRuntime.generatePreviewHtml(
+                        projectDir = projectDir,
+                        framework = config.framework,
+                        entryFile = config.entryFile
+                    )
+                    val previewFile = File(projectDir, "_preview_.html")
+                    previewFile.writeText(previewHtml)
+                    val targetUrl = "$url/_preview_.html"
+                    AppLogger.i("NodeJsAppPreview", "Preview page generated: $targetUrl")
+                    nodeJsAppPreviewState = NodeJsAppPreviewState.Ready(targetUrl)
+                    delay(200)
+                    loadInBrowser(targetUrl)
+                }
+            }
+        } catch (e: Exception) {
+            AppLogger.e("NodeJsAppPreview", "Failed to start preview", e)
+            nodeJsAppPreviewState = NodeJsAppPreviewState.Error(e.message ?: Strings.nodePreviewFailed, e)
+        }
+    }
+
+    DisposableEffect(nodeHttpServer) {
+        onDispose {
+            nodeHttpServer.stop()
+        }
+    }
+
+    DisposableEffect(nodeRuntime) {
+        onDispose {
+            nodeRuntime.stopServer()
+        }
+    }
+
+    LaunchedEffect(webApp, isActivated, isActivationChecked, goAppRetryTrigger) {
+        val app = webApp ?: return@LaunchedEffect
+        if (app.appType != com.webtoapp.data.model.AppType.GO_APP) return@LaunchedEffect
+        if (!isActivated || !isActivationChecked) return@LaunchedEffect
+
+        val config = app.goAppConfig
+        if (config == null) {
+            AppLogger.e("GoAppPreview", "goAppConfig is null")
+            goAppPreviewState = GoAppPreviewState.Error(Strings.goProjectNotFound)
+            return@LaunchedEffect
+        }
+
+        AppLogger.i("GoAppPreview", "Starting Go app preview flow, appId=$appId, config=$config")
+        goAppPreviewState = GoAppPreviewState.Starting
+
+        val projectId = config.projectId
+        AppLogger.i("GoAppPreview", "projectId='$projectId', framework='${config.framework}', binary='${config.binaryName}'")
+        if (projectId.isBlank()) {
+            AppLogger.e("GoAppPreview", "projectId is empty")
+            goAppPreviewState = GoAppPreviewState.Error(Strings.goProjectNotFound)
+            return@LaunchedEffect
+        }
+        val projectDir = goRuntime.getProjectDir(projectId)
+        AppLogger.i("GoAppPreview", "Project directory: ${projectDir.absolutePath}, exists=${projectDir.exists()}")
+        if (!projectDir.exists()) {
+            goAppPreviewState = GoAppPreviewState.Error(Strings.goProjectNotFound)
+            return@LaunchedEffect
+        }
+
+        projectDir.listFiles()?.take(20)?.forEach { file ->
+            AppLogger.d("GoAppPreview", "  - ${file.name} (${if (file.isDirectory) "dir" else "${file.length()} bytes"})")
+        }
+
+        try {
+            val candidates = listOf("dist", "build", "public", "static", "web", "www", "")
+            var foundDocRoot: File? = null
+            for (dir in candidates) {
+                val candidate = if (dir.isEmpty()) projectDir else File(projectDir, dir)
+                val hasIndex = File(candidate, "index.html").exists()
+                AppLogger.d("GoAppPreview", "Checking candidate: '$dir' -> ${candidate.absolutePath}, isDir=${candidate.isDirectory}, hasIndex=$hasIndex")
+                if (candidate.isDirectory && hasIndex) {
+                    foundDocRoot = candidate
+                    AppLogger.i("GoAppPreview", "Found docRoot: ${candidate.absolutePath}")
+                    break
+                }
+            }
+
+            val docRoot = foundDocRoot
+            if (docRoot != null) {
+                val url = goHttpServer.start(docRoot)
+                AppLogger.i("GoAppPreview", "LocalHttpServer started: $url")
+                goAppPreviewState = GoAppPreviewState.Ready(url)
+                delay(200)
+                loadInBrowser(url)
+            } else {
+
+                val goMod = File(projectDir, "go.mod")
+                val toolchainReady = com.webtoapp.core.golang.GoDependencyManager.isGoToolchainReady(context)
+                val needsBuild = config.binaryName.isBlank()
+                    && goRuntime.detectBinary(projectDir) == null
+                    && goMod.exists()
+                    && toolchainReady
+
+                if (needsBuild) {
+                    AppLogger.i("GoAppPreview", "No binary, but go.mod + 工具链就绪 → 自动应用内 build")
+                    goAppPreviewState = GoAppPreviewState.StartingServer
+                    val targetName = config.binaryName.ifBlank { projectDir.name }
+                    val produced = try {
+                        com.webtoapp.core.golang.GoBuildEnvironment.buildProject(
+                            context = context,
+                            projectDir = projectDir,
+                            binaryName = targetName,
+                            onOutput = { line -> AppLogger.d("GoAppPreview", "[build] $line") },
+                        )
+                    } catch (e: Exception) {
+                        AppLogger.e("GoAppPreview", "应用内 build 异常", e)
+                        null
+                    }
+                    if (produced != null) {
+                        AppLogger.i("GoAppPreview", "Build 成功 → ${produced.absolutePath}")
+                    } else {
+                        AppLogger.w("GoAppPreview", "Build 失败 / 工具链网络受限，回退到预览页")
+                    }
+                }
+
+                val hasBinary = config.binaryName.isNotBlank() || goRuntime.detectBinary(projectDir) != null
+                if (hasBinary) {
+                    AppLogger.i("GoAppPreview", "Starting Go backend server")
+                    goAppPreviewState = GoAppPreviewState.StartingServer
+
+                    val serverPort = goRuntime.startServer(
+                        projectDir = projectDir.absolutePath,
+                        binaryName = config.binaryName,
+                        port = config.serverPort,
+                        portConflictMode = config.portConflictMode,
+                        envVars = config.envVars
+                    )
+
+                    if (serverPort > 0) {
+                        val serverUrl = "http://127.0.0.1:$serverPort"
+                        AppLogger.i("GoAppPreview", "Go server started: $serverUrl")
+                        goAppPreviewState = GoAppPreviewState.Ready(serverUrl)
+                        delay(200)
+                        loadInBrowser(serverUrl)
+                    } else {
+                        AppLogger.e("GoAppPreview", "Go server failed to start, falling back to preview mode")
+                        val url = goHttpServer.start(projectDir)
+                        File(projectDir, "_preview_.html").delete()
+                        val previewHtml = goRuntime.generatePreviewHtml(
+                            projectDir = projectDir,
+                            framework = config.framework,
+                            binaryName = config.binaryName
+                        )
+                        val previewFile = File(projectDir, "_preview_.html")
+                        previewFile.writeText(previewHtml)
+                        val targetUrl = "$url/_preview_.html"
+                        goAppPreviewState = GoAppPreviewState.Ready(targetUrl)
+                        delay(200)
+                        loadInBrowser(targetUrl)
+                    }
+                } else {
+                    AppLogger.w("GoAppPreview", "No executable binary, generating project preview page")
+                    val url = goHttpServer.start(projectDir)
+                    File(projectDir, "_preview_.html").delete()
+
+                    val htmlFiles = projectDir.walkTopDown().filter { it.extension == "html" && it.name != "_preview_.html" }.take(1).toList()
+                    if (htmlFiles.isNotEmpty()) {
+                        val relPath = htmlFiles.first().relativeTo(projectDir).path
+                        val targetUrl = "$url/$relPath"
+                        goAppPreviewState = GoAppPreviewState.Ready(targetUrl)
+                        delay(200)
+                        loadInBrowser(targetUrl)
+                    } else {
+                        val previewHtml = goRuntime.generatePreviewHtml(
+                            projectDir = projectDir,
+                            framework = config.framework,
+                            binaryName = config.binaryName
+                        )
+                        val previewFile = File(projectDir, "_preview_.html")
+                        previewFile.writeText(previewHtml)
+                        val targetUrl = "$url/_preview_.html"
+                        goAppPreviewState = GoAppPreviewState.Ready(targetUrl)
+                        delay(200)
+                        loadInBrowser(targetUrl)
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            AppLogger.e("GoAppPreview", "Failed to start preview", e)
+            goAppPreviewState = GoAppPreviewState.Error(e.message ?: Strings.goPreviewFailed, e)
+        }
+    }
+
+    DisposableEffect(goHttpServer) {
+        onDispose {
+            goHttpServer.stop()
+            goRuntime.stopServer()
+        }
+    }
 
     val webViewCallbacks = remember {
         object : WebViewCallbacks {
@@ -2320,6 +3094,16 @@ fun WebViewScreen(
                 errorMessage = null
 
                 webViewRecreationKey++
+
+                val app = webApp
+                when (app?.appType) {
+                    com.webtoapp.data.model.AppType.PHP_APP -> phpAppRetryTrigger++
+                    com.webtoapp.data.model.AppType.NODEJS_APP -> nodeJsAppRetryTrigger++
+                    com.webtoapp.data.model.AppType.PYTHON_APP -> pythonAppRetryTrigger++
+                    com.webtoapp.data.model.AppType.GO_APP -> goAppRetryTrigger++
+                    com.webtoapp.data.model.AppType.WORDPRESS -> wpRetryTrigger++
+                    else -> {  }
+                }
             }
         }
     }
@@ -2403,6 +3187,26 @@ fun WebViewScreen(
 
             !testUrl.isNullOrBlank() -> normalizeWebUrlForSecurity(testUrl) to null
             !directUrl.isNullOrBlank() -> normalizeWebUrlForSecurity(directUrl) to null
+            app?.appType == com.webtoapp.data.model.AppType.WORDPRESS -> {
+
+                "about:blank" to null
+            }
+            app?.appType == com.webtoapp.data.model.AppType.PHP_APP -> {
+
+                "about:blank" to null
+            }
+            app?.appType == com.webtoapp.data.model.AppType.PYTHON_APP -> {
+
+                "about:blank" to null
+            }
+            app?.appType == com.webtoapp.data.model.AppType.NODEJS_APP -> {
+
+                "about:blank" to null
+            }
+            app?.appType == com.webtoapp.data.model.AppType.GO_APP -> {
+
+                "about:blank" to null
+            }
             app?.appType == com.webtoapp.data.model.AppType.MULTI_WEB -> {
 
                 val firstSite = app.multiWebConfig?.sites?.firstOrNull { it.enabled && (it.url.isNotBlank() || it.localFilePath.isNotBlank()) }
@@ -3261,6 +4065,64 @@ fun WebViewScreen(
                     CircularProgressIndicator()
                 }
             }
+
+            val isWordPressLoading = webApp?.appType == com.webtoapp.data.model.AppType.WORDPRESS &&
+                wordPressPreviewState !is WordPressPreviewState.Ready &&
+                wordPressPreviewState !is WordPressPreviewState.Idle
+            if (isWordPressLoading) {
+                WordPressLoadingOverlay(
+                    state = wordPressPreviewState,
+                    downloadState = wpDownloadState,
+                    onRetry = { wpRetryTrigger++ }
+                )
+            }
+
+            val isPhpAppLoading = webApp?.appType == com.webtoapp.data.model.AppType.PHP_APP &&
+                phpAppPreviewState !is PhpAppPreviewState.Ready &&
+                phpAppPreviewState !is PhpAppPreviewState.Idle
+            if (isPhpAppLoading) {
+                PhpAppLoadingOverlay(
+                    state = phpAppPreviewState,
+                    downloadState = phpAppDownloadState,
+                    onRetry = { phpAppRetryTrigger++ }
+                )
+            }
+
+            val isPythonAppLoading = webApp?.appType == com.webtoapp.data.model.AppType.PYTHON_APP &&
+                pythonAppPreviewState !is PythonAppPreviewState.Ready &&
+                pythonAppPreviewState !is PythonAppPreviewState.Idle
+            if (isPythonAppLoading) {
+                PythonAppLoadingOverlay(
+                    state = pythonAppPreviewState,
+                    onRetry = { pythonAppRetryTrigger++ }
+                )
+            }
+
+            val pythonReadyState = pythonAppPreviewState as? PythonAppPreviewState.Ready
+            if (webApp?.appType == com.webtoapp.data.model.AppType.PYTHON_APP &&
+                pythonReadyState?.staticFallback == true &&
+                pythonReadyState.url != dismissedPythonFallbackBannerUrl
+            ) {
+                PythonStaticFallbackBanner(
+                    onDismiss = { dismissedPythonFallbackBannerUrl = pythonReadyState.url },
+                    modifier = Modifier.align(Alignment.TopCenter)
+                )
+            }
+
+            val isGoAppLoading = webApp?.appType == com.webtoapp.data.model.AppType.GO_APP &&
+                goAppPreviewState !is GoAppPreviewState.Ready &&
+                goAppPreviewState !is GoAppPreviewState.Idle
+            if (isGoAppLoading) {
+                SimpleAppLoadingOverlay(
+                    isStarting = goAppPreviewState is GoAppPreviewState.Starting || goAppPreviewState is GoAppPreviewState.StartingServer,
+                    startingText = Strings.goStartingPreview,
+                    errorMessage = (goAppPreviewState as? GoAppPreviewState.Error)?.message,
+                    onRetry = { goAppRetryTrigger++ },
+                    errorScope = "Go preview",
+                    errorThrowable = (goAppPreviewState as? GoAppPreviewState.Error)?.throwable
+                )
+            }
+
             if (webApp?.webViewConfig?.showFloatingBackButton == true &&
                 ((hideToolbar && !showToolbarInPreview) || !toolbarEnabled) &&
                 canGoBack

@@ -238,6 +238,7 @@ fun ShellScreen(
         } else {
 
             val typeSpecificLandscape = when (appType) {
+                "IMAGE", "VIDEO" -> config.mediaConfig.landscape
                 "GALLERY" -> config.galleryConfig.orientation.uppercase() == "LANDSCAPE"
                 else -> config.webViewConfig.landscapeMode
             }

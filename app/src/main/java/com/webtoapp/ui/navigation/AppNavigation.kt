@@ -19,10 +19,15 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import android.widget.Toast
+import com.webtoapp.core.host.AdvancedAppTypes
+import com.webtoapp.core.host.HostRuntimePrefs
 import com.webtoapp.core.i18n.InitializeLanguage
+import com.webtoapp.core.i18n.Strings
 import com.webtoapp.data.model.AppType
 import com.webtoapp.data.model.HtmlLoadMode
 import com.webtoapp.ui.gallery.GalleryPlayerActivity
+import com.webtoapp.ui.media.MediaAppActivity
 import com.webtoapp.ui.webview.WebViewActivity
 import com.webtoapp.ui.agent.AgentScreen
 import com.webtoapp.ui.screens.AboutScreen
@@ -35,17 +40,26 @@ import com.webtoapp.ui.screens.BuildApkScreen
 import com.webtoapp.ui.screens.CreateAppScreen
 import com.webtoapp.ui.screens.CreateFrontendAppScreen
 import com.webtoapp.ui.screens.CreateGalleryAppScreenV2
+import com.webtoapp.ui.screens.CreateGoAppScreen
 import com.webtoapp.ui.screens.CreateHtmlAppScreen
+import com.webtoapp.ui.screens.CreateMediaAppScreen
 import com.webtoapp.ui.screens.CreateMultiWebAppScreen
+import com.webtoapp.ui.screens.CreateNodeJsAppScreen
 import com.webtoapp.ui.screens.CreateOfflinePackScreen
+import com.webtoapp.ui.screens.CreatePhpAppScreen
+import com.webtoapp.ui.screens.CreatePythonAppScreen
+import com.webtoapp.ui.screens.CreateWordPressAppScreen
 import com.webtoapp.ui.screens.PluginManagerScreen
 import com.webtoapp.ui.screens.FileManagerScreen
 import com.webtoapp.ui.screens.HomeScreen
 import com.webtoapp.ui.screens.HostsAdBlockScreen
+import com.webtoapp.ui.screens.LinuxEnvironmentScreen
 import com.webtoapp.ui.screens.PluginEditorScreen
 import com.webtoapp.ui.screens.ModuleMarketScreen
 import com.webtoapp.ui.screens.MoreScreen
+import com.webtoapp.ui.screens.PortManagerScreen
 import com.webtoapp.ui.screens.PlayStoreScreen
+import com.webtoapp.ui.screens.RuntimeDepsScreen
 import com.webtoapp.ui.screens.StatsScreen
 import com.webtoapp.ui.viewmodel.MainViewModel
 import kotlinx.coroutines.launch
@@ -56,17 +70,29 @@ object Routes {
     const val MORE = "more"
 
     const val CREATE_APP = "create_app"
+    const val CREATE_MEDIA_APP = "create_media_app"
     const val CREATE_GALLERY_APP = "create_gallery_app"
     const val CREATE_HTML_APP = "create_html_app"
     const val CREATE_FRONTEND_APP = "create_frontend_app"
+    const val CREATE_NODEJS_APP = "create_nodejs_app"
+    const val CREATE_WORDPRESS_APP = "create_wordpress_app"
+    const val CREATE_PHP_APP = "create_php_app"
+    const val CREATE_PYTHON_APP = "create_python_app"
+    const val CREATE_GO_APP = "create_go_app"
     const val CREATE_MULTI_WEB_APP = "create_multi_web_app"
     const val CREATE_OFFLINE_PACK = "create_offline_pack"
+    const val LINUX_ENVIRONMENT = "linux_environment"
 
     const val EDIT_APP = "edit_app/{appId}"
     const val EDIT_WEB_APP = "edit_web_app/{appId}"
+    const val EDIT_MEDIA_APP = "edit_media_app/{appId}"
     const val EDIT_GALLERY_APP = "edit_gallery_app/{appId}"
     const val EDIT_HTML_APP = "edit_html_app/{appId}"
     const val EDIT_FRONTEND_APP = "edit_frontend_app/{appId}"
+    const val EDIT_NODEJS_APP = "edit_nodejs_app/{appId}"
+    const val EDIT_PHP_APP = "edit_php_app/{appId}"
+    const val EDIT_PYTHON_APP = "edit_python_app/{appId}"
+    const val EDIT_GO_APP = "edit_go_app/{appId}"
     const val EDIT_MULTI_WEB_APP = "edit_multi_web_app/{appId}"
 
     const val APP_MODIFIER = "app_modifier"
@@ -80,6 +106,8 @@ object Routes {
     const val PLUGIN_MARKET_WITH_TAB = "plugin_market?initialTab={initialTab}"
     const val PLUGIN_EDITOR = "plugin_editor"
     const val PLUGIN_EDITOR_EDIT = "plugin_editor/{pluginId}"
+    const val RUNTIME_DEPS = "runtime_deps"
+    const val PORT_MANAGER = "port_manager"
     const val STATS = "stats"
     const val ABOUT = "about"
     const val SETTINGS = "settings"
@@ -97,9 +125,14 @@ object Routes {
 
     fun editApp(appId: Long) = "edit_app/$appId"
     fun editWebApp(appId: Long) = "edit_web_app/$appId"
+    fun editMediaApp(appId: Long) = "edit_media_app/$appId"
     fun editGalleryApp(appId: Long) = "edit_gallery_app/$appId"
     fun editHtmlApp(appId: Long) = "edit_html_app/$appId"
     fun editFrontendApp(appId: Long) = "edit_frontend_app/$appId"
+    fun editNodeJsApp(appId: Long) = "edit_nodejs_app/$appId"
+    fun editPhpApp(appId: Long) = "edit_php_app/$appId"
+    fun editPythonApp(appId: Long) = "edit_python_app/$appId"
+    fun editGoApp(appId: Long) = "edit_go_app/$appId"
     fun editMultiWebApp(appId: Long) = "edit_multi_web_app/$appId"
     fun editPlugin(pluginId: String) = "plugin_editor/$pluginId"
     fun appModifierModify(packageName: String) = "app_modifier/modify/$packageName"
@@ -145,9 +178,15 @@ fun AppNavigation() {
                             viewModel.createNewApp()
                             navController.navigate(Routes.CREATE_APP)
                         },
+                        onCreateMediaApp = { navController.navigate(Routes.CREATE_MEDIA_APP) },
                         onCreateGalleryApp = { navController.navigate(Routes.CREATE_GALLERY_APP) },
                         onCreateHtmlApp = { navController.navigate(Routes.CREATE_HTML_APP) },
                         onCreateFrontendApp = { navController.navigate(Routes.CREATE_FRONTEND_APP) },
+                        onCreateNodeJsApp = { navController.navigate(Routes.CREATE_NODEJS_APP) },
+                        onCreateWordPressApp = { navController.navigate(Routes.CREATE_WORDPRESS_APP) },
+                        onCreatePhpApp = { navController.navigate(Routes.CREATE_PHP_APP) },
+                        onCreatePythonApp = { navController.navigate(Routes.CREATE_PYTHON_APP) },
+                        onCreateGoApp = { navController.navigate(Routes.CREATE_GO_APP) },
                         onCreateMultiWebApp = { navController.navigate(Routes.CREATE_MULTI_WEB_APP) },
                         onCreateOfflinePack = { navController.navigate(Routes.CREATE_OFFLINE_PACK) },
                         onEditApp = { webApp ->
@@ -160,38 +199,50 @@ fun AppNavigation() {
                                     viewModel.editApp(webApp)
                                     navController.navigate(Routes.editWebApp(webApp.id))
                                 }
+                                com.webtoapp.data.model.AppType.IMAGE,
+                                com.webtoapp.data.model.AppType.VIDEO -> navController.navigate(Routes.editMediaApp(webApp.id))
                                 com.webtoapp.data.model.AppType.GALLERY -> navController.navigate(Routes.editGalleryApp(webApp.id))
                                 com.webtoapp.data.model.AppType.HTML -> navController.navigate(Routes.editHtmlApp(webApp.id))
                                 com.webtoapp.data.model.AppType.FRONTEND -> navController.navigate(Routes.editFrontendApp(webApp.id))
-                                com.webtoapp.data.model.AppType.MULTI_WEB -> navController.navigate(Routes.editMultiWebApp(webApp.id))
-                                // Removed types: no dedicated editor remains — fall through
-                                // to the generic edit screen (name/icon/common settings).
-                                else -> {
+                                com.webtoapp.data.model.AppType.NODEJS_APP -> navController.navigate(Routes.editNodeJsApp(webApp.id))
+                                com.webtoapp.data.model.AppType.WORDPRESS -> {
                                     viewModel.editApp(webApp)
                                     navController.navigate(Routes.editApp(webApp.id))
                                 }
+                                com.webtoapp.data.model.AppType.PHP_APP -> navController.navigate(Routes.editPhpApp(webApp.id))
+                                com.webtoapp.data.model.AppType.PYTHON_APP -> navController.navigate(Routes.editPythonApp(webApp.id))
+                                com.webtoapp.data.model.AppType.GO_APP -> navController.navigate(Routes.editGoApp(webApp.id))
+                                com.webtoapp.data.model.AppType.MULTI_WEB -> navController.navigate(Routes.editMultiWebApp(webApp.id))
                             }
                         },
                         onPreviewApp = { summary ->
                             // Open the activity directly. Routing through an empty
                             // preview destination started a page slide, popped it,
                             // then started the activity — three motions for one tap.
-                            if (summary.appType == AppType.GALLERY) {
-                                previewScope.launch {
+                            if (!AdvancedAppTypes.isUsable(context, summary.appType)) {
+                                Toast.makeText(context, Strings.advancedFeaturesOff, Toast.LENGTH_SHORT).show()
+                            } else when (summary.appType) {
+                                AppType.GALLERY -> previewScope.launch {
                                     val config = viewModel.getWebApp(summary.id)?.galleryConfig
                                         ?: return@launch
                                     GalleryPlayerActivity.launch(context, config, 0, summary.id)
                                 }
-                            } else {
-                                WebViewActivity.start(context, summary.id)
+                                AppType.IMAGE, AppType.VIDEO -> previewScope.launch {
+                                    val app = viewModel.getWebApp(summary.id) ?: return@launch
+                                    MediaAppActivity.startForPreview(context, app)
+                                }
+                                else -> WebViewActivity.start(context, summary.id)
                             }
                         },
                         onOpenAppModifier = { navController.navigate(Routes.APP_MODIFIER) },
                         onOpenAiSettings = { navController.navigate(Routes.AI_SETTINGS) },
                         onOpenAgent = { navController.navigate(Routes.AGENT) },
                         onOpenPlugins = { navController.navigate(Routes.PLUGINS) },
+                        onOpenLinuxEnvironment = { navController.navigate(Routes.LINUX_ENVIRONMENT) },
                         onOpenBrowserKernel = { navController.navigate(Routes.BROWSER_KERNEL) },
                         onOpenHostsAdBlock = { navController.navigate(Routes.HOSTS_ADBLOCK) },
+                        onOpenRuntimeDeps = { navController.navigate(Routes.RUNTIME_DEPS) },
+                        onOpenPortManager = { navController.navigate(Routes.PORT_MANAGER) },
                         onOpenStats = { navController.navigate(Routes.STATS) },
                         onOpenAbout = { navController.navigate(Routes.ABOUT) },
                         onOpenSettings = { navController.navigate(Routes.SETTINGS) },
@@ -255,6 +306,16 @@ fun AppNavigation() {
                     isEdit = false,
                     onBack = { navController.popBackStackSafely() },
                     onSaved = { navController.popBackStackSafely() }
+                )
+            }
+
+            composable(Routes.CREATE_MEDIA_APP) {
+                CreateMediaAppScreen(
+                    onBack = { navController.popBackStackSafely() },
+                    onCreated = { name, appType, mediaUri, mediaConfig, iconUri, themeType ->
+                        viewModel.saveMediaApp(name, appType, mediaUri, mediaConfig, iconUri, themeType)
+                        navController.popBackStackSafely()
+                    }
                 )
             }
 
@@ -343,6 +404,107 @@ fun AppNavigation() {
                         )
                         navController.popBackStackSafely()
                     },
+                    onNavigateToLinuxEnv = { navController.navigate(Routes.LINUX_ENVIRONMENT) }
+                )
+            }
+
+            composable(Routes.CREATE_WORDPRESS_APP) {
+                CreateWordPressAppScreen(
+                    onBack = { navController.popBackStackSafely() },
+                    onCreated = { name, wordpressConfig, iconUri, themeType ->
+                        viewModel.saveWordPressApp(name, wordpressConfig, iconUri, themeType)
+                        navController.popBackStackSafely()
+                    }
+                )
+            }
+
+            composable(Routes.CREATE_NODEJS_APP) {
+                CreateNodeJsAppScreen(
+                    onBack = { navController.popBackStackSafely() },
+                    onCreated = { name, nodejsConfig, iconUri, themeType ->
+                        viewModel.saveNodeJsApp(name, nodejsConfig, iconUri, themeType)
+                        navController.popBackStackSafely()
+                    },
+                    onOpenLinuxEnv = { navController.navigate(Routes.LINUX_ENVIRONMENT) },
+                )
+            }
+
+            composable(Routes.CREATE_PHP_APP) {
+                CreatePhpAppScreen(
+                    onBack = { navController.popBackStackSafely() },
+                    onCreated = { name, phpAppConfig, iconUri, themeType ->
+                        viewModel.savePhpApp(name, phpAppConfig, iconUri, themeType)
+                        navController.popBackStackSafely()
+                    },
+                    onOpenLinuxEnv = { navController.navigate(Routes.LINUX_ENVIRONMENT) },
+                )
+            }
+
+            composable(Routes.CREATE_PYTHON_APP) {
+                CreatePythonAppScreen(
+                    onBack = { navController.popBackStackSafely() },
+                    onCreated = { name, pythonAppConfig, iconUri, themeType ->
+                        viewModel.savePythonApp(name, pythonAppConfig, iconUri, themeType)
+                        navController.popBackStackSafely()
+                    },
+                    onOpenLinuxEnv = { navController.navigate(Routes.LINUX_ENVIRONMENT) },
+                )
+            }
+
+            composable(Routes.CREATE_GO_APP) {
+                CreateGoAppScreen(
+                    onBack = { navController.popBackStackSafely() },
+                    onCreated = { name, goAppConfig, iconUri, themeType ->
+                        viewModel.saveGoApp(name, goAppConfig, iconUri, themeType)
+                        navController.popBackStackSafely()
+                    }
+                )
+            }
+
+            composable(
+                route = Routes.EDIT_PHP_APP,
+                arguments = listOf(navArgument("appId") { type = NavType.LongType })
+            ) { backStackEntry ->
+                val appId = backStackEntry.arguments?.getLong("appId") ?: 0L
+                CreatePhpAppScreen(
+                    existingAppId = appId,
+                    onBack = { navController.popBackStackSafely() },
+                    onCreated = { name, phpAppConfig, iconUri, themeType ->
+                        viewModel.updatePhpApp(appId, name, phpAppConfig, iconUri, themeType)
+                        navController.popBackStackSafely()
+                    },
+                    onOpenLinuxEnv = { navController.navigate(Routes.LINUX_ENVIRONMENT) },
+                )
+            }
+
+            composable(
+                route = Routes.EDIT_PYTHON_APP,
+                arguments = listOf(navArgument("appId") { type = NavType.LongType })
+            ) { backStackEntry ->
+                val appId = backStackEntry.arguments?.getLong("appId") ?: 0L
+                CreatePythonAppScreen(
+                    existingAppId = appId,
+                    onBack = { navController.popBackStackSafely() },
+                    onCreated = { name, pythonAppConfig, iconUri, themeType ->
+                        viewModel.updatePythonApp(appId, name, pythonAppConfig, iconUri, themeType)
+                        navController.popBackStackSafely()
+                    },
+                    onOpenLinuxEnv = { navController.navigate(Routes.LINUX_ENVIRONMENT) },
+                )
+            }
+
+            composable(
+                route = Routes.EDIT_GO_APP,
+                arguments = listOf(navArgument("appId") { type = NavType.LongType })
+            ) { backStackEntry ->
+                val appId = backStackEntry.arguments?.getLong("appId") ?: 0L
+                CreateGoAppScreen(
+                    existingAppId = appId,
+                    onBack = { navController.popBackStackSafely() },
+                    onCreated = { name, goAppConfig, iconUri, themeType ->
+                        viewModel.updateGoApp(appId, name, goAppConfig, iconUri, themeType)
+                        navController.popBackStackSafely()
+                    }
                 )
             }
 
@@ -392,6 +554,10 @@ fun AppNavigation() {
                 )
             }
 
+            composable(Routes.LINUX_ENVIRONMENT) {
+                LinuxEnvironmentScreen(onBack = { navController.popBackStackSafely() })
+            }
+
             composable(
                 route = Routes.EDIT_APP,
                 arguments = listOf(navArgument("appId") { type = NavType.LongType })
@@ -413,6 +579,21 @@ fun AppNavigation() {
                     isEdit = true,
                     onBack = { navController.popBackStackSafely() },
                     onSaved = { navController.popBackStackSafely() }
+                )
+            }
+
+            composable(
+                route = Routes.EDIT_MEDIA_APP,
+                arguments = listOf(navArgument("appId") { type = NavType.LongType })
+            ) { backStackEntry ->
+                val appId = backStackEntry.arguments?.getLong("appId") ?: 0L
+                CreateMediaAppScreen(
+                    existingAppId = appId,
+                    onBack = { navController.popBackStackSafely() },
+                    onCreated = { name, appType, mediaUri, mediaConfig, iconUri, themeType ->
+                        viewModel.updateMediaApp(appId, name, appType, mediaUri, mediaConfig, iconUri, themeType)
+                        navController.popBackStackSafely()
+                    }
                 )
             }
 
@@ -473,6 +654,23 @@ fun AppNavigation() {
                         viewModel.updateFrontendApp(appId, name, outputPath, iconUri, framework.name)
                         navController.popBackStackSafely()
                     },
+                    onNavigateToLinuxEnv = { navController.navigate(Routes.LINUX_ENVIRONMENT) }
+                )
+            }
+
+            composable(
+                route = Routes.EDIT_NODEJS_APP,
+                arguments = listOf(navArgument("appId") { type = NavType.LongType })
+            ) { backStackEntry ->
+                val appId = backStackEntry.arguments?.getLong("appId") ?: 0L
+                CreateNodeJsAppScreen(
+                    existingAppId = appId,
+                    onBack = { navController.popBackStackSafely() },
+                    onCreated = { name, nodejsConfig, iconUri, themeType ->
+                        viewModel.updateNodeJsApp(appId, name, nodejsConfig, iconUri, themeType)
+                        navController.popBackStackSafely()
+                    },
+                    onOpenLinuxEnv = { navController.navigate(Routes.LINUX_ENVIRONMENT) },
                 )
             }
 
@@ -514,6 +712,14 @@ fun AppNavigation() {
 
             composable(Routes.HOSTS_ADBLOCK) {
                 HostsAdBlockScreen(onBack = { navController.popBackStackSafely() })
+            }
+
+            composable(Routes.RUNTIME_DEPS) {
+                RuntimeDepsScreen(onBack = { navController.popBackStackSafely() })
+            }
+
+            composable(Routes.PORT_MANAGER) {
+                PortManagerScreen(onBack = { navController.popBackStackSafely() })
             }
 
             composable(

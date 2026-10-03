@@ -6,6 +6,7 @@ import com.webtoapp.data.model.AppType
 import com.webtoapp.data.model.GalleryConfig
 import com.webtoapp.data.model.GalleryItem
 import com.webtoapp.data.model.GalleryItemType
+import com.webtoapp.data.model.MediaConfig
 import com.webtoapp.data.model.WebApp
 import java.io.File
 import java.nio.file.Files
@@ -83,5 +84,42 @@ class MultiWebGallerySiteTest {
         assertThat(previewGallerySiteItems(app)).isEmpty()
     }
 
+    @Test
+    fun `preview media path accepts local files only`() {
+        val dir = Files.createTempDirectory("wta-mwmed").toFile()
+        try {
+            val video = File(dir, "v.mp4").also { it.writeBytes(byteArrayOf(9)) }
+            val app = WebApp(
+                id = 6,
+                name = "v",
+                url = "",
+                appType = AppType.VIDEO,
+                mediaConfig = MediaConfig(mediaPath = video.absolutePath)
+            )
+            assertThat(multiWebSitePreviewMediaPath(app)).isEqualTo(video.absolutePath)
 
+            val remote = WebApp(
+                id = 7,
+                name = "r",
+                url = "https://example.com/v.mp4",
+                appType = AppType.VIDEO,
+                mediaConfig = MediaConfig(mediaPath = "https://example.com/v.mp4")
+            )
+            assertThat(multiWebSitePreviewMediaPath(remote)).isNull()
+
+            val missing = WebApp(
+                id = 8,
+                name = "m",
+                url = "",
+                appType = AppType.IMAGE,
+                mediaConfig = MediaConfig(mediaPath = File(dir, "gone.png").absolutePath)
+            )
+            assertThat(multiWebSitePreviewMediaPath(missing)).isNull()
+
+            val web = WebApp(id = 9, name = "w", url = "https://example.com", appType = AppType.WEB)
+            assertThat(multiWebSitePreviewMediaPath(web)).isNull()
+        } finally {
+            dir.deleteRecursively()
+        }
+    }
 }

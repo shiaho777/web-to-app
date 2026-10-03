@@ -11,6 +11,7 @@ import com.webtoapp.data.model.FloatingWindowConfig
 import com.webtoapp.data.model.HtmlConfig
 import com.webtoapp.data.model.HtmlLoadMode
 import com.webtoapp.data.model.NativeBridgeCapabilities
+import com.webtoapp.data.model.NodeJsConfig
 import com.webtoapp.data.model.WebApp
 import com.webtoapp.data.model.WebViewConfig
 import com.webtoapp.core.playstore.aab.axml.AxmlToProtoXml
@@ -329,7 +330,8 @@ class ExportSecurityRegressionTest {
         val config = WebApp(
             name = "Runtime",
             url = "",
-            appType = AppType.HTML,
+            appType = AppType.NODEJS_APP,
+            nodejsConfig = NodeJsConfig(projectId = "node", projectName = "Node"),
             webViewConfig = WebViewConfig(
                 floatingWindowConfig = FloatingWindowConfig(enabled = true),
                 enableNativeBridge = true,
@@ -349,6 +351,7 @@ class ExportSecurityRegressionTest {
         val components = method.invoke(builder, config) as Set<String>
 
         assertThat(components).containsAtLeast(
+            "com.webtoapp.core.nodejs.NodeService",
             "com.webtoapp.core.background.BackgroundRunService",
             "com.webtoapp.core.notification.NotificationPollingService",
             "com.webtoapp.core.notification.BridgeAlarmReceiver",

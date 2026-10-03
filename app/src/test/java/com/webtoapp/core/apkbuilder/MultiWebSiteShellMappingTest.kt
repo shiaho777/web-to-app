@@ -7,6 +7,7 @@ import com.webtoapp.data.model.AppType
 import com.webtoapp.data.model.GalleryConfig
 import com.webtoapp.data.model.GalleryItem
 import com.webtoapp.data.model.GalleryItemType
+import com.webtoapp.data.model.MediaConfig
 import com.webtoapp.data.model.WebApp
 import java.io.File
 import org.junit.Test
@@ -98,5 +99,25 @@ class MultiWebSiteShellMappingTest {
         }
     }
 
+    @Test
+    fun `preview sets previewMediaPath for local single media`() {
+        val dir = File(context.cacheDir, "mwmap-${System.nanoTime()}").also { it.mkdirs() }
+        try {
+            val video = tempMedia(dir, "v.mp4")
+            val source = WebApp(
+                id = 13,
+                name = "video-src",
+                url = "",
+                appType = AppType.VIDEO,
+                mediaConfig = MediaConfig(mediaPath = video.absolutePath)
+            )
+            val shell = buildSiteShellConfig(source, "preview", "s9", context, isPreview = true)
+            assertThat(shell.previewMediaPath).isEqualTo(video.absolutePath)
 
+            val exported = buildSiteShellConfig(source, "com.example", "s9", context, isPreview = false)
+            assertThat(exported.previewMediaPath).isNull()
+        } finally {
+            dir.deleteRecursively()
+        }
+    }
 }

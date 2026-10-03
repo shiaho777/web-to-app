@@ -2,6 +2,8 @@ package com.webtoapp.core.playstore.aab
 
 import android.content.Context
 import com.webtoapp.core.apkbuilder.ApkBuilder
+import com.webtoapp.core.host.AdvancedAppTypes
+import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.apkbuilder.BuildResult
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.core.playstore.aab.axml.ProtoManifestRewriter
@@ -25,13 +27,24 @@ class AabExportCoordinator(private val context: Context) {
         onProgress: ((stage: AabExporter.Stage, percent: Int) -> Unit)? = null
     ): AabExporter.Result {
 
-        // Removed app types (media and server-runtime) cannot be exported at all —
-        // the interactive path blocks this via PlayPolicyChecker; this guard covers
-        // programmatic callers (agent tools, future automation).
-        if (!webApp.appType.isSupported) {
+        if (!AdvancedAppTypes.isUsable(context, webApp.appType)) {
             throw AabExportException(
                 FailureStage.BUILD_APK,
-                "${webApp.appType.name} apps can no longer be exported: the app type was removed."
+                Strings.advancedFeaturesOff
+            )
+        }
+
+        // The AAB pipeline rewrites targetSdk to the Play-required level (>= 29). A
+        // server-runtime app (Node/PHP/Python/Go/WordPress, directly or via a multi-web
+        // site that survived source resolution) cannot exec its bundled runtimes under the
+        // W^X that follows, so converting it would mint an AAB whose app can never start.
+        // The interactive path blocks this via PlayPolicyChecker; this guard covers
+        // programmatic callers (agent tools, future automation).
+        if (webApp.appType.requiresProcessExec) {
+            throw AabExportException(
+                FailureStage.BUILD_APK,
+                "${webApp.appType.name} apps cannot be exported as Play AABs: the required " +
+                    "targetSdk rewrite (>= 29) enables W^X, which blocks the bundled runtime binaries."
             )
         }
 
@@ -133,5 +146,10 @@ class AabExportCoordinator(private val context: Context) {
 
         private const val BUILD_PROGRESS_WEIGHT = 45
 
+        @Deprecated(
+            "Use AppType.requiresProcessExec / AppType.REQUIRES_PROCESS_EXEC",
+            replaceWith = ReplaceWith("AppType.REQUIRES_PROCESS_EXEC")
+        )
+        val PROCESS_EXEC_APP_TYPES: Set<AppType> get() = AppType.REQUIRES_PROCESS_EXEC
     }
 }

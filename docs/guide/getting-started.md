@@ -20,9 +20,9 @@ On launch, `WebToAppApplication` starts in **builder mode** (`SHELL_RUNTIME_ONLY
 
 ## 2. Create an app definition
 
-At the bottom of **My Apps**, tap **Create**. A panel expands with a 3-column grid of the [app types](/guide/app-types/):
+At the bottom of **My Apps**, tap **Create**. A panel expands with a 3-column grid of the 12 [app types](/guide/app-types/):
 
-**Web · Multi-Web · HTML · Offline Pack · Frontend · Gallery**
+**Web · Multi-Web · HTML · Offline Pack · Frontend · PHP · WordPress · Node.js · Python · Go · Media · Gallery**
 
 Tap **Web** for your first app. The Web editor opens.
 
@@ -42,6 +42,7 @@ Tap **Save**. Under the hood, the editor assembles a `WebApp` object (with `appT
 
 On **My Apps**, tap your app's card. The preview router checks the app's `appType` and launches the matching runtime:
 
+- `IMAGE` / `VIDEO` → the media player activity
 - `GALLERY` → the gallery player activity
 - everything else (including `WEB`) → the WebView activity
 

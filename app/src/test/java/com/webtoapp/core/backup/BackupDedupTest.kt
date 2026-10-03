@@ -36,13 +36,13 @@ class BackupDedupTest {
 
     @Test
     fun `local path apps dedup on type and name`() {
-        // Export rewrites local content urls to packaged paths — paths can't be the key.
+        // Export rewrites media urls to resources/... — paths can't be the key.
         val original = WebApp(
-            name = "My HTML",
-            url = "/data/files/site/index.html",
-            appType = AppType.HTML
+            name = "My Video",
+            url = "/data/files/video.mp4",
+            appType = AppType.VIDEO
         )
-        val reimported = original.copy(url = "resources/html/1_index.html")
+        val reimported = original.copy(url = "resources/media/1_media.mp4")
         assertThat(manager.backupDedupKey(original))
             .isEqualTo(manager.backupDedupKey(reimported))
     }

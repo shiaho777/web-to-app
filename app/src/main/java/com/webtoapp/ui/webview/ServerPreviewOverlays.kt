@@ -1,0 +1,284 @@
+package com.webtoapp.ui.webview
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.Warning
+import androidx.compose.material3.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import com.webtoapp.core.i18n.Strings
+import com.webtoapp.core.wordpress.WordPressDependencyManager
+
+@Composable
+fun WordPressLoadingOverlay(
+    state: WordPressPreviewState,
+    downloadState: WordPressDependencyManager.DownloadState,
+    onRetry: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.surface),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier.padding(32.dp)
+        ) {
+            when (state) {
+                is WordPressPreviewState.CheckingDeps -> {
+                    CircularProgressIndicator()
+                    Text(Strings.wpCheckingDeps)
+                }
+                is WordPressPreviewState.Downloading -> {
+                    when (val dlState = downloadState) {
+                        is WordPressDependencyManager.DownloadState.Downloading -> {
+                            LinearProgressIndicator(
+                                progress = { dlState.progress },
+                                modifier = Modifier.fillMaxWidth(0.8f)
+                            )
+                            Text("${Strings.wpDownloading}: ${dlState.currentFile}")
+                            Text(
+                                "${formatWpBytes(dlState.bytesDownloaded)} / ${formatWpBytes(dlState.totalBytes)}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        is WordPressDependencyManager.DownloadState.Extracting -> {
+                            CircularProgressIndicator()
+                            Text("${Strings.wpExtracting}: ${dlState.fileName}")
+                        }
+                        is WordPressDependencyManager.DownloadState.Verifying -> {
+                            CircularProgressIndicator()
+                            Text("${dlState.fileName}...")
+                        }
+                        else -> {
+                            CircularProgressIndicator()
+                            Text(Strings.wpDownloading)
+                        }
+                    }
+
+                    MirrorSourceInfo()
+                }
+                is WordPressPreviewState.CreatingProject -> {
+                    CircularProgressIndicator()
+                    Text(Strings.wpCreatingProject)
+                }
+                is WordPressPreviewState.StartingServer -> {
+                    CircularProgressIndicator()
+                    Text(Strings.wpStartingServer)
+                }
+                is WordPressPreviewState.Error -> {
+                    ErrorWithRetry(state.message, onRetry, scope = "WordPress preview", throwable = state.throwable)
+                }
+                else -> {}
+            }
+        }
+    }
+}
+
+@Composable
+fun PhpAppLoadingOverlay(
+    state: PhpAppPreviewState,
+    downloadState: WordPressDependencyManager.DownloadState,
+    onRetry: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.surface),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier.padding(32.dp)
+        ) {
+            when (state) {
+                is PhpAppPreviewState.CheckingDeps -> {
+                    CircularProgressIndicator()
+                    Text(Strings.phpAppCheckingDeps)
+                }
+                is PhpAppPreviewState.Downloading -> {
+                    when (val dlState = downloadState) {
+                        is WordPressDependencyManager.DownloadState.Downloading -> {
+                            LinearProgressIndicator(
+                                progress = { dlState.progress },
+                                modifier = Modifier.fillMaxWidth(0.8f)
+                            )
+                            Text("${Strings.phpAppDownloading}: ${dlState.currentFile}")
+                            Text(
+                                "${formatWpBytes(dlState.bytesDownloaded)} / ${formatWpBytes(dlState.totalBytes)}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        is WordPressDependencyManager.DownloadState.Extracting -> {
+                            CircularProgressIndicator()
+                            Text("${Strings.wpExtracting}: ${dlState.fileName}")
+                        }
+                        else -> {
+                            CircularProgressIndicator()
+                            Text(Strings.phpAppDownloading)
+                        }
+                    }
+
+                    MirrorSourceInfo()
+                }
+                is PhpAppPreviewState.StartingServer -> {
+                    CircularProgressIndicator()
+                    Text(Strings.phpAppStartingServer)
+                }
+                is PhpAppPreviewState.Error -> {
+                    ErrorWithRetry(state.message, onRetry, scope = "PHP preview", throwable = state.throwable)
+                }
+                else -> {}
+            }
+        }
+    }
+}
+
+@Composable
+fun PythonAppLoadingOverlay(
+    state: PythonAppPreviewState,
+    onRetry: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.surface),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier.padding(32.dp)
+        ) {
+            when (state) {
+                is PythonAppPreviewState.Starting -> {
+                    CircularProgressIndicator()
+                    Text(Strings.pyStartingPreview)
+                }
+                is PythonAppPreviewState.Error -> {
+                    ErrorWithRetry(state.message, onRetry, scope = "Python preview", throwable = state.throwable)
+                }
+                else -> {}
+            }
+        }
+    }
+}
+
+@Composable
+fun SimpleAppLoadingOverlay(
+    isStarting: Boolean,
+    startingText: String,
+    errorMessage: String?,
+    onRetry: () -> Unit,
+    errorScope: String = "App preview",
+    errorThrowable: Throwable? = null
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.surface),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier.padding(32.dp)
+        ) {
+            if (isStarting) {
+                CircularProgressIndicator()
+                Text(startingText)
+            } else if (errorMessage != null) {
+                ErrorWithRetry(errorMessage, onRetry, scope = errorScope, throwable = errorThrowable)
+            }
+        }
+    }
+}
+
+@Composable
+private fun ErrorWithRetry(
+    message: String,
+    onRetry: () -> Unit,
+    scope: String = "App preview",
+    throwable: Throwable? = null
+) {
+    Icon(
+        Icons.Outlined.Warning,
+        contentDescription = null,
+        modifier = Modifier.size(48.dp),
+        tint = MaterialTheme.colorScheme.error
+    )
+    Text(
+        message,
+        color = MaterialTheme.colorScheme.error,
+        textAlign = TextAlign.Center
+    )
+    val report = remember(scope, message, throwable) {
+        com.webtoapp.ui.components.buildErrorReport(scope, message, throwable)
+    }
+    com.webtoapp.ui.components.WtaErrorDetailsSection(
+        report = report,
+        onRetry = onRetry
+    )
+}
+
+@Composable
+private fun MirrorSourceInfo() {
+    Text(
+        "${Strings.wpMirrorSource}: ${
+            if (WordPressDependencyManager.getMirrorRegion() == WordPressDependencyManager.MirrorRegion.CN)
+                Strings.wpMirrorCN else Strings.wpMirrorGlobal
+        }",
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant
+    )
+}
+
+@Composable
+fun PythonStaticFallbackBanner(
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        shadowElevation = 4.dp
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                Icons.Outlined.Warning,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.width(10.dp))
+            Text(
+                Strings.pythonStaticFallbackBanner,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f)
+            )
+            IconButton(onClick = onDismiss, modifier = Modifier.size(28.dp)) {
+                Icon(
+                    Icons.Outlined.Close,
+                    contentDescription = Strings.cdClose,
+                    modifier = Modifier.size(16.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}

@@ -16,3 +16,4 @@ Prevents the screen from turning off while the app runs, with optional timeout a
 ## Notes
 
 - Enabling any non-`OFF` mode sets `keepScreenOn`.
+- Media apps have their own keep-screen-on toggle (see the [Media](/guide/app-types/media) type).

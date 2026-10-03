@@ -818,9 +818,57 @@ object StringsA {
         AppLanguage.KOREAN -> "프런트엔드 프로젝트 편집"
     }
 
+    val createNodeJsApp: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Node.js 应用"
+        AppLanguage.ENGLISH -> "Node.js App"
+        AppLanguage.ARABIC -> "تطبيق Node.js"
+        AppLanguage.PORTUGUESE -> "App Node.js"
+        AppLanguage.SPANISH -> "App Node.js"
+        AppLanguage.FRENCH -> "App Node.js"
+        AppLanguage.GERMAN -> "Node.js-App"
+        AppLanguage.RUSSIAN -> "Приложение Node.js"
+        AppLanguage.JAPANESE -> "Node.jsアプリ"
+        AppLanguage.KOREAN -> "Node.js 앱"
+    }
 
+    val createPhpApp: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "PHP 应用"
+        AppLanguage.ENGLISH -> "PHP App"
+        AppLanguage.ARABIC -> "تطبيق PHP"
+        AppLanguage.PORTUGUESE -> "App PHP"
+        AppLanguage.SPANISH -> "App PHP"
+        AppLanguage.FRENCH -> "App PHP"
+        AppLanguage.GERMAN -> "PHP-App"
+        AppLanguage.RUSSIAN -> "Приложение PHP"
+        AppLanguage.JAPANESE -> "PHPアプリ"
+        AppLanguage.KOREAN -> "PHP 앱"
+    }
 
+    val createPythonApp: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Python 应用"
+        AppLanguage.ENGLISH -> "Python App"
+        AppLanguage.ARABIC -> "تطبيق Python"
+        AppLanguage.PORTUGUESE -> "App Python"
+        AppLanguage.SPANISH -> "App Python"
+        AppLanguage.FRENCH -> "App Python"
+        AppLanguage.GERMAN -> "Python-App"
+        AppLanguage.RUSSIAN -> "Приложение Python"
+        AppLanguage.JAPANESE -> "Pythonアプリ"
+        AppLanguage.KOREAN -> "Python 앱"
+    }
 
+    val createGoApp: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Go 服务"
+        AppLanguage.ENGLISH -> "Go Service"
+        AppLanguage.ARABIC -> "خدمة Go"
+        AppLanguage.PORTUGUESE -> "Serviço Go"
+        AppLanguage.SPANISH -> "Servicio Go"
+        AppLanguage.FRENCH -> "Service Go"
+        AppLanguage.GERMAN -> "Go-Dienst"
+        AppLanguage.RUSSIAN -> "Служба Go"
+        AppLanguage.JAPANESE -> "Goサービス"
+        AppLanguage.KOREAN -> "Go 서비스"
+    }
 
     val appTypeMultiWeb: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "多站点"
@@ -1264,7 +1312,31 @@ object StringsA {
         AppLanguage.KOREAN -> "웹"
     }
 
+    val appTypeImage: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "图片"
+        AppLanguage.ENGLISH -> "Image"
+        AppLanguage.ARABIC -> "صورة"
+        AppLanguage.PORTUGUESE -> "Imagem"
+        AppLanguage.SPANISH -> "Imagen"
+        AppLanguage.FRENCH -> "Image"
+        AppLanguage.GERMAN -> "Bild"
+        AppLanguage.RUSSIAN -> "Изображение"
+        AppLanguage.JAPANESE -> "画像"
+        AppLanguage.KOREAN -> "이미지"
+    }
 
+    val appTypeVideo: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "视频"
+        AppLanguage.ENGLISH -> "Video"
+        AppLanguage.ARABIC -> "فيديو"
+        AppLanguage.PORTUGUESE -> "Vídeo"
+        AppLanguage.SPANISH -> "Vídeo"
+        AppLanguage.FRENCH -> "Vidéo"
+        AppLanguage.GERMAN -> "Video"
+        AppLanguage.RUSSIAN -> "Видео"
+        AppLanguage.JAPANESE -> "動画"
+        AppLanguage.KOREAN -> "동영상"
+    }
 
     val appTypeHtml: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "HTML"
@@ -1292,19 +1364,6 @@ object StringsA {
         AppLanguage.KOREAN -> "갤러리"
     }
 
-    val appTypeRemoved: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "已移除类型"
-        AppLanguage.ENGLISH -> "Removed type"
-        AppLanguage.ARABIC -> "نوع محذوف"
-        AppLanguage.PORTUGUESE -> "Tipo removido"
-        AppLanguage.SPANISH -> "Tipo eliminado"
-        AppLanguage.FRENCH -> "Type supprimé"
-        AppLanguage.GERMAN -> "Entfernter Typ"
-        AppLanguage.RUSSIAN -> "Удалённый тип"
-        AppLanguage.JAPANESE -> "削除されたタイプ"
-        AppLanguage.KOREAN -> "삭제된 유형"
-    }
-
     val appTypeFrontend: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "前端"
         AppLanguage.ENGLISH -> "Frontend"
@@ -1318,10 +1377,70 @@ object StringsA {
         AppLanguage.KOREAN -> "프런트엔드"
     }
 
+    val appTypeWordPress: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "WordPress"
+        AppLanguage.ENGLISH -> "WordPress"
+        AppLanguage.ARABIC -> "WordPress"
+        AppLanguage.PORTUGUESE -> "WordPress"
+        AppLanguage.SPANISH -> "WordPress"
+        AppLanguage.FRENCH -> "WordPress"
+        AppLanguage.GERMAN -> "WordPress"
+        AppLanguage.RUSSIAN -> "WordPress"
+        AppLanguage.JAPANESE -> "WordPress"
+        AppLanguage.KOREAN -> "WordPress"
+    }
 
+    val appTypeNodeJs: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Node.js"
+        AppLanguage.ENGLISH -> "Node.js"
+        AppLanguage.ARABIC -> "Node.js"
+        AppLanguage.PORTUGUESE -> "Node.js"
+        AppLanguage.SPANISH -> "Node.js"
+        AppLanguage.FRENCH -> "Node.js"
+        AppLanguage.GERMAN -> "Node.js"
+        AppLanguage.RUSSIAN -> "Node.js"
+        AppLanguage.JAPANESE -> "Node.js"
+        AppLanguage.KOREAN -> "Node.js"
+    }
 
+    val appTypePhp: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "PHP"
+        AppLanguage.ENGLISH -> "PHP"
+        AppLanguage.ARABIC -> "PHP"
+        AppLanguage.PORTUGUESE -> "PHP"
+        AppLanguage.SPANISH -> "PHP"
+        AppLanguage.FRENCH -> "PHP"
+        AppLanguage.GERMAN -> "PHP"
+        AppLanguage.RUSSIAN -> "PHP"
+        AppLanguage.JAPANESE -> "PHP"
+        AppLanguage.KOREAN -> "PHP"
+    }
 
+    val appTypePython: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Python"
+        AppLanguage.ENGLISH -> "Python"
+        AppLanguage.ARABIC -> "Python"
+        AppLanguage.PORTUGUESE -> "Python"
+        AppLanguage.SPANISH -> "Python"
+        AppLanguage.FRENCH -> "Python"
+        AppLanguage.GERMAN -> "Python"
+        AppLanguage.RUSSIAN -> "Python"
+        AppLanguage.JAPANESE -> "Python"
+        AppLanguage.KOREAN -> "Python"
+    }
 
+    val appTypeGo: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Go"
+        AppLanguage.ENGLISH -> "Go"
+        AppLanguage.ARABIC -> "Go"
+        AppLanguage.PORTUGUESE -> "Go"
+        AppLanguage.SPANISH -> "Go"
+        AppLanguage.FRENCH -> "Go"
+        AppLanguage.GERMAN -> "Go"
+        AppLanguage.RUSSIAN -> "Go"
+        AppLanguage.JAPANESE -> "Go"
+        AppLanguage.KOREAN -> "Go"
+    }
 
     val dirNotExists: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "目录不存在"
@@ -1375,6 +1494,18 @@ object StringsA {
         AppLanguage.KOREAN -> "환경 준비 중..."
     }
 
+    val startingServer: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "正在准备应用..."
+        AppLanguage.ENGLISH -> "Preparing your app..."
+        AppLanguage.ARABIC -> "جارٍ تجهيز التطبيق..."
+        AppLanguage.PORTUGUESE -> "Preparando seu aplicativo..."
+        AppLanguage.SPANISH -> "Preparando tu aplicación..."
+        AppLanguage.FRENCH -> "Préparation de votre application..."
+        AppLanguage.GERMAN -> "Ihre App wird vorbereitet..."
+        AppLanguage.RUSSIAN -> "Подготовка приложения..."
+        AppLanguage.JAPANESE -> "アプリを準備中..."
+        AppLanguage.KOREAN -> "앱을 준비하는 중..."
+    }
 
     val serverStartFailed: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "服务启动失败"
@@ -1462,6 +1593,188 @@ object StringsA {
         AppLanguage.KOREAN -> "재시도"
     }
 
+    val phpSupportedFrameworks: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "支持 Laravel、ThinkPHP、CodeIgniter、Slim。"
+        AppLanguage.ENGLISH -> "Supports Laravel, ThinkPHP, CodeIgniter, Slim and plain PHP projects"
+        AppLanguage.ARABIC -> "يدعم Laravel و ThinkPHP و CodeIgniter و Slim ومشاريع PHP الأصلية"
+        AppLanguage.PORTUGUESE -> "Suporta Laravel, ThinkPHP, CodeIgniter, Slim e projetos PHP puros"
+        AppLanguage.SPANISH -> "Soporta Laravel, ThinkPHP, CodeIgniter, Slim y proyectos PHP puros"
+        AppLanguage.FRENCH -> "Prend en charge Laravel, ThinkPHP, CodeIgniter, Slim et les projets PHP purs"
+        AppLanguage.GERMAN -> "Unterstützt Laravel, ThinkPHP, CodeIgniter, Slim und reine PHP-Projekte"
+        AppLanguage.RUSSIAN -> "Поддерживает Laravel, ThinkPHP, CodeIgniter, Slim и чистые PHP-проекты"
+        AppLanguage.JAPANESE -> "Laravel、ThinkPHP、CodeIgniter、Slim、および純粋なPHPプロジェクトに対応"
+        AppLanguage.KOREAN -> "Laravel, ThinkPHP, CodeIgniter, Slim 및 순수 PHP 프로젝트 지원"
+    }
+
+    val pySupportedFrameworks: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "支持 Flask、Django、FastAPI、Tornado。"
+        AppLanguage.ENGLISH -> "Supports Flask, Django, FastAPI, Tornado and plain Python Web projects"
+        AppLanguage.ARABIC -> "يدعم Flask و Django و FastAPI و Tornado ومشاريع Python Web الأصلية"
+        AppLanguage.PORTUGUESE -> "Suporta Flask, Django, FastAPI, Tornado e projetos Python Web puros"
+        AppLanguage.SPANISH -> "Soporta Flask, Django, FastAPI, Tornado y proyectos Python Web puros"
+        AppLanguage.FRENCH -> "Prend en charge Flask, Django, FastAPI, Tornado et les projets Python Web purs"
+        AppLanguage.GERMAN -> "Unterstützt Flask, Django, FastAPI, Tornado und reine Python-Web-Projekte"
+        AppLanguage.RUSSIAN -> "Поддерживает Flask, Django, FastAPI, Tornado и чистые Python Web-проекты"
+        AppLanguage.JAPANESE -> "Flask、Django、FastAPI、Tornado、および純粋なPython Webプロジェクトに対応"
+        AppLanguage.KOREAN -> "Flask, Django, FastAPI, Tornado 및 순수 Python Web 프로젝트 지원"
+    }
+
+    val goSupportedFrameworks: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "支持 Gin、Fiber、Echo、Chi、net/http，需 ARM64 版。"
+        AppLanguage.ENGLISH -> "Supports Gin, Fiber, Echo, Chi, net/http. Requires ARM64 binary."
+        AppLanguage.ARABIC -> "يدعم Gin و Fiber و Echo و Chi و net/http. يتطلب ملف ثنائي ARM64 مسبق التجميع."
+        AppLanguage.PORTUGUESE -> "Suporta Gin, Fiber, Echo, Chi, net/http. Requer binário ARM64."
+        AppLanguage.SPANISH -> "Soporta Gin, Fiber, Echo, Chi, net/http. Requiere binario ARM64."
+        AppLanguage.FRENCH -> "Prend en charge Gin, Fiber, Echo, Chi, net/http. Nécessite un binaire ARM64."
+        AppLanguage.GERMAN -> "Unterstützt Gin, Fiber, Echo, Chi, net/http. Erfordert ARM64-Binary."
+        AppLanguage.RUSSIAN -> "Поддерживает Gin, Fiber, Echo, Chi, net/http. Требуется ARM64-бинарник."
+        AppLanguage.JAPANESE -> "Gin、Fiber、Echo、Chi、net/http に対応。ARM64バイナリが必要です。"
+        AppLanguage.KOREAN -> "Gin, Fiber, Echo, Chi, net/http 지원. ARM64 바이너리 필요."
+    }
+
+    val phpFrameworkDetected: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "检测到框架"
+        AppLanguage.ENGLISH -> "Framework Detected"
+        AppLanguage.ARABIC -> "تم اكتشاف الإطار"
+        AppLanguage.PORTUGUESE -> "Framework Detectado"
+        AppLanguage.SPANISH -> "Framework Detectado"
+        AppLanguage.FRENCH -> "Framework détecté"
+        AppLanguage.GERMAN -> "Framework erkannt"
+        AppLanguage.RUSSIAN -> "Фреймворк обнаружен"
+        AppLanguage.JAPANESE -> "フレームワークを検出"
+        AppLanguage.KOREAN -> "프레임워크 감지됨"
+    }
+
+    val phpDocumentRoot: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Web 根目录"
+        AppLanguage.ENGLISH -> "Document Root"
+        AppLanguage.ARABIC -> "جذر المستند"
+        AppLanguage.PORTUGUESE -> "Raiz do Documento"
+        AppLanguage.SPANISH -> "Raíz del Documento"
+        AppLanguage.FRENCH -> "Racine des documents"
+        AppLanguage.GERMAN -> "Dokumentwurzel"
+        AppLanguage.RUSSIAN -> "Корневой каталог документов"
+        AppLanguage.JAPANESE -> "ドキュメントルート"
+        AppLanguage.KOREAN -> "문서 루트"
+    }
+
+    val phpEntryFile: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "入口文件"
+        AppLanguage.ENGLISH -> "Entry File"
+        AppLanguage.ARABIC -> "ملف الدخول"
+        AppLanguage.PORTUGUESE -> "Arquivo de Entrada"
+        AppLanguage.SPANISH -> "Archivo de Entrada"
+        AppLanguage.FRENCH -> "Fichier d'entrée"
+        AppLanguage.GERMAN -> "Einstiegsdatei"
+        AppLanguage.RUSSIAN -> "Точка входа"
+        AppLanguage.JAPANESE -> "エントリファイル"
+        AppLanguage.KOREAN -> "진입 파일"
+    }
+
+    val phpProjectReady: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "PHP 项目已就绪"
+        AppLanguage.ENGLISH -> "PHP project ready"
+        AppLanguage.ARABIC -> "مشروع PHP جاهز"
+        AppLanguage.PORTUGUESE -> "Projeto PHP pronto"
+        AppLanguage.SPANISH -> "Proyecto PHP listo"
+        AppLanguage.FRENCH -> "Projet PHP prêt"
+        AppLanguage.GERMAN -> "PHP-Projekt bereit"
+        AppLanguage.RUSSIAN -> "Проект PHP готов"
+        AppLanguage.JAPANESE -> "PHPプロジェクトの準備が完了しました"
+        AppLanguage.KOREAN -> "PHP 프로젝트 준비 완료"
+    }
+
+    val phpSelectProject: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "选择 PHP 项目目录"
+        AppLanguage.ENGLISH -> "Select PHP Project Directory"
+        AppLanguage.ARABIC -> "اختر مجلد مشروع PHP"
+        AppLanguage.PORTUGUESE -> "Selecionar Diretório do Projeto PHP"
+        AppLanguage.SPANISH -> "Seleccionar Directorio del Proyecto PHP"
+        AppLanguage.FRENCH -> "Sélectionner le répertoire du projet PHP"
+        AppLanguage.GERMAN -> "PHP-Projektverzeichnis auswählen"
+        AppLanguage.RUSSIAN -> "Выберите каталог проекта PHP"
+        AppLanguage.JAPANESE -> "PHPプロジェクトディレクトリを選択"
+        AppLanguage.KOREAN -> "PHP 프로젝트 디렉터리 선택"
+    }
+
+    val phpAppCheckingDeps: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "检查 PHP 环境..."
+        AppLanguage.ENGLISH -> "Checking PHP environment..."
+        AppLanguage.ARABIC -> "جارٍ فحص بيئة PHP..."
+        AppLanguage.PORTUGUESE -> "Verificando ambiente PHP..."
+        AppLanguage.SPANISH -> "Comprobando entorno PHP..."
+        AppLanguage.FRENCH -> "Vérification de l'environnement PHP..."
+        AppLanguage.GERMAN -> "PHP-Umgebung wird geprüft..."
+        AppLanguage.RUSSIAN -> "Проверка среды PHP..."
+        AppLanguage.JAPANESE -> "PHP環境を確認中..."
+        AppLanguage.KOREAN -> "PHP 환경 확인 중..."
+    }
+
+    val phpAppDownloading: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "正在下载 PHP 运行时"
+        AppLanguage.ENGLISH -> "Downloading PHP runtime"
+        AppLanguage.ARABIC -> "جارٍ تنزيل بيئة تشغيل PHP"
+        AppLanguage.PORTUGUESE -> "Baixando runtime PHP"
+        AppLanguage.SPANISH -> "Descargando runtime PHP"
+        AppLanguage.FRENCH -> "Téléchargement du runtime PHP"
+        AppLanguage.GERMAN -> "PHP-Runtime wird heruntergeladen"
+        AppLanguage.RUSSIAN -> "Загрузка среды выполнения PHP"
+        AppLanguage.JAPANESE -> "PHPランタイムをダウンロード中"
+        AppLanguage.KOREAN -> "PHP 런타임 다운로드 중"
+    }
+
+    val phpAppStartingServer: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "正在启动 PHP 服务器..."
+        AppLanguage.ENGLISH -> "Starting PHP server..."
+        AppLanguage.ARABIC -> "جارٍ تشغيل خادم PHP..."
+        AppLanguage.PORTUGUESE -> "Iniciando servidor PHP..."
+        AppLanguage.SPANISH -> "Iniciando servidor PHP..."
+        AppLanguage.FRENCH -> "Démarrage du serveur PHP..."
+        AppLanguage.GERMAN -> "PHP-Server wird gestartet..."
+        AppLanguage.RUSSIAN -> "Запуск сервера PHP..."
+        AppLanguage.JAPANESE -> "PHPサーバーを起動中..."
+        AppLanguage.KOREAN -> "PHP 서버 시작 중..."
+    }
+
+    val phpAppServerError: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "PHP 服务器启动失败"
+        AppLanguage.ENGLISH -> "PHP server failed to start"
+        AppLanguage.ARABIC -> "فشل تشغيل خادم PHP"
+        AppLanguage.PORTUGUESE -> "Falha ao iniciar o servidor PHP"
+        AppLanguage.SPANISH -> "Error al iniciar el servidor PHP"
+        AppLanguage.FRENCH -> "Échec du démarrage du serveur PHP"
+        AppLanguage.GERMAN -> "PHP-Serverstart fehlgeschlagen"
+        AppLanguage.RUSSIAN -> "Не удалось запустить сервер PHP"
+        AppLanguage.JAPANESE -> "PHPサーバーの起動に失敗しました"
+        AppLanguage.KOREAN -> "PHP 서버 시작 실패"
+    }
+
+    val phpAppDownloadFailed: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "PHP 运行时下载失败，请检查网络后重试"
+        AppLanguage.ENGLISH -> "PHP runtime download failed, please check network and retry"
+        AppLanguage.ARABIC -> "فشل تنزيل بيئة تشغيل PHP، يرجى التحقق من الشبكة والمحاولة مرة أخرى"
+        AppLanguage.PORTUGUESE -> "Falha no download do runtime PHP, verifique a rede e tente novamente"
+        AppLanguage.SPANISH -> "Error al descargar el runtime PHP, comprueba la red e inténtalo de nuevo"
+        AppLanguage.FRENCH -> "Échec du téléchargement du runtime PHP, vérifiez le réseau et réessayez"
+        AppLanguage.GERMAN -> "Download der PHP-Runtime fehlgeschlagen, bitte Netzwerk prüfen und erneut versuchen"
+        AppLanguage.RUSSIAN -> "Не удалось загрузить среду выполнения PHP, проверьте сеть и повторите"
+        AppLanguage.JAPANESE -> "PHPランタイムのダウンロードに失敗しました。ネットワークを確認して再試行してください"
+        AppLanguage.KOREAN -> "PHP 런타임 다운로드 실패, 네트워크를 확인하고 재시도하세요"
+    }
+
+    val phpAppProjectNotFound: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "PHP 项目文件不存在"
+        AppLanguage.ENGLISH -> "PHP project files not found"
+        AppLanguage.ARABIC -> "ملفات مشروع PHP غير موجودة"
+        AppLanguage.PORTUGUESE -> "Arquivos do projeto PHP não encontrados"
+        AppLanguage.SPANISH -> "Archivos del proyecto PHP no encontrados"
+        AppLanguage.FRENCH -> "Fichiers du projet PHP introuvables"
+        AppLanguage.GERMAN -> "PHP-Projektdateien nicht gefunden"
+        AppLanguage.RUSSIAN -> "Файлы проекта PHP не найдены"
+        AppLanguage.JAPANESE -> "PHPプロジェクトファイルが見つかりません"
+        AppLanguage.KOREAN -> "PHP 프로젝트 파일을 찾을 수 없습니다"
+    }
+
     val phpImportZip: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "导入 ZIP 压缩包"
         AppLanguage.ENGLISH -> "Import ZIP Archive"
@@ -1475,6 +1788,110 @@ object StringsA {
         AppLanguage.KOREAN -> "ZIP 아카이브 가져오기"
     }
 
+    val phpExtractingZip: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "正在解压 ZIP 文件..."
+        AppLanguage.ENGLISH -> "Extracting ZIP file..."
+        AppLanguage.ARABIC -> "جارٍ استخراج ملف ZIP..."
+        AppLanguage.PORTUGUESE -> "Extraindo arquivo ZIP..."
+        AppLanguage.SPANISH -> "Extrayendo archivo ZIP..."
+        AppLanguage.FRENCH -> "Extraction de l'archive ZIP..."
+        AppLanguage.GERMAN -> "ZIP-Datei wird entpackt..."
+        AppLanguage.RUSSIAN -> "Распаковка ZIP-файла..."
+        AppLanguage.JAPANESE -> "ZIPファイルを展開中..."
+        AppLanguage.KOREAN -> "ZIP 파일 압축 푸는 중..."
+    }
+
+    val phpZipExtractFailed: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "ZIP 解压失败"
+        AppLanguage.ENGLISH -> "ZIP extraction failed"
+        AppLanguage.ARABIC -> "فشل استخراج ZIP"
+        AppLanguage.PORTUGUESE -> "Falha na extração do ZIP"
+        AppLanguage.SPANISH -> "Error al extraer ZIP"
+        AppLanguage.FRENCH -> "Échec de l'extraction ZIP"
+        AppLanguage.GERMAN -> "ZIP-Entpacken fehlgeschlagen"
+        AppLanguage.RUSSIAN -> "Не удалось распаковать ZIP"
+        AppLanguage.JAPANESE -> "ZIPの展開に失敗しました"
+        AppLanguage.KOREAN -> "ZIP 압축 해제 실패"
+    }
+
+    val phpZipNoPhpFiles: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "ZIP 中未找到 PHP 项目文件"
+        AppLanguage.ENGLISH -> "No PHP project files found in ZIP"
+        AppLanguage.ARABIC -> "لم يتم العثور على ملفات مشروع PHP في ZIP"
+        AppLanguage.PORTUGUESE -> "Nenhum arquivo de projeto PHP encontrado no ZIP"
+        AppLanguage.SPANISH -> "No se encontraron archivos de proyecto PHP en el ZIP"
+        AppLanguage.FRENCH -> "Aucun fichier de projet PHP trouvé dans le ZIP"
+        AppLanguage.GERMAN -> "Keine PHP-Projektdateien im ZIP gefunden"
+        AppLanguage.RUSSIAN -> "В ZIP нет файлов проекта PHP"
+        AppLanguage.JAPANESE -> "ZIP内にPHPプロジェクトファイルが見つかりません"
+        AppLanguage.KOREAN -> "ZIP에서 PHP 프로젝트 파일을 찾을 수 없습니다"
+    }
+
+    val pySelectProject: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "选择 Python 项目目录"
+        AppLanguage.ENGLISH -> "Select Python Project Directory"
+        AppLanguage.ARABIC -> "اختر مجلد مشروع Python"
+        AppLanguage.PORTUGUESE -> "Selecionar Diretório do Projeto Python"
+        AppLanguage.SPANISH -> "Seleccionar Directorio del Proyecto Python"
+        AppLanguage.FRENCH -> "Sélectionner le répertoire du projet Python"
+        AppLanguage.GERMAN -> "Python-Projektverzeichnis auswählen"
+        AppLanguage.RUSSIAN -> "Выберите каталог проекта Python"
+        AppLanguage.JAPANESE -> "Pythonプロジェクトディレクトリを選択"
+        AppLanguage.KOREAN -> "Python 프로젝트 디렉터리 선택"
+    }
+
+    val pyServerType: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "服务器类型"
+        AppLanguage.ENGLISH -> "Server Type"
+        AppLanguage.ARABIC -> "نوع الخادم"
+        AppLanguage.PORTUGUESE -> "Tipo de Servidor"
+        AppLanguage.SPANISH -> "Tipo de Servidor"
+        AppLanguage.FRENCH -> "Type de serveur"
+        AppLanguage.GERMAN -> "Server-Typ"
+        AppLanguage.RUSSIAN -> "Тип сервера"
+        AppLanguage.JAPANESE -> "サーバータイプ"
+        AppLanguage.KOREAN -> "서버 유형"
+    }
+
+    val pyRuntimeModeAuto: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "自动配置（推荐）"
+        AppLanguage.ENGLISH -> "Auto-configured (recommended)"
+        AppLanguage.ARABIC -> "إعداد تلقائي (موصى به)"
+        AppLanguage.PORTUGUESE -> "Configuração automática (recomendado)"
+        AppLanguage.SPANISH -> "Configuración automática (recomendada)"
+        AppLanguage.FRENCH -> "Configuration automatique (recommandée)"
+        AppLanguage.GERMAN -> "Automatisch konfiguriert (empfohlen)"
+        AppLanguage.RUSSIAN -> "Автоматическая настройка (рекомендуется)"
+        AppLanguage.JAPANESE -> "自動設定（推奨）"
+        AppLanguage.KOREAN -> "자동 구성(권장)"
+    }
+
+    val pyRuntimeModeAutoDesc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "已根据检测到的项目框架自动选择最兼容的运行方式，无需手动设置"
+        AppLanguage.ENGLISH -> "The most compatible runtime mode is selected automatically from the detected framework — no manual setup needed"
+        AppLanguage.ARABIC -> "يتم اختيار وضع التشغيل الأكثر توافقًا تلقائيًا حسب إطار العمل المكتشف — لا حاجة لإعداد يدوي"
+        AppLanguage.PORTUGUESE -> "O modo de execução mais compatível é escolhido automaticamente a partir do framework detectado — sem configuração manual"
+        AppLanguage.SPANISH -> "El modo de ejecución más compatible se selecciona automáticamente según el framework detectado; no requiere configuración manual"
+        AppLanguage.FRENCH -> "Le mode d'exécution le plus compatible est choisi automatiquement selon le framework détecté — aucune configuration manuelle"
+        AppLanguage.GERMAN -> "Der kompatibelste Laufzeitmodus wird automatisch anhand des erkannten Frameworks gewählt — keine manuelle Einrichtung nötig"
+        AppLanguage.RUSSIAN -> "Наиболее совместимый режим выполнения выбирается автоматически по обнаруженному фреймворку — ручная настройка не требуется"
+        AppLanguage.JAPANESE -> "検出されたフレームワークに基づいて最も互換性の高い実行モードが自動的に選択されます。手動設定は不要です"
+        AppLanguage.KOREAN -> "감지된 프레임워크에 따라 가장 호환되는 실행 모드가 자동으로 선택됩니다 — 수동 설정이 필요 없습니다"
+    }
+
+    val pythonStaticFallbackBanner: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Python 后端未运行：当前为静态预览，接口请求不可用"
+        AppLanguage.ENGLISH -> "Python backend is not running — static preview only, API calls will fail"
+        AppLanguage.ARABIC -> "خادم Python لا يعمل — معاينة ثابتة فقط، ولن تعمل طلبات API"
+        AppLanguage.PORTUGUESE -> "O backend Python não está em execução — apenas visualização estática, chamadas de API falharão"
+        AppLanguage.SPANISH -> "El backend de Python no se está ejecutando: solo vista previa estática, las llamadas a la API fallarán"
+        AppLanguage.FRENCH -> "Le backend Python ne fonctionne pas — aperçu statique uniquement, les appels d'API échoueront"
+        AppLanguage.GERMAN -> "Python-Backend läuft nicht — nur statische Vorschau, API-Aufrufe schlagen fehl"
+        AppLanguage.RUSSIAN -> "Бэкенд Python не запущен — только статический предпросмотр, запросы к API не сработают"
+        AppLanguage.JAPANESE -> "Pythonバックエンドが実行されていません — 静的プレビューのみで、APIリクエストは失敗します"
+        AppLanguage.KOREAN -> "Python 백엔드가 실행 중이 아닙니다 — 정적 미리보기만 제공되며 API 요청은 실패합니다"
+    }
+
     val siteAnalyzeLanTimeoutHint: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "连接局域网地址超时：请确认与目标设备在同一网络，并在系统设置中允许本应用访问本地网络/局域网"
         AppLanguage.ENGLISH -> "Timed out connecting to a LAN address: make sure you are on the same network as the target device, and allow local network access for this app in system settings"
@@ -1486,6 +1903,721 @@ object StringsA {
         AppLanguage.RUSSIAN -> "Истекло время ожидания при подключении к локальному сетевому адресу: убедитесь, что вы в одной сети с целевым устройством, и разрешите этому приложению доступ к локальной сети в настройках системы"
         AppLanguage.JAPANESE -> "ローカルネットワークアドレスへの接続がタイムアウトしました：対象デバイスと同じネットワークにいることを確認し、システム設定でこのアプリのローカルネットワークへのアクセスを許可してください"
         AppLanguage.KOREAN -> "로컬 네트워크 주소 연결 시간이 초과되었습니다: 대상 기기와 같은 네트워크에 있는지 확인하고, 시스템 설정에서 이 앱의 로컬 네트워크 접근을 허용해 주세요"
+    }
+
+    val pyProjectReady: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Python 项目已就绪"
+        AppLanguage.ENGLISH -> "Python project ready"
+        AppLanguage.ARABIC -> "مشروع Python جاهز"
+        AppLanguage.PORTUGUESE -> "Projeto Python pronto"
+        AppLanguage.SPANISH -> "Proyecto Python listo"
+        AppLanguage.FRENCH -> "Projet Python prêt"
+        AppLanguage.GERMAN -> "Python-Projekt bereit"
+        AppLanguage.RUSSIAN -> "Проект Python готов"
+        AppLanguage.JAPANESE -> "Pythonプロジェクトの準備が完了しました"
+        AppLanguage.KOREAN -> "Python 프로젝트 준비 완료"
+    }
+
+    val pyProjectNotFound: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Python 项目文件不存在"
+        AppLanguage.ENGLISH -> "Python project files not found"
+        AppLanguage.ARABIC -> "ملفات مشروع Python غير موجودة"
+        AppLanguage.PORTUGUESE -> "Arquivos do projeto Python não encontrados"
+        AppLanguage.SPANISH -> "Archivos del proyecto Python no encontrados"
+        AppLanguage.FRENCH -> "Fichiers du projet Python introuvables"
+        AppLanguage.GERMAN -> "Python-Projektdateien nicht gefunden"
+        AppLanguage.RUSSIAN -> "Файлы проекта Python не найдены"
+        AppLanguage.JAPANESE -> "Pythonプロジェクトファイルが見つかりません"
+        AppLanguage.KOREAN -> "Python 프로젝트 파일을 찾을 수 없습니다"
+    }
+
+    val pyStartingPreview: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "正在启动 Python 应用预览..."
+        AppLanguage.ENGLISH -> "Starting Python app preview..."
+        AppLanguage.ARABIC -> "جارٍ تشغيل معاينة تطبيق Python..."
+        AppLanguage.PORTUGUESE -> "Iniciando pré-visualização do app Python..."
+        AppLanguage.SPANISH -> "Iniciando vista previa de la app Python..."
+        AppLanguage.FRENCH -> "Démarrage de l'aperçu de l'app Python..."
+        AppLanguage.GERMAN -> "Python-App-Vorschau wird gestartet..."
+        AppLanguage.RUSSIAN -> "Запуск предпросмотра приложения Python..."
+        AppLanguage.JAPANESE -> "Pythonアプリのプレビューを起動中..."
+        AppLanguage.KOREAN -> "Python 앱 미리보기 시작 중..."
+    }
+
+    val pyPreviewFailed: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Python 应用预览启动失败"
+        AppLanguage.ENGLISH -> "Python app preview failed to start"
+        AppLanguage.ARABIC -> "فشل تشغيل معاينة تطبيق Python"
+        AppLanguage.PORTUGUESE -> "Falha ao iniciar a pré-visualização do app Python"
+        AppLanguage.SPANISH -> "Error al iniciar la vista previa de la app Python"
+        AppLanguage.FRENCH -> "Échec du démarrage de l'aperçu de l'app Python"
+        AppLanguage.GERMAN -> "Start der Python-App-Vorschau fehlgeschlagen"
+        AppLanguage.RUSSIAN -> "Не удалось запустить предпросмотр приложения Python"
+        AppLanguage.JAPANESE -> "Pythonアプリのプレビュー起動に失敗しました"
+        AppLanguage.KOREAN -> "Python 앱 미리보기 시작 실패"
+    }
+
+    val goSelectBinary: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "选择 Go 二进制文件"
+        AppLanguage.ENGLISH -> "Select Go Binary"
+        AppLanguage.ARABIC -> "اختر ملف Go الثنائي"
+        AppLanguage.PORTUGUESE -> "Selecionar Binário Go"
+        AppLanguage.SPANISH -> "Seleccionar Binario Go"
+        AppLanguage.FRENCH -> "Sélectionner le binaire Go"
+        AppLanguage.GERMAN -> "Go-Binary auswählen"
+        AppLanguage.RUSSIAN -> "Выберите бинарник Go"
+        AppLanguage.JAPANESE -> "Goバイナリを選択"
+        AppLanguage.KOREAN -> "Go 바이너리 선택"
+    }
+
+    val goSelectProject: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "选择 Go 项目目录"
+        AppLanguage.ENGLISH -> "Select Go Project Directory"
+        AppLanguage.ARABIC -> "اختر مجلد مشروع Go"
+        AppLanguage.PORTUGUESE -> "Selecionar Diretório do Projeto Go"
+        AppLanguage.SPANISH -> "Seleccionar Directorio del Proyecto Go"
+        AppLanguage.FRENCH -> "Sélectionner le répertoire du projet Go"
+        AppLanguage.GERMAN -> "Go-Projektverzeichnis auswählen"
+        AppLanguage.RUSSIAN -> "Выберите каталог проекта Go"
+        AppLanguage.JAPANESE -> "Goプロジェクトディレクトリを選択"
+        AppLanguage.KOREAN -> "Go 프로젝트 디렉터리 선택"
+    }
+
+    val goProjectReady: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Go 服务已就绪"
+        AppLanguage.ENGLISH -> "Go service ready"
+        AppLanguage.ARABIC -> "خدمة Go جاهزة"
+        AppLanguage.PORTUGUESE -> "Serviço Go pronto"
+        AppLanguage.SPANISH -> "Servicio Go listo"
+        AppLanguage.FRENCH -> "Service Go prêt"
+        AppLanguage.GERMAN -> "Go-Dienst bereit"
+        AppLanguage.RUSSIAN -> "Служба Go готова"
+        AppLanguage.JAPANESE -> "Goサービスの準備が完了しました"
+        AppLanguage.KOREAN -> "Go 서비스 준비 완료"
+    }
+
+    val goProjectNotFound: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Go 项目文件不存在"
+        AppLanguage.ENGLISH -> "Go project files not found"
+        AppLanguage.ARABIC -> "ملفات مشروع Go غير موجودة"
+        AppLanguage.PORTUGUESE -> "Arquivos do projeto Go não encontrados"
+        AppLanguage.SPANISH -> "Archivos del proyecto Go no encontrados"
+        AppLanguage.FRENCH -> "Fichiers du projet Go introuvables"
+        AppLanguage.GERMAN -> "Go-Projektdateien nicht gefunden"
+        AppLanguage.RUSSIAN -> "Файлы проекта Go не найдены"
+        AppLanguage.JAPANESE -> "Goプロジェクトファイルが見つかりません"
+        AppLanguage.KOREAN -> "Go 프로젝트 파일을 찾을 수 없습니다"
+    }
+
+    val goStartingPreview: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "正在启动 Go 应用预览..."
+        AppLanguage.ENGLISH -> "Starting Go app preview..."
+        AppLanguage.ARABIC -> "جارٍ تشغيل معاينة تطبيق Go..."
+        AppLanguage.PORTUGUESE -> "Iniciando pré-visualização do app Go..."
+        AppLanguage.SPANISH -> "Iniciando vista previa de la app Go..."
+        AppLanguage.FRENCH -> "Démarrage de l'aperçu de l'app Go..."
+        AppLanguage.GERMAN -> "Go-App-Vorschau wird gestartet..."
+        AppLanguage.RUSSIAN -> "Запуск предпросмотра приложения Go..."
+        AppLanguage.JAPANESE -> "Goアプリのプレビューを起動中..."
+        AppLanguage.KOREAN -> "Go 앱 미리보기 시작 중..."
+    }
+
+    val goPreviewFailed: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Go 应用预览启动失败"
+        AppLanguage.ENGLISH -> "Go app preview failed to start"
+        AppLanguage.ARABIC -> "فشل تشغيل معاينة تطبيق Go"
+        AppLanguage.PORTUGUESE -> "Falha ao iniciar a pré-visualização do app Go"
+        AppLanguage.SPANISH -> "Error al iniciar la vista previa de la app Go"
+        AppLanguage.FRENCH -> "Échec du démarrage de l'aperçu de l'app Go"
+        AppLanguage.GERMAN -> "Start der Go-App-Vorschau fehlgeschlagen"
+        AppLanguage.RUSSIAN -> "Не удалось запустить предпросмотр приложения Go"
+        AppLanguage.JAPANESE -> "Goアプリのプレビュー起動に失敗しました"
+        AppLanguage.KOREAN -> "Go 앱 미리보기 시작 실패"
+    }
+
+    val nodeProjectNotFound: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Node.js 项目文件不存在"
+        AppLanguage.ENGLISH -> "Node.js project files not found"
+        AppLanguage.ARABIC -> "ملفات مشروع Node.js غير موجودة"
+        AppLanguage.PORTUGUESE -> "Arquivos do projeto Node.js não encontrados"
+        AppLanguage.SPANISH -> "Archivos del proyecto Node.js no encontrados"
+        AppLanguage.FRENCH -> "Fichiers du projet Node.js introuvables"
+        AppLanguage.GERMAN -> "Node.js-Projektdateien nicht gefunden"
+        AppLanguage.RUSSIAN -> "Файлы проекта Node.js не найдены"
+        AppLanguage.JAPANESE -> "Node.jsプロジェクトファイルが見つかりません"
+        AppLanguage.KOREAN -> "Node.js 프로젝트 파일을 찾을 수 없습니다"
+    }
+
+    val nodePreviewFailed: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Node.js 应用预览启动失败"
+        AppLanguage.ENGLISH -> "Node.js app preview failed to start"
+        AppLanguage.ARABIC -> "فشل تشغيل معاينة تطبيق Node.js"
+        AppLanguage.PORTUGUESE -> "Falha ao iniciar a pré-visualização do app Node.js"
+        AppLanguage.SPANISH -> "Error al iniciar la vista previa de la app Node.js"
+        AppLanguage.FRENCH -> "Échec du démarrage de l'aperçu de l'app Node.js"
+        AppLanguage.GERMAN -> "Start der Node.js-App-Vorschau fehlgeschlagen"
+        AppLanguage.RUSSIAN -> "Не удалось запустить предпросмотр приложения Node.js"
+        AppLanguage.JAPANESE -> "Node.jsアプリのプレビュー起動に失敗しました"
+        AppLanguage.KOREAN -> "Node.js 앱 미리보기 시작 실패"
+    }
+
+    val previewNotRunningBadge: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "预览（未运行）"
+        AppLanguage.ENGLISH -> "Preview (not running)"
+        AppLanguage.ARABIC -> "معاينة (غير قيد التشغيل)"
+        AppLanguage.PORTUGUESE -> "Pré-visualização (não executando)"
+        AppLanguage.SPANISH -> "Vista previa (no ejecutándose)"
+        AppLanguage.FRENCH -> "Aperçu (non démarré)"
+        AppLanguage.GERMAN -> "Vorschau (wird nicht ausgeführt)"
+        AppLanguage.RUSSIAN -> "Предпросмотр (не запущен)"
+        AppLanguage.JAPANESE -> "プレビュー（未実行）"
+        AppLanguage.KOREAN -> "미리보기 (실행 중 아님)"
+    }
+
+    val previewNotRunningNote: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "这是未运行状态的预览，点击进入后会真正启动服务器并加载实际页面。"
+        AppLanguage.ENGLISH -> "This is a non-running preview. Opening the app starts the server and loads the real page."
+        AppLanguage.ARABIC -> "هذه معاينة في حالة عدم التشغيل. عند فتح التطبيق سيبدأ الخادم ويُحمّل الصفحة الفعلية."
+        AppLanguage.PORTUGUESE -> "Esta é uma pré-visualização sem execução. Abrir o app inicia o servidor e carrega a página real."
+        AppLanguage.SPANISH -> "Esta es una vista previa sin ejecución. Abrir la app inicia el servidor y carga la página real."
+        AppLanguage.FRENCH -> "Ceci est un aperçu non démarré. Ouvrir l'app démarre le serveur et charge la page réelle."
+        AppLanguage.GERMAN -> "Dies ist eine Vorschau ohne Ausführung. Beim Öffnen der App wird der Server gestartet und die echte Seite geladen."
+        AppLanguage.RUSSIAN -> "Это предпросмотр без запуска. При открытии приложения запускается сервер и загружается реальная страница."
+        AppLanguage.JAPANESE -> "これは非実行状態のプレビューです。アプリを開くとサーバーが起動し、実際のページが読み込まれます。"
+        AppLanguage.KOREAN -> "실행 중이 아닌 미리보기입니다. 앱을 열면 서버가 시작되고 실제 페이지가 로드됩니다."
+    }
+
+    val previewLabelTheme: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "主题"
+        AppLanguage.ENGLISH -> "Theme"
+        AppLanguage.ARABIC -> "السمة"
+        AppLanguage.PORTUGUESE -> "Tema"
+        AppLanguage.SPANISH -> "Tema"
+        AppLanguage.FRENCH -> "Thème"
+        AppLanguage.GERMAN -> "Theme"
+        AppLanguage.RUSSIAN -> "Тема"
+        AppLanguage.JAPANESE -> "テーマ"
+        AppLanguage.KOREAN -> "테마"
+    }
+
+    val previewLabelPlugins: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "插件"
+        AppLanguage.ENGLISH -> "Plugins"
+        AppLanguage.ARABIC -> "الإضافات"
+        AppLanguage.PORTUGUESE -> "Plugins"
+        AppLanguage.SPANISH -> "Plugins"
+        AppLanguage.FRENCH -> "Plugins"
+        AppLanguage.GERMAN -> "Plugins"
+        AppLanguage.RUSSIAN -> "Плагины"
+        AppLanguage.JAPANESE -> "プラグイン"
+        AppLanguage.KOREAN -> "플러그인"
+    }
+
+    val previewLabelAdmin: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "管理员"
+        AppLanguage.ENGLISH -> "Admin"
+        AppLanguage.ARABIC -> "المسؤول"
+        AppLanguage.PORTUGUESE -> "Administrador"
+        AppLanguage.SPANISH -> "Administrador"
+        AppLanguage.FRENCH -> "Admin"
+        AppLanguage.GERMAN -> "Admin"
+        AppLanguage.RUSSIAN -> "Админ"
+        AppLanguage.JAPANESE -> "管理者"
+        AppLanguage.KOREAN -> "관리자"
+    }
+
+    val previewLabelFramework: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "框架"
+        AppLanguage.ENGLISH -> "Framework"
+        AppLanguage.ARABIC -> "الإطار"
+        AppLanguage.PORTUGUESE -> "Framework"
+        AppLanguage.SPANISH -> "Framework"
+        AppLanguage.FRENCH -> "Framework"
+        AppLanguage.GERMAN -> "Framework"
+        AppLanguage.RUSSIAN -> "Фреймворк"
+        AppLanguage.JAPANESE -> "フレームワーク"
+        AppLanguage.KOREAN -> "프레임워크"
+    }
+
+    val previewLabelEntry: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "入口文件"
+        AppLanguage.ENGLISH -> "Entry"
+        AppLanguage.ARABIC -> "ملف الدخول"
+        AppLanguage.PORTUGUESE -> "Arquivo de Entrada"
+        AppLanguage.SPANISH -> "Archivo de Entrada"
+        AppLanguage.FRENCH -> "Fichier d'Entrée"
+        AppLanguage.GERMAN -> "Einstiegspunkt"
+        AppLanguage.RUSSIAN -> "Точка входа"
+        AppLanguage.JAPANESE -> "エントリファイル"
+        AppLanguage.KOREAN -> "진입 파일"
+    }
+
+    val previewLabelDocumentRoot: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Web 根目录"
+        AppLanguage.ENGLISH -> "Document Root"
+        AppLanguage.ARABIC -> "جذر المستند"
+        AppLanguage.PORTUGUESE -> "Raiz do Documento"
+        AppLanguage.SPANISH -> "Raíz del Documento"
+        AppLanguage.FRENCH -> "Racine du Document"
+        AppLanguage.GERMAN -> "Document Root"
+        AppLanguage.RUSSIAN -> "Корневой каталог"
+        AppLanguage.JAPANESE -> "ドキュメントルート"
+        AppLanguage.KOREAN -> "문서 루트"
+    }
+
+    val previewLabelBinary: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "二进制文件"
+        AppLanguage.ENGLISH -> "Binary"
+        AppLanguage.ARABIC -> "الملف الثنائي"
+        AppLanguage.PORTUGUESE -> "Binário"
+        AppLanguage.SPANISH -> "Binario"
+        AppLanguage.FRENCH -> "Binaire"
+        AppLanguage.GERMAN -> "Binärdatei"
+        AppLanguage.RUSSIAN -> "Бинарный файл"
+        AppLanguage.JAPANESE -> "バイナリファイル"
+        AppLanguage.KOREAN -> "바이너리 파일"
+    }
+
+    val previewValueDefault: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "默认"
+        AppLanguage.ENGLISH -> "Default"
+        AppLanguage.ARABIC -> "افتراضي"
+        AppLanguage.PORTUGUESE -> "Padrão"
+        AppLanguage.SPANISH -> "Predeterminado"
+        AppLanguage.FRENCH -> "Par défaut"
+        AppLanguage.GERMAN -> "Standard"
+        AppLanguage.RUSSIAN -> "По умолчанию"
+        AppLanguage.JAPANESE -> "デフォルト"
+        AppLanguage.KOREAN -> "기본값"
+    }
+
+    val previewValueUnknown: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "未知"
+        AppLanguage.ENGLISH -> "Unknown"
+        AppLanguage.ARABIC -> "غير معروف"
+        AppLanguage.PORTUGUESE -> "Desconhecido"
+        AppLanguage.SPANISH -> "Desconocido"
+        AppLanguage.FRENCH -> "Inconnu"
+        AppLanguage.GERMAN -> "Unbekannt"
+        AppLanguage.RUSSIAN -> "Неизвестно"
+        AppLanguage.JAPANESE -> "不明"
+        AppLanguage.KOREAN -> "알 수 없음"
+    }
+
+    val wpDownloadDeps: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "下载 WordPress 依赖"
+        AppLanguage.ENGLISH -> "Download WordPress Dependencies"
+        AppLanguage.ARABIC -> "تنزيل متطلبات WordPress"
+        AppLanguage.PORTUGUESE -> "Baixar Dependências do WordPress"
+        AppLanguage.SPANISH -> "Descargar Dependencias de WordPress"
+        AppLanguage.FRENCH -> "Télécharger les dépendances WordPress"
+        AppLanguage.GERMAN -> "WordPress-Abhängigkeiten herunterladen"
+        AppLanguage.RUSSIAN -> "Загрузить зависимости WordPress"
+        AppLanguage.JAPANESE -> "WordPressの依存関係をダウンロード"
+        AppLanguage.KOREAN -> "WordPress 종속성 다운로드"
+    }
+
+    val wpDownloadDesc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "首次使用需要下载 PHP 解释器和 WordPress 核心文件（级 25MB）"
+        AppLanguage.ENGLISH -> "First use needs PHP and WordPress core (~25MB)."
+        AppLanguage.ARABIC -> "يتطلب الاستخدام الأول تنزيل مترجم PHP ونواة WordPress (~25MB)"
+        AppLanguage.PORTUGUESE -> "O primeiro uso precisa do PHP e do núcleo do WordPress (~25MB)."
+        AppLanguage.SPANISH -> "El primer uso requiere PHP y el núcleo de WordPress (~25MB)."
+        AppLanguage.FRENCH -> "La première utilisation nécessite PHP et le cœur de WordPress (~25MB)."
+        AppLanguage.GERMAN -> "Erstverwendung benötigt PHP und den WordPress-Core (~25MB)."
+        AppLanguage.RUSSIAN -> "При первом использовании нужен PHP и ядро WordPress (~25МБ)."
+        AppLanguage.JAPANESE -> "初回利用時にはPHPとWordPressコアが必要です（約25MB）。"
+        AppLanguage.KOREAN -> "첫 사용 시 PHP와 WordPress 코어가 필요합니다 (~25MB)."
+    }
+
+    val wpMirrorCN: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "国内镜像"
+        AppLanguage.ENGLISH -> "China Mirror"
+        AppLanguage.ARABIC -> "مرآة الصين"
+        AppLanguage.PORTUGUESE -> "Mirror da China"
+        AppLanguage.SPANISH -> "Mirror de China"
+        AppLanguage.FRENCH -> "Miroir de Chine"
+        AppLanguage.GERMAN -> "China-Mirror"
+        AppLanguage.RUSSIAN -> "Китайское зеркало"
+        AppLanguage.JAPANESE -> "中国ミラー"
+        AppLanguage.KOREAN -> "중국 미러"
+    }
+
+    val wpMirrorGlobal: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "国际源"
+        AppLanguage.ENGLISH -> "Global Source"
+        AppLanguage.ARABIC -> "مصدر عالمي"
+        AppLanguage.PORTUGUESE -> "Fonte Global"
+        AppLanguage.SPANISH -> "Fuente Global"
+        AppLanguage.FRENCH -> "Source globale"
+        AppLanguage.GERMAN -> "Globale Quelle"
+        AppLanguage.RUSSIAN -> "Глобальный источник"
+        AppLanguage.JAPANESE -> "グローバルソース"
+        AppLanguage.KOREAN -> "글로벌 소스"
+    }
+
+    val wpDownloading: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "正在下载"
+        AppLanguage.ENGLISH -> "Downloading"
+        AppLanguage.ARABIC -> "جارٍ التنزيل"
+        AppLanguage.PORTUGUESE -> "Baixando"
+        AppLanguage.SPANISH -> "Descargando"
+        AppLanguage.FRENCH -> "Téléchargement"
+        AppLanguage.GERMAN -> "Wird heruntergeladen"
+        AppLanguage.RUSSIAN -> "Загрузка"
+        AppLanguage.JAPANESE -> "ダウンロード中"
+        AppLanguage.KOREAN -> "다운로드 중"
+    }
+
+    val wpExtracting: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "正在解压"
+        AppLanguage.ENGLISH -> "Extracting"
+        AppLanguage.ARABIC -> "جارٍ الاستخراج"
+        AppLanguage.PORTUGUESE -> "Extraindo"
+        AppLanguage.SPANISH -> "Extrayendo"
+        AppLanguage.FRENCH -> "Extraction"
+        AppLanguage.GERMAN -> "Wird entpackt"
+        AppLanguage.RUSSIAN -> "Распаковка"
+        AppLanguage.JAPANESE -> "展開中"
+        AppLanguage.KOREAN -> "압축 푸는 중"
+    }
+
+    val wpDepsReady: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "依赖已就绪"
+        AppLanguage.ENGLISH -> "Dependencies Ready"
+        AppLanguage.ARABIC -> "المتطلبات جاهزة"
+        AppLanguage.PORTUGUESE -> "Dependências Prontas"
+        AppLanguage.SPANISH -> "Dependencias Listas"
+        AppLanguage.FRENCH -> "Dépendances prêtes"
+        AppLanguage.GERMAN -> "Abhängigkeiten bereit"
+        AppLanguage.RUSSIAN -> "Зависимости готовы"
+        AppLanguage.JAPANESE -> "依存関係の準備が完了しました"
+        AppLanguage.KOREAN -> "종속성 준비 완료"
+    }
+
+    val wpSiteTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "站点标题"
+        AppLanguage.ENGLISH -> "Site Title"
+        AppLanguage.ARABIC -> "عنوان الموقع"
+        AppLanguage.PORTUGUESE -> "Título do Site"
+        AppLanguage.SPANISH -> "Título del Sitio"
+        AppLanguage.FRENCH -> "Titre du site"
+        AppLanguage.GERMAN -> "Website-Titel"
+        AppLanguage.RUSSIAN -> "Заголовок сайта"
+        AppLanguage.JAPANESE -> "サイトタイトル"
+        AppLanguage.KOREAN -> "사이트 제목"
+    }
+
+    val wpAdminUser: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "管理员用户名"
+        AppLanguage.ENGLISH -> "Admin Username"
+        AppLanguage.ARABIC -> "اسم المستخدم المسؤول"
+        AppLanguage.PORTUGUESE -> "Nome de Usuário Admin"
+        AppLanguage.SPANISH -> "Nombre de Usuario Admin"
+        AppLanguage.FRENCH -> "Nom d'utilisateur admin"
+        AppLanguage.GERMAN -> "Admin-Benutzername"
+        AppLanguage.RUSSIAN -> "Имя администратора"
+        AppLanguage.JAPANESE -> "管理者ユーザー名"
+        AppLanguage.KOREAN -> "관리자 사용자 이름"
+    }
+
+    val wpStartingServer: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "正在准备应用..."
+        AppLanguage.ENGLISH -> "Preparing your app..."
+        AppLanguage.ARABIC -> "جارٍ تجهيز التطبيق..."
+        AppLanguage.PORTUGUESE -> "Preparando seu aplicativo..."
+        AppLanguage.SPANISH -> "Preparando tu aplicación..."
+        AppLanguage.FRENCH -> "Préparation de votre application..."
+        AppLanguage.GERMAN -> "Ihre App wird vorbereitet..."
+        AppLanguage.RUSSIAN -> "Подготовка приложения..."
+        AppLanguage.JAPANESE -> "アプリを準備中..."
+        AppLanguage.KOREAN -> "앱을 준비하는 중..."
+    }
+
+    val wpServerError: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "PHP 服务器启动失败"
+        AppLanguage.ENGLISH -> "PHP server failed to start"
+        AppLanguage.ARABIC -> "فشل تشغيل خادم PHP"
+        AppLanguage.PORTUGUESE -> "Falha ao iniciar o servidor PHP"
+        AppLanguage.SPANISH -> "Error al iniciar el servidor PHP"
+        AppLanguage.FRENCH -> "Échec du démarrage du serveur PHP"
+        AppLanguage.GERMAN -> "PHP-Serverstart fehlgeschlagen"
+        AppLanguage.RUSSIAN -> "Не удалось запустить сервер PHP"
+        AppLanguage.JAPANESE -> "PHPサーバーの起動に失敗しました"
+        AppLanguage.KOREAN -> "PHP 서버 시작 실패"
+    }
+
+    val wpClearCache: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "清理 WordPress 缓存"
+        AppLanguage.ENGLISH -> "Clear WordPress Cache"
+        AppLanguage.ARABIC -> "مسح ذاكرة التخزين المؤقت WordPress"
+        AppLanguage.PORTUGUESE -> "Limpar Cache do WordPress"
+        AppLanguage.SPANISH -> "Borrar Caché de WordPress"
+        AppLanguage.FRENCH -> "Vider le cache WordPress"
+        AppLanguage.GERMAN -> "WordPress-Cache leeren"
+        AppLanguage.RUSSIAN -> "Очистить кэш WordPress"
+        AppLanguage.JAPANESE -> "WordPressキャッシュをクリア"
+        AppLanguage.KOREAN -> "WordPress 캐시 지우기"
+    }
+
+    val wpMirrorSource: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "镜像源"
+        AppLanguage.ENGLISH -> "Mirror Source"
+        AppLanguage.ARABIC -> "مصدر المرآة"
+        AppLanguage.PORTUGUESE -> "Fonte do Mirror"
+        AppLanguage.SPANISH -> "Fuente del Mirror"
+        AppLanguage.FRENCH -> "Source du miroir"
+        AppLanguage.GERMAN -> "Mirror-Quelle"
+        AppLanguage.RUSSIAN -> "Источник зеркала"
+        AppLanguage.JAPANESE -> "ミラーソース"
+        AppLanguage.KOREAN -> "미러 소스"
+    }
+
+    val wpAutoDetect: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "自动识别"
+        AppLanguage.ENGLISH -> "Auto Detect"
+        AppLanguage.ARABIC -> "كشف تلقائي"
+        AppLanguage.PORTUGUESE -> "Detecção Automática"
+        AppLanguage.SPANISH -> "Detección Automática"
+        AppLanguage.FRENCH -> "Détection automatique"
+        AppLanguage.GERMAN -> "Automatische Erkennung"
+        AppLanguage.RUSSIAN -> "Автоопределение"
+        AppLanguage.JAPANESE -> "自動検出"
+        AppLanguage.KOREAN -> "자동 감지"
+    }
+
+    val wpCheckingDeps: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "检查依赖..."
+        AppLanguage.ENGLISH -> "Checking dependencies..."
+        AppLanguage.ARABIC -> "جارٍ فحص المتطلبات..."
+        AppLanguage.PORTUGUESE -> "Verificando dependências..."
+        AppLanguage.SPANISH -> "Comprobando dependencias..."
+        AppLanguage.FRENCH -> "Vérification des dépendances..."
+        AppLanguage.GERMAN -> "Abhängigkeiten werden geprüft..."
+        AppLanguage.RUSSIAN -> "Проверка зависимостей..."
+        AppLanguage.JAPANESE -> "依存関係を確認中..."
+        AppLanguage.KOREAN -> "종속성 확인 중..."
+    }
+
+    val wpCreatingProject: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "创建 WordPress 项目..."
+        AppLanguage.ENGLISH -> "Creating WordPress project..."
+        AppLanguage.ARABIC -> "جارٍ إنشاء مشروع WordPress..."
+        AppLanguage.PORTUGUESE -> "Criando projeto WordPress..."
+        AppLanguage.SPANISH -> "Creando proyecto WordPress..."
+        AppLanguage.FRENCH -> "Création du projet WordPress..."
+        AppLanguage.GERMAN -> "WordPress-Projekt wird erstellt..."
+        AppLanguage.RUSSIAN -> "Создание проекта WordPress..."
+        AppLanguage.JAPANESE -> "WordPressプロジェクトを作成中..."
+        AppLanguage.KOREAN -> "WordPress 프로젝트 생성 중..."
+    }
+
+    val wpDownloadFailed: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "依赖下载失败，请检查网络后重试"
+        AppLanguage.ENGLISH -> "Dependency download failed, please check network and retry"
+        AppLanguage.ARABIC -> "فشل تنزيل المتطلبات، يرجى التحقق من الشبكة والمحاولة مرة أخرى"
+        AppLanguage.PORTUGUESE -> "Falha no download de dependências, verifique a rede e tente novamente"
+        AppLanguage.SPANISH -> "Error al descargar dependencias, comprueba la red e inténtalo de nuevo"
+        AppLanguage.FRENCH -> "Échec du téléchargement des dépendances, vérifiez le réseau et réessayez"
+        AppLanguage.GERMAN -> "Download der Abhängigkeiten fehlgeschlagen, bitte Netzwerk prüfen und erneut versuchen"
+        AppLanguage.RUSSIAN -> "Не удалось загрузить зависимости, проверьте сеть и повторите"
+        AppLanguage.JAPANESE -> "依存関係のダウンロードに失敗しました。ネットワークを確認して再試行してください"
+        AppLanguage.KOREAN -> "종속성 다운로드 실패, 네트워크를 확인하고 재시도하세요"
+    }
+
+    val wpProjectCreateFailed: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "WordPress 项目创建失败"
+        AppLanguage.ENGLISH -> "WordPress project creation failed"
+        AppLanguage.ARABIC -> "فشل إنشاء مشروع WordPress"
+        AppLanguage.PORTUGUESE -> "Falha na criação do projeto WordPress"
+        AppLanguage.SPANISH -> "Error al crear el proyecto WordPress"
+        AppLanguage.FRENCH -> "Échec de la création du projet WordPress"
+        AppLanguage.GERMAN -> "Erstellung des WordPress-Projekts fehlgeschlagen"
+        AppLanguage.RUSSIAN -> "Не удалось создать проект WordPress"
+        AppLanguage.JAPANESE -> "WordPressプロジェクトの作成に失敗しました"
+        AppLanguage.KOREAN -> "WordPress 프로젝트 생성 실패"
+    }
+
+    val wpCreateTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "创建 WordPress 应用"
+        AppLanguage.ENGLISH -> "Create WordPress App"
+        AppLanguage.ARABIC -> "إنشاء تطبيق WordPress"
+        AppLanguage.PORTUGUESE -> "Criar App WordPress"
+        AppLanguage.SPANISH -> "Crear App WordPress"
+        AppLanguage.FRENCH -> "Créer une app WordPress"
+        AppLanguage.GERMAN -> "WordPress-App erstellen"
+        AppLanguage.RUSSIAN -> "Создать приложение WordPress"
+        AppLanguage.JAPANESE -> "WordPressアプリを作成"
+        AppLanguage.KOREAN -> "WordPress 앱 만들기"
+    }
+
+    val wpSiteTitleHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "输入站点标题"
+        AppLanguage.ENGLISH -> "Enter site title"
+        AppLanguage.ARABIC -> "أدخل عنوان الموقع"
+        AppLanguage.PORTUGUESE -> "Digite o título do site"
+        AppLanguage.SPANISH -> "Introduce el título del sitio"
+        AppLanguage.FRENCH -> "Saisir le titre du site"
+        AppLanguage.GERMAN -> "Website-Titel eingeben"
+        AppLanguage.RUSSIAN -> "Введите заголовок сайта"
+        AppLanguage.JAPANESE -> "サイトタイトルを入力"
+        AppLanguage.KOREAN -> "사이트 제목 입력"
+    }
+
+    val wpDefaultSiteTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "我的站点"
+        AppLanguage.ENGLISH -> "My Site"
+        AppLanguage.ARABIC -> "موقعي"
+        AppLanguage.PORTUGUESE -> "Meu Site"
+        AppLanguage.SPANISH -> "Mi Sitio"
+        AppLanguage.FRENCH -> "Mon site"
+        AppLanguage.GERMAN -> "Meine Website"
+        AppLanguage.RUSSIAN -> "Мой сайт"
+        AppLanguage.JAPANESE -> "マイサイト"
+        AppLanguage.KOREAN -> "내 사이트"
+    }
+
+    val wpDefaultSiteLanguageCode: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "zh_CN"
+        AppLanguage.ENGLISH -> "en_US"
+        AppLanguage.ARABIC -> "ar"
+        AppLanguage.PORTUGUESE -> "pt_BR"
+        AppLanguage.SPANISH -> "es_ES"
+        AppLanguage.FRENCH -> "fr_FR"
+        AppLanguage.GERMAN -> "de_DE"
+        AppLanguage.RUSSIAN -> "ru_RU"
+        AppLanguage.JAPANESE -> "ja_JP"
+        AppLanguage.KOREAN -> "ko_KR"
+    }
+
+    val wpAdminUserHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "管理员用户名（默认 admin）"
+        AppLanguage.ENGLISH -> "Admin username (default: admin)"
+        AppLanguage.ARABIC -> "اسم المستخدم المسؤول (افتراضي: admin)"
+        AppLanguage.PORTUGUESE -> "Nome de usuário admin (padrão: admin)"
+        AppLanguage.SPANISH -> "Nombre de usuario admin (predeterminado: admin)"
+        AppLanguage.FRENCH -> "Nom d'utilisateur admin (par défaut : admin)"
+        AppLanguage.GERMAN -> "Admin-Benutzername (Standard: admin)"
+        AppLanguage.RUSSIAN -> "Имя администратора (по умолчанию: admin)"
+        AppLanguage.JAPANESE -> "管理者ユーザー名（デフォルト: admin）"
+        AppLanguage.KOREAN -> "관리자 사용자 이름 (기본값: admin)"
+    }
+
+    val wpBasicConfig: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "基本配置"
+        AppLanguage.ENGLISH -> "Basic Configuration"
+        AppLanguage.ARABIC -> "الإعدادات الأساسية"
+        AppLanguage.PORTUGUESE -> "Configuração Básica"
+        AppLanguage.SPANISH -> "Configuración Básica"
+        AppLanguage.FRENCH -> "Configuration de base"
+        AppLanguage.GERMAN -> "Grundkonfiguration"
+        AppLanguage.RUSSIAN -> "Базовая конфигурация"
+        AppLanguage.JAPANESE -> "基本設定"
+        AppLanguage.KOREAN -> "기본 구성"
+    }
+
+    val wpImportProject: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "导入 WordPress 项目"
+        AppLanguage.ENGLISH -> "Import WordPress Project"
+        AppLanguage.ARABIC -> "استيراد مشروع WordPress"
+        AppLanguage.PORTUGUESE -> "Importar Projeto WordPress"
+        AppLanguage.SPANISH -> "Importar Proyecto WordPress"
+        AppLanguage.FRENCH -> "Importer le projet WordPress"
+        AppLanguage.GERMAN -> "WordPress-Projekt importieren"
+        AppLanguage.RUSSIAN -> "Импорт проекта WordPress"
+        AppLanguage.JAPANESE -> "WordPressプロジェクトをインポート"
+        AppLanguage.KOREAN -> "WordPress 프로젝트 가져오기"
+    }
+
+    val wpImportProjectDesc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "选择完整的 WordPress 压缩包（.zip），包含主题和插件"
+        AppLanguage.ENGLISH -> "Select a complete WordPress archive (.zip) with themes and plugins"
+        AppLanguage.ARABIC -> "حدد أرشيف WordPress كامل (.zip) مع السمات والإضافات"
+        AppLanguage.PORTUGUESE -> "Selecione um arquivo WordPress completo (.zip) com temas e plugins"
+        AppLanguage.SPANISH -> "Selecciona un archivo WordPress completo (.zip) con temas y plugins"
+        AppLanguage.FRENCH -> "Sélectionnez une archive WordPress complète (.zip) avec thèmes et plugins"
+        AppLanguage.GERMAN -> "Vollständiges WordPress-Archiv (.zip) mit Themes und Plugins auswählen"
+        AppLanguage.RUSSIAN -> "Выберите полный архив WordPress (.zip) с темами и плагинами"
+        AppLanguage.JAPANESE -> "テーマとプラグインを含む完全なWordPressアーカイブ(.zip)を選択"
+        AppLanguage.KOREAN -> "테마와 플러그인이 포함된 완전한 WordPress 아카이브(.zip)를 선택하세요"
+    }
+
+    val wpOrCreateNew: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "或者创建全新站点"
+        AppLanguage.ENGLISH -> "Or create a new site"
+        AppLanguage.ARABIC -> "أو أنشئ موقعًا جديدًا"
+        AppLanguage.PORTUGUESE -> "Ou crie um novo site"
+        AppLanguage.SPANISH -> "O crea un nuevo sitio"
+        AppLanguage.FRENCH -> "Ou créez un nouveau site"
+        AppLanguage.GERMAN -> "Oder neue Website erstellen"
+        AppLanguage.RUSSIAN -> "Или создайте новый сайт"
+        AppLanguage.JAPANESE -> "または新規サイトを作成"
+        AppLanguage.KOREAN -> "또는 새 사이트 만들기"
+    }
+
+    val wpCreateNewSite: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "创建新站点"
+        AppLanguage.ENGLISH -> "Create New Site"
+        AppLanguage.ARABIC -> "إنشاء موقع جديد"
+        AppLanguage.PORTUGUESE -> "Criar Novo Site"
+        AppLanguage.SPANISH -> "Crear Nuevo Sitio"
+        AppLanguage.FRENCH -> "Créer un nouveau site"
+        AppLanguage.GERMAN -> "Neue Website erstellen"
+        AppLanguage.RUSSIAN -> "Создать новый сайт"
+        AppLanguage.JAPANESE -> "新規サイトを作成"
+        AppLanguage.KOREAN -> "새 사이트 만들기"
+    }
+
+    val wpCreateNewSiteDesc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "使用默认 WordPress 核心创建空白站点"
+        AppLanguage.ENGLISH -> "Create blank site with default WordPress core"
+        AppLanguage.ARABIC -> "إنشاء موقع فارغ باستخدام نواة WordPress الافتراضية"
+        AppLanguage.PORTUGUESE -> "Criar site vazio com o núcleo padrão do WordPress"
+        AppLanguage.SPANISH -> "Crear sitio vacío con el núcleo predeterminado de WordPress"
+        AppLanguage.FRENCH -> "Créer un site vide avec le cœur WordPress par défaut"
+        AppLanguage.GERMAN -> "Leere Website mit Standard-WordPress-Core erstellen"
+        AppLanguage.RUSSIAN -> "Создать пустой сайт с ядром WordPress по умолчанию"
+        AppLanguage.JAPANESE -> "デフォルトのWordPressコアで空のサイトを作成"
+        AppLanguage.KOREAN -> "기본 WordPress 코어로 빈 사이트 만들기"
+    }
+
+    val wpSettings: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "WordPress 设置"
+        AppLanguage.ENGLISH -> "WordPress Settings"
+        AppLanguage.ARABIC -> "إعدادات WordPress"
+        AppLanguage.PORTUGUESE -> "Configurações do WordPress"
+        AppLanguage.SPANISH -> "Ajustes de WordPress"
+        AppLanguage.FRENCH -> "Réglages WordPress"
+        AppLanguage.GERMAN -> "WordPress-Einstellungen"
+        AppLanguage.RUSSIAN -> "Настройки WordPress"
+        AppLanguage.JAPANESE -> "WordPress設定"
+        AppLanguage.KOREAN -> "WordPress 설정"
+    }
+
+    val wpCacheSize: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "缓存占用"
+        AppLanguage.ENGLISH -> "Cache Size"
+        AppLanguage.ARABIC -> "حجم ذاكرة التخزين المؤقت"
+        AppLanguage.PORTUGUESE -> "Tamanho do Cache"
+        AppLanguage.SPANISH -> "Tamaño de Caché"
+        AppLanguage.FRENCH -> "Taille du cache"
+        AppLanguage.GERMAN -> "Cache-Größe"
+        AppLanguage.RUSSIAN -> "Размер кэша"
+        AppLanguage.JAPANESE -> "キャッシュサイズ"
+        AppLanguage.KOREAN -> "캐시 크기"
+    }
+
+    val wpProjectReady: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "WordPress 项目已就绪"
+        AppLanguage.ENGLISH -> "WordPress project ready"
+        AppLanguage.ARABIC -> "مشروع WordPress جاهز"
+        AppLanguage.PORTUGUESE -> "Projeto WordPress pronto"
+        AppLanguage.SPANISH -> "Proyecto WordPress listo"
+        AppLanguage.FRENCH -> "Projet WordPress prêt"
+        AppLanguage.GERMAN -> "WordPress-Projekt bereit"
+        AppLanguage.RUSSIAN -> "Проект WordPress готов"
+        AppLanguage.JAPANESE -> "WordPressプロジェクトの準備が完了しました"
+        AppLanguage.KOREAN -> "WordPress 프로젝트 준비 완료"
     }
 
     val njsCreateTitle: String get() = when (Strings.lang) {
@@ -2154,6 +3286,19 @@ object StringsA {
         }
     }
 
+    val njsDownloadDeps: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "下载 Node.js 依赖"
+        AppLanguage.ENGLISH -> "Download Node.js Dependencies"
+        AppLanguage.ARABIC -> "تنزيل متطلبات Node.js"
+        AppLanguage.PORTUGUESE -> "Baixar Dependências do Node.js"
+        AppLanguage.SPANISH -> "Descargar Dependencias de Node.js"
+        AppLanguage.FRENCH -> "Télécharger les dépendances Node.js"
+        AppLanguage.GERMAN -> "Node.js-Abhängigkeiten herunterladen"
+        AppLanguage.RUSSIAN -> "Загрузить зависимости Node.js"
+        AppLanguage.JAPANESE -> "Node.jsの依存関係をダウンロード"
+        AppLanguage.KOREAN -> "Node.js 종속성 다운로드"
+    }
+
     val njsDownloading: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "正在下载 Node.js 运行时..."
         AppLanguage.ENGLISH -> "Downloading Node.js runtime..."
@@ -2787,6 +3932,19 @@ object StringsA {
         AppLanguage.KOREAN -> "복사됨"
     }
 
+    val menuRuntimeDeps: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "运行时管理"
+        AppLanguage.ENGLISH -> "Runtime Manager"
+        AppLanguage.ARABIC -> "مدير وقت التشغيل"
+        AppLanguage.PORTUGUESE -> "Gerenciador de Runtime"
+        AppLanguage.SPANISH -> "Gestor de Runtime"
+        AppLanguage.FRENCH -> "Gestionnaire de runtime"
+        AppLanguage.GERMAN -> "Runtime-Manager"
+        AppLanguage.RUSSIAN -> "Менеджер среды выполнения"
+        AppLanguage.JAPANESE -> "ランタイムマネージャー"
+        AppLanguage.KOREAN -> "런타임 관리자"
+    }
+
     val menuPortManager: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "端口管理"
         AppLanguage.ENGLISH -> "Port Manager"
@@ -2800,6 +3958,521 @@ object StringsA {
         AppLanguage.KOREAN -> "포트 관리자"
     }
 
+    val portManagerTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "端口管理"
+        AppLanguage.ENGLISH -> "Port Manager"
+        AppLanguage.ARABIC -> "مدير المنافذ"
+        AppLanguage.PORTUGUESE -> "Gerenciador de Portas"
+        AppLanguage.SPANISH -> "Gestor de Puertos"
+        AppLanguage.FRENCH -> "Gestionnaire de ports"
+        AppLanguage.GERMAN -> "Port-Manager"
+        AppLanguage.RUSSIAN -> "Менеджер портов"
+        AppLanguage.JAPANESE -> "ポートマネージャー"
+        AppLanguage.KOREAN -> "포트 관리자"
+    }
+
+    val portManagerRunningServices: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "运行中的服务"
+        AppLanguage.ENGLISH -> "Running Services"
+        AppLanguage.ARABIC -> "الخدمات قيد التشغيل"
+        AppLanguage.PORTUGUESE -> "Serviços em Execução"
+        AppLanguage.SPANISH -> "Servicios en Ejecución"
+        AppLanguage.FRENCH -> "Services en cours d'exécution"
+        AppLanguage.GERMAN -> "Laufende Dienste"
+        AppLanguage.RUSSIAN -> "Запущенные службы"
+        AppLanguage.JAPANESE -> "実行中のサービス"
+        AppLanguage.KOREAN -> "실행 중인 서비스"
+    }
+
+    val portManagerNoServices: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "没有运行中的服务"
+        AppLanguage.ENGLISH -> "No running services"
+        AppLanguage.ARABIC -> "لا توجد خدمات قيد التشغيل"
+        AppLanguage.PORTUGUESE -> "Nenhum serviço em execução"
+        AppLanguage.SPANISH -> "No hay servicios en ejecución"
+        AppLanguage.FRENCH -> "Aucun service en cours d'exécution"
+        AppLanguage.GERMAN -> "Keine laufenden Dienste"
+        AppLanguage.RUSSIAN -> "Нет запущенных служб"
+        AppLanguage.JAPANESE -> "実行中のサービスはありません"
+        AppLanguage.KOREAN -> "실행 중인 서비스가 없습니다"
+    }
+
+    val portManagerAllReleased: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "所有端口均已释放"
+        AppLanguage.ENGLISH -> "All ports released"
+        AppLanguage.ARABIC -> "تم تحرير جميع المنافذ"
+        AppLanguage.PORTUGUESE -> "Todos os portas liberados"
+        AppLanguage.SPANISH -> "Todos los puertos liberados"
+        AppLanguage.FRENCH -> "Tous les ports libérés"
+        AppLanguage.GERMAN -> "Alle Ports freigegeben"
+        AppLanguage.RUSSIAN -> "Все порты освобождены"
+        AppLanguage.JAPANESE -> "すべてのポートを解放しました"
+        AppLanguage.KOREAN -> "모든 포트가 해제되었습니다"
+    }
+
+    val portManagerKillAll: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "终止所有"
+        AppLanguage.ENGLISH -> "Kill All"
+        AppLanguage.ARABIC -> "إنهاء الكل"
+        AppLanguage.PORTUGUESE -> "Encerrar Tudo"
+        AppLanguage.SPANISH -> "Terminar Todo"
+        AppLanguage.FRENCH -> "Tout arrêter"
+        AppLanguage.GERMAN -> "Alle beenden"
+        AppLanguage.RUSSIAN -> "Завершить все"
+        AppLanguage.JAPANESE -> "すべて終了"
+        AppLanguage.KOREAN -> "모두 종료"
+    }
+
+    val portManagerKillAllConfirm: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "确定要终止所有运行中的服务吗？"
+        AppLanguage.ENGLISH -> "Kill all running services?"
+        AppLanguage.ARABIC -> "هل تريد إنهاء جميع الخدمات قيد التشغيل؟"
+        AppLanguage.PORTUGUESE -> "Encerrar todos os serviços em execução?"
+        AppLanguage.SPANISH -> "¿Terminar todos los servicios en ejecución?"
+        AppLanguage.FRENCH -> "Arrêter tous les services en cours d'exécution ?"
+        AppLanguage.GERMAN -> "Alle laufenden Dienste beenden?"
+        AppLanguage.RUSSIAN -> "Завершить все запущенные службы?"
+        AppLanguage.JAPANESE -> "実行中のすべてのサービスを終了しますか？"
+        AppLanguage.KOREAN -> "실행 중인 모든 서비스를 종료하시겠습니까?"
+    }
+
+    val portManagerKillService: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "终止服务"
+        AppLanguage.ENGLISH -> "Kill Service"
+        AppLanguage.ARABIC -> "إنهاء الخدمة"
+        AppLanguage.PORTUGUESE -> "Encerrar Serviço"
+        AppLanguage.SPANISH -> "Terminar Servicio"
+        AppLanguage.FRENCH -> "Arrêter le service"
+        AppLanguage.GERMAN -> "Dienst beenden"
+        AppLanguage.RUSSIAN -> "Завершить службу"
+        AppLanguage.JAPANESE -> "サービスを終了"
+        AppLanguage.KOREAN -> "서비스 종료"
+    }
+
+    val portManagerOpen: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "打开"
+        AppLanguage.ENGLISH -> "Open"
+        AppLanguage.ARABIC -> "فتح"
+        AppLanguage.PORTUGUESE -> "Abrir"
+        AppLanguage.SPANISH -> "Abrir"
+        AppLanguage.FRENCH -> "Ouvrir"
+        AppLanguage.GERMAN -> "Öffnen"
+        AppLanguage.RUSSIAN -> "Открыть"
+        AppLanguage.JAPANESE -> "開く"
+        AppLanguage.KOREAN -> "열기"
+    }
+
+    val portManagerKill: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "终止"
+        AppLanguage.ENGLISH -> "Kill"
+        AppLanguage.ARABIC -> "إنهاء"
+        AppLanguage.PORTUGUESE -> "Encerrar"
+        AppLanguage.SPANISH -> "Terminar"
+        AppLanguage.FRENCH -> "Arrêter"
+        AppLanguage.GERMAN -> "Beenden"
+        AppLanguage.RUSSIAN -> "Завершить"
+        AppLanguage.JAPANESE -> "終了"
+        AppLanguage.KOREAN -> "종료"
+    }
+
+    val portManagerPort: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "端口"
+        AppLanguage.ENGLISH -> "Port"
+        AppLanguage.ARABIC -> "المنفذ"
+        AppLanguage.PORTUGUESE -> "Porta"
+        AppLanguage.SPANISH -> "Puerto"
+        AppLanguage.FRENCH -> "Port"
+        AppLanguage.GERMAN -> "Port"
+        AppLanguage.RUSSIAN -> "Порт"
+        AppLanguage.JAPANESE -> "ポート"
+        AppLanguage.KOREAN -> "포트"
+    }
+
+    val portManagerType: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "类型"
+        AppLanguage.ENGLISH -> "Type"
+        AppLanguage.ARABIC -> "النوع"
+        AppLanguage.PORTUGUESE -> "Tipo"
+        AppLanguage.SPANISH -> "Tipo"
+        AppLanguage.FRENCH -> "Type"
+        AppLanguage.GERMAN -> "Typ"
+        AppLanguage.RUSSIAN -> "Тип"
+        AppLanguage.JAPANESE -> "タイプ"
+        AppLanguage.KOREAN -> "유형"
+    }
+
+    val portManagerProject: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "项目"
+        AppLanguage.ENGLISH -> "Project"
+        AppLanguage.ARABIC -> "المشروع"
+        AppLanguage.PORTUGUESE -> "Projeto"
+        AppLanguage.SPANISH -> "Proyecto"
+        AppLanguage.FRENCH -> "Projet"
+        AppLanguage.GERMAN -> "Projekt"
+        AppLanguage.RUSSIAN -> "Проект"
+        AppLanguage.JAPANESE -> "プロジェクト"
+        AppLanguage.KOREAN -> "프로젝트"
+    }
+
+    val portManagerStatus: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "状态"
+        AppLanguage.ENGLISH -> "Status"
+        AppLanguage.ARABIC -> "الحالة"
+        AppLanguage.PORTUGUESE -> "Estado"
+        AppLanguage.SPANISH -> "Estado"
+        AppLanguage.FRENCH -> "Statut"
+        AppLanguage.GERMAN -> "Status"
+        AppLanguage.RUSSIAN -> "Статус"
+        AppLanguage.JAPANESE -> "ステータス"
+        AppLanguage.KOREAN -> "상태"
+    }
+
+    val portManagerResponding: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "响应中"
+        AppLanguage.ENGLISH -> "Responding"
+        AppLanguage.ARABIC -> "يستجيب"
+        AppLanguage.PORTUGUESE -> "Respondendo"
+        AppLanguage.SPANISH -> "Respondiendo"
+        AppLanguage.FRENCH -> "Répond"
+        AppLanguage.GERMAN -> "Antwortet"
+        AppLanguage.RUSSIAN -> "Отвечает"
+        AppLanguage.JAPANESE -> "応答中"
+        AppLanguage.KOREAN -> "응답 중"
+    }
+
+    val portManagerNotResponding: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "无响应"
+        AppLanguage.ENGLISH -> "Not Responding"
+        AppLanguage.ARABIC -> "لا يستجيب"
+        AppLanguage.PORTUGUESE -> "Sem Resposta"
+        AppLanguage.SPANISH -> "No Responde"
+        AppLanguage.FRENCH -> "Ne répond pas"
+        AppLanguage.GERMAN -> "Antwortet nicht"
+        AppLanguage.RUSSIAN -> "Не отвечает"
+        AppLanguage.JAPANESE -> "応答なし"
+        AppLanguage.KOREAN -> "응답 없음"
+    }
+
+    val portManagerUnknown: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "未知"
+        AppLanguage.ENGLISH -> "Unknown"
+        AppLanguage.ARABIC -> "غير معروف"
+        AppLanguage.PORTUGUESE -> "Desconhecido"
+        AppLanguage.SPANISH -> "Desconocido"
+        AppLanguage.FRENCH -> "Inconnu"
+        AppLanguage.GERMAN -> "Unbekannt"
+        AppLanguage.RUSSIAN -> "Неизвестно"
+        AppLanguage.JAPANESE -> "不明"
+        AppLanguage.KOREAN -> "알 수 없음"
+    }
+
+    val portManagerServiceKilled: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "已终止端口 %d 的服务"
+        AppLanguage.ENGLISH -> "Killed service on port %d"
+        AppLanguage.ARABIC -> "تم إنهاء الخدمة على المنفذ %d"
+        AppLanguage.PORTUGUESE -> "Serviço na porta %d encerrado"
+        AppLanguage.SPANISH -> "Servicio terminado en el puerto %d"
+        AppLanguage.FRENCH -> "Service arrêté sur le port %d"
+        AppLanguage.GERMAN -> "Dienst auf Port %d beendet"
+        AppLanguage.RUSSIAN -> "Служба на порту %d завершена"
+        AppLanguage.JAPANESE -> "ポート %d のサービスを終了しました"
+        AppLanguage.KOREAN -> "포트 %d의 서비스가 종료되었습니다"
+    }
+
+    val portManagerAllKilled: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "已终止 %d 个服务"
+        AppLanguage.ENGLISH -> "Killed %d services"
+        AppLanguage.ARABIC -> "تم إنهاء %d خدمات"
+        AppLanguage.PORTUGUESE -> "%d serviços encerrados"
+        AppLanguage.SPANISH -> "%d servicios terminados"
+        AppLanguage.FRENCH -> "%d services arrêtés"
+        AppLanguage.GERMAN -> "%d Dienste beendet"
+        AppLanguage.RUSSIAN -> "Завершено служб: %d"
+        AppLanguage.JAPANESE -> "%d個のサービスを終了しました"
+        AppLanguage.KOREAN -> "%d개 서비스 종료됨"
+    }
+
+    val portManagerKillFailed: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "终止失败，请重试"
+        AppLanguage.ENGLISH -> "Kill failed, please retry"
+        AppLanguage.ARABIC -> "فشل الإنهاء، يرجى المحاولة مرة أخرى"
+        AppLanguage.PORTUGUESE -> "Falha ao encerrar, tente novamente"
+        AppLanguage.SPANISH -> "Error al terminar, inténtalo de nuevo"
+        AppLanguage.FRENCH -> "Échec de l'arrêt, veuillez réessayer"
+        AppLanguage.GERMAN -> "Beenden fehlgeschlagen, bitte erneut versuchen"
+        AppLanguage.RUSSIAN -> "Не удалось завершить, повторите"
+        AppLanguage.JAPANESE -> "終了に失敗しました。再試行してください"
+        AppLanguage.KOREAN -> "종료 실패, 재시도하세요"
+    }
+
+    val portManagerUptime: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "运行时长"
+        AppLanguage.ENGLISH -> "Uptime"
+        AppLanguage.ARABIC -> "وقت التشغيل"
+        AppLanguage.PORTUGUESE -> "Tempo de Atividade"
+        AppLanguage.SPANISH -> "Tiempo de Actividad"
+        AppLanguage.FRENCH -> "Disponibilité"
+        AppLanguage.GERMAN -> "Betriebszeit"
+        AppLanguage.RUSSIAN -> "Время работы"
+        AppLanguage.JAPANESE -> "稼働時間"
+        AppLanguage.KOREAN -> "가동 시간"
+    }
+
+    val portManagerLatency: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "延迟"
+        AppLanguage.ENGLISH -> "Latency"
+        AppLanguage.ARABIC -> "زمن الاستجابة"
+        AppLanguage.PORTUGUESE -> "Latência"
+        AppLanguage.SPANISH -> "Latencia"
+        AppLanguage.FRENCH -> "Latence"
+        AppLanguage.GERMAN -> "Latenz"
+        AppLanguage.RUSSIAN -> "Задержка"
+        AppLanguage.JAPANESE -> "レイテンシ"
+        AppLanguage.KOREAN -> "지연 시간"
+    }
+
+    val portManagerPortRanges: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "端口范围"
+        AppLanguage.ENGLISH -> "Port Ranges"
+        AppLanguage.ARABIC -> "نطاقات المنافذ"
+        AppLanguage.PORTUGUESE -> "Faixas de Portas"
+        AppLanguage.SPANISH -> "Rangos de Puertos"
+        AppLanguage.FRENCH -> "Plages de ports"
+        AppLanguage.GERMAN -> "Port-Bereiche"
+        AppLanguage.RUSSIAN -> "Диапазоны портов"
+        AppLanguage.JAPANESE -> "ポート範囲"
+        AppLanguage.KOREAN -> "포트 범위"
+    }
+
+    val portManagerAutoRefresh: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "自动刷新"
+        AppLanguage.ENGLISH -> "Auto Refresh"
+        AppLanguage.ARABIC -> "تحديث تلقائي"
+        AppLanguage.PORTUGUESE -> "Atualização Automática"
+        AppLanguage.SPANISH -> "Actualización Automática"
+        AppLanguage.FRENCH -> "Actualisation automatique"
+        AppLanguage.GERMAN -> "Automatische Aktualisierung"
+        AppLanguage.RUSSIAN -> "Автообновление"
+        AppLanguage.JAPANESE -> "自動更新"
+        AppLanguage.KOREAN -> "자동 새로고침"
+    }
+
+    val portManagerKillConfirmSingle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "确定要终止此服务吗？"
+        AppLanguage.ENGLISH -> "Kill this service?"
+        AppLanguage.ARABIC -> "هل تريد إنهاء هذه الخدمة؟"
+        AppLanguage.PORTUGUESE -> "Encerrar este serviço?"
+        AppLanguage.SPANISH -> "¿Terminar este servicio?"
+        AppLanguage.FRENCH -> "Arrêter ce service ?"
+        AppLanguage.GERMAN -> "Diesen Dienst beenden?"
+        AppLanguage.RUSSIAN -> "Завершить эту службу?"
+        AppLanguage.JAPANESE -> "このサービスを終了しますか？"
+        AppLanguage.KOREAN -> "이 서비스를 종료하시겠습니까?"
+    }
+
+    val portManagerProcess: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "进程"
+        AppLanguage.ENGLISH -> "Process"
+        AppLanguage.ARABIC -> "العملية"
+        AppLanguage.PORTUGUESE -> "Processo"
+        AppLanguage.SPANISH -> "Proceso"
+        AppLanguage.FRENCH -> "Processus"
+        AppLanguage.GERMAN -> "Prozess"
+        AppLanguage.RUSSIAN -> "Процесс"
+        AppLanguage.JAPANESE -> "プロセス"
+        AppLanguage.KOREAN -> "프로세스"
+    }
+
+    val portManagerTabThisApp: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "本应用"
+        AppLanguage.ENGLISH -> "This App"
+        AppLanguage.ARABIC -> "هذا التطبيق"
+        AppLanguage.PORTUGUESE -> "Este App"
+        AppLanguage.SPANISH -> "Esta App"
+        AppLanguage.FRENCH -> "Cette app"
+        AppLanguage.GERMAN -> "Diese App"
+        AppLanguage.RUSSIAN -> "Это приложение"
+        AppLanguage.JAPANESE -> "このアプリ"
+        AppLanguage.KOREAN -> "이 앱"
+    }
+
+    val portManagerTabAllApps: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "全部 Web2App 应用"
+        AppLanguage.ENGLISH -> "All Web2App Apps"
+        AppLanguage.ARABIC -> "كل تطبيقات Web2App"
+        AppLanguage.PORTUGUESE -> "Todos os Apps Web2App"
+        AppLanguage.SPANISH -> "Todas las Apps Web2App"
+        AppLanguage.FRENCH -> "Toutes les apps Web2App"
+        AppLanguage.GERMAN -> "Alle Web2App-Apps"
+        AppLanguage.RUSSIAN -> "Все приложения Web2App"
+        AppLanguage.JAPANESE -> "すべてのWeb2Appアプリ"
+        AppLanguage.KOREAN -> "모든 Web2App 앱"
+    }
+
+    val portManagerNoWtaApps: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "未发现其他 Web2App 应用"
+        AppLanguage.ENGLISH -> "No other Web2App apps found"
+        AppLanguage.ARABIC -> "لم يتم العثور على تطبيقات Web2App أخرى"
+        AppLanguage.PORTUGUESE -> "Nenhum outro app Web2App encontrado"
+        AppLanguage.SPANISH -> "No se encontraron otras apps Web2App"
+        AppLanguage.FRENCH -> "Aucune autre app Web2App trouvée"
+        AppLanguage.GERMAN -> "Keine weiteren Web2App-Apps gefunden"
+        AppLanguage.RUSSIAN -> "Другие приложения Web2App не найдены"
+        AppLanguage.JAPANESE -> "他のWeb2Appアプリが見つかりません"
+        AppLanguage.KOREAN -> "다른 Web2App 앱을 찾을 수 없습니다"
+    }
+
+    val portManagerNoWtaAppsHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "由本工具构建并安装的应用会自动出现在这里"
+        AppLanguage.ENGLISH -> "Apps built and installed via this tool appear here"
+        AppLanguage.ARABIC -> "التطبيقات المبنية والمثبتة عبر هذه الأداة تظهر هنا"
+        AppLanguage.PORTUGUESE -> "Apps construídos e instalados via esta ferramenta aparecem aqui"
+        AppLanguage.SPANISH -> "Las apps construidas e instaladas con esta herramienta aparecen aquí"
+        AppLanguage.FRENCH -> "Les apps construites et installées via cet outil apparaissent ici"
+        AppLanguage.GERMAN -> "Mit diesem Tool erstellte und installierte Apps erscheinen hier"
+        AppLanguage.RUSSIAN -> "Приложения, созданные и установленные этим инструментом, появляются здесь"
+        AppLanguage.JAPANESE -> "このツールでビルド・インストールしたアプリがここに表示されます"
+        AppLanguage.KOREAN -> "이 도구로 빌드 및 설치된 앱이 여기에 표시됩니다"
+    }
+
+    val portManagerWtaAppNoPorts: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "当前未占用任何端口"
+        AppLanguage.ENGLISH -> "Not holding any ports"
+        AppLanguage.ARABIC -> "لا يحتجز أي منفذ"
+        AppLanguage.PORTUGUESE -> "Não ocupa nenhuma porta"
+        AppLanguage.SPANISH -> "No ocupa ningún puerto"
+        AppLanguage.FRENCH -> "N'occupe aucun port"
+        AppLanguage.GERMAN -> "Belegt keine Ports"
+        AppLanguage.RUSSIAN -> "Не занимает портов"
+        AppLanguage.JAPANESE -> "ポートを占有していません"
+        AppLanguage.KOREAN -> "포트를 점유하지 않습니다"
+    }
+
+    val portManagerWtaAppOffline: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "未响应（应用未运行或版本过旧）"
+        AppLanguage.ENGLISH -> "Not responding (app not running or older build)"
+        AppLanguage.ARABIC -> "لا يستجيب (التطبيق غير قيد التشغيل أو إصدار قديم)"
+        AppLanguage.PORTUGUESE -> "Sem resposta (app não em execução ou build antigo)"
+        AppLanguage.SPANISH -> "No responde (app no en ejecución o build antiguo)"
+        AppLanguage.FRENCH -> "Ne répond pas (app non lancée ou build ancien)"
+        AppLanguage.GERMAN -> "Antwortet nicht (App läuft nicht oder älterer Build)"
+        AppLanguage.RUSSIAN -> "Не отвечает (приложение не запущено или старая сборка)"
+        AppLanguage.JAPANESE -> "応答なし（アプリが実行されていないか古いビルド）"
+        AppLanguage.KOREAN -> "응답 없음 (앱이 실행 중이 아니거나 이전 빌드)"
+    }
+
+    val portManagerWtaAppPortsCount: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "%d 个端口"
+        AppLanguage.ENGLISH -> "%d ports"
+        AppLanguage.ARABIC -> "%d منافذ"
+        AppLanguage.PORTUGUESE -> "%d portas"
+        AppLanguage.SPANISH -> "%d puertos"
+        AppLanguage.FRENCH -> "%d ports"
+        AppLanguage.GERMAN -> "%d Ports"
+        AppLanguage.RUSSIAN -> "%d портов"
+        AppLanguage.JAPANESE -> "%d ポート"
+        AppLanguage.KOREAN -> "%d개 포트"
+    }
+
+    val portManagerReleaseRemoteSuccess: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "已请求 %s 释放端口 %d"
+        AppLanguage.ENGLISH -> "Requested %s to release port %d"
+        AppLanguage.ARABIC -> "طلب من %s تحرير المنفذ %d"
+        AppLanguage.PORTUGUESE -> "Solicitado a %s liberar a porta %d"
+        AppLanguage.SPANISH -> "Solicitado a %s liberar el puerto %d"
+        AppLanguage.FRENCH -> "Demandé à %s de libérer le port %d"
+        AppLanguage.GERMAN -> "%s aufgefordert, Port %d freizugeben"
+        AppLanguage.RUSSIAN -> "Запрошено у %s освобождение порта %d"
+        AppLanguage.JAPANESE -> "%sにポート%dの解放を要求しました"
+        AppLanguage.KOREAN -> "%s에게 포트 %d 해제를 요청했습니다"
+    }
+
+    val portManagerReleaseRemoteFailed: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "释放失败：目标应用未响应"
+        AppLanguage.ENGLISH -> "Release failed: target app did not respond"
+        AppLanguage.ARABIC -> "فشل التحرير: لم يستجب التطبيق المستهدف"
+        AppLanguage.PORTUGUESE -> "Falha na liberação: app alvo não respondeu"
+        AppLanguage.SPANISH -> "Error al liberar: la app objetivo no respondió"
+        AppLanguage.FRENCH -> "Échec de la libération : l'app cible n'a pas répondu"
+        AppLanguage.GERMAN -> "Freigabe fehlgeschlagen: Ziel-App hat nicht geantwortet"
+        AppLanguage.RUSSIAN -> "Не удалось освободить: целевое приложение не ответило"
+        AppLanguage.JAPANESE -> "解放失敗：対象アプリが応答しませんでした"
+        AppLanguage.KOREAN -> "해제 실패: 대상 앱이 응답하지 않았습니다"
+    }
+
+    val portManagerScanFailed: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "扫描失败"
+        AppLanguage.ENGLISH -> "Scan failed"
+        AppLanguage.ARABIC -> "فشل الفحص"
+        AppLanguage.PORTUGUESE -> "Falha na verificação"
+        AppLanguage.SPANISH -> "Error al escanear"
+        AppLanguage.FRENCH -> "Échec du scan"
+        AppLanguage.GERMAN -> "Scan fehlgeschlagen"
+        AppLanguage.RUSSIAN -> "Ошибка сканирования"
+        AppLanguage.JAPANESE -> "スキャン失敗"
+        AppLanguage.KOREAN -> "스캔 실패"
+    }
+
+    val portManagerSubtitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "查看、打开或释放本机与其它 WebToApp 实例的端口"
+        AppLanguage.ENGLISH -> "Inspect, open, or free ports used by this and other WebToApp instances"
+        AppLanguage.ARABIC -> "اعرض وافتح أو حرّر المنافذ المستخدمة بواسطة هذا التطبيق ونسخ WebToApp الأخرى"
+        AppLanguage.PORTUGUESE -> "Veja, abra ou libere portas usadas por esta e outras instâncias do WebToApp"
+        AppLanguage.SPANISH -> "Consulta, abre o libera puertos usados por esta y otras instancias de WebToApp"
+        AppLanguage.FRENCH -> "Consultez, ouvrez ou libérez les ports de cette instance et d'autres WebToApp"
+        AppLanguage.GERMAN -> "Ports dieser und anderer WebToApp-Instanzen ansehen, öffnen oder freigeben"
+        AppLanguage.RUSSIAN -> "Просматривайте, открывайте или освобождайте порты этого и других экземпляров WebToApp"
+        AppLanguage.JAPANESE -> "このアプリや他の WebToApp インスタンスが使うポートを確認・開放・解放"
+        AppLanguage.KOREAN -> "이 앱과 다른 WebToApp 인스턴스가 사용하는 포트 확인·열기·해제"
+    }
+    val portManagerSearchHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "搜索端口、项目或类型…"
+        AppLanguage.ENGLISH -> "Search port, project, or type…"
+        AppLanguage.ARABIC -> "ابحث عن المنفذ أو المشروع أو النوع…"
+        AppLanguage.PORTUGUESE -> "Pesquisar porta, projeto ou tipo…"
+        AppLanguage.SPANISH -> "Buscar puerto, proyecto o tipo…"
+        AppLanguage.FRENCH -> "Rechercher port, projet ou type…"
+        AppLanguage.GERMAN -> "Port, Projekt oder Typ suchen…"
+        AppLanguage.RUSSIAN -> "Поиск порта, проекта или типа…"
+        AppLanguage.JAPANESE -> "ポート・プロジェクト・種類を検索…"
+        AppLanguage.KOREAN -> "포트, 프로젝트 또는 유형 검색…"
+    }
+    val portManagerFilterAll: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "全部类型"
+        AppLanguage.ENGLISH -> "All types"
+        AppLanguage.ARABIC -> "كل الأنواع"
+        AppLanguage.PORTUGUESE -> "Todos os tipos"
+        AppLanguage.SPANISH -> "Todos los tipos"
+        AppLanguage.FRENCH -> "Tous les types"
+        AppLanguage.GERMAN -> "Alle Typen"
+        AppLanguage.RUSSIAN -> "Все типы"
+        AppLanguage.JAPANESE -> "すべての種類"
+        AppLanguage.KOREAN -> "모든 유형"
+    }
+    val portManagerNoMatch: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "没有匹配的端口服务"
+        AppLanguage.ENGLISH -> "No matching port services"
+        AppLanguage.ARABIC -> "لا توجد خدمات منافذ مطابقة"
+        AppLanguage.PORTUGUESE -> "Nenhum serviço de porta correspondente"
+        AppLanguage.SPANISH -> "No hay servicios de puerto coincidentes"
+        AppLanguage.FRENCH -> "Aucun service de port correspondant"
+        AppLanguage.GERMAN -> "Keine passenden Port-Dienste"
+        AppLanguage.RUSSIAN -> "Нет подходящих портовых служб"
+        AppLanguage.JAPANESE -> "一致するポートサービスがありません"
+        AppLanguage.KOREAN -> "일치하는 포트 서비스가 없습니다"
+    }
+    val portManagerRespondingCount: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "%d 个响应中"
+        AppLanguage.ENGLISH -> "%d responding"
+        AppLanguage.ARABIC -> "%d يستجيب"
+        AppLanguage.PORTUGUESE -> "%d respondendo"
+        AppLanguage.SPANISH -> "%d respondiendo"
+        AppLanguage.FRENCH -> "%d qui répondent"
+        AppLanguage.GERMAN -> "%d antworten"
+        AppLanguage.RUSSIAN -> "%d отвечают"
+        AppLanguage.JAPANESE -> "%d 件が応答中"
+        AppLanguage.KOREAN -> "%d개 응답 중"
+    }
     val portManagerTypeLocalHttp: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "静态服务"
         AppLanguage.ENGLISH -> "Static server"
@@ -2811,6 +4484,54 @@ object StringsA {
         AppLanguage.RUSSIAN -> "Статический сервер"
         AppLanguage.JAPANESE -> "静的サーバー"
         AppLanguage.KOREAN -> "정적 서버"
+    }
+    val portManagerTypeNodeJs: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Node.js"
+        AppLanguage.ENGLISH -> "Node.js"
+        AppLanguage.ARABIC -> "Node.js"
+        AppLanguage.PORTUGUESE -> "Node.js"
+        AppLanguage.SPANISH -> "Node.js"
+        AppLanguage.FRENCH -> "Node.js"
+        AppLanguage.GERMAN -> "Node.js"
+        AppLanguage.RUSSIAN -> "Node.js"
+        AppLanguage.JAPANESE -> "Node.js"
+        AppLanguage.KOREAN -> "Node.js"
+    }
+    val portManagerTypePhp: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "PHP"
+        AppLanguage.ENGLISH -> "PHP"
+        AppLanguage.ARABIC -> "PHP"
+        AppLanguage.PORTUGUESE -> "PHP"
+        AppLanguage.SPANISH -> "PHP"
+        AppLanguage.FRENCH -> "PHP"
+        AppLanguage.GERMAN -> "PHP"
+        AppLanguage.RUSSIAN -> "PHP"
+        AppLanguage.JAPANESE -> "PHP"
+        AppLanguage.KOREAN -> "PHP"
+    }
+    val portManagerTypePython: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Python"
+        AppLanguage.ENGLISH -> "Python"
+        AppLanguage.ARABIC -> "Python"
+        AppLanguage.PORTUGUESE -> "Python"
+        AppLanguage.SPANISH -> "Python"
+        AppLanguage.FRENCH -> "Python"
+        AppLanguage.GERMAN -> "Python"
+        AppLanguage.RUSSIAN -> "Python"
+        AppLanguage.JAPANESE -> "Python"
+        AppLanguage.KOREAN -> "Python"
+    }
+    val portManagerTypeGo: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Go"
+        AppLanguage.ENGLISH -> "Go"
+        AppLanguage.ARABIC -> "Go"
+        AppLanguage.PORTUGUESE -> "Go"
+        AppLanguage.SPANISH -> "Go"
+        AppLanguage.FRENCH -> "Go"
+        AppLanguage.GERMAN -> "Go"
+        AppLanguage.RUSSIAN -> "Go"
+        AppLanguage.JAPANESE -> "Go"
+        AppLanguage.KOREAN -> "Go"
     }
     val portManagerTypeUnknown: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "未知"
@@ -2824,6 +4545,603 @@ object StringsA {
         AppLanguage.JAPANESE -> "不明"
         AppLanguage.KOREAN -> "알 수 없음"
     }
+    val portManagerCopyPort: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "复制端口"
+        AppLanguage.ENGLISH -> "Copy port"
+        AppLanguage.ARABIC -> "نسخ المنفذ"
+        AppLanguage.PORTUGUESE -> "Copiar porta"
+        AppLanguage.SPANISH -> "Copiar puerto"
+        AppLanguage.FRENCH -> "Copier le port"
+        AppLanguage.GERMAN -> "Port kopieren"
+        AppLanguage.RUSSIAN -> "Копировать порт"
+        AppLanguage.JAPANESE -> "ポートをコピー"
+        AppLanguage.KOREAN -> "포트 복사"
+    }
+    val portManagerPortCopied: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "端口已复制"
+        AppLanguage.ENGLISH -> "Port copied"
+        AppLanguage.ARABIC -> "تم نسخ المنفذ"
+        AppLanguage.PORTUGUESE -> "Porta copiada"
+        AppLanguage.SPANISH -> "Puerto copiado"
+        AppLanguage.FRENCH -> "Port copié"
+        AppLanguage.GERMAN -> "Port kopiert"
+        AppLanguage.RUSSIAN -> "Порт скопирован"
+        AppLanguage.JAPANESE -> "ポートをコピーしました"
+        AppLanguage.KOREAN -> "포트를 복사했습니다"
+    }
+
+    val runtimeDepsTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "运行时 & 依赖管理"
+        AppLanguage.ENGLISH -> "Runtime & Dependencies"
+        AppLanguage.ARABIC -> "وقت التشغيل والتبعيات"
+        AppLanguage.PORTUGUESE -> "Runtime & Dependências"
+        AppLanguage.SPANISH -> "Runtime & Dependencias"
+        AppLanguage.FRENCH -> "Runtime & Dépendances"
+        AppLanguage.GERMAN -> "Runtime & Abhängigkeiten"
+        AppLanguage.RUSSIAN -> "Среда выполнения и зависимости"
+        AppLanguage.JAPANESE -> "ランタイム & 依存関係"
+        AppLanguage.KOREAN -> "런타임 & 종속성"
+    }
+
+    val depSectionRuntimes: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "运行时环境"
+        AppLanguage.ENGLISH -> "Runtimes"
+        AppLanguage.ARABIC -> "بيئات التشغيل"
+        AppLanguage.PORTUGUESE -> "Ambientes de execução"
+        AppLanguage.SPANISH -> "Entornos de ejecución"
+        AppLanguage.FRENCH -> "Environnements d'exécution"
+        AppLanguage.GERMAN -> "Laufzeitumgebungen"
+        AppLanguage.RUSSIAN -> "Среды выполнения"
+        AppLanguage.JAPANESE -> "ランタイム"
+        AppLanguage.KOREAN -> "런타임"
+    }
+
+    val depSectionRuntimePlugins: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "运行时插件"
+        AppLanguage.ENGLISH -> "Runtime Plugins"
+        AppLanguage.ARABIC -> "إضافات التشغيل"
+        AppLanguage.PORTUGUESE -> "Plugins de Runtime"
+        AppLanguage.SPANISH -> "Plugins de Runtime"
+        AppLanguage.FRENCH -> "Plugins de runtime"
+        AppLanguage.GERMAN -> "Runtime-Plugins"
+        AppLanguage.RUSSIAN -> "Плагины среды выполнения"
+        AppLanguage.JAPANESE -> "ランタイムプラグイン"
+        AppLanguage.KOREAN -> "런타임 플러그인"
+    }
+
+    val depSectionProjects: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "项目文件"
+        AppLanguage.ENGLISH -> "Project Files"
+        AppLanguage.ARABIC -> "ملفات المشاريع"
+        AppLanguage.PORTUGUESE -> "Arquivos de Projeto"
+        AppLanguage.SPANISH -> "Archivos de Proyecto"
+        AppLanguage.FRENCH -> "Fichiers de projet"
+        AppLanguage.GERMAN -> "Projektdateien"
+        AppLanguage.RUSSIAN -> "Файлы проектов"
+        AppLanguage.JAPANESE -> "プロジェクトファイル"
+        AppLanguage.KOREAN -> "프로젝트 파일"
+    }
+
+    val depSectionDownload: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "镜像源 & 下载"
+        AppLanguage.ENGLISH -> "Mirror & Download"
+        AppLanguage.ARABIC -> "المرآة والتنزيل"
+        AppLanguage.PORTUGUESE -> "Espelho & Download"
+        AppLanguage.SPANISH -> "Mirror & Descarga"
+        AppLanguage.FRENCH -> "Miroir & Téléchargement"
+        AppLanguage.GERMAN -> "Spiegel & Download"
+        AppLanguage.RUSSIAN -> "Зеркало и загрузка"
+        AppLanguage.JAPANESE -> "ミラー & ダウンロード"
+        AppLanguage.KOREAN -> "미러 & 다운로드"
+    }
+
+    val depSectionStorage: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "存储空间"
+        AppLanguage.ENGLISH -> "Storage"
+        AppLanguage.ARABIC -> "التخزين"
+        AppLanguage.PORTUGUESE -> "Armazenamento"
+        AppLanguage.SPANISH -> "Almacenamiento"
+        AppLanguage.FRENCH -> "Stockage"
+        AppLanguage.GERMAN -> "Speicher"
+        AppLanguage.RUSSIAN -> "Хранилище"
+        AppLanguage.JAPANESE -> "ストレージ"
+        AppLanguage.KOREAN -> "저장공간"
+    }
+
+    val depStatusReady: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "已就绪"
+        AppLanguage.ENGLISH -> "Ready"
+        AppLanguage.ARABIC -> "جاهز"
+        AppLanguage.PORTUGUESE -> "Pronto"
+        AppLanguage.SPANISH -> "Listo"
+        AppLanguage.FRENCH -> "Prêt"
+        AppLanguage.GERMAN -> "Bereit"
+        AppLanguage.RUSSIAN -> "Готово"
+        AppLanguage.JAPANESE -> "準備完了"
+        AppLanguage.KOREAN -> "준비됨"
+    }
+
+    val depStatusNotInstalled: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "未安装"
+        AppLanguage.ENGLISH -> "Not Installed"
+        AppLanguage.ARABIC -> "غير مثبت"
+        AppLanguage.PORTUGUESE -> "Não Instalado"
+        AppLanguage.SPANISH -> "No Instalado"
+        AppLanguage.FRENCH -> "Non installé"
+        AppLanguage.GERMAN -> "Nicht installiert"
+        AppLanguage.RUSSIAN -> "Не установлено"
+        AppLanguage.JAPANESE -> "未インストール"
+        AppLanguage.KOREAN -> "설치되지 않음"
+    }
+
+    val depStatusDownloading: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "下载中..."
+        AppLanguage.ENGLISH -> "Downloading..."
+        AppLanguage.ARABIC -> "جارٍ التنزيل..."
+        AppLanguage.PORTUGUESE -> "Baixando..."
+        AppLanguage.SPANISH -> "Descargando..."
+        AppLanguage.FRENCH -> "Téléchargement..."
+        AppLanguage.GERMAN -> "Wird heruntergeladen..."
+        AppLanguage.RUSSIAN -> "Загрузка..."
+        AppLanguage.JAPANESE -> "ダウンロード中..."
+        AppLanguage.KOREAN -> "다운로드 중..."
+    }
+
+    val depPhpRuntime: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "PHP 运行时"
+        AppLanguage.ENGLISH -> "PHP Runtime"
+        AppLanguage.ARABIC -> "وقت تشغيل PHP"
+        AppLanguage.PORTUGUESE -> "Runtime PHP"
+        AppLanguage.SPANISH -> "Runtime PHP"
+        AppLanguage.FRENCH -> "Runtime PHP"
+        AppLanguage.GERMAN -> "PHP-Runtime"
+        AppLanguage.RUSSIAN -> "Среда выполнения PHP"
+        AppLanguage.JAPANESE -> "PHPランタイム"
+        AppLanguage.KOREAN -> "PHP 런타임"
+    }
+
+    val depPhpDesc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "PHP ${com.webtoapp.core.wordpress.WordPressDependencyManager.PHP_VERSION} · WordPress / PHP 应用"
+        AppLanguage.ENGLISH -> "PHP ${com.webtoapp.core.wordpress.WordPressDependencyManager.PHP_VERSION} · WordPress / PHP Apps"
+        AppLanguage.ARABIC -> "PHP ${com.webtoapp.core.wordpress.WordPressDependencyManager.PHP_VERSION} · تطبيقات WordPress / PHP"
+        AppLanguage.PORTUGUESE -> "PHP ${com.webtoapp.core.wordpress.WordPressDependencyManager.PHP_VERSION} · Apps WordPress / PHP"
+        AppLanguage.SPANISH -> "PHP ${com.webtoapp.core.wordpress.WordPressDependencyManager.PHP_VERSION} · Apps WordPress / PHP"
+        AppLanguage.FRENCH -> "PHP ${com.webtoapp.core.wordpress.WordPressDependencyManager.PHP_VERSION} · Apps WordPress / PHP"
+        AppLanguage.GERMAN -> "PHP ${com.webtoapp.core.wordpress.WordPressDependencyManager.PHP_VERSION} · WordPress / PHP-Apps"
+        AppLanguage.RUSSIAN -> "PHP ${com.webtoapp.core.wordpress.WordPressDependencyManager.PHP_VERSION} · Приложения WordPress / PHP"
+        AppLanguage.JAPANESE -> "PHP ${com.webtoapp.core.wordpress.WordPressDependencyManager.PHP_VERSION} · WordPress / PHPアプリ"
+        AppLanguage.KOREAN -> "PHP ${com.webtoapp.core.wordpress.WordPressDependencyManager.PHP_VERSION} · WordPress / PHP 앱"
+    }
+
+    val depWpCore: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "WordPress 核心"
+        AppLanguage.ENGLISH -> "WordPress Core"
+        AppLanguage.ARABIC -> "نواة WordPress"
+        AppLanguage.PORTUGUESE -> "Núcleo WordPress"
+        AppLanguage.SPANISH -> "Núcleo WordPress"
+        AppLanguage.FRENCH -> "Cœur WordPress"
+        AppLanguage.GERMAN -> "WordPress-Core"
+        AppLanguage.RUSSIAN -> "Ядро WordPress"
+        AppLanguage.JAPANESE -> "WordPressコア"
+        AppLanguage.KOREAN -> "WordPress 코어"
+    }
+
+    val depWpCoreDesc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "WordPress ${com.webtoapp.core.wordpress.WordPressDependencyManager.WORDPRESS_VERSION} 核心文件"
+        AppLanguage.ENGLISH -> "WordPress ${com.webtoapp.core.wordpress.WordPressDependencyManager.WORDPRESS_VERSION} core files"
+        AppLanguage.ARABIC -> "ملفات نواة WordPress ${com.webtoapp.core.wordpress.WordPressDependencyManager.WORDPRESS_VERSION}"
+        AppLanguage.PORTUGUESE -> "Arquivos do núcleo WordPress ${com.webtoapp.core.wordpress.WordPressDependencyManager.WORDPRESS_VERSION}"
+        AppLanguage.SPANISH -> "Archivos del núcleo WordPress ${com.webtoapp.core.wordpress.WordPressDependencyManager.WORDPRESS_VERSION}"
+        AppLanguage.FRENCH -> "Fichiers du cœur WordPress ${com.webtoapp.core.wordpress.WordPressDependencyManager.WORDPRESS_VERSION}"
+        AppLanguage.GERMAN -> "WordPress ${com.webtoapp.core.wordpress.WordPressDependencyManager.WORDPRESS_VERSION} -Core-Dateien"
+        AppLanguage.RUSSIAN -> "Файлы ядра WordPress ${com.webtoapp.core.wordpress.WordPressDependencyManager.WORDPRESS_VERSION}"
+        AppLanguage.JAPANESE -> "WordPress ${com.webtoapp.core.wordpress.WordPressDependencyManager.WORDPRESS_VERSION} コアファイル"
+        AppLanguage.KOREAN -> "WordPress ${com.webtoapp.core.wordpress.WordPressDependencyManager.WORDPRESS_VERSION} 코어 파일"
+    }
+
+    val depSqlitePlugin: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "SQLite 数据库插件"
+        AppLanguage.ENGLISH -> "SQLite Database Plugin"
+        AppLanguage.ARABIC -> "إضافة قاعدة بيانات SQLite"
+        AppLanguage.PORTUGUESE -> "Plugin de Banco de Dados SQLite"
+        AppLanguage.SPANISH -> "Plugin de Base de Datos SQLite"
+        AppLanguage.FRENCH -> "Plugin de Base de Données SQLite"
+        AppLanguage.GERMAN -> "SQLite-Datenbank-Plugin"
+        AppLanguage.RUSSIAN -> "Плагин базы данных SQLite"
+        AppLanguage.JAPANESE -> "SQLite データベースプラグイン"
+        AppLanguage.KOREAN -> "SQLite 데이터베이스 플러그인"
+    }
+
+    val depSqliteDesc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "WordPress SQLite 集成 v${com.webtoapp.core.wordpress.WordPressDependencyManager.SQLITE_PLUGIN_VERSION}"
+        AppLanguage.ENGLISH -> "WordPress SQLite Integration v${com.webtoapp.core.wordpress.WordPressDependencyManager.SQLITE_PLUGIN_VERSION}"
+        AppLanguage.ARABIC -> "تكامل WordPress SQLite v${com.webtoapp.core.wordpress.WordPressDependencyManager.SQLITE_PLUGIN_VERSION}"
+        AppLanguage.PORTUGUESE -> "Integração WordPress SQLite v${com.webtoapp.core.wordpress.WordPressDependencyManager.SQLITE_PLUGIN_VERSION}"
+        AppLanguage.SPANISH -> "Integración WordPress SQLite v${com.webtoapp.core.wordpress.WordPressDependencyManager.SQLITE_PLUGIN_VERSION}"
+        AppLanguage.FRENCH -> "Intégration WordPress SQLite v${com.webtoapp.core.wordpress.WordPressDependencyManager.SQLITE_PLUGIN_VERSION}"
+        AppLanguage.GERMAN -> "WordPress-SQLite-Integration v${com.webtoapp.core.wordpress.WordPressDependencyManager.SQLITE_PLUGIN_VERSION}"
+        AppLanguage.RUSSIAN -> "Интеграция WordPress SQLite v${com.webtoapp.core.wordpress.WordPressDependencyManager.SQLITE_PLUGIN_VERSION}"
+        AppLanguage.JAPANESE -> "WordPress SQLite 統合 v${com.webtoapp.core.wordpress.WordPressDependencyManager.SQLITE_PLUGIN_VERSION}"
+        AppLanguage.KOREAN -> "WordPress SQLite 통합 v${com.webtoapp.core.wordpress.WordPressDependencyManager.SQLITE_PLUGIN_VERSION}"
+    }
+
+    val depNodeRuntime: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Node.js 运行时"
+        AppLanguage.ENGLISH -> "Node.js Runtime"
+        AppLanguage.ARABIC -> "وقت تشغيل Node.js"
+        AppLanguage.PORTUGUESE -> "Runtime Node.js"
+        AppLanguage.SPANISH -> "Runtime de Node.js"
+        AppLanguage.FRENCH -> "Runtime Node.js"
+        AppLanguage.GERMAN -> "Node.js-Laufzeit"
+        AppLanguage.RUSSIAN -> "Среда выполнения Node.js"
+        AppLanguage.JAPANESE -> "Node.js ランタイム"
+        AppLanguage.KOREAN -> "Node.js 런타임"
+    }
+
+    val depNodeDesc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Node.js ${com.webtoapp.core.nodejs.NodeDependencyManager.NODE_VERSION} · 全栈 / API 后端"
+        AppLanguage.ENGLISH -> "Node.js ${com.webtoapp.core.nodejs.NodeDependencyManager.NODE_VERSION} · Fullstack / API Backend"
+        AppLanguage.ARABIC -> "Node.js ${com.webtoapp.core.nodejs.NodeDependencyManager.NODE_VERSION} · كامل / خلفية API"
+        AppLanguage.PORTUGUESE -> "Node.js ${com.webtoapp.core.nodejs.NodeDependencyManager.NODE_VERSION} · Fullstack / Backend de API"
+        AppLanguage.SPANISH -> "Node.js ${com.webtoapp.core.nodejs.NodeDependencyManager.NODE_VERSION} · Fullstack / Backend de API"
+        AppLanguage.FRENCH -> "Node.js ${com.webtoapp.core.nodejs.NodeDependencyManager.NODE_VERSION} · Fullstack / Backend API"
+        AppLanguage.GERMAN -> "Node.js ${com.webtoapp.core.nodejs.NodeDependencyManager.NODE_VERSION} · Fullstack / API-Backend"
+        AppLanguage.RUSSIAN -> "Node.js ${com.webtoapp.core.nodejs.NodeDependencyManager.NODE_VERSION} · Fullstack / API-бэкенд"
+        AppLanguage.JAPANESE -> "Node.js ${com.webtoapp.core.nodejs.NodeDependencyManager.NODE_VERSION} · フルスタック / API バックエンド"
+        AppLanguage.KOREAN -> "Node.js ${com.webtoapp.core.nodejs.NodeDependencyManager.NODE_VERSION} · 풀스택 / API 백엔드"
+    }
+
+    val depPythonRuntime: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Python 运行时"
+        AppLanguage.ENGLISH -> "Python Runtime"
+        AppLanguage.ARABIC -> "وقت تشغيل Python"
+        AppLanguage.PORTUGUESE -> "Runtime Python"
+        AppLanguage.SPANISH -> "Runtime de Python"
+        AppLanguage.FRENCH -> "Runtime Python"
+        AppLanguage.GERMAN -> "Python-Laufzeit"
+        AppLanguage.RUSSIAN -> "Среда выполнения Python"
+        AppLanguage.JAPANESE -> "Python ランタイム"
+        AppLanguage.KOREAN -> "Python 런타임"
+    }
+
+    val depPythonDesc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Python ${com.webtoapp.core.python.PythonDependencyManager.PYTHON_FULL_VERSION} · 脚本 / Web 后端"
+        AppLanguage.ENGLISH -> "Python ${com.webtoapp.core.python.PythonDependencyManager.PYTHON_FULL_VERSION} · Scripting / Web Backend"
+        AppLanguage.ARABIC -> "Python ${com.webtoapp.core.python.PythonDependencyManager.PYTHON_FULL_VERSION} · برمجة / خلفية الويب"
+        AppLanguage.PORTUGUESE -> "Python ${com.webtoapp.core.python.PythonDependencyManager.PYTHON_FULL_VERSION} · Scripts / Backend Web"
+        AppLanguage.SPANISH -> "Python ${com.webtoapp.core.python.PythonDependencyManager.PYTHON_FULL_VERSION} · Scripts / Backend Web"
+        AppLanguage.FRENCH -> "Python ${com.webtoapp.core.python.PythonDependencyManager.PYTHON_FULL_VERSION} · Scripts / Backend Web"
+        AppLanguage.GERMAN -> "Python ${com.webtoapp.core.python.PythonDependencyManager.PYTHON_FULL_VERSION} · Skripte / Web-Backend"
+        AppLanguage.RUSSIAN -> "Python ${com.webtoapp.core.python.PythonDependencyManager.PYTHON_FULL_VERSION} · Скрипты / Веб-бэкенд"
+        AppLanguage.JAPANESE -> "Python ${com.webtoapp.core.python.PythonDependencyManager.PYTHON_FULL_VERSION} · スクリプト / Web バックエンド"
+        AppLanguage.KOREAN -> "Python ${com.webtoapp.core.python.PythonDependencyManager.PYTHON_FULL_VERSION} · 스크립팅 / 웹 백엔드"
+    }
+
+    val depGoRuntime: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Go 二进制运行支持"
+        AppLanguage.ENGLISH -> "Go Binary Runtime Support"
+        AppLanguage.ARABIC -> "دعم تشغيل ملفات Go الثنائية"
+        AppLanguage.PORTUGUESE -> "Suporte a Runtime Binário Go"
+        AppLanguage.SPANISH -> "Soporte de Runtime Binario Go"
+        AppLanguage.FRENCH -> "Support du Runtime Binaire Go"
+        AppLanguage.GERMAN -> "Go-Binary-Runtime-Unterstützung"
+        AppLanguage.RUSSIAN -> "Поддержка бинарного runtime Go"
+        AppLanguage.JAPANESE -> "Go バイナリランタイムサポート"
+        AppLanguage.KOREAN -> "Go 바이너리 런타임 지원"
+    }
+
+    val depGoDesc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Go 1.26 官方工具链 · 支持 go build / go mod / go run · arm64-v8a"
+        AppLanguage.ENGLISH -> "Go 1.26 official toolchain · Supports go build / go mod / go run · arm64-v8a"
+        AppLanguage.ARABIC -> "سلسلة أدوات Go 1.26 الرسمية · تدعم go build / go mod / go run · arm64-v8a"
+        AppLanguage.PORTUGUESE -> "Toolchain oficial Go 1.26 · Suporta go build / go mod / go run · arm64-v8a"
+        AppLanguage.SPANISH -> "Toolchain oficial Go 1.26 · Soporta go build / go mod / go run · arm64-v8a"
+        AppLanguage.FRENCH -> "Toolchain officielle Go 1.26 · Prend en charge go build / go mod / go run · arm64-v8a"
+        AppLanguage.GERMAN -> "Offizielle Go 1.26-Toolchain · Unterstützt go build / go mod / go run · arm64-v8a"
+        AppLanguage.RUSSIAN -> "Официальная toolchain Go 1.26 · Поддерживает go build / go mod / go run · arm64-v8a"
+        AppLanguage.JAPANESE -> "Go 1.26 公式ツールチェーン · go build / go mod / go run 対応 · arm64-v8a"
+        AppLanguage.KOREAN -> "Go 1.26 공식 툴체인 · go build / go mod / go run 지원 · arm64-v8a"
+    }
+
+    val depWpProjects: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "WordPress 项目"
+        AppLanguage.ENGLISH -> "WordPress Projects"
+        AppLanguage.ARABIC -> "مشاريع WordPress"
+        AppLanguage.PORTUGUESE -> "Projetos WordPress"
+        AppLanguage.SPANISH -> "Proyectos WordPress"
+        AppLanguage.FRENCH -> "Projets WordPress"
+        AppLanguage.GERMAN -> "WordPress-Projekte"
+        AppLanguage.RUSSIAN -> "Проекты WordPress"
+        AppLanguage.JAPANESE -> "WordPress プロジェクト"
+        AppLanguage.KOREAN -> "WordPress 프로젝트"
+    }
+
+    val depNodeProjects: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Node.js 项目"
+        AppLanguage.ENGLISH -> "Node.js Projects"
+        AppLanguage.ARABIC -> "مشاريع Node.js"
+        AppLanguage.PORTUGUESE -> "Projetos Node.js"
+        AppLanguage.SPANISH -> "Proyectos Node.js"
+        AppLanguage.FRENCH -> "Projets Node.js"
+        AppLanguage.GERMAN -> "Node.js-Projekte"
+        AppLanguage.RUSSIAN -> "Проекты Node.js"
+        AppLanguage.JAPANESE -> "Node.js プロジェクト"
+        AppLanguage.KOREAN -> "Node.js 프로젝트"
+    }
+
+    val depPythonProjects: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Python 项目"
+        AppLanguage.ENGLISH -> "Python Projects"
+        AppLanguage.ARABIC -> "مشاريع Python"
+        AppLanguage.PORTUGUESE -> "Projetos Python"
+        AppLanguage.SPANISH -> "Proyectos Python"
+        AppLanguage.FRENCH -> "Projets Python"
+        AppLanguage.GERMAN -> "Python-Projekte"
+        AppLanguage.RUSSIAN -> "Проекты Python"
+        AppLanguage.JAPANESE -> "Python プロジェクト"
+        AppLanguage.KOREAN -> "Python 프로젝트"
+    }
+
+    val depGoProjects: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Go 项目"
+        AppLanguage.ENGLISH -> "Go Projects"
+        AppLanguage.ARABIC -> "مشاريع Go"
+        AppLanguage.PORTUGUESE -> "Projetos Go"
+        AppLanguage.SPANISH -> "Proyectos Go"
+        AppLanguage.FRENCH -> "Projets Go"
+        AppLanguage.GERMAN -> "Go-Projekte"
+        AppLanguage.RUSSIAN -> "Проекты Go"
+        AppLanguage.JAPANESE -> "Go プロジェクト"
+        AppLanguage.KOREAN -> "Go 프로젝트"
+    }
+
+    val depDocsProjects: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "文档站点"
+        AppLanguage.ENGLISH -> "Docs Sites"
+        AppLanguage.ARABIC -> "مواقع التوثيق"
+        AppLanguage.PORTUGUESE -> "Sites de Documentação"
+        AppLanguage.SPANISH -> "Sitios de Documentación"
+        AppLanguage.FRENCH -> "Sites de Documentation"
+        AppLanguage.GERMAN -> "Dokumentationsseiten"
+        AppLanguage.RUSSIAN -> "Сайты документации"
+        AppLanguage.JAPANESE -> "ドキュメントサイト"
+        AppLanguage.KOREAN -> "문서 사이트"
+    }
+
+    fun depProjectCount(count: Int): String = when (Strings.lang) {
+        AppLanguage.CHINESE -> "$count 个项目"
+        AppLanguage.ENGLISH -> "$count project${if (count != 1) "s" else ""}"
+        AppLanguage.ARABIC -> "$count مشروع"
+        AppLanguage.PORTUGUESE -> "$count projetos"
+        AppLanguage.SPANISH -> "$count proyectos"
+        AppLanguage.FRENCH -> "$count projets"
+        AppLanguage.GERMAN -> "$count Projekte"
+        AppLanguage.RUSSIAN -> "$count проектов"
+        AppLanguage.JAPANESE -> "$count プロジェクト"
+        AppLanguage.KOREAN -> "$count 프로젝트"
+    }
+
+    val depMirrorSource: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "下载镜像源"
+        AppLanguage.ENGLISH -> "Download Mirror"
+        AppLanguage.ARABIC -> "مرآة التنزيل"
+        AppLanguage.PORTUGUESE -> "Espelho de Download"
+        AppLanguage.SPANISH -> "Espejo de Descarga"
+        AppLanguage.FRENCH -> "Miroir de Téléchargement"
+        AppLanguage.GERMAN -> "Download-Spiegel"
+        AppLanguage.RUSSIAN -> "Зеркало загрузки"
+        AppLanguage.JAPANESE -> "ダウンロードミラー"
+        AppLanguage.KOREAN -> "다운로드 미러"
+    }
+
+    val depMirrorDesc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "影响 PHP、WordPress、Node.js 和 Go 的下载速度"
+        AppLanguage.ENGLISH -> "Affects download speed for PHP, WordPress, Node.js & Go"
+        AppLanguage.ARABIC -> "يؤثر على سرعة تنزيل PHP و WordPress و Node.js و Go"
+        AppLanguage.PORTUGUESE -> "Afeta a velocidade de download de PHP, WordPress, Node.js e Go"
+        AppLanguage.SPANISH -> "Afecta la velocidad de descarga de PHP, WordPress, Node.js y Go"
+        AppLanguage.FRENCH -> "Affecte la vitesse de téléchargement de PHP, WordPress, Node.js et Go"
+        AppLanguage.GERMAN -> "Beeinflusst die Download-Geschwindigkeit für PHP, WordPress, Node.js & Go"
+        AppLanguage.RUSSIAN -> "Влияет на скорость загрузки PHP, WordPress, Node.js и Go"
+        AppLanguage.JAPANESE -> "PHP、WordPress、Node.js、Go のダウンロード速度に影響します"
+        AppLanguage.KOREAN -> "PHP, WordPress, Node.js, Go의 다운로드 속도에 영향을 줍니다"
+    }
+
+    val depMirrorCN: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "国内镜像"
+        AppLanguage.ENGLISH -> "China Mirror"
+        AppLanguage.ARABIC -> "مرآة الصين"
+        AppLanguage.PORTUGUESE -> "Espelho da China"
+        AppLanguage.SPANISH -> "Espejo de China"
+        AppLanguage.FRENCH -> "Miroir Chine"
+        AppLanguage.GERMAN -> "China-Spiegel"
+        AppLanguage.RUSSIAN -> "Китайское зеркало"
+        AppLanguage.JAPANESE -> "中国ミラー"
+        AppLanguage.KOREAN -> "중국 미러"
+    }
+
+    val depMirrorGlobal: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "国际源"
+        AppLanguage.ENGLISH -> "Global Source"
+        AppLanguage.ARABIC -> "مصدر عالمي"
+        AppLanguage.PORTUGUESE -> "Fonte Global"
+        AppLanguage.SPANISH -> "Fuente Global"
+        AppLanguage.FRENCH -> "Source Globale"
+        AppLanguage.GERMAN -> "Globale Quelle"
+        AppLanguage.RUSSIAN -> "Глобальный источник"
+        AppLanguage.JAPANESE -> "グローバルソース"
+        AppLanguage.KOREAN -> "글로벌 소스"
+    }
+
+    val depMirrorAuto: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "自动"
+        AppLanguage.ENGLISH -> "Auto"
+        AppLanguage.ARABIC -> "تلقائي"
+        AppLanguage.PORTUGUESE -> "Automático"
+        AppLanguage.SPANISH -> "Automático"
+        AppLanguage.FRENCH -> "Automatique"
+        AppLanguage.GERMAN -> "Automatisch"
+        AppLanguage.RUSSIAN -> "Авто"
+        AppLanguage.JAPANESE -> "自動"
+        AppLanguage.KOREAN -> "자동"
+    }
+
+    val depDownloadAll: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "下载全部运行时"
+        AppLanguage.ENGLISH -> "Download All Runtimes"
+        AppLanguage.ARABIC -> "تنزيل جميع بيئات التشغيل"
+        AppLanguage.PORTUGUESE -> "Baixar Todos os Runtimes"
+        AppLanguage.SPANISH -> "Descargar Todos los Runtimes"
+        AppLanguage.FRENCH -> "Télécharger Tous les Runtimes"
+        AppLanguage.GERMAN -> "Alle Runtimes herunterladen"
+        AppLanguage.RUSSIAN -> "Загрузить все среды выполнения"
+        AppLanguage.JAPANESE -> "すべてのランタイムをダウンロード"
+        AppLanguage.KOREAN -> "모든 런타임 다운로드"
+    }
+
+    val depTotalStorage: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "总占用空间"
+        AppLanguage.ENGLISH -> "Total Storage"
+        AppLanguage.ARABIC -> "إجمالي التخزين"
+        AppLanguage.PORTUGUESE -> "Armazenamento Total"
+        AppLanguage.SPANISH -> "Almacenamiento Total"
+        AppLanguage.FRENCH -> "Stockage Total"
+        AppLanguage.GERMAN -> "Gesamtspeicher"
+        AppLanguage.RUSSIAN -> "Общий объём хранилища"
+        AppLanguage.JAPANESE -> "合計ストレージ"
+        AppLanguage.KOREAN -> "전체 저장 공간"
+    }
+
+    val depClearAll: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "清理全部缓存"
+        AppLanguage.ENGLISH -> "Clear All Cache"
+        AppLanguage.ARABIC -> "مسح كل ذاكرة التخزين المؤقت"
+        AppLanguage.PORTUGUESE -> "Limpar Todo o Cache"
+        AppLanguage.SPANISH -> "Borrar Toda la Caché"
+        AppLanguage.FRENCH -> "Vider Tout le Cache"
+        AppLanguage.GERMAN -> "Gesamten Cache löschen"
+        AppLanguage.RUSSIAN -> "Очистить весь кэш"
+        AppLanguage.JAPANESE -> "すべてのキャッシュをクリア"
+        AppLanguage.KOREAN -> "모든 캐시 지우기"
+    }
+
+    val depClearConfirm: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "将删除所有已下载的运行时和缓存文件，下次使用时需要重新下载。确定继续？"
+        AppLanguage.ENGLISH -> "This will delete all downloaded runtimes and cache. They will need to be re-downloaded. Continue?"
+        AppLanguage.ARABIC -> "سيؤدي هذا إلى حذف جميع بيئات التشغيل وذاكرة التخزين المؤقت المحملة. ستحتاج إلى إعادة التنزيل. هل تريد المتابعة؟"
+        AppLanguage.PORTUGUESE -> "Isso excluirá todos os runtimes e o cache baixados. Eles precisarão ser baixados novamente. Continuar?"
+        AppLanguage.SPANISH -> "Esto eliminará todos los runtimes y la caché descargados. Tendrán que ser descargados nuevamente. ¿Continuar?"
+        AppLanguage.FRENCH -> "Cela supprimera tous les runtimes et le cache téléchargés. Ils devront être re-téléchargés. Continuer ?"
+        AppLanguage.GERMAN -> "Dies löscht alle heruntergeladenen Runtimes und den Cache. Sie müssen neu heruntergeladen werden. Fortfahren?"
+        AppLanguage.RUSSIAN -> "Это удалит все загруженные среды выполнения и кэш. Их потребуется загрузить заново. Продолжить?"
+        AppLanguage.JAPANESE -> "ダウンロードしたすべてのランタイムとキャッシュが削除されます。再ダウンロードが必要になります。続行しますか？"
+        AppLanguage.KOREAN -> "이 작업은 다운로드된 모든 런타임과 캐시를 삭제합니다. 다시 다운로드해야 합니다. 계속하시겠습니까?"
+    }
+
+    val depAllReady: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "所有运行时已就绪"
+        AppLanguage.ENGLISH -> "All runtimes ready"
+        AppLanguage.ARABIC -> "جميع بيئات التشغيل جاهزة"
+        AppLanguage.PORTUGUESE -> "Todos os runtimes prontos"
+        AppLanguage.SPANISH -> "Todos los runtimes listos"
+        AppLanguage.FRENCH -> "Tous les runtimes prêts"
+        AppLanguage.GERMAN -> "Alle Runtimes bereit"
+        AppLanguage.RUSSIAN -> "Все среды выполнения готовы"
+        AppLanguage.JAPANESE -> "すべてのランタイムの準備が完了"
+        AppLanguage.KOREAN -> "모든 런타임 준비 완료"
+    }
+
+    val depSomeNotReady: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "部分运行时未安装"
+        AppLanguage.ENGLISH -> "Some runtimes not installed"
+        AppLanguage.ARABIC -> "بعض بيئات التشغيل غير مثبتة"
+        AppLanguage.PORTUGUESE -> "Alguns runtimes não estão instalados"
+        AppLanguage.SPANISH -> "Algunos runtimes no están instalados"
+        AppLanguage.FRENCH -> "Certains runtimes ne sont pas installés"
+        AppLanguage.GERMAN -> "Einige Runtimes sind nicht installiert"
+        AppLanguage.RUSSIAN -> "Некоторые среды выполнения не установлены"
+        AppLanguage.JAPANESE -> "一部のランタイムがインストールされていません"
+        AppLanguage.KOREAN -> "일부 런타임이 설치되지 않았습니다"
+    }
+
+    val depInstall: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "安装"
+        AppLanguage.ENGLISH -> "Install"
+        AppLanguage.ARABIC -> "تثبيت"
+        AppLanguage.PORTUGUESE -> "Instalar"
+        AppLanguage.SPANISH -> "Instalar"
+        AppLanguage.FRENCH -> "Installer"
+        AppLanguage.GERMAN -> "Installieren"
+        AppLanguage.RUSSIAN -> "Установить"
+        AppLanguage.JAPANESE -> "インストール"
+        AppLanguage.KOREAN -> "설치"
+    }
+
+    val depDlPause: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "暂停"
+        AppLanguage.ENGLISH -> "Pause"
+        AppLanguage.ARABIC -> "إيقاف مؤقت"
+        AppLanguage.PORTUGUESE -> "Pausar"
+        AppLanguage.SPANISH -> "Pausar"
+        AppLanguage.FRENCH -> "Mettre en pause"
+        AppLanguage.GERMAN -> "Pausieren"
+        AppLanguage.RUSSIAN -> "Пауза"
+        AppLanguage.JAPANESE -> "一時停止"
+        AppLanguage.KOREAN -> "일시정지"
+    }
+
+    val depDlResume: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "继续"
+        AppLanguage.ENGLISH -> "Resume"
+        AppLanguage.ARABIC -> "استئناف"
+        AppLanguage.PORTUGUESE -> "Retomar"
+        AppLanguage.SPANISH -> "Reanudar"
+        AppLanguage.FRENCH -> "Reprendre"
+        AppLanguage.GERMAN -> "Fortsetzen"
+        AppLanguage.RUSSIAN -> "Продолжить"
+        AppLanguage.JAPANESE -> "再開"
+        AppLanguage.KOREAN -> "재개"
+    }
+
+    val depDlEta: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "剩余时间"
+        AppLanguage.ENGLISH -> "Time Left"
+        AppLanguage.ARABIC -> "الوقت المتبقي"
+        AppLanguage.PORTUGUESE -> "Tempo Restante"
+        AppLanguage.SPANISH -> "Tiempo Restante"
+        AppLanguage.FRENCH -> "Temps Restant"
+        AppLanguage.GERMAN -> "Verbleibende Zeit"
+        AppLanguage.RUSSIAN -> "Оставшееся время"
+        AppLanguage.JAPANESE -> "残り時間"
+        AppLanguage.KOREAN -> "남은 시간"
+    }
+
+    val depDlPaused: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "已暂停"
+        AppLanguage.ENGLISH -> "Paused"
+        AppLanguage.ARABIC -> "متوقف مؤقتًا"
+        AppLanguage.PORTUGUESE -> "Pausado"
+        AppLanguage.SPANISH -> "Pausado"
+        AppLanguage.FRENCH -> "En pause"
+        AppLanguage.GERMAN -> "Pausiert"
+        AppLanguage.RUSSIAN -> "Приостановлено"
+        AppLanguage.JAPANESE -> "一時停止中"
+        AppLanguage.KOREAN -> "일시정지됨"
+    }
+
+    val depDlCancel: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "取消下载"
+        AppLanguage.ENGLISH -> "Cancel download"
+        AppLanguage.ARABIC -> "إلغاء التنزيل"
+        AppLanguage.PORTUGUESE -> "Cancelar download"
+        AppLanguage.SPANISH -> "Cancelar descarga"
+        AppLanguage.FRENCH -> "Annuler le téléchargement"
+        AppLanguage.GERMAN -> "Download abbrechen"
+        AppLanguage.RUSSIAN -> "Отменить загрузку"
+        AppLanguage.JAPANESE -> "ダウンロードをキャンセル"
+        AppLanguage.KOREAN -> "다운로드 취소"
+    }
+
     val deleteConfirmTitle: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "确认删除"
         AppLanguage.ENGLISH -> "Confirm Delete"
@@ -2863,12 +5181,174 @@ object StringsA {
         AppLanguage.KOREAN -> "APK 빌드"
     }
 
+    val buildEnvironment: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "构建环境"
+        AppLanguage.ENGLISH -> "Build Environment"
+        AppLanguage.ARABIC -> "بيئة البناء"
+        AppLanguage.PORTUGUESE -> "Ambiente de Build"
+        AppLanguage.SPANISH -> "Entorno de Compilación"
+        AppLanguage.FRENCH -> "Environnement de Compilation"
+        AppLanguage.GERMAN -> "Build-Umgebung"
+        AppLanguage.RUSSIAN -> "Среда сборки"
+        AppLanguage.JAPANESE -> "ビルド環境"
+        AppLanguage.KOREAN -> "빌드 환경"
+    }
 
+    val envReady: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "环境就绪"
+        AppLanguage.ENGLISH -> "Environment Ready"
+        AppLanguage.ARABIC -> "البيئة جاهزة"
+        AppLanguage.PORTUGUESE -> "Ambiente Pronto"
+        AppLanguage.SPANISH -> "Entorno Listo"
+        AppLanguage.FRENCH -> "Environnement Prêt"
+        AppLanguage.GERMAN -> "Umgebung bereit"
+        AppLanguage.RUSSIAN -> "Среда готова"
+        AppLanguage.JAPANESE -> "環境の準備が完了"
+        AppLanguage.KOREAN -> "환경 준비 완료"
+    }
 
+    val envNotInstalled: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "未安装"
+        AppLanguage.ENGLISH -> "Not Installed"
+        AppLanguage.ARABIC -> "غير مثبت"
+        AppLanguage.PORTUGUESE -> "Não Instalado"
+        AppLanguage.SPANISH -> "No Instalado"
+        AppLanguage.FRENCH -> "Non Installé"
+        AppLanguage.GERMAN -> "Nicht installiert"
+        AppLanguage.RUSSIAN -> "Не установлено"
+        AppLanguage.JAPANESE -> "未インストール"
+        AppLanguage.KOREAN -> "설치되지 않음"
+    }
 
+    val envDownloading: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "下载中"
+        AppLanguage.ENGLISH -> "Downloading"
+        AppLanguage.ARABIC -> "جاري التحميل"
+        AppLanguage.PORTUGUESE -> "Baixando"
+        AppLanguage.SPANISH -> "Descargando"
+        AppLanguage.FRENCH -> "Téléchargement"
+        AppLanguage.GERMAN -> "Wird heruntergeladen"
+        AppLanguage.RUSSIAN -> "Загрузка"
+        AppLanguage.JAPANESE -> "ダウンロード中"
+        AppLanguage.KOREAN -> "다운로드 중"
+    }
 
+    val envInstalling: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "安装中"
+        AppLanguage.ENGLISH -> "Installing"
+        AppLanguage.ARABIC -> "جاري التثبيت"
+        AppLanguage.PORTUGUESE -> "Instalando"
+        AppLanguage.SPANISH -> "Instalando"
+        AppLanguage.FRENCH -> "Installation"
+        AppLanguage.GERMAN -> "Wird installiert"
+        AppLanguage.RUSSIAN -> "Установка"
+        AppLanguage.JAPANESE -> "インストール中"
+        AppLanguage.KOREAN -> "설치 중"
+    }
 
+    val canBuildFrontend: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "可在本机安装依赖并构建前端项目"
+        AppLanguage.ENGLISH -> "Can install deps and build frontend projects locally"
+        AppLanguage.ARABIC -> "يمكن تثبيت التبعيات وبناء مشاريع الواجهة محليًا"
+        AppLanguage.PORTUGUESE -> "Pode instalar dependências e compilar projetos frontend localmente"
+        AppLanguage.SPANISH -> "Puede instalar dependencias y compilar proyectos frontend localmente"
+        AppLanguage.FRENCH -> "Peut installer les dépendances et compiler les projets frontend localement"
+        AppLanguage.GERMAN -> "Kann Abhängigkeiten installieren und Frontend-Projekte lokal bauen"
+        AppLanguage.RUSSIAN -> "Может устанавливать зависимости и собирать фронтенд-проекты локально"
+        AppLanguage.JAPANESE -> "依存関係をインストールし、フロントエンドプロジェクトをローカルでビルドできます"
+        AppLanguage.KOREAN -> "로컬에서 종속성을 설치하고 프론트엔드 프로젝트를 빌드할 수 있습니다"
+    }
 
+    val builtInPackagerReady: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "请先安装本地 Node.js 构建工具链"
+        AppLanguage.ENGLISH -> "Install the local Node.js build toolchain first"
+        AppLanguage.ARABIC -> "ثبّت سلسلة أدوات بناء Node.js المحلية أولاً"
+        AppLanguage.PORTUGUESE -> "Instale a toolchain de build Node.js local primeiro"
+        AppLanguage.SPANISH -> "Instala la toolchain de compilación Node.js local primero"
+        AppLanguage.FRENCH -> "Installez d'abord la toolchain de compilation Node.js locale"
+        AppLanguage.GERMAN -> "Installiere zuerst die lokale Node.js-Build-Toolchain"
+        AppLanguage.RUSSIAN -> "Сначала установите локальную toolchain сборки Node.js"
+        AppLanguage.JAPANESE -> "まずローカルの Node.js ビルドツールチェーンをインストールしてください"
+        AppLanguage.KOREAN -> "먼저 로컬 Node.js 빌드 툴체인을 설치하세요"
+    }
+
+    val installAdvancedBuildTool: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "安装本地构建环境"
+        AppLanguage.ENGLISH -> "Install Local Build Environment"
+        AppLanguage.ARABIC -> "تثبيت بيئة البناء المحلية"
+        AppLanguage.PORTUGUESE -> "Instalar Ambiente de Build Local"
+        AppLanguage.SPANISH -> "Instalar Entorno de Compilación Local"
+        AppLanguage.FRENCH -> "Installer l'Environnement de Compilation Local"
+        AppLanguage.GERMAN -> "Lokale Build-Umgebung installieren"
+        AppLanguage.RUSSIAN -> "Установить локальную среду сборки"
+        AppLanguage.JAPANESE -> "ローカルビルド環境をインストール"
+        AppLanguage.KOREAN -> "로컬 빌드 환경 설치"
+    }
+
+    val nodeInstalledNpmMissing: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Node 已就绪，npm 未安装"
+        AppLanguage.ENGLISH -> "Node ready, npm not installed"
+        AppLanguage.ARABIC -> "Node جاهز، لم يتم تثبيت npm"
+        AppLanguage.PORTUGUESE -> "Node pronto, npm não instalado"
+        AppLanguage.SPANISH -> "Node listo, npm no instalado"
+        AppLanguage.FRENCH -> "Node prêt, npm non installé"
+        AppLanguage.GERMAN -> "Node bereit, npm nicht installiert"
+        AppLanguage.RUSSIAN -> "Node готов, npm не установлен"
+        AppLanguage.JAPANESE -> "Node の準備が完了、npm は未インストール"
+        AppLanguage.KOREAN -> "Node 준비 완료, npm 미설치"
+    }
+
+    val nodeInstalledNpmMissingHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "继续安装 npm / pnpm / yarn 后即可进行本地构建"
+        AppLanguage.ENGLISH -> "Install npm / pnpm / yarn to enable local builds"
+        AppLanguage.ARABIC -> "ثبّت npm / pnpm / yarn لتفعيل البناء المحلي"
+        AppLanguage.PORTUGUESE -> "Instale npm / pnpm / yarn para habilitar builds locais"
+        AppLanguage.SPANISH -> "Instala npm / pnpm / yarn para habilitar compilaciones locales"
+        AppLanguage.FRENCH -> "Installez npm / pnpm / yarn pour activer les compilations locales"
+        AppLanguage.GERMAN -> "Installiere npm / pnpm / yarn, um lokale Builds zu aktivieren"
+        AppLanguage.RUSSIAN -> "Установите npm / pnpm / yarn для локальной сборки"
+        AppLanguage.JAPANESE -> "npm / pnpm / yarn をインストールするとローカルビルドが有効になります"
+        AppLanguage.KOREAN -> "npm / pnpm / yarn을 설치하면 로컬 빌드를 사용할 수 있습니다"
+    }
+
+    val preparingBuildEnv: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "准备本地构建环境"
+        AppLanguage.ENGLISH -> "Preparing local build environment"
+        AppLanguage.ARABIC -> "تجهيز بيئة البناء المحلية"
+        AppLanguage.PORTUGUESE -> "Preparando ambiente de build local"
+        AppLanguage.SPANISH -> "Preparando entorno de compilación local"
+        AppLanguage.FRENCH -> "Préparation de l'environnement de compilation local"
+        AppLanguage.GERMAN -> "Lokale Build-Umgebung wird vorbereitet"
+        AppLanguage.RUSSIAN -> "Подготовка локальной среды сборки"
+        AppLanguage.JAPANESE -> "ローカルビルド環境を準備中"
+        AppLanguage.KOREAN -> "로컬 빌드 환경 준비 중"
+    }
+
+    val buildEnvNotFullyReady: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "构建环境未完全就绪"
+        AppLanguage.ENGLISH -> "Build environment is not fully ready"
+        AppLanguage.ARABIC -> "بيئة البناء ليست جاهزة بالكامل"
+        AppLanguage.PORTUGUESE -> "Ambiente de build não está totalmente pronto"
+        AppLanguage.SPANISH -> "El entorno de compilación no está completamente listo"
+        AppLanguage.FRENCH -> "L'environnement de compilation n'est pas entièrement prêt"
+        AppLanguage.GERMAN -> "Build-Umgebung ist nicht vollständig bereit"
+        AppLanguage.RUSSIAN -> "Среда сборки не полностью готова"
+        AppLanguage.JAPANESE -> "ビルド環境が完全ではありません"
+        AppLanguage.KOREAN -> "빌드 환경이 완전히 준비되지 않았습니다"
+    }
+
+    val nodeLauncherUnavailable: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Node 启动器不可用"
+        AppLanguage.ENGLISH -> "Node launcher unavailable"
+        AppLanguage.ARABIC -> "مشغّل Node غير متاح"
+        AppLanguage.PORTUGUESE -> "Iniciador Node indisponível"
+        AppLanguage.SPANISH -> "Lanzador Node no disponible"
+        AppLanguage.FRENCH -> "Lanceur Node indisponible"
+        AppLanguage.GERMAN -> "Node-Starter nicht verfügbar"
+        AppLanguage.RUSSIAN -> "Запуск Node недоступен"
+        AppLanguage.JAPANESE -> "Node ランチャーは利用できません"
+        AppLanguage.KOREAN -> "Node 런처를 사용할 수 없습니다"
+    }
 
     val npmUnavailable: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "npm 不可用"
@@ -2881,6 +5361,58 @@ object StringsA {
         AppLanguage.RUSSIAN -> "npm недоступен"
         AppLanguage.JAPANESE -> "npm は利用できません"
         AppLanguage.KOREAN -> "npm을 사용할 수 없습니다"
+    }
+
+    val localBuildEnvNotReady: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "本地构建环境未就绪"
+        AppLanguage.ENGLISH -> "Local build environment is not ready"
+        AppLanguage.ARABIC -> "بيئة البناء المحلية ليست جاهزة"
+        AppLanguage.PORTUGUESE -> "Ambiente de build local não está pronto"
+        AppLanguage.SPANISH -> "El entorno de compilación local no está listo"
+        AppLanguage.FRENCH -> "L'environnement de compilation local n'est pas prêt"
+        AppLanguage.GERMAN -> "Lokale Build-Umgebung ist nicht bereit"
+        AppLanguage.RUSSIAN -> "Локальная среда сборки не готова"
+        AppLanguage.JAPANESE -> "ローカルビルド環境の準備ができていません"
+        AppLanguage.KOREAN -> "로컬 빌드 환경이 준비되지 않았습니다"
+    }
+
+    val buildTools: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "构建工具"
+        AppLanguage.ENGLISH -> "Build Tools"
+        AppLanguage.ARABIC -> "أدوات البناء"
+        AppLanguage.PORTUGUESE -> "Ferramentas de Build"
+        AppLanguage.SPANISH -> "Herramientas de Compilación"
+        AppLanguage.FRENCH -> "Outils de Compilation"
+        AppLanguage.GERMAN -> "Build-Tools"
+        AppLanguage.RUSSIAN -> "Инструменты сборки"
+        AppLanguage.JAPANESE -> "ビルドツール"
+        AppLanguage.KOREAN -> "빌드 도구"
+    }
+
+    val installed: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "已安装"
+        AppLanguage.ENGLISH -> "Installed"
+        AppLanguage.ARABIC -> "مثبت"
+        AppLanguage.PORTUGUESE -> "Instalado"
+        AppLanguage.SPANISH -> "Instalado"
+        AppLanguage.FRENCH -> "Installé"
+        AppLanguage.GERMAN -> "Installiert"
+        AppLanguage.RUSSIAN -> "Установлено"
+        AppLanguage.JAPANESE -> "インストール済み"
+        AppLanguage.KOREAN -> "설치됨"
+    }
+
+    val notInstalled: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "未安装"
+        AppLanguage.ENGLISH -> "Not Installed"
+        AppLanguage.ARABIC -> "غير مثبت"
+        AppLanguage.PORTUGUESE -> "Não Instalado"
+        AppLanguage.SPANISH -> "No Instalado"
+        AppLanguage.FRENCH -> "Non Installé"
+        AppLanguage.GERMAN -> "Nicht installiert"
+        AppLanguage.RUSSIAN -> "Не установлено"
+        AppLanguage.JAPANESE -> "未インストール"
+        AppLanguage.KOREAN -> "설치되지 않음"
     }
 
     val ready: String get() = when (Strings.lang) {
@@ -3312,8 +5844,44 @@ object StringsA {
         AppLanguage.KOREAN -> "1. 프로젝트 폴더 선택\n2. 로컬 빌드 환경 설치\n3. 기기에서 종속성을 설치하고 빌드 실행"
     }
 
+    val builtInEngineReady: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "支持在本地安装依赖并执行 package.json 的构建脚本，也支持直接导入已构建产物。"
+        AppLanguage.ENGLISH -> "Supports local dependency install and package.json build scripts, and can also import prebuilt output."
+        AppLanguage.ARABIC -> "يدعم تثبيت التبعيات محليًا وتشغيل أوامر البناء من package.json، كما يدعم استيراد المخرجات المبنية."
+        AppLanguage.PORTUGUESE -> "Suporta instalação local de dependências e scripts de build do package.json, e também pode importar saídas pré-compiladas."
+        AppLanguage.SPANISH -> "Soporta instalación local de dependencias y scripts de compilación de package.json, y también puede importar salida precompilada."
+        AppLanguage.FRENCH -> "Prend en charge l'installation locale des dépendances et les scripts de compilation de package.json, et peut aussi importer une sortie précompilée."
+        AppLanguage.GERMAN -> "Unterstützt lokale Abhängigkeitsinstallation und package.json-Build-Skripte und kann auch vorgebaute Ausgaben importieren."
+        AppLanguage.RUSSIAN -> "Поддерживает локальную установку зависимостей и скрипты сборки package.json, а также импорт готовых сборок."
+        AppLanguage.JAPANESE -> "ローカルでの依存関係のインストールと package.json のビルドスクリプトに対応し、ビルド済み出力のインポートも可能です。"
+        AppLanguage.KOREAN -> "로컬 종속성 설치와 package.json 빌드 스크립트를 지원하며, 미리 빌드된 출력을 가져올 수도 있습니다."
+    }
 
+    val createMediaAppTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "创建媒体应用"
+        AppLanguage.ENGLISH -> "Create Media App"
+        AppLanguage.ARABIC -> "إنشاء تطبيق وسائط"
+        AppLanguage.PORTUGUESE -> "Criar App de Mídia"
+        AppLanguage.SPANISH -> "Crear App de Medios"
+        AppLanguage.FRENCH -> "Créer une App Média"
+        AppLanguage.GERMAN -> "Medien-App erstellen"
+        AppLanguage.RUSSIAN -> "Создать медиа-приложение"
+        AppLanguage.JAPANESE -> "メディアアプリを作成"
+        AppLanguage.KOREAN -> "미디어 앱 만들기"
+    }
 
+    val selectMediaType: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "选择媒体类型"
+        AppLanguage.ENGLISH -> "Select Media Type"
+        AppLanguage.ARABIC -> "اختيار نوع الوسائط"
+        AppLanguage.PORTUGUESE -> "Selecionar Tipo de Mídia"
+        AppLanguage.SPANISH -> "Seleccionar Tipo de Medio"
+        AppLanguage.FRENCH -> "Sélectionner le Type de Média"
+        AppLanguage.GERMAN -> "Medientyp auswählen"
+        AppLanguage.RUSSIAN -> "Выбрать тип медиа"
+        AppLanguage.JAPANESE -> "メディアタイプを選択"
+        AppLanguage.KOREAN -> "미디어 유형 선택"
+    }
 
     val image: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "图片"
@@ -3380,7 +5948,31 @@ object StringsA {
         AppLanguage.KOREAN -> "탭하여 이미지 선택"
     }
 
+    val clickToSelectVideo: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "点击选择视频"
+        AppLanguage.ENGLISH -> "Click to select video"
+        AppLanguage.ARABIC -> "انقر لاختيار فيديو"
+        AppLanguage.PORTUGUESE -> "Toque para selecionar vídeo"
+        AppLanguage.SPANISH -> "Toca para seleccionar video"
+        AppLanguage.FRENCH -> "Toucher pour sélectionner une vidéo"
+        AppLanguage.GERMAN -> "Tippen, um Video auszuwählen"
+        AppLanguage.RUSSIAN -> "Нажмите, чтобы выбрать видео"
+        AppLanguage.JAPANESE -> "タップして動画を選択"
+        AppLanguage.KOREAN -> "탭하여 동영상 선택"
+    }
 
+    val videoSelected: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "视频已选择"
+        AppLanguage.ENGLISH -> "Video selected"
+        AppLanguage.ARABIC -> "تم اختيار الفيديو"
+        AppLanguage.PORTUGUESE -> "Vídeo selecionado"
+        AppLanguage.SPANISH -> "Video seleccionado"
+        AppLanguage.FRENCH -> "Vidéo sélectionnée"
+        AppLanguage.GERMAN -> "Video ausgewählt"
+        AppLanguage.RUSSIAN -> "Видео выбрано"
+        AppLanguage.JAPANESE -> "動画が選択されました"
+        AppLanguage.KOREAN -> "동영상이 선택되었습니다"
+    }
 
     val fillScreen: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "铺满屏幕"
@@ -3512,6 +6104,18 @@ object StringsA {
         AppLanguage.KOREAN -> "앱을 열면 자동으로 재생 시작"
     }
 
+    val mediaAppHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "创建的应用将%s，可用作相框、展示或视频壁纸。"
+        AppLanguage.ENGLISH -> "The app will %s. Good for frames, signage, or video wallpaper."
+        AppLanguage.ARABIC -> "سيقوم التطبيق المُنشأ بـ %s، مناسب للإطارات الرقمية أو عروض الإعلانات أو خلفيات الفيديو."
+        AppLanguage.PORTUGUESE -> "O app vai %s. Útil para molduras, displays ou papéis de parede em vídeo."
+        AppLanguage.SPANISH -> "La app %s. Útil para marcos, cartelería o fondos de pantalla de video."
+        AppLanguage.FRENCH -> "L'app %s. Utile pour cadres, affichages ou fonds d'écran vidéo."
+        AppLanguage.GERMAN -> "Die App wird %s. Gut für Rahmen, Beschilderung oder Video-Hintergründe."
+        AppLanguage.RUSSIAN -> "Приложение будет %s. Подходит для рамок, вывесок или видеообоев."
+        AppLanguage.JAPANESE -> "アプリは%sします。フォトフレーム、サイネージ、動画の壁紙に適しています。"
+        AppLanguage.KOREAN -> "앱은 %s합니다. 액자, 사이니지 또는 비디오 배경화면에 적합합니다."
+    }
 
     val fullscreenDisplayImage: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "全屏显示所选图片"
@@ -5516,6 +8120,18 @@ object StringsA {
         AppLanguage.KOREAN -> "이미지 앱"
     }
 
+    val videoApp: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "视频应用"
+        AppLanguage.ENGLISH -> "Video App"
+        AppLanguage.ARABIC -> "تطبيق فيديو"
+        AppLanguage.PORTUGUESE -> "App de Vídeos"
+        AppLanguage.SPANISH -> "App de Vídeos"
+        AppLanguage.FRENCH -> "App de Vidéos"
+        AppLanguage.GERMAN -> "Video-App"
+        AppLanguage.RUSSIAN -> "Видео-приложение"
+        AppLanguage.JAPANESE -> "動画アプリ"
+        AppLanguage.KOREAN -> "동영상 앱"
+    }
 
     val unknownFile: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "未知文件"
@@ -5529,6 +8145,72 @@ object StringsA {
         AppLanguage.JAPANESE -> "不明なファイル"
         AppLanguage.KOREAN -> "알 수 없는 파일"
     }
+
+    val runtimePhpSqlite: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "PHP + SQLite"
+        AppLanguage.ENGLISH -> "PHP + SQLite"
+        AppLanguage.ARABIC -> "PHP + SQLite"
+        AppLanguage.PORTUGUESE -> "PHP + SQLite"
+        AppLanguage.SPANISH -> "PHP + SQLite"
+        AppLanguage.FRENCH -> "PHP + SQLite"
+        AppLanguage.GERMAN -> "PHP + SQLite"
+        AppLanguage.RUSSIAN -> "PHP + SQLite"
+        AppLanguage.JAPANESE -> "PHP + SQLite"
+        AppLanguage.KOREAN -> "PHP + SQLite"
+    }
+
+    val runtimeNodeJs: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Node.js Runtime"
+        AppLanguage.ENGLISH -> "Node.js Runtime"
+        AppLanguage.ARABIC -> "بيئة تشغيل Node.js"
+        AppLanguage.PORTUGUESE -> "Runtime Node.js"
+        AppLanguage.SPANISH -> "Runtime Node.js"
+        AppLanguage.FRENCH -> "Runtime Node.js"
+        AppLanguage.GERMAN -> "Node.js-Laufzeit"
+        AppLanguage.RUSSIAN -> "Среда Node.js"
+        AppLanguage.JAPANESE -> "Node.jsランタイム"
+        AppLanguage.KOREAN -> "Node.js 런타임"
+    }
+
+    val runtimePhp: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "PHP Runtime"
+        AppLanguage.ENGLISH -> "PHP Runtime"
+        AppLanguage.ARABIC -> "بيئة تشغيل PHP"
+        AppLanguage.PORTUGUESE -> "Runtime PHP"
+        AppLanguage.SPANISH -> "Runtime PHP"
+        AppLanguage.FRENCH -> "Runtime PHP"
+        AppLanguage.GERMAN -> "PHP-Laufzeit"
+        AppLanguage.RUSSIAN -> "Среда PHP"
+        AppLanguage.JAPANESE -> "PHPランタイム"
+        AppLanguage.KOREAN -> "PHP 런타임"
+    }
+
+    val runtimePython: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Python Runtime"
+        AppLanguage.ENGLISH -> "Python Runtime"
+        AppLanguage.ARABIC -> "بيئة تشغيل Python"
+        AppLanguage.PORTUGUESE -> "Runtime Python"
+        AppLanguage.SPANISH -> "Runtime Python"
+        AppLanguage.FRENCH -> "Runtime Python"
+        AppLanguage.GERMAN -> "Python-Laufzeit"
+        AppLanguage.RUSSIAN -> "Среда Python"
+        AppLanguage.JAPANESE -> "Pythonランタイム"
+        AppLanguage.KOREAN -> "Python 런타임"
+    }
+
+    val runtimeGoBinary: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Go 二进制 / 构建产物"
+        AppLanguage.ENGLISH -> "Go Binary / Build Output"
+        AppLanguage.ARABIC -> "ثنائي Go / ناتج البناء"
+        AppLanguage.PORTUGUESE -> "Binário Go / Saída de Build"
+        AppLanguage.SPANISH -> "Binario Go / Salida de Build"
+        AppLanguage.FRENCH -> "Binaire Go / Sortie de Build"
+        AppLanguage.GERMAN -> "Go-Binärdatei / Build-Ausgabe"
+        AppLanguage.RUSSIAN -> "Бинарник Go / Результат сборки"
+        AppLanguage.JAPANESE -> "Goバイナリ / ビルド成果物"
+        AppLanguage.KOREAN -> "Go 바이너리 / 빌드 산출물"
+    }
+
 
     val fabIconFromGallery: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "相册"

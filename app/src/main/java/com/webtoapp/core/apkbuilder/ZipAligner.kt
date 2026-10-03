@@ -378,8 +378,8 @@ object ZipAligner {
                     // manifest ships extractNativeLibs=true (the template is
                     // packaged with jniLibs.useLegacyPackaging), so the OS
                     // extracts them to nativeLibraryDir at install and the
-                    // data offset is irrelevant. Only STORED libs — injected
-                    // native libraries like libcronet.so — may be
+                    // data offset is irrelevant. Only STORED libs — the
+                    // injected runtime binaries like libnode.so — may be
                     // mapped in place and must sit on a page boundary.
                     if (entry.method != ZipEntry.STORED) continue
                     storedCount++

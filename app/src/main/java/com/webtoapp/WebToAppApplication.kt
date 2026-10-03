@@ -72,6 +72,16 @@ class WebToAppApplication : Application(), ImageLoaderFactory {
         instance = this
         Strings.initialize(this)
 
+        if (isNodeJsProcess()) {
+            try {
+                AppLogger.init(this)
+                AppLogger.system("Application", ":nodejs 子进程 onCreate (跳过宿主重型 init)")
+            } catch (e: Exception) {
+                android.util.Log.e("WebToAppApplication", ":nodejs 子进程 logger init 失败", e)
+            }
+            return
+        }
+
         if (BuildConfig.SHELL_RUNTIME_ONLY) {
             initShellRuntime()
             AppLogger.system("Application", "onCreate completed (shell)")
@@ -193,6 +203,24 @@ class WebToAppApplication : Application(), ImageLoaderFactory {
             AppLogger.i("WebToAppApplication", "Dedicated shell runtime initialized: shellMode=$isShell")
         } catch (e: Exception) {
             AppLogger.e("WebToAppApplication", "Shell runtime initialization failed", e)
+        }
+    }
+
+    private fun isNodeJsProcess(): Boolean {
+        return try {
+            val processName = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                Application.getProcessName()
+            } else {
+                runCatching {
+                    val am = getSystemService(android.content.Context.ACTIVITY_SERVICE)
+                        as android.app.ActivityManager
+                    val pid = android.os.Process.myPid()
+                    am.runningAppProcesses?.firstOrNull { it.pid == pid }?.processName
+                }.getOrNull()
+            }
+            processName?.endsWith(":nodejs") == true
+        } catch (_: Exception) {
+            false
         }
     }
 

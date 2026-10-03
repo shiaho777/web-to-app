@@ -4,7 +4,7 @@ package com.webtoapp.core.network
  * Single source of truth for GitHub release / npm-registry mirror expansion.
  * Every runtime downloader funnels through here so mirror ordering (probed by
  * measured latency via [CnMirrorProbe]) and the direct-URL fallback stay
- * consistent across host download flows.
+ * consistent across Node / Python / PHP / WordPress / Go toolchains.
  */
 object GitHubMirror {
 

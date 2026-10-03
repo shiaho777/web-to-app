@@ -13,6 +13,7 @@ import android.webkit.WebView
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.util.SafeNotificationChannels
 import com.webtoapp.core.logging.AppLogger
+import com.webtoapp.core.shell.ShellServerLauncher
 import com.webtoapp.core.webview.DownloadBridge
 import com.webtoapp.core.webview.TranslateBridge
 import com.webtoapp.data.model.FloatingWindowConfig
@@ -70,6 +71,8 @@ class FloatingWindowService : Service() {
 
     private lateinit var floatingWindowManager: FloatingWindowManager
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    @Volatile
+    private var serverStopper: ShellServerLauncher.RuntimeStopper? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -183,7 +186,24 @@ class FloatingWindowService : Service() {
                     }
                 }
 
-                floatingWindowManager.show(config, appName, url)
+                if (shellConfig != null && needsServerStartup(shellConfig.appType)) {
+                    AppLogger.i(TAG, "悬浮窗启动服务端运行时: appType=${shellConfig.appType}, sentinelUrl=$url")
+                    floatingWindowManager.show(config, appName, "about:blank")
+                    serviceScope.launch {
+                        val result = ShellServerLauncher.resolveServerBackedTargetUrl(
+                            this@FloatingWindowService,
+                            shellConfig
+                        )
+                        serverStopper = result.stopper
+                        if (result.error != null) {
+                            AppLogger.e(TAG, "服务端运行时启动失败: ${result.error}")
+                        }
+                        floatingWindowManager.getWebView()?.loadUrl(result.resolvedUrl)
+                        AppLogger.i(TAG, "悬浮窗加载真实 URL: ${result.resolvedUrl}")
+                    }
+                } else {
+                    floatingWindowManager.show(config, appName, url)
+                }
 
                 AppLogger.i(TAG, "悬浮窗已启动: url=$url, size=${config.windowSizePercent}%, opacity=${config.opacity}%")
             }
@@ -208,11 +228,19 @@ class FloatingWindowService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onDestroy() {
+        runCatching { serverStopper?.stop() }
+            .onFailure { AppLogger.w(TAG, "服务端运行时停止失败", it) }
+        serverStopper = null
         floatingWindowManager.dismiss()
         serviceScope.cancel()
         instance = null
         AppLogger.i(TAG, "FloatingWindowService 已销毁")
         super.onDestroy()
+    }
+
+    private fun needsServerStartup(appType: String): Boolean = when (appType.uppercase()) {
+        "PHP_APP", "PYTHON_APP", "GO_APP", "NODEJS_APP", "WORDPRESS" -> true
+        else -> false
     }
 
     private fun buildWebViewManagerConfigurator(

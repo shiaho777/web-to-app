@@ -62,6 +62,12 @@ const t = {
       html: 'HTML',
       offlinePack: 'Offline Pack',
       frontend: 'Frontend',
+      php: 'PHP',
+      wordpress: 'WordPress',
+      nodejs: 'Node.js',
+      python: 'Python',
+      go: 'Go',
+      media: 'Media',
       gallery: 'Gallery',
       appActions: 'App Actions',
       editCore: 'Edit Core Config',
@@ -81,6 +87,8 @@ const t = {
       aiSettings: 'AI Settings',
       extensionModules: 'Plugins',
       appModifier: 'App Modifier',
+      linuxEnvironment: 'Linux Environment',
+      runtimeManagement: 'Runtime Management',
       portManager: 'Port Manager',
       browserKernel: 'Browser Kernel',
       hostsAdblock: 'Hosts Ad Blocking',
@@ -95,6 +103,7 @@ const t = {
       network: 'Network',
       privacy: 'Privacy',
       appearance: 'Appearance',
+      runtimes: 'Runtimes',
       faq: 'FAQ'
     },
     dev: {
@@ -174,6 +183,12 @@ const t = {
       html: 'HTML',
       offlinePack: '离线包',
       frontend: '前端',
+      php: 'PHP',
+      wordpress: 'WordPress',
+      nodejs: 'Node.js',
+      python: 'Python',
+      go: 'Go',
+      media: '媒体',
       gallery: '画廊',
       appActions: '应用功能',
       editCore: '编辑核心配置',
@@ -193,6 +208,8 @@ const t = {
       aiSettings: 'AI 设置',
       extensionModules: '插件',
       appModifier: '应用修改器',
+      linuxEnvironment: 'Linux 环境',
+      runtimeManagement: '运行时管理',
       portManager: '端口管理',
       browserKernel: '浏览器内核',
       hostsAdblock: 'Hosts 拦截',
@@ -207,6 +224,7 @@ const t = {
       network: '网络',
       privacy: '隐私',
       appearance: '外观',
+      runtimes: '运行时',
       faq: '常见问题'
     },
     dev: {
@@ -275,6 +293,12 @@ function sidebar(lang: Lang, prefix: string) {
           { text: s.guide.html, link: `${prefix}/guide/app-types/html` },
           { text: s.guide.offlinePack, link: `${prefix}/guide/app-types/offline-pack` },
           { text: s.guide.frontend, link: `${prefix}/guide/app-types/frontend` },
+          { text: s.guide.php, link: `${prefix}/guide/app-types/php` },
+          { text: s.guide.wordpress, link: `${prefix}/guide/app-types/wordpress` },
+          { text: s.guide.nodejs, link: `${prefix}/guide/app-types/nodejs` },
+          { text: s.guide.python, link: `${prefix}/guide/app-types/python` },
+          { text: s.guide.go, link: `${prefix}/guide/app-types/go` },
+          { text: s.guide.media, link: `${prefix}/guide/app-types/media` },
           { text: s.guide.gallery, link: `${prefix}/guide/app-types/gallery` }
         ]
       },
@@ -377,6 +401,8 @@ function sidebar(lang: Lang, prefix: string) {
             items: [
               { text: s.guide.extensionModules, link: `${prefix}/guide/more-features/extension-modules` },
               { text: s.guide.appModifier, link: `${prefix}/guide/more-features/app-modifier` },
+              { text: s.guide.linuxEnvironment, link: `${prefix}/guide/more-features/linux-environment` },
+              { text: s.guide.runtimeManagement, link: `${prefix}/guide/more-features/runtime-management` },
               { text: s.guide.portManager, link: `${prefix}/guide/more-features/port-manager` }
             ]
           },
@@ -408,7 +434,8 @@ function sidebar(lang: Lang, prefix: string) {
           { text: s.guide.configOverview, link: `${prefix}/guide/config/` },
           { text: s.guide.network, link: `${prefix}/guide/config/network` },
           { text: s.guide.privacy, link: `${prefix}/guide/config/privacy` },
-          { text: s.guide.appearance, link: `${prefix}/guide/config/appearance` }
+          { text: s.guide.appearance, link: `${prefix}/guide/config/appearance` },
+          { text: s.guide.runtimes, link: `${prefix}/guide/config/runtimes` }
         ]
       },
       {
@@ -478,7 +505,7 @@ function themeConfig(lang: Lang, prefix: string) {
 export default defineConfig({
   title: 'WebToApp',
   description:
-    'Build Android APKs from web projects, directly on your phone — hardened networking, and Play-ready export.',
+    'Build Android APKs from web projects, directly on your phone — on-device runtimes, hardened networking, and Play-ready export.',
   lang: 'en',
   base,
   cleanUrls: true,
@@ -507,7 +534,7 @@ export default defineConfig({
       label: '简体中文',
       lang: 'zh-CN',
       title: 'WebToApp',
-      description: '在手机上直接把网页项目构建成 Android APK —— 加固网络栈、Play 级导出。',
+      description: '在手机上直接把网页项目构建成 Android APK —— 设备端运行时、加固网络栈、Play 级导出。',
       themeConfig: themeConfig('zh', '/zh')
     }
   },

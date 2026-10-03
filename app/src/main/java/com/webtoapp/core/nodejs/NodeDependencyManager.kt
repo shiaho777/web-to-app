@@ -1,0 +1,878 @@
+package com.webtoapp.core.nodejs
+
+import android.content.Context
+import android.os.Build
+import com.webtoapp.core.i18n.Strings
+import com.webtoapp.core.download.DependencyDownloadEngine
+import com.webtoapp.core.download.DependencyDownloadNotification
+import com.webtoapp.core.logging.AppLogger
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
+import java.io.File
+import java.io.FileOutputStream
+import java.security.MessageDigest
+import java.util.Locale
+import java.util.concurrent.atomic.AtomicBoolean
+
+object NodeDependencyManager {
+
+    private const val TAG = "NodeDependencyManager"
+
+    const val NODE_VERSION = "18.20.4"
+
+    enum class MirrorRegion { CN, GLOBAL }
+
+    // capawesome-team fork: same Node 18.20.4 core, Android binaries pre-built with 16 KB page
+    // alignment (upstream `release18-20-4+16kb-fix` branch) — no runtime ELF rewrite needed.
+    private val NODE_GITHUB_URL = "https://github.com/capawesome-team/nodejs-mobile/releases/download/v18.20.4-capawesome.1/nodejs-mobile-v18.20.4-capawesome.1-android.zip"
+
+    /**
+     * SHA-256 of nodejs-mobile-v18.20.4-capawesome.1-android.zip.
+     * Verify with `shasum -a 256 <zip>` against the GitHub release when bumping
+     * [NODE_GITHUB_URL] / NODE_VERSION — mismatches fail the download loudly.
+     */
+    private const val NODE_ZIP_SHA256 =
+        "1b3c7979c81aec89a7f51b29af1f4875a5d637727ad6e2c392cdf2e127715da9"
+
+    data class MirrorConfig(
+
+        val nodeUrls: List<String>
+    )
+
+    private fun buildCnMirror(): MirrorConfig = MirrorConfig(
+        nodeUrls = com.webtoapp.core.network.GitHubMirror.proxiedCn(NODE_GITHUB_URL)
+    )
+
+    private val GLOBAL_MIRROR = MirrorConfig(
+        nodeUrls = listOf(NODE_GITHUB_URL)
+    )
+
+    private const val MAX_RETRY_PER_URL = 2
+
+    private const val RETRY_DELAY_MS = 2000L
+
+    sealed class DownloadState {
+        object Idle : DownloadState()
+        data class Downloading(val progress: Float, val currentFile: String, val bytesDownloaded: Long, val totalBytes: Long) : DownloadState()
+        data class Verifying(val fileName: String) : DownloadState()
+        data class Extracting(val fileName: String) : DownloadState()
+        object Complete : DownloadState()
+        data class Error(val message: String, val retryable: Boolean = true) : DownloadState()
+
+        data class Paused(val progress: Float, val currentFile: String, val bytesDownloaded: Long, val totalBytes: Long) : DownloadState()
+    }
+
+    private val _downloadState = MutableStateFlow<DownloadState>(DownloadState.Idle)
+    val downloadState: StateFlow<DownloadState> = _downloadState
+
+    private val downloadCancelled = AtomicBoolean(false)
+
+    /** Abort the in-flight download; the .tmp partial file is kept for a later resume. */
+    fun cancelDownload() {
+        downloadCancelled.set(true)
+        DependencyDownloadEngine.cancel()
+        _downloadState.value = DownloadState.Idle
+    }
+    private val runtimeDownloadMutex = Mutex()
+
+    private var _userMirrorRegion: MirrorRegion? = null
+
+    fun setMirrorRegion(region: MirrorRegion?) {
+        _userMirrorRegion = region
+    }
+
+    fun getMirrorRegion(): MirrorRegion {
+        _userMirrorRegion?.let { return it }
+        val lang = Locale.getDefault().language
+        return if (lang == "zh") MirrorRegion.CN else MirrorRegion.GLOBAL
+    }
+
+    fun getMirrorConfig(): MirrorConfig {
+        return when (getMirrorRegion()) {
+            MirrorRegion.CN -> buildCnMirror()
+            MirrorRegion.GLOBAL -> GLOBAL_MIRROR
+        }
+    }
+
+    fun getDepsDir(context: Context): File {
+        return File(context.filesDir, "nodejs_deps").also { it.mkdirs() }
+    }
+
+    fun getNodeDir(context: Context): File {
+        val abi = getDeviceAbi()
+        return getNodeDir(context, abi)
+    }
+
+    fun getNodeDir(context: Context, abi: String): File {
+        return File(getDepsDir(context), "node/$abi").also { it.mkdirs() }
+    }
+
+    /**
+     * Every ABI directory name that can appear inside the upstream nodejs-mobile zip.
+     * Extraction routes entries by path segment, so "x86" never swallows "x86_64" paths.
+     */
+    private val NODE_KNOWN_ABIS = setOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
+
+    /**
+     * ABIs the upstream v18.20.4 nodejs-mobile zip actually ships (32-bit x86 was dropped
+     * upstream). Export requires a cached libnode.so for each selected ABI in this set;
+     * any other selected ABI (e.g. x86) is skipped with a warning instead of failing.
+     */
+    val NODE_EXPORT_ABIS: Set<String> = setOf("armeabi-v7a", "arm64-v8a", "x86_64")
+
+    /** The libnode.so cached for [abi], or null when the runtime zip never provided it. */
+    fun nodeLibForAbi(context: Context, abi: String): File? {
+        val lib = File(getNodeDir(context, abi), NODE_BINARY_NAME)
+        return lib.takeIf { it.exists() && it.isFile && it.length() > 0L }
+    }
+
+    /**
+     * Selected export ABIs that are expected to have a libnode.so but currently lack one.
+     * The device ABI is also satisfied by the host's own nativeLibraryDir (bundled builds).
+     * ABIs outside [NODE_EXPORT_ABIS] can never be satisfied upstream and are not reported.
+     */
+    fun missingExportAbis(context: Context, neededAbis: Collection<String>): Set<String> {
+        val deviceAbi = getDeviceAbi()
+        return neededAbis.filter { it in NODE_EXPORT_ABIS }
+            .filterNot { abi ->
+                nodeLibForAbi(context, abi) != null ||
+                    (abi == deviceAbi && File(context.applicationInfo.nativeLibraryDir, NODE_BINARY_NAME)
+                        .let { it.exists() && it.length() > 0L })
+            }.toSet()
+    }
+
+    /**
+     * Ensure every export-requested ABI has a cached libnode.so, re-downloading the runtime
+     * zip once when some are missing (the zip carries all ABIs; older installs only ever
+     * extracted the device ABI). Returns the ABIs still missing after the attempt.
+     */
+    suspend fun ensureExportAbis(context: Context, neededAbis: Collection<String>): Set<String> =
+        withContext(Dispatchers.IO) {
+            var missing = missingExportAbis(context, neededAbis)
+            if (missing.isEmpty()) return@withContext missing
+            coroutineScope {
+                // Same live engine→manager state bridge as downloadNodeRuntime:
+                // this path re-downloads the runtime zip for missing export ABIs
+                // and must not leave callers' progress UI stuck on Idle.
+                val syncJob = launch {
+                    DependencyDownloadEngine.state.collect { syncEngineState() }
+                }
+                try {
+                    runtimeDownloadMutex.withLock {
+                        missing = missingExportAbis(context, neededAbis)
+                        if (missing.isNotEmpty()) {
+                            AppLogger.i(
+                                TAG,
+                                "Node.js export needs libnode.so for $missing — re-downloading runtime zip (all ABIs)"
+                            )
+                            downloadNode(context, getMirrorConfig())
+                            missing = missingExportAbis(context, neededAbis)
+                            if (missing.isNotEmpty()) {
+                                AppLogger.e(TAG, "Still no libnode.so for $missing after re-download")
+                            }
+                        }
+                    }
+                } finally {
+                    syncJob.cancel()
+                }
+            }
+            missing
+        }
+
+    fun getNodeProjectsDir(context: Context): File {
+        return File(context.filesDir, "nodejs_projects").also { it.mkdirs() }
+    }
+
+    const val NODE_BINARY_NAME = "libnode.so"
+
+    fun isNodeReady(context: Context): Boolean {
+        val nativeNode = File(context.applicationInfo.nativeLibraryDir, NODE_BINARY_NAME)
+        if (nativeNode.exists()) return true
+        val downloadedNode = File(getNodeDir(context), NODE_BINARY_NAME)
+        return downloadedNode.exists() && downloadedNode.length() > 0
+    }
+
+    fun getNodeExecutablePath(context: Context): String {
+        val nativeNode = File(context.applicationInfo.nativeLibraryDir, NODE_BINARY_NAME)
+        if (nativeNode.exists()) {
+            AppLogger.d(TAG, "Using nativeLibraryDir Node: ${nativeNode.absolutePath}")
+            return nativeNode.absolutePath
+        }
+        val downloadedNode = File(getNodeDir(context), NODE_BINARY_NAME)
+        if (downloadedNode.exists()) {
+            AppLogger.d(TAG, "Using downloaded Node: ${downloadedNode.absolutePath}")
+            return downloadedNode.absolutePath
+        }
+
+        AppLogger.d(TAG, "Node placeholder path (not installed): ${downloadedNode.absolutePath}")
+        return downloadedNode.absolutePath
+    }
+
+    fun getNodeLibraryPath(context: Context): String? {
+        val nativeNode = File(context.applicationInfo.nativeLibraryDir, NODE_BINARY_NAME)
+        if (nativeNode.exists() && nativeNode.length() > 0L) {
+            if (isElfPageAlignmentCompatible(nativeNode) || !isElf64Lsb(nativeNode)) {
+                AppLogger.d(TAG, "libnode.so path (nativeLibraryDir): ${nativeNode.absolutePath}")
+                return nativeNode.absolutePath
+            }
+            val staged = File(getNodeDir(context), NODE_BINARY_NAME)
+            try {
+                val needsCopy = !staged.exists() ||
+                    staged.length() != nativeNode.length() ||
+                    staged.lastModified() < nativeNode.lastModified() ||
+                    !isElfPageAlignmentCompatible(staged)
+                if (needsCopy) {
+                    nativeNode.copyTo(staged, overwrite = true)
+                }
+                ensureLibnodePageAligned(staged)
+                if (staged.exists() && staged.length() > 0L && isElfPageAlignmentCompatible(staged)) {
+                    AppLogger.d(TAG, "libnode.so path (staged+aligned from nativeLibraryDir): ${staged.absolutePath}")
+                    return staged.absolutePath
+                }
+            } catch (e: Exception) {
+                AppLogger.e(TAG, "Failed to stage/align libnode.so from nativeLibraryDir", e)
+            }
+            AppLogger.w(
+                TAG,
+                "libnode.so in nativeLibraryDir is not page-aligned for ${systemPageSize()}B pages: ${nativeNode.absolutePath}"
+            )
+            return nativeNode.absolutePath
+        }
+        val downloadedNode = File(getNodeDir(context), NODE_BINARY_NAME)
+        if (downloadedNode.exists() && downloadedNode.length() > 0) {
+            ensureLibnodePageAligned(downloadedNode)
+            AppLogger.d(TAG, "libnode.so path (download cache): ${downloadedNode.absolutePath}")
+            return downloadedNode.absolutePath
+        }
+        AppLogger.w(TAG, "libnode.so is missing from both nativeLibraryDir and download cache")
+        return null
+    }
+
+    private fun ensureLibnodePageAligned(lib: File) {
+        if (!lib.exists() || lib.length() <= 0L) return
+        if (isElfPageAlignmentCompatible(lib)) return
+        val pageSize = systemPageSize().toLong()
+        AppLogger.i(TAG, "libnode.so is incompatible with system page size ${pageSize}B; rewriting PT_LOAD…")
+        val ok = tryPatchPageAlignment(lib, pageSize)
+        if (!ok) {
+            AppLogger.e(TAG, "libnode.so ELF page-align patch failed; dlopen will still fail")
+        } else if (!isElfPageAlignmentCompatible(lib)) {
+            AppLogger.e(TAG, "libnode.so patch finished but a second pass still flags incompatibility (suspect patcher bug)")
+        } else {
+            AppLogger.i(TAG, "libnode.so re-packaged to ${pageSize}B alignment")
+        }
+    }
+
+    suspend fun downloadNodeRuntime(context: Context): Boolean = withContext(Dispatchers.IO) {
+        coroutineScope {
+            // Bridge engine progress into _downloadState for the whole call —
+            // callers' dialogs otherwise sit on Idle ("preparing") for the
+            // entire download since syncEngineState only ran once at the end.
+            val syncJob = launch {
+                DependencyDownloadEngine.state.collect { syncEngineState() }
+            }
+            try {
+                downloadCancelled.set(false)
+                runtimeDownloadMutex.withLock {
+                    DependencyDownloadNotification.getInstance(context)
+                    if (isNodeReady(context)) {
+                        markComplete()
+                        return@withLock true
+                    }
+                    try {
+                        _downloadState.value = DownloadState.Idle
+                        DependencyDownloadEngine.reset()
+                        val mirror = getMirrorConfig()
+
+                        if (!isNodeReady(context)) {
+                            val success = downloadNode(context, mirror)
+                            if (!success) return@withLock false
+                        }
+
+                        markComplete()
+                        AppLogger.i(TAG, "Node.js runtime download complete")
+                        true
+                    } catch (e: Exception) {
+                        AppLogger.e(TAG, "Failed to download Node.js runtime", e)
+                        markError(e.message ?: Strings.unknownError)
+                        false
+                    }
+                }
+            } finally {
+                syncJob.cancel()
+            }
+        }
+    }
+
+    fun clearCache(context: Context) {
+        getDepsDir(context).deleteRecursively()
+        AppLogger.i(TAG, "Node.js Dependency cache cleared")
+    }
+
+    fun getCacheSize(context: Context): Long {
+        return getDepsDir(context).walkTopDown().filter { it.isFile }.sumOf { it.length() }
+    }
+
+    fun getDeviceAbi(): String {
+        return Build.SUPPORTED_ABIS.firstOrNull() ?: "arm64-v8a"
+    }
+
+    private suspend fun downloadWithRetry(
+        urls: List<String>,
+        destFile: File,
+        displayName: String,
+        context: Context?,
+        expectedSha256: String? = null
+    ): Boolean = DependencyDownloadEngine.downloadFileWithFallback(
+        urls, destFile, displayName, context, MAX_RETRY_PER_URL, RETRY_DELAY_MS,
+        expectedSha256For = expectedSha256?.let { hash -> { _: String -> hash } }
+    )
+
+    private suspend fun downloadNode(context: Context, mirror: MirrorConfig): Boolean {
+        val abi = getDeviceAbi()
+        val nodeUrls = mirror.nodeUrls
+        val fileName = nodeUrls.first().substringAfterLast("/")
+        val destDir = getNodeDir(context)
+        val archiveFile = File(getDepsDir(context), fileName)
+
+        AppLogger.i(TAG, "Downloading Node.js runtime (${nodeUrls.size} sources)")
+
+        val downloaded = downloadWithRetry(nodeUrls, archiveFile, "Node.js $NODE_VERSION ($abi)", context, NODE_ZIP_SHA256)
+        syncEngineState()
+        if (!downloaded) return false
+
+        _downloadState.value = DownloadState.Extracting("Node.js")
+        DependencyDownloadEngine.publishState(DependencyDownloadEngine.State.Extracting("Node.js"))
+        try {
+            val extractedAbis = extractNodeZip(archiveFile, context, abi)
+
+            val nodeLib = File(destDir, NODE_BINARY_NAME)
+            if (nodeLib.exists()) {
+                nodeLib.setExecutable(true, false)
+                AppLogger.i(TAG, "Node.js runtime ready: ${nodeLib.absolutePath} (${nodeLib.length()} bytes)")
+            } else {
+                AppLogger.e(TAG, "Not found after extraction: $NODE_BINARY_NAME (ABI: $abi)")
+                markError(Strings.nodeRuntimeNotFound(abi))
+                return false
+            }
+
+            extractedAbis.forEach { extractedAbi ->
+                ensureLibnodePageAligned(File(getNodeDir(context, extractedAbi), NODE_BINARY_NAME))
+            }
+
+            archiveFile.delete()
+            return true
+        } catch (e: Exception) {
+            AppLogger.e(TAG, "Failed to extract Node.js", e)
+            markError(Strings.nodeExtractFailed(e.message ?: ""))
+            return false
+        }
+    }
+
+    /**
+     * Extract the upstream zip into per-ABI dirs (`node/<abi>/libnode.so`) so multi-arch
+     * exports can embed libnode.so for ABIs other than the host device's. Returns the set
+     * of ABIs whose libnode.so was extracted; [deviceAbi] must be among them.
+     */
+    private fun extractNodeZip(zipFile: File, context: Context, deviceAbi: String): Set<String> {
+        val zipInput = java.util.zip.ZipInputStream(zipFile.inputStream().buffered())
+        val guard = com.webtoapp.util.SafeZip.EntryGuard()
+        val extractedAbis = mutableSetOf<String>()
+
+        zipInput.use { zis ->
+            var entry = zis.nextEntry
+            while (entry != null) {
+                guard.onEntry()
+                val abi = nodeAbiOfEntry(entry.name)
+
+                if (!entry.isDirectory && abi != null && entry.name.endsWith(".so")) {
+                    val soName = entry.name.substringAfterLast("/")
+                    val outFile = File(getNodeDir(context, abi), soName)
+                    outFile.parentFile?.mkdirs()
+                    FileOutputStream(outFile).use { fos ->
+                        guard.copyTo(zis, fos)
+                    }
+                    if (soName == NODE_BINARY_NAME) {
+                        outFile.setExecutable(true, false)
+                        extractedAbis += abi
+                        AppLogger.i(TAG, "Extracting ${entry.name} -> ${outFile.absolutePath}")
+                    }
+                }
+                entry = zis.nextEntry
+            }
+        }
+
+        if (deviceAbi !in extractedAbis) {
+            throw IllegalStateException(Strings.nodeLibNotFoundInZip.format(deviceAbi))
+        }
+        val absent = NODE_EXPORT_ABIS - extractedAbis
+        if (absent.isNotEmpty()) {
+            AppLogger.w(TAG, "Node.js zip ships no libnode.so for $absent — exports cannot target those ABIs")
+        }
+        return extractedAbis
+    }
+
+    /**
+     * The ABI a zip entry belongs to, matched on whole path segments so "x86" can never
+     * capture "x86_64" paths (a plain contains("x86") check would misroute them).
+     */
+    internal fun nodeAbiOfEntry(entryName: String): String? =
+        entryName.split('/').firstOrNull { it in NODE_KNOWN_ABIS }
+
+    private fun syncEngineState() {
+        when (val es = DependencyDownloadEngine.state.value) {
+            is DependencyDownloadEngine.State.Downloading -> {
+                _downloadState.value = DownloadState.Downloading(
+                    progress = es.progress,
+                    currentFile = es.displayName,
+                    bytesDownloaded = es.bytesDownloaded,
+                    totalBytes = es.totalBytes
+                )
+            }
+            is DependencyDownloadEngine.State.Paused -> {
+                _downloadState.value = DownloadState.Paused(
+                    progress = es.progress,
+                    currentFile = es.displayName,
+                    bytesDownloaded = es.bytesDownloaded,
+                    totalBytes = es.totalBytes
+                )
+            }
+            is DependencyDownloadEngine.State.Error -> {
+                if (!downloadCancelled.get()) {
+                    _downloadState.value = DownloadState.Error(es.message)
+                }
+            }
+            else -> {}
+        }
+    }
+
+    private fun markComplete() {
+        _downloadState.value = DownloadState.Complete
+        DependencyDownloadEngine.publishState(DependencyDownloadEngine.State.Complete)
+    }
+
+    private fun markError(message: String, retryable: Boolean = true) {
+        if (downloadCancelled.get()) {
+            _downloadState.value = DownloadState.Idle
+            return
+        }
+        _downloadState.value = DownloadState.Error(message, retryable = retryable)
+        DependencyDownloadEngine.publishState(DependencyDownloadEngine.State.Error(message))
+    }
+
+    fun sha256(file: File): String {
+        val digest = MessageDigest.getInstance("SHA-256")
+        file.inputStream().buffered().use { input ->
+            val buffer = ByteArray(8192)
+            var bytesRead: Int
+            while (input.read(buffer).also { bytesRead = it } != -1) {
+                digest.update(buffer, 0, bytesRead)
+            }
+        }
+        return digest.digest().joinToString("") { "%02x".format(it) }
+    }
+
+    private fun systemPageSize(): Int {
+        return runCatching {
+            val sysconfClass = Class.forName("android.system.Os")
+            val sysconf = sysconfClass.getMethod("sysconf", Int::class.javaPrimitiveType)
+
+            val value = sysconf.invoke(null, 39) as Long
+            value.toInt().takeIf { it > 0 } ?: 4096
+        }.getOrDefault(4096)
+    }
+
+    private fun readElfMinLoadAlign(file: File): Long? {
+        return runCatching {
+            java.io.RandomAccessFile(file, "r").use { raf ->
+                if (raf.length() < 64) return null
+
+                val magic = ByteArray(4)
+                raf.readFully(magic)
+                if (magic[0] != 0x7f.toByte() || magic[1] != 'E'.code.toByte() ||
+                    magic[2] != 'L'.code.toByte() || magic[3] != 'F'.code.toByte()) {
+                    return null
+                }
+                val elfClass = raf.readByte().toInt()
+                val elfData = raf.readByte().toInt()
+                if (elfClass != 2 || elfData != 1) return null
+
+                raf.seek(32)
+                val phoff = readLeLong(raf)
+                raf.seek(54)
+                val phentsize = readLeShort(raf)
+                val phnum = readLeShort(raf)
+                if (phentsize <= 0 || phnum <= 0) return null
+
+                var minAlign = Long.MAX_VALUE
+                var found = false
+                for (i in 0 until phnum) {
+                    raf.seek(phoff + i.toLong() * phentsize)
+                    val pType = readLeInt(raf)
+                    if (pType == 1) {
+
+                        raf.seek(phoff + i.toLong() * phentsize + 48)
+                        val pAlign = readLeLong(raf)
+                        if (pAlign > 0L && pAlign < minAlign) minAlign = pAlign
+                        found = true
+                    }
+                }
+                if (!found || minAlign == Long.MAX_VALUE) null else minAlign
+            }
+        }.getOrNull()
+    }
+
+    private fun readLeShort(raf: java.io.RandomAccessFile): Int {
+        val a = raf.readUnsignedByte()
+        val b = raf.readUnsignedByte()
+        return (b shl 8) or a
+    }
+
+    private fun readLeInt(raf: java.io.RandomAccessFile): Int {
+        val a = raf.readUnsignedByte()
+        val b = raf.readUnsignedByte()
+        val c = raf.readUnsignedByte()
+        val d = raf.readUnsignedByte()
+        return (d shl 24) or (c shl 16) or (b shl 8) or a
+    }
+
+    private fun readLeLong(raf: java.io.RandomAccessFile): Long {
+        var v = 0L
+        for (i in 0 until 8) {
+            v = v or (raf.readUnsignedByte().toLong() shl (8 * i))
+        }
+        return v
+    }
+
+    private fun isElf64Lsb(lib: File): Boolean {
+        return try {
+            lib.inputStream().use { input ->
+                val hdr = ByteArray(6)
+                if (input.read(hdr) != 6) return false
+                hdr[0] == 0x7f.toByte() &&
+                    hdr[1] == 'E'.code.toByte() &&
+                    hdr[2] == 'L'.code.toByte() &&
+                    hdr[3] == 'F'.code.toByte() &&
+                    hdr[4].toInt() == 2 &&
+                    hdr[5].toInt() == 1
+            }
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    private fun isElfPageAlignmentCompatible(lib: File): Boolean {
+        val align = readElfMinLoadAlign(lib) ?: return false
+        val pageSize = systemPageSize().toLong()
+        return align >= pageSize
+    }
+
+    private fun tryPatchPageAlignment(lib: File, targetAlign: Long): Boolean {
+        if (targetAlign <= 0 || (targetAlign and (targetAlign - 1)) != 0L) {
+            AppLogger.e(TAG, "tryPatchPageAlignment: targetAlign must be a power of two: $targetAlign")
+            return false
+        }
+        return runCatching {
+            patchElfPageSize(lib, targetAlign)
+        }.getOrElse { e ->
+            AppLogger.e(TAG, "ELF patch exception", e)
+            false
+        }
+    }
+
+    private data class PtLoad(
+        val phdrOffset: Long,
+        val pOffset: Long,
+        val pVaddr: Long,
+        val pFilesz: Long,
+        val pMemsz: Long,
+    )
+
+    private data class Shdr(
+        val index: Int,
+        val phdrOffset: Long,
+        val shName: Int,
+        val shType: Int,
+        val shFlags: Long,
+        val shAddr: Long,
+        val shOffset: Long,
+        val shSize: Long,
+        val shLink: Int,
+        val shInfo: Int,
+        val shAddralign: Long,
+        val shEntsize: Long,
+    )
+
+    private fun patchElfPageSize(lib: File, pageSize: Long): Boolean {
+
+        val src = lib.readBytes()
+        if (src.size < 64) return false
+        if (src[0] != 0x7f.toByte() || src[1] != 'E'.code.toByte() ||
+            src[2] != 'L'.code.toByte() || src[3] != 'F'.code.toByte()
+        ) return false
+        if (src[4].toInt() != 2 || src[5].toInt() != 1) {
+            AppLogger.e(TAG, "patchElfPageSize: only ELF64 LSB is supported")
+            return false
+        }
+
+        val ePhoff = readLeLongAt(src, 32)
+        val eShoff = readLeLongAt(src, 40)
+        val ePhentsize = readLeShortAt(src, 54)
+        val ePhnum = readLeShortAt(src, 56)
+        val eShentsize = readLeShortAt(src, 58)
+        val eShnum = readLeShortAt(src, 60)
+        if (ePhnum <= 0 || ePhentsize <= 0) return false
+
+        val phdrs = ArrayList<LongArray>(ePhnum)
+        for (i in 0 until ePhnum) {
+            val base = ePhoff + i.toLong() * ePhentsize
+            phdrs += longArrayOf(
+                base,
+                readLeIntAt(src, base.toInt() + 0).toLong() and 0xffffffffL,
+                readLeIntAt(src, base.toInt() + 4).toLong() and 0xffffffffL,
+                readLeLongAt(src, base.toInt() + 8),
+                readLeLongAt(src, base.toInt() + 16),
+                readLeLongAt(src, base.toInt() + 24),
+                readLeLongAt(src, base.toInt() + 32),
+                readLeLongAt(src, base.toInt() + 40),
+                readLeLongAt(src, base.toInt() + 48),
+            )
+        }
+
+        val ptLoads = phdrs.filter { it[1] == 1L }.map {
+            PtLoad(
+                phdrOffset = it[0],
+                pOffset = it[3],
+                pVaddr = it[4],
+                pFilesz = it[6],
+                pMemsz = it[7],
+            )
+        }.sortedBy { it.pVaddr }
+
+        if (ptLoads.isEmpty()) {
+            AppLogger.w(TAG, "patchElfPageSize: no PT_LOAD segment found")
+            return false
+        }
+
+        val shdrs = ArrayList<Shdr>(eShnum)
+        for (i in 0 until eShnum) {
+            val base = eShoff + i.toLong() * eShentsize
+            shdrs += Shdr(
+                index = i,
+                phdrOffset = base,
+                shName = readLeIntAt(src, base.toInt() + 0),
+                shType = readLeIntAt(src, base.toInt() + 4),
+                shFlags = readLeLongAt(src, base.toInt() + 8),
+                shAddr = readLeLongAt(src, base.toInt() + 16),
+                shOffset = readLeLongAt(src, base.toInt() + 24),
+                shSize = readLeLongAt(src, base.toInt() + 32),
+                shLink = readLeIntAt(src, base.toInt() + 40),
+                shInfo = readLeIntAt(src, base.toInt() + 44),
+                shAddralign = readLeLongAt(src, base.toInt() + 48),
+                shEntsize = readLeLongAt(src, base.toInt() + 56),
+            )
+        }
+
+        val mask = pageSize - 1
+
+        val newOffsets = HashMap<Long, Long>()
+        var prevEnd = 0L
+        for (s in ptLoads) {
+            if (s.pOffset == 0L && s.pVaddr == 0L) {
+                newOffsets[s.phdrOffset] = 0L
+                if (s.pFilesz > prevEnd) prevEnd = s.pFilesz
+                continue
+            }
+            val targetMod = s.pVaddr and mask
+            val rounded = (prevEnd + mask) and mask.inv()
+            var newOff = rounded + targetMod
+            if (newOff < prevEnd) newOff += pageSize
+            newOffsets[s.phdrOffset] = newOff
+            prevEnd = newOff + s.pFilesz
+        }
+
+        val needsWrite = ptLoads.any { newOffsets[it.phdrOffset] != it.pOffset } ||
+            phdrs.any { it[8] < pageSize && it[1] == 1L }
+        if (!needsWrite) {
+            AppLogger.d(TAG, "patchElfPageSize: file is already ${pageSize}-aligned, no rewrite needed")
+            return true
+        }
+
+        val newShoff = (prevEnd + mask) and mask.inv()
+        val sectHdrTableSize = eShentsize.toLong() * eShnum
+
+        val nonLoadSections = shdrs.filter {
+            it.shType != 0 && it.shSize > 0L && (it.shFlags and 0x2L) == 0L
+        }
+        var cursor = newShoff + sectHdrTableSize
+        val newShOffsets = HashMap<Int, Long>()
+        for (sh in nonLoadSections) {
+            val align = if (sh.shAddralign < 1L) 1L else sh.shAddralign
+            cursor = ((cursor + align - 1L) / align) * align
+            newShOffsets[sh.index] = cursor
+            cursor += sh.shSize
+        }
+        val finalSize = cursor
+
+        if (finalSize < 0L || finalSize > Int.MAX_VALUE.toLong()) {
+            AppLogger.e(TAG, "patchElfPageSize: computed target size is too large: $finalSize")
+            return false
+        }
+        val out = ByteArray(finalSize.toInt())
+
+        System.arraycopy(src, 0, out, 0, 64)
+
+        System.arraycopy(
+            src, ePhoff.toInt(),
+            out, ePhoff.toInt(),
+            (ePhnum.toLong() * ePhentsize).toInt()
+        )
+
+        for (s in ptLoads) {
+            val newOff = newOffsets[s.phdrOffset]!!
+            if (s.pFilesz > 0L) {
+                System.arraycopy(
+                    src, s.pOffset.toInt(),
+                    out, newOff.toInt(),
+                    s.pFilesz.toInt()
+                )
+            }
+
+            writeLeLongAt(out, (s.phdrOffset + 8).toInt(), newOff)
+            writeLeLongAt(out, (s.phdrOffset + 48).toInt(), pageSize)
+        }
+
+        for (ph in phdrs) {
+            val pType = ph[1]
+            if (pType == 1L) continue
+            val pOff = ph[3]
+            for (s in ptLoads) {
+                if (pOff in s.pOffset until (s.pOffset + s.pFilesz)) {
+                    val delta = newOffsets[s.phdrOffset]!! - s.pOffset
+                    writeLeLongAt(out, (ph[0] + 8).toInt(), pOff + delta)
+                    break
+                }
+            }
+        }
+
+        for (sh in shdrs) {
+            var newOff = sh.shOffset
+            if (sh.shType == 0) {
+                newOff = 0L
+            } else if ((sh.shFlags and 0x2L) != 0L) {
+
+                for (s in ptLoads) {
+                    if (sh.shOffset in s.pOffset until (s.pOffset + s.pFilesz)) {
+                        newOff = sh.shOffset + (newOffsets[s.phdrOffset]!! - s.pOffset)
+                        break
+                    }
+                }
+            } else if (newShOffsets.containsKey(sh.index)) {
+                newOff = newShOffsets[sh.index]!!
+            }
+
+            val dst = (newShoff + sh.index.toLong() * eShentsize).toInt()
+            writeLeIntAt(out, dst + 0, sh.shName)
+            writeLeIntAt(out, dst + 4, sh.shType)
+            writeLeLongAt(out, dst + 8, sh.shFlags)
+            writeLeLongAt(out, dst + 16, sh.shAddr)
+            writeLeLongAt(out, dst + 24, newOff)
+            writeLeLongAt(out, dst + 32, sh.shSize)
+            writeLeIntAt(out, dst + 40, sh.shLink)
+            writeLeIntAt(out, dst + 44, sh.shInfo)
+            writeLeLongAt(out, dst + 48, sh.shAddralign)
+            writeLeLongAt(out, dst + 56, sh.shEntsize)
+        }
+
+        for (sh in nonLoadSections) {
+            val newOff = newShOffsets[sh.index]!!
+            if (sh.shSize > 0L) {
+                System.arraycopy(
+                    src, sh.shOffset.toInt(),
+                    out, newOff.toInt(),
+                    sh.shSize.toInt()
+                )
+            }
+        }
+
+        writeLeLongAt(out, 40, newShoff)
+
+        val newFile = File(lib.parentFile, lib.name + ".16k.new")
+        newFile.writeBytes(out)
+        if (!newFile.renameTo(lib)) {
+
+            newFile.copyTo(lib, overwrite = true)
+            newFile.delete()
+        }
+        lib.setExecutable(true, false)
+
+        val verifyBytes = lib.readBytes()
+        var verifiedCount = 0
+        var corruptCount = 0
+        for (s in ptLoads) {
+            val phEntry = s.phdrOffset.toInt()
+            val onDisk = readLeLongAt(verifyBytes, phEntry + 48)
+            if (onDisk == pageSize) {
+                verifiedCount++
+            } else {
+                corruptCount++
+                AppLogger.e(
+                    TAG,
+                    "patchElfPageSize: PT_LOAD@0x${java.lang.Long.toHexString(s.phdrOffset)} on-disk p_align=0x${java.lang.Long.toHexString(onDisk)} doesn't match expected 0x${java.lang.Long.toHexString(pageSize)}"
+                )
+            }
+        }
+        AppLogger.i(
+            TAG,
+            "patchElfPageSize: rewrite complete ${src.size} bytes -> ${out.size} bytes" +
+                " (page=$pageSize, PT_LOAD=${ptLoads.size}, " +
+                "verified=$verifiedCount/${ptLoads.size}, " +
+                "SHT@0x${java.lang.Long.toHexString(newShoff)})"
+        )
+        if (corruptCount > 0) {
+            AppLogger.e(
+                TAG,
+                "patchElfPageSize: $corruptCount PT_LOAD entries didn't persist p_align; dlopen will fail"
+            )
+            return false
+        }
+        return true
+    }
+
+    private fun readLeShortAt(src: ByteArray, off: Int): Int {
+        return ((src[off].toInt() and 0xff)) or ((src[off + 1].toInt() and 0xff) shl 8)
+    }
+
+    private fun readLeIntAt(src: ByteArray, off: Int): Int {
+        return ((src[off].toInt() and 0xff)) or
+            ((src[off + 1].toInt() and 0xff) shl 8) or
+            ((src[off + 2].toInt() and 0xff) shl 16) or
+            ((src[off + 3].toInt() and 0xff) shl 24)
+    }
+
+    private fun readLeLongAt(src: ByteArray, off: Int): Long {
+        var v = 0L
+        for (i in 0 until 8) {
+            v = v or ((src[off + i].toLong() and 0xffL) shl (8 * i))
+        }
+        return v
+    }
+
+    private fun writeLeIntAt(dst: ByteArray, off: Int, value: Int) {
+        for (i in 0 until 4) {
+            dst[off + i] = ((value ushr (8 * i)) and 0xff).toByte()
+        }
+    }
+
+    private fun writeLeLongAt(dst: ByteArray, off: Int, value: Long) {
+        for (i in 0 until 8) {
+            dst[off + i] = ((value ushr (8 * i)) and 0xffL).toByte()
+        }
+    }
+}

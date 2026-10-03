@@ -15,7 +15,9 @@ import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.graphics.drawable.IconCompat
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import com.webtoapp.core.host.AdvancedAppTypes
 import com.webtoapp.core.host.HostRuntimePrefs
+import com.webtoapp.core.i18n.Strings
 import com.webtoapp.data.model.WebApp
 import com.webtoapp.ui.webview.WebViewActivity
 import com.webtoapp.util.threadLocalCompat
@@ -41,6 +43,9 @@ class AppExporter(private val context: Context) {
     }
 
     fun createShortcut(webApp: WebApp): ShortcutResult {
+        if (!AdvancedAppTypes.isUsable(context, webApp.appType)) {
+            return ShortcutResult.Error(Strings.advancedFeaturesOff)
+        }
         return try {
 
             val iconBitmap = prepareIconBitmap(webApp)

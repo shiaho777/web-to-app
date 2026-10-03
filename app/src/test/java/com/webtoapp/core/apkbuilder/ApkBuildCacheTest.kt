@@ -17,7 +17,7 @@ class ApkBuildCacheTest {
         val cache = ApkBuildCache(RuntimeEnvironment.getApplication())
         assertThat(cache.isContentReplaceableEntry(ApkTemplate.CONFIG_PATH)).isTrue()
         assertThat(cache.isContentReplaceableEntry("assets/html/index.html")).isTrue()
-        assertThat(cache.isContentReplaceableEntry("assets/html/app.js")).isTrue()
+        assertThat(cache.isContentReplaceableEntry("assets/nodejs_app/server.js")).isTrue()
         assertThat(cache.isContentReplaceableEntry("assets/splash_media.png")).isTrue()
         // Stale-content hazards: these are written conditionally at build time, so a cached
         // copy must be dropped even when the new build does not rewrite them (removed CA,
@@ -25,9 +25,14 @@ class ApkBuildCacheTest {
         assertThat(cache.isContentReplaceableEntry("assets/wta_custom_ca/1.cer")).isTrue()
         assertThat(cache.isContentReplaceableEntry("assets/statusbar_background_dark.png")).isTrue()
         assertThat(cache.isContentReplaceableEntry("assets/announcement_icon.png")).isTrue()
+        assertThat(cache.isContentReplaceableEntry("assets/python/arm64-v8a/python3")).isTrue()
+        // Python stdlib is re-embedded by RuntimeAssetEmbedder on every build in both
+        // modes; without this entry CONTENT_OVERLAY duplicates it and the duplicates
+        // accumulate across incremental rebuilds.
+        assertThat(cache.isContentReplaceableEntry("assets/python_runtime/lib/os.py")).isTrue()
         assertThat(cache.isContentReplaceableEntry("AndroidManifest.xml")).isFalse()
         assertThat(cache.isContentReplaceableEntry("resources.arsc")).isFalse()
-        assertThat(cache.isContentReplaceableEntry("lib/arm64-v8a/libsqlite3.so")).isFalse()
+        assertThat(cache.isContentReplaceableEntry("lib/arm64-v8a/libnode.so")).isFalse()
     }
 
     @Test
@@ -62,6 +67,7 @@ class ApkBuildCacheTest {
             encryptionEnabled = false,
             abiFilters = emptyList(),
             projectDirs = emptyList(),
+            mediaContentPath = null,
             splashMediaPath = null,
             bgmPlaylistPaths = emptyList(),
             htmlFiles = emptyList(),
@@ -100,7 +106,7 @@ class ApkBuildCacheTest {
             webApp = app.copy(apkExportConfig = com.webtoapp.data.model.ApkExportConfig(saepEnabled = enabled)),
             packageName = config.packageName, config = config, templateApk = template,
             encryptionEnabled = false, abiFilters = emptyList(), projectDirs = emptyList(),
-            splashMediaPath = null, bgmPlaylistPaths = emptyList(),
+            mediaContentPath = null, splashMediaPath = null, bgmPlaylistPaths = emptyList(),
             htmlFiles = emptyList(), galleryItems = emptyList(), errorPageMediaPath = null,
             forceFullRebuild = false
         )
@@ -218,6 +224,7 @@ class ApkBuildCacheTest {
             encryptionEnabled = false,
             abiFilters = emptyList(),
             projectDirs = emptyList(),
+            mediaContentPath = null,
             splashMediaPath = null,
             bgmPlaylistPaths = emptyList(),
             htmlFiles = emptyList(),
@@ -249,6 +256,7 @@ class ApkBuildCacheTest {
             encryptionEnabled = false,
             abiFilters = emptyList(),
             projectDirs = emptyList(),
+            mediaContentPath = null,
             splashMediaPath = null,
             bgmPlaylistPaths = emptyList(),
             htmlFiles = emptyList(),
@@ -268,20 +276,20 @@ class ApkBuildCacheTest {
 
         val webApp = com.webtoapp.data.model.WebApp(
             id = 11,
-            name = "DemoApp",
-            url = "https://demo.example.com"
+            name = "NodeApp",
+            url = "nodejs://localhost"
         )
         val template = File(context.cacheDir, "shell_template_node.apk").apply {
             writeBytes(ByteArray(48) { 5 })
         }
         val config = ApkConfig(
             meta = MetaBlock(
-                appName = "DemoApp",
+                appName = "NodeApp",
                 packageName = "com.demo.node",
-                targetUrl = "https://demo.example.com",
+                targetUrl = "nodejs://localhost",
                 versionCode = 1,
                 versionName = "1.0",
-                appType = "WEB"
+                appType = "NODEJS_APP"
             )
         )
 
@@ -293,6 +301,7 @@ class ApkBuildCacheTest {
             encryptionEnabled = false,
             abiFilters = listOf("arm64-v8a"),
             projectDirs = emptyList(),
+            mediaContentPath = null,
             splashMediaPath = null,
             bgmPlaylistPaths = emptyList(),
             htmlFiles = emptyList(),
@@ -302,8 +311,8 @@ class ApkBuildCacheTest {
             forceFullRebuild = false
         )
 
-        // First build with the "old" native lib fingerprint → cache miss → FULL.
-        val plan1 = planWith("sha256=oldlib,size=1,aligned16k=false")
+        // First build with the "old" libnode.so fingerprint → cache miss → FULL.
+        val plan1 = planWith("sha256=oldlibnode,size=1,aligned16k=false")
         assertThat(plan1.mode).isEqualTo(IncrementalBuildMode.FULL)
 
         val unsigned = File(context.cacheDir, "node_unsigned.apk").apply {
@@ -318,10 +327,10 @@ class ApkBuildCacheTest {
             shellTemplateId = plan1.shellTemplateId
         )
 
-        // Same config but host upgraded an injected native lib to a 16KB-aligned build → the native
+        // Same config but host upgraded libnode.so to a 16KB-aligned build → the native
         // libs fingerprint changed. This must NOT reuse the stale cached unsigned APK;
         // it must rebuild so the new aligned lib is re-injected.
-        val plan2 = planWith("sha256=newlib,size=2,aligned16k=true")
+        val plan2 = planWith("sha256=newlibnode,size=2,aligned16k=true")
         assertThat(plan2.mode).isEqualTo(IncrementalBuildMode.FULL)
         assertThat(plan2.identityFingerprint).isNotEqualTo(plan1.identityFingerprint)
     }
@@ -333,20 +342,20 @@ class ApkBuildCacheTest {
 
         val webApp = com.webtoapp.data.model.WebApp(
             id = 12,
-            name = "DemoApp2",
-            url = "https://demo.example.com"
+            name = "NodeApp2",
+            url = "nodejs://localhost"
         )
         val template = File(context.cacheDir, "shell_t2.apk").apply {
             writeBytes(ByteArray(16) { 7 })
         }
         val config = ApkConfig(
             meta = MetaBlock(
-                appName = "DemoApp2",
+                appName = "NodeApp2",
                 packageName = "com.demo.node2",
-                targetUrl = "https://demo.example.com",
+                targetUrl = "nodejs://localhost",
                 versionCode = 1,
                 versionName = "1.0",
-                appType = "WEB"
+                appType = "NODEJS_APP"
             )
         )
 
@@ -358,6 +367,7 @@ class ApkBuildCacheTest {
             encryptionEnabled = false,
             abiFilters = emptyList(),
             projectDirs = emptyList(),
+            mediaContentPath = null,
             splashMediaPath = null,
             bgmPlaylistPaths = emptyList(),
             htmlFiles = emptyList(),
@@ -374,6 +384,7 @@ class ApkBuildCacheTest {
             encryptionEnabled = false,
             abiFilters = emptyList(),
             projectDirs = emptyList(),
+            mediaContentPath = null,
             splashMediaPath = null,
             bgmPlaylistPaths = emptyList(),
             htmlFiles = emptyList(),
@@ -420,6 +431,7 @@ class ApkBuildCacheTest {
             encryptionEnabled = false,
             abiFilters = emptyList(),
             projectDirs = emptyList(),
+            mediaContentPath = null,
             splashMediaPath = null,
             bgmPlaylistPaths = emptyList(),
             htmlFiles = emptyList(),
@@ -436,6 +448,7 @@ class ApkBuildCacheTest {
             encryptionEnabled = false,
             abiFilters = emptyList(),
             projectDirs = emptyList(),
+            mediaContentPath = null,
             splashMediaPath = null,
             bgmPlaylistPaths = emptyList(),
             htmlFiles = emptyList(),
@@ -481,6 +494,7 @@ class ApkBuildCacheTest {
             encryptionEnabled = false,
             abiFilters = emptyList(),
             projectDirs = emptyList(),
+            mediaContentPath = null,
             splashMediaPath = null,
             bgmPlaylistPaths = emptyList(),
             htmlFiles = emptyList(),
@@ -514,6 +528,7 @@ class ApkBuildCacheTest {
             encryptionEnabled = false,
             abiFilters = emptyList(),
             projectDirs = emptyList(),
+            mediaContentPath = null,
             splashMediaPath = null,
             bgmPlaylistPaths = emptyList(),
             htmlFiles = emptyList(),

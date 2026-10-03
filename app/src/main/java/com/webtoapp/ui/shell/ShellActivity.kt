@@ -473,6 +473,10 @@ class ShellActivity : AppCompatActivity() {
                 com.webtoapp.core.i18n.AppLanguage.valueOf(config.language.uppercase())
             }.getOrDefault(com.webtoapp.core.i18n.AppLanguage.CHINESE)
             Strings.setLanguage(appLanguage)
+            // Persist for the :nodejs child process — Strings.lang is per-process
+            // and generated apps carry the language in assets config, not DataStore.
+            getSharedPreferences("wta_runtime_lang", MODE_PRIVATE)
+                .edit().putString("app_language", appLanguage.name).apply()
             AppLogger.d("ShellActivity", "设置界面语言: ${config.language} -> $appLanguage")
         } catch (e: Exception) {
             AppLogger.e("ShellActivity", "设置语言失败", e)

@@ -1,0 +1,589 @@
+package com.webtoapp.core.wordpress
+
+import com.webtoapp.core.i18n.Strings
+
+import android.content.Context
+import android.os.Build
+import com.webtoapp.core.download.DependencyDownloadEngine
+import com.webtoapp.core.download.DependencyDownloadNotification
+import com.webtoapp.core.logging.AppLogger
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.File
+import java.io.FileOutputStream
+import java.security.MessageDigest
+import java.util.Locale
+import java.util.concurrent.atomic.AtomicBoolean
+
+object WordPressDependencyManager {
+
+    private const val TAG = "DependencyManager"
+
+    const val PHP_VERSION = "8.4"
+
+    const val WORDPRESS_VERSION = "7.0"
+
+    const val SQLITE_PLUGIN_VERSION = "2.2.23"
+
+    enum class MirrorRegion { CN, GLOBAL }
+
+    private val PHP_GITHUB_URL = "https://github.com/pmmp/PHP-Binaries/releases/download/pm5-php-${PHP_VERSION}-latest/PHP-${PHP_VERSION}-Android-arm64-PM5.tar.gz"
+
+    /**
+     * SHA-256 of PHP-${PHP_VERSION}-Android-arm64-PM5.tar.gz (GitHub release
+     * `pm5-php-${PHP_VERSION}-latest` digest). NOTE: the tag is MOVING — pmmp
+     * re-cuts it periodically. The pin intentionally freezes the observed cut:
+     * a re-cut fails the digest loudly instead of silently shipping different
+     * bytes; bump the digest together with PHP_VERSION when that happens.
+     */
+    private const val PHP_TARBALL_SHA256 =
+        "d8867966340121f821591b9bb29c80a58ad77abd6cc8e0e44d1cbbb3aaedd70c"
+
+    /** SHA-256 of wordpress-${WORDPRESS_VERSION}.tar.gz (wordpress.org). */
+    private const val WORDPRESS_CORE_EN_SHA256 =
+        "530c8fdeb16fb0affdb53eb727b6a04bb8d166621c20029e389cabb01a0fa921"
+
+    /** SHA-256 of wordpress-${WORDPRESS_VERSION}-zh_CN.tar.gz (cn.wordpress.org). */
+    private const val WORDPRESS_CORE_ZH_CN_SHA256 =
+        "4588f0a11feddf1b0decce1ea52a37b9d8108bf0601dafb1b37d35e0874ea38e"
+
+    /** SHA-256 of sqlite-database-integration.${SQLITE_PLUGIN_VERSION}.zip. */
+    private const val SQLITE_PLUGIN_ZIP_SHA256 =
+        "44be096a14ebcea424b5e4bf764436ec85fb067f74ab47822c4c5346df21591e"
+
+    /**
+     * Pin resolver for the WordPress core URL list: exact-version URLs are
+     * pinned (zh_CN vs global digest); `latest` fallbacks are moving targets
+     * and stay unpinned — they only run when every pinned source already
+     * failed.
+     */
+    private fun wordpressCoreSha256For(url: String): String? = when {
+        "latest" in url -> null
+        "zh_CN" in url -> WORDPRESS_CORE_ZH_CN_SHA256
+        else -> WORDPRESS_CORE_EN_SHA256
+    }
+
+    data class MirrorConfig(
+
+        val phpUrls: List<String>,
+
+        val wordpressUrls: List<String>,
+        val sqlitePluginUrl: String
+    )
+
+    private fun buildCnMirror(): MirrorConfig = MirrorConfig(
+        phpUrls = com.webtoapp.core.network.GitHubMirror.proxiedCn(PHP_GITHUB_URL),
+        wordpressUrls = listOf(
+            "https://cn.wordpress.org/wordpress-${WORDPRESS_VERSION}-zh_CN.tar.gz",
+            "https://cn.wordpress.org/latest-zh_CN.tar.gz",
+            "https://wordpress.org/wordpress-${WORDPRESS_VERSION}.tar.gz",
+            "https://wordpress.org/latest.tar.gz"
+        ),
+        sqlitePluginUrl = "https://downloads.wordpress.org/plugin/"
+    )
+
+    private val GLOBAL_MIRROR = MirrorConfig(
+        phpUrls = listOf(PHP_GITHUB_URL),
+        wordpressUrls = listOf(
+            "https://wordpress.org/wordpress-${WORDPRESS_VERSION}.tar.gz",
+            "https://wordpress.org/latest.tar.gz"
+        ),
+        sqlitePluginUrl = "https://downloads.wordpress.org/plugin/"
+    )
+
+    sealed class DownloadState {
+        object Idle : DownloadState()
+        data class Downloading(val progress: Float, val currentFile: String, val bytesDownloaded: Long, val totalBytes: Long) : DownloadState()
+        data class Verifying(val fileName: String) : DownloadState()
+        data class Extracting(val fileName: String) : DownloadState()
+        object Complete : DownloadState()
+        data class Error(val message: String, val retryable: Boolean = true) : DownloadState()
+
+        data class Paused(val progress: Float, val currentFile: String, val bytesDownloaded: Long, val totalBytes: Long) : DownloadState()
+    }
+
+    private val _downloadState = MutableStateFlow<DownloadState>(DownloadState.Idle)
+    val downloadState: StateFlow<DownloadState> = _downloadState
+
+    private val downloadCancelled = AtomicBoolean(false)
+
+    /** Abort the in-flight download; .tmp partial files are kept for a later resume. */
+    fun cancelDownload() {
+        downloadCancelled.set(true)
+        DependencyDownloadEngine.cancel()
+        _downloadState.value = DownloadState.Idle
+    }
+
+    private var _userMirrorRegion: MirrorRegion? = null
+
+    fun setMirrorRegion(region: MirrorRegion?) {
+        _userMirrorRegion = region
+    }
+
+    fun getMirrorRegion(): MirrorRegion {
+        _userMirrorRegion?.let { return it }
+        val lang = Locale.getDefault().language
+        return if (lang == "zh") MirrorRegion.CN else MirrorRegion.GLOBAL
+    }
+
+    fun getMirrorConfig(): MirrorConfig {
+        return when (getMirrorRegion()) {
+            MirrorRegion.CN -> buildCnMirror()
+            MirrorRegion.GLOBAL -> GLOBAL_MIRROR
+        }
+    }
+
+    fun getDepsDir(context: Context): File {
+        return File(context.filesDir, "wordpress_deps").also { it.mkdirs() }
+    }
+
+    fun getPhpDir(context: Context): File {
+        val abi = getDeviceAbi()
+        return File(getDepsDir(context), "php/$abi").also { it.mkdirs() }
+    }
+
+    fun getWordPressProjectsDir(context: Context): File {
+        return File(context.filesDir, "wordpress_projects").also { it.mkdirs() }
+    }
+
+    fun isPhpReady(context: Context): Boolean {
+        return resolvePhpExecutable(context) != null
+    }
+
+    fun getPhpExecutablePath(context: Context): String {
+        resolvePhpExecutable(context)?.let { phpBinary ->
+            return phpBinary.absolutePath
+        }
+
+        val fallback = File(context.applicationInfo.nativeLibraryDir, "libphp.so")
+        AppLogger.d(TAG, "PHP binary not ready, returning nativeLib placeholder path: ${fallback.absolutePath}")
+        return fallback.absolutePath
+    }
+
+    fun buildPhpExecPrefix(context: Context): List<String> {
+        val phpPath = getPhpExecutablePath(context)
+        return listOf(phpPath)
+    }
+
+    fun isWordPressReady(context: Context): Boolean {
+        val wpDir = File(getDepsDir(context), "wordpress")
+        return wpDir.exists() && File(wpDir, "wp-includes/version.php").exists()
+    }
+
+    fun isSqlitePluginReady(context: Context): Boolean {
+        val pluginDir = File(getDepsDir(context), "sqlite-database-integration")
+        return pluginDir.exists() && File(pluginDir, "load.php").exists()
+    }
+
+    fun isAllReady(context: Context): Boolean {
+        return isPhpReady(context) && isWordPressReady(context) && isSqlitePluginReady(context)
+    }
+
+    suspend fun downloadAllDependencies(context: Context): Boolean = withContext(Dispatchers.IO) {
+        coroutineScope {
+            // Bridge engine progress into _downloadState for the whole call —
+            // callers' UI otherwise sits on Idle for the entire download since
+            // syncEngineState only ran once at the end.
+            val syncJob = launch {
+                DependencyDownloadEngine.state.collect { syncEngineState() }
+            }
+            try {
+                downloadCancelled.set(false)
+                _downloadState.value = DownloadState.Idle
+
+                DependencyDownloadNotification.getInstance(context)
+                DependencyDownloadEngine.reset()
+                val mirror = getMirrorConfig()
+
+                if (!isPhpReady(context)) {
+                    val success = downloadPhp(context, mirror)
+                    if (!success) return@coroutineScope false
+                }
+
+                if (!isWordPressReady(context)) {
+                    val success = downloadWordPress(context, mirror)
+                    if (!success) return@coroutineScope false
+                }
+
+                if (!isSqlitePluginReady(context)) {
+                    val success = downloadSqlitePlugin(context, mirror)
+                    if (!success) return@coroutineScope false
+                }
+
+                markComplete()
+                AppLogger.i(TAG, "All WordPress dependencies downloaded")
+                true
+            } catch (e: Exception) {
+                AppLogger.e(TAG, "Failed to download dependency", e)
+                markError(e.message ?: "未知错误")
+                false
+            } finally {
+                syncJob.cancel()
+            }
+        }
+    }
+
+    suspend fun downloadPhpDependency(context: Context): Boolean = withContext(Dispatchers.IO) {
+        coroutineScope {
+            val syncJob = launch {
+                DependencyDownloadEngine.state.collect { syncEngineState() }
+            }
+            try {
+                downloadCancelled.set(false)
+                if (isPhpReady(context)) {
+                    DependencyDownloadNotification.getInstance(context)
+                    markComplete()
+                    return@coroutineScope true
+                }
+                DependencyDownloadNotification.getInstance(context)
+                DependencyDownloadEngine.reset()
+                val mirror = getMirrorConfig()
+                val ok = downloadPhp(context, mirror)
+                if (ok) markComplete()
+                ok
+            } catch (e: Exception) {
+                AppLogger.e(TAG, "Failed to download PHP dependency", e)
+                markError(e.message ?: "未知错误")
+                false
+            } finally {
+                syncJob.cancel()
+            }
+        }
+    }
+
+    fun clearCache(context: Context) {
+        getDepsDir(context).deleteRecursively()
+        AppLogger.i(TAG, "Dependency cache cleared")
+    }
+
+    fun getCacheSize(context: Context): Long {
+        return getDepsDir(context).walkTopDown().filter { it.isFile }.sumOf { it.length() }
+    }
+
+    fun getDeviceAbi(): String {
+        return Build.SUPPORTED_ABIS.firstOrNull() ?: "arm64-v8a"
+    }
+
+    private fun resolvePhpExecutable(context: Context): File? {
+
+        val nativePhp = File(context.applicationInfo.nativeLibraryDir, "libphp.so")
+        if (nativePhp.exists() && nativePhp.canExecute()) {
+            AppLogger.d(TAG, "Using nativeLibraryDir PHP: ${nativePhp.absolutePath}")
+            return nativePhp
+        }
+
+        val abi = getDeviceAbi()
+        val downloadedPhp = File(getPhpDir(context), "bin/php")
+        if (downloadedPhp.exists() && downloadedPhp.length() > 1024 * 1024) {
+
+            if (!downloadedPhp.canExecute()) {
+                downloadedPhp.setExecutable(true, false)
+            }
+            AppLogger.d(TAG, "Using downloaded PHP: ${downloadedPhp.absolutePath} (abi=$abi)")
+            return downloadedPhp
+        }
+
+        val downloadedPhpFlat = File(getPhpDir(context), "php")
+        if (downloadedPhpFlat.exists() && downloadedPhpFlat.length() > 1024 * 1024) {
+            if (!downloadedPhpFlat.canExecute()) {
+                downloadedPhpFlat.setExecutable(true, false)
+            }
+            AppLogger.d(TAG, "Using downloaded PHP (legacy layout): ${downloadedPhpFlat.absolutePath}")
+            return downloadedPhpFlat
+        }
+
+        AppLogger.d(
+            TAG,
+            "PHP not ready: nativeLib=${nativePhp.exists()}, downloaded=${downloadedPhp.exists()}"
+        )
+        return null
+    }
+
+    private fun repairPhpExecutable(file: File) {
+        if (!file.exists() || !file.isFile) return
+
+        val wasReadable = file.canRead()
+        val wasExecutable = file.canExecute()
+
+        if (!wasReadable) {
+            file.setReadable(true, false)
+        }
+        if (!wasExecutable) {
+            file.setExecutable(true, false)
+        }
+
+        if (!wasExecutable && file.canExecute()) {
+            AppLogger.i(TAG, "Fixed PHP binary execute permission: ${file.absolutePath}")
+        } else if (!file.canExecute()) {
+            AppLogger.w(TAG, "PHP binary still not executable: ${file.absolutePath}")
+        }
+    }
+
+    private const val MAX_RETRY_PER_URL = 2
+
+    private const val RETRY_DELAY_MS = 2000L
+
+    private suspend fun downloadWithRetry(
+        urls: List<String>,
+        destFile: File,
+        displayName: String,
+        context: Context?,
+        expectedSha256For: ((url: String) -> String?)? = null
+    ): Boolean = DependencyDownloadEngine.downloadFileWithFallback(
+        urls, destFile, displayName, context, MAX_RETRY_PER_URL, RETRY_DELAY_MS, expectedSha256For
+    )
+
+    private suspend fun downloadWithRetry(
+        url: String,
+        destFile: File,
+        displayName: String,
+        context: Context?,
+        expectedSha256For: ((url: String) -> String?)? = null
+    ): Boolean = downloadWithRetry(listOf(url), destFile, displayName, context, expectedSha256For)
+
+    private suspend fun downloadPhp(context: Context, mirror: MirrorConfig): Boolean {
+        val abi = getDeviceAbi()
+        if (abi != "arm64-v8a") {
+            AppLogger.e(TAG, "PHP binary only supports arm64-v8a; current device: $abi")
+            markError(Strings.phpArmOnly)
+            return false
+        }
+
+        val phpUrls = mirror.phpUrls
+        val fileName = phpUrls.first().substringAfterLast("/")
+        val destDir = getPhpDir(context)
+        val archiveFile = File(getDepsDir(context), fileName)
+
+        AppLogger.i(TAG, "Downloading PHP binary (${phpUrls.size} sources)")
+
+        val downloaded = downloadWithRetry(phpUrls, archiveFile, "PHP $PHP_VERSION ($abi)", context) { _ -> PHP_TARBALL_SHA256 }
+        syncEngineState()
+        if (!downloaded) return false
+
+        _downloadState.value = DownloadState.Extracting("PHP")
+        DependencyDownloadEngine.publishState(DependencyDownloadEngine.State.Extracting("PHP"))
+        try {
+            extractTarGz(archiveFile, destDir)
+
+            var phpBinary = File(destDir, "php")
+            if (!phpBinary.exists()) {
+                phpBinary = File(destDir, "bin/php")
+            }
+
+            if (!phpBinary.exists()) {
+                phpBinary = destDir.walkTopDown().firstOrNull { it.name == "php" && it.isFile } ?: phpBinary
+            }
+
+            if (phpBinary.exists()) {
+                phpBinary.setExecutable(true, false)
+
+                val targetBinary = File(destDir, "php")
+                if (phpBinary.absolutePath != targetBinary.absolutePath) {
+                    phpBinary.copyTo(targetBinary, overwrite = true)
+                    targetBinary.setExecutable(true, false)
+                }
+                AppLogger.i(TAG, "PHP binary ready: ${targetBinary.absolutePath}")
+            } else {
+                AppLogger.e(TAG, "PHP binary not found after extraction")
+                markError(Strings.phpBinaryNotFound)
+                return false
+            }
+
+            archiveFile.delete()
+            return true
+        } catch (e: Exception) {
+            AppLogger.e(TAG, "Failed to extract PHP", e)
+            markError(Strings.phpExtractFailed(e.message ?: ""))
+            return false
+        }
+    }
+
+    private suspend fun downloadWordPress(context: Context, mirror: MirrorConfig): Boolean {
+        val wpUrls = mirror.wordpressUrls
+        val destDir = getDepsDir(context)
+
+        val archiveFile = File(destDir, "wordpress-core.tar.gz")
+
+        AppLogger.i(TAG, "Downloading WordPress core (${wpUrls.size} sources)")
+
+        val downloaded = downloadWithRetry(wpUrls, archiveFile, "WordPress $WORDPRESS_VERSION", context, ::wordpressCoreSha256For)
+        syncEngineState()
+        if (!downloaded) return false
+
+        _downloadState.value = DownloadState.Extracting("WordPress")
+        DependencyDownloadEngine.publishState(DependencyDownloadEngine.State.Extracting("WordPress"))
+        try {
+            extractTarGz(archiveFile, destDir)
+            archiveFile.delete()
+
+            val wpDir = File(destDir, "wordpress")
+            if (!wpDir.exists() || !File(wpDir, "wp-includes/version.php").exists()) {
+                markError(Strings.wpExtractIncomplete)
+                return false
+            }
+
+            AppLogger.i(TAG, "WordPress core ready")
+            return true
+        } catch (e: Exception) {
+            AppLogger.e(TAG, "Failed to extract WordPress", e)
+            markError(Strings.wpExtractFailed(e.message ?: ""))
+            return false
+        }
+    }
+
+    private suspend fun downloadSqlitePlugin(context: Context, mirror: MirrorConfig): Boolean {
+        val fileName = "sqlite-database-integration.${SQLITE_PLUGIN_VERSION}.zip"
+        val url = "${mirror.sqlitePluginUrl}sqlite-database-integration.${SQLITE_PLUGIN_VERSION}.zip"
+        val destDir = getDepsDir(context)
+        val archiveFile = File(destDir, fileName)
+
+        AppLogger.i(TAG, "Downloading SQLite plugin: $url")
+
+        val downloaded = downloadWithRetry(url, archiveFile, "SQLite Plugin $SQLITE_PLUGIN_VERSION", context) { _ -> SQLITE_PLUGIN_ZIP_SHA256 }
+        syncEngineState()
+        if (!downloaded) return false
+
+        _downloadState.value = DownloadState.Extracting("SQLite Plugin")
+        DependencyDownloadEngine.publishState(DependencyDownloadEngine.State.Extracting("SQLite Plugin"))
+        try {
+            extractZip(archiveFile, destDir)
+            archiveFile.delete()
+
+            val pluginDir = File(destDir, "sqlite-database-integration")
+            if (!pluginDir.exists()) {
+                markError(Strings.sqlitePluginExtractIncomplete)
+                return false
+            }
+
+            AppLogger.i(TAG, "SQLite plugin ready")
+            return true
+        } catch (e: Exception) {
+            AppLogger.e(TAG, "Failed to extract SQLite plugin", e)
+            markError(Strings.sqlitePluginExtractFailed(e.message ?: ""))
+            return false
+        }
+    }
+
+    private fun syncEngineState() {
+        when (val es = DependencyDownloadEngine.state.value) {
+            is DependencyDownloadEngine.State.Downloading -> {
+                _downloadState.value = DownloadState.Downloading(
+                    progress = es.progress,
+                    currentFile = es.displayName,
+                    bytesDownloaded = es.bytesDownloaded,
+                    totalBytes = es.totalBytes
+                )
+            }
+            is DependencyDownloadEngine.State.Paused -> {
+                _downloadState.value = DownloadState.Paused(
+                    progress = es.progress,
+                    currentFile = es.displayName,
+                    bytesDownloaded = es.bytesDownloaded,
+                    totalBytes = es.totalBytes
+                )
+            }
+            is DependencyDownloadEngine.State.Error -> {
+                if (!downloadCancelled.get()) {
+                    _downloadState.value = DownloadState.Error(es.message)
+                }
+            }
+            else -> {}
+        }
+    }
+
+    private fun markComplete() {
+        _downloadState.value = DownloadState.Complete
+        DependencyDownloadEngine.publishState(DependencyDownloadEngine.State.Complete)
+    }
+
+    private fun markError(message: String, retryable: Boolean = true) {
+        if (downloadCancelled.get()) {
+            _downloadState.value = DownloadState.Idle
+            return
+        }
+        _downloadState.value = DownloadState.Error(message, retryable = retryable)
+        DependencyDownloadEngine.publishState(DependencyDownloadEngine.State.Error(message))
+    }
+
+    private fun extractTarGz(archiveFile: File, destDir: File) {
+        val processBuilder = ProcessBuilder("tar", "-xzf", archiveFile.absolutePath, "-C", destDir.absolutePath)
+        processBuilder.redirectErrorStream(true)
+        val process = processBuilder.start()
+        val output = process.inputStream.bufferedReader().readText()
+        val exitCode = process.waitFor()
+        if (exitCode != 0) {
+
+            extractTarGzWithCommons(archiveFile, destDir)
+        }
+    }
+
+    private fun extractTarGzWithCommons(archiveFile: File, destDir: File) {
+        val gzIn = java.util.zip.GZIPInputStream(archiveFile.inputStream().buffered())
+        val tarIn = org.apache.commons.compress.archivers.tar.TarArchiveInputStream(gzIn)
+        val guard = com.webtoapp.util.SafeZip.EntryGuard()
+
+        var entry = tarIn.nextEntry
+        while (entry != null) {
+            guard.onEntry()
+            val outFile = com.webtoapp.util.SafeZip.safeChild(destDir, entry.name) ?: run {
+                entry = tarIn.nextEntry
+                continue
+            }
+            if (entry.isDirectory) {
+                outFile.mkdirs()
+            } else {
+                outFile.parentFile?.mkdirs()
+                FileOutputStream(outFile).use { fos ->
+                    guard.copyTo(tarIn, fos)
+                }
+
+                if (com.webtoapp.util.SafeZip.hasOwnerExecBit(entry.mode.toLong())) {
+                    outFile.setExecutable(true, false)
+                }
+            }
+            entry = tarIn.nextEntry
+        }
+        tarIn.close()
+    }
+
+    private fun extractZip(zipFile: File, destDir: File) {
+        val zipInputStream = java.util.zip.ZipInputStream(zipFile.inputStream().buffered())
+        val guard = com.webtoapp.util.SafeZip.EntryGuard()
+        var entry = zipInputStream.nextEntry
+        while (entry != null) {
+            guard.onEntry()
+            val outFile = com.webtoapp.util.SafeZip.safeChild(destDir, entry.name) ?: run {
+                zipInputStream.closeEntry()
+                entry = zipInputStream.nextEntry
+                continue
+            }
+            if (entry.isDirectory) {
+                outFile.mkdirs()
+            } else {
+                outFile.parentFile?.mkdirs()
+                FileOutputStream(outFile).use { fos ->
+                    guard.copyTo(zipInputStream, fos)
+                }
+            }
+            zipInputStream.closeEntry()
+            entry = zipInputStream.nextEntry
+        }
+        zipInputStream.close()
+    }
+
+    fun sha256(file: File): String {
+        val digest = MessageDigest.getInstance("SHA-256")
+        file.inputStream().buffered().use { input ->
+            val buffer = ByteArray(8192)
+            var bytesRead: Int
+            while (input.read(buffer).also { bytesRead = it } != -1) {
+                digest.update(buffer, 0, bytesRead)
+            }
+        }
+        return digest.digest().joinToString("") { "%02x".format(it) }
+    }
+}

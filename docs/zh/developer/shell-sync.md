@@ -34,7 +34,7 @@
 1. `WebToAppApplication` 启动。
 2. `ShellModeManager.isShellMode()` 检查 assets 中是否有 `app_config.json`。
 3. 若有,`getConfig()` 将其(经 Gson)反序列化为 `ShellConfig` —— 可能先解密。
-4. `ShellContentRouter` 按配置的应用类型选择内容界面(WebView 内容或画廊播放器);`ShellRuntimeServices` 初始化运行时服务(激活、公告、去广告)。
+4. `ShellServerLauncher` 解析并启动服务端运行时;`ShellRuntimeServices` 初始化运行时栈。
 
 ## 约束
 

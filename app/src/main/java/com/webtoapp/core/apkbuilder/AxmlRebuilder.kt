@@ -150,6 +150,7 @@ class AxmlRebuilder {
             "com.webtoapp.core.notification.NotificationWebSocketService",
             "com.webtoapp.core.notification.NotificationFcmService",
             "com.webtoapp.core.floatingwindow.FloatingWindowService",
+            "com.webtoapp.core.nodejs.NodeService",
             "com.webtoapp.core.autostart.BootReceiver",
             "com.webtoapp.core.autostart.ScheduledStartReceiver",
             "com.webtoapp.core.port.PortQueryReceiver",

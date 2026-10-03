@@ -23,3 +23,7 @@
 ## 浏览器引擎
 
 - 引擎(系统 WebView / GeckoView)在[自定义DNS](/zh/guide/app-actions/edit-common-config/custom-dns)或 [APK导出配置](/zh/guide/app-actions/edit-common-config/apk-export)中选择;在[浏览器内核](/zh/guide/more-features/browser-kernel)中管理引擎。
+
+## 运行时
+
+- 服务端运行时的 DNS/代理桥接见[本地服务运行时](/zh/guide/config/runtimes)。

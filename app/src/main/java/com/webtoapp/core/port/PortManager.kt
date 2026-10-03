@@ -26,6 +26,10 @@ object PortManager {
 
     enum class PortRange(val start: Int, val end: Int) {
         LOCAL_HTTP(18000, 18499),
+        PHP(18500, 18999),
+        NODEJS(19000, 19499),
+        PYTHON(19500, 19999),
+        GO(20000, 20499),
         GENERAL(20500, 21000);
 
         val size: Int get() = end - start + 1
@@ -404,6 +408,38 @@ object PortManager {
         preferred: Int = 0,
         conflictPolicy: ConflictPolicy = ConflictPolicy.REASSIGN
     ) = allocate(PortRange.LOCAL_HTTP, "localhttp:$owner", preferred, conflictPolicy)
+
+    fun allocateForPhp(
+        projectId: String,
+        preferred: Int = 0,
+        conflictPolicy: ConflictPolicy = ConflictPolicy.REASSIGN
+    ) = allocate(PortRange.PHP, "php:$projectId", preferred, conflictPolicy)
+
+    fun allocateForNodeJs(
+        projectId: String,
+        preferred: Int = 0,
+        conflictPolicy: ConflictPolicy = ConflictPolicy.REASSIGN
+    ) = allocate(PortRange.NODEJS, "nodejs:$projectId", preferred, conflictPolicy)
+
+    fun allocateForPython(
+        projectId: String,
+        preferred: Int = 0,
+        conflictPolicy: ConflictPolicy = ConflictPolicy.REASSIGN
+    ) = allocate(PortRange.PYTHON, "python:$projectId", preferred, conflictPolicy)
+
+    fun allocateForGo(
+        projectId: String,
+        preferred: Int = 0,
+        conflictPolicy: ConflictPolicy = ConflictPolicy.REASSIGN
+    ) = allocate(PortRange.GO, "go:$projectId", preferred, conflictPolicy)
+
+    fun releasePhp(projectId: String) = releaseByOwner("php:$projectId")
+
+    fun releaseNodeJs(projectId: String) = releaseByOwner("nodejs:$projectId")
+
+    fun releasePython(projectId: String) = releaseByOwner("python:$projectId")
+
+    fun releaseGo(projectId: String) = releaseByOwner("go:$projectId")
 
     fun getStats(): String {
         val sb = StringBuilder("端口使用统计:\n")

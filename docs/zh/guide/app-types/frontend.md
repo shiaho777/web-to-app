@@ -13,6 +13,10 @@
 - **构建输出** —— 要打包的生产构建目录(创建页字段;保存后的配置与 HTML 类型一样只保留导入的文件)。
 - **框架** —— 被识别或选择(React、Vue、Vite 等)。
 
+### 工具链
+
+- 当需要设备端构建步骤时,界面会链接到 [Linux 环境](/zh/guide/more-features/linux-environment)安装 Node 和构建工具。
+
 ## 说明
 
 - **前端 vs HTML:** 前端用于框架项目的构建输出;[HTML](/zh/guide/app-types/html) 用于你已有的纯静态文件。

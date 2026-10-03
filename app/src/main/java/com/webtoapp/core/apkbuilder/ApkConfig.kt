@@ -19,6 +19,7 @@ data class ApkConfig(
     val tlsFingerprint: TlsFingerprintBlock = TlsFingerprintBlock(),
     val errorPage: ErrorPageBlock = ErrorPageBlock(),
     val splash: SplashBlock = SplashBlock(),
+    val media: MediaBlock = MediaBlock(),
     val html: HtmlBlock = HtmlBlock(),
     val gallery: GalleryBlock = GalleryBlock(),
     val bgm: BgmBlock = BgmBlock(),
@@ -30,6 +31,11 @@ data class ApkConfig(
     val deepLink: DeepLinkBlock = DeepLinkBlock(),
     val shareReceive: ShareReceiveBlock = ShareReceiveBlock(),
     val openWith: OpenWithBlock = OpenWithBlock(),
+    val wordpress: WordpressBlock = WordpressBlock(),
+    val nodejs: NodejsBlock = NodejsBlock(),
+    val phpApp: PhpAppBlock = PhpAppBlock(),
+    val pythonApp: PythonAppBlock = PythonAppBlock(),
+    val goApp: GoAppBlock = GoAppBlock(),
     val multiWeb: MultiWebBlock = MultiWebBlock()
 ) {
 
@@ -275,6 +281,12 @@ data class ApkConfig(
     val splashFillScreen: Boolean get() = splash.fillScreen
     val splashEnableAudio: Boolean get() = splash.enableAudio
 
+    val mediaEnableAudio: Boolean get() = media.enableAudio
+    val mediaLoop: Boolean get() = media.loop
+    val mediaAutoPlay: Boolean get() = media.autoPlay
+    val mediaFillScreen: Boolean get() = media.fillScreen
+    val mediaLandscape: Boolean get() = media.landscape
+    val mediaKeepScreenOn: Boolean get() = media.keepScreenOn
 
     val htmlEntryFile: String get() = html.entryFile
     val htmlEnableJavaScript: Boolean get() = html.enableJavaScript
@@ -346,10 +358,44 @@ data class ApkConfig(
     val shareReceiveMimeTypes: List<String> get() = shareReceive.mimeTypes
     val openWithEnabled: Boolean get() = openWith.enabled
 
+    val wordpressSiteTitle: String get() = wordpress.siteTitle
+    val wordpressAdminUser: String get() = wordpress.adminUser
+    val wordpressAdminEmail: String get() = wordpress.adminEmail
+    val wordpressAdminPassword: String get() = wordpress.adminPassword
+    val wordpressThemeName: String get() = wordpress.themeName
+    val wordpressPlugins: List<String> get() = wordpress.plugins
+    val wordpressActivePlugins: List<String> get() = wordpress.activePlugins
+    val wordpressPermalinkStructure: String get() = wordpress.permalinkStructure
+    val wordpressSiteLanguage: String get() = wordpress.siteLanguage
+    val wordpressAutoInstall: Boolean get() = wordpress.autoInstall
+    val wordpressPhpPort: Int get() = wordpress.phpPort
 
+    val nodejsMode: String get() = nodejs.mode
+    val nodejsPort: Int get() = nodejs.port
+    val nodejsEntryFile: String get() = nodejs.entryFile
+    val nodejsEnvVars: Map<String, String> get() = nodejs.envVars
+    val nodejsCustomNodeExtensions: List<com.webtoapp.data.model.CustomNodeExtension> get() = nodejs.customNodeExtensions
 
+    val phpAppFramework: String get() = phpApp.framework
+    val phpAppDocumentRoot: String get() = phpApp.documentRoot
+    val phpAppEntryFile: String get() = phpApp.entryFile
+    val phpAppPort: Int get() = phpApp.port
+    val phpAppEnvVars: Map<String, String> get() = phpApp.envVars
 
+    val pythonAppFramework: String get() = pythonApp.framework
+    val pythonAppEntryFile: String get() = pythonApp.entryFile
+    val pythonAppEntryModule: String get() = pythonApp.entryModule
+    val pythonAppServerType: String get() = pythonApp.serverType
+    val pythonAppPort: Int get() = pythonApp.port
+    val pythonAppEnvVars: Map<String, String> get() = pythonApp.envVars
+    val pythonAppCustomPythonExtensions: List<com.webtoapp.data.model.CustomPythonExtension> get() = pythonApp.customPythonExtensions
 
+    val goAppFramework: String get() = goApp.framework
+    val goAppBinaryName: String get() = goApp.binaryName
+    val goAppTargetArch: String get() = goApp.targetArch
+    val goAppPort: Int get() = goApp.port
+    val goAppStaticDir: String get() = goApp.staticDir
+    val goAppEnvVars: Map<String, String> get() = goApp.envVars
 
     val multiWebSites: List<com.webtoapp.core.shell.MultiWebSiteShellConfig> get() = multiWeb.sites
     val multiWebDisplayMode: String get() = multiWeb.displayMode
@@ -687,6 +733,15 @@ data class SplashBlock(
     val showCountdown: Boolean = true
 )
 
+data class MediaBlock(
+    val enableAudio: Boolean = true,
+    val loop: Boolean = true,
+    val autoPlay: Boolean = true,
+    val fillScreen: Boolean = true,
+    val landscape: Boolean = false,
+    val keepScreenOn: Boolean = true,
+    val backgroundColor: String = "#000000"
+)
 
 data class HtmlBlock(
     val entryFile: String = "index.html",
@@ -798,6 +853,63 @@ data class ShareReceiveBlock(
  */
 data class OpenWithBlock(
     val enabled: Boolean = false
+)
+
+data class WordpressBlock(
+    val siteTitle: String = "",
+    val adminUser: String = "admin",
+    val adminEmail: String = "",
+    val adminPassword: String = "admin",
+    val themeName: String = "",
+    val plugins: List<String> = emptyList(),
+    val activePlugins: List<String> = emptyList(),
+    val permalinkStructure: String = "/%postname%/",
+    val siteLanguage: String = "zh_CN",
+    val autoInstall: Boolean = true,
+    val phpPort: Int = 0,
+    val portConflictMode: String = "AUTO_KILL",
+    val customPhpExtensions: List<com.webtoapp.data.model.CustomPhpExtension> = emptyList()
+)
+
+data class NodejsBlock(
+    val mode: String = "STATIC",
+    val port: Int = 0,
+    val portConflictMode: String = "AUTO_KILL",
+    val entryFile: String = "",
+    val envVars: Map<String, String> = emptyMap(),
+    val customNodeExtensions: List<com.webtoapp.data.model.CustomNodeExtension> = emptyList()
+)
+
+data class PhpAppBlock(
+    val framework: String = "",
+    val documentRoot: String = "",
+    val entryFile: String = "index.php",
+    val port: Int = 0,
+    val portConflictMode: String = "AUTO_KILL",
+    val envVars: Map<String, String> = emptyMap(),
+    val phpExtensions: Map<String, Boolean> = emptyMap(),
+    val customPhpExtensions: List<com.webtoapp.data.model.CustomPhpExtension> = emptyList()
+)
+
+data class PythonAppBlock(
+    val framework: String = "",
+    val entryFile: String = "app.py",
+    val entryModule: String = "",
+    val serverType: String = "builtin",
+    val port: Int = 0,
+    val portConflictMode: String = "AUTO_KILL",
+    val envVars: Map<String, String> = emptyMap(),
+    val customPythonExtensions: List<com.webtoapp.data.model.CustomPythonExtension> = emptyList()
+)
+
+data class GoAppBlock(
+    val framework: String = "",
+    val binaryName: String = "",
+    val targetArch: String = "arm64-v8a",
+    val port: Int = 0,
+    val portConflictMode: String = "AUTO_KILL",
+    val staticDir: String = "",
+    val envVars: Map<String, String> = emptyMap()
 )
 
 data class MultiWebBlock(

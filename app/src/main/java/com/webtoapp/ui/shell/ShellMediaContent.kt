@@ -1,0 +1,495 @@
+package com.webtoapp.ui.shell
+
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
+import com.webtoapp.core.logging.AppLogger
+import com.webtoapp.core.i18n.Strings
+import com.webtoapp.ui.shared.AspectRatioSurface
+import kotlinx.coroutines.delay
+
+@Composable
+fun ShellSplashOverlay(
+    splashType: String,
+    countdown: Int,
+    videoStartMs: Long = 0,
+    videoEndMs: Long = 5000,
+    fillScreen: Boolean = true,
+    enableAudio: Boolean = false,
+    mediaPath: String? = null,
+    showCountdown: Boolean = true,
+    onSkip: (() -> Unit)?,
+    onComplete: (() -> Unit)? = null
+) {
+    val context = LocalContext.current
+    val extension = if (splashType == "VIDEO") "mp4" else "png"
+    val assetPath = "splash_media.$extension"
+    val videoDurationMs = videoEndMs - videoStartMs
+    val contentScaleMode = if (fillScreen) ContentScale.Crop else ContentScale.Fit
+
+    var videoRemainingMs by remember { mutableLongStateOf(videoDurationMs) }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black)
+            .then(
+                if (onSkip != null) {
+                    Modifier.clickable(
+                        indication = null,
+                        interactionSource = remember { MutableInteractionSource() }
+                    ) { onSkip() }
+                } else {
+                    Modifier
+                }
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        when (splashType) {
+            "IMAGE" -> {
+
+                var bitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
+
+                LaunchedEffect(assetPath, mediaPath) {
+                    bitmap = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                        try {
+                            val previewFile = mediaPath?.let { java.io.File(it) }
+                            if (previewFile != null && previewFile.exists()) {
+                                com.webtoapp.util.BoundedBitmaps.decodeBoundedBitmapFile(previewFile.absolutePath)
+                            } else {
+                                val decryptor = com.webtoapp.core.crypto.AssetDecryptor(context)
+                                val imageBytes = decryptor.loadAsset(assetPath)
+                                com.webtoapp.util.BoundedBitmaps.decodeBoundedBitmapBytes(imageBytes)
+                            }
+                        } catch (e: Exception) {
+                            AppLogger.e("ShellSplash", "Failed to load splash image", e)
+                            null
+                        }
+                    }
+                }
+
+                bitmap?.let { bmp ->
+                    Image(
+                        bitmap = bmp.asImageBitmap(),
+                        contentDescription = Strings.cdSplashScreen,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = contentScaleMode
+                    )
+                }
+            }
+            "VIDEO" -> {
+
+                var mediaPlayer by remember { mutableStateOf<android.media.MediaPlayer?>(null) }
+                var isPlayerReady by remember { mutableStateOf(false) }
+                var tempVideoFile by remember { mutableStateOf<java.io.File?>(null) }
+
+                LaunchedEffect(isPlayerReady) {
+                    if (!isPlayerReady) return@LaunchedEffect
+                    while (true) {
+                        // Re-read the live player each iteration: a back press during the
+                        // splash releases it and nulls the state mid-poll.
+                        val mp = mediaPlayer ?: return@LaunchedEffect
+                        try {
+                            if (!mp.isPlaying) {
+                                delay(50)
+                                continue
+                            }
+                            val currentPos = mp.currentPosition
+
+                            videoRemainingMs = (videoEndMs - currentPos).coerceAtLeast(0L)
+                            if (currentPos >= videoEndMs) {
+                                mp.pause()
+
+                                onComplete?.invoke()
+                                break
+                            }
+                        } catch (e: IllegalStateException) {
+                            // Player released between iterations; the splash is going away.
+                            return@LaunchedEffect
+                        }
+                        delay(100)
+                    }
+                }
+
+                AndroidView(
+                    factory = { ctx ->
+                        android.view.SurfaceView(ctx).apply {
+                            holder.addCallback(object : android.view.SurfaceHolder.Callback {
+                                override fun surfaceCreated(holder: android.view.SurfaceHolder) {
+                                    try {
+
+                                        val previewFile = mediaPath?.let { java.io.File(it) }
+                                        if (previewFile != null && previewFile.exists()) {
+                                            mediaPlayer = android.media.MediaPlayer().apply {
+                                                setDataSource(previewFile.absolutePath)
+                                                setSurface(holder.surface)
+                                                val volume = if (enableAudio) 1f else 0f
+                                                setVolume(volume, volume)
+                                                isLooping = false
+                                                setOnPreparedListener { mp ->
+                                                    // prepareAsync may still be in flight when a
+                                                    // back press releases the player; skip stale
+                                                    // callbacks (issue #612).
+                                                    if (mediaPlayer !== mp) return@setOnPreparedListener
+                                                    try {
+                                                        seekTo(videoStartMs.toInt())
+                                                        start()
+                                                        isPlayerReady = true
+                                                    } catch (e: IllegalStateException) {
+                                                        AppLogger.e("ShellActivity", "Splash player released before prepared", e)
+                                                    }
+                                                }
+                                                setOnCompletionListener { mp ->
+                                                    if (mediaPlayer === mp) onComplete?.invoke()
+                                                }
+                                                prepareAsync()
+                                            }
+                                            return
+                                        }
+
+                                        val encryptedPath = "$assetPath.enc"
+                                        val hasEncrypted = try {
+                                            ctx.assets.open(encryptedPath).use { true }
+                                        } catch (e: Exception) { false }
+
+                                        if (hasEncrypted) {
+
+                                            AppLogger.d("ShellSplash", "检测到加密启动画面视频")
+                                            val decryptor = com.webtoapp.core.crypto.AssetDecryptor(ctx)
+                                            val decryptedData = decryptor.loadAsset(assetPath)
+                                            val tempFile = java.io.File(ctx.cacheDir, "splash_video_${System.currentTimeMillis()}.mp4")
+                                            tempFile.writeBytes(decryptedData)
+                                            tempVideoFile = tempFile
+
+                                            mediaPlayer = android.media.MediaPlayer().apply {
+                                                setDataSource(tempFile.absolutePath)
+                                                setSurface(holder.surface)
+                                                val volume = if (enableAudio) 1f else 0f
+                                                setVolume(volume, volume)
+                                                isLooping = false
+                                                setOnPreparedListener { mp ->
+                                                    if (mediaPlayer !== mp) return@setOnPreparedListener
+                                                    try {
+                                                        seekTo(videoStartMs.toInt())
+                                                        start()
+                                                        isPlayerReady = true
+                                                    } catch (e: IllegalStateException) {
+                                                        AppLogger.e("ShellActivity", "Splash player released before prepared", e)
+                                                    }
+                                                }
+                                                setOnCompletionListener { mp ->
+                                                    if (mediaPlayer === mp) onComplete?.invoke()
+                                                }
+                                                prepareAsync()
+                                            }
+                                        } else {
+
+                                            val afd = ctx.assets.openFd(assetPath)
+                                            mediaPlayer = android.media.MediaPlayer().apply {
+                                                setDataSource(afd.fileDescriptor, afd.startOffset, afd.length)
+                                                setSurface(holder.surface)
+                                                val volume = if (enableAudio) 1f else 0f
+                                                setVolume(volume, volume)
+                                                isLooping = false
+                                                setOnPreparedListener { mp ->
+                                                    if (mediaPlayer !== mp) return@setOnPreparedListener
+                                                    try {
+                                                        seekTo(videoStartMs.toInt())
+                                                        start()
+                                                        isPlayerReady = true
+                                                    } catch (e: IllegalStateException) {
+                                                        AppLogger.e("ShellActivity", "Splash player released before prepared", e)
+                                                    }
+                                                }
+                                                setOnCompletionListener { mp ->
+                                                    if (mediaPlayer === mp) onComplete?.invoke()
+                                                }
+                                                prepareAsync()
+                                            }
+                                            afd.close()
+                                        }
+                                    } catch (e: Exception) {
+                                        AppLogger.e("ShellActivity", "Operation failed", e)
+                                        onComplete?.invoke()
+                                    }
+                                }
+                                override fun surfaceChanged(h: android.view.SurfaceHolder, f: Int, w: Int, ht: Int) {}
+                                override fun surfaceDestroyed(h: android.view.SurfaceHolder) {
+                                    // Detach callbacks before releasing so in-flight
+                                    // prepare/completion notifications cannot touch a
+                                    // released player (issue #612).
+                                    mediaPlayer?.setOnPreparedListener(null)
+                                    mediaPlayer?.setOnCompletionListener(null)
+                                    mediaPlayer?.release()
+                                    mediaPlayer = null
+                                }
+                            })
+                        }
+                    },
+                    modifier = Modifier.fillMaxSize()
+                )
+
+                DisposableEffect(Unit) {
+                    onDispose {
+                        mediaPlayer?.setOnPreparedListener(null)
+                        mediaPlayer?.setOnCompletionListener(null)
+                        mediaPlayer?.release()
+                        mediaPlayer = null
+
+                        tempVideoFile?.delete()
+                        tempVideoFile = null
+                    }
+                }
+            }
+        }
+
+        val displayTime = if (splashType == "VIDEO") ((videoRemainingMs + 999) / 1000).toInt() else countdown
+
+        Surface(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .statusBarsPadding()
+                .padding(16.dp),
+            shape = MaterialTheme.shapes.small,
+            color = Color.Black.copy(alpha = 0.6f)
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                val showNumber = showCountdown && displayTime > 0
+                if (showNumber) {
+                    Text(
+                        text = "${displayTime}s",
+                        color = Color.White,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+                if (onSkip != null) {
+                    if (showNumber) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "|",
+                            color = Color.White.copy(alpha = 0.5f)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                    }
+                    Text(
+                        text = Strings.skip,
+                        color = Color.White,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun MediaContentDisplay(
+    isVideo: Boolean,
+    mediaConfig: com.webtoapp.core.shell.MediaShellConfig,
+    mediaPath: String? = null
+) {
+    val context = LocalContext.current
+
+    // mediaPath carries either an absolute host file (host-run preview) or a
+    // site-prefixed asset path (multi-web embedded site,
+    // multiweb_sites/<id>/media_content.*). Null preserves the legacy
+    // hardcoded root asset (standalone export). Same rule as the splash
+    // previewFile pattern: existing host files always win over assets.
+    val previewFile = remember(mediaPath) {
+        mediaPath?.let { java.io.File(it) }?.takeIf { it.isFile && it.canRead() }
+    }
+    // Unused when previewFile hits; otherwise the asset to open (site-prefixed
+    // for multi-web sites, legacy root asset for standalone exports).
+    val assetPath = remember(mediaPath, isVideo) {
+        mediaPath?.takeIf { it.isNotBlank() }
+            ?: if (isVideo) "media_content.mp4" else "media_content.png"
+    }
+
+    val bgColor = remember(mediaConfig.backgroundColor) {
+        try {
+            Color(android.graphics.Color.parseColor(mediaConfig.backgroundColor))
+        } catch (e: Exception) {
+            Color.Black
+        }
+    }
+
+    // Mirror host MediaAppActivity: keep the screen awake for the lifetime of
+    // this screen when configured. Add-only like the host (no explicit clear).
+    LaunchedEffect(mediaConfig.keepScreenOn) {
+        if (mediaConfig.keepScreenOn) {
+            try {
+                (context as? android.app.Activity)?.window?.addFlags(
+                    android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+                )
+            } catch (e: Exception) {
+                AppLogger.w("ShellMedia", "Failed to set keep-screen-on: ${e.message}")
+            }
+        }
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(bgColor),
+        contentAlignment = Alignment.Center
+    ) {
+        if (isVideo) {
+
+            var mediaPlayer by remember { mutableStateOf<android.media.MediaPlayer?>(null) }
+            var tempVideoFile by remember { mutableStateOf<java.io.File?>(null) }
+            var videoWidth by remember { mutableIntStateOf(0) }
+            var videoHeight by remember { mutableIntStateOf(0) }
+
+            AspectRatioSurface(
+                videoWidth = videoWidth,
+                videoHeight = videoHeight,
+            fillScreen = mediaConfig.fillScreen,
+            modifier = Modifier.fillMaxSize(),
+            onSurfaceCreated = { holder ->
+                try {
+                    // Host-run preview points at a real file: play it directly
+                    // (mirrors the splash previewFile branch).
+                    val hostFile = previewFile
+                    if (hostFile != null) {
+                        mediaPlayer = android.media.MediaPlayer().apply {
+                            setDataSource(hostFile.absolutePath)
+                            setSurface(holder.surface)
+                            val volume = if (mediaConfig.enableAudio) 1f else 0f
+                            setVolume(volume, volume)
+                            isLooping = mediaConfig.loop
+                            setOnPreparedListener { mp ->
+                                videoWidth = mp.videoWidth
+                                videoHeight = mp.videoHeight
+                                if (mediaConfig.autoPlay) start()
+                            }
+                            setOnVideoSizeChangedListener { _, width, height ->
+                                videoWidth = width
+                                videoHeight = height
+                            }
+                            prepareAsync()
+                        }
+                    } else {
+                        val encryptedPath = "$assetPath.enc"
+                    val hasEncrypted = try {
+                        context.assets.open(encryptedPath).use { true }
+                    } catch (e: Exception) { false }
+
+                    if (hasEncrypted) {
+                        AppLogger.d("MediaContent", "检测到加密媒体视频")
+                        val decryptor = com.webtoapp.core.crypto.AssetDecryptor(context)
+                        val decryptedData = decryptor.loadAsset(assetPath)
+                        val tempFile = java.io.File(context.cacheDir, "media_video_${System.currentTimeMillis()}.mp4")
+                        tempFile.writeBytes(decryptedData)
+                        tempVideoFile = tempFile
+
+                        mediaPlayer = android.media.MediaPlayer().apply {
+                            setDataSource(tempFile.absolutePath)
+                            setSurface(holder.surface)
+                            val volume = if (mediaConfig.enableAudio) 1f else 0f
+                            setVolume(volume, volume)
+                            isLooping = mediaConfig.loop
+                            setOnPreparedListener { mp ->
+                                videoWidth = mp.videoWidth
+                                videoHeight = mp.videoHeight
+                                if (mediaConfig.autoPlay) start()
+                            }
+                            setOnVideoSizeChangedListener { _, width, height ->
+                                videoWidth = width
+                                videoHeight = height
+                            }
+                            prepareAsync()
+                        }
+                    } else {
+                        val afd = context.assets.openFd(assetPath)
+                        mediaPlayer = android.media.MediaPlayer().apply {
+                            setDataSource(afd.fileDescriptor, afd.startOffset, afd.length)
+                            setSurface(holder.surface)
+                            val volume = if (mediaConfig.enableAudio) 1f else 0f
+                            setVolume(volume, volume)
+                            isLooping = mediaConfig.loop
+                            setOnPreparedListener { mp ->
+                                videoWidth = mp.videoWidth
+                                videoHeight = mp.videoHeight
+                                if (mediaConfig.autoPlay) start()
+                            }
+                            setOnVideoSizeChangedListener { _, width, height ->
+                                videoWidth = width
+                                videoHeight = height
+                            }
+                            prepareAsync()
+                        }
+                        afd.close()
+                        }
+                    }
+                } catch (e: Exception) {
+                    AppLogger.e("ShellActivity", "Operation failed", e)
+                }
+            },
+                onSurfaceDestroyed = {
+                    mediaPlayer?.release()
+                    mediaPlayer = null
+                    videoWidth = 0
+                    videoHeight = 0
+                }
+            )
+
+            DisposableEffect(Unit) {
+                onDispose {
+                    mediaPlayer?.release()
+                    mediaPlayer = null
+
+                    tempVideoFile?.delete()
+                    tempVideoFile = null
+                }
+            }
+        } else {
+
+            var bitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
+
+            LaunchedEffect(assetPath) {
+                bitmap = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    try {
+                        val hostFile = previewFile
+                        val imageBytes = if (hostFile != null) {
+                            hostFile.readBytes()
+                        } else {
+                            val decryptor = com.webtoapp.core.crypto.AssetDecryptor(context)
+                            decryptor.loadAsset(assetPath)
+                        }
+                        com.webtoapp.util.BoundedBitmaps.decodeBoundedBitmapBytes(imageBytes)
+                    } catch (e: Exception) {
+                        AppLogger.e("MediaContent", "Failed to load image media", e)
+                        null
+                    }
+                }
+            }
+
+            bitmap?.let { bmp ->
+                Image(
+                    bitmap = bmp.asImageBitmap(),
+                    contentDescription = Strings.cdMediaContent,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = if (mediaConfig.fillScreen)
+                        ContentScale.Crop
+                    else
+                        ContentScale.Fit
+                )
+            }
+        }
+    }
+}

@@ -40,6 +40,7 @@ import androidx.compose.material.icons.outlined.ExpandLess
 import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.FilterNone
+import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material.icons.outlined.Hub
 import androidx.compose.material.icons.outlined.ForkRight
 import androidx.compose.material.icons.outlined.Forum
@@ -144,6 +145,7 @@ fun AboutScreen(onBack: () -> Unit) {
             DescriptionsToggleCard()
 
             SeparateTasksCard()
+            AdvancedFeaturesCard()
 
             LocalMcpCard()
 
@@ -179,6 +181,33 @@ private fun DescriptionsToggleCard() {
                     onCheckedChange = {
                         scope.launch { themeManager.setShowDescriptions(it) }
                     }
+                )
+            }
+        )
+    }
+}
+
+@Composable
+private fun AdvancedFeaturesCard() {
+    val context = LocalContext.current
+    val hostPrefs = remember { HostRuntimePrefs.getInstance(context) }
+    val enabled by hostPrefs.advancedFeaturesFlow.collectAsStateWithLifecycle()
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+
+    WtaCard(
+        modifier = Modifier.fillMaxWidth(),
+        tone = WtaCardTone.Elevated,
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)
+    ) {
+        WtaSettingRow(
+            icon = Icons.Outlined.Tune,
+            title = Strings.advancedFeatures,
+            subtitle = Strings.advancedFeaturesDesc,
+            onClick = { scope.launch { hostPrefs.setAdvancedFeaturesEnabled(!enabled) } },
+            trailing = {
+                WtaSwitch(
+                    checked = enabled,
+                    onCheckedChange = { scope.launch { hostPrefs.setAdvancedFeaturesEnabled(it) } }
                 )
             }
         )

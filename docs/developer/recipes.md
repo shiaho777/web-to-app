@@ -52,10 +52,17 @@ See [Config Field Drift](/developer/config-drift).
 1. Follow `modules/README.md` catalog layout (`registry.json` + module folders).
 2. Runtime consumption still goes through the extension/shell paths if it ships inside generated APKs.
 
-## 8. Local site serving / download path
+## 8. Local server runtime / download path
 
 1. Allocate ports through `PortManager` with the configured conflict policy; implement real stop handlers.
-2. Use `NetworkModule.downloadClient` for large engine / toolchain (e.g. esbuild) downloads.
+2. Wire fork+exec processes into `LocalDnsBridgeProxy` when they need host DNS/proxy env.
+3. Use `NetworkModule.downloadClient` for large dependency / engine / runtime downloads.
+
+## 9. Node.js / Go export
+
+1. **Node.js:** ensure `injectNodeJsNativeLibs` embeds `libnode_bridge.so` + `libnode.so` (16KB-aligned via `ElfAligner16k`) + `libc++_shared.so`. Node binary resolution prefers `nativeLibraryDir`, falls back to download cache.
+2. **Go:** ensure `injectGoExecLoaderNativeLib` embeds `libgo_exec_loader.so`.
+3. `NodeService` runs in a dedicated `:nodejs` OS process so V8 lifecycle is isolated from the host.
 
 ## Verify commands
 
@@ -68,4 +75,4 @@ python3 scripts/check_config_field_drift.py
 
 Use these when you change shell membership, export packaging, or config fields. For host-only UI/string work, targeted compile on `:app` is usually enough.
 
-Focused tests often worth running after nearby edits: `ApkBuildCacheTest`, `AdBlockerHostRuntimeTest`, `AdBlockExportWiringTest`, `PortManagerTest`, `BuildInputPreflightTest`, `RuntimePermissionSyncTest`.
+Focused tests often worth running after nearby edits: `ApkBuildCacheTest`, `AdBlockerHostRuntimeTest`, `AdBlockExportWiringTest`, `PortManagerTest`, `BuildInputPreflightTest`, `GoBuildEnvironmentTest`, `RuntimePermissionSyncTest`.

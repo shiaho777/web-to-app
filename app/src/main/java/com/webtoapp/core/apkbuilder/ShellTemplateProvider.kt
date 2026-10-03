@@ -55,7 +55,14 @@ class AssetTemplateProvider(
             "WEB",
             "HTML",
             "FRONTEND",
+            "IMAGE",
+            "VIDEO",
             "GALLERY",
+            "WORDPRESS",
+            "NODEJS_APP",
+            "PHP_APP",
+            "PYTHON_APP",
+            "GO_APP",
             "MULTI_WEB"
         )
     }
