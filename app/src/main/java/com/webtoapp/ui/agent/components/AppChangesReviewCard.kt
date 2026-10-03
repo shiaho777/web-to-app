@@ -24,20 +24,21 @@ import androidx.compose.material.icons.outlined.ExpandLess
 import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.ui.agent.PendingAppChange
 import com.webtoapp.ui.design.WtaAlpha
-import com.webtoapp.ui.design.WtaButton
-import com.webtoapp.ui.design.WtaButtonSize
-import com.webtoapp.ui.design.WtaButtonVariant
 import com.webtoapp.ui.design.WtaCard
 import com.webtoapp.ui.design.WtaCardTone
 import com.webtoapp.ui.design.WtaColors
@@ -63,9 +64,10 @@ fun AppChangesReviewCard(
     Box(
         modifier = modifier.padding(
             horizontal = WtaSpacing.ScreenHorizontal,
-            vertical = WtaSpacing.Tiny + 2.dp
+            vertical = 2.dp
         )
     ) {
+        CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides Dp.Unspecified) {
         WtaCard(
             tone = WtaCardTone.Elevated,
             contentPadding = PaddingValues(0.dp),
@@ -96,6 +98,7 @@ fun AppChangesReviewCard(
                 }
             }
         }
+        }
     }
 }
 
@@ -110,10 +113,7 @@ private fun HeaderRow(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onToggle)
-            .padding(
-                horizontal = WtaSpacing.Medium,
-                vertical = WtaSpacing.Small + 2.dp
-            ),
+            .padding(horizontal = WtaSpacing.Small, vertical = 2.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
@@ -123,19 +123,20 @@ private fun HeaderRow(
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(WtaSize.IconSmall)
         )
-        Spacer(Modifier.width(WtaSpacing.Small))
+        Spacer(Modifier.width(WtaSpacing.Tiny))
         Text(
             text = Strings.agentAppChangesHeader.format(count),
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodySmall,
             fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f)
         )
-        WtaButton(
-            onClick = onClear,
+        ReviewActionButton(
             text = Strings.agentChangesReviewClear,
-            variant = WtaButtonVariant.Tonal,
-            size = WtaButtonSize.Small
+            onClick = onClear,
+            tonal = true
         )
     }
 }
@@ -149,10 +150,7 @@ private fun AppChangeRow(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onOpen)
-            .padding(
-                horizontal = WtaSpacing.Medium,
-                vertical = WtaSpacing.Small
-            ),
+            .padding(horizontal = WtaSpacing.Small, vertical = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
     ) {
@@ -161,10 +159,11 @@ private fun AppChangeRow(
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = change.appName,
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodySmall,
                 fontWeight = FontWeight.Medium,
                 color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
             if (change.changedFields.isEmpty()) {
                 Text(

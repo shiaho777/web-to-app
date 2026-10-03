@@ -9,12 +9,15 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.NoteAdd
 import androidx.compose.material.icons.automirrored.outlined.Undo
@@ -22,27 +25,31 @@ import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.ExpandLess
 import androidx.compose.material.icons.outlined.ExpandMore
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.ui.agent.PendingChange
 import com.webtoapp.ui.design.WtaAlpha
-import com.webtoapp.ui.design.WtaButton
-import com.webtoapp.ui.design.WtaButtonSize
-import com.webtoapp.ui.design.WtaButtonVariant
 import com.webtoapp.ui.design.WtaCard
 import com.webtoapp.ui.design.WtaCardTone
 import com.webtoapp.ui.design.WtaColors
-import com.webtoapp.ui.design.WtaIconButton
 import com.webtoapp.ui.design.WtaInfoChip
+import com.webtoapp.ui.design.WtaRadius
 import com.webtoapp.ui.design.WtaSize
 import com.webtoapp.ui.design.WtaSpacing
 
@@ -60,12 +67,15 @@ fun ChangesReviewCard(
     Box(
         modifier = modifier.padding(
             horizontal = WtaSpacing.ScreenHorizontal,
-            vertical = WtaSpacing.Tiny + 2.dp
+            vertical = 2.dp
         )
     ) {
+        // Dense review chrome: the default 48dp touch floor would put the
+        // header buttons and undo icon back to the height this card is shrinking.
+        CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides Dp.Unspecified) {
         WtaCard(
             tone = WtaCardTone.Elevated,
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
+            contentPadding = PaddingValues(0.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
             HeaderRow(
@@ -94,6 +104,7 @@ fun ChangesReviewCard(
                 }
             }
         }
+        }
     }
 }
 
@@ -109,10 +120,7 @@ private fun HeaderRow(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onToggle)
-            .padding(
-                horizontal = WtaSpacing.Medium,
-                vertical = WtaSpacing.Small + 2.dp
-            ),
+            .padding(horizontal = WtaSpacing.Small, vertical = 2.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
@@ -122,25 +130,25 @@ private fun HeaderRow(
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(WtaSize.IconSmall)
         )
-        Spacer(Modifier.width(WtaSpacing.Small))
+        Spacer(Modifier.width(WtaSpacing.Tiny))
         Text(
             text = Strings.agentChangesReviewHeader.format(count),
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodySmall,
             fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f)
         )
-        WtaButton(
-            onClick = onUndoAll,
+        ReviewActionButton(
             text = Strings.agentChangesReviewUndoAll,
-            variant = WtaButtonVariant.Text,
-            size = WtaButtonSize.Small
+            onClick = onUndoAll,
+            tonal = false
         )
-        WtaButton(
-            onClick = onClear,
+        ReviewActionButton(
             text = Strings.agentChangesReviewClear,
-            variant = WtaButtonVariant.Tonal,
-            size = WtaButtonSize.Small
+            onClick = onClear,
+            tonal = true
         )
     }
 }
@@ -153,22 +161,20 @@ private fun ChangeRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(
-                horizontal = WtaSpacing.Medium,
-                vertical = WtaSpacing.Small
-            ),
+            .padding(horizontal = WtaSpacing.Small, vertical = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
+        horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Tiny)
     ) {
         KindBadge(change.kind)
 
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = change.path.substringAfterLast('/'),
-                style = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace),
+                style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
                 fontWeight = FontWeight.Medium,
                 color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
             val parent = change.path.substringBeforeLast('/', missingDelimiterValue = "")
             if (parent.isNotEmpty()) {
@@ -176,15 +182,56 @@ private fun ChangeRow(
                     text = parent,
                     style = MaterialTheme.typography.labelSmall.copy(fontFamily = FontFamily.Monospace),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
         }
-        WtaIconButton(
+        IconButton(
             onClick = onUndo,
-            icon = Icons.AutoMirrored.Outlined.Undo,
-            contentDescription = Strings.agentChangesReviewUndoOne,
-            modifier = Modifier.size(WtaSize.TouchTarget)
+            modifier = Modifier.size(28.dp)
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Outlined.Undo,
+                contentDescription = Strings.agentChangesReviewUndoOne,
+                modifier = Modifier.size(WtaSize.IconSmall)
+            )
+        }
+    }
+}
+
+/** Header action short enough to leave the conversation the vertical room. */
+@Composable
+internal fun ReviewActionButton(
+    text: String,
+    onClick: () -> Unit,
+    tonal: Boolean
+) {
+    val shape = RoundedCornerShape(WtaRadius.Button)
+    val padding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
+    val buttonModifier = Modifier.height(28.dp)
+    val label: @Composable androidx.compose.foundation.layout.RowScope.() -> Unit = {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelSmall,
+            maxLines = 1
+        )
+    }
+    if (tonal) {
+        FilledTonalButton(
+            onClick = onClick,
+            modifier = buttonModifier,
+            shape = shape,
+            contentPadding = padding,
+            content = label
+        )
+    } else {
+        TextButton(
+            onClick = onClick,
+            modifier = buttonModifier,
+            shape = shape,
+            contentPadding = padding,
+            content = label
         )
     }
 }

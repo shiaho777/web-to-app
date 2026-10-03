@@ -1,5 +1,6 @@
 package com.webtoapp.ui.agent.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -7,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -41,18 +43,23 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.webtoapp.core.agent.session.UserAttachment
 import com.webtoapp.core.i18n.Strings
@@ -143,11 +150,9 @@ fun Composer(
 }
 
 /**
- * Unified chat composer (ChatGPT/Claude-style): a single elevated card holding
- * the attachment strip, the growing text field, and a bottom action row with
- * the attach menu and an embedded circular send/stop button. Keeps the legacy
- * height behaviour (44dp resting, 220dp cap) that only BasicTextField allows —
- * an M3 TextField enforces a 56dp minimum.
+ * One short row: attach, a filled control-radius field, send/stop.
+ * [BasicTextField] is required — an M3 TextField forces a 56dp minimum and
+ * draws the bottom indicator this row is not allowed to have.
  */
 @Composable
 private fun ComposerCard(
@@ -161,16 +166,11 @@ private fun ComposerCard(
     onRemoveAttachment: (String) -> Unit,
     resolveAttachmentPreview: (UserAttachment) -> Any?
 ) {
-    WtaCard(
-        tone = WtaCardTone.Elevated,
-        shape = RoundedCornerShape(WtaRadius.Card + 8.dp),
-        contentPadding = PaddingValues(vertical = WtaSpacing.Small),
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(
-                horizontal = WtaSpacing.ScreenHorizontal,
-                vertical = WtaSpacing.Small
-            )
+            .padding(horizontal = WtaSpacing.ScreenHorizontal, vertical = 4.dp),
+        verticalArrangement = Arrangement.spacedBy(WtaSpacing.Tiny)
     ) {
         if (state.pendingAttachments.isNotEmpty()) {
             PendingAttachmentsRow(
@@ -179,64 +179,70 @@ private fun ComposerCard(
                 resolveAttachmentPreview = resolveAttachmentPreview
             )
         }
-        ComposerField(
-            value = state.composerText,
-            onValueChange = onTextChange,
-            placeholder = composerPlaceholder(state)
-        )
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = WtaSpacing.Small, vertical = WtaSpacing.Tiny),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            AttachButton(
-                onAttachImage = onAttachImage,
-                onAttachFile = onAttachFile,
-                onAttachFolder = onAttachFolder
-            )
-            Spacer(Modifier.weight(1f))
-            SendButton(
-                working = state.isWorking,
-                enabled = state.canSend &&
-                    (state.composerText.isNotBlank() || state.pendingAttachments.isNotEmpty()),
-                onSend = onSend,
-                onCancel = onCancel
-            )
+        CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides Dp.Unspecified) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
+            ) {
+                AttachButton(
+                    onAttachImage = onAttachImage,
+                    onAttachFile = onAttachFile,
+                    onAttachFolder = onAttachFolder
+                )
+                ComposerField(
+                    value = state.composerText,
+                    onValueChange = onTextChange,
+                    placeholder = composerPlaceholder(state)
+                )
+                SendButton(
+                    working = state.isWorking,
+                    enabled = state.canSend &&
+                        (state.composerText.isNotBlank() || state.pendingAttachments.isNotEmpty()),
+                    onSend = onSend,
+                    onCancel = onCancel
+                )
+            }
         }
     }
 }
 
 /**
- * The growing text field inside [ComposerCard]. Built on foundation
- * [BasicTextField] — an M3 TextField would enforce its own 56dp minimum and
- * add focus chrome we do not want inside the unified card.
+ * Filled field on [WtaRadius.Control]. No indicator line and no square corners.
  */
 @Composable
-private fun ComposerField(
+private fun RowScope.ComposerField(
     value: String,
     onValueChange: (String) -> Unit,
     placeholder: String
 ) {
+    val shape = RoundedCornerShape(WtaRadius.Control)
+    val textStyle = MaterialTheme.typography.bodyMedium.copy(
+        color = MaterialTheme.colorScheme.onSurface
+    )
     BasicTextField(
         value = value,
         onValueChange = onValueChange,
         modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 36.dp, max = 220.dp)
-            .padding(horizontal = WtaSpacing.RowHorizontal, vertical = WtaSpacing.Tiny),
-        textStyle = MaterialTheme.typography.bodyLarge.copy(
-            color = MaterialTheme.colorScheme.onSurface
-        ),
+            .weight(1f)
+            .heightIn(min = 36.dp, max = 120.dp)
+            .clip(shape)
+            .background(MaterialTheme.colorScheme.surfaceContainerHigh, shape)
+            .padding(horizontal = 12.dp, vertical = 6.dp),
+        textStyle = textStyle,
         cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
         decorationBox = { innerField ->
-            Box(contentAlignment = Alignment.CenterStart) {
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.CenterStart
+            ) {
                 if (value.isEmpty()) {
                     Text(
                         text = placeholder,
-                        style = MaterialTheme.typography.bodyLarge,
+                        style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
                 innerField()
@@ -256,7 +262,8 @@ private fun AttachButton(
         WtaIconButton(
             onClick = { menuOpen = true },
             icon = Icons.Outlined.Add,
-            contentDescription = Strings.agentAttachTooltip
+            contentDescription = Strings.agentAttachTooltip,
+            modifier = Modifier.size(32.dp)
         )
         DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
             DropdownMenuItem(
@@ -288,7 +295,7 @@ private fun PendingAttachmentsRow(
         modifier = Modifier
             .fillMaxWidth()
             .horizontalScroll(rememberScrollState())
-            .padding(horizontal = WtaSpacing.RowHorizontal, vertical = WtaSpacing.Tiny),
+            .padding(vertical = WtaSpacing.Tiny),
         horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
     ) {
         attachments.forEach { att ->
@@ -313,7 +320,7 @@ private fun ImageAttachmentChip(att: UserAttachment, onRemove: (String) -> Unit,
                 model = previewModel,
                 contentDescription = att.displayName,
                 contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-                modifier = Modifier.size(56.dp)
+                modifier = Modifier.size(40.dp)
             )
         }
         AttachmentRemoveBadge(
@@ -411,16 +418,16 @@ private fun SendButton(
     Surface(
         onClick = if (working) onCancel else onSend,
         enabled = working || enabled,
-        shape = RoundedCornerShape(WtaRadius.Pill),
+        shape = RoundedCornerShape(WtaRadius.Button),
         color = container,
-        modifier = Modifier.size(40.dp)
+        modifier = Modifier.size(32.dp)
     ) {
         Box(contentAlignment = Alignment.Center) {
             Icon(
                 imageVector = if (working) Icons.Outlined.Stop else Icons.AutoMirrored.Outlined.Send,
                 contentDescription = if (working) Strings.agentStopTooltip else Strings.agentSendTooltip,
                 tint = content,
-                modifier = Modifier.size(18.dp)
+                modifier = Modifier.size(16.dp)
             )
         }
     }
@@ -592,7 +599,7 @@ private fun ModeChipRow(
             .horizontalScroll(rememberScrollState())
             .padding(
                 horizontal = WtaSpacing.ScreenHorizontal,
-                vertical = WtaSpacing.Tiny + 2.dp
+                vertical = 2.dp
             ),
         horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small),
         verticalAlignment = Alignment.CenterVertically
@@ -686,8 +693,8 @@ private fun ModelChip(
         onClick = onClick,
         tone = tone,
         contentPadding = PaddingValues(
-            horizontal = WtaSpacing.Small + 2.dp,
-            vertical = WtaSpacing.Tiny + 2.dp
+            horizontal = WtaSpacing.Small,
+            vertical = 2.dp
         )
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -727,8 +734,8 @@ private fun ContextChip(
         onClick = onClick,
         tone = com.webtoapp.ui.design.WtaCardTone.Surface,
         contentPadding = androidx.compose.foundation.layout.PaddingValues(
-            horizontal = WtaSpacing.Small + 2.dp,
-            vertical = WtaSpacing.Tiny + 2.dp
+            horizontal = WtaSpacing.Small,
+            vertical = 2.dp
         )
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -774,8 +781,8 @@ private fun ModeChip(
         onClick = onClick,
         tone = tone,
         contentPadding = androidx.compose.foundation.layout.PaddingValues(
-            horizontal = WtaSpacing.Small + 2.dp,
-            vertical = WtaSpacing.Tiny + 2.dp
+            horizontal = WtaSpacing.Small,
+            vertical = 2.dp
         )
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
