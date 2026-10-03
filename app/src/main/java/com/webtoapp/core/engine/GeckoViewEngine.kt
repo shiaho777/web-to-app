@@ -479,6 +479,13 @@ class GeckoViewEngine(
     private var lastAllowJavascript: Boolean = true
     private var lastUserAgentOverride: String? = null
 
+    /**
+     * True while the session is detached from its GeckoView for a hidden
+     * multi-web tab (#1161). Crash recovery must not re-attach it — the tab
+     * binds the display again on the next setDisplayVisible(true).
+     */
+    private var displayDetached = false
+
     private var bridgeScope: kotlinx.coroutines.CoroutineScope? = null
 
     /**
@@ -593,6 +600,7 @@ class GeckoViewEngine(
         // matching the System WebView path (which has no opaque backing surface).
         view.setBackgroundColor(android.graphics.Color.TRANSPARENT)
         view.setSession(newSession)
+        displayDetached = false
         geckoView = view
 
         val effectiveUserAgent = when (config.userAgentMode) {
@@ -1748,7 +1756,11 @@ class GeckoViewEngine(
                 newSession.settings.userAgentOverride = it
             }
 
-            view.setSession(newSession)
+            // A hidden tab keeps its display detached after recovery — it
+            // reattaches on the next setDisplayVisible(true) (#1161).
+            if (!displayDetached) {
+                view.setSession(newSession)
+            }
             session = newSession
 
             if (!urlToRestore.isNullOrBlank() && urlToRestore != "about:blank") {
@@ -1808,6 +1820,37 @@ class GeckoViewEngine(
     override fun getCurrentUrl(): String? = currentUrl
     override fun getTitle(): String? = currentTitle
     override fun getView(): View? = geckoView
+
+    /**
+     * Detach or reattach the session's display for multi-web tab visibility
+     * changes (#1161). A GeckoView renders into its own surface layer, which
+     * the Compose alpha()/zIndex used to hide inactive tabs never reaches —
+     * the last-visited site stayed composited on top of the selected one.
+     * Releasing the session blanks that surface while the session (and its
+     * page) stays alive; setSession rebinds it on select, state intact.
+     */
+    fun setDisplayVisible(visible: Boolean) {
+        val view = geckoView ?: return
+        try {
+            if (visible) {
+                val s = session
+                if (s != null && displayDetached) {
+                    view.setSession(s)
+                    s.setActive(true)
+                    displayDetached = false
+                }
+            } else {
+                view.releaseSession()
+                // setActive(false) is Gecko's background-tab throttle — the
+                // hidden-tab WebView path sheds JS/timers via onPause, and a
+                // detached session should not run them at full speed either.
+                session?.setActive(false)
+                displayDetached = true
+            }
+        } catch (e: Exception) {
+            AppLogger.w(TAG, "setDisplayVisible($visible) failed: ${e.message}")
+        }
+    }
 
     override fun destroy() {
         session?.let { s ->

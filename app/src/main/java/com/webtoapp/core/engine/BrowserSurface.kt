@@ -97,11 +97,16 @@ class BrowserSurface private constructor(
     fun onResume() {
         webView?.onResume()
         webView?.resumeTimers()
-        engine?.getView()?.let { }
+        // GeckoView draws into its own surface layer, which the Compose
+        // alpha()/zIndex used to hide inactive multi-web tabs never reaches —
+        // the last-visited site stayed composited on screen (#1161). Rebind
+        // the session's display on resume; onPause releases it.
+        (engine as? GeckoViewEngine)?.setDisplayVisible(true)
     }
 
     fun onPause() {
         webView?.onPause()
+        (engine as? GeckoViewEngine)?.setDisplayVisible(false)
     }
 
     fun resumeTimers() {

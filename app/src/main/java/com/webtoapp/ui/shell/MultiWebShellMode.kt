@@ -264,6 +264,13 @@ private fun TabsMode(
                 if (id != site.id) runCatching { wv.onPause() }
             }
             registry.webViews[site.id]?.let { wv -> runCatching { wv.onResume() } }
+            // Engine surfaces too: a hidden GeckoView's surface ignores the
+            // Compose alpha() hide — onPause detaches its display so the
+            // previously selected site cannot stay composited on top (#1161).
+            registry.surfaces.forEach { (id, surface) ->
+                if (id != site.id) runCatching { surface.onPause() }
+            }
+            registry.surfaces[site.id]?.let { surface -> runCatching { surface.onResume() } }
             registry.pushCurrent(site.id, onWebViewCreated, onBrowserSurfaceCreated)
             webViewCallbacks.onTitleChanged(site.name.ifBlank { extractDomain(site.url) })
             // onUrlChanged (not onPageStarted): the tab's page is already loaded;
@@ -1020,6 +1027,18 @@ private fun DrawerMode(
         // same contract TabsMode keeps.
         LaunchedEffect(currentSite?.id) {
             currentSite?.let { site ->
+                // Same hidden-tab handling as TabsMode: WebViews pause so they
+                // shed layout/JS work (#1033), and engine surfaces detach their
+                // display — a hidden GeckoView's own surface ignores the
+                // Compose alpha() hide and would stay composited on top (#1161).
+                registry.webViews.forEach { (id, wv) ->
+                    if (id != site.id) runCatching { wv.onPause() }
+                }
+                registry.webViews[site.id]?.let { wv -> runCatching { wv.onResume() } }
+                registry.surfaces.forEach { (id, surface) ->
+                    if (id != site.id) runCatching { surface.onPause() }
+                }
+                registry.surfaces[site.id]?.let { surface -> runCatching { surface.onResume() } }
                 registry.pushCurrent(site.id, onWebViewCreated, onBrowserSurfaceCreated)
                 webViewCallbacks.onTitleChanged(site.name.ifBlank { extractDomain(site.url) })
                 webViewCallbacks.onUrlChanged(registry.webViews[site.id], registry.webViews[site.id]?.url ?: site.url)
