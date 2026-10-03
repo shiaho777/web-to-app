@@ -90,6 +90,8 @@ import com.webtoapp.ui.design.WtaCardTone
 import com.webtoapp.ui.design.WtaColors
 import com.webtoapp.ui.design.WtaLoadingState
 import com.webtoapp.ui.design.WtaScreen
+import com.webtoapp.ui.theme.LocalShowDescriptions
+import com.webtoapp.ui.theme.ifDescriptionsShown
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.util.Locale
@@ -172,7 +174,7 @@ fun LinuxEnvironmentScreen(onBack: () -> Unit) {
 
     WtaScreen(
         title = Strings.menuLinuxEnvironment,
-        subtitle = Strings.linuxEnvSubtitle,
+        subtitle = Strings.linuxEnvSubtitle.ifDescriptionsShown(),
         snackbarHostState = snackbarHostState,
         onBack = onBack,
         actions = {
@@ -227,17 +229,17 @@ fun LinuxEnvironmentScreen(onBack: () -> Unit) {
             }
 
             if (info != null) {
-                item { SectionHeader(Strings.linuxEnvCoreTools, Strings.linuxEnvCoreHint) }
+                item { SectionHeader(Strings.linuxEnvCoreTools, Strings.linuxEnvCoreHint.ifDescriptionsShown()) }
                 item {
                     CoreToolchainCard(info = info)
                 }
 
-                item { SectionHeader(Strings.linuxEnvPackageManagers, Strings.linuxEnvPmHint) }
+                item { SectionHeader(Strings.linuxEnvPackageManagers, Strings.linuxEnvPmHint.ifDescriptionsShown()) }
                 item {
                     PackageManagerMosaic(info = info)
                 }
 
-                item { SectionHeader(Strings.linuxEnvOptionalRuntimes, Strings.linuxEnvOptionalHint) }
+                item { SectionHeader(Strings.linuxEnvOptionalRuntimes, Strings.linuxEnvOptionalHint.ifDescriptionsShown()) }
                 item {
                     OptionalRuntimesCard(
                         info = info,
@@ -424,8 +426,9 @@ private fun ReadinessHero(
         is EnvironmentState.Error -> Strings.envInstallFailed
     }
     val subtitle = when (state) {
-        is EnvironmentState.Ready -> Strings.canBuildFrontend
-        is EnvironmentState.NotInstalled, is EnvironmentState.NodeNotInstalled -> Strings.builtInPackagerReady
+        is EnvironmentState.Ready -> Strings.canBuildFrontend.ifDescriptionsShown()
+        is EnvironmentState.NotInstalled, is EnvironmentState.NodeNotInstalled ->
+            Strings.builtInPackagerReady.ifDescriptionsShown()
         is EnvironmentState.NodeInstalledNpmMissing -> Strings.nodeInstalledNpmMissingHint
         is EnvironmentState.Downloading -> "${state.component} · ${(state.progress * 100).toInt()}%"
         is EnvironmentState.Installing -> state.step.ifBlank { progress.currentStep }
@@ -462,14 +465,16 @@ private fun ReadinessHero(
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.SemiBold
                     )
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        text = subtitle,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 3,
-                        overflow = TextOverflow.Ellipsis
-                    )
+                    if (!subtitle.isNullOrBlank()) {
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            text = subtitle,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 3,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
                     if (info != null) {
                         Spacer(Modifier.height(10.dp))
                         Surface(
@@ -1145,11 +1150,13 @@ private fun CapabilitiesBoard() {
                     }
                 }
             }
-            Text(
-                text = Strings.linuxEnvCapFooter,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            if (LocalShowDescriptions.current) {
+                Text(
+                    text = Strings.linuxEnvCapFooter,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
     }
 }

@@ -100,7 +100,14 @@ Default target: [shiaho777/web-to-app](https://github.com/shiaho777/web-to-app).
 
 **Language (required):** GitHub **Issues and PRs must be written in English** — titles, bodies, labels text you author, and delivery comments on the Issue/PR. Local chat with the user may be Chinese or any language; do not copy that language into Issue/PR text.
 
-When the user asks to deliver a change, run the Issue → branch → PR → CI → merge loop end-to-end. Do not close the Issue until the PR is merged and CI is green.
+When the user asks to deliver a change, run the Issue → branch → PR → CI → merge loop end-to-end. Opening the PR is not the end of the task. Stay with it until the merge is done:
+
+1. Watch the required `check` job in "Android CI Build" until it finishes. `package-apks` skips on PRs; do not wait on it.
+2. If `check` fails, fix it on the same branch and push. Do not open a second PR for the fix.
+3. Squash-merge only after `check` is green. Then confirm the Issue is closed by the merge and the head branch is deleted.
+4. Do not tell the user the delivery is done while the PR is still open, CI is still running or red, or the Issue is still open.
+
+Do not close the Issue yourself before the PR is merged and CI is green.
 
 **Branch naming:** use plain `type/slug` names — `fix/…`, `feat/…`, `refactor/…`, `docs/…`, `perf/…`, `chore/…`. Do not use tool/agent namespaces (`codex/…`, `devin/…`, etc.); the branch belongs to the repo, not the agent.
 
@@ -296,6 +303,17 @@ Hard rules learned the hard way:
 6. **Conditional sub-blocks** (mode swaps, dependent fields) use `AnimatedVisibility` with `CardExpandTransition` / `CardCollapseTransition`, never bare `if` inside the card body.
 7. **Compile ≠ verified.** After any card UI change, build + install on the emulator and check the rendered card: `uiautomator dump` element bounds, compare left edges / row heights of the changed card against its neighbours on the same screen (they must share the same content columns), plus a screenshot pass. Content a few dp off the grid is invisible in code review and obvious on screen.
 8. **If a UI rework PR gets "this doesn't match the other cards" feedback**, the fix is realignment to these patterns, not further invention.
+9. **Description text follows the About switch.** After the card change, apply the host-UI description rule below to every new subtitle or hint on the card.
+
+### Host UI descriptions (About → 显示说明文字)
+
+The About screen switch `Strings.showDescriptions` stores `ThemeManager.showDescriptions` and is read in Compose as `LocalShowDescriptions`. It hides helper copy. The default is on, so a missed gate still looks fine until the user turns descriptions off.
+
+After every host UI change — editor cards, dialogs, About, home, not only config cards — look at the new prose and decide:
+
+- **Gate it** when it is secondary explanation: a row subtitle, a "what this does" paragraph, a hint under a title. Row subtitles use `subtitle = Strings.xxx.ifDescriptionsShown()`. A block of explanatory text uses `AnimatedVisibility(visible = LocalShowDescriptions.current)` or `if (LocalShowDescriptions.current)`, the same way neighbouring screens already do.
+- **Do not gate** titles, the control's current value, errors, confirmation buttons, or status that is the only feedback the user has. `ifDescriptionsShown` exists so important status stays visible.
+- **Shell / generated-APK UI does not read this preference.** It is a host display setting. Do not thread it into shell-synced screens.
 
 ---
 
@@ -318,6 +336,7 @@ Hard rules learned the hard way:
 - **Port conflict policy.** Local server runtimes must allocate through `PortManager` and clean up on stop; do not bind ports directly.
 - **Agent tool ↔ service drift.** When a service class API changes, the corresponding Agent tool in `core/agent/tool/builtin/` must be updated in the same PR. A stale tool either fails to compile or silently passes wrong arguments at runtime. Check `ToolRegistryFactory.baseTools()` for the full tool list.
 - **Editor card UI grammar.** Config-screen cards share one layout grammar (recipe 12): rows are full-bleed, non-row content sits in 16dp-padded zones, expansion never toggles the feature, and card UI is verified on the emulator — not just compiled.
+- **About "显示说明文字".** Helper copy on host UI is gated by the About switch (`Strings.showDescriptions` → `ThemeManager.showDescriptions` → `LocalShowDescriptions`). After every host UI change, decide whether new prose is that kind of helper text and gate it if it is. See "Host UI descriptions" under the card-UI recipe.
 
 ---
 

@@ -33,6 +33,7 @@ import com.webtoapp.core.linux.LinuxEnvironmentManager
 import com.webtoapp.core.linux.LocalBuildEnvironment
 import com.webtoapp.ui.components.PremiumButton
 import com.webtoapp.ui.theme.LocalAppTheme
+import com.webtoapp.ui.theme.LocalShowDescriptions
 import kotlinx.coroutines.launch
 import java.io.File
 
@@ -108,12 +109,14 @@ fun InstallProjectDepsCard(
                     fontWeight = FontWeight.SemiBold,
                 )
             }
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                Strings.installDepsInAppDesc,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            if (LocalShowDescriptions.current) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    Strings.installDepsInAppDesc,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 

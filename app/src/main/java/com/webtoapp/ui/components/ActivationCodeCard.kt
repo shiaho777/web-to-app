@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.sp
 import com.webtoapp.core.activation.ActivationCode
 import com.webtoapp.core.activation.ActivationCodeType
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.ui.theme.LocalShowDescriptions
 import com.webtoapp.ui.theme.ifDescriptionsShown
 import java.util.concurrent.TimeUnit
 
@@ -303,7 +304,8 @@ fun ActivationCodeCard(
 
                     WtaToggleRow(
                         title = Strings.requireEveryLaunch,
-                        subtitle = if (requireEveryTime) Strings.requireEveryLaunchHintOn else Strings.requireEveryLaunchHintOff,
+                        subtitle = (if (requireEveryTime) Strings.requireEveryLaunchHintOn else Strings.requireEveryLaunchHintOff)
+                            .ifDescriptionsShown(),
                         checked = requireEveryTime,
                         onCheckedChange = onRequireEveryTimeChange
                     )
@@ -544,7 +546,11 @@ private fun RemoteActivationSection(
                         },
                         label = { Text(Strings.remoteActivationAesKeyLabel) },
                         placeholder = { Text("openssl rand -base64 32") },
-                        supportingText = { Text(Strings.remoteActivationAesKeyHint) },
+                        supportingText = if (LocalShowDescriptions.current) {
+                            { Text(Strings.remoteActivationAesKeyHint) }
+                        } else {
+                            null
+                        },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -1120,11 +1126,13 @@ private fun AddActivationCodeDialog(
                         )
                     }
                 }
-                Text(
-                    text = getActivationTypeDesc(codeType),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                if (LocalShowDescriptions.current) {
+                    Text(
+                        text = getActivationTypeDesc(codeType),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
 
@@ -1583,12 +1591,14 @@ private fun BatchImportDialog(
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Text(
-                    text = Strings.batchImportCodesHint,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    lineHeight = 18.sp
-                )
+                if (LocalShowDescriptions.current) {
+                    Text(
+                        text = Strings.batchImportCodesHint,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        lineHeight = 18.sp
+                    )
+                }
 
                 PremiumTextField(
                     value = input,

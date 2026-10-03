@@ -28,6 +28,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.ui.theme.LocalShowDescriptions
+import com.webtoapp.ui.theme.ifDescriptionsShown
 import com.webtoapp.core.linux.HtmlProjectOptimizer
 import com.webtoapp.core.linux.NativeNodeEngine
 import com.webtoapp.core.nodejs.NodeDependencyManager
@@ -449,12 +451,14 @@ fun CreateNodeJsAppScreen(
                             icon = Icons.Outlined.Folder,
                             title = Strings.njsSelectProjectFolder
                         )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = Strings.njsSelectProjectDesc,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        if (LocalShowDescriptions.current) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = Strings.njsSelectProjectDesc,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                         Spacer(modifier = Modifier.height(12.dp))
 
                         if (selectedProjectDir != null) {
@@ -517,7 +521,7 @@ fun CreateNodeJsAppScreen(
                 if (selectedProjectDir == null && !isCreating) {
                     TypedSampleProjectsCard(
                         title = Strings.sampleProjects,
-                        subtitle = Strings.sampleNodeSubtitle,
+                        subtitle = Strings.sampleNodeSubtitle.ifDescriptionsShown(),
                         samples = remember { NodeSampleManager.getSampleProjects() },
                         onSelectSample = { sample ->
                             scope.launch {
@@ -686,11 +690,13 @@ fun CreateNodeJsAppScreen(
                                             style = MaterialTheme.typography.bodyMedium,
                                             fontWeight = if (buildMode == mode) FontWeight.SemiBold else FontWeight.Normal
                                         )
-                                        Text(
-                                            text = desc,
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
+                                        if (LocalShowDescriptions.current) {
+                                            Text(
+                                                text = desc,
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -757,11 +763,13 @@ fun CreateNodeJsAppScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
-                                    Text(
-                                        text = Strings.tsPreCompileHint,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
+                                    if (LocalShowDescriptions.current) {
+                                        Text(
+                                            text = Strings.tsPreCompileHint,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
                                 }
                                 WtaSwitch(
                                     checked = enableTsPreCompile,
@@ -1032,7 +1040,7 @@ private fun NodeJsHeroSection(
     RuntimeHeroSection(
         icon = Icons.Outlined.Code,
         title = title,
-        subtitle = Strings.njsHeroDesc,
+        subtitle = Strings.njsHeroDesc.ifDescriptionsShown(),
         brandColor = accentColor,
         tags = tags
     )

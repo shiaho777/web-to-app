@@ -30,6 +30,8 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.ui.theme.LocalShowDescriptions
+import com.webtoapp.ui.theme.ifDescriptionsShown
 import com.webtoapp.data.model.AppType
 import com.webtoapp.data.model.MediaConfig
 import com.webtoapp.data.model.SplashOrientation
@@ -411,7 +413,7 @@ fun CreateMediaAppScreen(
                     }
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    SettingsRow(title = Strings.fillScreen, subtitle = Strings.fillScreenHint) {
+                    SettingsRow(title = Strings.fillScreen, subtitle = Strings.fillScreenHint.ifDescriptionsShown()) {
                         WtaSwitch(
                             checked = fillScreen,
                             onCheckedChange = { fillScreen = it },
@@ -419,7 +421,7 @@ fun CreateMediaAppScreen(
                     }
 
                     if (!isEditMode) {
-                    SettingsRow(title = Strings.landscapeMode, subtitle = Strings.landscapeModeHint) {
+                    SettingsRow(title = Strings.landscapeMode, subtitle = Strings.landscapeModeHint.ifDescriptionsShown()) {
                         WtaSwitch(
                             checked = orientation == SplashOrientation.LANDSCAPE,
                             onCheckedChange = {
@@ -430,7 +432,7 @@ fun CreateMediaAppScreen(
                     }
 
                     HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
-                    SettingsRow(title = Strings.mediaScreenLock, subtitle = Strings.mediaScreenLockHint) {
+                    SettingsRow(title = Strings.mediaScreenLock, subtitle = Strings.mediaScreenLockHint.ifDescriptionsShown()) {
                         WtaSwitch(
                             checked = keepScreenOn,
                             onCheckedChange = { keepScreenOn = it },
@@ -440,19 +442,19 @@ fun CreateMediaAppScreen(
                     if (mediaType == AppType.VIDEO) {
                         HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
 
-                        SettingsRow(title = Strings.enableAudio, subtitle = Strings.enableAudioHint) {
+                        SettingsRow(title = Strings.enableAudio, subtitle = Strings.enableAudioHint.ifDescriptionsShown()) {
                             WtaSwitch(
                                 checked = enableAudio,
                                 onCheckedChange = { enableAudio = it },
                             )
                         }
-                        SettingsRow(title = Strings.loopPlay, subtitle = Strings.loopPlayHint) {
+                        SettingsRow(title = Strings.loopPlay, subtitle = Strings.loopPlayHint.ifDescriptionsShown()) {
                             WtaSwitch(
                                 checked = loop,
                                 onCheckedChange = { loop = it },
                             )
                         }
-                        SettingsRow(title = Strings.autoPlay, subtitle = Strings.autoPlayHint) {
+                        SettingsRow(title = Strings.autoPlay, subtitle = Strings.autoPlayHint.ifDescriptionsShown()) {
                             WtaSwitch(
                                 checked = autoPlay,
                                 onCheckedChange = { autoPlay = it },
@@ -503,6 +505,7 @@ fun CreateMediaAppScreen(
             }
             }
 
+            if (LocalShowDescriptions.current) {
             WtaCreateFlowSection(title = Strings.preview) {
             EnhancedElevatedCard(
                 modifier = Modifier.fillMaxWidth(),
@@ -523,6 +526,7 @@ fun CreateMediaAppScreen(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                 }
+            }
             }
             }
 
@@ -740,12 +744,14 @@ private fun MediaImageAdjustCard(
                     Text(Strings.mediaReset, style = MaterialTheme.typography.labelSmall, color = accentColor)
                 }
             }
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                Strings.mediaImageAdjustHint,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            if (LocalShowDescriptions.current) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    Strings.mediaImageAdjustHint,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
             Spacer(modifier = Modifier.height(12.dp))
 
             MediaSliderRow(
@@ -896,7 +902,7 @@ private fun MediaGestureCard(
             }
             Spacer(modifier = Modifier.height(12.dp))
 
-            SettingsRow(title = Strings.mediaSwipeDismiss, subtitle = Strings.mediaSwipeDismissHint) {
+            SettingsRow(title = Strings.mediaSwipeDismiss, subtitle = Strings.mediaSwipeDismissHint.ifDescriptionsShown()) {
                 WtaSwitch(
                     checked = swipeDismiss,
                     onCheckedChange = onSwipeDismissChange,
@@ -904,7 +910,7 @@ private fun MediaGestureCard(
             }
 
             if (isImage) {
-                SettingsRow(title = Strings.mediaDoubleTapZoom, subtitle = Strings.mediaDoubleTapZoomHint) {
+                SettingsRow(title = Strings.mediaDoubleTapZoom, subtitle = Strings.mediaDoubleTapZoomHint.ifDescriptionsShown()) {
                     WtaSwitch(
                         checked = doubleTapZoom,
                         onCheckedChange = onDoubleTapZoomChange,
@@ -963,7 +969,7 @@ fun MediaTypeOption(
 @Composable
 fun SettingsRow(
     title: String,
-    subtitle: String,
+    subtitle: String?,
     trailing: @Composable () -> Unit
 ) {
     Row(
@@ -975,11 +981,13 @@ fun SettingsRow(
     ) {
         Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
             Text(text = title, style = MaterialTheme.typography.bodyLarge)
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            if (!subtitle.isNullOrBlank()) {
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
         trailing()
     }

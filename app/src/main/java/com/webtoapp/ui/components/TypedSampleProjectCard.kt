@@ -28,7 +28,7 @@ import com.webtoapp.ui.theme.LocalAppTheme
 @Composable
 fun TypedSampleProjectsCard(
     title: String,
-    subtitle: String,
+    subtitle: String?,
     samples: List<TypedSampleProject>,
     onSelectSample: (TypedSampleProject) -> Unit,
     modifier: Modifier = Modifier
@@ -81,13 +81,15 @@ fun TypedSampleProjectsCard(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
-                    Text(
-                        subtitle,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
-                    )
+                    if (!subtitle.isNullOrBlank()) {
+                        Text(
+                            subtitle,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
                 }
 
                 Box(

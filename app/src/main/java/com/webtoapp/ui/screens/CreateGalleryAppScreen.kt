@@ -37,6 +37,8 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.ui.theme.LocalShowDescriptions
+import com.webtoapp.ui.theme.ifDescriptionsShown
 import com.webtoapp.data.model.*
 import com.webtoapp.ui.components.*
 import com.webtoapp.ui.screens.create.WtaCreateFlowScaffold
@@ -818,7 +820,7 @@ private fun PlaybackSettingsTab(
 
                 SettingsRow(
                     title = Strings.enableAudio,
-                    subtitle = Strings.galleryEnableAudioHint
+                    subtitle = Strings.galleryEnableAudioHint.ifDescriptionsShown()
                 ) {
                     WtaSwitch(
                         checked = enableAudio,
@@ -828,7 +830,7 @@ private fun PlaybackSettingsTab(
 
                 SettingsRow(
                     title = Strings.galleryVideoAutoNext,
-                    subtitle = Strings.galleryVideoAutoNextHint
+                    subtitle = Strings.galleryVideoAutoNextHint.ifDescriptionsShown()
                 ) {
                     WtaSwitch(
                         checked = videoAutoNext,
@@ -848,7 +850,7 @@ private fun PlaybackSettingsTab(
 
                 SettingsRow(
                     title = Strings.galleryAutoPlay,
-                    subtitle = Strings.galleryAutoPlayHint
+                    subtitle = Strings.galleryAutoPlayHint.ifDescriptionsShown()
                 ) {
                     WtaSwitch(
                         checked = autoPlay,
@@ -858,7 +860,7 @@ private fun PlaybackSettingsTab(
 
                 SettingsRow(
                     title = Strings.loopPlay,
-                    subtitle = Strings.galleryLoopHint
+                    subtitle = Strings.galleryLoopHint.ifDescriptionsShown()
                 ) {
                     WtaSwitch(
                         checked = loop,
@@ -869,7 +871,7 @@ private fun PlaybackSettingsTab(
                 AnimatedVisibility(visible = loop) {
                     SettingsRow(
                         title = Strings.galleryShuffleOnLoop,
-                        subtitle = Strings.galleryShuffleOnLoopHint
+                        subtitle = Strings.galleryShuffleOnLoopHint.ifDescriptionsShown()
                     ) {
                         WtaSwitch(
                             checked = shuffleOnLoop,
@@ -880,7 +882,7 @@ private fun PlaybackSettingsTab(
 
                 SettingsRow(
                     title = Strings.galleryRememberPosition,
-                    subtitle = Strings.galleryRememberPositionHint
+                    subtitle = Strings.galleryRememberPositionHint.ifDescriptionsShown()
                 ) {
                     WtaSwitch(
                         checked = rememberPosition,
@@ -1023,7 +1025,7 @@ private fun DisplaySettingsTab(
 
                 SettingsRow(
                     title = Strings.galleryShowThumbnailBar,
-                    subtitle = Strings.galleryShowThumbnailBarHint
+                    subtitle = Strings.galleryShowThumbnailBarHint.ifDescriptionsShown()
                 ) {
                     WtaSwitch(
                         checked = showThumbnailBar,
@@ -1033,7 +1035,7 @@ private fun DisplaySettingsTab(
 
                 SettingsRow(
                     title = Strings.galleryShowMediaInfo,
-                    subtitle = Strings.galleryShowMediaInfoHint
+                    subtitle = Strings.galleryShowMediaInfoHint.ifDescriptionsShown()
                 ) {
                     WtaSwitch(
                         checked = showMediaInfo,
@@ -1043,7 +1045,7 @@ private fun DisplaySettingsTab(
 
                 SettingsRow(
                     title = Strings.landscapeMode,
-                    subtitle = Strings.landscapeModeHint
+                    subtitle = Strings.landscapeModeHint.ifDescriptionsShown()
                 ) {
                     WtaSwitch(
                         checked = orientation == SplashOrientation.LANDSCAPE,
@@ -1782,8 +1784,10 @@ private fun EmptyGalleryState(onAddMedia: () -> Unit) {
         Icon(Icons.Outlined.AddPhotoAlternate, null, modifier = Modifier.size(80.dp), tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f))
         Spacer(modifier = Modifier.height(16.dp))
         Text(text = Strings.galleryClickToAdd, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(text = Strings.gallerySupportTypes, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f), textAlign = TextAlign.Center)
+        if (LocalShowDescriptions.current) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(text = Strings.gallerySupportTypes, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f), textAlign = TextAlign.Center)
+        }
     }
 }
 
@@ -1849,8 +1853,8 @@ private fun GallerySettingsSheet(
 ) {
     Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp).padding(bottom = 32.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         SettingsSection(title = Strings.galleryGeneralSettings) {
-            SettingsSwitch(title = Strings.loopPlay, subtitle = Strings.galleryLoopHint, checked = loop, onCheckedChange = onLoopChange)
-            SettingsSwitch(title = Strings.galleryAutoPlay, subtitle = Strings.galleryAutoPlayHint, checked = autoPlay, onCheckedChange = onAutoPlayChange)
+            SettingsSwitch(title = Strings.loopPlay, subtitle = Strings.galleryLoopHint.ifDescriptionsShown(), checked = loop, onCheckedChange = onLoopChange)
+            SettingsSwitch(title = Strings.galleryAutoPlay, subtitle = Strings.galleryAutoPlayHint.ifDescriptionsShown(), checked = autoPlay, onCheckedChange = onAutoPlayChange)
         }
         SettingsSection(title = Strings.galleryImageSettings) {
             Column {
@@ -1862,8 +1866,8 @@ private fun GallerySettingsSheet(
             }
         }
         SettingsSection(title = Strings.galleryVideoSettings) {
-            SettingsSwitch(title = Strings.enableAudio, subtitle = Strings.galleryEnableAudioHint, checked = enableAudio, onCheckedChange = onEnableAudioChange)
-            SettingsSwitch(title = Strings.galleryVideoAutoNext, subtitle = Strings.galleryVideoAutoNextHint, checked = videoAutoNext, onCheckedChange = onVideoAutoNextChange)
+            SettingsSwitch(title = Strings.enableAudio, subtitle = Strings.galleryEnableAudioHint.ifDescriptionsShown(), checked = enableAudio, onCheckedChange = onEnableAudioChange)
+            SettingsSwitch(title = Strings.galleryVideoAutoNext, subtitle = Strings.galleryVideoAutoNextHint.ifDescriptionsShown(), checked = videoAutoNext, onCheckedChange = onVideoAutoNextChange)
         }
         Spacer(modifier = Modifier.height(16.dp))
         PremiumButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) { Text(Strings.btnConfirm) }

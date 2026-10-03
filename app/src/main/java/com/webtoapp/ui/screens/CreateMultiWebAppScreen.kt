@@ -26,6 +26,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.ui.theme.LocalShowDescriptions
 import com.webtoapp.data.model.MultiWebConfig
 import com.webtoapp.data.model.MultiWebSite
 import com.webtoapp.data.model.HtmlFileType
@@ -205,11 +206,13 @@ fun CreateMultiWebAppScreen(
                                     Strings.multiWebSitesInheritConfig,
                                     style = MaterialTheme.typography.bodyMedium
                                 )
-                                Text(
-                                    Strings.multiWebSitesInheritConfigHint,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
+                                if (LocalShowDescriptions.current) {
+                                    Text(
+                                        Strings.multiWebSitesInheritConfigHint,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
                             }
                             Switch(
                                 checked = sitesInheritConfig,
@@ -331,12 +334,14 @@ fun CreateMultiWebAppScreen(
             WtaCreateFlowSection(title = Strings.multiWebCustomCodeSection) {
                 EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        Text(
-                            Strings.multiWebCustomCodeDesc,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(modifier = Modifier.height(12.dp))
+                        if (LocalShowDescriptions.current) {
+                            Text(
+                                Strings.multiWebCustomCodeDesc,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.height(12.dp))
+                        }
                         UserScriptsSection(
                             scripts = injectScripts,
                             onScriptsChange = { injectScripts = it }
@@ -836,13 +841,15 @@ private fun DisplayModeCard(
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface
             )
-            Spacer(modifier = Modifier.height(2.dp))
-            Text(
-                option.desc,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                lineHeight = 16.sp
-            )
+            if (LocalShowDescriptions.current) {
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    option.desc,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    lineHeight = 16.sp
+                )
+            }
         }
     }
 }

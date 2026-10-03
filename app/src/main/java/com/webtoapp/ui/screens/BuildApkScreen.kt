@@ -48,6 +48,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import com.webtoapp.ui.theme.LocalShowDescriptions
+import com.webtoapp.ui.theme.ifDescriptionsShown
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -744,7 +746,7 @@ private fun BuildApkContent(
                             WtaSettingRow(
                                 icon = Icons.Outlined.Cached,
                                 title = Strings.forceFullRebuild,
-                                subtitle = Strings.forceFullRebuildDesc,
+                                subtitle = Strings.forceFullRebuildDesc.ifDescriptionsShown(),
                                 active = forceFullRebuild,
                                 contentPadding = PaddingValues(horizontal = 0.dp, vertical = 6.dp),
                                 onClick = { forceFullRebuild = !forceFullRebuild }
@@ -757,7 +759,7 @@ private fun BuildApkContent(
                             WtaSettingRow(
                                 icon = Icons.Outlined.VerifiedUser,
                                 title = Strings.perAppSigningTitle,
-                                subtitle = Strings.perAppSigningHint,
+                                subtitle = Strings.perAppSigningHint.ifDescriptionsShown(),
                                 active = perAppSigningEnabled,
                                 contentPadding = PaddingValues(horizontal = 0.dp, vertical = 6.dp),
                                 onClick = { perAppSigningEnabled = !perAppSigningEnabled }
@@ -770,7 +772,7 @@ private fun BuildApkContent(
                             WtaSettingRow(
                                 icon = Icons.Outlined.VerifiedUser,
                                 title = Strings.saepPolicyTitle,
-                                subtitle = Strings.saepPolicyHint,
+                                subtitle = Strings.saepPolicyHint.ifDescriptionsShown(),
                                 active = saepEnabled,
                                 contentPadding = PaddingValues(horizontal = 0.dp, vertical = 6.dp),
                                 onClick = { saepEnabled = !saepEnabled }
@@ -1372,11 +1374,13 @@ fun EngineSelectionCard(
                 style = MaterialTheme.typography.titleSmall
             )
         }
-        Text(
-            Strings.engineSelectDesc,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        if (LocalShowDescriptions.current) {
+            Text(
+                Strings.engineSelectDesc,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
 
         Row(
             modifier = Modifier
@@ -1393,11 +1397,13 @@ fun EngineSelectionCard(
             Spacer(Modifier.width(8.dp))
             Column(Modifier.weight(weight = 1f, fill = true)) {
                 Text(Strings.engineSystemWebView, style = MaterialTheme.typography.bodyMedium)
-                Text(
-                    Strings.engineSystemWebViewDesc,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                if (LocalShowDescriptions.current) {
+                    Text(
+                        Strings.engineSystemWebViewDesc,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
         }
 

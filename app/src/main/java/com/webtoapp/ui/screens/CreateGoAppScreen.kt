@@ -25,6 +25,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.ui.theme.LocalShowDescriptions
+import com.webtoapp.ui.theme.ifDescriptionsShown
 import com.webtoapp.core.golang.GoRuntime
 import com.webtoapp.core.golang.GoSampleManager
 import com.webtoapp.data.model.GoAppConfig
@@ -294,7 +296,7 @@ fun CreateGoAppScreen(
             if (selectedProjectDir == null) {
                 TypedSampleProjectsCard(
                     title = Strings.sampleProjects,
-                    subtitle = Strings.sampleGoSubtitle,
+                    subtitle = Strings.sampleGoSubtitle.ifDescriptionsShown(),
                     samples = remember { GoSampleManager.getSampleProjects() },
                     onSelectSample = { sample ->
                         scope.launch {
@@ -545,7 +547,7 @@ private fun GoHeroSection(
     RuntimeHeroSection(
         icon = Icons.Outlined.Code,
         title = title,
-        subtitle = Strings.goHeroDesc,
+        subtitle = Strings.goHeroDesc.ifDescriptionsShown(),
         brandColor = accentColor,
         tags = tags
     )
@@ -752,12 +754,14 @@ private fun GoStaticFilesCard(
                 icon = Icons.Outlined.Folder,
                 title = Strings.goStaticFiles
             )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                Strings.goStaticFilesHint,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            if (LocalShowDescriptions.current) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    Strings.goStaticFilesHint,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
             Spacer(modifier = Modifier.height(12.dp))
             PremiumTextField(
                 value = staticDir,
@@ -925,12 +929,14 @@ private fun GoBuildInAppCard(
                 icon = Icons.Outlined.Build,
                 title = Strings.goBuildInAppTitle
             )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = Strings.goBuildInAppDesc,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            if (LocalShowDescriptions.current) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = Strings.goBuildInAppDesc,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
             Spacer(modifier = Modifier.height(12.dp))
 
             if (!toolchainReady) {

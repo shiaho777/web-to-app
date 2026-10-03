@@ -25,6 +25,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.ui.theme.LocalShowDescriptions
 import com.webtoapp.ui.theme.ifDescriptionsShown
 import com.webtoapp.data.model.*
 import com.webtoapp.ui.components.*
@@ -273,12 +274,14 @@ fun ApkExportSection(
                             color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.padding(bottom = 4.dp)
                         )
-                        Text(
-                            text = Strings.deepLinkCustomHostsHint,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(bottom = 4.dp)
-                        )
+                        if (LocalShowDescriptions.current) {
+                            Text(
+                                text = Strings.deepLinkCustomHostsHint,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(bottom = 4.dp)
+                            )
+                        }
                         PremiumTextField(
                             value = customHostsText,
                             onValueChange = { newText ->
@@ -320,15 +323,17 @@ fun ApkExportSection(
                 checked = config.saepEnabled,
                 onCheckedChange = { onConfigChange(config.copy(saepEnabled = it)) }
             )
-            Text(
-                text = Strings.saepPolicyHint,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(
-                    horizontal = WtaSpacing.RowHorizontal,
-                    vertical = WtaSpacing.ContentGap
+            if (LocalShowDescriptions.current) {
+                Text(
+                    text = Strings.saepPolicyHint,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(
+                        horizontal = WtaSpacing.RowHorizontal,
+                        vertical = WtaSpacing.ContentGap
+                    )
                 )
-            )
+            }
         }
 
         if (onOpenPermissionConfig != null) {
@@ -1548,7 +1553,8 @@ private fun TargetSdkOverrideRows(
     Column(modifier = Modifier.fillMaxWidth()) {
         WtaToggleRow(
             title = Strings.targetSdkOverrideTitle,
-            subtitle = if (enabled) Strings.targetSdkOverrideOnHint else Strings.targetSdkOverrideOffHint,
+            subtitle = (if (enabled) Strings.targetSdkOverrideOnHint else Strings.targetSdkOverrideOffHint)
+                .ifDescriptionsShown(),
             icon = Icons.Outlined.SystemUpdate,
             checked = enabled,
             onCheckedChange = { on ->

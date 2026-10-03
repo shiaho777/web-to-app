@@ -108,6 +108,7 @@ import com.webtoapp.ui.design.rememberHapticClick
 import com.webtoapp.ui.design.wtaPressScale
 import com.webtoapp.ui.theme.LocalIsDarkTheme
 import com.webtoapp.ui.theme.LocalShowDescriptions
+import com.webtoapp.ui.theme.ifDescriptionsShown
 import com.webtoapp.ui.theme.ThemeManager
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
@@ -173,7 +174,7 @@ private fun DescriptionsToggleCard() {
         WtaSettingRow(
             icon = Icons.Outlined.Subtitles,
             title = Strings.showDescriptions,
-            subtitle = Strings.showDescriptionsHint,
+            subtitle = Strings.showDescriptionsHint.ifDescriptionsShown(),
             onClick = { scope.launch { themeManager.setShowDescriptions(!showDescriptions) } },
             trailing = {
                 WtaSwitch(
@@ -202,7 +203,7 @@ private fun AdvancedFeaturesCard() {
         WtaSettingRow(
             icon = Icons.Outlined.Tune,
             title = Strings.advancedFeatures,
-            subtitle = Strings.advancedFeaturesDesc,
+            subtitle = Strings.advancedFeaturesDesc.ifDescriptionsShown(),
             onClick = { scope.launch { hostPrefs.setAdvancedFeaturesEnabled(!enabled) } },
             trailing = {
                 WtaSwitch(
@@ -238,7 +239,7 @@ private fun SeparateTasksCard() {
         WtaSettingRow(
             icon = Icons.Outlined.FilterNone,
             title = Strings.webAppSeparateTasks,
-            subtitle = Strings.webAppSeparateTasksDesc,
+            subtitle = Strings.webAppSeparateTasksDesc.ifDescriptionsShown(),
             onClick = { apply(!separateTasks) },
             trailing = {
                 WtaSwitch(
@@ -274,7 +275,7 @@ private fun LocalMcpCard() {
             WtaSettingRow(
                 icon = Icons.Outlined.Hub,
                 title = Strings.localMcp,
-                subtitle = Strings.localMcpDesc,
+                subtitle = Strings.localMcpDesc.ifDescriptionsShown(),
                 onClick = { setEnabled(!mcp.enabled) },
                 trailing = {
                     WtaSwitch(
@@ -320,11 +321,13 @@ private fun LocalMcpCard() {
                             color = MaterialTheme.colorScheme.error
                         )
                     }
-                    Text(
-                        text = Strings.localMcpAdb(port),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    if (LocalShowDescriptions.current) {
+                        Text(
+                            text = Strings.localMcpAdb(port),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                     Row(horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small)) {
                         TextButton(onClick = {
                             context.copyToClipboard(

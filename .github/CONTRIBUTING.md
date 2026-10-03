@@ -223,7 +223,8 @@ an hour as authoritative; the refresh button always bypasses the cache.
 - **Write Issues and PRs in English** — titles, bodies, and review threads.
 - Describe the user-visible effect in the PR body, not just the code change.
 - The standard loop is Issue → branch → PR (`Fixes #N`) → green CI → merge.
-  Issues close on merge, never on PR open or red CI.
+  Issues close on merge, never on PR open or red CI. Opening the PR is not
+  the end of the loop: stay until `check` is green and the PR is merged.
 - If your PR touches the build system, native code, or APK packaging, attach
   the output of the template rebuild above (or note the failure if it fails
   on your machine).
@@ -430,7 +431,8 @@ cd web-to-app
 - **Issue 与 PR 请用英文写**——标题、正文、评审讨论
 - PR 描述写"用户看得到的效果"，不只是代码 diff
 - 标准流程是 Issue → 分支 → PR（`Fixes #N`）→ CI 变绿 → 合并。
-  Issue 只在合并时关闭，开 PR 时不关、CI 红时不关
+  Issue 只在合并时关闭，开 PR 时不关、CI 红时不关。开 PR 不是流程结束，
+  要等到 `check` 变绿并且 PR 已合并
 - 改动涉及构建系统、原生代码或 APK 打包时，附上上面模板重建命令的结果
 - CI 必须绿色才会合并
 - 不要提交密钥、keystore、`local.properties` 或 IDE / 缓存垃圾

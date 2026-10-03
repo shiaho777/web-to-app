@@ -23,6 +23,7 @@ import com.webtoapp.ui.design.WtaSettingCard
 import com.webtoapp.ui.design.WtaSettingRow
 import com.webtoapp.ui.design.WtaSpacing
 import com.webtoapp.ui.design.WtaToggleRow
+import com.webtoapp.ui.theme.ifDescriptionsShown
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -64,7 +65,7 @@ fun MoreScreen(
                         }
                         WtaToggleRow(
                             title = Strings.rememberCategoryFilter,
-                            subtitle = Strings.rememberCategoryFilterDesc,
+                            subtitle = Strings.rememberCategoryFilterDesc.ifDescriptionsShown(),
                             checked = rememberCategory,
                             onCheckedChange = {
                                 rememberCategory = it

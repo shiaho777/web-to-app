@@ -27,6 +27,7 @@ import com.webtoapp.core.appearance.BrowserDisguisePreset
 import com.webtoapp.core.appearance.WebGLRenderer
 import com.webtoapp.core.appearance.ScreenProfile
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.ui.theme.LocalShowDescriptions
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -217,7 +218,9 @@ fun BrowserDisguiseConfigCard(
                     ) {
                         Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
                             Text(Strings.browserDisguiseEnable, style = MaterialTheme.typography.bodyLarge)
-                            Text(Strings.browserDisguiseEnableDesc, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            if (LocalShowDescriptions.current) {
+                                Text(Strings.browserDisguiseEnableDesc, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
                         }
                         WtaSwitch(
                             checked = enabled,
@@ -457,12 +460,14 @@ private fun VectorSwitch(
     ) {
         Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
             Text(title, style = MaterialTheme.typography.bodyMedium)
-            Text(
-                description,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 2
-            )
+            if (LocalShowDescriptions.current) {
+                Text(
+                    description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2
+                )
+            }
         }
         WtaSwitch(
             checked = checked,

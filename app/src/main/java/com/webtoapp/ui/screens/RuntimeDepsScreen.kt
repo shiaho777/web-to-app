@@ -92,6 +92,8 @@ import com.webtoapp.ui.design.WtaChip
 import com.webtoapp.ui.design.WtaColors
 import com.webtoapp.ui.design.WtaScreen
 import com.webtoapp.ui.theme.AppColors
+import com.webtoapp.ui.theme.LocalShowDescriptions
+import com.webtoapp.ui.theme.ifDescriptionsShown
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -465,7 +467,7 @@ fun RuntimeDepsScreen(onBack: () -> Unit) {
 
     WtaScreen(
         title = Strings.runtimeDepsTitle,
-        subtitle = Strings.runtimeDepsSubtitle,
+        subtitle = Strings.runtimeDepsSubtitle.ifDescriptionsShown(),
         snackbarHostState = snackbarHostState,
         onBack = onBack,
         actions = {
@@ -874,11 +876,13 @@ private fun DownloadMirrorCard(
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold
             )
-            Text(
-                text = Strings.depMirrorDesc,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            if (LocalShowDescriptions.current) {
+                Text(
+                    text = Strings.depMirrorDesc,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -958,14 +962,16 @@ private fun RuntimeEntryCard(
                             ready = entry.isReady
                         )
                     }
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        text = entry.description,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
-                    )
+                    if (LocalShowDescriptions.current) {
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            text = entry.description,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
                     Spacer(Modifier.height(6.dp))
                     FlowRow(
                         horizontalArrangement = Arrangement.spacedBy(10.dp),

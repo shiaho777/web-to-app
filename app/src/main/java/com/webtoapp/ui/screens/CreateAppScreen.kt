@@ -44,6 +44,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.ui.theme.LocalShowDescriptions
 import com.webtoapp.ui.theme.ifDescriptionsShown
 import com.webtoapp.data.model.*
 import com.webtoapp.ui.components.ActivationCodeCard
@@ -737,14 +738,18 @@ fun AdsMonetizationSection(
                         value = config.appId,
                         onValueChange = { onConfigChange(config.copy(appId = it.trim())) },
                         label = { Text(Strings.adMobAppId) },
-                        supportingText = { Text(Strings.adMobAppIdHint) },
+                        supportingText = if (LocalShowDescriptions.current) {
+                            { Text(Strings.adMobAppIdHint) }
+                        } else {
+                            null
+                        },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
 
                     WtaToggleRow(
                         title = Strings.adTestMode,
-                        subtitle = Strings.adTestModeHint,
+                        subtitle = Strings.adTestModeHint.ifDescriptionsShown(),
                         checked = config.testMode,
                         onCheckedChange = { onConfigChange(config.copy(testMode = it)) }
                     )
@@ -1274,11 +1279,13 @@ fun AppThemeCard(
                 )
             }
 
-            Text(
-                text = Strings.exportAppThemeHint,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            if (LocalShowDescriptions.current) {
+                Text(
+                    text = Strings.exportAppThemeHint,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
 
             ExposedDropdownMenuBox(
                 expanded = expanded,
@@ -1360,11 +1367,13 @@ fun TranslateCard(
                     ),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                Text(
-                    text = Strings.autoTranslateHint,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                if (LocalShowDescriptions.current) {
+                    Text(
+                        text = Strings.autoTranslateHint,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
 
                 ExposedDropdownMenuBox(
                     expanded = langExpanded,

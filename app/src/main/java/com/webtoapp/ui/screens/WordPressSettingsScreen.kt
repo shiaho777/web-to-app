@@ -20,6 +20,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.ui.theme.LocalShowDescriptions
 import com.webtoapp.core.wordpress.WordPressDependencyManager
 import com.webtoapp.ui.components.EnhancedElevatedCard
 import kotlinx.coroutines.Dispatchers
@@ -143,11 +144,13 @@ fun WordPressSettingsScreen(
                     ) {
                         Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
                             Text(Strings.wpAutoDetect)
-                            Text(
-                                text = Strings.wpDownloadDesc,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                            if (LocalShowDescriptions.current) {
+                                Text(
+                                    text = Strings.wpDownloadDesc,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         }
                     }
 

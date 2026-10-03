@@ -28,6 +28,7 @@ import com.webtoapp.data.model.WebViewConfig
 import com.webtoapp.data.repository.ConfigTemplateStore
 import com.webtoapp.ui.components.PremiumTextField
 import com.webtoapp.ui.design.*
+import com.webtoapp.ui.theme.LocalShowDescriptions
 import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 
@@ -93,12 +94,14 @@ fun ConfigTemplateMenuButton(
             )
             if (templates.isNotEmpty()) {
                 HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                Text(
-                    Strings.templateApplyHint,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp)
-                )
+                if (LocalShowDescriptions.current) {
+                    Text(
+                        Strings.templateApplyHint,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp)
+                    )
+                }
                 Column(modifier = Modifier.heightIn(max = 280.dp).verticalScroll(rememberScrollState())) {
                     templates.forEach { template ->
                         DropdownMenuItem(
@@ -144,12 +147,14 @@ fun ConfigTemplateMenuButton(
             title = { Text(Strings.templateSaveAs) },
             text = {
                 Column {
-                    Text(
-                        Strings.configTemplatesDesc,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
+                    if (LocalShowDescriptions.current) {
+                        Text(
+                            Strings.configTemplatesDesc,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
                     PremiumTextField(
                         value = name,
                         onValueChange = { if (it.length <= 40) name = it },

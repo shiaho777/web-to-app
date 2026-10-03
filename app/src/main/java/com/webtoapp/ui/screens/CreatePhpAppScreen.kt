@@ -30,6 +30,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.ui.theme.LocalShowDescriptions
+import com.webtoapp.ui.theme.ifDescriptionsShown
 import com.webtoapp.core.php.PhpAppRuntime
 import com.webtoapp.core.php.PhpSampleManager
 import com.webtoapp.core.wordpress.WordPressDependencyManager
@@ -418,7 +420,7 @@ fun CreatePhpAppScreen(
             if (selectedProjectDir == null) {
                 TypedSampleProjectsCard(
                     title = Strings.sampleProjects,
-                    subtitle = Strings.samplePhpSubtitle,
+                    subtitle = Strings.samplePhpSubtitle.ifDescriptionsShown(),
                     samples = remember { PhpSampleManager.getSampleProjects() },
                     onSelectSample = { sample ->
                         scope.launch {
@@ -704,7 +706,7 @@ private fun PhpHeroSection(
     RuntimeHeroSection(
         icon = Icons.Outlined.Code,
         title = title,
-        subtitle = Strings.phpHeroDesc,
+        subtitle = Strings.phpHeroDesc.ifDescriptionsShown(),
         brandColor = accentColor,
         tags = tags
     )
@@ -810,8 +812,10 @@ private fun PhpDocRootCard(
                 icon = Icons.Outlined.FolderOpen,
                 title = Strings.phpDocRootSelect
             )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(Strings.phpDocRootHint, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            if (LocalShowDescriptions.current) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(Strings.phpDocRootHint, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
             Spacer(modifier = Modifier.height(12.dp))
 
             if (detectedWebDirs.isNotEmpty()) {
@@ -893,8 +897,10 @@ private fun PhpExtensionsCard(
                 title = Strings.phpExtensions,
                 brandColor = MaterialTheme.colorScheme.onSurface
             )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(Strings.phpExtensionsHint, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            if (LocalShowDescriptions.current) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(Strings.phpExtensionsHint, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
             Spacer(modifier = Modifier.height(12.dp))
 
             FlowRow(
@@ -936,8 +942,10 @@ private fun PhpExtensionsCard(
             HorizontalDivider()
             Spacer(modifier = Modifier.height(12.dp))
             Text(Strings.phpAddCustomExtension, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(Strings.phpCustomExtensionHint, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            if (LocalShowDescriptions.current) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(Strings.phpCustomExtensionHint, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
             Spacer(modifier = Modifier.height(8.dp))
 
             PremiumTextField(
@@ -1098,7 +1106,7 @@ private fun PhpFrameworkTipCard(framework: String?) {
         else -> null
     }
 
-    if (tip != null) {
+    if (LocalShowDescriptions.current && tip != null) {
         val tipColor = MaterialTheme.colorScheme.onSurface
 
         Surface(

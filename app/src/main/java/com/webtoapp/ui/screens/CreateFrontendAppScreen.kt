@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.webtoapp.core.frontend.*
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.ui.theme.LocalShowDescriptions
 import com.webtoapp.core.linux.*
 import com.webtoapp.ui.components.*
 import com.webtoapp.ui.design.WtaStatusBanner
@@ -324,13 +325,14 @@ fun CreateFrontendAppScreen(
                                 )
                             }
 
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            Text(
-                                Strings.selectProjectHint,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                            if (LocalShowDescriptions.current) {
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    Strings.selectProjectHint,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         } else {
                             Surface(
                                 modifier = Modifier.fillMaxWidth(),

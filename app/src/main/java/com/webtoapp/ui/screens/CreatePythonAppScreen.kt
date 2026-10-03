@@ -28,6 +28,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.ui.theme.LocalShowDescriptions
+import com.webtoapp.ui.theme.ifDescriptionsShown
 import com.webtoapp.core.python.PythonDependencyManager
 import com.webtoapp.core.python.PythonRuntime
 import com.webtoapp.core.python.PythonSampleManager
@@ -385,7 +387,7 @@ fun CreatePythonAppScreen(
             if (selectedProjectDir == null) {
                 TypedSampleProjectsCard(
                     title = Strings.sampleProjects,
-                    subtitle = Strings.samplePythonSubtitle,
+                    subtitle = Strings.samplePythonSubtitle.ifDescriptionsShown(),
                     samples = remember { PythonSampleManager.getSampleProjects() },
                     onSelectSample = { sample ->
                         scope.launch {
@@ -709,7 +711,7 @@ private fun PythonHeroSection(
     RuntimeHeroSection(
         icon = Icons.Outlined.Code,
         title = title,
-        subtitle = Strings.pyHeroDesc,
+        subtitle = Strings.pyHeroDesc.ifDescriptionsShown(),
         brandColor = accentColor,
         tags = tags
     )
@@ -878,12 +880,14 @@ private fun PythonServerTypeCard(
                     fontWeight = FontWeight.SemiBold
                 )
             }
-            Spacer(modifier = Modifier.height(6.dp))
-            Text(
-                Strings.pyRuntimeModeAutoDesc,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            if (LocalShowDescriptions.current) {
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    Strings.pyRuntimeModeAutoDesc,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
     }
 }
@@ -969,21 +973,22 @@ private fun PythonDjangoCard(
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(8.dp),
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f)
-            ) {
-                Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Outlined.Info, null, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(16.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        Strings.pyDjangoAllowedHosts,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
+            if (LocalShowDescriptions.current) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f)
+                ) {
+                    Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Outlined.Info, null, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            Strings.pyDjangoAllowedHosts,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
                 }
             }
         }
@@ -1016,12 +1021,14 @@ private fun PythonFastapiCard(
                         fontFamily = FontFamily.Monospace,
                         color = MaterialTheme.colorScheme.onSurface
                     )
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Text(
-                        Strings.pyFastapiAsgiHint,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    if (LocalShowDescriptions.current) {
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            Strings.pyFastapiAsgiHint,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
         }

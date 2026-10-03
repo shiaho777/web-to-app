@@ -33,6 +33,8 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.ui.theme.LocalShowDescriptions
+import com.webtoapp.ui.theme.ifDescriptionsShown
 import com.webtoapp.core.wordpress.WordPressDependencyManager
 import com.webtoapp.core.wordpress.WordPressManager
 import com.webtoapp.core.wordpress.WordPressSampleManager
@@ -260,7 +262,7 @@ fun CreateWordPressAppScreen(
             if (projectId == null && !isCreating) {
                 TypedSampleProjectsCard(
                     title = Strings.sampleProjects,
-                    subtitle = Strings.sampleWpSubtitle,
+                    subtitle = Strings.sampleWpSubtitle.ifDescriptionsShown(),
                     samples = remember { WordPressSampleManager.getSampleProjects() },
                     onSelectSample = { sample ->
                         scope.launch {
@@ -391,12 +393,14 @@ fun CreateWordPressAppScreen(
                         title = Strings.wpImportProject,
                         brandColor = accentColor
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = Strings.wpImportProjectDesc,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    if (LocalShowDescriptions.current) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = Strings.wpImportProjectDesc,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                     Spacer(modifier = Modifier.height(12.dp))
 
                     PremiumOutlinedButton(
@@ -438,12 +442,14 @@ fun CreateWordPressAppScreen(
                         Text(Strings.wpCreateNewSite)
                     }
 
-                    Text(
-                        text = Strings.wpCreateNewSiteDesc,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 4.dp)
-                    )
+                    if (LocalShowDescriptions.current) {
+                        Text(
+                            text = Strings.wpCreateNewSiteDesc,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+                    }
                 }
             }
             }
@@ -615,7 +621,7 @@ private fun WpHeroSection(
     RuntimeHeroSection(
         icon = Icons.Outlined.Language,
         title = Strings.wpHeroTitle,
-        subtitle = Strings.wpHeroDesc,
+        subtitle = Strings.wpHeroDesc.ifDescriptionsShown(),
         brandColor = accentColor,
         tags = tags
     )

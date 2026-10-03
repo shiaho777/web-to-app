@@ -79,6 +79,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.ui.theme.ifDescriptionsShown
 import com.webtoapp.core.port.PortManager
 import com.webtoapp.core.port.ProcessPortScanner
 import com.webtoapp.core.port.ProcessPortScanner.RunningService
@@ -252,7 +253,7 @@ fun PortManagerScreen(onBack: () -> Unit) {
 
     WtaScreen(
         title = Strings.portManagerTitle,
-        subtitle = Strings.portManagerSubtitle,
+        subtitle = Strings.portManagerSubtitle.ifDescriptionsShown(),
         onBack = onBack,
         snackbarHostState = snackbarHostState,
         actions = {

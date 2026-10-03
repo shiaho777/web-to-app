@@ -66,7 +66,7 @@ fun RuntimeSectionHeader(
 fun RuntimeHeroSection(
     icon: ImageVector,
     title: String,
-    subtitle: String,
+    subtitle: String?,
     @Suppress("UNUSED_PARAMETER")
     brandColor: Color,
     tags: List<Pair<String, Color>> = emptyList()
@@ -106,11 +106,13 @@ fun RuntimeHeroSection(
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
-                    Text(
-                        text = subtitle,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    if (!subtitle.isNullOrBlank()) {
+                        Text(
+                            text = subtitle,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                     if (tags.isNotEmpty()) {
                         Spacer(modifier = Modifier.height(6.dp))
                         FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {

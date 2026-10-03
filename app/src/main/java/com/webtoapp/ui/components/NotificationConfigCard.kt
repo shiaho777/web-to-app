@@ -31,6 +31,8 @@ import com.webtoapp.ui.design.WtaChip
 import com.webtoapp.ui.design.WtaSpacing
 import com.webtoapp.ui.design.WtaSwitch
 import com.webtoapp.ui.design.WtaTextField
+import com.webtoapp.ui.theme.LocalShowDescriptions
+import com.webtoapp.ui.theme.ifDescriptionsShown
 
 private val POLL_INTERVAL_PRESETS = listOf(5, 15, 30, 60, 120)
 
@@ -265,7 +267,7 @@ private fun PollingSection(
                     }
                 },
                 label = Strings.notificationPollInterval,
-                supportingText = Strings.notificationPollIntervalHint,
+                supportingText = Strings.notificationPollIntervalHint.ifDescriptionsShown(),
                 isError = !intervalValid,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 singleLine = true,
@@ -513,6 +515,7 @@ private fun FcmSection(
 /** 一行小字提示：图标 + 说明，替代过去的整幅 Banner。 */
 @Composable
 private fun HintLine(text: String) {
+    if (!LocalShowDescriptions.current) return
     Row(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.Top
