@@ -22,4 +22,4 @@
 ## 说明
 
 - 只构建不分享,用[构建 APK](/zh/guide/app-actions/build-apk)。
-- 导出可复用项目而非 APK,用[导出](/zh/guide/app-actions/export-apk)。
+- 要源码而不是 APK，用[导出源码](/zh/guide/app-actions/export-apk)。

@@ -95,8 +95,8 @@ class ShareApkTool : Tool {
 class ExportAppTool : Tool {
     override val name = "ExportApp"
     override val description = """
-        Export an app as a Gradle project template (full source tree) or a config JSON.
-        - format "template": generates a complete Gradle Android project in Documents/WebToApp/.
+        Export an app as a source zip or a config JSON.
+        - format "template": writes a source zip (app_config.json, network trust files, and local content) and returns its path. This is the definition the shell runs. It is not a compilable Android Studio project and does not include the signing keystore.
         - format "config": exports the app's configuration as a JSON string.
     """.trimIndent()
     override val parametersSchema: JsonElement = jsonSchema {
@@ -109,7 +109,7 @@ class ExportAppTool : Tool {
     override suspend fun execute(args: JsonObject, ctx: ToolContext): ToolResult {
         val appId = args.get("appId")?.asLong ?: return ToolResult.error("ExportApp: missing appId.")
         // Reject unknown values instead of silently falling through to "template" —
-        // a typo'd "config" would trigger a heavy Gradle-project export.
+        // a typo'd "config" would trigger a heavy source-zip export.
         val format = args.get("format")?.asString
             ?.takeIf { it == "template" || it == "config" }
             ?: return ToolResult.error("ExportApp: unknown format '${args.get("format")}'. Use \"template\" or \"config\".")

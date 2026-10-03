@@ -127,7 +127,7 @@ Android 6.0(API 23)或更高。
 
 ### 如何备份或迁移我的应用?
 
-使用[数据备份](/zh/guide/more-features/data-backup)(主页 ⋮ 菜单),或通过[导出](/zh/guide/app-actions/export-apk)把单个应用导出为可复用模板。
+整份工作区用[数据备份](/zh/guide/more-features/data-backup)(主页 ⋮ 菜单)。[导出源码](/zh/guide/app-actions/export-apk)分享单个应用的配置和本地文件。
 
 ### 去哪里获取帮助?
 

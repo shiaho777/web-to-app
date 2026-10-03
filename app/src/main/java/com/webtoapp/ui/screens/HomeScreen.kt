@@ -639,13 +639,19 @@ fun HomeScreen(
                             onExport = {
                                 scope.launch {
                                     val fullApp = viewModel.getWebApp(app.id) ?: return@launch
-                                    when (val result = exporter.exportAsTemplate(fullApp)) {
-                                        is com.webtoapp.core.export.ExportResult.Success -> {
-                                            snackbarHostState.showSnackbar(Strings.projectExportedTo.replace("%s", result.path))
+                                    val packed = withContext(Dispatchers.IO) {
+                                        runCatching {
+                                            com.webtoapp.core.export.AppSourcePackager(listContext).pack(fullApp)
                                         }
-                                        is com.webtoapp.core.export.ExportResult.Error -> {
-                                            snackbarHostState.showSnackbar(result.message)
+                                    }
+                                    val file = packed.getOrNull()
+                                    val shared = file != null &&
+                                        com.webtoapp.core.export.AppSourcePackager(listContext).share(file)
+                                    if (!shared) {
+                                        packed.exceptionOrNull()?.let {
+                                            AppLogger.e("HomeScreen", "Source export failed", it)
                                         }
+                                        snackbarHostState.showSnackbar(Strings.exportAppSourceFailed)
                                     }
                                 }
                             },
@@ -1335,8 +1341,8 @@ fun AppCard(
                         }
                     )
                     com.webtoapp.ui.design.WtaDropdownMenuItem(
-                        text = Strings.btnExport,
-                        leadingIcon = Icons.Outlined.FileDownload,
+                        text = Strings.exportAppSource,
+                        leadingIcon = Icons.Outlined.Code,
                         onClick = {
                             expanded = false
                             onExport()

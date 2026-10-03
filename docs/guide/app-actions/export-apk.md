@@ -1,20 +1,25 @@
-# Export
+# Export source
 
-Exports the app as a **reusable project template** you can import on another device. Tap ⋮ on an app card, then **Export**.
+Packages the app's source and opens the system share sheet so you can save or send the zip.
 
-## How it works
+## Where
 
-- WebToApp packages the app's configuration (and content) into a portable template.
-- On success, the output path is reported.
+- On the home screen, tap ⋮ on an app card, then **Export source**.
+- On the build page, after a successful build, tap **Export source** on the build summary.
 
-## Export vs Build vs Share
+## What is in the zip
 
-| Action | Produces |
-| --- | --- |
-| **Export** | A reusable project template (re-importable) |
-| [Build APK](/guide/app-actions/build-apk) | An installable, signed APK |
-| [Share APK](/guide/app-actions/share-apk) | A built APK sent via the share sheet |
+- `README.md` explains the archive.
+- `app_config.json` is the runtime configuration embedded in the APK. An encrypted build stores that file as ciphertext inside the APK; this copy is plaintext.
+- `network_security_config.xml` and `certs/` are the network-trust settings, including what you need for full certificate-chain validation (root and intermediate).
+- `content/` holds local HTML, frontend, gallery, splash, and audio files that belong to the app. `node_modules` and `.git` are left out.
 
-## Notes
+## What it is not
 
-- Use Export to move an app's *definition* between devices; use Build/Share to distribute an installable APK.
+The installable file is still the [built APK](/guide/app-actions/build-apk) or a [Play AAB](/guide/more-features/google-play). This zip is the definition those builds run: the WebToApp shell plus these files. It is not an Android Studio project, and it does not include the signing keystore.
+
+The archive can include activation secrets and proxy credentials you configured.
+
+## Moving apps between devices
+
+Use [Data Backup](/guide/more-features/data-backup) to move the whole workspace. The source zip is the readable definition of one app, not a restore package.

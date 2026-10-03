@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.outlined.Autorenew
 import androidx.compose.material.icons.outlined.Build
 import androidx.compose.material.icons.outlined.Cached
+import androidx.compose.material.icons.outlined.Code
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.History
@@ -892,7 +893,7 @@ private fun BuildApkContent(
                 item {
                     WtaCard {
                         BuildSummaryCard(
-                            webApp = webApp,
+                            webApp = currentBuildConfig(),
                             apkFile = report.apkFile,
                             totalSizeFormatted = report.totalSizeFormatted,
                             versionName = currentBuildConfig().apkExportConfig
@@ -1104,6 +1105,8 @@ private fun BuildSummaryCard(
 ) {
     val context = LocalContext.current
     val clipboardManager = LocalClipboardManager.current
+    val scope = rememberCoroutineScope()
+    var exportingSource by remember { mutableStateOf(false) }
 
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
@@ -1208,6 +1211,45 @@ private fun BuildSummaryCard(
                     Spacer(Modifier.width(6.dp))
                     Text(Strings.buildSummaryOpenWith, style = MaterialTheme.typography.labelMedium)
                 }
+            }
+            androidx.compose.material3.FilledTonalButton(
+                onClick = {
+                    if (exportingSource) return@FilledTonalButton
+                    exportingSource = true
+                    scope.launch {
+                        val packed = withContext(Dispatchers.IO) {
+                            runCatching { com.webtoapp.core.export.AppSourcePackager(context).pack(webApp) }
+                        }
+                        exportingSource = false
+                        val file = packed.getOrNull()
+                        val shared = file != null &&
+                            com.webtoapp.core.export.AppSourcePackager(context).share(file)
+                        if (!shared) {
+                            packed.exceptionOrNull()?.let {
+                                AppLogger.e("BuildSummaryCard", "Source export failed", it)
+                            }
+                            android.widget.Toast.makeText(
+                                context,
+                                Strings.exportAppSourceFailed,
+                                android.widget.Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    }
+                },
+                enabled = !exportingSource,
+                modifier = Modifier.fillMaxWidth(),
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+            ) {
+                if (exportingSource) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(16.dp),
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Icon(Icons.Outlined.Code, null, Modifier.size(16.dp))
+                }
+                Spacer(Modifier.width(6.dp))
+                Text(Strings.exportAppSource, style = MaterialTheme.typography.labelMedium)
             }
         }
     }

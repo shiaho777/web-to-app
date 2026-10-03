@@ -194,6 +194,9 @@ object Strings {
     val btnCreate: String get() = StringsA.btnCreate
     val btnPreview: String get() = StringsA.btnPreview
     val btnExport: String get() = StringsA.btnExport
+    val exportAppSource: String get() = StringsA.exportAppSource
+    val exportAppSourceFailed: String get() = StringsA.exportAppSourceFailed
+    fun sourceBundleReadme(name: String): String = StringsA.sourceBundleReadme(name)
     val btnSave: String get() = StringsA.btnSave
     val btnCancel: String get() = StringsA.btnCancel
     val btnImport: String get() = StringsA.btnImport

@@ -56,7 +56,7 @@ features:
 
 3. **构建并分享**
 
-   [构建 APK](/zh/guide/app-actions/build-apk) 用 V1/V2/V3 在设备上完成签名,再[分享](/zh/guide/app-actions/share-apk)出去或[导出 Play 级 AAB](/zh/guide/app-actions/export-apk)。无需电脑,没有构建队列。
+   [构建 APK](/zh/guide/app-actions/build-apk) 用 V1/V2/V3 在设备上完成签名,再[分享](/zh/guide/app-actions/share-apk)出去、[导出源码](/zh/guide/app-actions/export-apk),或[导出 Play 级 AAB](/zh/guide/more-features/google-play)。无需电脑,没有构建队列。
 
 </div>
 

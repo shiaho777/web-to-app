@@ -12,7 +12,7 @@ Builds and signs an installable APK from the app. Tap ⋮ on an app card, then *
 - **Force full rebuild** — skip incremental caching.
 - **Version code** — bumps to the next installable version code when the package is already installed with a higher one. Turn off **Auto-bump version** in the editor's APK export config to pin the configured version.
 
-A **preflight check** runs first and reports blocking errors. After a successful build you can jump to [AAB export](/guide/more-features/google-play).
+A **preflight check** runs first and reports blocking errors. After a successful build the summary offers [Export source](/guide/app-actions/export-apk), and you can jump to [AAB export](/guide/more-features/google-play).
 
 ## What happens
 

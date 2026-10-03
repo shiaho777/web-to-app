@@ -15,10 +15,7 @@ import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.graphics.drawable.IconCompat
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
-import com.webtoapp.core.apkbuilder.NetworkSecurityConfigBuilder
-import com.webtoapp.data.model.NetworkTrustConfig
 import com.webtoapp.data.model.WebApp
-import com.webtoapp.data.model.getActivationCodeStrings
 import com.webtoapp.ui.webview.WebViewActivity
 import com.webtoapp.util.threadLocalCompat
 import java.io.File
@@ -36,9 +33,6 @@ class AppExporter(private val context: Context) {
         private val gson: Gson by lazy {
             GsonBuilder().setPrettyPrinting().create()
         }
-
-        private val SANITIZE_FILENAME_REGEX = Regex("[^a-zA-Z0-9_\\-\\u4e00-\\u9fa5]")
-        private val SANITIZE_PACKAGE_REGEX = Regex("[^a-z0-9]")
 
         private val dateFormat: ThreadLocal<SimpleDateFormat> = threadLocalCompat {
             SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault())
@@ -268,21 +262,16 @@ class AppExporter(private val context: Context) {
         }
     }
 
+    /**
+     * Writes the source zip ([AppSourcePackager]) and returns its path.
+     * Callers that should hand the file to the user open the share sheet
+     * themselves; this method only produces the archive.
+     */
     fun exportAsTemplate(webApp: WebApp): ExportResult {
         return try {
-            val exportDir = getExportDirectory()
-            val projectDir = File(exportDir, sanitizeFileName(webApp.name))
-
-            if (projectDir.exists()) {
-                projectDir.deleteRecursively()
-            }
-            projectDir.mkdirs()
-
-            createTemplateProject(projectDir, webApp)
-
-            ExportResult.Success(projectDir.absolutePath)
+            ExportResult.Success(AppSourcePackager(context).pack(webApp).absolutePath)
         } catch (e: Exception) {
-            ExportResult.Error(e.message ?: "导出模板失败")
+            ExportResult.Error(e.message ?: "source export failed")
         }
     }
 
@@ -292,210 +281,6 @@ class AppExporter(private val context: Context) {
         } else {
             File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS), "WebToApp")
         }
-    }
-
-    private fun createTemplateProject(projectDir: File, webApp: WebApp) {
-
-        val appDir = File(projectDir, "app/src/main")
-        appDir.mkdirs()
-        File(appDir, "java/com/webtoapp/generated").mkdirs()
-        File(appDir, "res/values").mkdirs()
-        File(appDir, "res/xml").mkdirs()
-        File(appDir, "res/raw").mkdirs()
-        File(appDir, "res/mipmap-xxxhdpi").mkdirs()
-
-        File(projectDir, "build.gradle.kts").writeText(generateRootBuildGradle())
-        File(projectDir, "settings.gradle.kts").writeText(generateSettingsGradle(webApp.name))
-        File(projectDir, "app/build.gradle.kts").writeText(generateAppBuildGradle(webApp))
-
-        File(appDir, "AndroidManifest.xml").writeText(generateManifest())
-
-        File(appDir, "java/com/webtoapp/generated/AppConfig.kt")
-            .writeText(generateAppConfig(webApp))
-
-        File(appDir, "res/values/strings.xml").writeText(generateStrings(webApp))
-        val rawTrustConfig = webApp.apkExportConfig?.networkTrustConfig ?: NetworkTrustConfig()
-        val effectiveTrustConfig = if (webApp.webViewConfig.antiCapture) {
-            rawTrustConfig.copy(trustUserCa = false)
-        } else {
-            rawTrustConfig
-        }
-        File(appDir, "res/xml/network_security_config.xml")
-            .writeText(NetworkSecurityConfigBuilder.build(effectiveTrustConfig))
-        NetworkSecurityConfigBuilder.customRawEntries(effectiveTrustConfig).forEach { entry ->
-            entry.sourceFile.copyTo(File(appDir, "res/raw/${entry.resourceName}.cer"), overwrite = true)
-        }
-
-        webApp.iconPath?.let { path ->
-            try {
-                val uri = Uri.parse(path)
-                context.contentResolver.openInputStream(uri)?.use { input ->
-                    File(appDir, "res/mipmap-xxxhdpi/ic_launcher.png").outputStream().buffered(BUFFER_SIZE).use { output ->
-                        input.copyTo(output, BUFFER_SIZE)
-                    }
-                }
-            } catch (e: Exception) {
-
-            }
-        }
-
-        File(projectDir, "README.md").writeText(generateReadme(webApp))
-    }
-
-    private fun generateRootBuildGradle(): String = """
-plugins {
-    id("com.android.application") version "8.2.0" apply false
-    id("org.jetbrains.kotlin.android") version "1.9.20" apply false
-}
-    """.trimIndent()
-
-    private fun generateSettingsGradle(appName: String): String = """
-rootProject.name = "${sanitizeFileName(appName)}"
-include(":app")
-    """.trimIndent()
-
-    private fun generateAppBuildGradle(webApp: WebApp): String {
-        val packageName = "com.webtoapp.${sanitizePackageName(webApp.name)}"
-        return """
-plugins {
-    id("com.android.application")
-    id("org.jetbrains.kotlin.android")
-}
-
-android {
-    namespace = "$packageName"
-    compileSdk = 34
-
-    defaultConfig {
-        applicationId = "$packageName"
-        minSdk = 24
-        targetSdk = 34
-        versionCode = 1
-        versionName = "1.0.0"
-    }
-
-    buildTypes {
-        release {
-            isMinifyEnabled = true
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
-        }
-    }
-
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
-
-    kotlinOptions {
-        jvmTarget = "17"
-    }
-}
-
-dependencies {
-    implementation("androidx.core:core-ktx:1.12.0")
-    implementation("androidx.appcompat:appcompat:1.6.1")
-    implementation("androidx.webkit:webkit:1.9.0")
-}
-        """.trimIndent()
-    }
-
-    private fun generateManifest(): String = """
-<?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-
-    <application
-        android:allowBackup="true"
-        android:icon="@mipmap/ic_launcher"
-        android:label="@string/app_name"
-        android:networkSecurityConfig="@xml/network_security_config"
-        android:usesCleartextTraffic="true"
-        android:theme="@style/Theme.AppCompat.Light.NoActionBar">
-
-        <activity
-            android:name=".MainActivity"
-            android:exported="true"
-            android:configChanges="orientation|screenSize|keyboardHidden">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
-    </application>
-</manifest>
-    """.trimIndent()
-
-    private fun generateAppConfig(webApp: WebApp): String {
-        return """
-package com.webtoapp.generated
-
-object AppConfig {
-    const val APP_NAME = "${webApp.name}"
-    const val TARGET_URL = "${webApp.url}"
-
-    const val ACTIVATION_ENABLED = ${webApp.activationEnabled}
-    val ACTIVATION_CODES = listOf(${webApp.getActivationCodeStrings().joinToString { gson.toJson(it) }})
-
-    const val AD_BLOCK_ENABLED = ${webApp.adBlockEnabled}
-    val AD_BLOCK_RULES = listOf(${webApp.adBlockRules.joinToString { "\"$it\"" }})
-
-    const val ANNOUNCEMENT_ENABLED = ${webApp.announcementEnabled}
-    const val ANNOUNCEMENT_TITLE = "${webApp.announcement?.title ?: ""}"
-    const val ANNOUNCEMENT_CONTENT = "${webApp.announcement?.content ?: ""}"
-    const val ANNOUNCEMENT_LINK = "${webApp.announcement?.linkUrl ?: ""}"
-    const val ANNOUNCEMENT_SHOW_ONCE = ${webApp.announcement?.showOnce ?: true}
-
-    const val JAVASCRIPT_ENABLED = ${webApp.webViewConfig.javaScriptEnabled}
-    const val DOM_STORAGE_ENABLED = ${webApp.webViewConfig.domStorageEnabled}
-    const val ZOOM_ENABLED = ${webApp.webViewConfig.zoomEnabled}
-    const val DESKTOP_MODE = ${webApp.webViewConfig.desktopMode}
-}
-        """.trimIndent()
-    }
-
-    private fun generateStrings(webApp: WebApp): String = """
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string name="app_name">${webApp.name}</string>
-</resources>
-    """.trimIndent()
-
-    private fun generateReadme(webApp: WebApp): String = """
-# ${webApp.name}
-
-这是由 WebToApp 生成的Android项目模板。
-
-## 配置信息
-
-- **目标网址**: ${webApp.url}
-- **激活码验证**: ${if (webApp.activationEnabled) "启用" else "禁用"}
-- **广告拦截**: ${if (webApp.adBlockEnabled) "启用" else "禁用"}
-- **弹窗公告**: ${if (webApp.announcementEnabled) "启用" else "禁用"}
-
-## 编译方法
-
-1. 使用 Android Studio 打开此项目
-2. 等待 Gradle 同步完成
-3. 点击 Build > Build Bundle(s) / APK(s) > Build APK(s)
-4. 生成的 APK 位于 `app/build/outputs/apk/` 目录
-
-## 注意事项
-
-- 需要 Android Studio Hedgehog 或更高版本
-- 需要 JDK 17 或更高版本
-- 首次编译需要下载依赖，请确保网络畅通
-    """.trimIndent()
-
-    private fun sanitizeFileName(name: String): String {
-        return name.replace(SANITIZE_FILENAME_REGEX, "_")
-    }
-
-    private fun sanitizePackageName(name: String): String {
-        return name.lowercase()
-            .replace(SANITIZE_PACKAGE_REGEX, "")
-            .take(20)
-            .ifEmpty { "app" }
     }
 
     private fun WebApp.toExportFormat() = mapOf(

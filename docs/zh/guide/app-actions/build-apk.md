@@ -12,7 +12,7 @@
 - **强制全量重建** —— 跳过增量缓存。
 - **版本号** —— 当包名已安装且 versionCode 更高时,自动提升到可安装的版本号。在编辑器 APK 导出配置中关闭**自动提升版本号**可固定所填版本。
 
-**预检** 会先运行,报告阻塞性错误。构建成功后可跳到 [AAB 导出](/zh/guide/more-features/google-play)。
+**预检** 会先运行,报告阻塞性错误。构建成功后,摘要里可以[导出源码](/zh/guide/app-actions/export-apk),也可以跳到 [AAB 导出](/zh/guide/more-features/google-play)。
 
 ## 发生什么
 

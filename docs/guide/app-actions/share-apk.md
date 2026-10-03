@@ -22,4 +22,4 @@ You can copy the report for troubleshooting.
 ## Notes
 
 - To build without sharing, use [Build APK](/guide/app-actions/build-apk).
-- To export a reusable project instead of an APK, use [Export](/guide/app-actions/export-apk).
+- To export the app's source instead of an APK, use [Export source](/guide/app-actions/export-apk).

@@ -127,7 +127,7 @@ Check the app's [Custom DNS](/guide/app-actions/edit-common-config/custom-dns) a
 
 ### How do I back up or migrate my apps?
 
-Use [Data Backup](/guide/more-features/data-backup) (home ⋮ menu), or export individual apps as reusable templates via [Export](/guide/app-actions/export-apk).
+Use [Data Backup](/guide/more-features/data-backup) (home ⋮ menu) to move the whole workspace. [Export source](/guide/app-actions/export-apk) shares one app's configuration and local files.
 
 ### Where do I get help?
 

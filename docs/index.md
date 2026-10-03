@@ -56,7 +56,7 @@ features:
 
 3. **Build and share**
 
-   [Build APK](/guide/app-actions/build-apk) signs on-device with V1/V2/V3, then [share](/guide/app-actions/share-apk) it or [export a Play-ready AAB](/guide/app-actions/export-apk). No PC, no build queue.
+   [Build APK](/guide/app-actions/build-apk) signs on-device with V1/V2/V3, then [share](/guide/app-actions/share-apk) it, [export its source](/guide/app-actions/export-apk), or [export a Play-ready AAB](/guide/more-features/google-play). No PC, no build queue.
 
 </div>
 

@@ -5553,8 +5553,8 @@ object StringsC {
     }
 
     val networkTrustTemplateLimitHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "导入的自定义 CA 会在构建出的 APK 内生效:由该 CA 直接签发的证书将被信任。完整的证书链校验(根 CA + 中间 CA)请使用源码项目导出。"
-        AppLanguage.ENGLISH -> "Imported custom CAs take effect inside built APKs: certificates directly signed by an imported CA are trusted. For full chain validation (root + intermediate), use source-project export."
+        AppLanguage.CHINESE -> "导入的自定义 CA 会在构建出的 APK 内生效:由该 CA 直接签发的证书将被信任。完整证书链(根 CA + 中间 CA)所需的 network_security_config.xml 和证书在源码导出里。"
+        AppLanguage.ENGLISH -> "Imported custom CAs take effect inside built APKs: certificates directly signed by an imported CA are trusted. The source export includes network_security_config.xml and the certificates for full chain validation (root + intermediate)."
         AppLanguage.ARABIC -> "شهادات CA المخصصة المستوردة تسري داخل ملفات APK المبنية: الشهادات الموقعة مباشرة من CA مستورد موثوقة. للتحقق الكامل من السلسلة (جذر + وسيط)، استخدم تصدير المشروع المصدري."
         AppLanguage.PORTUGUESE -> "CAs personalizadas importadas passam a valer dentro dos APKs gerados: certificados assinados diretamente por uma CA importada são confiáveis. Para validação completa da cadeia (raiz + intermediária), use a exportação do projeto fonte."
         AppLanguage.SPANISH -> "Las CAs personalizadas importadas funcionan dentro de los APK generados: los certificados firmados directamente por una CA importada son de confianza. Para validación completa de cadena (raíz + intermedia), usa la exportación del proyecto fuente."
@@ -5748,8 +5748,8 @@ object StringsC {
     }
 
     val preflightTemplateCaLimitMessage: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "导入的 CA 会在构建出的 APK 内生效:由该 CA 直接签发的证书会被信任。完整证书链(根+中间)请用源码项目导出。"
-        AppLanguage.ENGLISH -> "Imported CAs take effect in built APKs: certificates directly signed by an imported CA are trusted. For full chain (root + intermediate), use source-project export."
+        AppLanguage.CHINESE -> "导入的 CA 会在构建出的 APK 内生效:由该 CA 直接签发的证书会被信任。完整证书链(根+中间)所需的 network_security_config.xml 和证书在源码导出里。"
+        AppLanguage.ENGLISH -> "Imported CAs take effect in built APKs: certificates directly signed by an imported CA are trusted. The source export includes network_security_config.xml and the certificates for full chain validation (root + intermediate)."
         AppLanguage.ARABIC -> "شهادات CA المستوردة تسري داخل APK المبني: الشهادات الموقعة مباشرة من CA مستورد موثوقة. للسلسلة الكاملة (جذر + وسيط) استخدم تصدير المشروع المصدري."
         AppLanguage.PORTUGUESE -> "CAs importadas passam a valer nos APKs gerados: certificados assinados diretamente por uma CA importada são confiáveis. Para cadeia completa (raiz + intermediária), use a exportação do projeto fonte."
         AppLanguage.SPANISH -> "Las CAs importadas funcionan en los APK generados: los certificados firmados directamente por una CA importada son de confianza. Para cadena completa (raíz + intermedia), usa la exportación del proyecto fuente."

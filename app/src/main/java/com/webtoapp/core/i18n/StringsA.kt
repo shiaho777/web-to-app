@@ -2271,6 +2271,145 @@ object StringsA {
         AppLanguage.KOREAN -> "APK 내보내기"
     }
 
+    val exportAppSource: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "导出源码"
+        AppLanguage.ENGLISH -> "Export source"
+        AppLanguage.ARABIC -> "تصدير المصدر"
+        AppLanguage.PORTUGUESE -> "Exportar código"
+        AppLanguage.SPANISH -> "Exportar código"
+        AppLanguage.FRENCH -> "Exporter le code"
+        AppLanguage.GERMAN -> "Quellcode exportieren"
+        AppLanguage.RUSSIAN -> "Экспорт исходников"
+        AppLanguage.JAPANESE -> "ソースを書き出す"
+        AppLanguage.KOREAN -> "소스 내보내기"
+    }
+
+    val exportAppSourceFailed: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "无法导出源码"
+        AppLanguage.ENGLISH -> "Could not export the source."
+        AppLanguage.ARABIC -> "تعذر تصدير المصدر."
+        AppLanguage.PORTUGUESE -> "Não foi possível exportar o código."
+        AppLanguage.SPANISH -> "No se pudo exportar el código."
+        AppLanguage.FRENCH -> "Impossible d'exporter le code."
+        AppLanguage.GERMAN -> "Der Quellcode konnte nicht exportiert werden."
+        AppLanguage.RUSSIAN -> "Не удалось экспортировать исходный код."
+        AppLanguage.JAPANESE -> "ソースを書き出せませんでした。"
+        AppLanguage.KOREAN -> "소스를 내보낼 수 없습니다."
+    }
+
+    fun sourceBundleReadme(name: String): String = when (Strings.lang) {
+        AppLanguage.CHINESE -> """
+            # $name
+
+            这是 WebToApp 构建该应用时使用的源码包。
+
+            - app_config.json：写入 APK 的运行时配置。资源加密的安装包里这份文件是密文，这里是明文。
+            - network_security_config.xml 与 certs/：网络信任设置。完整证书链（根 CA 与中间 CA）用这两处。
+            - content/：属于该应用的本地 HTML、前端、画廊、启动画面和音频。不含 node_modules 与 .git。
+
+            可安装的 APK 是 WebToApp 的壳加上这些文件。此压缩包不含签名密钥库。它可能包含你配置的激活密钥和代理凭据。
+        """.trimIndent()
+        AppLanguage.ENGLISH -> """
+            # $name
+
+            This is the source bundle WebToApp used to build the app.
+
+            - app_config.json: the runtime configuration embedded in the APK. An encrypted build stores that file as ciphertext; this copy is plaintext.
+            - network_security_config.xml and certs/: network trust settings. Use these for full certificate-chain validation (root and intermediate).
+            - content/: local HTML, frontend, gallery, splash, and audio files that belong to the app. node_modules and .git are omitted.
+
+            The installable APK is the WebToApp shell plus these files. This archive does not include the signing keystore. It may include activation secrets and proxy credentials you configured.
+        """.trimIndent()
+        AppLanguage.ARABIC -> """
+            # $name
+
+            هذه حزمة المصدر التي استخدمها WebToApp لبناء التطبيق.
+
+            - app_config.json: إعدادات التشغيل المضمّنة في APK. البناء المشفّر يخزّن هذا الملف كنص مشفّر، وهذه النسخة نص واضح.
+            - network_security_config.xml و certs/: إعدادات الثقة بالشبكة. استعملها للتحقق من سلسلة الشهادات الكاملة (الجذر والوسيط).
+            - content/: ملفات HTML والواجهة والمعرض وشاشة البدء والصوت الخاصة بالتطبيق. يُستبعد node_modules و .git.
+
+            ملف APK القابل للتثبيت هو غلاف WebToApp مع هذه الملفات. هذا الأرشيف لا يحتوي مخزن مفاتيح التوقيع. قد يحتوي أسرار التفعيل وبيانات اعتماد الوكيل التي أعددتها.
+        """.trimIndent()
+        AppLanguage.PORTUGUESE -> """
+            # $name
+
+            Este é o pacote de código que o WebToApp usou para construir o aplicativo.
+
+            - app_config.json: a configuração de execução embutida no APK. Um build criptografado guarda esse arquivo como texto cifrado; esta cópia é texto puro.
+            - network_security_config.xml e certs/: ajustes de confiança de rede. Use-os para validar a cadeia completa de certificados (raiz e intermediário).
+            - content/: arquivos locais de HTML, frontend, galeria, splash e áudio do aplicativo. node_modules e .git ficam de fora.
+
+            O APK instalável é o shell do WebToApp mais estes arquivos. Este arquivo não inclui a keystore de assinatura. Pode incluir segredos de ativação e credenciais de proxy que você configurou.
+        """.trimIndent()
+        AppLanguage.SPANISH -> """
+            # $name
+
+            Este es el paquete de código que WebToApp usó para construir la aplicación.
+
+            - app_config.json: la configuración de ejecución incluida en el APK. Una compilación cifrada guarda ese archivo como texto cifrado; esta copia es texto plano.
+            - network_security_config.xml y certs/: ajustes de confianza de red. Úsalos para validar la cadena completa de certificados (raíz e intermedio).
+            - content/: archivos locales de HTML, frontend, galería, splash y audio de la aplicación. Se omiten node_modules y .git.
+
+            El APK instalable es el shell de WebToApp más estos archivos. Este archivo no incluye el almacén de claves de firma. Puede incluir secretos de activación y credenciales de proxy que configuraste.
+        """.trimIndent()
+        AppLanguage.FRENCH -> """
+            # $name
+
+            Ceci est le paquet source que WebToApp a utilisé pour construire l'application.
+
+            - app_config.json : la configuration d'exécution intégrée à l'APK. Une compilation chiffrée stocke ce fichier en texte chiffré ; cette copie est en clair.
+            - network_security_config.xml et certs/ : réglages de confiance réseau. Utilisez-les pour la validation complète de la chaîne de certificats (racine et intermédiaire).
+            - content/ : fichiers locaux HTML, frontend, galerie, écran de démarrage et audio de l'application. node_modules et .git sont omis.
+
+            L'APK installable est le shell WebToApp plus ces fichiers. Cette archive ne contient pas le keystore de signature. Elle peut contenir les secrets d'activation et les identifiants de proxy que vous avez configurés.
+        """.trimIndent()
+        AppLanguage.GERMAN -> """
+            # $name
+
+            Dies ist das Quellpaket, mit dem WebToApp die App gebaut hat.
+
+            - app_config.json: die Laufzeitkonfiguration, die in der APK steckt. Ein verschlüsselter Build speichert diese Datei als Geheimtext; diese Kopie ist Klartext.
+            - network_security_config.xml und certs/: Netzvertrauens-Einstellungen. Damit lässt sich die volle Zertifikatskette prüfen (Root und Intermediate).
+            - content/: lokale HTML-, Frontend-, Galerie-, Startbildschirm- und Audiodateien der App. node_modules und .git fehlen.
+
+            Die installierbare APK ist die WebToApp-Shell plus diese Dateien. Dieses Archiv enthält keinen Signatur-Keystore. Es kann Aktivierungsgeheimnisse und Proxy-Zugangsdaten enthalten, die Sie festgelegt haben.
+        """.trimIndent()
+        AppLanguage.RUSSIAN -> """
+            # $name
+
+            Это пакет исходников, из которого WebToApp собрал приложение.
+
+            - app_config.json: конфигурация выполнения, встроенная в APK. В зашифрованной сборке этот файл хранится как шифротекст; здесь он в открытом виде.
+            - network_security_config.xml и certs/: параметры доверия сети. Они нужны для полной проверки цепочки сертификатов (корневой и промежуточный).
+            - content/: локальные файлы HTML, фронтенда, галереи, заставки и аудио приложения. node_modules и .git не включаются.
+
+            Устанавливаемый APK — это оболочка WebToApp плюс эти файлы. Архив не содержит хранилище ключа подписи. В нём могут быть секреты активации и учётные данные прокси, которые вы задали.
+        """.trimIndent()
+        AppLanguage.JAPANESE -> """
+            # $name
+
+            これは WebToApp がこのアプリをビルドするときに使ったソース一式です。
+
+            - app_config.json: APK に埋め込まれる実行時設定です。リソース暗号化ビルドではこのファイルは暗号文になり、ここにあるのは平文です。
+            - network_security_config.xml と certs/: ネットワーク信頼の設定です。証明書チェーン全体（ルートと中間）の検証に使います。
+            - content/: このアプリのローカル HTML、フロントエンド、ギャラリー、スプラッシュ、音声ファイルです。node_modules と .git は含みません。
+
+            インストールできる APK は WebToApp のシェルにこれらのファイルを足したものです。この書庫に署名キーストアは含まれません。設定した認証の秘密やプロキシ資格情報が含まれることがあります。
+        """.trimIndent()
+        AppLanguage.KOREAN -> """
+            # $name
+
+            이것은 WebToApp이 이 앱을 빌드할 때 사용한 소스 묶음입니다.
+
+            - app_config.json: APK에 들어가는 런타임 설정입니다. 리소스 암호화 빌드에서는 이 파일이 암호문이고, 여기 있는 것은 평문입니다.
+            - network_security_config.xml 및 certs/: 네트워크 신뢰 설정입니다. 전체 인증서 체인(루트와 중간) 검증에 사용합니다.
+            - content/: 이 앱의 로컬 HTML, 프런트엔드, 갤러리, 스플래시, 오디오 파일입니다. node_modules와 .git은 빠집니다.
+
+            설치 가능한 APK는 WebToApp 셸에 이 파일들을 더한 것입니다. 이 압축 파일에는 서명 키 저장소가 없습니다. 설정한 활성화 비밀과 프록시 자격 증명이 들어 있을 수 있습니다.
+        """.trimIndent()
+    }
+
     val btnSave: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "保存"
         AppLanguage.ENGLISH -> "Save"
