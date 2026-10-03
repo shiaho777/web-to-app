@@ -287,7 +287,7 @@ fun ShellSplashOverlay(
                         Spacer(modifier = Modifier.width(8.dp))
                     }
                     Text(
-                        text = "Skip",
+                        text = Strings.skip,
                         color = Color.White,
                         style = MaterialTheme.typography.bodyMedium
                     )

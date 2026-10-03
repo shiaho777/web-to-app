@@ -5297,7 +5297,7 @@ object StringsB {
     }
 
     val skip: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "Skip"
+        AppLanguage.CHINESE -> "跳过"
         AppLanguage.ENGLISH -> "Skip"
         AppLanguage.ARABIC -> "تخطي"
         AppLanguage.PORTUGUESE -> "Pular"
