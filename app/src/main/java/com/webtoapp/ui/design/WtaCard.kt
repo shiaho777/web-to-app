@@ -1,6 +1,7 @@
 package com.webtoapp.ui.design
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
@@ -11,6 +12,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
@@ -77,6 +79,7 @@ fun WtaCard(
     contentPadding: PaddingValues = PaddingValues(WtaSpacing.Large),
     shape: Shape = RoundedCornerShape(WtaRadius.Card),
     border: BorderStroke? = null,
+    pressScale: Float? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
     val spec = resolveTone(tone)
@@ -92,27 +95,35 @@ fun WtaCard(
         hoveredElevation = if (spec.elevation > 0.dp) spec.elevation + 1.dp else 1.dp
     )
     val resolvedBorder = border ?: spec.border
+    val interactionSource = remember { MutableInteractionSource() }
+    val cardModifier = if (pressScale != null) {
+        modifier.wtaPressScale(interactionSource, pressedScale = pressScale, enabled = true)
+    } else {
+        modifier
+    }
 
     if (resolvedBorder != null) {
         OutlinedCard(
             onClick = hapticClick,
-            modifier = modifier,
+            modifier = cardModifier,
             enabled = enabled,
             shape = shape,
             colors = colors,
             border = resolvedBorder,
-            elevation = elevation
+            elevation = elevation,
+            interactionSource = interactionSource,
         ) {
             Column(modifier = Modifier.padding(contentPadding), content = content)
         }
     } else {
         Card(
             onClick = hapticClick,
-            modifier = modifier,
+            modifier = cardModifier,
             enabled = enabled,
             shape = shape,
             colors = colors,
-            elevation = elevation
+            elevation = elevation,
+            interactionSource = interactionSource,
         ) {
             Column(modifier = Modifier.padding(contentPadding), content = content)
         }

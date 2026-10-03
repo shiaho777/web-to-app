@@ -70,6 +70,7 @@ import com.webtoapp.data.model.SplashType
 import com.webtoapp.data.model.WebApp
 import com.webtoapp.data.model.hasAnyToolbarItem
 import com.webtoapp.data.model.resolveToolbarButtons
+import com.webtoapp.ui.animation.HostPreviewMotion
 import android.content.pm.ActivityInfo
 import com.webtoapp.ui.theme.WebToAppTheme
 import com.webtoapp.util.DownloadHelper
@@ -105,28 +106,40 @@ class WebViewActivity : AppCompatActivity() {
         private const val EXTRA_PREVIEW_APP_JSON = "preview_app_json"
 
         fun start(context: Context, appId: Long) {
-            context.startActivity(Intent(context, WebViewActivity::class.java).apply {
-                putExtra(EXTRA_APP_ID, appId)
-            })
+            HostPreviewMotion.launch(
+                context,
+                Intent(context, WebViewActivity::class.java).apply {
+                    putExtra(EXTRA_APP_ID, appId)
+                }
+            )
         }
 
         fun startWithUrl(context: Context, url: String) {
-            context.startActivity(Intent(context, WebViewActivity::class.java).apply {
-                putExtra(EXTRA_URL, url)
-            })
+            HostPreviewMotion.launch(
+                context,
+                Intent(context, WebViewActivity::class.java).apply {
+                    putExtra(EXTRA_URL, url)
+                }
+            )
         }
 
         fun startPreview(context: Context, webAppJson: String) {
-            context.startActivity(Intent(context, WebViewActivity::class.java).apply {
-                putExtra(EXTRA_PREVIEW_APP_JSON, webAppJson)
-            })
+            HostPreviewMotion.launch(
+                context,
+                Intent(context, WebViewActivity::class.java).apply {
+                    putExtra(EXTRA_PREVIEW_APP_JSON, webAppJson)
+                }
+            )
         }
 
         fun startForTest(context: Context, testUrl: String, moduleIds: List<String>) {
-            context.startActivity(Intent(context, WebViewActivity::class.java).apply {
-                putExtra(EXTRA_TEST_URL, testUrl)
-                putStringArrayListExtra(EXTRA_TEST_MODULE_IDS, ArrayList(moduleIds))
-            })
+            HostPreviewMotion.launch(
+                context,
+                Intent(context, WebViewActivity::class.java).apply {
+                    putExtra(EXTRA_TEST_URL, testUrl)
+                    putStringArrayListExtra(EXTRA_TEST_MODULE_IDS, ArrayList(moduleIds))
+                }
+            )
         }
     }
 
@@ -776,6 +789,7 @@ class WebViewActivity : AppCompatActivity() {
         }
 
         super.onCreate(savedInstanceState)
+        HostPreviewMotion.install(this)
 
         requestNotificationPermissionIfNeeded()
 
@@ -1110,9 +1124,15 @@ class WebViewActivity : AppCompatActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        HostPreviewMotion.install(this)
         if (shouldRecreateForNewIntent(intent, trackedAppId)) {
             recreate()
         }
+    }
+
+    override fun finish() {
+        super.finish()
+        HostPreviewMotion.onFinish(this)
     }
 
     /**

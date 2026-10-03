@@ -45,6 +45,7 @@ fun EnhancedElevatedCard(
     elevation: CardElevation = CardDefaults.elevatedCardElevation(),
     containerColor: Color? = null,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    pressScale: Float? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
     WtaCard(
@@ -54,6 +55,7 @@ fun EnhancedElevatedCard(
         enabled = enabled,
         contentPadding = PaddingValues(0.dp),
         shape = shape,
+        pressScale = pressScale,
         content = content
     )
 }

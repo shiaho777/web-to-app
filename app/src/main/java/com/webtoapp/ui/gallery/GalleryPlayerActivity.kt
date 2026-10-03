@@ -17,6 +17,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.webtoapp.data.model.GalleryConfig
 import com.webtoapp.data.model.SplashOrientation
+import com.webtoapp.ui.animation.HostPreviewMotion
 
 class GalleryPlayerActivity : ComponentActivity() {
 
@@ -37,8 +38,13 @@ class GalleryPlayerActivity : ComponentActivity() {
                 putExtra(EXTRA_START_INDEX, startIndex)
                 putExtra(EXTRA_GALLERY_ID, galleryId)
             }
-            context.startActivity(intent)
+            HostPreviewMotion.launch(context, intent)
         }
+    }
+
+    override fun finish() {
+        super.finish()
+        HostPreviewMotion.onFinish(this)
     }
 
     private var config: GalleryConfig? = null
@@ -48,6 +54,7 @@ class GalleryPlayerActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        HostPreviewMotion.install(this)
 
         val configJson = intent.getStringExtra(EXTRA_CONFIG)
         config = configJson?.let {

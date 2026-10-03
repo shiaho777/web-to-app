@@ -8,6 +8,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -18,9 +19,11 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.webtoapp.WebToAppApplication
 import com.webtoapp.core.i18n.InitializeLanguage
+import com.webtoapp.data.model.AppType
 import com.webtoapp.data.model.HtmlLoadMode
+import com.webtoapp.ui.gallery.GalleryPlayerActivity
+import com.webtoapp.ui.webview.WebViewActivity
 import com.webtoapp.ui.agent.AgentScreen
 import com.webtoapp.ui.screens.AboutScreen
 import com.webtoapp.ui.screens.SettingsScreen
@@ -66,7 +69,6 @@ object Routes {
     const val EDIT_FRONTEND_APP = "edit_frontend_app/{appId}"
     const val EDIT_MULTI_WEB_APP = "edit_multi_web_app/{appId}"
 
-    const val PREVIEW = "preview/{appId}"
     const val APP_MODIFIER = "app_modifier"
     const val APP_MODIFIER_MODIFY = "app_modifier/modify/{packageName}"
     const val AI_SETTINGS = "ai_settings"
@@ -99,7 +101,6 @@ object Routes {
     fun editHtmlApp(appId: Long) = "edit_html_app/$appId"
     fun editFrontendApp(appId: Long) = "edit_frontend_app/$appId"
     fun editMultiWebApp(appId: Long) = "edit_multi_web_app/$appId"
-    fun preview(appId: Long) = "preview/$appId"
     fun editPlugin(pluginId: String) = "plugin_editor/$pluginId"
     fun appModifierModify(packageName: String) = "app_modifier/modify/$packageName"
 }
@@ -124,6 +125,8 @@ fun AppNavigation() {
 
     val navController = rememberNavController()
     val viewModel: MainViewModel = koinViewModel()
+    val context = LocalContext.current
+    val previewScope = rememberCoroutineScope()
 
     Box(modifier = Modifier.fillMaxSize()) {
         NavHost(
@@ -169,7 +172,20 @@ fun AppNavigation() {
                                 }
                             }
                         },
-                        onPreviewApp = { webApp -> navController.navigate(Routes.preview(webApp.id)) },
+                        onPreviewApp = { summary ->
+                            // Open the activity directly. Routing through an empty
+                            // preview destination started a page slide, popped it,
+                            // then started the activity — three motions for one tap.
+                            if (summary.appType == AppType.GALLERY) {
+                                previewScope.launch {
+                                    val config = viewModel.getWebApp(summary.id)?.galleryConfig
+                                        ?: return@launch
+                                    GalleryPlayerActivity.launch(context, config, 0, summary.id)
+                                }
+                            } else {
+                                WebViewActivity.start(context, summary.id)
+                            }
+                        },
                         onOpenAppModifier = { navController.navigate(Routes.APP_MODIFIER) },
                         onOpenAiSettings = { navController.navigate(Routes.AI_SETTINGS) },
                         onOpenAgent = { navController.navigate(Routes.AGENT) },
@@ -460,14 +476,6 @@ fun AppNavigation() {
                 )
             }
 
-            composable(
-                route = Routes.PREVIEW,
-                arguments = listOf(navArgument("appId") { type = NavType.LongType })
-            ) { backStackEntry ->
-                val appId = backStackEntry.arguments?.getLong("appId") ?: 0L
-                PreviewScreen(appId = appId, onBack = { navController.popBackStackSafely() })
-            }
-
             composable(Routes.APP_MODIFIER) {
                 AppModifierScreen(
                     onBack = { navController.popBackStackSafely() },
@@ -610,33 +618,6 @@ fun AppNavigation() {
                     onNavigateBack = { navController.popBackStackSafely() }
                 )
             }
-        }
-    }
-}
-
-@Composable
-fun PreviewScreen(appId: Long, onBack: () -> Unit) {
-    val context = LocalContext.current
-    val repository = remember { WebToAppApplication.repository }
-    val webApp by repository.getWebAppById(appId).collectAsState(initial = null)
-    val hasLaunched = remember { androidx.compose.runtime.mutableStateOf(false) }
-
-    LaunchedEffect(webApp) {
-        val app = webApp
-        if (app != null && !hasLaunched.value) {
-            hasLaunched.value = true
-            when (app.appType) {
-                com.webtoapp.data.model.AppType.GALLERY -> {
-                    app.galleryConfig?.let { config ->
-                        com.webtoapp.ui.gallery.GalleryPlayerActivity.launch(context, config, 0, appId)
-                    }
-                }
-
-                else -> {
-                    com.webtoapp.ui.webview.WebViewActivity.start(context, appId)
-                }
-            }
-            onBack()
         }
     }
 }

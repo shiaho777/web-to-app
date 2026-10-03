@@ -112,7 +112,7 @@ fun HomeScreen(
     onCreateOfflinePack: () -> Unit = {},
     onEditApp: (WebApp) -> Unit,
     onEditAppCore: (WebApp) -> Unit = {},
-    onPreviewApp: (WebApp) -> Unit,
+    onPreviewApp: (WebAppSummary) -> Unit,
     onOpenAppModifier: () -> Unit = {},
     onOpenAiSettings: () -> Unit = {},
     onOpenAgent: () -> Unit = {},
@@ -594,11 +594,7 @@ fun HomeScreen(
                         AppCard(
                             app = app,
                             modifier = Modifier.animateItem(),
-                            onClick = {
-                                scope.launch {
-                                    viewModel.getWebApp(app.id)?.let(onPreviewApp)
-                                }
-                            },
+                            onClick = { onPreviewApp(app) },
                             onLongClick = { selectedApp = app },
                             onEdit = {
                                 scope.launch {
@@ -1109,7 +1105,8 @@ fun AppCard(
 
     EnhancedElevatedCard(
         onClick = onClick,
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth(),
+        pressScale = 0.97f,
     ) {
         Row(
             modifier = Modifier
