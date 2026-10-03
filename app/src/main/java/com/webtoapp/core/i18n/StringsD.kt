@@ -2132,6 +2132,123 @@ object StringsD {
         AppLanguage.KOREAN -> "켜면 홈 미리보기와 바로가기가 각 WebApp을 별도 최근 작업으로 열어 동시에 사용할 수 있습니다. 메모리를 더 씁니다. 기본값은 끔."
     }
 
+    val localMcp: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "本地 MCP"
+        AppLanguage.ENGLISH -> "Local MCP"
+        AppLanguage.ARABIC -> "MCP المحلي"
+        AppLanguage.PORTUGUESE -> "MCP local"
+        AppLanguage.SPANISH -> "MCP local"
+        AppLanguage.FRENCH -> "MCP local"
+        AppLanguage.GERMAN -> "Lokales MCP"
+        AppLanguage.RUSSIAN -> "Локальный MCP"
+        AppLanguage.JAPANESE -> "ローカル MCP"
+        AppLanguage.KOREAN -> "로컬 MCP"
+    }
+
+    val localMcpDesc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "开启后在 127.0.0.1 提供与应用内 Agent 相同的工具，供外部 Agent 连接。默认关闭。写操作会在手机上确认。"
+        AppLanguage.ENGLISH -> "When on, serves the same tools as the in-app agent on 127.0.0.1 for an external agent. Off by default. Writes ask for confirmation on the phone."
+        AppLanguage.ARABIC -> "عند التفعيل يقدّم نفس أدوات الوكيل الداخلي على 127.0.0.1. متوقف افتراضياً. عمليات الكتابة تطلب تأكيداً على الهاتف."
+        AppLanguage.PORTUGUESE -> "Quando ativo, oferece as mesmas ferramentas do agente interno em 127.0.0.1. Desligado por padrão. Escrita pede confirmação no telefone."
+        AppLanguage.SPANISH -> "Si está activo, ofrece las mismas herramientas del agente interno en 127.0.0.1. Desactivado por defecto. Escribir pide confirmación en el teléfono."
+        AppLanguage.FRENCH -> "Une fois activé, sert les mêmes outils que l'agent interne sur 127.0.0.1. Désactivé par défaut. Les écritures demandent une confirmation sur le téléphone."
+        AppLanguage.GERMAN -> "Wenn aktiv, stellt dieselben Werkzeuge wie der interne Agent auf 127.0.0.1 bereit. Standard: aus. Schreiben fragt auf dem Telefon nach."
+        AppLanguage.RUSSIAN -> "Когда включено, отдаёт те же инструменты, что и встроенный агент, на 127.0.0.1. По умолчанию выкл. Запись спрашивает подтверждение на телефоне."
+        AppLanguage.JAPANESE -> "オンにすると、アプリ内エージェントと同じツールを 127.0.0.1 で提供します。初期値はオフ。書き込みはスマホで確認します。"
+        AppLanguage.KOREAN -> "켜면 앱 안 에이전트와 같은 도구를 127.0.0.1에서 제공합니다. 기본값은 끔. 쓰기 작업은 휴대폰에서 확인합니다."
+    }
+
+    val localMcpCopyConfig: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "复制配置"
+        AppLanguage.ENGLISH -> "Copy config"
+        AppLanguage.ARABIC -> "نسخ الإعداد"
+        AppLanguage.PORTUGUESE -> "Copiar config"
+        AppLanguage.SPANISH -> "Copiar config"
+        AppLanguage.FRENCH -> "Copier la config"
+        AppLanguage.GERMAN -> "Konfig kopieren"
+        AppLanguage.RUSSIAN -> "Копировать конфиг"
+        AppLanguage.JAPANESE -> "設定をコピー"
+        AppLanguage.KOREAN -> "설정 복사"
+    }
+
+    val localMcpCopied: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "已复制 MCP 配置"
+        AppLanguage.ENGLISH -> "MCP config copied"
+        AppLanguage.ARABIC -> "تم نسخ إعداد MCP"
+        AppLanguage.PORTUGUESE -> "Config MCP copiada"
+        AppLanguage.SPANISH -> "Config MCP copiada"
+        AppLanguage.FRENCH -> "Config MCP copiée"
+        AppLanguage.GERMAN -> "MCP-Konfig kopiert"
+        AppLanguage.RUSSIAN -> "Конфиг MCP скопирован"
+        AppLanguage.JAPANESE -> "MCP設定をコピーしました"
+        AppLanguage.KOREAN -> "MCP 설정을 복사했습니다"
+    }
+
+    val localMcpAddressCopied: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "已复制地址"
+        AppLanguage.ENGLISH -> "Address copied"
+        AppLanguage.ARABIC -> "تم نسخ العنوان"
+        AppLanguage.PORTUGUESE -> "Endereço copiado"
+        AppLanguage.SPANISH -> "Dirección copiada"
+        AppLanguage.FRENCH -> "Adresse copiée"
+        AppLanguage.GERMAN -> "Adresse kopiert"
+        AppLanguage.RUSSIAN -> "Адрес скопирован"
+        AppLanguage.JAPANESE -> "アドレスをコピーしました"
+        AppLanguage.KOREAN -> "주소를 복사했습니다"
+    }
+
+    val localMcpTokenCopied: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "已复制令牌"
+        AppLanguage.ENGLISH -> "Token copied"
+        AppLanguage.ARABIC -> "تم نسخ الرمز"
+        AppLanguage.PORTUGUESE -> "Token copiado"
+        AppLanguage.SPANISH -> "Token copiado"
+        AppLanguage.FRENCH -> "Jeton copié"
+        AppLanguage.GERMAN -> "Token kopiert"
+        AppLanguage.RUSSIAN -> "Токен скопирован"
+        AppLanguage.JAPANESE -> "トークンをコピーしました"
+        AppLanguage.KOREAN -> "토큰을 복사했습니다"
+    }
+
+    val localMcpRotateToken: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "更换令牌"
+        AppLanguage.ENGLISH -> "Rotate token"
+        AppLanguage.ARABIC -> "تدوير الرمز"
+        AppLanguage.PORTUGUESE -> "Trocar token"
+        AppLanguage.SPANISH -> "Rotar token"
+        AppLanguage.FRENCH -> "Renouveler le jeton"
+        AppLanguage.GERMAN -> "Token erneuern"
+        AppLanguage.RUSSIAN -> "Сменить токен"
+        AppLanguage.JAPANESE -> "トークンを更新"
+        AppLanguage.KOREAN -> "토큰 교체"
+    }
+
+    fun localMcpAdb(port: Int): String = when (Strings.lang) {
+        AppLanguage.CHINESE -> "电脑上的 Agent 先执行 adb reverse tcp:$port tcp:$port，再用上面的地址。"
+        AppLanguage.ENGLISH -> "From a computer, run adb reverse tcp:$port tcp:$port, then use the URL above."
+        AppLanguage.ARABIC -> "من الحاسوب نفّذ adb reverse tcp:$port tcp:$port ثم استخدم العنوان أعلاه."
+        AppLanguage.PORTUGUESE -> "No computador, execute adb reverse tcp:$port tcp:$port e use o endereço acima."
+        AppLanguage.SPANISH -> "En el ordenador, ejecuta adb reverse tcp:$port tcp:$port y usa la URL de arriba."
+        AppLanguage.FRENCH -> "Depuis un ordinateur, lancez adb reverse tcp:$port tcp:$port puis utilisez l'adresse ci-dessus."
+        AppLanguage.GERMAN -> "Am Computer adb reverse tcp:$port tcp:$port ausführen, dann die Adresse oben nutzen."
+        AppLanguage.RUSSIAN -> "На компьютере выполните adb reverse tcp:$port tcp:$port и используйте адрес выше."
+        AppLanguage.JAPANESE -> "パソコンでは adb reverse tcp:$port tcp:$port を実行してから、上の URL を使います。"
+        AppLanguage.KOREAN -> "컴퓨터에서는 adb reverse tcp:$port tcp:$port 를 실행한 뒤 위 주소를 사용하세요."
+    }
+
+    fun localMcpBindFailed(detail: String): String = when (Strings.lang) {
+        AppLanguage.CHINESE -> "本地 MCP 没有打开：$detail"
+        AppLanguage.ENGLISH -> "Local MCP did not start: $detail"
+        AppLanguage.ARABIC -> "لم يبدأ MCP المحلي: $detail"
+        AppLanguage.PORTUGUESE -> "O MCP local não iniciou: $detail"
+        AppLanguage.SPANISH -> "El MCP local no arrancó: $detail"
+        AppLanguage.FRENCH -> "Le MCP local n'a pas démarré : $detail"
+        AppLanguage.GERMAN -> "Lokales MCP ist nicht gestartet: $detail"
+        AppLanguage.RUSSIAN -> "Локальный MCP не запустился: $detail"
+        AppLanguage.JAPANESE -> "ローカル MCP を開始できませんでした: $detail"
+        AppLanguage.KOREAN -> "로컬 MCP를 시작하지 못했습니다: $detail"
+    }
+
     val menuHostsAdBlock: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "Hosts 拦截"
         AppLanguage.ENGLISH -> "Hosts Blocking"

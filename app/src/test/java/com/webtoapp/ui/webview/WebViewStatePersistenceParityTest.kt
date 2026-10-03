@@ -52,6 +52,10 @@ class WebViewStatePersistenceParityTest {
             .that(onNewIntent).contains("shouldRecreateForNewIntent")
         assertWithMessage("bare intents must not destroy the live WebView session")
             .that(onNewIntent).doesNotContain("newAppId <= 0 || newAppId != trackedAppId")
+        assertWithMessage("bringing the same preview document forward must not recreate the WebView")
+            .that(onNewIntent).contains("sessionKey")
+        assertWithMessage("the same-document path must return before recreate")
+            .that(onNewIntent.indexOf("sessionKey")).isLessThan(onNewIntent.indexOf("recreate()"))
     }
 
     @Test

@@ -36,6 +36,7 @@ import com.webtoapp.core.agent.tool.builtin.ListAppsTool
 import com.webtoapp.core.agent.tool.builtin.ListFilesTool
 import com.webtoapp.core.agent.tool.builtin.ListModulesTool
 import com.webtoapp.core.agent.tool.builtin.ManageHostsRulesTool
+import com.webtoapp.core.agent.tool.builtin.PreviewTool
 import com.webtoapp.core.agent.tool.builtin.MoveToCategoryTool
 import com.webtoapp.core.agent.tool.builtin.ReadFileTool
 import com.webtoapp.core.agent.tool.builtin.ReadAppFileTool
@@ -67,6 +68,9 @@ class ToolRegistryFactory(
         val all = (base + plan + imagery).distinctBy { it.name }
         return ToolRegistry(all)
     }
+
+    /** In-app tools minus plan mode and image tools. Served by the local MCP. */
+    fun buildForExternalHost(): ToolRegistry = ToolRegistry(baseTools())
 
     private fun baseTools(): List<Tool> = listOf(
         ReadFileTool(),
@@ -123,6 +127,7 @@ class ToolRegistryFactory(
         GetModuleTool(),
         CreateModuleTool(),
         UpdateModuleTool(),
+        PreviewTool(),
     )
 
     private fun planTools(): List<Tool> = listOf(

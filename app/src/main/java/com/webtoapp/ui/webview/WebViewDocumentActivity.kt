@@ -6,8 +6,9 @@ import java.util.WeakHashMap
 
 /**
  * One recents task per document URI. Home preview and shortcuts use it when
- * the About-screen separate-tasks switch is on. [WebViewActivity] stays
- * singleTask so the default path still reuses one preview.
+ * the About-screen separate-tasks switch is on. The preview tool always uses
+ * it, so an external agent has a page the user can watch. [WebViewActivity]
+ * stays singleTask so the default path still reuses one preview.
  */
 class WebViewDocumentActivity : WebViewActivity() {
 
@@ -29,9 +30,11 @@ class WebViewDocumentActivity : WebViewActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         live.add(this)
         super.onCreate(savedInstanceState)
+        PreviewSessions.onActivityReady(this)
     }
 
     override fun onDestroy() {
+        PreviewSessions.onActivityGone(this)
         live.remove(this)
         super.onDestroy()
     }

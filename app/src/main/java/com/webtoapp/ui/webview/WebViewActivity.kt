@@ -62,9 +62,9 @@ import com.webtoapp.core.webview.LocalHttpServer
 import com.webtoapp.core.webview.LongPressHandler
 import com.webtoapp.core.webview.VideoPosterCompat
 import com.webtoapp.core.webview.WebScrollTracker
-import com.webtoapp.core.host.HostRuntimePrefs
 import com.webtoapp.core.webview.WebViewCallbacks
 import com.webtoapp.core.webview.WebViewManager
+import com.webtoapp.core.host.HostRuntimePrefs
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.data.model.KeyboardAdjustMode
 import com.webtoapp.data.model.LongPressMenuStyle
@@ -74,13 +74,16 @@ import com.webtoapp.data.model.SplashType
 import com.webtoapp.data.model.WebApp
 import com.webtoapp.data.model.hasAnyToolbarItem
 import com.webtoapp.data.model.resolveToolbarButtons
-import com.webtoapp.ui.animation.HostPreviewMotion
 import android.content.pm.ActivityInfo
+import com.webtoapp.ui.animation.HostPreviewMotion
 import com.webtoapp.ui.theme.WebToAppTheme
 import com.webtoapp.util.DownloadHelper
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withTimeoutOrNull
+import kotlin.coroutines.resume
 import com.webtoapp.ui.shared.WindowHelper
 import com.webtoapp.ui.shell.ConsoleLevel
 import com.webtoapp.ui.shell.ConsoleLogEntry
@@ -1190,17 +1193,22 @@ open class WebViewActivity : AppCompatActivity() {
     }
 
     override fun onNewIntent(intent: Intent) {
+        val previousKey = getIntent()?.let { PreviewSessions.sessionKey(it) }
         super.onNewIntent(intent)
         setIntent(intent)
         HostPreviewMotion.install(this)
+        // Same preview document brought forward. Recreating here would wipe the
+        // page the agent is in the middle of operating.
+        if (this is WebViewDocumentActivity &&
+            previousKey != null &&
+            previousKey == PreviewSessions.sessionKey(intent)
+        ) {
+            PreviewSessions.onActivityReady(this)
+            return
+        }
         if (shouldRecreateForNewIntent(intent, trackedAppId)) {
             recreate()
         }
-    }
-
-    override fun finish() {
-        super.finish()
-        HostPreviewMotion.onFinish(this)
     }
 
     /**
@@ -1354,6 +1362,37 @@ open class WebViewActivity : AppCompatActivity() {
         super.onLowMemory()
 
         com.webtoapp.core.logging.AppLogger.w("WebViewActivity", "Low memory, skipped manual GC")
+    }
+
+    /**
+     * Runs [script] on the live page and returns the raw evaluateJavascript
+     * result. Null when the surface is gone or the engine does not answer.
+     */
+    internal suspend fun evalForAgent(script: String, timeoutMs: Long = 5_000): String? {
+        return withTimeoutOrNull(timeoutMs) {
+            suspendCancellableCoroutine { cont ->
+                runOnUiThread {
+                    val surface = browserSurface
+                    if (surface == null) {
+                        if (cont.isActive) cont.resume(null)
+                        return@runOnUiThread
+                    }
+                    try {
+                        surface.evaluateJavascript(script) { value ->
+                            if (cont.isActive) cont.resume(value)
+                        }
+                    } catch (e: Exception) {
+                        AppLogger.w("WebViewActivity", "evalForAgent failed: ${e.message}")
+                        if (cont.isActive) cont.resume(null)
+                    }
+                }
+            }
+        }
+    }
+
+    override fun finish() {
+        super.finish()
+        HostPreviewMotion.onFinish(this)
     }
 
     override fun onDestroy() {

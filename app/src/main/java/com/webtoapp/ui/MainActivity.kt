@@ -30,9 +30,14 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.view.WindowCompat
 import com.webtoapp.WebToAppApplication
+import com.webtoapp.core.agent.mcp.HostMcpController
+import com.webtoapp.core.agent.permission.ChoiceRequest
+import com.webtoapp.core.agent.permission.PermissionRequest
 import com.webtoapp.core.i18n.LanguageManager
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.logging.AppLogger
+import com.webtoapp.ui.agent.components.ChoiceBottomSheet
+import com.webtoapp.ui.agent.components.PermissionDialog
 import com.webtoapp.ui.components.FirstLaunchLanguageScreen
 import com.webtoapp.ui.navigation.AppNavigation
 import com.webtoapp.ui.shell.ShellActivity
@@ -42,6 +47,7 @@ import com.webtoapp.ui.theme.WebToAppTheme
 import com.webtoapp.ui.theme.rememberThemeRevealState
 import com.webtoapp.ui.webview.WebViewActivity
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
@@ -185,6 +191,29 @@ class MainActivity : ComponentActivity() {
                         }
 
                         CircularRevealOverlay(revealState = themeRevealState)
+                    }
+                }
+
+                var mcpPermission by remember { mutableStateOf<PermissionRequest?>(null) }
+                var mcpChoice by remember { mutableStateOf<ChoiceRequest?>(null) }
+                LaunchedEffect(Unit) {
+                    launch {
+                        HostMcpController.prompter.requests.collect { mcpPermission = it }
+                    }
+                    launch {
+                        HostMcpController.prompter.choices.collect { mcpChoice = it }
+                    }
+                }
+                mcpPermission?.let { req ->
+                    PermissionDialog(req) { response ->
+                        mcpPermission = null
+                        HostMcpController.prompter.respond(req.toolCallId, response)
+                    }
+                }
+                mcpChoice?.let { req ->
+                    ChoiceBottomSheet(req) { response ->
+                        mcpChoice = null
+                        HostMcpController.prompter.respondChoice(req.id, response)
                     }
                 }
 

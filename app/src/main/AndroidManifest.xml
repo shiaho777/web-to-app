@@ -303,7 +303,7 @@
             android:windowSoftInputMode="adjustResize"
             android:theme="@style/Theme.WebToApp.Shell" />
 
-        <!-- Separate recents task. Home preview and shortcuts use it when that switch is on. -->
+        <!-- Separate recents task. Home preview uses it when that switch is on. The preview tool always does. -->
         <activity
             android:name=".ui.webview.WebViewDocumentActivity"
             android:configChanges="orientation|screenSize|keyboardHidden|screenLayout|smallestScreenSize|uiMode"

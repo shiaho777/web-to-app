@@ -9,9 +9,11 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -38,6 +40,7 @@ import androidx.compose.material.icons.outlined.ExpandLess
 import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.FilterNone
+import androidx.compose.material.icons.outlined.Hub
 import androidx.compose.material.icons.outlined.ForkRight
 import androidx.compose.material.icons.outlined.Forum
 import androidx.compose.material.icons.outlined.Groups
@@ -74,15 +77,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.webtoapp.R
+import com.webtoapp.core.agent.mcp.HostMcpController
 import com.webtoapp.core.host.HostRuntimePrefs
 import com.webtoapp.core.i18n.AppLanguage
 import com.webtoapp.core.i18n.Strings
@@ -137,6 +144,8 @@ fun AboutScreen(onBack: () -> Unit) {
             DescriptionsToggleCard()
 
             SeparateTasksCard()
+
+            LocalMcpCard()
 
             OtherProjectsSection()
 
@@ -210,6 +219,131 @@ private fun SeparateTasksCard() {
             }
         )
     }
+}
+
+@Composable
+private fun LocalMcpCard() {
+    val context = LocalContext.current
+    val hostPrefs = remember { HostRuntimePrefs.getInstance(context) }
+    val mcp by hostPrefs.mcpFlow.collectAsStateWithLifecycle()
+    val status by HostMcpController.status.collectAsStateWithLifecycle()
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+
+    fun setEnabled(enabled: Boolean) {
+        scope.launch {
+            hostPrefs.setMcpEnabled(enabled)
+            HostMcpController.apply(context.applicationContext)
+        }
+    }
+
+    WtaCard(
+        modifier = Modifier.fillMaxWidth(),
+        tone = WtaCardTone.Elevated,
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)
+    ) {
+        Column {
+            WtaSettingRow(
+                icon = Icons.Outlined.Hub,
+                title = Strings.localMcp,
+                subtitle = Strings.localMcpDesc,
+                onClick = { setEnabled(!mcp.enabled) },
+                trailing = {
+                    WtaSwitch(
+                        checked = mcp.enabled,
+                        onCheckedChange = { setEnabled(it) }
+                    )
+                }
+            )
+            AnimatedVisibility(
+                visible = mcp.enabled,
+                enter = com.webtoapp.ui.animation.CardExpandTransition,
+                exit = com.webtoapp.ui.animation.CardCollapseTransition
+            ) {
+                Column(
+                    modifier = Modifier.padding(
+                        horizontal = WtaSpacing.RowHorizontal,
+                        vertical = WtaSpacing.ContentGap
+                    ),
+                    verticalArrangement = Arrangement.spacedBy(WtaSpacing.ContentGap)
+                ) {
+                    val port = (status as? HostMcpController.Status.Running)?.port ?: mcp.port
+                    CopyOnLongPressText(
+                        text = "http://127.0.0.1:$port/mcp",
+                        clipLabel = "webtoapp-mcp-url",
+                        toast = Strings.localMcpAddressCopied,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    if (mcp.token.isNotEmpty()) {
+                        CopyOnLongPressText(
+                            text = mcp.token,
+                            clipLabel = "webtoapp-mcp-token",
+                            toast = Strings.localMcpTokenCopied,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    val failed = status as? HostMcpController.Status.Failed
+                    if (failed != null) {
+                        Text(
+                            text = Strings.localMcpBindFailed(failed.message),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                    Text(
+                        text = Strings.localMcpAdb(port),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small)) {
+                        TextButton(onClick = {
+                            context.copyToClipboard(
+                                "webtoapp-mcp",
+                                HostMcpController.configSnippet(port, mcp.token)
+                            )
+                            Toast.makeText(context, Strings.localMcpCopied, Toast.LENGTH_SHORT).show()
+                        }) {
+                            Text(Strings.localMcpCopyConfig)
+                        }
+                        TextButton(onClick = {
+                            scope.launch { hostPrefs.rotateMcpToken() }
+                        }) {
+                            Text(Strings.localMcpRotateToken)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun CopyOnLongPressText(
+    text: String,
+    clipLabel: String,
+    toast: String,
+    style: TextStyle,
+    color: Color,
+) {
+    val context = LocalContext.current
+    val haptics = LocalHapticFeedback.current
+    Text(
+        text = text,
+        style = style,
+        color = color,
+        modifier = Modifier
+            .fillMaxWidth()
+            .combinedClickable(
+                onClick = {},
+                onLongClick = {
+                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                    context.copyToClipboard(clipLabel, text)
+                    Toast.makeText(context, toast, Toast.LENGTH_SHORT).show()
+                }
+            )
+    )
 }
 
 @Composable

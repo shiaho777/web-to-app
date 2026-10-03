@@ -6,6 +6,7 @@ import android.content.Context
 import coil.ImageLoader
 import coil.ImageLoaderFactory
 import com.webtoapp.core.activation.ActivationManager
+import com.webtoapp.core.agent.mcp.HostMcpController
 import com.webtoapp.core.adblock.AdBlocker
 import com.webtoapp.core.announcement.AnnouncementManager
 import com.webtoapp.core.i18n.Strings
@@ -26,6 +27,7 @@ import com.webtoapp.di.appModules
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
@@ -107,6 +109,11 @@ class WebToAppApplication : Application(), ImageLoaderFactory {
             ),
             database = database,
         ).also { it.initialize(appScope) }
+
+        appScope.launch {
+            runCatching { HostMcpController.restore(this@WebToAppApplication) }
+                .onFailure { AppLogger.w("Application", "local MCP restore failed: ${it.message}") }
+        }
     }
 
     override fun onTerminate() {
