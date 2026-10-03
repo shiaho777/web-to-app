@@ -3390,6 +3390,8 @@ object Strings {
     val totalSize: String get() = StringsE.totalSize
     val extensionName: String get() = StringsE.extensionName
     val install: String get() = StringsE.install
+    val launchInstalledApp: String get() = StringsE.launchInstalledApp
+    val launchInstalledAppFailed: String get() = StringsE.launchInstalledAppFailed
     val matchingSites: String get() = StringsE.matchingSites
     val requiredApis: String get() = StringsE.requiredApis
     val contentScripts: String get() = StringsE.contentScripts

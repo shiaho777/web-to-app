@@ -939,6 +939,30 @@ object StringsE {
         AppLanguage.JAPANESE -> "インストール"
         AppLanguage.KOREAN -> "설치"
     }
+    val launchInstalledApp: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "启动"
+        AppLanguage.ENGLISH -> "Launch"
+        AppLanguage.ARABIC -> "تشغيل"
+        AppLanguage.PORTUGUESE -> "Abrir"
+        AppLanguage.SPANISH -> "Abrir"
+        AppLanguage.FRENCH -> "Ouvrir"
+        AppLanguage.GERMAN -> "Öffnen"
+        AppLanguage.RUSSIAN -> "Открыть"
+        AppLanguage.JAPANESE -> "起動"
+        AppLanguage.KOREAN -> "실행"
+    }
+    val launchInstalledAppFailed: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "无法启动该应用，请确认它已安装且有桌面图标"
+        AppLanguage.ENGLISH -> "Could not launch the app. Check that it is installed and has a launcher icon."
+        AppLanguage.ARABIC -> "تعذر تشغيل التطبيق. تأكد من أنه مثبت وله أيقونة في الشاشة الرئيسية."
+        AppLanguage.PORTUGUESE -> "Não foi possível abrir o aplicativo. Verifique se ele está instalado e tem um ícone."
+        AppLanguage.SPANISH -> "No se pudo abrir la aplicación. Comprueba que esté instalada y tenga un icono."
+        AppLanguage.FRENCH -> "Impossible d'ouvrir l'application. Vérifiez qu'elle est installée et qu'elle a une icône."
+        AppLanguage.GERMAN -> "Die App konnte nicht geöffnet werden. Prüfen Sie, ob sie installiert ist und ein Startsymbol hat."
+        AppLanguage.RUSSIAN -> "Не удалось открыть приложение. Проверьте, что оно установлено и есть значок запуска."
+        AppLanguage.JAPANESE -> "アプリを起動できません。インストール済みでランチャーアイコンがあるか確認してください。"
+        AppLanguage.KOREAN -> "앱을 실행할 수 없습니다. 설치되어 있고 런처 아이콘이 있는지 확인하세요."
+    }
     val matchingSites: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "匹配网站"
         AppLanguage.ENGLISH -> "Matching sites"

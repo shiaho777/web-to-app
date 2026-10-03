@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.OpenInNew
 import androidx.compose.material.icons.filled.Android
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.outlined.Autorenew
@@ -54,6 +55,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -227,10 +231,36 @@ private fun BuildApkContent(
     var suggestedVersion by remember(resolvedPackageName) {
         mutableStateOf<Pair<Int, String>?>(null)
     }
-    LaunchedEffect(resolvedPackageName, baseVersionCode, autoVersionBump, uiReady) {
+    // True when this build's package is already on the device. Re-probed on
+    // resume so returning from the system installer reveals Launch (#1151).
+    var targetInstalled by remember(resolvedPackageName) { mutableStateOf(false) }
+    var installProbeTick by remember(resolvedPackageName) { mutableIntStateOf(0) }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner, resolvedPackageName) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) installProbeTick++
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+    LaunchedEffect(resolvedPackageName, baseVersionCode, autoVersionBump, uiReady, installProbeTick) {
         if (!uiReady) return@LaunchedEffect
-        suggestedVersion = withContext(Dispatchers.IO) {
-            com.webtoapp.core.apkbuilder.ApkBuilder.suggestedVersionForInstall(context, webApp)
+        val probe = withContext(Dispatchers.IO) {
+            val installed = ApkBuilder.findInstalledVersionCode(context, resolvedPackageName) != null
+            val suggested = ApkBuilder.suggestedVersionForInstall(context, webApp)
+            installed to suggested
+        }
+        targetInstalled = probe.first
+        suggestedVersion = probe.second
+    }
+    fun launchInstalledApp() {
+        val started = ApkBuilder.launchInstalledPackage(context, resolvedPackageName)
+        if (!started) {
+            android.widget.Toast.makeText(
+                context,
+                Strings.launchInstalledAppFailed,
+                android.widget.Toast.LENGTH_SHORT
+            ).show()
         }
     }
     val engineFileManager = remember { com.webtoapp.core.engine.download.EngineFileManager(context) }
@@ -450,6 +480,25 @@ private fun BuildApkContent(
                             Text("AAB", maxLines = 1)
                         }
                         Spacer(Modifier.width(8.dp))
+                        if (targetInstalled) {
+                            PremiumOutlinedButton(
+                                onClick = { launchInstalledApp() },
+                                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
+                            ) {
+                                Icon(
+                                    Icons.AutoMirrored.Outlined.OpenInNew,
+                                    contentDescription = Strings.launchInstalledApp,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(Modifier.width(6.dp))
+                                Text(
+                                    Strings.launchInstalledApp,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                            Spacer(Modifier.width(8.dp))
+                        }
                         PremiumButton(
                             onClick = {
                                 if (builtApk != null) {
@@ -507,7 +556,7 @@ private fun BuildApkContent(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             item {
-                WtaCard {
+                val headerContent: @Composable ColumnScope.() -> Unit = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     val iconPath = webApp.iconPath
                     Box(
@@ -572,7 +621,21 @@ private fun BuildApkContent(
                             overflow = TextOverflow.Ellipsis
                         )
                     }
+                    if (targetInstalled) {
+                        Spacer(Modifier.width(8.dp))
+                        Icon(
+                            Icons.AutoMirrored.Outlined.OpenInNew,
+                            contentDescription = Strings.launchInstalledApp,
+                            modifier = Modifier.size(18.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
+                }
+                if (targetInstalled) {
+                    WtaCard(onClick = { launchInstalledApp() }, content = headerContent)
+                } else {
+                    WtaCard(content = headerContent)
                 }
             }
 

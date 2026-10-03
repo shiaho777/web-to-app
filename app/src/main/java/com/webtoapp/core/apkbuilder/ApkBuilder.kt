@@ -181,6 +181,24 @@ class ApkBuilder(private val context: Context) {
         }
 
         /**
+         * Opens the installed app for [packageName]. Returns false when the
+         * package is missing, has no launcher activity, or the start fails.
+         */
+        fun launchInstalledPackage(context: Context, packageName: String): Boolean {
+            if (packageName.isBlank()) return false
+            val launch = context.packageManager.getLaunchIntentForPackage(packageName)
+                ?: return false
+            launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            return try {
+                context.startActivity(launch)
+                true
+            } catch (e: Exception) {
+                AppLogger.e("ApkBuilder", "Launch installed package failed", e)
+                false
+            }
+        }
+
+        /**
          * Android refuses to install over an existing package when versionCode
          * is lower, so rebuilds that would land as a downgrade get their
          * version bumped. Equal-or-higher versions set by the user are left
