@@ -48,7 +48,7 @@ features:
 
 1. **选择类型**
 
-   从 [12 种应用类型](/zh/guide/app-types/)里选 —— 普通的 [Web](/zh/guide/app-types/web) 封装、[HTML](/zh/guide/app-types/html) 或 [Frontend](/zh/guide/app-types/frontend) 构建,或是设备端运行的 [Node.js](/zh/guide/app-types/nodejs)、[PHP](/zh/guide/app-types/php)、[Python](/zh/guide/app-types/python)、[Go](/zh/guide/app-types/go)、[WordPress](/zh/guide/app-types/wordpress) 服务器。
+   从 [12 种应用类型](/zh/guide/app-types/)里选 —— 普通的 [Web](/zh/guide/app-types/web) 封装、[HTML](/zh/guide/app-types/html) 或 [Frontend](/zh/guide/app-types/frontend) 构建,或是设备端运行的 [Node.js](/zh/guide/app-types/nodejs)、[PHP](/zh/guide/app-types/php)、[Python](/zh/guide/app-types/python)、[Go](/zh/guide/app-types/go)、[WordPress](/zh/guide/app-types/wordpress) 服务器。服务端类型和图片/视频在打开[关于 → 高级功能](/zh/guide/more-features/about)之前保持隐藏。
 
 2. **填写基本信息**
 

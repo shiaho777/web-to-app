@@ -27,3 +27,5 @@ Grouped with dividers, top to bottom:
 | **About** | [About](/guide/more-features/about) |
 
 Each is covered in detail under [More Features](/guide/more-features/agent).
+
+Linux Environment, Runtime Management, and Port Manager are listed only while **Advanced features** is on in [About](/guide/more-features/about).

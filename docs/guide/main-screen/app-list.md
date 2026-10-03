@@ -17,6 +17,8 @@ Each card shows:
 
 | Gesture | Result |
 | --- | --- |
-| **Tap the card** | Preview the app |
+| **Tap the card** | Open the preview activity directly (WebView, gallery player, or media player). One back returns to the list. |
 | **Tap ⋮ on the card** | Open the [action menu](/guide/app-actions/edit-core-config) |
 | **Swipe the card left** | Quick [delete](/guide/app-actions/delete) (with confirmation) |
+
+[About → Separate WebApp tasks](/guide/more-features/about) is off by default. When it is on, each home preview and each desktop shortcut gets its own recents entry.

@@ -20,9 +20,9 @@ On launch, `WebToAppApplication` starts in **builder mode** (`SHELL_RUNTIME_ONLY
 
 ## 2. Create an app definition
 
-At the bottom of **My Apps**, tap **Create**. A panel expands with a 3-column grid of the 12 [app types](/guide/app-types/):
+At the bottom of **My Apps**, tap **Create**. A panel expands with a 3-column grid of [app types](/guide/app-types/).
 
-**Web · Multi-Web · HTML · Offline Pack · Frontend · PHP · WordPress · Node.js · Python · Go · Media · Gallery**
+By default that grid is **Web · Multi-Web · HTML · Offline Pack · Frontend · Gallery**. PHP, WordPress, Node.js, Python, Go, and Media appear after you turn on **Advanced features** in [About](/guide/more-features/about). That switch is off by default.
 
 Tap **Web** for your first app. The Web editor opens.
 
@@ -40,11 +40,13 @@ Tap **Save**. Under the hood, the editor assembles a `WebApp` object (with `appT
 
 ## 4. Preview
 
-On **My Apps**, tap your app's card. The preview router checks the app's `appType` and launches the matching runtime:
+On **My Apps**, tap your app's card. The list opens the matching activity directly:
 
-- `IMAGE` / `VIDEO` → the media player activity
+- `IMAGE` / `VIDEO` → the media player activity (only while Advanced features is on)
 - `GALLERY` → the gallery player activity
 - everything else (including `WEB`) → the WebView activity
+
+There is no empty preview page on the back stack. One back returns to the list.
 
 For a Web app, the WebView activity loads your URL with your configured settings — the same code the exported app will run. (Tap the card's ⋮ button instead to open the [action menu](/guide/app-actions/edit-core-config).)
 

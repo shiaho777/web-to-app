@@ -48,7 +48,7 @@ features:
 
 1. **Pick a type**
 
-   Choose from [12 app types](/guide/app-types/) — a plain [Web](/guide/app-types/web) wrapper, [HTML](/guide/app-types/html) or [Frontend](/guide/app-types/frontend) builds, or on-device [Node.js](/guide/app-types/nodejs), [PHP](/guide/app-types/php), [Python](/guide/app-types/python), [Go](/guide/app-types/go), [WordPress](/guide/app-types/wordpress) servers.
+   Choose from [12 app types](/guide/app-types/) — a plain [Web](/guide/app-types/web) wrapper, [HTML](/guide/app-types/html) or [Frontend](/guide/app-types/frontend) builds, or on-device [Node.js](/guide/app-types/nodejs), [PHP](/guide/app-types/php), [Python](/guide/app-types/python), [Go](/guide/app-types/go), [WordPress](/guide/app-types/wordpress) servers. The server and image/video types stay hidden until [About → Advanced features](/guide/more-features/about) is on.
 
 2. **Fill in the basics**
 

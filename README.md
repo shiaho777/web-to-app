@@ -138,6 +138,8 @@ A quick scan of what's in the box. Each links to the detailed feature map below.
 | Multiple sites | Tab/card/feed/drawer multi-web APK | Link hubs, portals, app collections |
 | Installed APK | Rebranded clone or shortcut disguise | Icon/name/package experiments, repackaging research |
 
+Node.js, PHP, Python, Go, WordPress, image, and video stay in the app. Turn them on from **About → Advanced features** (off by default). Gallery does not need that switch.
+
 ---
 
 ## Quick start
@@ -145,7 +147,7 @@ A quick scan of what's in the box. Each links to the detailed feature map below.
 From a fresh install to your first signed APK in about a minute:
 
 1. **Install the builder** — get the APK from [GitHub Releases](https://github.com/shiaho777/web-to-app/releases) onto a device running Android 6.0 (API 23) or newer.
-2. **Create an app** — on **My Apps**, tap **Create** and pick one of the 12 app types (Web · Multi-Site · HTML · Offline Pack · Frontend · PHP · WordPress · Node.js · Python · Go · Media App · Gallery).
+2. **Create an app** — on **My Apps**, tap **Create**. The default grid is Web, Multi-Site, HTML, Offline Pack, Frontend, and Gallery. PHP, WordPress, Node.js, Python, Go, and Media appear after **About → Advanced features** is on.
 3. **Fill in the basics** — app name, target URL (or your project files), and an optional icon, then **Save**. Every other editor card is optional configuration.
 4. **Preview** — tap the app's card to run it in the same runtime code the export will use.
 5. **Build** — tap **⋮ → Build APK**, pick the engine and options, and get a signed APK ready to install or share. Shipping to Google Play? Use **⋮ → Google Play** instead — it builds the APK, converts it to a Play-ready signed AAB with `targetSdk` rewritten, and generates the Play metadata — all on-device.

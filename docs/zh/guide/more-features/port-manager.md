@@ -1,6 +1,6 @@
 # 端口管理
 
-在所有生成的应用间协调本地服务运行时所用的端口。从 [⋮ → 端口管理](/zh/guide/main-screen/more) 打开。
+在所有生成的应用间协调本地服务运行时所用的端口。从 [⋮ → 端口管理](/zh/guide/main-screen/more) 打开。该菜单项只在[关于](/zh/guide/more-features/about)页的 **高级功能** 开启时列出。
 
 ## 功能
 

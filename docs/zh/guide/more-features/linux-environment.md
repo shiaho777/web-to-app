@@ -1,6 +1,6 @@
 # Linux 环境
 
-管理服务端运行时应用类型([Node.js](/zh/guide/app-types/nodejs)、[PHP](/zh/guide/app-types/php)、[Python](/zh/guide/app-types/python))和[前端](/zh/guide/app-types/frontend)构建所用的设备端工具链与依赖。从 [⋮ → Linux 环境](/zh/guide/main-screen/more) 打开。
+管理服务端运行时应用类型([Node.js](/zh/guide/app-types/nodejs)、[PHP](/zh/guide/app-types/php)、[Python](/zh/guide/app-types/python))和[前端](/zh/guide/app-types/frontend)构建所用的设备端工具链与依赖。从 [⋮ → Linux 环境](/zh/guide/main-screen/more) 打开。该菜单项只在[关于](/zh/guide/more-features/about)页的 **高级功能** 开启时列出。
 
 ## 功能
 

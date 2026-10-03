@@ -19,6 +19,10 @@ Tap [Create](/guide/main-screen/create-app) on My Apps to open the app-type pick
 | [Media](/guide/app-types/media) | An image or video | Media-player APK | Single media viewers |
 | [Gallery](/guide/app-types/gallery) | A media collection | Gallery APK | Albums, portfolios |
 
+::: tip Advanced features
+PHP, WordPress, Node.js, Python, Go, and Media (image and video) stay in the app, but they stay out of the create grid until **Advanced features** is on in [About](/guide/more-features/about). The switch is off by default. While it is off, those types also cannot be previewed, exported, pinned as shortcuts, or created by the in-app agent. Gallery is always in the grid. Projects you already saved stay in the list and can still be edited.
+:::
+
 ## The creation flow
 
 Every type follows the same shape:

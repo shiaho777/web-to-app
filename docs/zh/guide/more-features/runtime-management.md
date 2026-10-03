@@ -1,6 +1,6 @@
 # 运行时管理
 
-下载并管理服务端运行时应用所使用的运行时二进制。从 [⋮ → 运行时管理](/zh/guide/main-screen/more) 打开。
+下载并管理服务端运行时应用所使用的运行时二进制。从 [⋮ → 运行时管理](/zh/guide/main-screen/more) 打开。该菜单项只在[关于](/zh/guide/more-features/about)页的 **高级功能** 开启时列出。
 
 ## 管理的运行时
 

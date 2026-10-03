@@ -1,6 +1,6 @@
 # Port Manager
 
-Coordinates the local-server ports used by runtime apps across all your generated apps. Open it from [⋮ → Port Manager](/guide/main-screen/more).
+Coordinates the local-server ports used by runtime apps across all your generated apps. Open it from [⋮ → Port Manager](/guide/main-screen/more). The menu item is listed only while **Advanced features** is on in [About](/guide/more-features/about).
 
 ## Features
 

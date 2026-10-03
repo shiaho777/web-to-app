@@ -20,6 +20,8 @@ WebToApp 的核心是管理一份**应用定义**列表。每个定义是一条 
 
 网页类类型在 WebView 中加载 URL 或本地文件;运行时类型(`NODEJS_APP`、`PHP_APP`、`PYTHON_APP`、`GO_APP`、`WORDPRESS`)在设备上 fork 一个原生服务二进制,并把 WebView 指向本地端口;媒体类型(`IMAGE`、`VIDEO`、`GALLERY`)直接播放内容。每种见[创建应用](/zh/guide/app-types/)。
 
+PHP、WordPress、Node.js、Python、Go、图片和视频由[关于 → 高级功能](/zh/guide/more-features/about)控制,该开关默认关闭。这些类型的代码仍在应用里;开关只决定能否创建、预览和导出。画廊不受这个开关控制。
+
 ## 一套代码,两种运行方式
 
 同一个 `WebToAppApplication` 以两种模式运行,由一个构建标志选择:

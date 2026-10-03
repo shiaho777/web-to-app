@@ -22,7 +22,7 @@ Android 6.0(API 23)或更高。
 
 ### 能创建哪些应用类型?
 
-12 种:网页、多站点、HTML、离线包、前端、PHP、WordPress、Node.js、Python、Go、媒体和画廊。见[创建应用](/zh/guide/app-types/)。
+12 种:网页、多站点、HTML、离线包、前端、PHP、WordPress、Node.js、Python、Go、媒体和画廊。见[创建应用](/zh/guide/app-types/)。PHP、WordPress、Node.js、Python、Go 和媒体在打开[关于 → 高级功能](/zh/guide/more-features/about)之前不会出现在创建网格里。画廊不需要这个开关。
 
 ## 创建与编辑
 

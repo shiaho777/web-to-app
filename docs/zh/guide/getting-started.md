@@ -20,9 +20,9 @@
 
 ## 2. 创建一个应用定义
 
-在 **我的应用** 底部,点击 **创建**。会展开一个面板,含 12 种[应用类型](/zh/guide/app-types/)的 3 列网格:
+在 **我的应用** 底部,点击 **创建**。会展开一个面板,含[应用类型](/zh/guide/app-types/)的 3 列网格。
 
-**网页 · 多站点 · HTML · 离线包 · 前端 · PHP · WordPress · Node.js · Python · Go · 媒体 · 画廊**
+默认网格是 **网页 · 多站点 · HTML · 离线包 · 前端 · 画廊**。PHP、WordPress、Node.js、Python、Go 和媒体要在[关于](/zh/guide/more-features/about)页打开 **高级功能** 后才出现。该开关默认关闭。
 
 第一个应用点击 **网页**。网页编辑器打开。
 
@@ -40,11 +40,13 @@
 
 ## 4. 预览
 
-在 **我的应用** 中,点击你的应用卡片。预览路由检查应用的 `appType` 并启动对应的运行时:
+在 **我的应用** 中,点击你的应用卡片。列表会直接打开对应的 activity:
 
-- `IMAGE` / `VIDEO` → 媒体播放器 activity
+- `IMAGE` / `VIDEO` → 媒体播放器 activity(仅在高级功能开启时)
 - `GALLERY` → 画廊播放器 activity
 - 其他一切(包括 `WEB`)→ WebView activity
+
+返回栈上没有空白预览页。按一次返回就回到列表。
 
 对于网页应用,WebView activity 用你配置的设置加载你的 URL —— 与导出的应用将运行的代码相同。(改为点击卡片上的 ⋮ 按钮可打开[操作菜单](/zh/guide/app-actions/edit-core-config)。)
 

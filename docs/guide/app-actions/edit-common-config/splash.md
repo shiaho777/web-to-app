@@ -20,4 +20,5 @@ Shows an image or video splash screen when the app launches.
 ## Notes
 
 - When the status bar is visible, the countdown/skip chip automatically sits below it so it is never covered; in pure fullscreen it stays at the top corner.
+- The skip label follows the generated app's language. It uses one of the builder's 10 languages, not a fixed English "Skip".
 - Splash media is packaged into the exported APK (and can be encrypted).

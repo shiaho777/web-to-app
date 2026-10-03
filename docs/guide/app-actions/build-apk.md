@@ -14,6 +14,8 @@ Builds and signs an installable APK from the app. Tap ⋮ on an app card, then *
 
 A **preflight check** runs first and reports blocking errors. After a successful build the summary offers [Export source](/guide/app-actions/export-apk), and you can jump to [AAB export](/guide/more-features/google-play).
 
+When this package is already installed, **Launch** sits between AAB and the main build/install button, and the header card opens the same package. The action appears again when you return from the system installer. A package with no launcher icon shows a toast instead of doing nothing.
+
 ## What happens
 
 WebToApp patches the shell template, embeds your config and content, prunes unused permissions, and signs the result (V1/V2/V3).

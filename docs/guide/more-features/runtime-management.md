@@ -1,6 +1,6 @@
 # Runtime Management
 
-Downloads and manages the runtime binaries used by server-runtime apps. Open it from [⋮ → Runtime Management](/guide/main-screen/more).
+Downloads and manages the runtime binaries used by server-runtime apps. Open it from [⋮ → Runtime Management](/guide/main-screen/more). The menu item is listed only while **Advanced features** is on in [About](/guide/more-features/about).
 
 ## Runtimes managed
 

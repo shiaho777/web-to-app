@@ -20,6 +20,8 @@ The `AppType` enum defines what an app can be:
 
 The web-oriented types load a URL or local files in a WebView; the runtime types (`NODEJS_APP`, `PHP_APP`, `PYTHON_APP`, `GO_APP`, `WORDPRESS`) fork a native server binary on-device and point the WebView at a local port; the media types (`IMAGE`, `VIDEO`, `GALLERY`) play content directly. See [Create App](/guide/app-types/) for each.
 
+PHP, WordPress, Node.js, Python, Go, image, and video are gated by [About → Advanced features](/guide/more-features/about), which is off by default. The types remain in the app; the switch only controls whether they can be created, previewed, and exported. Gallery is not gated.
+
 ## One codebase, two ways to run
 
 The same `WebToAppApplication` runs in two modes, selected by a build flag:

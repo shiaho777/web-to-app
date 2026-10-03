@@ -17,6 +17,8 @@
 
 | 手势 | 结果 |
 | --- | --- |
-| **点卡片** | 预览应用 |
+| **点卡片** | 直接打开预览 activity(WebView、画廊播放器或媒体播放器)。按一次返回就回到列表。 |
 | **点卡片上的 ⋮** | 打开[操作菜单](/zh/guide/app-actions/edit-core-config) |
 | **向左滑动卡片** | 快速[删除](/zh/guide/app-actions/delete)(带确认) |
+
+[关于 → WebApp 独立任务](/zh/guide/more-features/about)默认关闭。开启后,每次首页预览和每个桌面快捷方式都会单独占用一条最近任务。

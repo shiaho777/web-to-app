@@ -1,6 +1,6 @@
 # Linux Environment
 
-Manages the on-device toolchains and dependencies used by the server-runtime app types ([Node.js](/guide/app-types/nodejs), [PHP](/guide/app-types/php), [Python](/guide/app-types/python)) and [Frontend](/guide/app-types/frontend) builds. Open it from [⋮ → Linux Environment](/guide/main-screen/more).
+Manages the on-device toolchains and dependencies used by the server-runtime app types ([Node.js](/guide/app-types/nodejs), [PHP](/guide/app-types/php), [Python](/guide/app-types/python)) and [Frontend](/guide/app-types/frontend) builds. Open it from [⋮ → Linux Environment](/guide/main-screen/more). The menu item is listed only while **Advanced features** is on in [About](/guide/more-features/about).
 
 ## Features
 

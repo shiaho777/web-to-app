@@ -22,7 +22,7 @@ A URL wrapper just opens a website in a WebView. WebToApp additionally runs **re
 
 ### What app types can I create?
 
-Twelve: Web, Multi-Web, HTML, Offline Pack, Frontend, PHP, WordPress, Node.js, Python, Go, Media, and Gallery. See [Create App](/guide/app-types/).
+Twelve: Web, Multi-Web, HTML, Offline Pack, Frontend, PHP, WordPress, Node.js, Python, Go, Media, and Gallery. See [Create App](/guide/app-types/). PHP, WordPress, Node.js, Python, Go, and Media stay out of the create grid until [About → Advanced features](/guide/more-features/about) is on. Gallery does not need that switch.
 
 ## Creating & editing
 

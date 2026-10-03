@@ -23,6 +23,10 @@ Beyond generating web apps, plugins, userscripts, MV3 Chrome extensions, and loc
 - **Plan mode** — proposes a plan and waits for your approval before applying changes (shown with a plan-mode badge).
 - **Resilience** — automatic retry with backoff on 429/5xx responses.
 
+## Local MCP
+
+[About → Local MCP](/guide/more-features/about) is off by default. When it is on, an external agent can call the same tools over `127.0.0.1`, with a bearer token. A read-only preview tool opens the page in a document task you can watch. Write tools still ask on the phone. Generated APKs do not ship this server. A computer reaches the port with `adb reverse`.
+
 ## Configuration
 
 Agent uses the model and keys configured in [AI Settings](/guide/more-features/ai-settings).

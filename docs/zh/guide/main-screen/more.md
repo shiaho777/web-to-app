@@ -27,3 +27,5 @@
 | **关于** | [关于](/zh/guide/more-features/about) |
 
 每一项都在[更多功能](/zh/guide/more-features/agent)中有详细说明。
+
+Linux 环境、运行时管理和端口管理只在[关于](/zh/guide/more-features/about)页的 **高级功能** 开启时列出。
