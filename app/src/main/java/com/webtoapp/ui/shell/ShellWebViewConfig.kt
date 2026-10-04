@@ -257,6 +257,7 @@ fun buildWebViewConfig(config: ShellConfig): WebViewConfig {
         ),
 
         swipeRefreshEnabled = config.webViewConfig.swipeRefreshEnabled,
+        overscrollEffectEnabled = config.webViewConfig.overscrollEffectEnabled,
         swipeRefreshZone = try {
             com.webtoapp.data.model.SwipeRefreshZone.valueOf(config.webViewConfig.swipeRefreshZone)
         } catch (e: Exception) {

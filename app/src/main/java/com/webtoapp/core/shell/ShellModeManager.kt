@@ -1483,6 +1483,10 @@ data class WebViewShellConfig(
     @SerializedName("swipeRefreshZone")
     val swipeRefreshZone: String = "TOP_EDGE",
 
+    /** Missing on pre-#1193 exports. True keeps the platform edge effect. */
+    @SerializedName("overscrollEffectEnabled")
+    val overscrollEffectEnabled: Boolean = true,
+
     @SerializedName("fullscreenEnabled")
     val fullscreenEnabled: Boolean = true,
 

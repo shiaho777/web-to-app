@@ -1748,6 +1748,32 @@ object StringsB {
         AppLanguage.KOREAN -> "아래로 스와이프하여 새로고침 허용"
     }
 
+    val overscrollEffectSetting: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "越界回弹"
+        AppLanguage.ENGLISH -> "Edge overscroll"
+        AppLanguage.ARABIC -> "التمرير خارج الحافة"
+        AppLanguage.PORTUGUESE -> "Rolagem além da borda"
+        AppLanguage.SPANISH -> "Desplazamiento más allá del borde"
+        AppLanguage.FRENCH -> "Défilement au-delà du bord"
+        AppLanguage.GERMAN -> "Überrollen am Rand"
+        AppLanguage.RUSSIAN -> "Прокрутка за край"
+        AppLanguage.JAPANESE -> "端でのオーバースクロール"
+        AppLanguage.KOREAN -> "가장자리 오버스크롤"
+    }
+
+    val overscrollEffectSettingHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "滚到页面边缘时显示系统的拉伸回弹。关闭后停在边缘，固定顶栏不会被拉开。"
+        AppLanguage.ENGLISH -> "Shows the system stretch when the page scrolls past its edge. Turn off to stop at the edge so fixed headers are not stretched."
+        AppLanguage.ARABIC -> "يعرض تمدد النظام عند التمرير خارج حافة الصفحة. أوقفه ليتوقف المحتوى عند الحافة دون تمديد الشريط الثابت."
+        AppLanguage.PORTUGUESE -> "Mostra o esticamento do sistema quando a página passa da borda. Desative para parar na borda e não esticar cabeçalhos fixos."
+        AppLanguage.SPANISH -> "Muestra el estiramiento del sistema cuando la página pasa del borde. Desactívalo para detenerse en el borde y no estirar las cabeceras fijas."
+        AppLanguage.FRENCH -> "Affiche l'étirement du système lorsque la page dépasse le bord. Désactivez-le pour s'arrêter au bord sans étirer les en-têtes fixes."
+        AppLanguage.GERMAN -> "Zeigt die Systemdehnung, wenn die Seite über den Rand hinaus scrollt. Ausschalten, damit sie am Rand stoppt und feste Leisten nicht gedehnt werden."
+        AppLanguage.RUSSIAN -> "Показывает системное растяжение, когда страница прокручивается за край. Выключите, чтобы останавливаться на краю и не растягивать закреплённые панели."
+        AppLanguage.JAPANESE -> "ページ端を超えてスクロールしたとき、システムの伸び縮みを表示します。オフにすると端で止まり、固定ヘッダーは伸びません。"
+        AppLanguage.KOREAN -> "페이지가 가장자리를 넘어 스크롤될 때 시스템 늘림 효과를 표시합니다. 끄면 가장자리에서 멈추고 고정 헤더는 늘어나지 않습니다."
+    }
+
     val swipeRefreshZoneLabel: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "触发区域"
         AppLanguage.ENGLISH -> "Trigger area"

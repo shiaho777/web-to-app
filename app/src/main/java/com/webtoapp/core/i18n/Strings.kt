@@ -1198,6 +1198,8 @@ object Strings {
     val swipeRefreshZoneTopEdge: String get() = StringsB.swipeRefreshZoneTopEdge
     val swipeRefreshZoneAnywhere: String get() = StringsB.swipeRefreshZoneAnywhere
     val swipeRefreshSettingHint: String get() = StringsB.swipeRefreshSettingHint
+    val overscrollEffectSetting: String get() = StringsB.overscrollEffectSetting
+    val overscrollEffectSettingHint: String get() = StringsB.overscrollEffectSettingHint
     val autoRefreshSettingLabel: String get() = StringsB.autoRefreshSettingLabel
     val autoRefreshSettingDesc: String get() = StringsB.autoRefreshSettingDesc
     val autoRefreshIntervalLabel: String get() = StringsB.autoRefreshIntervalLabel

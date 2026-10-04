@@ -123,6 +123,7 @@ object EngineViewFactory {
         }
         GeckoViewEngine.applyAntiCapture(config.antiCapture)
         GeckoViewEngine.applyAutoplayPolicy(config.mediaAutoplayEnabled)
+        GeckoViewEngine.applyOverscrollEffect(config.overscrollEffectEnabled)
 
         val tlsFingerprintEnabled = config.tlsFingerprintEnabled &&
             config.tlsFingerprintTemplate.isNotBlank()

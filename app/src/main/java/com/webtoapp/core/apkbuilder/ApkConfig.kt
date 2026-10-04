@@ -138,6 +138,7 @@ data class ApkConfig(
     val openExternalLinks: Boolean get() = webView.openExternalLinks
     val showFloatingBackButton: Boolean get() = webView.showFloatingBackButton
     val swipeRefreshEnabled: Boolean get() = webView.swipeRefreshEnabled
+    val overscrollEffectEnabled: Boolean get() = webView.overscrollEffectEnabled
     val swipeRefreshZone: String get() = webView.swipeRefreshZone
     val fullscreenEnabled: Boolean get() = webView.fullscreenEnabled
     val performanceOptimization: Boolean get() = webView.performanceOptimization
@@ -524,6 +525,8 @@ data class WebViewBlock(
     val backButtonBehavior: String = "GO_BACK",
     val swipeRefreshEnabled: Boolean = true,
     val swipeRefreshZone: String = "TOP_EDGE",
+    // Absent on configs exported before #1193. True keeps the platform stretch.
+    val overscrollEffectEnabled: Boolean = true,
     val fullscreenEnabled: Boolean = true,
     val performanceOptimization: Boolean = false,
     val pwaOfflineEnabled: Boolean = false,

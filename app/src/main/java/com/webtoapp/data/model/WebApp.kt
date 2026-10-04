@@ -334,6 +334,13 @@ data class WebViewConfig(
     val zoomEnabled: Boolean = true,
     val swipeRefreshEnabled: Boolean = true,
     val swipeRefreshZone: SwipeRefreshZone = SwipeRefreshZone.TOP_EDGE,
+    /**
+     * System edge effect when the document scrolls past its end. On Android 12+
+     * that effect stretches the whole WebView, including `position: fixed`
+     * chrome. Off stops at the edge. Default on keeps the platform behavior
+     * for existing apps (#1193). A page's own scripted bounce is unchanged.
+     */
+    val overscrollEffectEnabled: Boolean = true,
     val autoRefreshEnabled: Boolean = false,
     val autoRefreshIntervalSec: Int = 60,
     val autoRefreshShowCountdown: Boolean = true,

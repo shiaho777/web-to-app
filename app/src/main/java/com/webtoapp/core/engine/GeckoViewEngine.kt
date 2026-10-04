@@ -119,7 +119,7 @@ class GeckoViewEngine(
             val ech = currentDnsConfig?.echEffective == true
             val proxy = currentProxyConfig?.let { buildProxyPrefs(it) } ?: emptyMap()
             val proxyKey = proxy.entries.joinToString(",") { "${it.key}=${it.value}" }
-            return "ech=$ech|proxy=$proxyKey|tlsMitm=$tlsMitmActive|enterpriseRoots=$enterpriseRootsEnabled|antiCapture=$antiCaptureActive|autoplay=$autoplayAllowed"
+            return "ech=$ech|proxy=$proxyKey|tlsMitm=$tlsMitmActive|enterpriseRoots=$enterpriseRootsEnabled|antiCapture=$antiCaptureActive|autoplay=$autoplayAllowed|overscroll=$overscrollEffectEnabled"
         }
 
         fun getRuntime(context: Context): GeckoRuntime {
@@ -210,6 +210,21 @@ class GeckoViewEngine(
         fun applyAutoplayPolicy(allowed: Boolean) {
             autoplayAllowed = allowed
             AppLogger.d(TAG, "applyAutoplayPolicy: allowed=$allowed")
+        }
+
+        @Volatile
+        private var overscrollEffectEnabled: Boolean = true
+
+        /**
+         * Gecko draws its own edge stretch ([org.mozilla.geckoview.OverscrollEdgeEffect]);
+         * [android.view.View.setOverScrollMode] on the GeckoView does not reach it.
+         * `apz.overscroll.enabled` drops the excess scroll instead. Like autoplay,
+         * the pref is read when the runtime is created, so it is part of the
+         * runtime fingerprint.
+         */
+        fun applyOverscrollEffect(enabled: Boolean) {
+            overscrollEffectEnabled = enabled
+            AppLogger.d(TAG, "applyOverscrollEffect: enabled=$enabled")
         }
 
         fun applyEnterpriseRootsEnabled(enabled: Boolean) {
@@ -333,6 +348,9 @@ class GeckoViewEngine(
             // media.autoplay.default: 0 = allow, 1 = block audible without user gesture
             // (Firefox's own default). Mirrors WebView's mediaPlaybackRequiresUserGesture.
             prefs["media.autoplay.default"] = if (autoplayAllowed) 0 else 1
+            // false discards scroll that cannot be handed off, so the page stops
+            // at the edge instead of stretching (#1193).
+            prefs["apz.overscroll.enabled"] = overscrollEffectEnabled
 
             if (antiCaptureActive) {
                 prefs["security.enterprise_roots.enabled"] = false

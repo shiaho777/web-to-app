@@ -67,6 +67,8 @@ class WebViewConfigDefaultsContractTest {
         "javaScriptCanOpenWindows",
         "enableImageRepair",
         "enableScrollMemory",
+        // Platform edge stretch stays on so existing apps do not change (#1193).
+        "overscrollEffectEnabled",
         "enableBackStatePreservation",
         "enablePrivateNetworkBridge",
         "enableClipboardPolyfill",

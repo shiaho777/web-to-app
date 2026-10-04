@@ -1096,6 +1096,13 @@ fun BrowserAdvancedConfigCard(
 
                             WtaSectionDivider()
                             WtaToggleRow(
+                                title = Strings.overscrollEffectSetting,
+                                subtitle = Strings.overscrollEffectSettingHint.ifDescriptionsShown(),
+                                checked = config.overscrollEffectEnabled,
+                                onCheckedChange = { onConfigChange(config.copy(overscrollEffectEnabled = it)) }
+                            )
+                            WtaSectionDivider()
+                            WtaToggleRow(
                                 title = Strings.externalLinksSetting,
                                 subtitle = Strings.externalLinksSettingHint.ifDescriptionsShown(),
                                 checked = config.openExternalLinks,

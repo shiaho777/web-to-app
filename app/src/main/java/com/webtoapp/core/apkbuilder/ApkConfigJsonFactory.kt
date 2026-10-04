@@ -172,6 +172,7 @@ internal object ApkConfigJsonFactory {
         "keyboardAdjustMode" to webView.keyboardAdjustMode,
         "swipeRefreshEnabled" to webView.swipeRefreshEnabled,
         "swipeRefreshZone" to webView.swipeRefreshZone,
+        "overscrollEffectEnabled" to webView.overscrollEffectEnabled,
         "fullscreenEnabled" to webView.fullscreenEnabled,
         "hideToolbar" to webView.hideToolbar,
         "browserToolbarEnabled" to webView.browserToolbarEnabled,

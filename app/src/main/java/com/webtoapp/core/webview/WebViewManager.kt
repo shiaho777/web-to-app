@@ -1524,6 +1524,7 @@ class WebViewManager(
 
         GeckoViewEngine.applyAntiCapture(config.antiCapture)
         GeckoViewEngine.applyAutoplayPolicy(config.mediaAutoplayEnabled)
+        GeckoViewEngine.applyOverscrollEffect(config.overscrollEffectEnabled)
 
         val tlsFingerprintEnabled = config.tlsFingerprintEnabled &&
             config.tlsFingerprintTemplate.isNotBlank()
@@ -1799,6 +1800,16 @@ class WebViewManager(
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
 
                 }
+            }
+
+            // Android 12+ stretches the WebView bitmap at the edge, which pulls
+            // position:fixed chrome with it (#1193). OVER_SCROLL_NEVER stops
+            // that. Reset explicitly so a pooled WebView cannot keep the
+            // previous app's mode.
+            overScrollMode = if (config.overscrollEffectEnabled) {
+                WebView.OVER_SCROLL_IF_CONTENT_SCROLLS
+            } else {
+                WebView.OVER_SCROLL_NEVER
             }
 
             isScrollbarFadingEnabled = true
