@@ -372,9 +372,32 @@ class ShellActivity : AppCompatActivity() {
     ) = permissionDelegate.handleDownloadWithPermission(url, userAgent, contentDisposition, mimeType, contentLength, webView)
 
     private fun resetFreshBrowsingSession() {
-        com.webtoapp.core.webview.WebViewManager.beginFreshBrowsingSession()
-        com.webtoapp.core.webview.WebViewManager.clearBrowsingData(this, webView)
+        // Drop any restored navigation first. A saved bundle would reload the
+        // previous document, including a dead EventSource, on top of the clear.
         webViewStateBundle = null
+        com.webtoapp.core.webview.WebViewManager.beginFreshBrowsingSession()
+        val gecko = com.webtoapp.core.engine.EngineType.fromString(shellConfig?.engineType ?: "") ==
+            com.webtoapp.core.engine.EngineType.GECKOVIEW
+        if (gecko) {
+            // Cold start clears inside GeckoViewEngine.createView, which owns
+            // runtime creation. A warm process already has a runtime, so the
+            // profile has to be cleared here before the next loadUrl.
+            if (com.webtoapp.core.engine.GeckoViewEngine.hasLiveRuntime()) {
+                com.webtoapp.core.engine.GeckoViewEngine.clearStoredDataHoldingNavigation()
+            }
+            return
+        }
+        val wiped = com.webtoapp.core.webview.WebViewProfileWiper.wipeIfProviderInactive(applicationContext)
+        com.webtoapp.core.webview.WebViewManager.noteFreshProfileWiped(wiped)
+        if (!wiped) {
+            // Provider is already live (launcher relaunch inside this process).
+            // Deleting app_webview now would corrupt the open cookie database.
+            com.webtoapp.core.webview.WebViewManager.clearBrowsingData(
+                this,
+                webView,
+                holdNavigation = true
+            )
+        }
     }
 
     /**
@@ -406,7 +429,9 @@ class ShellActivity : AppCompatActivity() {
 
 
     private fun loadInBrowser(url: String) {
-        browserSurface?.loadUrl(url) ?: webView?.loadUrl(url)
+        com.webtoapp.core.webview.WebViewManager.runWhenFreshSessionReady {
+            browserSurface?.loadUrl(url) ?: webView?.loadUrl(url)
+        }
     }
 
     private fun reloadBrowser() {
@@ -486,16 +511,18 @@ class ShellActivity : AppCompatActivity() {
 
         com.webtoapp.core.shell.ShellLogger.i("ShellActivity", "配置加载成功: ${config.appName}")
         shellConfig = config
+        // Before AdMob or anything else that can spin up a WebView. Once the
+        // provider is live, the on-disk profile can no longer be deleted.
+        clearBrowsingDataOnLaunch = config.webViewConfig.clearBrowsingDataOnLaunch
+        if (clearBrowsingDataOnLaunch) {
+            resetFreshBrowsingSession()
+        }
         initAdStack(config)
         notificationPolyfillEnabled = config.webViewConfig.enableNotificationPolyfill
         com.webtoapp.core.engine.GeckoViewEngine.applyEnterpriseRootsEnabled(
             config.networkTrustConfig.trustUserCa
         )
         AppLogger.d("ShellActivity", "WebView UA config from shell: userAgentMode=${config.webViewConfig.userAgentMode}, customUserAgent=${config.webViewConfig.customUserAgent}, userAgent=${config.webViewConfig.userAgent}")
-        clearBrowsingDataOnLaunch = config.webViewConfig.clearBrowsingDataOnLaunch
-        if (clearBrowsingDataOnLaunch) {
-            resetFreshBrowsingSession()
-        }
 
         try {
             val appLanguage = runCatching {

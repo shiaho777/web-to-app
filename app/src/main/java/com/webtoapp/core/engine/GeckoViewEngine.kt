@@ -122,6 +122,37 @@ class GeckoViewEngine(
             return "ech=$ech|proxy=$proxyKey|tlsMitm=$tlsMitmActive|enterpriseRoots=$enterpriseRootsEnabled|antiCapture=$antiCaptureActive|autoplay=$autoplayAllowed|overscroll=$overscrollEffectEnabled"
         }
 
+        fun hasLiveRuntime(): Boolean = sharedRuntime != null
+
+        /**
+         * Clears the live Gecko profile and holds shell navigation until
+         * [StorageController.clearData] finishes. [clearData] returns a
+         * [GeckoResult]; loading the page before it completes replays the
+         * previous cookies and site storage.
+         */
+        fun clearStoredDataHoldingNavigation() {
+            val runtime = sharedRuntime ?: return
+            val ticket = com.webtoapp.core.webview.WebViewManager.openFreshSessionGate()
+            try {
+                runtime.storageController.clearData(StorageController.ClearFlags.ALL)
+                    .finally_ {
+                        val closeGate = Runnable {
+                            com.webtoapp.core.webview.WebViewManager.closeFreshSessionGate(ticket)
+                        }
+                        val main = android.os.Looper.getMainLooper()
+                        if (android.os.Looper.myLooper() == main) {
+                            closeGate.run()
+                        } else {
+                            android.os.Handler(main).post(closeGate)
+                        }
+                    }
+                AppLogger.i(TAG, "Cleared browsing data on launch (clearBrowsingDataOnLaunch)")
+            } catch (e: Exception) {
+                AppLogger.w(TAG, "clearBrowsingDataOnLaunch failed: ${e.message}")
+                com.webtoapp.core.webview.WebViewManager.closeFreshSessionGate(ticket)
+            }
+        }
+
         fun getRuntime(context: Context): GeckoRuntime {
             return sharedRuntime ?: synchronized(this) {
                 sharedRuntime ?: createRuntime(context.applicationContext).also {
@@ -549,12 +580,7 @@ class GeckoViewEngine(
         val runtime = getRuntime(context)
 
         if (config.clearBrowsingDataOnLaunch) {
-            try {
-                runtime.storageController.clearData(StorageController.ClearFlags.ALL)
-                AppLogger.i(TAG, "Cleared browsing data on launch (clearBrowsingDataOnLaunch)")
-            } catch (e: Exception) {
-                AppLogger.w(TAG, "clearBrowsingDataOnLaunch failed: ${e.message}")
-            }
+            clearStoredDataHoldingNavigation()
         }
 
         if (config.enableCorsBypass || config.enablePrivateNetworkBridge) {

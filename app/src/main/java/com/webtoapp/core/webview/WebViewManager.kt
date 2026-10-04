@@ -235,6 +235,28 @@ class WebViewManager(
         }
 
         /**
+         * Set when this process deleted the WebView profile directory for the
+         * current [browsingDataClearGeneration]. The matching
+         * [clearBrowsingData] call must be skipped: the directory is already
+         * empty, and touching [android.webkit.CookieManager] would start the
+         * provider and race the page that plants the next session cookie.
+         */
+        @Volatile
+        private var wipedProfileGeneration = -1L
+
+        fun noteFreshProfileWiped(wiped: Boolean) {
+            if (wiped) wipedProfileGeneration = browsingDataClearGeneration
+        }
+
+        fun wasFreshProfileWiped(): Boolean = wipedProfileGeneration == browsingDataClearGeneration
+
+        fun openFreshSessionGate(): Any = FreshSessionGate.open()
+
+        fun closeFreshSessionGate(ticket: Any) = FreshSessionGate.close(ticket)
+
+        fun runWhenFreshSessionReady(block: () -> Unit) = FreshSessionGate.runWhenReady(block)
+
+        /**
          * (Re-)applies the "follow system dark mode" state to a single WebView, derived from
          * the CURRENT system uiMode. Safe to call at setup time and again whenever the system
          * theme changes (e.g. Activity.onConfigurationChanged), which is required because:
@@ -333,8 +355,16 @@ class WebViewManager(
             return targetSdk >= android.os.Build.VERSION_CODES.TIRAMISU
         }
 
+        /**
+         * @param holdNavigation when true, [runWhenFreshSessionReady] waits
+         *   until [CookieManager.removeAllCookies] has finished and the new
+         *   jar has been flushed. [CookieManager.flush] before that callback
+         *   writes the previous cookies back out, so the next page load still
+         *   sends them — and a cookie that has Max-Age is not removed by
+         *   [CookieManager.removeSessionCookies].
+         */
         @Suppress("DEPRECATION")
-        fun clearBrowsingData(context: Context, webView: WebView?) {
+        fun clearBrowsingData(context: Context, webView: WebView?, holdNavigation: Boolean = false) {
             try {
                 webView?.stopLoading()
                 webView?.clearCache(true)
@@ -348,15 +378,20 @@ class WebViewManager(
             } catch (e: Exception) {
                 AppLogger.w("WebViewManager", "Failed to clear WebStorage", e)
             }
+            val ticket = if (holdNavigation) FreshSessionGate.open() else null
             try {
                 val cookieManager = CookieManager.getInstance()
-                cookieManager.removeAllCookie()
-                cookieManager.removeSessionCookie()
-                cookieManager.removeAllCookies(null)
-                cookieManager.removeSessionCookies(null)
-                cookieManager.flush()
+                cookieManager.removeAllCookies {
+                    try {
+                        cookieManager.flush()
+                    } catch (e: Exception) {
+                        AppLogger.w("WebViewManager", "Failed to flush cookies after clear", e)
+                    }
+                    if (ticket != null) FreshSessionGate.close(ticket)
+                }
             } catch (e: Exception) {
                 AppLogger.w("WebViewManager", "Failed to clear cookies", e)
+                if (ticket != null) FreshSessionGate.close(ticket)
             }
             try {
                 val db = WebViewDatabase.getInstance(context)
@@ -1448,7 +1483,12 @@ class WebViewManager(
 
         if (config.clearBrowsingDataOnLaunch && appliedBrowsingDataClearGeneration != browsingDataClearGeneration) {
             appliedBrowsingDataClearGeneration = browsingDataClearGeneration
-            clearBrowsingData(context, webView)
+            // A cold start already deleted app_webview. Clearing again here
+            // would open CookieManager against the empty directory and the
+            // async removal could delete the cookie the new page is about to set.
+            if (!wasFreshProfileWiped()) {
+                clearBrowsingData(context, webView, holdNavigation = true)
+            }
         }
 
         this.cachedBrowserDisguiseConfig = browserDisguiseConfig

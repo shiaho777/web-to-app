@@ -138,13 +138,17 @@ fun ShellBrowserAndroidView(
                         WebScrollTracker.install(wv)
                         onWebViewCreated(wv)
                         onWebViewRefUpdated(wv)
-                        if (wv.tag == "state_restored") {
-                            surface.reload()
-                        } else if (!initialUrl.isNullOrBlank()) {
-                            surface.loadUrl(initialUrl)
+                        WebViewManager.runWhenFreshSessionReady {
+                            if (wv.tag == "state_restored") {
+                                surface.reload()
+                            } else if (!initialUrl.isNullOrBlank()) {
+                                surface.loadUrl(initialUrl)
+                            }
                         }
                     } else if (!initialUrl.isNullOrBlank()) {
-                        surface.loadUrl(initialUrl)
+                        WebViewManager.runWhenFreshSessionReady {
+                            surface.loadUrl(initialUrl)
+                        }
                     }
                     if (wv == null) {
                         var originX = 0f
