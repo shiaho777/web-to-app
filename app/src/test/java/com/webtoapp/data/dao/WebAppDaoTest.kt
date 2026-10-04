@@ -5,7 +5,11 @@ import android.app.Application
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
+import androidx.sqlite.db.SupportSQLiteDatabase
+import androidx.sqlite.db.SupportSQLiteOpenHelper
+import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
 import com.webtoapp.data.database.AppDatabase
+import com.webtoapp.data.database.addHomeSortIndex
 import com.webtoapp.data.model.AppType
 import com.webtoapp.data.model.WebApp
 import kotlinx.coroutines.flow.first
@@ -106,6 +110,8 @@ class WebAppDaoTest {
         assertThat(a.activationEnabled).isTrue()
         assertThat(a.adBlockEnabled).isFalse()
         assertThat(a.announcementEnabled).isTrue()
+        assertThat(a.homeSortIndex).isEqualTo(0)
+        assertThat(a.createdAt).isGreaterThan(0L)
 
         val b = byName.getValue("B")
         assertThat(b.url).isEmpty()
@@ -115,5 +121,92 @@ class WebAppDaoTest {
         assertThat(b.activationEnabled).isFalse()
         assertThat(b.adBlockEnabled).isTrue()
         assertThat(b.announcementEnabled).isFalse()
+    }
+
+    @Test
+    fun `setHomeSortOrder writes indices without touching timestamps`() = runTest {
+        val older = dao.insert(
+            WebApp(name = "Older", url = "https://older.example", createdAt = 10, updatedAt = 10)
+        )
+        val newer = dao.insert(
+            WebApp(name = "Newer", url = "https://newer.example", createdAt = 5, updatedAt = 20)
+        )
+        val beforeOlder = dao.getWebAppById(older)!!
+        val beforeNewer = dao.getWebAppById(newer)!!
+
+        dao.setHomeSortOrder(listOf(older, newer))
+
+        val afterOlder = dao.getWebAppById(older)!!
+        val afterNewer = dao.getWebAppById(newer)!!
+        assertThat(afterOlder.homeSortIndex).isEqualTo(0)
+        assertThat(afterNewer.homeSortIndex).isEqualTo(1)
+        assertThat(afterOlder.updatedAt).isEqualTo(beforeOlder.updatedAt)
+        assertThat(afterNewer.updatedAt).isEqualTo(beforeNewer.updatedAt)
+        assertThat(afterOlder.createdAt).isEqualTo(beforeOlder.createdAt)
+        assertThat(afterNewer.createdAt).isEqualTo(beforeNewer.createdAt)
+
+        val summaries = dao.getAllWebAppSummaries().first().associateBy { it.id }
+        assertThat(summaries.getValue(older).homeSortIndex).isEqualTo(0)
+        assertThat(summaries.getValue(newer).homeSortIndex).isEqualTo(1)
+        assertThat(summaries.getValue(older).createdAt).isEqualTo(10L)
+    }
+
+    @Test
+    fun `migration backfill numbers rows by updatedAt then id`() {
+        context.deleteDatabase(MIGRATION_DB)
+        val helper = FrameworkSQLiteOpenHelperFactory().create(
+            SupportSQLiteOpenHelper.Configuration.builder(context)
+                .name(MIGRATION_DB)
+                .callback(object : SupportSQLiteOpenHelper.Callback(45) {
+                    override fun onCreate(db: SupportSQLiteDatabase) {
+                        db.execSQL(
+                            """
+                            CREATE TABLE web_apps (
+                                id INTEGER PRIMARY KEY NOT NULL,
+                                updatedAt INTEGER NOT NULL
+                            )
+                            """.trimIndent()
+                        )
+                    }
+
+                    override fun onUpgrade(
+                        db: SupportSQLiteDatabase,
+                        oldVersion: Int,
+                        newVersion: Int,
+                    ) = Unit
+                })
+                .build()
+        )
+        try {
+            val db = helper.writableDatabase
+            db.execSQL("INSERT INTO web_apps (id, updatedAt) VALUES (1, 50)")
+            db.execSQL("INSERT INTO web_apps (id, updatedAt) VALUES (2, 80)")
+            db.execSQL("INSERT INTO web_apps (id, updatedAt) VALUES (3, 80)")
+            db.addHomeSortIndex()
+
+            val cursor = db.query(
+                "SELECT id, homeSortIndex, updatedAt FROM web_apps ORDER BY homeSortIndex ASC"
+            )
+            val rows = mutableListOf<Triple<Long, Int, Long>>()
+            try {
+                while (cursor.moveToNext()) {
+                    rows += Triple(cursor.getLong(0), cursor.getInt(1), cursor.getLong(2))
+                }
+            } finally {
+                cursor.close()
+            }
+            assertThat(rows).containsExactly(
+                Triple(3L, 0, 80L),
+                Triple(2L, 1, 80L),
+                Triple(1L, 2, 50L),
+            ).inOrder()
+        } finally {
+            helper.close()
+            context.deleteDatabase(MIGRATION_DB)
+        }
+    }
+
+    private companion object {
+        const val MIGRATION_DB = "home-sort-migration"
     }
 }

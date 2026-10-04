@@ -173,5 +173,6 @@ class AppChangeToolTest {
         override suspend fun countByName(name: String, excludeId: Long): Int = 0
         override suspend fun clearCategoryId(categoryId: Long) {}
         override suspend fun getAllUrls(): List<String> = emptyList()
+        override suspend fun updateHomeSortIndex(id: Long, index: Int) = Unit
     }
 }

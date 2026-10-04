@@ -10,11 +10,13 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -76,6 +78,7 @@ import com.webtoapp.ui.viewmodel.MainViewModel
 import com.webtoapp.ui.viewmodel.UiState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -83,6 +86,7 @@ import java.util.*
 import androidx.compose.ui.graphics.Color
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -99,7 +103,15 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.zIndex
+import com.webtoapp.data.home.AppListSort
+import com.webtoapp.data.home.HomeDragSlot
+import com.webtoapp.data.home.stepCustomDrag
 import com.webtoapp.ui.design.WtaBadge
+import com.webtoapp.ui.theme.LocalShowDescriptions
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -141,6 +153,8 @@ fun HomeScreen(
     val apps by viewModel.filteredSummaries.collectAsStateWithLifecycle()
     val allWebApps by viewModel.webApps.collectAsStateWithLifecycle()
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
+    val appListSort by viewModel.appListSort.collectAsStateWithLifecycle()
+    val reorderEnabled = appListSort == AppListSort.CUSTOM && searchQuery.isBlank()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     val categories by viewModel.categories.collectAsStateWithLifecycle()
@@ -154,6 +168,7 @@ fun HomeScreen(
     var appToClearCache by remember { mutableStateOf<WebAppSummary?>(null) }
 
     var isSearchActive by remember { mutableStateOf(false) }
+    var showSortMenu by remember { mutableStateOf(false) }
     var selectedApp by remember { mutableStateOf<WebAppSummary?>(null) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var shareApkFailureReport by remember { mutableStateOf<BuildFailureReport?>(null) }
@@ -295,6 +310,45 @@ fun HomeScreen(
                             }
                         }
                     )
+
+                    Box {
+                        IconButton(
+                            onClick = { showSortMenu = true },
+                            modifier = Modifier.size(44.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Sort,
+                                contentDescription = Strings.appListSort,
+                                modifier = Modifier.size(22.dp),
+                                tint = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                        DropdownMenu(
+                            expanded = showSortMenu,
+                            onDismissRequest = { showSortMenu = false }
+                        ) {
+                            AppListSort.entries.forEach { mode ->
+                                DropdownMenuItem(
+                                    text = { Text(mode.homeMenuLabel()) },
+                                    onClick = {
+                                        showSortMenu = false
+                                        viewModel.setAppListSort(mode)
+                                    },
+                                    leadingIcon = {
+                                        if (appListSort == mode) {
+                                            Icon(
+                                                Icons.Outlined.Check,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                        } else {
+                                            Spacer(Modifier.size(18.dp))
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                    }
 
                     IconButton(
                         onClick = {
@@ -556,12 +610,92 @@ fun HomeScreen(
 
 
 
+                    val listState = rememberLazyListState()
+                    val listDrag = remember { HomeListDragState() }
+                    val latestApps = rememberUpdatedState(apps)
+                    val haptic = LocalHapticFeedback.current
+                    val density = LocalDensity.current
+                    val displayedApps = listDrag.order ?: apps
+                    val showDragHint = reorderEnabled && LocalShowDescriptions.current
+
+                    fun stepDrag() {
+                        val id = listDrag.id ?: return
+                        val current = listDrag.order ?: return
+                        val slots = listState.layoutInfo.visibleItemsInfo.mapNotNull { info ->
+                            (info.key as? Long)?.let { key ->
+                                HomeDragSlot(id = key, top = info.offset, height = info.size)
+                            }
+                        }
+                        val step = stepCustomDrag(
+                            order = current.map { it.id },
+                            dragId = id,
+                            dragDy = listDrag.dy,
+                            slots = slots,
+                        ) ?: return
+                        val byId = current.associateBy { it.id }
+                        listDrag.order = step.order.map { byId.getValue(it) }
+                        listDrag.dy = step.dragDy
+                        haptic.performHapticFeedback(HapticFeedbackType.SegmentTick)
+                    }
+
+                    LaunchedEffect(apps.map { it.id }, listDrag.id) {
+                        val pending = listDrag.order ?: return@LaunchedEffect
+                        if (listDrag.id != null) return@LaunchedEffect
+                        val pendingIds = pending.map { it.id }
+                        val currentIds = apps.map { it.id }
+                        if (pendingIds == currentIds || pendingIds.toSet() != currentIds.toSet()) {
+                            listDrag.order = null
+                        }
+                    }
+
+                    LaunchedEffect(reorderEnabled) {
+                        if (!reorderEnabled) listDrag.clear()
+                    }
+
+                    LaunchedEffect(listDrag.tracking) {
+                        if (!listDrag.tracking) return@LaunchedEffect
+                        val edge = with(density) { 56.dp.toPx() }
+                        while (isActive && listDrag.tracking) {
+                            val id = listDrag.id
+                            val info = listState.layoutInfo
+                            val dragged = info.visibleItemsInfo.firstOrNull { it.key == id }
+                            if (dragged != null) {
+                                val top = dragged.offset + listDrag.dy
+                                val bottom = top + dragged.size
+                                val topLimit = info.viewportStartOffset + edge
+                                val bottomLimit = info.viewportEndOffset - edge
+                                val delta = when {
+                                    top < topLimit -> (top - topLimit).coerceAtLeast(-36f)
+                                    bottom > bottomLimit -> (bottom - bottomLimit).coerceAtMost(36f)
+                                    else -> 0f
+                                }
+                                if (delta != 0f) {
+                                    listState.scrollBy(delta)
+                                    stepDrag()
+                                }
+                            }
+                            withFrameNanos { }
+                        }
+                    }
+
                     LazyColumn(
+                    state = listState,
+                    userScrollEnabled = listDrag.id == null,
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
+                    if (showDragHint) {
+                        item(key = "home-sort-hint", contentType = "hint") {
+                            Text(
+                                text = Strings.appListSortDragHint,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
+                            )
+                        }
+                    }
                     itemsIndexed(
-                        apps,
+                        displayedApps,
                         key = { _, app -> app.id },
                         contentType = { _, _ -> "AppCard" }
                     ) { index, app ->
@@ -594,7 +728,69 @@ fun HomeScreen(
                             }
                         )
 
+                        val dragged = app.id == listDrag.id
                         SwipeToDismissBox(
+                            modifier = Modifier
+                                .zIndex(if (dragged) 1f else 0f)
+                                .graphicsLayer {
+                                    if (app.id == listDrag.id) {
+                                        translationY = listDrag.dy
+                                        scaleX = 1.02f
+                                        scaleY = 1.02f
+                                        shadowElevation = 8.dp.toPx()
+                                    }
+                                }
+                                .homeReorderDrag(
+                                    enabled = reorderEnabled &&
+                                        (listDrag.id == null || listDrag.id == app.id),
+                                    onStart = {
+                                        if (!listDrag.tracking) {
+                                            listDrag.settleJob?.cancel()
+                                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                            listDrag.order = latestApps.value
+                                            listDrag.dy = 0f
+                                            listDrag.id = app.id
+                                            listDrag.tracking = true
+                                        }
+                                    },
+                                    onDrag = { delta ->
+                                        if (listDrag.id == app.id) {
+                                            listDrag.dy += delta
+                                            stepDrag()
+                                        }
+                                    },
+                                    onEnd = { velocity ->
+                                        if (listDrag.id == app.id) {
+                                            listDrag.tracking = false
+                                            val finalOrder = listDrag.order
+                                            val changed = finalOrder != null &&
+                                                finalOrder.map { it.id } != latestApps.value.map { it.id }
+                                            if (changed && finalOrder != null) {
+                                                viewModel.saveVisibleHomeOrder(finalOrder.map { it.id })
+                                            }
+                                            listDrag.settleJob = scope.launch {
+                                                val anim = Animatable(listDrag.dy)
+                                                anim.animateTo(
+                                                    targetValue = 0f,
+                                                    animationSpec = spring(
+                                                        dampingRatio = 0.86f,
+                                                        stiffness = Spring.StiffnessMedium,
+                                                    ),
+                                                    initialVelocity = velocity,
+                                                ) {
+                                                    if (!listDrag.tracking) listDrag.dy = value
+                                                }
+                                                if (!listDrag.tracking && listDrag.id == app.id) {
+                                                    listDrag.id = null
+                                                    if (!changed) listDrag.order = null
+                                                }
+                                            }
+                                        }
+                                    },
+                                    onCancel = {
+                                        if (listDrag.id == app.id) listDrag.clear()
+                                    },
+                                ),
                             state = dismissState,
                             backgroundContent = {
 
@@ -626,12 +822,16 @@ fun HomeScreen(
                                 }
                             },
                             enableDismissFromStartToEnd = false,
-                            enableDismissFromEndToStart = true
+                            enableDismissFromEndToStart = listDrag.id == null
                         ) {
 
                         AppCard(
                             app = app,
-                            modifier = Modifier.animateItem(),
+                            modifier = if (dragged) {
+                                Modifier.animateItem(placementSpec = null)
+                            } else {
+                                Modifier.animateItem()
+                            },
                             onClick = { onPreviewApp(app) },
                             onLongClick = { selectedApp = app },
                             onEdit = {

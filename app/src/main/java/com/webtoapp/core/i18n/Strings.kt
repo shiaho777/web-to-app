@@ -5028,6 +5028,12 @@ object Strings {
     val buildHistoryFileMissing: String get() = StringsE.buildHistoryFileMissing
     val buildHistoryDeleteConfirm: String get() = StringsE.buildHistoryDeleteConfirm
     val buildHistoryRecordOnly: String get() = StringsE.buildHistoryRecordOnly
+    val appListSort: String get() = StringsE.appListSort
+    val appListSortUpdated: String get() = StringsE.appListSortUpdated
+    val appListSortCreated: String get() = StringsE.appListSortCreated
+    val appListSortName: String get() = StringsE.appListSortName
+    val appListSortCustom: String get() = StringsE.appListSortCustom
+    val appListSortDragHint: String get() = StringsE.appListSortDragHint
     val shareApkReadyMode: String get() = StringsE.shareApkReadyMode
 
     // Agent UI rework additions

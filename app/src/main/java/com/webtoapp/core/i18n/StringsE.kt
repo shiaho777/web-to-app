@@ -16341,4 +16341,82 @@ object StringsE {
         AppLanguage.KOREAN -> "이 빌드 기록을 삭제할까요?"
     }
 
+    val appListSort: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "排序"
+        AppLanguage.ENGLISH -> "Sort"
+        AppLanguage.ARABIC -> "الترتيب"
+        AppLanguage.PORTUGUESE -> "Ordenar"
+        AppLanguage.SPANISH -> "Ordenar"
+        AppLanguage.FRENCH -> "Trier"
+        AppLanguage.GERMAN -> "Sortieren"
+        AppLanguage.RUSSIAN -> "Сортировка"
+        AppLanguage.JAPANESE -> "並べ替え"
+        AppLanguage.KOREAN -> "정렬"
+    }
+
+    val appListSortUpdated: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "最近更新"
+        AppLanguage.ENGLISH -> "Recently updated"
+        AppLanguage.ARABIC -> "الأحدث تحديثًا"
+        AppLanguage.PORTUGUESE -> "Atualizados recentemente"
+        AppLanguage.SPANISH -> "Actualizados recientemente"
+        AppLanguage.FRENCH -> "Mis à jour récemment"
+        AppLanguage.GERMAN -> "Zuletzt aktualisiert"
+        AppLanguage.RUSSIAN -> "Недавно обновлённые"
+        AppLanguage.JAPANESE -> "更新が新しい順"
+        AppLanguage.KOREAN -> "최근 업데이트"
+    }
+
+    val appListSortCreated: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "最近创建"
+        AppLanguage.ENGLISH -> "Recently created"
+        AppLanguage.ARABIC -> "الأحدث إنشاءً"
+        AppLanguage.PORTUGUESE -> "Criados recentemente"
+        AppLanguage.SPANISH -> "Creados recientemente"
+        AppLanguage.FRENCH -> "Créés récemment"
+        AppLanguage.GERMAN -> "Zuletzt erstellt"
+        AppLanguage.RUSSIAN -> "Недавно созданные"
+        AppLanguage.JAPANESE -> "作成が新しい順"
+        AppLanguage.KOREAN -> "최근 생성"
+    }
+
+    val appListSortName: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "按名称"
+        AppLanguage.ENGLISH -> "By name"
+        AppLanguage.ARABIC -> "حسب الاسم"
+        AppLanguage.PORTUGUESE -> "Por nome"
+        AppLanguage.SPANISH -> "Por nombre"
+        AppLanguage.FRENCH -> "Par nom"
+        AppLanguage.GERMAN -> "Nach Name"
+        AppLanguage.RUSSIAN -> "По имени"
+        AppLanguage.JAPANESE -> "名前順"
+        AppLanguage.KOREAN -> "이름순"
+    }
+
+    val appListSortCustom: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "自定义"
+        AppLanguage.ENGLISH -> "Custom"
+        AppLanguage.ARABIC -> "مخصص"
+        AppLanguage.PORTUGUESE -> "Personalizado"
+        AppLanguage.SPANISH -> "Personalizado"
+        AppLanguage.FRENCH -> "Personnalisé"
+        AppLanguage.GERMAN -> "Benutzerdefiniert"
+        AppLanguage.RUSSIAN -> "Свой порядок"
+        AppLanguage.JAPANESE -> "カスタム"
+        AppLanguage.KOREAN -> "사용자 지정"
+    }
+
+    val appListSortDragHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "长按卡片后上下拖动，即可调整顺序"
+        AppLanguage.ENGLISH -> "Long-press a card, then drag it up or down to reorder"
+        AppLanguage.ARABIC -> "اضغط مطولاً على البطاقة ثم اسحبها لأعلى أو لأسفل لإعادة الترتيب"
+        AppLanguage.PORTUGUESE -> "Pressione e segure um cartão e arraste para reordenar"
+        AppLanguage.SPANISH -> "Mantén pulsada una tarjeta y arrástrala para reordenar"
+        AppLanguage.FRENCH -> "Appuyez longuement sur une carte, puis faites-la glisser pour réordonner"
+        AppLanguage.GERMAN -> "Karte lange drücken und nach oben oder unten ziehen, um die Reihenfolge zu ändern"
+        AppLanguage.RUSSIAN -> "Удерживайте карточку и перетащите её, чтобы изменить порядок"
+        AppLanguage.JAPANESE -> "カードを長押しして上下にドラッグすると順序を変更できます"
+        AppLanguage.KOREAN -> "카드를 길게 누른 뒤 위아래로 끌어 순서를 바꾸세요"
+    }
+
 }

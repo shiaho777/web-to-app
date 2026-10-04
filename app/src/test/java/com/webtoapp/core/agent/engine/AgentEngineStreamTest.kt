@@ -271,5 +271,6 @@ class AgentEngineStreamTest {
         override suspend fun countByName(name: String, excludeId: Long): Int = throw NotImplementedError()
         override suspend fun clearCategoryId(categoryId: Long) = throw NotImplementedError()
         override suspend fun getAllUrls(): List<String> = throw NotImplementedError()
+        override suspend fun updateHomeSortIndex(id: Long, index: Int) = throw NotImplementedError()
     }
 }

@@ -136,7 +136,16 @@ data class WebApp(
     val categoryId: Long? = null,
 
     val createdAt: Long = System.currentTimeMillis(),
-    val updatedAt: Long = System.currentTimeMillis()
+    val updatedAt: Long = System.currentTimeMillis(),
+
+    /**
+     * Home-list slot when the user sorts by custom order. Lower is higher on
+     * screen. Writes must not stamp [updatedAt]. A new row stays 0 so it sorts
+     * ahead of migrated rows that share 0: custom order breaks ties by id
+     * descending. Backup restore copies the value through as-is.
+     */
+    @ColumnInfo(defaultValue = "0")
+    val homeSortIndex: Int = 0
 )
 
 data class AdConfig(

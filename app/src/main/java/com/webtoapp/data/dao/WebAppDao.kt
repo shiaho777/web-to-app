@@ -16,6 +16,8 @@ data class WebAppSummary(
     val activationEnabled: Boolean,
     val adBlockEnabled: Boolean,
     val announcementEnabled: Boolean,
+    val createdAt: Long,
+    val homeSortIndex: Int,
 )
 
 data class WebAppStartupCandidate(
@@ -33,7 +35,8 @@ interface WebAppDao {
     @Query(
         """
         SELECT id, name, url, iconPath, appType, updatedAt, categoryId,
-               activationEnabled, adBlockEnabled, announcementEnabled
+               activationEnabled, adBlockEnabled, announcementEnabled,
+               createdAt, homeSortIndex
         FROM web_apps
         ORDER BY updatedAt DESC
         """
@@ -142,4 +145,18 @@ interface WebAppDao {
 
     @Query("SELECT url FROM web_apps")
     suspend fun getAllUrls(): List<String>
+
+    /**
+     * Custom home order only. Does not touch [WebApp.updatedAt], so "recently
+     * updated" keeps meaning the last real edit.
+     */
+    @Query("UPDATE web_apps SET homeSortIndex = :index WHERE id = :id")
+    suspend fun updateHomeSortIndex(id: Long, index: Int)
+
+    @Transaction
+    suspend fun setHomeSortOrder(idsInOrder: List<Long>) {
+        idsInOrder.forEachIndexed { index, id ->
+            updateHomeSortIndex(id, index)
+        }
+    }
 }

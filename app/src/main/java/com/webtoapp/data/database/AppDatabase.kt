@@ -19,7 +19,7 @@ import com.webtoapp.core.stats.AppUsageStatsDao
 
 @Database(
     entities = [WebApp::class, AppCategory::class, AppUsageStats::class, AppHealthRecord::class],
-    version = 45,
+    version = 46,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -1067,6 +1067,15 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        // Backfill by the previous home order (updatedAt DESC, id DESC) so
+        // switching to custom does not reshuffle. createAddColumnMigration
+        // swallows errors and cannot assign per-row indices.
+        private val MIGRATION_45_46 = object : Migration(45, 46) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.addHomeSortIndex()
+            }
+        }
+
         private val MIGRATION_43_44 =
             createAddColumnMigration(43, 44, "appLockConfig")
 
@@ -1300,11 +1309,32 @@ abstract class AppDatabase : RoomDatabase() {
                     MIGRATION_41_42,
                     MIGRATION_42_43,
                     MIGRATION_43_44,
-                    MIGRATION_44_45
+                    MIGRATION_44_45,
+                    MIGRATION_45_46
                 )
                 .fallbackToDestructiveMigrationOnDowngrade()
                 .fallbackToDestructiveMigrationFrom(1, 2, 3, 4, 5, 6, 7)
                 .build()
         }
+    }
+}
+
+/**
+ * Adds [com.webtoapp.data.model.WebApp.homeSortIndex] and numbers existing rows
+ * `0..n-1` in updatedAt DESC, id DESC order. New rows keep the column default
+ * of 0 and sort ahead of these via the id tie-break.
+ */
+internal fun SupportSQLiteDatabase.addHomeSortIndex() {
+    execSQL("ALTER TABLE web_apps ADD COLUMN homeSortIndex INTEGER NOT NULL DEFAULT 0")
+    val cursor = query("SELECT id FROM web_apps ORDER BY updatedAt DESC, id DESC")
+    try {
+        var index = 0
+        while (cursor.moveToNext()) {
+            val id = cursor.getLong(0)
+            execSQL("UPDATE web_apps SET homeSortIndex = $index WHERE id = $id")
+            index++
+        }
+    } finally {
+        cursor.close()
     }
 }
