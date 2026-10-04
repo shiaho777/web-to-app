@@ -12,9 +12,11 @@ A template is a **full snapshot of the common config (`WebViewConfig`)** — bro
 
 - **Save as template** — snapshots the config currently shown in the editor under a name (1–40 chars). Saving again with the same name overwrites the old snapshot.
 - **Apply** — tap a template name in the card to replace the current app's common config with it. The change lands in the editor like any manual edit; review and save as usual.
-- **Manage templates** — rename or delete saved templates.
+- **Export current config** — writes the editor's config as a `webtoapp-config-template` JSON file (`*.wta-config.json`). **Export** on a saved template writes that snapshot the same way.
+- **Import config** — reads that JSON, or a bare `WebViewConfig` object. Unrelated JSON is rejected. A name that already exists gets a numeric suffix. Import also applies the config to the open editor.
+- **Manage templates** — rename, export, or delete saved templates.
 
 ## Notes
 
 - Templates are stored locally (`config_templates.json` in app storage) and survive app updates.
-- The in-app Agent can also manage templates: `ListConfigTemplates`, `SaveConfigTemplate`, `ApplyConfigTemplate`, `DeleteConfigTemplate`.
+- The in-app Agent can also manage templates: `ListConfigTemplates`, `SaveConfigTemplate`, `ApplyConfigTemplate`, `DeleteConfigTemplate`, read-only `ExportConfigTemplate`, and `ImportConfigTemplate`.

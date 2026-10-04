@@ -36,7 +36,7 @@ This applies only to generated APKs, not the builder host. Export writes `com.ob
 These are chosen when you [Build APK](/guide/app-actions/build-apk):
 
 - **Resource encryption** — PBKDF2 + AES-256-GCM, with an optional custom password.
-- **Isolation** — per-app isolation of storage/WebRTC/Canvas/Audio/WebGL/fonts/headers/IP.
+- **Isolation** — per-app isolation of storage/WebRTC/Canvas/Audio/WebGL/fonts/headers/IP. Fingerprints identify as a phone, and the request User-Agent matches the client hints. A saved desktop fingerprint is replaced on the next launch. A custom User-Agent, desktop mode, and a desktop kernel flavor stay as you set them.
 - **Background run** — keep a service alive (`backgroundRunConfig`).
 - **Notifications** — scheduled/persistent notifications and polling (`notificationConfig`).
 - **Force full rebuild** — skip incremental caching.

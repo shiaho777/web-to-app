@@ -22,3 +22,12 @@ Each card shows:
 | **Swipe the card left** | Quick [delete](/guide/app-actions/delete) (with confirmation) |
 
 [About → Separate WebApp tasks](/guide/more-features/about) is off by default. When it is on, each home preview and each desktop shortcut gets its own recents entry.
+
+## Sort
+
+**Sort** on My Apps chooses the order. The default is **Recently updated**.
+
+- **Recently updated** — newest edit first.
+- **Recently created**.
+- **By name**.
+- **Custom** — long-press a card, then drag it up or down. A swipe to the left still deletes. Drag is off while the search box has text. A category filter reorders only the apps you can see; the others keep their places. New and duplicated apps go to the top. Dragging does not change the updated time, so switching back to recently updated still follows real edits.

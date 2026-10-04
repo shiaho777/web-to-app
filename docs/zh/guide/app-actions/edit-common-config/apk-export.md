@@ -36,7 +36,7 @@
 这些在你[构建 APK](/zh/guide/app-actions/build-apk) 时选择:
 
 - **资源加密** —— PBKDF2 + AES-256-GCM,可选自定义密码。
-- **隔离** —— 按应用隔离存储/WebRTC/Canvas/Audio/WebGL/字体/头部/IP。
+- **隔离** —— 按应用隔离存储/WebRTC/Canvas/Audio/WebGL/字体/头部/IP。指纹以手机身份出现,请求的 User-Agent 与客户端提示一致。已保存的桌面指纹会在下次启动时换掉。自定义 User-Agent、桌面模式和桌面内核风味保持你的设置。
 - **后台运行** —— 保持服务存活(`backgroundRunConfig`)。
 - **通知** —— 定时/持久通知和轮询(`notificationConfig`)。
 - **强制全量重建** —— 跳过增量缓存。

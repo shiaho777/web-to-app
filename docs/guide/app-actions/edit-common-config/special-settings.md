@@ -60,6 +60,7 @@ For platforms that return to an **https** callback on the wrapped site's own hos
 - **Error page** — custom error page config (`errorPageConfig`).
 - **Performance optimization** — `performanceOptimization`.
 - **PWA offline** — offline cache strategy (`pwaOfflineEnabled`, `pwaOfflineStrategy`).
+- **Fresh session on launch** — on the **Network & Offline** card, next to PWA offline (`clearBrowsingDataOnLaunch`). Off by default. The generated APK then clears cookies, site storage, and the on-disk WebView profile on each cold start, including the second launch. It cannot be on together with PWA offline. Leaving it off keeps the profile.
 - **Floating back button** — `showFloatingBackButton`.
 - **Keyboard adjust mode** — `keyboardAdjustMode` (resize, …). On Android 10 and below, the RESIZE mode uses the classic window-resize path (the window is not edge-to-edge), so the keyboard resizes content reliably.
 - **Fullscreen video orientation** — how fullscreen video orients (`fullscreenVideoOrientation`), e.g. auto sensor landscape.

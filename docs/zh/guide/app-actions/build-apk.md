@@ -6,7 +6,7 @@
 
 - **浏览器引擎** —— 系统 WebView 或 GeckoView(GeckoView 首次使用下载)。
 - **资源加密** —— 对打包的配置/HTML/媒体/BGM 使用 PBKDF2 + AES-256-GCM,可选自定义密码。启用它会激活运行时加固(反调试、反 Frida、DEX 篡改),并总是强制全量重建。
-- **隔离** —— 按应用隔离存储、WebRTC、Canvas、Audio、WebGL、字体、头部和 IP 表面。
+- **隔离** —— 按应用隔离存储、WebRTC、Canvas、Audio、WebGL、字体、头部和 IP。生成的指纹以手机身份出现(Android Chrome、Edge、Firefox、三星浏览器或 iPhone Safari),请求的 User-Agent 与客户端提示一致。已保存的桌面指纹会在下次启动时换掉。自定义 User-Agent、桌面模式和桌面内核风味保持你的设置。
 - **后台运行** —— 让应用的服务在后台保持存活。
 - **通知** —— 定时/持久通知、URL 轮询前台服务、深度链接。
 - **强制全量重建** —— 跳过增量缓存。

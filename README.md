@@ -121,7 +121,7 @@ A quick scan of what's in the box. Each links to the detailed feature map below.
 | **Local runtimes** | Native Node.js 18.20, PHP 8.4 + Composer 2.10, Python 3.14, official Go 1.26, WordPress 7.x over SQLite |
 | **Extensions** | Built-in modules, userscripts with `GM_*`, MV3 Chrome extensions, live Chrome Web Store search |
 | **APK/AAB output** | On-device V1/V2/V3 signing, Google Play AAB export with targetSdk rewrite, keystore management |
-| **Agent** | Full-app automation via up to 57 tools: generate, build, export, manage ports/engines/runtimes, clone apps, ad-block rules, config templates, and more; auto-retry on 429/5xx |
+| **Agent** | Full-app automation via up to 60 tools: generate, build, export, manage ports/engines/runtimes, clone apps, ad-block rules, config templates, and more; auto-retry on 429/5xx |
 | **Host languages** | **10 UI languages** — 中文 · English · العربية · Português · Español · Français · Deutsch · Русский · 日本語 · 한국어 (Arabic RTL) |
 
 ---
@@ -213,7 +213,7 @@ WebToApp has a large number of switches. The sections below group them by use ca
 - **MV3 Chrome extension runtime** for manifest content scripts in isolated or main worlds, with `chrome.*` polyfills for runtime, storage, tabs, scripting, and declarative network-request parsing.
 - **In-app Chrome Web Store search** — browse and install browser extensions by keyword (or paste a store URL / extension ID), with offline fallback to manual import.
 - **Export codes** (`WTA1:` gzip + Base64) and QR sharing via ZXing.
-- **Agent** — a tool-calling assistant with up to 57 built-in tools covering the entire app surface: create/edit/build/export apps, manage ports and browser engines, install/clear runtimes, ad-block hosts rules, common-config templates, usage stats, app cloning, batch import, Play policy checks, and module development. Plan mode waits for user approval; automatic retry/backoff on 429/5xx.
+- **Agent** — a tool-calling assistant with up to 60 built-in tools covering the entire app surface: create/edit/build/export apps, manage ports and browser engines, install/clear runtimes, ad-block hosts rules, common-config templates (including JSON export and import), usage stats, app cloning, batch import, Play policy checks, and module development. Plan mode waits for user approval; automatic retry/backoff on 429/5xx.
 
 </details>
 
@@ -278,12 +278,13 @@ WebToApp ships a built-in AI agent (open from **⋮ → Agent**) that can operat
 3. The Agent executes each tool on-device — read-only tools run immediately; write tools pop a permission dialog first.
 4. Results flow back to the LLM, which continues until the task is done or it asks you a clarifying question.
 
-**Up to 57 built-in tools, grouped by domain (the 3 imagery tools load only with an image-capable model):**
+**Up to 60 built-in tools, grouped by domain (55 base + 2 plan mode + 3 imagery; the imagery tools load only with an image-capable model):**
 
 | Domain | Examples |
 | --- | --- |
 | Files | Read, Write, Edit, Delete, List, Glob, Grep project files |
 | Apps | List, Get, Create, Update app configurations |
+| Config templates | List, save, apply, delete, export, and import a common-config JSON file |
 | App lifecycle | Build APK/AAB, Export, Share, Create shortcut, Duplicate, Delete, Move to category |
 | Ports & engines | Scan/kill ports, check/select/delete browser engines (WebView, GeckoView) |
 | Runtimes | Status, install, and cache-clear for Node.js, PHP, Python, Go, WordPress, Linux env |

@@ -25,7 +25,8 @@ Each site entry has:
 
 ### Layout & display
 
-- **Display mode** (`displayMode`) — `TABS`, cards, feed, or drawer. New apps are created with `TABS`; there is currently no UI switch for the other layouts.
+- **Display mode** (`displayMode`) — chosen in the editor. **Bottom Tabs** (`TABS`, the default for new apps), **Top Tabs** (`TOP_TABS`), **Card Home** (`CARDS`), **Side Drawer** (`DRAWER`), or **Feed** (`FEED`).
+- **Top Tabs** — labels sit under the status bar. The selected site has a dot. A sideways swipe on the page switches sites. The bar background follows a live sample of the top of the current page, then the site's theme color. **Show site icons** applies here too. On GeckoView the sample is unavailable, so the bar uses the theme color. A covered Gecko tab is collapsed, so switching back shows that tab's page instead of the newest frame.
 - **Show site icons** (`showSiteIcons`).
 
 ### Refresh

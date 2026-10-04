@@ -13,4 +13,4 @@ Blocks ads in the generated app using hosts rules and cosmetic filtering.
 ## Notes
 
 - Manage filter lists and subscriptions globally in [Hosts Ad Blocking](/guide/more-features/hosts-adblock) (20 built-in community lists).
-- Ad blocking is wired for both preview and export: the host blocker serves preview, and the compiled rule set ships inside the exported APK.
+- Ad blocking is wired for both preview and export: the host blocker serves preview, and the rule text ships inside the exported APK for the app to parse at launch. A large list shows **Compiling ad-block rules...** while that step runs.

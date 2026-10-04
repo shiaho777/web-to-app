@@ -244,7 +244,7 @@ Checklist in order:
 
 ### 11. Change a feature that has an Agent tool
 
-The in-app Agent exposes up to 57 tools — 52 base + 2 plan-mode + 3 imagery (imagery only load with an image-capable model; see `ToolRegistryFactory.build()`) — that wrap host service classes. When you change a feature, trace the tool chain:
+The in-app Agent exposes up to 60 tools — 55 base + 2 plan-mode + 3 imagery (imagery only load with an image-capable model; see `ToolRegistryFactory.build()`) — that wrap host service classes. When you change a feature, trace the tool chain:
 
 ```text
 LLM response (tool_calls)
@@ -402,4 +402,4 @@ Landed:
 - Module Market: Chrome Web Store live search + GreasyFork browse
 - Code editor find-and-replace
 - Security hardening sweep: TLS-fingerprint bridge validates upstream certs (system + custom CAs + hostname) and its local CA is signature-verified with no error-type fallback; JS bridges are caller/origin/scheme-gated (NativeBridge CORS bypass, GM bridge, MV3 `ChromeHostPermissions`); MITM proxy host-allowlisted and CA key wrapped at rest; zip extraction routed through `util/SafeZip`; concurrent exports serialized per package with per-package work dirs; multi-web server-runtime site sources degrade to URL; PHP/Python/WP embed failures fail the build; error pages and `TranslateBridge` callbacks JSON-escaped; keystore password sidecars excluded from backups
-- Agent tool system: up to 57 tools — 52 base + 2 plan-mode + 3 imagery (image-capable models only) — covering app lifecycle, config templates, ports/engine, hosts/runtime, stats/modifier/import, build env/Play, modules, files, and imagery, with Channel-based permission prompting, per-section SSE parse resilience, and plan mode; runtime/build-env tools surface `localExecAllowed` so the LLM knows targetSdk>=29 hosts cannot exec app-storage binaries
+- Agent tool system: up to 60 tools — 55 base + 2 plan-mode + 3 imagery (image-capable models only) — covering app lifecycle, config templates, ports/engine, hosts/runtime, stats/modifier/import, build env/Play, modules, files, and imagery, with Channel-based permission prompting, per-section SSE parse resilience, and plan mode; runtime/build-env tools surface `localExecAllowed` so the LLM knows targetSdk>=29 hosts cannot exec app-storage binaries

@@ -6,8 +6,8 @@ A broad set of browser behavior toggles. This card collects the advanced `WebVie
 
 ## User agent & rendering
 
-- **User agent mode** — system default or a custom UA string (`userAgentMode`, `customUserAgent`).
-- **Desktop mode** — request the desktop site (`desktopMode`).
+- **User agent** — the first block of this card. System default, a desktop flavor, or a custom string (`userAgentMode`, `customUserAgent`). Export writes this choice. The HTTP `User-Agent` and `Sec-CH-UA*` stay a pair, including architecture and model. Choosing Custom clears a leftover kernel flavor and turns kernel disguise off, so the typed string is the identity. A desktop flavor also turns desktop mode on.
+- **Desktop mode** — request the desktop site (`desktopMode`). The switch sits on the same block.
 - **Zoom** — enable pinch zoom (`zoomEnabled`).
 - **Page zoom** — build-time per-app whole-page zoom as a percentage, chosen from Chrome-style presets (50%–150%) or entered freely (`pageZoomPercent`, default 100). Applied via `setInitialScale` on every run, including cold starts — it scales text and layout/images/canvas together (unlike `textZoom`, which only scales glyphs), so no runtime toolbar needed. A stored legacy value of `0` is treated as 100.
 - **Viewport mode** — default or a custom viewport width (`viewportMode`, `customViewportWidth`).
@@ -15,6 +15,7 @@ A broad set of browser behavior toggles. This card collects the advanced `WebVie
 ## Navigation & refresh
 
 - **Swipe refresh** — pull-to-refresh (`swipeRefreshEnabled`).
+- **Edge overscroll** — on by default (`overscrollEffectEnabled`). Off stops the Android 12+ stretch on the system WebView and GeckoView's own edge effect. Pull-to-refresh still works. A page's own scripted bounce is unchanged.
 - **Auto refresh** — periodic reload with interval and countdown (`autoRefreshEnabled`, `autoRefreshIntervalSec`).
 - **New-window behavior** — how popups/new windows open (`newWindowBehavior`: same window, external, popup, …).
 - **Popup blocker** — block popups (`popupBlockerEnabled`).

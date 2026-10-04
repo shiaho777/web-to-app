@@ -12,9 +12,11 @@
 
 - **保存为模板** —— 把编辑器当前的配置以指定名称(1–40 字符)存为快照；同名再次保存会覆盖旧快照。
 - **套用** —— 点击卡片中的模板名称，把当前应用的通用配置整体替换为该快照。改动与手动编辑一样落在编辑器里，确认无误后照常保存。
-- **管理模板** —— 对已保存模板重命名或删除。
+- **导出当前配置** —— 把编辑器里的配置写成 `webtoapp-config-template` JSON 文件(`*.wta-config.json`)。已保存模板上的**导出**同样写出那份快照。
+- **导入配置** —— 读取这种 JSON,或一份裸的 `WebViewConfig` 对象。无关 JSON 会被拒绝。同名会加上数字后缀。导入同时把配置套到当前编辑器。
+- **管理模板** —— 对已保存模板重命名、导出或删除。
 
 ## 说明
 
 - 模板保存在本地(app 存储中的 `config_templates.json`),应用升级不会丢失。
-- 应用内 Agent 同样可以管理模板:`ListConfigTemplates`、`SaveConfigTemplate`、`ApplyConfigTemplate`、`DeleteConfigTemplate`。
+- 应用内 Agent 同样可以管理模板:`ListConfigTemplates`、`SaveConfigTemplate`、`ApplyConfigTemplate`、`DeleteConfigTemplate`,只读的 `ExportConfigTemplate`,以及 `ImportConfigTemplate`。
