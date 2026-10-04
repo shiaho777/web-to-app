@@ -32,6 +32,22 @@ class IsolationScriptInjectorTest {
     }
 
     @Test
+    fun `client hints report a phone for a chromium fingerprint`() {
+        val chrome = (0 until 40).asSequence()
+            .map { FingerprintGenerator.generateFingerprint("mobile-hint-$it") }
+            .first { it.chUa.isNotEmpty() }
+
+        val script = IsolationScriptInjector.generateIsolationScript(
+            config = IsolationConfig(enabled = true),
+            fingerprint = chrome
+        )
+
+        assertThat(script).contains("mobile: true")
+        assertThat(script).doesNotContain("mobile: false")
+        assertThat(script).contains("Mobile")
+    }
+
+    @Test
     fun `script respects optional spoof screen and timezone values`() {
         val config = IsolationConfig(
             enabled = true,

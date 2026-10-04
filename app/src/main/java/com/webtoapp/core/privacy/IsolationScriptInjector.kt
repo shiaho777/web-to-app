@@ -129,6 +129,9 @@ object IsolationScriptInjector {
         val deviceMemory = config.fingerprintConfig.deviceMemory ?: fp.deviceMemory
         val (primaryLang, langArray) = resolveLanguages(config, fp)
 
+        // Follow the fingerprint. A hardcoded false made every profile look
+        // like a desktop browser, so sites rendered the desktop page.
+        val clientHintsMobile = fp.chUaMobile.contains('1')
         val clientHintsJs = if (fp.chUa.isNotEmpty()) {
             """
             // navigator.userAgentData (Client Hints API)
@@ -138,12 +141,12 @@ object IsolationScriptInjector {
             }}];
             var uadObj = {
                 brands: uadBrands,
-                mobile: false,
+                mobile: $clientHintsMobile,
                 platform: ${fp.chUaPlatform},
                 getHighEntropyValues: function(hints) {
                     return Promise.resolve({
                         brands: uadBrands,
-                        mobile: false,
+                        mobile: $clientHintsMobile,
                         platform: ${fp.chUaPlatform},
                         platformVersion: ${fp.chUaPlatformVersion},
                         architecture: ${fp.chUaArch},
@@ -154,7 +157,7 @@ object IsolationScriptInjector {
                     });
                 },
                 toJSON: function() {
-                    return {brands:uadBrands,mobile:false,platform:${fp.chUaPlatform}};
+                    return {brands:uadBrands,mobile:$clientHintsMobile,platform:${fp.chUaPlatform}};
                 }
             };
             try{Object.defineProperty(navigator,'userAgentData',{get:function(){return uadObj;},configurable:true});}catch(e){/* expected */}

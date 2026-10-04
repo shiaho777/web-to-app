@@ -44,7 +44,14 @@ class IsolationManager(private val context: Context) {
             generateNewFingerprint(java.util.UUID.randomUUID().toString())
         } else {
 
-            loadFingerprint() ?: generateNewFingerprint(config.fingerprintConfig.fingerprintId)
+            // A fingerprint saved before the catalog was phones still carries a
+            // Windows/macOS UA. Reuse would keep sending the desktop identity.
+            val saved = loadFingerprint()
+            if (saved != null && saved.identifiesAsPhone()) {
+                saved
+            } else {
+                generateNewFingerprint(config.fingerprintConfig.fingerprintId)
+            }
         }
 
         saveConfig(config)
