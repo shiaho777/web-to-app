@@ -26,7 +26,10 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.shell.ShellConfig
+import com.webtoapp.ui.shared.PageEdgeChrome
 import com.webtoapp.ui.shared.effectiveBottomContentPadding
+import com.webtoapp.ui.shared.pageEdgeBands
+import com.webtoapp.ui.shared.parseBandColor
 import com.webtoapp.core.webview.WebViewCallbacks
 import com.webtoapp.data.model.WebViewConfig
 import com.webtoapp.data.model.hasAnyToolbarItem
@@ -78,7 +81,9 @@ fun BoxScope.ShellScaffoldLayout(
     showFindBar: Boolean,
     onToggleFindBar: () -> Unit,
 
-    statusBarHeightDp: Int
+    statusBarHeightDp: Int,
+    pageTopColor: String? = null,
+    pageBottomColor: String? = null
 ) {
     val context = LocalContext.current
 
@@ -244,7 +249,16 @@ fun BoxScope.ShellScaffoldLayout(
             }
         }
 
-        Box(modifier = contentModifier) {
+        val customBand = if (shellDark) config.webViewConfig.statusBarColorDark else config.webViewConfig.statusBarColor
+        val topBand = parseBandColor(PageEdgeChrome.topBandHex(shellMode, pageTopColor, customBand, shellDark))
+        val bottomBand = parseBandColor(
+            PageEdgeChrome.bottomBandHex(shellMode, pageBottomColor, pageTopColor, customBand, shellDark)
+        )
+        val bottomBandPx = with(density) { padBottom.toPx() }
+        val bands = Modifier.pageEdgeBands(topBand, bottomBand, bottomBandPx)
+        val bandedModifier = if (hideToolbar && !showToolbar) bands.then(contentModifier) else contentModifier
+
+        Box(modifier = bandedModifier) {
 
             WebViewLoadingBar(
                 visible = isLoading,

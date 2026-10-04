@@ -46,7 +46,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -85,8 +84,11 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.coroutines.resume
+import com.webtoapp.ui.shared.PageEdgeChrome
 import com.webtoapp.ui.shared.WindowHelper
 import com.webtoapp.ui.shared.effectiveBottomContentPadding
+import com.webtoapp.ui.shared.pageEdgeBands
+import com.webtoapp.ui.shared.parseBandColor
 import com.webtoapp.ui.shell.ConsoleLevel
 import com.webtoapp.ui.shell.ConsoleLogEntry
 import com.webtoapp.ui.shell.ConsolePanel
@@ -246,6 +248,7 @@ open class WebViewActivity : AppCompatActivity() {
     private var statusBarBackgroundAlpha: Float = 1.0f
     private var statusBarBackgroundAlphaDark: Float = 1.0f
     private var statusBarAutoColor: String? = null
+    private var pageBottomAutoColor: String? = null
     internal var keyboardAdjustMode: KeyboardAdjustMode = KeyboardAdjustMode.RESIZE
 
     private var currentIsDarkTheme: Boolean = false
@@ -280,9 +283,35 @@ open class WebViewActivity : AppCompatActivity() {
         }
         val effectiveColorMode = if (currentIsDarkTheme) statusBarColorModeDark else statusBarColorMode
         val effectiveCustomColor = if (currentIsDarkTheme) statusBarCustomColorDark else statusBarCustomColor
-        val effectiveDarkIcons = if (currentIsDarkTheme) statusBarDarkIconsDark else statusBarDarkIcons
         val effectiveAlpha = if (currentIsDarkTheme) statusBarBackgroundAlphaDark else statusBarBackgroundAlpha
-        applyStatusBarColor(effectiveColorMode, effectiveCustomColor, effectiveDarkIcons, currentIsDarkTheme, effectiveAlpha)
+        applyStatusBarColor(effectiveColorMode, effectiveCustomColor, resolvedStatusIcons(currentIsDarkTheme), currentIsDarkTheme, effectiveAlpha)
+        applyPageEdgeNavigation(currentIsDarkTheme)
+    }
+
+    private fun resolvedStatusIcons(isDark: Boolean): Boolean? {
+        val explicit = if (isDark) statusBarDarkIconsDark else statusBarDarkIcons
+        if (explicit != null) return explicit
+        val mode = if (isDark) statusBarColorModeDark else statusBarColorMode
+        if (mode != com.webtoapp.data.model.StatusBarColorMode.TRANSPARENT &&
+            mode != com.webtoapp.data.model.StatusBarColorMode.PAGE_TOP
+        ) return null
+        val hex = statusBarAutoColor ?: return null
+        val color = runCatching { android.graphics.Color.parseColor(hex) }.getOrNull() ?: return null
+        return WindowHelper.isColorLight(color)
+    }
+
+    private fun applyPageEdgeNavigation(isDark: Boolean) {
+        val mode = if (isDark) statusBarColorModeDark else statusBarColorMode
+        val custom = if (isDark) statusBarCustomColorDark else statusBarCustomColor
+        com.webtoapp.ui.shared.PageEdgeChrome.applyNavigationBar(
+            activity = this,
+            mode = mode.name,
+            sampleBottom = pageBottomAutoColor,
+            sampleTop = statusBarAutoColor,
+            custom = custom,
+            darkIcons = if (isDark) statusBarDarkIconsDark else statusBarDarkIcons,
+            isDark = isDark
+        )
     }
 
     private fun applyStatusBarColor(
@@ -314,11 +343,14 @@ open class WebViewActivity : AppCompatActivity() {
             showStatusBar = effectiveShowStatusBar,
             statusBarColorMode = resolved.mode,
             statusBarCustomColor = resolved.color,
-            statusBarDarkIcons = if (isDarkTheme) statusBarDarkIconsDark else statusBarDarkIcons,
+            statusBarDarkIcons = resolvedStatusIcons(isDarkTheme),
             statusBarBgType = if (isDarkTheme) statusBarBackgroundTypeDark.name else statusBarBackgroundType.name,
             keyboardAdjustMode = keyboardAdjustMode,
             tag = "WebViewActivity"
         )
+        // showNavigationBarInFullscreen only applies while fullscreen is on.
+        // Leaving fullscreen always shows the system navigation bar.
+        if (!enabled || !shouldHideNavBar) applyPageEdgeNavigation(isDarkTheme)
     }
 
     internal fun refreshWindowConfig() {
@@ -920,13 +952,14 @@ open class WebViewActivity : AppCompatActivity() {
                     statusBarColorModeDark,
                     statusBarCustomColorDark,
                     statusBarDarkIconsDark,
-                    statusBarAutoColor
+                    statusBarAutoColor,
+                    pageBottomAutoColor
                 ) {
                     if (!immersiveFullscreenEnabled) {
                         val effectiveColorMode = if (isDarkTheme) statusBarColorModeDark else statusBarColorMode
                         val effectiveCustomColor = if (isDarkTheme) statusBarCustomColorDark else statusBarCustomColor
-                        val effectiveDarkIcons = if (isDarkTheme) statusBarDarkIconsDark else statusBarDarkIcons
-                        applyStatusBarColor(effectiveColorMode, effectiveCustomColor, effectiveDarkIcons, isDarkTheme)
+                        applyStatusBarColor(effectiveColorMode, effectiveCustomColor, resolvedStatusIcons(isDarkTheme), isDarkTheme)
+                        applyPageEdgeNavigation(isDarkTheme)
                     }
                 }
 
@@ -954,6 +987,11 @@ open class WebViewActivity : AppCompatActivity() {
                 onStatusBarAutoColorChanged = { color ->
                     if (statusBarAutoColor == color) return@WebViewScreen
                     statusBarAutoColor = color
+                    refreshStatusBarAppearance()
+                },
+                onPageBottomColorChanged = { color ->
+                    if (pageBottomAutoColor == color) return@WebViewScreen
+                    pageBottomAutoColor = color
                     refreshStatusBarAppearance()
                 },
                 onSavedAppLoaded = { app ->
@@ -1450,6 +1488,7 @@ fun WebViewScreen(
     testModuleIds: List<String>? = null,
     onStatusBarConfigChanged: ((com.webtoapp.data.model.StatusBarColorMode, String?, Boolean?, Boolean, com.webtoapp.data.model.StatusBarBackgroundType, Float, com.webtoapp.data.model.StatusBarColorMode, String?, Boolean?, com.webtoapp.data.model.StatusBarBackgroundType, Float) -> Unit)? = null,
     onStatusBarAutoColorChanged: ((String?) -> Unit)? = null,
+    onPageBottomColorChanged: ((String?) -> Unit)? = null,
     onSavedAppLoaded: ((WebApp) -> Unit)? = null,
     onWebViewCreated: (WebView, WebApp?) -> Unit,
     onFileChooser: (ValueCallback<Array<Uri>>?, WebChromeClient.FileChooserParams?) -> Boolean,
@@ -1529,6 +1568,7 @@ fun WebViewScreen(
     var statusBarBackgroundAlpha by remember { mutableFloatStateOf(1.0f) }
     var statusBarHeightDp by remember { mutableIntStateOf(0) }
     var statusBarAutoColor by remember { mutableStateOf<String?>(null) }
+    var pageBottomAutoColor by remember { mutableStateOf<String?>(null) }
     var statusBarColorTracker by remember { mutableStateOf<com.webtoapp.core.webview.StatusBarPageColorTracker?>(null) }
 
     var statusBarBackgroundTypeDarkLocal by remember { mutableStateOf("COLOR") }
@@ -1571,6 +1611,18 @@ fun WebViewScreen(
             config.statusBarColorMode == com.webtoapp.data.model.StatusBarColorMode.PAGE_TOP) ||
             (config.statusBarBackgroundTypeDark == com.webtoapp.data.model.StatusBarBackgroundType.COLOR &&
                 config.statusBarColorModeDark == com.webtoapp.data.model.StatusBarColorMode.PAGE_TOP)
+    }
+
+    fun usesPageEdgeColor(app: WebApp?): Boolean {
+        val config = app?.webViewConfig ?: return false
+        val pageModes = setOf(
+            com.webtoapp.data.model.StatusBarColorMode.PAGE_TOP,
+            com.webtoapp.data.model.StatusBarColorMode.TRANSPARENT
+        )
+        return (config.statusBarBackgroundType == com.webtoapp.data.model.StatusBarBackgroundType.COLOR &&
+            config.statusBarColorMode in pageModes) ||
+            (config.statusBarBackgroundTypeDark == com.webtoapp.data.model.StatusBarBackgroundType.COLOR &&
+                config.statusBarColorModeDark in pageModes)
     }
 
     fun resolveStatusBarOverlayColor(isDark: Boolean): String? {
@@ -1631,9 +1683,11 @@ fun WebViewScreen(
                 )
                 Toast.makeText(context, Strings.adSdkNotIntegrated, Toast.LENGTH_LONG).show()
             }
-            if (!usesPageTopStatusBarColor(app)) {
+            if (!usesPageEdgeColor(app)) {
                 statusBarAutoColor = null
+                pageBottomAutoColor = null
                 onStatusBarAutoColorChanged?.invoke(null)
+                onPageBottomColorChanged?.invoke(null)
             } else {
                 statusBarColorTracker?.scheduleSample(80L)
             }
@@ -1661,6 +1715,7 @@ fun WebViewScreen(
             statusBarColorTracker?.detach()
             statusBarColorTracker = null
             onStatusBarAutoColorChanged?.invoke(null)
+            onPageBottomColorChanged?.invoke(null)
         }
     }
 
@@ -2751,10 +2806,12 @@ fun WebViewScreen(
                 currentUrl = url ?: ""
                 errorMessage = null
                 webViewRef?.let { WebScrollTracker.reset(it) }
-                if (usesPageTopStatusBarColor(webApp ?: previewApp)) {
+                if (usesPageEdgeColor(webApp ?: previewApp)) {
                     statusBarColorTracker?.reset()
                     statusBarAutoColor = null
+                    pageBottomAutoColor = null
                     onStatusBarAutoColorChanged?.invoke(null)
+                    onPageBottomColorChanged?.invoke(null)
                 }
                 if (!false) {
                 } else {
@@ -3512,6 +3569,14 @@ fun WebViewScreen(
         // #1172: the bottom band stays on the screen edge instead of riding up
         // with the keyboard. Preview and the exported shell share this rule.
         val padBottom = effectiveBottomContentPadding((webApp?.webViewConfig?.fullscreenPadBottom ?: 0).dp)
+        val previewModeName = effMode?.name ?: com.webtoapp.data.model.StatusBarColorMode.TRANSPARENT.name
+        val customBand = if (previewDark) webApp?.webViewConfig?.statusBarColorDark else webApp?.webViewConfig?.statusBarColor
+        val topBand = parseBandColor(PageEdgeChrome.topBandHex(previewModeName, statusBarAutoColor, customBand, previewDark))
+        val bottomBand = parseBandColor(
+            PageEdgeChrome.bottomBandHex(previewModeName, pageBottomAutoColor, statusBarAutoColor, customBand, previewDark)
+        )
+        val bottomBandPx = with(density) { padBottom.toPx() }
+        val bands = Modifier.pageEdgeBands(topBand, bottomBand, bottomBandPx)
 
         val contentModifier = when {
             hideToolbar && showToolbarInPreview -> {
@@ -3520,7 +3585,7 @@ fun WebViewScreen(
             }
             hideToolbar && webApp?.webViewConfig?.showStatusBarInFullscreen == true -> {
 
-                Modifier.fillMaxSize().padding(
+                bands.fillMaxSize().padding(
                     top = (if (barOverlaysContent) 0.dp else actualStatusBarPadding) + padTop,
                     start = padStart,
                     end = padEnd,
@@ -3529,7 +3594,7 @@ fun WebViewScreen(
             }
             hideToolbar -> {
 
-                Modifier.fillMaxSize().padding(
+                bands.fillMaxSize().padding(
                     top = padTop,
                     start = padStart,
                     end = padEnd,
@@ -3683,11 +3748,15 @@ fun WebViewScreen(
                             statusBarColorTracker?.detach()
                             val tracker = com.webtoapp.core.webview.StatusBarPageColorTracker(
                                 webView = wv,
-                                shouldSample = { usesPageTopStatusBarColor(webApp ?: previewApp) },
-                                onColorChanged = { color ->
-                                    if (statusBarAutoColor != color) {
-                                        statusBarAutoColor = color
-                                        onStatusBarAutoColorChanged?.invoke(color)
+                                shouldSample = { usesPageEdgeColor(webApp ?: previewApp) },
+                                onColors = { colors ->
+                                    if (statusBarAutoColor != colors.top) {
+                                        statusBarAutoColor = colors.top
+                                        onStatusBarAutoColorChanged?.invoke(colors.top)
+                                    }
+                                    if (pageBottomAutoColor != colors.bottom) {
+                                        pageBottomAutoColor = colors.bottom
+                                        onPageBottomColorChanged?.invoke(colors.bottom)
                                     }
                                 }
                             )
@@ -3932,11 +4001,15 @@ fun WebViewScreen(
                                     statusBarColorTracker?.detach()
                                     val tracker = com.webtoapp.core.webview.StatusBarPageColorTracker(
                                         webView = this,
-                                        shouldSample = { usesPageTopStatusBarColor(webApp ?: previewApp) },
-                                        onColorChanged = { color ->
-                                            if (statusBarAutoColor != color) {
-                                                statusBarAutoColor = color
-                                                onStatusBarAutoColorChanged?.invoke(color)
+                                        shouldSample = { usesPageEdgeColor(webApp ?: previewApp) },
+                                        onColors = { colors ->
+                                            if (statusBarAutoColor != colors.top) {
+                                                statusBarAutoColor = colors.top
+                                                onStatusBarAutoColorChanged?.invoke(colors.top)
+                                            }
+                                            if (pageBottomAutoColor != colors.bottom) {
+                                                pageBottomAutoColor = colors.bottom
+                                                onPageBottomColorChanged?.invoke(colors.bottom)
                                             }
                                         }
                                     )

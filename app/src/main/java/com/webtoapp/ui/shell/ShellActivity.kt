@@ -69,6 +69,7 @@ class ShellActivity : AppCompatActivity() {
     private var statusBarBackgroundImageDark: String? = null
     private var statusBarBackgroundAlphaDark: Float = 1.0f
     private var statusBarAutoColor: String? = null
+    private var pageBottomAutoColor: String? = null
     private var keyboardAdjustMode: KeyboardAdjustMode = KeyboardAdjustMode.RESIZE
 
     private var pendingFloatingWindowLaunch = false
@@ -155,9 +156,33 @@ class ShellActivity : AppCompatActivity() {
         }
         val effectiveColorMode = if (systemDark) statusBarColorModeDark else statusBarColorMode
         val effectiveCustomColor = if (systemDark) statusBarCustomColorDark else statusBarCustomColor
-        val effectiveDarkIcons = if (systemDark) statusBarDarkIconsDark else statusBarDarkIcons
         val effectiveAlpha = if (systemDark) statusBarBackgroundAlphaDark else statusBarBackgroundAlpha
-        applyStatusBarColor(effectiveColorMode, effectiveCustomColor, effectiveDarkIcons, systemDark, effectiveAlpha)
+        applyStatusBarColor(effectiveColorMode, effectiveCustomColor, resolvedStatusIcons(systemDark), systemDark, effectiveAlpha)
+        applyPageEdgeNavigation(systemDark)
+    }
+
+    private fun resolvedStatusIcons(isDark: Boolean): Boolean? {
+        val explicit = if (isDark) statusBarDarkIconsDark else statusBarDarkIcons
+        if (explicit != null) return explicit
+        val mode = if (isDark) statusBarColorModeDark else statusBarColorMode
+        if (mode != "TRANSPARENT" && mode != "PAGE_TOP") return null
+        val hex = statusBarAutoColor ?: return null
+        val color = runCatching { android.graphics.Color.parseColor(hex) }.getOrNull() ?: return null
+        return com.webtoapp.ui.shared.WindowHelper.isColorLight(color)
+    }
+
+    private fun applyPageEdgeNavigation(isDark: Boolean) {
+        val mode = if (isDark) statusBarColorModeDark else statusBarColorMode
+        val custom = if (isDark) statusBarCustomColorDark else statusBarCustomColor
+        com.webtoapp.ui.shared.PageEdgeChrome.applyNavigationBar(
+            activity = this,
+            mode = mode,
+            sampleBottom = pageBottomAutoColor,
+            sampleTop = statusBarAutoColor,
+            custom = custom,
+            darkIcons = if (isDark) statusBarDarkIconsDark else statusBarDarkIcons,
+            isDark = isDark
+        )
     }
 
     private fun isSystemInDarkMode(): Boolean =
@@ -183,11 +208,14 @@ class ShellActivity : AppCompatActivity() {
             showStatusBar = effectiveShowStatusBar,
             statusBarColorMode = resolved.first,
             statusBarCustomColor = resolved.second,
-            statusBarDarkIcons = if (systemDark) statusBarDarkIconsDark else statusBarDarkIcons,
+            statusBarDarkIcons = resolvedStatusIcons(systemDark),
             statusBarBgType = if (systemDark) statusBarBackgroundTypeDark else statusBarBackgroundType,
             keyboardAdjustMode = keyboardAdjustMode,
             tag = "ShellActivity"
         )
+        // showNavigationBarInFullscreen only applies while fullscreen is on.
+        // Leaving fullscreen always shows the system navigation bar.
+        if (!enabled || !shouldHideNavBar) applyPageEdgeNavigation(systemDark)
     }
 
     /**
@@ -617,14 +645,15 @@ class ShellActivity : AppCompatActivity() {
                     statusBarCustomColorDark,
                     statusBarDarkIconsDark,
                     statusBarBackgroundAlphaDark,
-                    statusBarAutoColor
+                    statusBarAutoColor,
+                    pageBottomAutoColor
                 ) {
                     if (!immersiveFullscreenEnabled) {
                         val effectiveColorMode = if (systemDark) statusBarColorModeDark else statusBarColorMode
                         val effectiveCustomColor = if (systemDark) statusBarCustomColorDark else statusBarCustomColor
-                        val effectiveDarkIcons = if (systemDark) statusBarDarkIconsDark else statusBarDarkIcons
                         val effectiveAlpha = if (systemDark) statusBarBackgroundAlphaDark else statusBarBackgroundAlpha
-                        applyStatusBarColor(effectiveColorMode, effectiveCustomColor, effectiveDarkIcons, systemDark, effectiveAlpha)
+                        applyStatusBarColor(effectiveColorMode, effectiveCustomColor, resolvedStatusIcons(systemDark), systemDark, effectiveAlpha)
+                        applyPageEdgeNavigation(systemDark)
                     }
                 }
 
@@ -810,6 +839,11 @@ class ShellActivity : AppCompatActivity() {
                     statusBarAutoColor = color
                     refreshStatusBarAppearance()
                 },
+                onPageBottomColorChanged = { color ->
+                    if (pageBottomAutoColor == color) return@ShellScreen
+                    pageBottomAutoColor = color
+                    refreshStatusBarAppearance()
+                },
                 onFileChooser = { callback, params ->
                     permissionDelegate.handleFileChooser(callback, params)
                 },
@@ -950,6 +984,7 @@ class ShellActivity : AppCompatActivity() {
                 val effectiveDarkIcons = if (systemDark) statusBarDarkIconsDark else statusBarDarkIcons
                 val effectiveAlpha = if (systemDark) statusBarBackgroundAlphaDark else statusBarBackgroundAlpha
                 applyStatusBarColor(effectiveColorMode, effectiveCustomColor, effectiveDarkIcons, systemDark, effectiveAlpha)
+                applyPageEdgeNavigation(systemDark)
             }
         }
     }

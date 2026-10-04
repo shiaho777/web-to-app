@@ -53,6 +53,7 @@ fun ShellScreen(
     onWebViewCreated: (WebView) -> Unit,
     onBrowserSurfaceCreated: (com.webtoapp.core.engine.BrowserSurface) -> Unit = {},
     onStatusBarAutoColorChanged: (String?) -> Unit = {},
+    onPageBottomColorChanged: (String?) -> Unit = {},
     onFileChooser: (ValueCallback<Array<Uri>>?, WebChromeClient.FileChooserParams?) -> Boolean,
     onShowCustomView: (View, WebChromeClient.CustomViewCallback?) -> Unit,
     onHideCustomView: () -> Unit,
@@ -153,6 +154,7 @@ fun ShellScreen(
         mutableStateOf<com.webtoapp.core.engine.BrowserSurface?>(null)
     }
     var statusBarAutoColor by remember { mutableStateOf<String?>(null) }
+    var pageBottomAutoColor by remember { mutableStateOf<String?>(null) }
     var statusBarColorTracker by remember { mutableStateOf<com.webtoapp.core.webview.StatusBarPageColorTracker?>(null) }
 
     var showLongPressMenu by remember { mutableStateOf(false) }
@@ -347,6 +349,17 @@ fun ShellScreen(
                 config.webViewConfig.statusBarColorModeDark == com.webtoapp.data.model.StatusBarColorMode.PAGE_TOP.name)
     }
 
+    fun usesPageEdgeColor(): Boolean {
+        val pageModes = setOf(
+            com.webtoapp.data.model.StatusBarColorMode.PAGE_TOP.name,
+            com.webtoapp.data.model.StatusBarColorMode.TRANSPARENT.name
+        )
+        return (config.webViewConfig.statusBarBackgroundType == "COLOR" &&
+            config.webViewConfig.statusBarColorMode in pageModes) ||
+            (config.webViewConfig.statusBarBackgroundTypeDark == "COLOR" &&
+                config.webViewConfig.statusBarColorModeDark in pageModes)
+    }
+
     fun resolveStatusBarOverlayColor(isDark: Boolean): String? {
         val mode = if (isDark) config.webViewConfig.statusBarColorModeDark else config.webViewConfig.statusBarColorMode
         val configuredColor = if (isDark) statusBarBackgroundColorDark else statusBarBackgroundColor
@@ -403,11 +416,15 @@ fun ShellScreen(
                 showLongPressMenu = true
             },
             resetStatusBarAutoColor = {
-                if (!usesPageTopStatusBarColor()) return@createShellWebViewCallbacks
+                if (!usesPageEdgeColor()) return@createShellWebViewCallbacks
                 statusBarColorTracker?.reset()
                 if (statusBarAutoColor != null) {
                     statusBarAutoColor = null
                     onStatusBarAutoColorChanged(null)
+                }
+                if (pageBottomAutoColor != null) {
+                    pageBottomAutoColor = null
+                    onPageBottomColorChanged(null)
                 }
             },
             scheduleStatusBarAutoColorSample = {
@@ -522,6 +539,7 @@ fun ShellScreen(
             statusBarColorTracker?.detach()
             statusBarColorTracker = null
             onStatusBarAutoColorChanged(null)
+            onPageBottomColorChanged(null)
         }
     }
 
@@ -530,11 +548,15 @@ fun ShellScreen(
             statusBarColorTracker?.detach()
             val tracker = com.webtoapp.core.webview.StatusBarPageColorTracker(
                 webView = webView,
-                shouldSample = ::usesPageTopStatusBarColor,
-                onColorChanged = { color ->
-                    if (statusBarAutoColor != color) {
-                        statusBarAutoColor = color
-                        onStatusBarAutoColorChanged(color)
+                shouldSample = ::usesPageEdgeColor,
+                onColors = { colors ->
+                    if (statusBarAutoColor != colors.top) {
+                        statusBarAutoColor = colors.top
+                        onStatusBarAutoColorChanged(colors.top)
+                    }
+                    if (pageBottomAutoColor != colors.bottom) {
+                        pageBottomAutoColor = colors.bottom
+                        onPageBottomColorChanged(colors.bottom)
                     }
                 }
             )
@@ -606,7 +628,9 @@ fun ShellScreen(
                 webViewRef?.evaluateJavascript(script, appendResult)
             }
         },
-        statusBarHeightDp = statusBarHeightDp
+        statusBarHeightDp = statusBarHeightDp,
+        pageTopColor = statusBarAutoColor,
+        pageBottomColor = pageBottomAutoColor
     )
 
     if (showActivationDialog) {

@@ -81,7 +81,7 @@ object StatusBarPageColorSampler {
                 var meta = document.querySelector('meta[name="theme-color" i]');
                 return meta ? parseColor(meta.getAttribute('content')) : null;
             }
-            return sampleTopArea(1) ||
+            var top = sampleTopArea(1) ||
                 sampleTopArea(6) ||
                 sampleTopArea(12) ||
                 sampleTopArea(20) ||
@@ -90,38 +90,64 @@ object StatusBarPageColorSampler {
                 colorFromElement(document.documentElement) ||
                 metaThemeColor() ||
                 null;
+            var bottom = sampleTopArea(heightEdge(-1)) ||
+                sampleTopArea(heightEdge(-8)) ||
+                sampleTopArea(heightEdge(-24)) ||
+                top;
+            function heightEdge(delta) {
+                var height = Math.max(1, window.innerHeight || 0);
+                return Math.max(1, Math.min(height - 1, height + delta));
+            }
+            return JSON.stringify({ top: top, bottom: bottom });
         })();
     """.trimIndent()
 
-    fun sample(webView: WebView, onColorSampled: (String?) -> Unit) {
+    fun sample(webView: WebView, onColors: (PageEdgeColors) -> Unit) {
         try {
             webView.evaluateJavascript(sampleScript) { result ->
-                onColorSampled(decodeJsString(result))
+                onColors(decodePageEdgeColors(result))
             }
         } catch (_: Exception) {
-            onColorSampled(null)
+            onColors(PageEdgeColors(null, null))
         }
     }
 
-    private fun decodeJsString(result: String?): String? {
-        if (result.isNullOrBlank() || result == "null") return null
-        return runCatching {
-            JSONObject("""{"value":$result}""").optString("value").takeIf { it.isNotBlank() }
-        }.getOrNull()
+    fun decodePageEdgeColors(result: String?): PageEdgeColors {
+        if (result.isNullOrBlank() || result == "null") return PageEdgeColors(null, null)
+        val text = unwrapJsString(result) ?: return PageEdgeColors(null, null)
+        if (text.startsWith("#")) return PageEdgeColors(text, text)
+        val parsed = runCatching { JSONObject(text) }.getOrNull()
+            ?: return PageEdgeColors(null, null)
+        return PageEdgeColors(
+            top = parsed.optString("top").takeIf { it.isNotBlank() && it != "null" },
+            bottom = parsed.optString("bottom").takeIf { it.isNotBlank() && it != "null" }
+        )
+    }
+
+    private fun unwrapJsString(result: String): String? {
+        val trimmed = result.trim()
+        if (trimmed.startsWith("\"")) {
+            return runCatching {
+                JSONObject("""{"value":$trimmed}""").optString("value").takeIf { it.isNotBlank() }
+            }.getOrNull()
+        }
+        return trimmed
     }
 }
+
+data class PageEdgeColors(val top: String?, val bottom: String?)
 
 class StatusBarPageColorTracker(
     private val webView: WebView,
     private val shouldSample: () -> Boolean,
-    private val onColorChanged: (String?) -> Unit
+    private val onColors: (PageEdgeColors) -> Unit
 ) {
     private val sampleRunnable = Runnable {
         if (!shouldSample()) {
-            onColorChanged(null)
+            onColors(PageEdgeColors(null, null))
             return@Runnable
         }
-        StatusBarPageColorSampler.sample(webView, onColorChanged)
+        StatusBarPageColorSampler.sample(webView, onColors)
     }
 
     fun attach() {
@@ -137,13 +163,13 @@ class StatusBarPageColorTracker(
 
     fun reset() {
         webView.removeCallbacks(sampleRunnable)
-        onColorChanged(null)
+        onColors(PageEdgeColors(null, null))
     }
 
     fun scheduleSample(delayMs: Long = 0L) {
         webView.removeCallbacks(sampleRunnable)
         if (!shouldSample()) {
-            onColorChanged(null)
+            onColors(PageEdgeColors(null, null))
             return
         }
         webView.postDelayed(sampleRunnable, delayMs.coerceAtLeast(0L))
