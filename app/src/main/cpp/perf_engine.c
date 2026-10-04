@@ -200,6 +200,17 @@ static const char PERF_JS_DOCUMENT_START[] =
 "}"
 "})();";
 
+/*
+ * Do not stamp content-visibility / contain / will-change onto the host page.
+ * content-visibility:auto and contain:paint make the element a containing
+ * block and a stacking context for position:fixed descendants. WoodMart's
+ * shop filter stays inside .container > .row and is position:fixed; the
+ * full-screen .wd-close-side lives on <body>. Containing the row puts the
+ * close layer above the panel, so a tap inside the filters closes it.
+ * The header menu and cart are outside that row, which is why only the
+ * shop sidebar broke, and only in the exported APK (this script is baked
+ * in at export; preview does not run it). #1150
+ */
 static const char PERF_JS_DOCUMENT_END[] =
 "(function(){'use strict';"
 
@@ -216,14 +227,6 @@ static const char PERF_JS_DOCUMENT_END[] =
   "},{rootMargin:'200px 0px'});"
   "var imgs=document.querySelectorAll('img:not([loading])');"
   "for(var i=0;i<imgs.length;i++){imgs[i].loading='lazy';_io.observe(imgs[i]);}"
-"}"
-
-"var sections=document.querySelectorAll('main>section,main>div,main>article,.container>div,.container>section');"
-"for(var i=0;i<sections.length;i++){"
-  "if(sections[i].offsetHeight>500){"
-    "sections[i].style.contentVisibility='auto';"
-    "sections[i].style.containIntrinsicSize='auto 500px';"
-  "}"
 "}"
 
 "try{"
@@ -265,10 +268,6 @@ static const char PERF_CSS[] =
 ".perf-low img{image-rendering:auto!important;}"
 
 "html{scroll-behavior:auto!important;-webkit-overflow-scrolling:touch;}"
-
-"*[style*='transform']{will-change:transform;}"
-
-"section,article{contain:content;}"
 "</style>";
 
 #define JNI_FUNC(name) Java_com_webtoapp_core_perf_NativePerfEngine_##name
