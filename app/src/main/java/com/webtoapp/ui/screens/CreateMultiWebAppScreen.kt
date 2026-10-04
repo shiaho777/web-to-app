@@ -178,7 +178,7 @@ fun CreateMultiWebAppScreen(
                             selected = displayMode,
                             onSelect = { displayMode = it }
                         )
-                        if (displayMode == "CARDS") {
+                        if (displayMode == "CARDS" || displayMode == "TOP_TABS") {
                             Spacer(modifier = Modifier.height(12.dp))
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -763,6 +763,7 @@ private fun DisplayModePicker(
 ) {
     val options = listOf(
         DisplayModeOption("TABS", Icons.Outlined.Dock, Strings.multiWebModeTabs, Strings.multiWebModeTabsDesc),
+        DisplayModeOption("TOP_TABS", Icons.Outlined.Tab, Strings.multiWebModeTopTabs, Strings.multiWebModeTopTabsDesc),
         DisplayModeOption("CARDS", Icons.Outlined.GridView, Strings.multiWebModeCards, Strings.multiWebModeCardsDesc),
         DisplayModeOption("DRAWER", Icons.Outlined.ViewSidebar, Strings.multiWebModeDrawer, Strings.multiWebModeDrawerDesc),
         DisplayModeOption("FEED", Icons.Outlined.RssFeed, Strings.multiWebModeFeed, Strings.multiWebModeFeedDesc)

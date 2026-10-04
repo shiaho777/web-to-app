@@ -83,7 +83,8 @@ fun BoxScope.ShellScaffoldLayout(
 
     statusBarHeightDp: Int,
     pageTopColor: String? = null,
-    pageBottomColor: String? = null
+    pageBottomColor: String? = null,
+    onTopTabColor: (String?) -> Unit = {}
 ) {
     val context = LocalContext.current
 
@@ -285,7 +286,8 @@ fun BoxScope.ShellScaffoldLayout(
         onBrowserSurfaceCreated = onBrowserSurfaceCreated,
                 onWebViewRefUpdated = onWebViewRefUpdated,
                 onShowActivationDialog = onShowActivationDialog,
-                onActivityFinish = onActivityFinish
+                onActivityFinish = onActivityFinish,
+                onTopTabColor = onTopTabColor
             )
 
             ShellLyricsOverlay(config = config, bgmState = bgmState)
@@ -506,7 +508,8 @@ private fun ShellContentArea(
     onBrowserSurfaceCreated: (com.webtoapp.core.engine.BrowserSurface) -> Unit = {},
     onWebViewRefUpdated: (WebView) -> Unit,
     onShowActivationDialog: () -> Unit,
-    onActivityFinish: () -> Unit
+    onActivityFinish: () -> Unit,
+    onTopTabColor: (String?) -> Unit = {}
 ) {
 
     if (!isActivationChecked) {
@@ -554,7 +557,8 @@ private fun ShellContentArea(
             onWebViewCreated = onWebViewCreated,
         onBrowserSurfaceCreated = onBrowserSurfaceCreated,
             onWebViewRefUpdated = onWebViewRefUpdated,
-            onActivityFinish = onActivityFinish
+            onActivityFinish = onActivityFinish,
+            onTopTabColor = onTopTabColor
         )
     }
 }

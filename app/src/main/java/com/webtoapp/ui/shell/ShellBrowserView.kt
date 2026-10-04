@@ -84,15 +84,20 @@ fun ShellBrowserAndroidView(
                     onSurfaceCreated?.invoke(surface)
 
                     val wv = surface.webView
+                    val touchSlop = android.view.ViewConfiguration.get(ctx).scaledTouchSlop
                     if (wv != null && enableLongPress) {
                         var lastTouchX = 0f
                         var lastTouchY = 0f
+                        var originX = 0f
+                        var originY = 0f
                         var downFromFinger = false
                         wv.setOnTouchListener { view, event ->
                             when (event.actionMasked) {
                                 MotionEvent.ACTION_DOWN -> {
                                     lastTouchX = event.x
                                     lastTouchY = event.y
+                                    originX = event.x
+                                    originY = event.y
                                     downFromFinger =
                                         event.getToolType(0) == MotionEvent.TOOL_TYPE_FINGER
                                     if (event.isFromSource(android.view.InputDevice.SOURCE_MOUSE)) {
@@ -108,6 +113,7 @@ fun ShellBrowserAndroidView(
                                     lastTouchY = event.y
                                 }
                                 MotionEvent.ACTION_UP -> {
+                                    SiteTabSwipe.onUp(event, originX, originY, touchSlop)
                                     view.performClick()
                                     downFromFinger = false
                                 }
@@ -139,6 +145,20 @@ fun ShellBrowserAndroidView(
                         }
                     } else if (!initialUrl.isNullOrBlank()) {
                         surface.loadUrl(initialUrl)
+                    }
+                    if (wv == null) {
+                        var originX = 0f
+                        var originY = 0f
+                        surface.view.setOnTouchListener { _, event ->
+                            when (event.actionMasked) {
+                                MotionEvent.ACTION_DOWN -> {
+                                    originX = event.x
+                                    originY = event.y
+                                }
+                                MotionEvent.ACTION_UP -> SiteTabSwipe.onUp(event, originX, originY, touchSlop)
+                            }
+                            false
+                        }
                     }
 
                     addView(

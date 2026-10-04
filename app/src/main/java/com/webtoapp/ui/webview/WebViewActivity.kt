@@ -249,6 +249,7 @@ open class WebViewActivity : AppCompatActivity() {
     private var statusBarBackgroundAlphaDark: Float = 1.0f
     private var statusBarAutoColor: String? = null
     private var pageBottomAutoColor: String? = null
+    private var topTabBarColor: String? = null
     internal var keyboardAdjustMode: KeyboardAdjustMode = KeyboardAdjustMode.RESIZE
 
     private var currentIsDarkTheme: Boolean = false
@@ -295,7 +296,8 @@ open class WebViewActivity : AppCompatActivity() {
         if (mode != com.webtoapp.data.model.StatusBarColorMode.TRANSPARENT &&
             mode != com.webtoapp.data.model.StatusBarColorMode.PAGE_TOP
         ) return null
-        val hex = statusBarAutoColor ?: return null
+        val hex = (if (mode == com.webtoapp.data.model.StatusBarColorMode.TRANSPARENT) topTabBarColor else null)
+            ?: statusBarAutoColor ?: return null
         val color = runCatching { android.graphics.Color.parseColor(hex) }.getOrNull() ?: return null
         return WindowHelper.isColorLight(color)
     }
@@ -994,6 +996,11 @@ open class WebViewActivity : AppCompatActivity() {
                     pageBottomAutoColor = color
                     refreshStatusBarAppearance()
                 },
+                onTopTabColor = { color ->
+                    if (topTabBarColor == color) return@WebViewScreen
+                    topTabBarColor = color
+                    refreshStatusBarAppearance()
+                },
                 onSavedAppLoaded = { app ->
                     resolvedSavedApp = app
                     if (app.name.isNotBlank()) applySeparateTaskDescription(app.name)
@@ -1489,6 +1496,7 @@ fun WebViewScreen(
     onStatusBarConfigChanged: ((com.webtoapp.data.model.StatusBarColorMode, String?, Boolean?, Boolean, com.webtoapp.data.model.StatusBarBackgroundType, Float, com.webtoapp.data.model.StatusBarColorMode, String?, Boolean?, com.webtoapp.data.model.StatusBarBackgroundType, Float) -> Unit)? = null,
     onStatusBarAutoColorChanged: ((String?) -> Unit)? = null,
     onPageBottomColorChanged: ((String?) -> Unit)? = null,
+    onTopTabColor: ((String?) -> Unit)? = null,
     onSavedAppLoaded: ((WebApp) -> Unit)? = null,
     onWebViewCreated: (WebView, WebApp?) -> Unit,
     onFileChooser: (ValueCallback<Array<Uri>>?, WebChromeClient.FileChooserParams?) -> Boolean,
@@ -3744,6 +3752,7 @@ fun WebViewScreen(
                         webViewConfig = mwApp.webViewConfig,
                         webViewCallbacks = webViewCallbacks,
                         webViewManager = webViewManager,
+                        onTopTabColor = { onTopTabColor?.invoke(it) },
                         onWebViewCreated = { wv ->
                             statusBarColorTracker?.detach()
                             val tracker = com.webtoapp.core.webview.StatusBarPageColorTracker(

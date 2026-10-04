@@ -935,6 +935,19 @@ object StringsA {
         AppLanguage.KOREAN -> "하단 탭"
     }
 
+    val multiWebModeTopTabs: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "顶部标签"
+        AppLanguage.ENGLISH -> "Top Tabs"
+        AppLanguage.ARABIC -> "ألسنة علوية"
+        AppLanguage.PORTUGUESE -> "Abas Superiores"
+        AppLanguage.SPANISH -> "Pestañas Superiores"
+        AppLanguage.FRENCH -> "Onglets en haut"
+        AppLanguage.GERMAN -> "Obere Tabs"
+        AppLanguage.RUSSIAN -> "Верхние вкладки"
+        AppLanguage.JAPANESE -> "上部タブ"
+        AppLanguage.KOREAN -> "상단 탭"
+    }
+
     val multiWebModeCards: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "卡片主页"
         AppLanguage.ENGLISH -> "Card Home"
@@ -972,6 +985,19 @@ object StringsA {
         AppLanguage.RUSSIAN -> "Постоянная нижняя панель для переключения сайтов"
         AppLanguage.JAPANESE -> "常設の下部バーでサイトを切り替え"
         AppLanguage.KOREAN -> "하단 바 상시 표시, 탭하여 사이트 전환"
+    }
+
+    val multiWebModeTopTabsDesc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "顶部标签栏，左右滑动切换，颜色跟随网页"
+        AppLanguage.ENGLISH -> "Top bar, swipe sideways to switch, colors follow the page"
+        AppLanguage.ARABIC -> "شريط علوي، اسحب جانبياً للتبديل، الألوان تتبع الصفحة"
+        AppLanguage.PORTUGUESE -> "Barra superior, deslize para trocar, cores seguem a página"
+        AppLanguage.SPANISH -> "Barra superior, desliza para cambiar, los colores siguen la página"
+        AppLanguage.FRENCH -> "Barre supérieure, balayez pour changer, couleurs selon la page"
+        AppLanguage.GERMAN -> "Obere Leiste, seitlich wischen, Farben folgen der Seite"
+        AppLanguage.RUSSIAN -> "Верхняя панель, свайп для смены, цвета как у страницы"
+        AppLanguage.JAPANESE -> "上部バー、横スワイプで切り替え、色はページに追従"
+        AppLanguage.KOREAN -> "상단 바, 가로 스와이프로 전환, 색은 페이지를 따름"
     }
 
     val multiWebModeCardsDesc: String get() = when (Strings.lang) {
@@ -1014,16 +1040,16 @@ object StringsA {
     }
 
     val multiWebShowSiteIcons: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "卡片上显示站点图标"
-        AppLanguage.ENGLISH -> "Show site icons on cards"
-        AppLanguage.ARABIC -> "إظهار أيقونات المواقع على البطاقات"
-        AppLanguage.PORTUGUESE -> "Mostrar ícones dos sites nos cartões"
-        AppLanguage.SPANISH -> "Mostrar iconos de sitios en tarjetas"
-        AppLanguage.FRENCH -> "Afficher les icônes sur les cartes"
-        AppLanguage.GERMAN -> "Seiten-Icons auf Karten anzeigen"
-        AppLanguage.RUSSIAN -> "Показывать значки сайтов на карточках"
-        AppLanguage.JAPANESE -> "カードにサイトアイコンを表示"
-        AppLanguage.KOREAN -> "카드에 사이트 아이콘 표시"
+        AppLanguage.CHINESE -> "显示站点图标"
+        AppLanguage.ENGLISH -> "Show site icons"
+        AppLanguage.ARABIC -> "إظهار أيقونات المواقع"
+        AppLanguage.PORTUGUESE -> "Mostrar ícones dos sites"
+        AppLanguage.SPANISH -> "Mostrar iconos de sitios"
+        AppLanguage.FRENCH -> "Afficher les icônes des sites"
+        AppLanguage.GERMAN -> "Seiten-Icons anzeigen"
+        AppLanguage.RUSSIAN -> "Показывать значки сайтов"
+        AppLanguage.JAPANESE -> "サイトアイコンを表示"
+        AppLanguage.KOREAN -> "사이트 아이콘 표시"
     }
 
     val multiWebSitesInheritConfig: String get() = when (Strings.lang) {

@@ -69,6 +69,7 @@ class ShellActivity : AppCompatActivity() {
     private var statusBarBackgroundImageDark: String? = null
     private var statusBarBackgroundAlphaDark: Float = 1.0f
     private var statusBarAutoColor: String? = null
+    private var topTabBarColor: String? = null
     private var pageBottomAutoColor: String? = null
     private var keyboardAdjustMode: KeyboardAdjustMode = KeyboardAdjustMode.RESIZE
 
@@ -166,7 +167,7 @@ class ShellActivity : AppCompatActivity() {
         if (explicit != null) return explicit
         val mode = if (isDark) statusBarColorModeDark else statusBarColorMode
         if (mode != "TRANSPARENT" && mode != "PAGE_TOP") return null
-        val hex = statusBarAutoColor ?: return null
+        val hex = (if (mode == "TRANSPARENT") topTabBarColor else null) ?: statusBarAutoColor ?: return null
         val color = runCatching { android.graphics.Color.parseColor(hex) }.getOrNull() ?: return null
         return com.webtoapp.ui.shared.WindowHelper.isColorLight(color)
     }
@@ -842,6 +843,11 @@ class ShellActivity : AppCompatActivity() {
                 onPageBottomColorChanged = { color ->
                     if (pageBottomAutoColor == color) return@ShellScreen
                     pageBottomAutoColor = color
+                    refreshStatusBarAppearance()
+                },
+                onTopTabColor = { color ->
+                    if (topTabBarColor == color) return@ShellScreen
+                    topTabBarColor = color
                     refreshStatusBarAppearance()
                 },
                 onFileChooser = { callback, params ->

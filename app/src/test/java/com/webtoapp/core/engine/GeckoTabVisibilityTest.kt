@@ -77,9 +77,10 @@ class GeckoTabVisibilityTest {
 
     @Test
     fun `multi-web keep-composed modes pause and resume engine surfaces`() {
-        // TabsMode and DrawerMode both keep visited sites composed under
-        // alpha(0). Each must collapse hidden Gecko surfaces (onCovered) and
-        // resume the selected one — releaseSession alone does not (#1192).
+        // TabsMode (bottom and top bars) and DrawerMode keep visited sites
+        // composed under alpha(0). Each must collapse hidden Gecko surfaces
+        // (onCovered) and resume the selected one — releaseSession alone does
+        // not (#1192). TOP_TABS calls TabsMode, so it shares that contract.
         val covered = Regex("surface\\.onCovered\\(\\)").findAll(multiWebSrc).count()
         val resumes = Regex("surface\\.onResume\\(\\)").findAll(multiWebSrc).count()
         assertWithMessage("both TABS and DRAWER must collapse hidden engine surfaces")

@@ -25,6 +25,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -40,7 +41,9 @@ import com.webtoapp.core.shell.MultiWebSiteShellConfig
 import com.webtoapp.core.shell.ShellConfig
 import com.webtoapp.core.webview.WebViewCallbacks
 import com.webtoapp.data.model.WebViewConfig
+import com.webtoapp.ui.shared.TopTabChrome
 import com.webtoapp.ui.shared.effectiveBottomContentPadding
+import com.webtoapp.ui.shared.parseBandColor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -57,7 +60,8 @@ fun MultiWebShellMode(
     swipeRefreshEnabled: Boolean = false,
     isRefreshing: Boolean = false,
     onRefresh: () -> Unit = {},
-    onBrowserSurfaceCreated: (com.webtoapp.core.engine.BrowserSurface) -> Unit = {}
+    onBrowserSurfaceCreated: (com.webtoapp.core.engine.BrowserSurface) -> Unit = {},
+    onTopTabColor: (String?) -> Unit = {}
 ) {
     val multiWebConfig = config.multiWebConfig
     val sites = multiWebConfig.sites.filter { it.enabled }
@@ -82,7 +86,8 @@ fun MultiWebShellMode(
     }
 
     when (multiWebConfig.displayMode.uppercase()) {
-        "TABS" -> TabsMode(config, multiWebConfig, sites, webViewConfig, webViewCallbacks, webViewManager, onWebViewCreated, swipeRefreshEnabled, isRefreshing, onRefresh, onBrowserSurfaceCreated)
+        "TABS" -> TabsMode(config, multiWebConfig, sites, webViewConfig, webViewCallbacks, webViewManager, onWebViewCreated, swipeRefreshEnabled, isRefreshing, onRefresh, onBrowserSurfaceCreated, TabBarPlacement.BOTTOM, onTopTabColor)
+        "TOP_TABS" -> TabsMode(config, multiWebConfig, sites, webViewConfig, webViewCallbacks, webViewManager, onWebViewCreated, swipeRefreshEnabled, isRefreshing, onRefresh, onBrowserSurfaceCreated, TabBarPlacement.TOP, onTopTabColor)
         "CARDS" -> CardsMode(config, multiWebConfig, sites, webViewConfig, webViewCallbacks, webViewManager, onWebViewCreated, swipeRefreshEnabled, isRefreshing, onRefresh, onBrowserSurfaceCreated)
         "FEED" -> FeedMode(config, multiWebConfig, sites, webViewConfig, webViewCallbacks, webViewManager, onWebViewCreated, swipeRefreshEnabled, isRefreshing, onRefresh, onBrowserSurfaceCreated)
         "DRAWER" -> DrawerMode(config, multiWebConfig, sites, webViewConfig, webViewCallbacks, webViewManager, onWebViewCreated, swipeRefreshEnabled, isRefreshing, onRefresh, onBrowserSurfaceCreated)
@@ -223,6 +228,8 @@ private fun rememberResumeStore(
     return store to key
 }
 
+private enum class TabBarPlacement { BOTTOM, TOP }
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun TabsMode(
@@ -236,7 +243,9 @@ private fun TabsMode(
     swipeRefreshEnabled: Boolean,
     isRefreshing: Boolean,
     onRefresh: () -> Unit,
-    onBrowserSurfaceCreated: (com.webtoapp.core.engine.BrowserSurface) -> Unit = {}
+    onBrowserSurfaceCreated: (com.webtoapp.core.engine.BrowserSurface) -> Unit = {},
+    placement: TabBarPlacement = TabBarPlacement.BOTTOM,
+    onTopTabColor: (String?) -> Unit = {}
 ) {
     val (resumeStore, resumeKey) = rememberResumeStore(config)
     // Selected site persists by id: rememberSaveable covers config-change and
@@ -254,6 +263,54 @@ private fun TabsMode(
     }
     val tabsListState = rememberLazyListState()
     val registry = remember { SiteRuntimeRegistry() }
+    val adaptive = placement == TabBarPlacement.TOP
+    var sampledTop by remember { mutableStateOf<String?>(null) }
+    var sampleGeneration by remember { mutableIntStateOf(0) }
+    LaunchedEffect(selectedTab) {
+        if (adaptive) sampledTop = null
+    }
+    val sampleSiteId = if (adaptive) sites.getOrNull(selectedTab)?.id else null
+    val sampleView = if (adaptive) sampleSiteId?.let { registry.webViews[it] } else null
+    DisposableEffect(adaptive, sampleSiteId, sampleView, sampleGeneration) {
+        if (!adaptive || sampleView == null) {
+            onDispose { }
+        } else {
+            val tracker = com.webtoapp.core.webview.StatusBarPageColorTracker(
+                webView = sampleView,
+                shouldSample = { true },
+                onColors = { colors -> sampledTop = colors.top }
+            )
+            tracker.attach()
+            tracker.scheduleSample(40L)
+            onDispose { tracker.detach() }
+        }
+    }
+    val barHex = if (adaptive) {
+        TopTabChrome.backgroundHex(
+            sampledTop,
+            sites.getOrNull(selectedTab)?.themeColor,
+            androidx.compose.foundation.isSystemInDarkTheme()
+        )
+    } else {
+        null
+    }
+    SideEffect {
+        if (adaptive) onTopTabColor(if (sites.size > 1) barHex else null)
+        SiteTabSwipe.onSwipe = if (adaptive && sites.size > 1) {
+            { delta ->
+                val next = (selectedTab + delta).coerceIn(0, sites.lastIndex)
+                if (next != selectedTab) selectedTab = next
+            }
+        } else {
+            null
+        }
+    }
+    DisposableEffect(adaptive) {
+        onDispose {
+            SiteTabSwipe.onSwipe = null
+            if (adaptive) onTopTabColor(null)
+        }
+    }
 
     LaunchedEffect(selectedTab, sites.size) {
         val site = sites.getOrNull(selectedTab)
@@ -288,11 +345,34 @@ private fun TabsMode(
         }
     }
 
+    val tabDark = androidx.compose.foundation.isSystemInDarkTheme()
+    val tabBgType = if (tabDark) webViewConfig.statusBarBackgroundTypeDark else webViewConfig.statusBarBackgroundType
+    val tabMode = if (tabDark) webViewConfig.statusBarColorModeDark else webViewConfig.statusBarColorMode
+    val tabOverlaysStatus = tabBgType == com.webtoapp.data.model.StatusBarBackgroundType.IMAGE ||
+        tabMode == com.webtoapp.data.model.StatusBarColorMode.TRANSPARENT
+    // The parent scaffold already reserves a solid status bar. A transparent
+    // bar (or a hidden one) lets this strip draw behind the status icons.
+    val drawUnderStatusBar = adaptive && webViewConfig.hideToolbar &&
+        !(webViewConfig.showStatusBarInFullscreen && !tabOverlaysStatus)
+
     Scaffold(
         containerColor = Color.Transparent,
         contentWindowInsets = WindowInsets(0),
+        topBar = {
+            if (adaptive && sites.size > 1 && barHex != null) {
+                TopTabBar(
+                    sites = sites,
+                    selectedTab = selectedTab,
+                    onSelect = { selectedTab = it },
+                    listState = tabsListState,
+                    showIcons = multiWebConfig.showSiteIcons,
+                    barHex = barHex,
+                    drawUnderStatusBar = drawUnderStatusBar
+                )
+            }
+        },
         bottomBar = {
-            if (sites.size > 1) {
+            if (!adaptive && sites.size > 1) {
                 Surface(
                     tonalElevation = 2.dp,
                     color = MaterialTheme.colorScheme.surface,
@@ -454,7 +534,10 @@ private fun TabsMode(
                                 webViewManager = webViewManager,
                                 onWebViewCreated = { wv ->
                                     registry.webViews[site.id] = wv
-                                    if (isVisible) onWebViewCreated(wv)
+                                    if (isVisible) {
+                                        onWebViewCreated(wv)
+                                        if (adaptive) sampleGeneration++
+                                    }
                                 },
                                 swipeRefreshEnabled = swipeRefreshEnabled,
                                 isRefreshing = isRefreshing,
@@ -468,6 +551,110 @@ private fun TabsMode(
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun TopTabBar(
+    sites: List<MultiWebSiteShellConfig>,
+    selectedTab: Int,
+    onSelect: (Int) -> Unit,
+    listState: androidx.compose.foundation.lazy.LazyListState,
+    showIcons: Boolean,
+    barHex: String,
+    drawUnderStatusBar: Boolean
+) {
+    val background = parseBandColor(barHex) ?: MaterialTheme.colorScheme.surface
+    val lightText = TopTabChrome.textIsLightOn(barHex)
+    val foreground = if (lightText) Color.White else Color(0xFF1C1B1F)
+    TopTabStrip(drawUnderStatusBar, background, foreground, sites, selectedTab, onSelect, listState, showIcons)
+}
+
+@Composable
+private fun TopTabStrip(
+    drawUnderStatusBar: Boolean,
+    background: Color,
+    foreground: Color,
+    sites: List<MultiWebSiteShellConfig>,
+    selectedTab: Int,
+    onSelect: (Int) -> Unit,
+    listState: androidx.compose.foundation.lazy.LazyListState,
+    showIcons: Boolean
+) {
+    Surface(color = background, modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = if (drawUnderStatusBar) {
+                Modifier.windowInsetsPadding(WindowInsets.statusBars)
+            } else {
+                Modifier
+            }
+        ) {
+            LazyRow(
+                state = listState,
+                modifier = Modifier.fillMaxWidth().height(48.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                contentPadding = PaddingValues(horizontal = 8.dp)
+            ) {
+                itemsIndexed(sites) { index, site ->
+                    val selected = selectedTab == index
+                    Column(
+                        modifier = Modifier
+                            .widthIn(min = 72.dp)
+                            .fillMaxHeight()
+                            .clip(RoundedCornerShape(10.dp))
+                            .clickable { onSelect(index) }
+                            .padding(horizontal = 12.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            if (showIcons) {
+                                if (site.iconEmoji.isNotBlank()) {
+                                    Text(site.iconEmoji, fontSize = 16.sp)
+                                } else {
+                                    Icon(
+                                        Icons.Outlined.Language,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(16.dp),
+                                        tint = foreground.copy(alpha = if (selected) 1f else 0.62f)
+                                    )
+                                }
+                                Spacer(Modifier.width(6.dp))
+                            }
+                            Text(
+                                site.name.ifBlank { extractDomain(site.url) },
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                fontSize = 15.sp,
+                                fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
+                                color = foreground.copy(alpha = if (selected) 1f else 0.62f)
+                            )
+                        }
+                        Spacer(Modifier.height(4.dp))
+                        Box(
+                            modifier = Modifier
+                                .size(4.dp)
+                                .clip(CircleShape)
+                                .background(if (selected) foreground else Color.Transparent)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+internal object SiteTabSwipe {
+    var onSwipe: ((Int) -> Unit)? = null
+
+    fun onUp(event: android.view.MotionEvent, downX: Float, downY: Float, touchSlop: Int) {
+        val dx = event.x - downX
+        val dy = event.y - downY
+        val threshold = touchSlop * 8
+        if (kotlin.math.abs(dx) > threshold && kotlin.math.abs(dx) > kotlin.math.abs(dy) * 1.5f) {
+            onSwipe?.invoke(if (dx < 0f) 1 else -1)
         }
     }
 }

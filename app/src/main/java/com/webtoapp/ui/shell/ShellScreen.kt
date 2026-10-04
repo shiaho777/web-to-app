@@ -54,6 +54,7 @@ fun ShellScreen(
     onBrowserSurfaceCreated: (com.webtoapp.core.engine.BrowserSurface) -> Unit = {},
     onStatusBarAutoColorChanged: (String?) -> Unit = {},
     onPageBottomColorChanged: (String?) -> Unit = {},
+    onTopTabColor: (String?) -> Unit = {},
     onFileChooser: (ValueCallback<Array<Uri>>?, WebChromeClient.FileChooserParams?) -> Boolean,
     onShowCustomView: (View, WebChromeClient.CustomViewCallback?) -> Unit,
     onHideCustomView: () -> Unit,
@@ -630,7 +631,8 @@ fun ShellScreen(
         },
         statusBarHeightDp = statusBarHeightDp,
         pageTopColor = statusBarAutoColor,
-        pageBottomColor = pageBottomAutoColor
+        pageBottomColor = pageBottomAutoColor,
+        onTopTabColor = onTopTabColor
     )
 
     if (showActivationDialog) {

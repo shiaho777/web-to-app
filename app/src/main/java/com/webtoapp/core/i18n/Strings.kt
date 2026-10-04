@@ -124,9 +124,11 @@ object Strings {
     val multiWebModeFeed: String get() = StringsA.multiWebModeFeed
     val multiWebDisplayMode: String get() = StringsA.multiWebDisplayMode
     val multiWebModeTabs: String get() = StringsA.multiWebModeTabs
+    val multiWebModeTopTabs: String get() = StringsA.multiWebModeTopTabs
     val multiWebModeCards: String get() = StringsA.multiWebModeCards
     val multiWebModeDrawer: String get() = StringsA.multiWebModeDrawer
     val multiWebModeTabsDesc: String get() = StringsA.multiWebModeTabsDesc
+    val multiWebModeTopTabsDesc: String get() = StringsA.multiWebModeTopTabsDesc
     val multiWebModeCardsDesc: String get() = StringsA.multiWebModeCardsDesc
     val multiWebModeDrawerDesc: String get() = StringsA.multiWebModeDrawerDesc
     val multiWebModeFeedDesc: String get() = StringsA.multiWebModeFeedDesc
