@@ -77,6 +77,64 @@ class AdBlockerHostRuntimeTest {
     }
 
     @Test
+    fun compileRulesTextKeepsAbpLinesAndConvertsHostsWithoutBuildingAnEngine() = runBlocking {
+        val abp = "https://example.test/ublock.txt"
+        AdBlockFilterCache.saveSourceContent(
+            context,
+            abp,
+            """
+            [Adblock Plus 2.0]
+            ! Title: uBlock filters
+            ||ads.example.test^
+            example.com##.ad-slot
+            example.com##+js(set, ads, false)
+            # comment kept out
+            """.trimIndent()
+        )
+        val hosts = "https://example.test/hosts.txt"
+        AdBlockFilterCache.saveSourceContent(
+            context,
+            hosts,
+            """
+            # hosts list
+            0.0.0.0 tracker.example.test
+            127.0.0.1 localhost
+            """.trimIndent()
+        )
+
+        val started = System.nanoTime()
+        val compiled = adBlocker.compileRulesText(
+            context = context,
+            subscriptionUrls = listOf(abp, hosts),
+            customRules = listOf("! ignored", "||custom.example.test^")
+        )
+        val elapsedMs = (System.nanoTime() - started) / 1_000_000
+
+        assertThat(compiled).contains("||ads.example.test^")
+        assertThat(compiled).contains("example.com##.ad-slot")
+        assertThat(compiled).contains("example.com##+js(set, ads, false)")
+        assertThat(compiled).contains("||tracker.example.test^")
+        assertThat(compiled).contains("||custom.example.test^")
+        assertThat(compiled).doesNotContain("Title:")
+        assertThat(compiled).doesNotContain("localhost")
+        assertThat(compiled).doesNotContain("! ignored")
+        // Parsing these into a second engine is what froze export. A straight
+        // copy of twenty thousand unanchored rules stays well under a second.
+        val bulk = "https://example.test/bulk.txt"
+        val bulkBody = buildString {
+            append("[Adblock Plus 2.0]\n")
+            repeat(20_000) { append("/ads/banner-").append(it).append(".js\n") }
+        }
+        AdBlockFilterCache.saveSourceContent(context, bulk, bulkBody)
+        val bulkStarted = System.nanoTime()
+        val bulkCompiled = adBlocker.compileRulesText(context, listOf(bulk))
+        val bulkMs = (System.nanoTime() - bulkStarted) / 1_000_000
+        assertThat(bulkCompiled.lines()).hasSize(20_000)
+        assertThat(bulkMs).isLessThan(2_000)
+        assertThat(elapsedMs).isLessThan(2_000)
+    }
+
+    @Test
     fun prepareRuntimeFiltersDisablesWhenRequested() = runBlocking {
         adBlocker.prepareRuntimeFilters(
             context = context,

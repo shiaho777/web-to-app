@@ -7,6 +7,7 @@ import android.webkit.WebResourceResponse
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlin.coroutines.coroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -783,13 +784,31 @@ class AdBlocker {
      * [matchesAnyNetworkFilter] walks only the un-indexed remainder instead of scanning
      * the whole list (including anchored rules) on every request.
      */
-    private val unanchoredFilterIndex = HashMap<List<NetworkFilter>, List<Int>>()
+    private val unanchoredFilterIndex = HashMap<List<NetworkFilter>, MutableList<Int>>()
 
     private fun rebuildUnanchoredIndex() {
         unanchoredFilterIndex[networkBlockFilters] = networkBlockFilters
-            .withIndex().filter { it.value.anchorDomain == null }.map { it.index }
+            .mapIndexedNotNullTo(ArrayList()) { index, filter ->
+                if (filter.anchorDomain == null) index else null
+            }
         unanchoredFilterIndex[networkExceptionFilters] = networkExceptionFilters
-            .withIndex().filter { it.value.anchorDomain == null }.map { it.index }
+            .mapIndexedNotNullTo(ArrayList()) { index, filter ->
+                if (filter.anchorDomain == null) index else null
+            }
+    }
+
+    /**
+     * Append one index. The previous `list + idx` copied the whole list on every
+     * unanchored rule, so a uBlock + AdGuard import (tens of thousands of those
+     * rules) allocated hundreds of megabytes and stalled the build at 70%.
+     */
+    private fun trackUnanchored(filters: MutableList<NetworkFilter>, idx: Int) {
+        val existing = unanchoredFilterIndex[filters]
+        if (existing == null) {
+            unanchoredFilterIndex[filters] = mutableListOf(idx)
+        } else {
+            existing.add(idx)
+        }
     }
 
     @Suppress("serial")
@@ -855,6 +874,7 @@ class AdBlocker {
         cosmeticBlockFilters.clear()
         cosmeticExceptionFilters.clear()
         scriptletRules.clear()
+        unanchoredFilterIndex.clear()
         blockResultCache.clear()
 
         if (useDefaultRules) {
@@ -1447,27 +1467,97 @@ class AdBlocker {
         }
     }
 
+    /**
+     * Text bundled into the generated APK as `assets/wta_adblock_compiled.txt`.
+     *
+     * This must not build a matching engine. uBlock + AdGuard Base + AdGuard DNS
+     * is tens of megabytes; parsing every rule into filter objects (and the old
+     * unanchored-index copy) ran after the template repack had already reported
+     * 70%, so the build looked frozen on "Repacking base template...". The shell
+     * parses the bundled text itself at launch, so export only has to keep the
+     * rule lines.
+     */
     suspend fun compileRulesText(
         context: Context,
         subscriptionUrls: List<String> = emptyList(),
         customRules: List<String> = emptyList()
     ): String {
-        val compiler = AdBlocker()
         val selected = subscriptionUrls.map { it.trim() }.filter { it.isNotEmpty() }
         if (selected.isEmpty()) {
+            // No per-app subscriptions: ship whatever the hosts cache already compiled.
+            val compiler = AdBlocker()
             compiler.loadHostsRules(context)
-        } else {
-            for (sourceKey in selected) {
-                val content = compiler.loadSourceContent(context, sourceKey)
-                if (content != null) {
-                    compiler.ingestFilterContent(sourceKey, content)
-                } else if (sourceKey.startsWith("http://") || sourceKey.startsWith("https://")) {
-                    compiler.importHostsFromUrl(sourceKey, context)
-                }
+            customRules.forEach { compiler.parseAndAddRule(it) }
+            return compiler.getCompiledRulesText()
+        }
+        val out = StringBuilder()
+        for (sourceKey in selected) {
+            coroutineContext.ensureActive()
+            val content = loadOrFetchFilterText(context, sourceKey) ?: continue
+            appendExportableRules(out, content)
+        }
+        customRules.forEach { rule ->
+            val trimmed = rule.trim()
+            if (trimmed.isNotEmpty() && !trimmed.startsWith("!") && !trimmed.startsWith("[")) {
+                if (out.isNotEmpty()) out.append('\n')
+                out.append(trimmed)
             }
         }
-        customRules.forEach { compiler.parseAndAddRule(it) }
-        return compiler.getCompiledRulesText()
+        return out.toString()
+    }
+
+    /** Cached subscription body, or a download that is stored without parsing it. */
+    private suspend fun loadOrFetchFilterText(context: Context, sourceKey: String): String? {
+        loadSourceContent(context, sourceKey)?.let { return it }
+        if (!sourceKey.startsWith("http://") && !sourceKey.startsWith("https://")) return null
+        val downloaded = downloadFilterText(sourceKey) ?: return null
+        AdBlockFilterCache.cacheUrlContent(context, sourceKey, downloaded)
+        AdBlockFilterCache.saveSourceContent(context, sourceKey, downloaded)
+        return downloaded
+    }
+
+    private suspend fun downloadFilterText(url: String): String? = withContext(Dispatchers.IO) {
+        val connection = URL(url).openConnection() as HttpURLConnection
+        try {
+            connection.connectTimeout = 15000
+            connection.readTimeout = 30000
+            connection.setRequestProperty("User-Agent", "WebToApp/1.0")
+            if (connection.responseCode != HttpURLConnection.HTTP_OK) return@withContext null
+            connection.inputStream.bufferedReader(Charsets.UTF_8).use { it.readText() }
+        } catch (_: Exception) {
+            null
+        } finally {
+            connection.disconnect()
+        }
+    }
+
+    private suspend fun appendExportableRules(out: StringBuilder, content: String) {
+        val isAbpFormat = content.lineSequence().take(20).any { line ->
+            val t = line.trim()
+            t.startsWith("[Adblock") || t.startsWith("!") || t.startsWith("||") ||
+                t.startsWith("@@") || t.contains("##") || t.contains("#@#")
+        }
+        var seen = 0
+        for (line in content.lineSequence()) {
+            if (seen++ % 4096 == 0) coroutineContext.ensureActive()
+            val trimmed = line.trim()
+            if (trimmed.isEmpty() || trimmed.startsWith("!")) continue
+            if (trimmed.startsWith("[") ||
+                (trimmed.startsWith("#") && !trimmed.startsWith("##") &&
+                    !trimmed.startsWith("#@#") && !trimmed.startsWith("#%#") &&
+                    !trimmed.startsWith("##+"))
+            ) {
+                continue
+            }
+            val exported = if (isAbpFormat) {
+                trimmed
+            } else {
+                val host = parseHostLine(trimmed)
+                if (host != null && isValidHost(host)) "||${host.lowercase()}^" else null
+            } ?: continue
+            if (out.isNotEmpty()) out.append('\n')
+            out.append(exported)
+        }
     }
 
     fun getCompiledRulesText(): String = buildString {
@@ -1847,13 +1937,11 @@ class AdBlocker {
         if (isException) {
             val idx = networkExceptionFilters.size
             networkExceptionFilters.add(filter)
-            unanchoredFilterIndex[networkExceptionFilters] =
-                (unanchoredFilterIndex[networkExceptionFilters] ?: emptyList()) + idx
+            trackUnanchored(networkExceptionFilters, idx)
         } else {
             val idx = networkBlockFilters.size
             networkBlockFilters.add(filter)
-            unanchoredFilterIndex[networkBlockFilters] =
-                (unanchoredFilterIndex[networkBlockFilters] ?: emptyList()) + idx
+            trackUnanchored(networkBlockFilters, idx)
         }
     }
 

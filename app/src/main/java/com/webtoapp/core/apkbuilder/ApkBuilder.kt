@@ -1748,6 +1748,10 @@ class ApkBuilder(private val context: Context) {
                 if (config.adBlock.enabled) {
                     val globalAdBlock = WebToAppApplication.adBlock
                     try {
+                        // The zip loop above already reported 100, which the caller
+                        // maps to overall 70% "Repacking base template...". Name this
+                        // step or a large subscription list looks like a frozen repack.
+                        onProgress(100, "Compiling ad-block rules...")
                         val compiledRules = globalAdBlock.compileRulesText(
                             context = context,
                             subscriptionUrls = config.adBlock.subscriptions

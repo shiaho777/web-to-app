@@ -76,6 +76,27 @@ class AdBlockLazyRegexTest {
     }
 
     @Test
+    fun `importing thousands of unanchored rules stays linear`() {
+        val rules = List(12_000) { i -> "/ads/slot-$i.js" }
+        val started = System.nanoTime()
+        adBlocker.initialize(rules, useDefaultRules = false)
+        val elapsedMs = (System.nanoTime() - started) / 1_000_000
+        assertThat(elapsedMs).isLessThan(3_000)
+        assertThat(
+            adBlocker.shouldBlock(
+                "https://cdn.example/ads/slot-11999.js",
+                "cdn.example", "script", true
+            )
+        ).isTrue()
+        assertThat(
+            adBlocker.shouldBlock(
+                "https://cdn.example/content/story.html",
+                "cdn.example", "other", true
+            )
+        ).isFalse()
+    }
+
+    @Test
     fun `export serialization does not compile regexes`() {
         adBlocker.addRule("||example.com/ads/banner*.js")
         // Must round-trip the ORIGINAL rule text (modifiers preserved opaquely).
