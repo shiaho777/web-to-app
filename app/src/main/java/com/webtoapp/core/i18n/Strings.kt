@@ -2706,6 +2706,8 @@ object Strings {
     val userAgentCustomHint: String get() = StringsC.userAgentCustomHint
     val mobileVersion: String get() = StringsC.mobileVersion
     val desktopVersion: String get() = StringsC.desktopVersion
+    val desktopModeLabel: String get() = StringsC.desktopModeLabel
+    val desktopModeHint: String get() = StringsC.desktopModeHint
     val currentUserAgent: String get() = StringsC.currentUserAgent
     val bypassWebViewDetection: String get() = StringsC.bypassWebViewDetection
     val fileLabel: String get() = StringsC.fileLabel

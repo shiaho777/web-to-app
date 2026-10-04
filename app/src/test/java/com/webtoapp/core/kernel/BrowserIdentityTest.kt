@@ -156,9 +156,38 @@ class BrowserIdentityTest {
         assertThat(identity.userAgent).isEqualTo(ua)
         assertThat(profile.mobile).isFalse()
         assertThat(profile.platform).isEqualTo("Windows")
+        assertThat(profile.architecture).isEqualTo("x86")
         assertThat(profile.supportsClientHints).isTrue()
         assertThat(profile.brands.map { it.brand }).contains("Chromium")
+        assertThat(profile.brands.map { it.brand }).doesNotContain("Android WebView")
         assertThat(profile.fullVersion).isEqualTo("${UserAgentVersions.CHROME}.0.0.0")
+    }
+
+    @Test
+    fun `the reported desktop Chrome custom UA wins over a leftover mobile flavor`() {
+        // Issue #1204: a Windows Chrome string saved as CUSTOM must describe Windows client
+        // hints, even when an earlier mobile flavor is still stored on the config.
+        val ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
+            "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+
+        val identity = resolve(
+            flavor = KernelFlavor.BLINK_CHROME,
+            legacyMode = UserAgentMode.CUSTOM,
+            customUserAgent = ua
+        )
+        val profile = identity.profile!!
+
+        assertThat(identity.userAgent).isEqualTo(ua)
+        assertThat(profile.platform).isEqualTo("Windows")
+        assertThat(profile.platformVersion).isEqualTo("10.0.0")
+        assertThat(profile.mobile).isFalse()
+        assertThat(profile.architecture).isEqualTo("x86")
+        assertThat(profile.model).isEmpty()
+        assertThat(profile.brands.map { it.brand }).containsExactly(
+            "Chromium",
+            "Google Chrome",
+            "Not_A Brand"
+        )
     }
 
     @Test

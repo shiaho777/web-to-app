@@ -8486,6 +8486,32 @@ object StringsC {
         AppLanguage.KOREAN -> "데스크톱"
     }
 
+    val desktopModeLabel: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "桌面模式"
+        AppLanguage.ENGLISH -> "Desktop mode"
+        AppLanguage.ARABIC -> "وضع سطح المكتب"
+        AppLanguage.PORTUGUESE -> "Modo área de trabalho"
+        AppLanguage.SPANISH -> "Modo de escritorio"
+        AppLanguage.FRENCH -> "Mode bureau"
+        AppLanguage.GERMAN -> "Desktop-Modus"
+        AppLanguage.RUSSIAN -> "Режим рабочего стола"
+        AppLanguage.JAPANESE -> "デスクトップモード"
+        AppLanguage.KOREAN -> "데스크톱 모드"
+    }
+
+    val desktopModeHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "以桌面版布局加载页面"
+        AppLanguage.ENGLISH -> "Load pages with the desktop site layout"
+        AppLanguage.ARABIC -> "تحميل الصفحات بتخطيط موقع سطح المكتب"
+        AppLanguage.PORTUGUESE -> "Carregar páginas com o layout do site para desktop"
+        AppLanguage.SPANISH -> "Cargar las páginas con el diseño del sitio de escritorio"
+        AppLanguage.FRENCH -> "Charger les pages avec la mise en page du site pour ordinateur"
+        AppLanguage.GERMAN -> "Seiten im Desktop-Layout laden"
+        AppLanguage.RUSSIAN -> "Загружать страницы в раскладке сайта для компьютера"
+        AppLanguage.JAPANESE -> "デスクトップ向けレイアウトでページを読み込む"
+        AppLanguage.KOREAN -> "데스크톱 사이트 레이아웃으로 페이지를 불러옵니다"
+    }
+
     val currentUserAgent: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "当前 User-Agent"
         AppLanguage.ENGLISH -> "Current User-Agent"

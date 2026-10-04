@@ -45,6 +45,7 @@ import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
 import com.webtoapp.R
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.ui.theme.LocalShowDescriptions
 import com.webtoapp.ui.theme.ifDescriptionsShown
 import com.webtoapp.data.model.*
 import com.webtoapp.ui.components.*
@@ -952,6 +953,10 @@ fun BrowserAdvancedConfigCard(
                     ),
                     verticalArrangement = Arrangement.spacedBy(WtaSpacing.SectionGap)
                 ) {
+                    // Documented home of User-Agent mode. The card below used to exist only as
+                    // an unreferenced composable, so the editor could never persist CUSTOM and
+                    // every exported APK kept the system WebView identity.
+                    UserAgentControls(config = config, onConfigChange = onConfigChange)
 
                     WtaSection(
                         title = Strings.sectionWebEngine,
@@ -1967,11 +1972,10 @@ private fun ViewportModeSelector(
 }
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
-fun UserAgentCard(
+private fun UserAgentControls(
     config: WebViewConfig,
     onConfigChange: (WebViewConfig) -> Unit
 ) {
-    var expanded by remember { mutableStateOf(false) }
     val isCustom = config.userAgentMode == UserAgentMode.CUSTOM
     val flavor = config.kernelFlavor
     val isEnabled = isCustom || flavor != com.webtoapp.core.kernel.KernelFlavor.SYSTEM_DEFAULT
@@ -1984,12 +1988,14 @@ fun UserAgentCard(
 
     // Picking a flavor is the entire identity decision. It has to clear the custom mode (or a
     // leftover UA string would keep winning) and switch the kernel disguise on, because the
-    // anti-detection JS that accompanies a flavor is gated behind that flag.
+    // anti-detection JS that accompanies a flavor is gated behind that flag. Desktop flavors
+    // also request the desktop layout; that flag is what `desktopMode` exports.
     fun selectFlavor(choice: com.webtoapp.core.kernel.KernelFlavor) {
         onConfigChange(
             config.copy(
                 kernelFlavor = choice,
                 userAgentMode = UserAgentMode.DEFAULT,
+                desktopMode = choice.isDesktop,
                 enableKernelDisguise = if (choice == com.webtoapp.core.kernel.KernelFlavor.SYSTEM_DEFAULT) {
                     config.enableKernelDisguise
                 } else {
@@ -1999,134 +2005,136 @@ fun UserAgentCard(
         )
     }
 
-    WtaSettingCard {
-        Column {
-            WtaChoiceRow(
-                title = Strings.userAgentMode,
-                subtitle = when {
-                    isCustom -> Strings.userAgentCustom
-                    flavor != com.webtoapp.core.kernel.KernelFlavor.SYSTEM_DEFAULT -> flavor.displayName
-                    else -> Strings.userAgentDefault
-                },
-                icon = Icons.Outlined.Language,
-                value = "",
-                isExpanded = expanded,
-                onClick = { expanded = !expanded }
+    Column(verticalArrangement = Arrangement.spacedBy(WtaSpacing.SectionGap)) {
+        Text(
+            text = Strings.userAgentMode,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.primary
+        )
+
+        AnimatedVisibility(
+            visible = LocalShowDescriptions.current,
+            enter = CardExpandTransition,
+            exit = CardCollapseTransition
+        ) {
+            WtaStatusBanner(
+                message = Strings.bypassWebViewDetection,
+                tone = WtaStatusTone.Info
+            )
+        }
+
+        Column(verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)) {
+            Text(
+                text = Strings.mobileVersion,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.primary
             )
 
-            AnimatedVisibility(
-                visible = expanded,
-                enter = CardExpandTransition,
-                exit = CardCollapseTransition
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small),
+                verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
             ) {
-                Column(
-                    modifier = Modifier.padding(
-                        horizontal = WtaSpacing.RowHorizontal,
-                        vertical = WtaSpacing.ContentGap
-                    ),
-                    verticalArrangement = Arrangement.spacedBy(WtaSpacing.SectionGap)
-                ) {
-                    WtaStatusBanner(
-                        message = Strings.bypassWebViewDetection,
-                        tone = WtaStatusTone.Info
-                    )
-
-                    Column(verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)) {
-                        Text(
-                            text = Strings.mobileVersion,
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-
-                        FlowRow(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small),
-                            verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
-                        ) {
-                            listOf(
-                                com.webtoapp.core.kernel.KernelFlavor.SYSTEM_DEFAULT to Strings.userAgentDefault,
-                                com.webtoapp.core.kernel.KernelFlavor.BLINK_CHROME to "Chrome",
-                                com.webtoapp.core.kernel.KernelFlavor.BLINK_EDGE to "Edge",
-                                com.webtoapp.core.kernel.KernelFlavor.BLINK_SAMSUNG to "Samsung",
-                                com.webtoapp.core.kernel.KernelFlavor.GECKO_FIREFOX to "Firefox",
-                                com.webtoapp.core.kernel.KernelFlavor.WEBKIT_SAFARI to "Safari"
-                            ).forEach { (candidate, name) ->
-                                WtaChip(
-                                    selected = !isCustom && flavor == candidate,
-                                    onClick = { selectFlavor(candidate) },
-                                    label = name,
-                                    showSelectedCheck = false
-                                )
-                            }
-                        }
-                    }
-
-                    Column(verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)) {
-                        Text(
-                            text = Strings.desktopVersion,
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-
-                        FlowRow(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small),
-                            verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
-                        ) {
-                            listOf(
-                                com.webtoapp.core.kernel.KernelFlavor.BLINK_CHROME_DESKTOP to "Chrome",
-                                com.webtoapp.core.kernel.KernelFlavor.BLINK_EDGE_DESKTOP to "Edge",
-                                com.webtoapp.core.kernel.KernelFlavor.GECKO_FIREFOX_DESKTOP to "Firefox",
-                                com.webtoapp.core.kernel.KernelFlavor.WEBKIT_SAFARI_DESKTOP to "Safari"
-                            ).forEach { (candidate, name) ->
-                                WtaChip(
-                                    selected = !isCustom && flavor == candidate,
-                                    onClick = { selectFlavor(candidate) },
-                                    label = name,
-                                    showSelectedCheck = false
-                                )
-                            }
-                        }
-                    }
-
+                listOf(
+                    com.webtoapp.core.kernel.KernelFlavor.SYSTEM_DEFAULT to Strings.userAgentDefault,
+                    com.webtoapp.core.kernel.KernelFlavor.BLINK_CHROME to "Chrome",
+                    com.webtoapp.core.kernel.KernelFlavor.BLINK_EDGE to "Edge",
+                    com.webtoapp.core.kernel.KernelFlavor.BLINK_SAMSUNG to "Samsung",
+                    com.webtoapp.core.kernel.KernelFlavor.GECKO_FIREFOX to "Firefox",
+                    com.webtoapp.core.kernel.KernelFlavor.WEBKIT_SAFARI to "Safari"
+                ).forEach { (candidate, name) ->
                     WtaChip(
-                        selected = isCustom,
-                        onClick = { onConfigChange(config.copy(userAgentMode = UserAgentMode.CUSTOM)) },
-                        label = Strings.userAgentCustom,
-                        leadingIcon = Icons.Outlined.Edit,
+                        selected = !isCustom && flavor == candidate,
+                        onClick = { selectFlavor(candidate) },
+                        label = name,
                         showSelectedCheck = false
                     )
-
-                    AnimatedVisibility(
-                        visible = isCustom,
-                        enter = CardExpandTransition,
-                        exit = CardCollapseTransition
-                    ) {
-                        PremiumTextField(
-                            value = config.customUserAgent ?: "",
-                            onValueChange = { onConfigChange(config.copy(customUserAgent = it.ifBlank { null })) },
-                            label = { Text("User-Agent") },
-                            placeholder = { Text(Strings.userAgentCustomHint) },
-                            modifier = Modifier.fillMaxWidth(),
-                            singleLine = false,
-                            minLines = 2,
-                            maxLines = 4
-                        )
-                    }
-
-                    AnimatedVisibility(
-                        visible = isEnabled && !isCustom,
-                        enter = CardExpandTransition,
-                        exit = CardCollapseTransition
-                    ) {
-                        WtaStatusBanner(
-                            title = Strings.currentUserAgent,
-                            message = currentUa ?: "",
-                            tone = WtaStatusTone.Info
-                        )
-                    }
                 }
             }
+        }
+
+        Column(verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)) {
+            Text(
+                text = Strings.desktopVersion,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
+
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small),
+                verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
+            ) {
+                listOf(
+                    com.webtoapp.core.kernel.KernelFlavor.BLINK_CHROME_DESKTOP to "Chrome",
+                    com.webtoapp.core.kernel.KernelFlavor.BLINK_EDGE_DESKTOP to "Edge",
+                    com.webtoapp.core.kernel.KernelFlavor.GECKO_FIREFOX_DESKTOP to "Firefox",
+                    com.webtoapp.core.kernel.KernelFlavor.WEBKIT_SAFARI_DESKTOP to "Safari"
+                ).forEach { (candidate, name) ->
+                    WtaChip(
+                        selected = !isCustom && flavor == candidate,
+                        onClick = { selectFlavor(candidate) },
+                        label = name,
+                        showSelectedCheck = false
+                    )
+                }
+            }
+        }
+
+        WtaChip(
+            selected = isCustom,
+            onClick = {
+                onConfigChange(
+                    config.copy(
+                        userAgentMode = UserAgentMode.CUSTOM,
+                        // A leftover flavor would keep winning whenever the typed string
+                        // cannot be described, and kernel disguise rewrites the UA after
+                        // the identity is applied. Custom means the typed string is the
+                        // identity; disguise can be turned back on from Special Settings.
+                        kernelFlavor = com.webtoapp.core.kernel.KernelFlavor.SYSTEM_DEFAULT,
+                        enableKernelDisguise = false
+                    )
+                )
+            },
+            label = Strings.userAgentCustom,
+            leadingIcon = Icons.Outlined.Edit,
+            showSelectedCheck = false
+        )
+
+        AnimatedVisibility(
+            visible = isCustom,
+            enter = CardExpandTransition,
+            exit = CardCollapseTransition
+        ) {
+            PremiumTextField(
+                value = config.customUserAgent ?: "",
+                onValueChange = { onConfigChange(config.copy(customUserAgent = it.ifBlank { null })) },
+                label = { Text("User-Agent") },
+                placeholder = { Text(Strings.userAgentCustomHint) },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = false,
+                minLines = 2,
+                maxLines = 4
+            )
+        }
+
+        WtaToggleRow(
+            title = Strings.desktopModeLabel,
+            subtitle = Strings.desktopModeHint.ifDescriptionsShown(),
+            checked = config.desktopMode,
+            onCheckedChange = { onConfigChange(config.copy(desktopMode = it)) }
+        )
+
+        AnimatedVisibility(
+            visible = isEnabled && !isCustom && !currentUa.isNullOrBlank(),
+            enter = CardExpandTransition,
+            exit = CardCollapseTransition
+        ) {
+            WtaStatusBanner(
+                title = Strings.currentUserAgent,
+                message = currentUa ?: "",
+                tone = WtaStatusTone.Info
+            )
         }
     }
 }

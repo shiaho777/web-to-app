@@ -174,10 +174,32 @@ internal object UserAgentProfileDeriver {
             platform = platform.first,
             platformVersion = platform.second,
             fullVersion = if (isChromium && chromeMajor != null) "$chromeMajor.0.0.0" else "",
-            architecture = "",
+            architecture = architectureOf(userAgent, platform.first),
             bitness = "64",
             model = ""
         )
+    }
+
+    /**
+     * Chrome reports 64-bit desktop CPUs as `x86` in `Sec-CH-UA-Arch`, including Win64 and
+     * x86_64. Leaving this blank keeps the WebView's real device architecture (often ARM on
+     * a phone) next to a Windows platform, which is the same kind of contradiction as a
+     * mismatched brand list.
+     */
+    private fun architectureOf(userAgent: String, platform: String): String {
+        val desktop = platform == "Windows" || platform == "macOS" || platform == "Linux"
+        if (!desktop) return ""
+        if (userAgent.contains("aarch64") || userAgent.contains("ARM64")) return "arm"
+        if (
+            platform == "Windows" ||
+            userAgent.contains("Win64") ||
+            userAgent.contains("x64") ||
+            userAgent.contains("x86_64") ||
+            userAgent.contains("Intel")
+        ) {
+            return "x86"
+        }
+        return ""
     }
 
     /** Returns the UA-CH platform name and major version for the UA, or null when unknown. */

@@ -31,9 +31,10 @@ object KernelFlavorMetadata {
             if (profile.architecture.isNotBlank()) {
                 builder.setArchitecture(profile.architecture)
             }
-            if (profile.model.isNotBlank()) {
-                builder.setModel(profile.model)
-            }
+            // Always set the model, including when it is blank. Skipping the call leaves the
+            // builder default, and an empty model is what stops the device model (for example
+            // a tablet codename) from leaking into Sec-CH-UA-Model next to a desktop UA.
+            builder.setModel(profile.model)
             if (profile.fullVersion.isNotBlank()) {
                 builder.setFullVersion(profile.fullVersion)
             }

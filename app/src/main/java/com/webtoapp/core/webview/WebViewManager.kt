@@ -2002,6 +2002,14 @@ class WebViewManager(
                 com.webtoapp.core.kernel.BrowserKernel.configureWebView(webView, level)
             }
 
+            // BrowserKernel.configureWebView rewrites settings.userAgentString from whatever
+            // is current (it strips "; wv" and "Version/x.y"). That runs after the identity
+            // block above, so a custom or flavor UA would be replaced and Sec-CH-UA would
+            // stay on the metadata of a string the network stack no longer sends. Re-apply
+            // the resolved pair last. Same for the isolation and extension overrides, which
+            // sit in that earlier block and are clobbered by the same rewrite.
+            reapplyRequestUserAgent(webView, isDesktopModeRequested)
+
             isFocusable = true
             isFocusableInTouchMode = true
             requestFocus()
@@ -5567,6 +5575,57 @@ class WebViewManager(
      * sources. Reading the cached device-disguise config (rather than taking it as a parameter)
      * keeps this usable both during configuration and from late plugin updates.
      */
+    /**
+     * Writes the request User-Agent and its client-hint metadata again.
+     *
+     * Called at the end of [configureWebView], after kernel disguise has had its chance to
+     * sanitize the string. When [resolvedBrowserIdentity] is a no-op the system UA (already
+     * sanitized, if disguise is on) is left alone.
+     */
+    private fun reapplyRequestUserAgent(
+        webView: WebView,
+        isDesktopModeRequested: Boolean
+    ) {
+        val identity = resolvedBrowserIdentity
+        if (identity.userAgent != null) {
+            webView.settings.userAgentString = stripWebViewMarker(identity.userAgent)
+            com.webtoapp.core.kernel.KernelFlavorMetadata.apply(webView, identity.profile)
+            AppLogger.d(
+                "WebViewManager",
+                "Browser identity re-applied (${identity.profile?.flavor?.name ?: "derived-from-UA"}): " +
+                    "${webView.settings.userAgentString.take(80)}..."
+            )
+        }
+
+        if (!isDesktopModeRequested && identity.userAgent == null) {
+            val hasActiveChromeExt = getActivePluginsForCurrentApp().any { plugin ->
+                plugin.kind == com.webtoapp.core.plugin.PluginKind.CHROME_EXTENSION &&
+                    plugin.chromeExtId.isNotEmpty()
+            }
+            if (hasActiveChromeExt) {
+                val desktopUa = DESKTOP_USER_AGENT ?: DESKTOP_USER_AGENT_FALLBACK
+                webView.settings.userAgentString = desktopUa
+                com.webtoapp.core.kernel.KernelFlavorMetadata.apply(
+                    webView,
+                    com.webtoapp.core.kernel.UserAgentProfileDeriver.derive(desktopUa)
+                )
+            }
+        }
+
+        try {
+            val isoUa = com.webtoapp.core.privacy.IsolationManager.getInstance(context).getUserAgent()
+            if (isoUa != null) {
+                webView.settings.userAgentString = stripWebViewMarker(isoUa)
+                com.webtoapp.core.kernel.KernelFlavorMetadata.apply(
+                    webView,
+                    com.webtoapp.core.kernel.UserAgentProfileDeriver.derive(isoUa)
+                )
+            }
+        } catch (e: Exception) {
+            AppLogger.w("WebViewManager", "Isolation UA reapply failed", e)
+        }
+    }
+
     private fun resolveBrowserIdentityFor(config: WebViewConfig): com.webtoapp.core.kernel.BrowserIdentity =
         com.webtoapp.core.kernel.BrowserIdentityResolver.resolve(
             flavor = config.kernelFlavor,
