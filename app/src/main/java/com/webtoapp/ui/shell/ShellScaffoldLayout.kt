@@ -26,6 +26,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.shell.ShellConfig
+import com.webtoapp.ui.shared.effectiveBottomContentPadding
 import com.webtoapp.core.webview.WebViewCallbacks
 import com.webtoapp.data.model.WebViewConfig
 import com.webtoapp.data.model.hasAnyToolbarItem
@@ -201,7 +202,9 @@ fun BoxScope.ShellScaffoldLayout(
         val padTop = config.webViewConfig.fullscreenPadTop.dp
         val padStart = config.webViewConfig.fullscreenPadStart.dp
         val padEnd = config.webViewConfig.fullscreenPadEnd.dp
-        val padBottom = config.webViewConfig.fullscreenPadBottom.dp
+        // #1172: the bottom band is anchored to the screen edge. The keyboard
+        // already covers it, so it must not ride up as a second gap.
+        val padBottom = effectiveBottomContentPadding(config.webViewConfig.fullscreenPadBottom.dp)
 
         // Issue #771: transparent/image bars overlay the content (persistent
         // WeChat-style bar) instead of reserving a strip; solid bars keep the

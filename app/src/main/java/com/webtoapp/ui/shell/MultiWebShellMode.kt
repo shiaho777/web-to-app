@@ -40,6 +40,7 @@ import com.webtoapp.core.shell.MultiWebSiteShellConfig
 import com.webtoapp.core.shell.ShellConfig
 import com.webtoapp.core.webview.WebViewCallbacks
 import com.webtoapp.data.model.WebViewConfig
+import com.webtoapp.ui.shared.effectiveBottomContentPadding
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -381,7 +382,8 @@ private fun TabsMode(
         val padTop = webViewConfig.fullscreenPadTop.dp
         val padStart = webViewConfig.fullscreenPadStart.dp
         val padEnd = webViewConfig.fullscreenPadEnd.dp
-        val padBottom = webViewConfig.fullscreenPadBottom.dp
+        // #1172: keep the bottom band on the screen edge when the keyboard opens.
+        val padBottom = effectiveBottomContentPadding(webViewConfig.fullscreenPadBottom.dp)
         val multiDark = androidx.compose.foundation.isSystemInDarkTheme()
         val multiBgType = if (multiDark) webViewConfig.statusBarBackgroundTypeDark else webViewConfig.statusBarBackgroundType
         val multiMode = if (multiDark) webViewConfig.statusBarColorModeDark else webViewConfig.statusBarColorMode

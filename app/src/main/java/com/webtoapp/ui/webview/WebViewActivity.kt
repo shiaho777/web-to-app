@@ -86,6 +86,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.coroutines.resume
 import com.webtoapp.ui.shared.WindowHelper
+import com.webtoapp.ui.shared.effectiveBottomContentPadding
 import com.webtoapp.ui.shell.ConsoleLevel
 import com.webtoapp.ui.shell.ConsoleLogEntry
 import com.webtoapp.ui.shell.ConsolePanel
@@ -3508,7 +3509,9 @@ fun WebViewScreen(
         val padTop = (webApp?.webViewConfig?.fullscreenPadTop ?: 0).dp
         val padStart = (webApp?.webViewConfig?.fullscreenPadStart ?: 0).dp
         val padEnd = (webApp?.webViewConfig?.fullscreenPadEnd ?: 0).dp
-        val padBottom = (webApp?.webViewConfig?.fullscreenPadBottom ?: 0).dp
+        // #1172: the bottom band stays on the screen edge instead of riding up
+        // with the keyboard. Preview and the exported shell share this rule.
+        val padBottom = effectiveBottomContentPadding((webApp?.webViewConfig?.fullscreenPadBottom ?: 0).dp)
 
         val contentModifier = when {
             hideToolbar && showToolbarInPreview -> {

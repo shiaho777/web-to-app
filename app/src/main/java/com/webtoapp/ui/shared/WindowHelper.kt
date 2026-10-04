@@ -24,6 +24,31 @@ object WindowHelper {
     private val manualImeInstalled =
         Collections.synchronizedSet(Collections.newSetFromMap(WeakHashMap<View, Boolean>()))
 
+    private val imeOcclusionListeners =
+        java.util.concurrent.CopyOnWriteArrayList<(View, Int) -> Unit>()
+    private val lastImeOcclusionPx =
+        Collections.synchronizedMap(WeakHashMap<View, Int>())
+
+    /**
+     * Fires with the content view whose bottom padding was just set to the
+     * keyboard height, and that height in px. 0 means the keyboard padding
+     * was cleared. Listeners re-read their own window; the view argument
+     * stops another activity's keyboard from changing this one.
+     */
+    fun addImeOcclusionListener(listener: (View, Int) -> Unit): () -> Unit {
+        imeOcclusionListeners.add(listener)
+        return { imeOcclusionListeners.remove(listener) }
+    }
+
+    private fun publishImeOcclusion(contentView: View, px: Int) {
+        val value = px.coerceAtLeast(0)
+        if (lastImeOcclusionPx[contentView] == value) return
+        lastImeOcclusionPx[contentView] = value
+        for (listener in imeOcclusionListeners) {
+            listener(contentView, value)
+        }
+    }
+
     fun applyStatusBarColor(
         activity: Activity,
         colorMode: String,
@@ -417,6 +442,7 @@ object WindowHelper {
                     bottom
                 )
             }
+            publishImeOcclusion(contentView, bottom)
         }
 
         ViewCompat.setWindowInsetsAnimationCallback(
@@ -479,6 +505,7 @@ object WindowHelper {
                 0
             )
         }
+        publishImeOcclusion(contentView, 0)
     }
 
     private fun checkAndScrollWebViewToFocusedInput(activity: Activity) {
