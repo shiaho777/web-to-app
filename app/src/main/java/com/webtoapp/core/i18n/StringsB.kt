@@ -605,6 +605,97 @@ object StringsB {
         AppLanguage.KOREAN -> "템플릿 \"$name\"을(를) 저장했습니다"
     }
 
+    val templateExportCurrent: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "导出当前配置"
+        AppLanguage.ENGLISH -> "Export current config"
+        AppLanguage.ARABIC -> "تصدير الإعداد الحالي"
+        AppLanguage.PORTUGUESE -> "Exportar configuração atual"
+        AppLanguage.SPANISH -> "Exportar configuración actual"
+        AppLanguage.FRENCH -> "Exporter la configuration actuelle"
+        AppLanguage.GERMAN -> "Aktuelle Konfiguration exportieren"
+        AppLanguage.RUSSIAN -> "Экспорт текущей конфигурации"
+        AppLanguage.JAPANESE -> "現在の設定を書き出す"
+        AppLanguage.KOREAN -> "현재 구성 내보내기"
+    }
+
+    val templateImport: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "导入配置"
+        AppLanguage.ENGLISH -> "Import config"
+        AppLanguage.ARABIC -> "استيراد إعداد"
+        AppLanguage.PORTUGUESE -> "Importar configuração"
+        AppLanguage.SPANISH -> "Importar configuración"
+        AppLanguage.FRENCH -> "Importer une configuration"
+        AppLanguage.GERMAN -> "Konfiguration importieren"
+        AppLanguage.RUSSIAN -> "Импорт конфигурации"
+        AppLanguage.JAPANESE -> "設定を読み込む"
+        AppLanguage.KOREAN -> "구성 가져오기"
+    }
+
+    val templateExport: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "导出"
+        AppLanguage.ENGLISH -> "Export"
+        AppLanguage.ARABIC -> "تصدير"
+        AppLanguage.PORTUGUESE -> "Exportar"
+        AppLanguage.SPANISH -> "Exportar"
+        AppLanguage.FRENCH -> "Exporter"
+        AppLanguage.GERMAN -> "Exportieren"
+        AppLanguage.RUSSIAN -> "Экспорт"
+        AppLanguage.JAPANESE -> "書き出す"
+        AppLanguage.KOREAN -> "내보내기"
+    }
+
+    val templateExported: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "配置已导出"
+        AppLanguage.ENGLISH -> "Config exported"
+        AppLanguage.ARABIC -> "تم تصدير الإعداد"
+        AppLanguage.PORTUGUESE -> "Configuração exportada"
+        AppLanguage.SPANISH -> "Configuración exportada"
+        AppLanguage.FRENCH -> "Configuration exportée"
+        AppLanguage.GERMAN -> "Konfiguration exportiert"
+        AppLanguage.RUSSIAN -> "Конфигурация экспортирована"
+        AppLanguage.JAPANESE -> "設定を書き出しました"
+        AppLanguage.KOREAN -> "구성을 내보냈습니다"
+    }
+
+    val templateExportFailed: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "导出配置失败"
+        AppLanguage.ENGLISH -> "Could not export the config"
+        AppLanguage.ARABIC -> "تعذر تصدير الإعداد"
+        AppLanguage.PORTUGUESE -> "Não foi possível exportar a configuração"
+        AppLanguage.SPANISH -> "No se pudo exportar la configuración"
+        AppLanguage.FRENCH -> "Impossible d'exporter la configuration"
+        AppLanguage.GERMAN -> "Konfiguration konnte nicht exportiert werden"
+        AppLanguage.RUSSIAN -> "Не удалось экспортировать конфигурацию"
+        AppLanguage.JAPANESE -> "設定を書き出せませんでした"
+        AppLanguage.KOREAN -> "구성을 내보내지 못했습니다"
+    }
+
+    val templateImportFailed: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "无法读取这份配置"
+        AppLanguage.ENGLISH -> "Could not read this config"
+        AppLanguage.ARABIC -> "تعذر قراءة هذا الإعداد"
+        AppLanguage.PORTUGUESE -> "Não foi possível ler esta configuração"
+        AppLanguage.SPANISH -> "No se pudo leer esta configuración"
+        AppLanguage.FRENCH -> "Impossible de lire cette configuration"
+        AppLanguage.GERMAN -> "Diese Konfiguration konnte nicht gelesen werden"
+        AppLanguage.RUSSIAN -> "Не удалось прочитать эту конфигурацию"
+        AppLanguage.JAPANESE -> "この設定を読み取れませんでした"
+        AppLanguage.KOREAN -> "이 구성을 읽지 못했습니다"
+    }
+
+    fun templateImported(name: String): String = when (Strings.lang) {
+        AppLanguage.CHINESE -> "已导入并套用「$name」"
+        AppLanguage.ENGLISH -> "Imported and applied \"$name\""
+        AppLanguage.ARABIC -> "تم استيراد \"$name\" وتطبيقه"
+        AppLanguage.PORTUGUESE -> "\"$name\" importado e aplicado"
+        AppLanguage.SPANISH -> "\"$name\" importada y aplicada"
+        AppLanguage.FRENCH -> "\"$name\" importé et appliqué"
+        AppLanguage.GERMAN -> "\"$name\" importiert und angewendet"
+        AppLanguage.RUSSIAN -> "\"$name\" импортирован и применён"
+        AppLanguage.JAPANESE -> "「$name」を読み込んで適用しました"
+        AppLanguage.KOREAN -> "\"$name\"을(를) 가져와 적용했습니다"
+    }
+
     val sectionWebEngine: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "引擎与显示"
         AppLanguage.ENGLISH -> "Engine & Display"

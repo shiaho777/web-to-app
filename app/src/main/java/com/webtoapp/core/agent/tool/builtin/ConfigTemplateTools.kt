@@ -82,6 +82,70 @@ class ApplyConfigTemplateTool : Tool {
     }
 }
 
+class ExportConfigTemplateTool : Tool {
+    override val name = "ExportConfigTemplate"
+    override val description = """
+        Export a common-config template as a JSON document (kind webtoapp-config-template)
+        that the editor's template menu can import. Pass `name` to export a saved template,
+        or `appId` to export that app's current common config. The result is the file text.
+    """.trimIndent()
+    override val parametersSchema: JsonElement = jsonSchema {
+        string("name", "Saved template name. Omit to export an app's current config.")
+        integer("appId", "App whose current WebViewConfig to export, when `name` is omitted.")
+    }
+    override fun isReadOnly() = true
+    override suspend fun execute(args: JsonObject, ctx: ToolContext): ToolResult {
+        val name = args.get("name")?.asString?.trim()?.takeIf { it.isNotEmpty() }
+        val appId = args.get("appId")?.takeIf { !it.isJsonNull }?.asLong
+        val encoded = if (name != null) {
+            val template = ConfigTemplateStore.get(ctx.androidContext, name)
+                ?: return ToolResult.error("ExportConfigTemplate: no template named \"$name\".")
+            ConfigTemplateStore.encode(template)
+        } else if (appId != null) {
+            val app = ctx.appRepository.getWebApp(appId)
+                ?: return ToolResult.error("ExportConfigTemplate: no app with id $appId.")
+            ConfigTemplateStore.encode("Current", System.currentTimeMillis(), app.webViewConfig)
+        } else {
+            return ToolResult.error("ExportConfigTemplate: pass `name` or `appId`.")
+        }
+        return ToolResult.ok(encoded)
+    }
+}
+
+class ImportConfigTemplateTool : Tool {
+    override val name = "ImportConfigTemplate"
+    override val description = """
+        Import a common-config JSON document (kind webtoapp-config-template, or a raw
+        WebViewConfig object) into the template list. A name that already exists is kept;
+        the import is stored under the next free name. Pass applyToAppId to also replace
+        that app's whole WebViewConfig with the imported snapshot.
+    """.trimIndent()
+    override val parametersSchema: JsonElement = jsonSchema {
+        string("json", "The exported JSON text.", required = true)
+        integer("applyToAppId", "When set, also apply the imported config to this app.")
+    }
+    override fun isReadOnly() = false
+    override fun activityDescription(args: JsonObject): String = "Importing a config template"
+    override suspend fun execute(args: JsonObject, ctx: ToolContext): ToolResult {
+        val json = args.get("json")?.asString
+            ?: return ToolResult.error("ImportConfigTemplate: missing `json`.")
+        val imported = ConfigTemplateStore.importJson(ctx.androidContext, json)
+            ?: return ToolResult.error("ImportConfigTemplate: the text is not a config template.")
+        val appId = args.get("applyToAppId")?.takeIf { !it.isJsonNull }?.asLong
+        if (appId != null) {
+            val app = ctx.appRepository.getWebApp(appId)
+                ?: return ToolResult.error(
+                    "ImportConfigTemplate: saved \"${imported.name}\" but no app with id $appId."
+                )
+            ctx.appRepository.updateWebApp(app.copy(webViewConfig = imported.webViewConfig))
+            return ToolResult.ok(
+                "Imported template \"${imported.name}\" and applied it to app id=${app.id}."
+            )
+        }
+        return ToolResult.ok("Imported template \"${imported.name}\".")
+    }
+}
+
 class DeleteConfigTemplateTool : Tool {
     override val name = "DeleteConfigTemplate"
     override val description = "Delete a saved common-config template by name."

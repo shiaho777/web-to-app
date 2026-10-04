@@ -69,6 +69,37 @@ class ConfigTemplateStoreTest {
     }
 
     @Test
+    fun exportThenImportRoundTripsTheConfigAndKeepsAnExistingName() {
+        cleanStore()
+        val config = WebViewConfig(zoomEnabled = false, userAgent = "ExportTest/1")
+        val json = ConfigTemplateStore.encode("Shared", 1_700_000_000_000L, config)
+        assertThat(json).contains("webtoapp-config-template")
+
+        ConfigTemplateStore.save(context, "Shared", WebViewConfig(zoomEnabled = true))
+        val imported = ConfigTemplateStore.importJson(context, json)
+        assertThat(imported).isNotNull()
+        assertThat(imported!!.name).isEqualTo("Shared 2")
+        assertThat(imported.webViewConfig.zoomEnabled).isFalse()
+        assertThat(imported.webViewConfig.userAgent).isEqualTo("ExportTest/1")
+        assertThat(ConfigTemplateStore.get(context, "Shared")!!.webViewConfig.zoomEnabled).isTrue()
+    }
+
+    @Test
+    fun importAcceptsABareConfigObjectAndRejectsUnrelatedJson() {
+        cleanStore()
+        val bare = """{"javaScriptEnabled":false,"userAgent":"Bare/1"}"""
+        val imported = ConfigTemplateStore.importJson(context, bare)
+        assertThat(imported).isNotNull()
+        assertThat(imported!!.name).isEqualTo("Imported")
+        assertThat(imported.webViewConfig.javaScriptEnabled).isFalse()
+        assertThat(imported.webViewConfig.userAgent).isEqualTo("Bare/1")
+
+        assertThat(ConfigTemplateStore.decode("{not json")).isNull()
+        assertThat(ConfigTemplateStore.decode("""{"foo":1}""")).isNull()
+        assertThat(ConfigTemplateStore.importJson(context, """{"kind":"other","webViewConfig":{}}""")).isNull()
+    }
+
+    @Test
     fun `list on a fresh install is empty and a corrupt file degrades to empty`() {
         cleanStore()
         assertThat(ConfigTemplateStore.list(context)).isEmpty()

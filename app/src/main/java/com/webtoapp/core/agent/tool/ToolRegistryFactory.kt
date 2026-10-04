@@ -54,6 +54,8 @@ import com.webtoapp.core.agent.tool.builtin.UpdateAppTool
 import com.webtoapp.core.agent.tool.builtin.ListConfigTemplatesTool
 import com.webtoapp.core.agent.tool.builtin.SaveConfigTemplateTool
 import com.webtoapp.core.agent.tool.builtin.ApplyConfigTemplateTool
+import com.webtoapp.core.agent.tool.builtin.ExportConfigTemplateTool
+import com.webtoapp.core.agent.tool.builtin.ImportConfigTemplateTool
 import com.webtoapp.core.agent.tool.builtin.DeleteConfigTemplateTool
 import com.webtoapp.core.agent.tool.builtin.UpdateModuleTool
 import com.webtoapp.core.agent.tool.builtin.WriteFileTool
@@ -97,6 +99,8 @@ class ToolRegistryFactory(
         ListConfigTemplatesTool(),
         SaveConfigTemplateTool(),
         ApplyConfigTemplateTool(),
+        ExportConfigTemplateTool(),
+        ImportConfigTemplateTool(),
         DeleteConfigTemplateTool(),
         // App lifecycle
         BuildApkTool(),

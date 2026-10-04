@@ -1,5 +1,7 @@
 package com.webtoapp.ui.screens
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -10,6 +12,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.DriveFileRenameOutline
+import androidx.compose.material.icons.outlined.FileDownload
+import androidx.compose.material.icons.outlined.FileUpload
 import androidx.compose.material.icons.outlined.LibraryAddCheck
 import androidx.compose.material.icons.outlined.Save
 import androidx.compose.material.icons.outlined.Tune
@@ -29,7 +33,9 @@ import com.webtoapp.data.repository.ConfigTemplateStore
 import com.webtoapp.ui.components.PremiumTextField
 import com.webtoapp.ui.design.*
 import com.webtoapp.ui.theme.LocalShowDescriptions
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.concurrent.TimeUnit
 
 /** "3 days ago"-style stamp; the platform formatter localizes it for free. */
@@ -43,8 +49,9 @@ private fun relativeCreatedAt(createdAt: Long): String =
 /**
  * Top-bar action for common-config templates: save the current WebViewConfig as a named
  * snapshot, apply one to the app (a template is a full snapshot — applying replaces the
- * whole WebViewConfig), and manage saved templates. Lives in the editor's fixed top bar
- * instead of the scrolling config list, since it applies to the config as a whole.
+ * whole WebViewConfig), import or export a JSON file, and manage saved templates.
+ * Lives in the editor's fixed top bar instead of the scrolling config list, since it
+ * applies to the config as a whole.
  */
 @Composable
 fun ConfigTemplateMenuButton(
@@ -65,9 +72,60 @@ fun ConfigTemplateMenuButton(
     var renameTarget by remember { mutableStateOf<ConfigTemplateStore.ConfigTemplate?>(null) }
     var renameText by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
+    var pendingExport by remember { mutableStateOf<ConfigTemplateStore.ConfigTemplate?>(null) }
 
     fun notify(message: String) {
         scope.launch { snackbarHostState.showSnackbar(message) }
+    }
+
+    val exportLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/json")
+    ) { uri ->
+        val template = pendingExport
+        pendingExport = null
+        if (uri == null || template == null) return@rememberLauncherForActivityResult
+        scope.launch {
+            val ok = withContext(Dispatchers.IO) {
+                runCatching {
+                    context.contentResolver.openOutputStream(uri)?.use { stream ->
+                        stream.write(
+                            ConfigTemplateStore.encode(template).toByteArray(Charsets.UTF_8)
+                        )
+                    } ?: error("no stream")
+                }.isSuccess
+            }
+            notify(if (ok) Strings.templateExported else Strings.templateExportFailed)
+        }
+    }
+
+    val importLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        scope.launch {
+            val imported = withContext(Dispatchers.IO) {
+                runCatching {
+                    val text = context.contentResolver.openInputStream(uri)
+                        ?.use { it.readBytes() }
+                        ?.toString(Charsets.UTF_8)
+                        ?: return@runCatching null
+                    ConfigTemplateStore.importJson(context, text)
+                }.getOrNull()
+            }
+            if (imported == null) {
+                notify(Strings.templateImportFailed)
+            } else {
+                refresh++
+                onApplyConfig(imported.webViewConfig)
+                notify(Strings.templateImported(imported.name))
+            }
+        }
+    }
+
+    fun exportTemplate(template: ConfigTemplateStore.ConfigTemplate) {
+        pendingExport = template
+        val safe = template.name.replace(Regex("""[\\/:*?"<>|]"""), "_").ifBlank { "config" }
+        exportLauncher.launch("$safe.wta-config.json")
     }
 
     Box {
@@ -90,6 +148,28 @@ fun ConfigTemplateMenuButton(
                 onClick = {
                     menuOpen = false
                     saveDialogOpen = true
+                }
+            )
+            DropdownMenuItem(
+                text = { Text(Strings.templateExportCurrent) },
+                leadingIcon = { Icon(Icons.Outlined.FileDownload, null) },
+                onClick = {
+                    menuOpen = false
+                    exportTemplate(
+                        ConfigTemplateStore.ConfigTemplate(
+                            name = "Current",
+                            createdAt = System.currentTimeMillis(),
+                            webViewConfig = config
+                        )
+                    )
+                }
+            )
+            DropdownMenuItem(
+                text = { Text(Strings.templateImport) },
+                leadingIcon = { Icon(Icons.Outlined.FileUpload, null) },
+                onClick = {
+                    menuOpen = false
+                    importLauncher.launch(arrayOf("application/json", "text/plain", "*/*"))
                 }
             )
             if (templates.isNotEmpty()) {
@@ -281,6 +361,13 @@ fun ConfigTemplateMenuButton(
                                                 relativeCreatedAt(template.createdAt),
                                                 style = MaterialTheme.typography.labelSmall,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                        IconButton(onClick = { exportTemplate(template) }) {
+                                            Icon(
+                                                Icons.Outlined.FileDownload,
+                                                contentDescription = Strings.templateExport,
+                                                modifier = Modifier.size(18.dp)
                                             )
                                         }
                                         IconButton(onClick = {

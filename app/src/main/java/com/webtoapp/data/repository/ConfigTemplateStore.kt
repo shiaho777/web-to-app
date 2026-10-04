@@ -1,6 +1,9 @@
 package com.webtoapp.data.repository
 
 import android.content.Context
+import com.google.gson.GsonBuilder
+import com.google.gson.JsonObject
+import com.google.gson.JsonParser
 import com.google.gson.reflect.TypeToken
 import com.webtoapp.data.converter.Converters
 import com.webtoapp.data.model.WebViewConfig
@@ -23,7 +26,12 @@ object ConfigTemplateStore {
     private const val FILE_NAME = "config_templates.json"
     private const val MAX_NAME_LENGTH = 40
 
+    /** Envelope written by export and accepted by import. A raw [WebViewConfig] object is accepted too. */
+    const val FILE_KIND = "webtoapp-config-template"
+    private const val FILE_VERSION = 1
+
     private val templatesType = object : TypeToken<List<ConfigTemplate>>() {}.type
+    private val prettyJson = GsonBuilder().setPrettyPrinting().create()
 
     private fun storeFile(context: Context) = File(context.filesDir, FILE_NAME)
 
@@ -68,4 +76,71 @@ object ConfigTemplateStore {
         storeFile(context).writeText(Converters.gson.toJson(templates))
         true
     }.getOrDefault(false)
+
+    /** Pretty JSON document a person can edit and send. */
+    fun encode(name: String, createdAt: Long, config: WebViewConfig): String {
+        val root = JsonObject()
+        root.addProperty("kind", FILE_KIND)
+        root.addProperty("version", FILE_VERSION)
+        root.addProperty("name", name.trim().ifEmpty { "Current" }.take(MAX_NAME_LENGTH))
+        root.addProperty("createdAt", createdAt)
+        root.add("webViewConfig", Converters.gson.toJsonTree(config))
+        return prettyJson.toJson(root)
+    }
+
+    fun encode(template: ConfigTemplate): String =
+        encode(template.name, template.createdAt, template.webViewConfig)
+
+    /**
+     * Reads an exported document, or a bare [WebViewConfig] JSON object.
+     * Returns null for anything that is not one of those, so a random file cannot
+     * wipe the editor with a default config.
+     */
+    fun decode(text: String): ConfigTemplate? = runCatching {
+        val root = JsonParser.parseString(text).asJsonObject
+        val kind = root.get("kind")?.takeIf { !it.isJsonNull }?.asString
+        val wrapped = root.get("webViewConfig")?.takeIf { it.isJsonObject }?.asJsonObject
+        val configElement = when {
+            kind == FILE_KIND && wrapped != null -> wrapped
+            kind == null && wrapped != null && looksLikeConfig(wrapped) -> wrapped
+            kind == null && looksLikeConfig(root) -> root
+            else -> return null
+        }
+        val config = Converters.gson.fromJson(configElement, WebViewConfig::class.java) ?: return null
+        val name = root.get("name")?.takeIf { !it.isJsonNull }?.asString?.trim().orEmpty()
+            .ifEmpty { "Imported" }
+            .take(MAX_NAME_LENGTH)
+        val createdAt = root.get("createdAt")
+            ?.takeIf { it.isJsonPrimitive && it.asJsonPrimitive.isNumber }
+            ?.asLong
+            ?: System.currentTimeMillis()
+        ConfigTemplate(name, createdAt, config)
+    }.getOrNull()
+
+    /**
+     * Saves a decoded document under a free name. An existing template with the same
+     * name is left in place; the import is stored as "name 2", "name 3", …
+     */
+    fun importJson(context: Context, text: String): ConfigTemplate? {
+        val decoded = decode(text) ?: return null
+        val name = uniqueName(context, decoded.name)
+        if (!save(context, name, decoded.webViewConfig)) return null
+        return get(context, name)
+    }
+
+    private fun uniqueName(context: Context, raw: String): String {
+        val base = raw.trim().take(MAX_NAME_LENGTH).ifEmpty { "Imported" }
+        if (get(context, base) == null) return base
+        var index = 2
+        while (index < 100) {
+            val suffix = " $index"
+            val candidate = base.take(MAX_NAME_LENGTH - suffix.length).trimEnd() + suffix
+            if (get(context, candidate) == null) return candidate
+            index++
+        }
+        return base
+    }
+
+    private fun looksLikeConfig(obj: JsonObject): Boolean =
+        obj.has("javaScriptEnabled") || obj.has("userAgent") || obj.has("desktopMode")
 }

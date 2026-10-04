@@ -1105,6 +1105,13 @@ object Strings {
     val templateOverwriteHint: String get() = StringsB.templateOverwriteHint
     fun templateApplied(name: String): String = StringsB.templateApplied(name)
     fun templateSaved(name: String): String = StringsB.templateSaved(name)
+    val templateExportCurrent: String get() = StringsB.templateExportCurrent
+    val templateImport: String get() = StringsB.templateImport
+    val templateExport: String get() = StringsB.templateExport
+    val templateExported: String get() = StringsB.templateExported
+    val templateExportFailed: String get() = StringsB.templateExportFailed
+    val templateImportFailed: String get() = StringsB.templateImportFailed
+    fun templateImported(name: String): String = StringsB.templateImported(name)
     val sectionWebEngine: String get() = StringsB.sectionWebEngine
     val sectionNavigation: String get() = StringsB.sectionNavigation
     val sectionOfflinePerformance: String get() = StringsB.sectionOfflinePerformance
