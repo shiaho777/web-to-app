@@ -483,6 +483,8 @@ class GeckoViewEngine(
      * True while the session is detached from its GeckoView for a hidden
      * multi-web tab (#1161). Crash recovery must not re-attach it — the tab
      * binds the display again on the next setDisplayVisible(true).
+     * A covered tab also sets the view to [View.GONE] so the SurfaceView
+     * actually leaves the compositor (#1192).
      */
     private var displayDetached = false
 
@@ -1823,32 +1825,54 @@ class GeckoViewEngine(
 
     /**
      * Detach or reattach the session's display for multi-web tab visibility
-     * changes (#1161). A GeckoView renders into its own surface layer, which
-     * the Compose alpha()/zIndex used to hide inactive tabs never reaches —
-     * the last-visited site stayed composited on top of the selected one.
-     * Releasing the session blanks that surface while the session (and its
-     * page) stays alive; setSession rebinds it on select, state intact.
+     * changes (#1161, #1192).
+     *
+     * GeckoView 142 draws into a [android.view.SurfaceView]. That layer ignores
+     * Compose `alpha` / `zIndex`, and [GeckoView.releaseSession] only drops the
+     * Gecko display — the SurfaceView stays in the window and keeps its last
+     * frame, so the newest tab remained on screen after #1174. Passing
+     * [collapseSurface] sets the view to [View.GONE], which destroys that
+     * surface. The session stays open; the page is not reloaded.
+     *
+     * Activity onPause must not collapse: the foreground page is the only
+     * surface, and tearing it down makes every Gecko app rebuild its surface
+     * when the user returns. Tab switches pass [collapseSurface] `true`.
+     *
+     * On show, visibility is restored before [GeckoView.setSession]. If the
+     * surface does not exist yet, GeckoView's display keeps the acquired
+     * session and [GeckoView.Display.onSurfaceChanged] finishes the bind once
+     * the SurfaceView is recreated.
      */
-    fun setDisplayVisible(visible: Boolean) {
+    fun setDisplayVisible(visible: Boolean, collapseSurface: Boolean = false) {
         val view = geckoView ?: return
-        try {
-            if (visible) {
-                val s = session
-                if (s != null && displayDetached) {
+        if (visible) {
+            if (view.visibility != View.VISIBLE) {
+                view.visibility = View.VISIBLE
+            }
+            val s = session
+            if (s != null && displayDetached) {
+                try {
                     view.setSession(s)
                     s.setActive(true)
                     displayDetached = false
+                } catch (e: Exception) {
+                    AppLogger.w(TAG, "setDisplayVisible(true) failed: ${e.message}")
                 }
-            } else {
+            }
+        } else {
+            try {
                 view.releaseSession()
                 // setActive(false) is Gecko's background-tab throttle — the
                 // hidden-tab WebView path sheds JS/timers via onPause, and a
                 // detached session should not run them at full speed either.
                 session?.setActive(false)
-                displayDetached = true
+            } catch (e: Exception) {
+                AppLogger.w(TAG, "setDisplayVisible(false) failed: ${e.message}")
             }
-        } catch (e: Exception) {
-            AppLogger.w(TAG, "setDisplayVisible($visible) failed: ${e.message}")
+            displayDetached = true
+            if (collapseSurface && view.visibility != View.GONE) {
+                view.visibility = View.GONE
+            }
         }
     }
 

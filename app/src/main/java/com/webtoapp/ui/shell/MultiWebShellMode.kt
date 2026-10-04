@@ -264,11 +264,12 @@ private fun TabsMode(
                 if (id != site.id) runCatching { wv.onPause() }
             }
             registry.webViews[site.id]?.let { wv -> runCatching { wv.onResume() } }
-            // Engine surfaces too: a hidden GeckoView's surface ignores the
-            // Compose alpha() hide — onPause detaches its display so the
-            // previously selected site cannot stay composited on top (#1161).
+            // Engine surfaces too. Compose alpha() never reaches a GeckoView
+            // SurfaceView, and releaseSession() leaves that surface — and its
+            // last frame — in front of older tabs (#1161, #1192). onCovered
+            // sets the view to GONE so the surface is destroyed.
             registry.surfaces.forEach { (id, surface) ->
-                if (id != site.id) runCatching { surface.onPause() }
+                if (id != site.id) runCatching { surface.onCovered() }
             }
             registry.surfaces[site.id]?.let { surface -> runCatching { surface.onResume() } }
             registry.pushCurrent(site.id, onWebViewCreated, onBrowserSurfaceCreated)
@@ -1028,15 +1029,15 @@ private fun DrawerMode(
         LaunchedEffect(currentSite?.id) {
             currentSite?.let { site ->
                 // Same hidden-tab handling as TabsMode: WebViews pause so they
-                // shed layout/JS work (#1033), and engine surfaces detach their
-                // display — a hidden GeckoView's own surface ignores the
-                // Compose alpha() hide and would stay composited on top (#1161).
+                // shed layout/JS work (#1033). Covered GeckoViews are set to
+                // GONE — releaseSession alone leaves the SurfaceView, and its
+                // last frame, composited above the selected site (#1161, #1192).
                 registry.webViews.forEach { (id, wv) ->
                     if (id != site.id) runCatching { wv.onPause() }
                 }
                 registry.webViews[site.id]?.let { wv -> runCatching { wv.onResume() } }
                 registry.surfaces.forEach { (id, surface) ->
-                    if (id != site.id) runCatching { surface.onPause() }
+                    if (id != site.id) runCatching { surface.onCovered() }
                 }
                 registry.surfaces[site.id]?.let { surface -> runCatching { surface.onResume() } }
                 registry.pushCurrent(site.id, onWebViewCreated, onBrowserSurfaceCreated)
