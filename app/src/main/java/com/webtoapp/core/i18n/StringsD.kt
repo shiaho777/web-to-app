@@ -289,6 +289,19 @@ object StringsD {
         AppLanguage.KOREAN -> "코드 지우기"
     }
 
+    val scriptViewCode: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "查看代码"
+        AppLanguage.ENGLISH -> "View Code"
+        AppLanguage.ARABIC -> "عرض الكود"
+        AppLanguage.PORTUGUESE -> "Ver Código"
+        AppLanguage.SPANISH -> "Ver Código"
+        AppLanguage.FRENCH -> "Voir le Code"
+        AppLanguage.GERMAN -> "Code ansehen"
+        AppLanguage.RUSSIAN -> "Просмотреть код"
+        AppLanguage.JAPANESE -> "コードを表示"
+        AppLanguage.KOREAN -> "코드 보기"
+    }
+
     val allApps: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "全部"
         AppLanguage.ENGLISH -> "All"

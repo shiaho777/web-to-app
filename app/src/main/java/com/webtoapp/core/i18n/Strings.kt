@@ -2937,6 +2937,7 @@ object Strings {
     val scriptImportFile: String get() = StringsD.scriptImportFile
     val scriptFileLoaded: String get() = StringsD.scriptFileLoaded
     val scriptClearCode: String get() = StringsD.scriptClearCode
+    val scriptViewCode: String get() = StringsD.scriptViewCode
     val allApps: String get() = StringsD.allApps
     val uncategorized: String get() = StringsD.uncategorized
     val addCategory: String get() = StringsD.addCategory

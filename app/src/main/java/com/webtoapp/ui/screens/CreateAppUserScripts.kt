@@ -28,9 +28,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.core.script.UserScriptStorage
 import com.webtoapp.data.model.*
 import com.webtoapp.ui.components.*
 import androidx.compose.ui.graphics.Color
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 fun UserScriptsSection(
@@ -155,13 +159,30 @@ fun UserScriptEditorDialog(
 
     var nameError by remember { mutableStateOf(false) }
     var codeError by remember { mutableStateOf(false) }
+    var showCodeEditor by remember { mutableStateOf(false) }
 
     val isEdit = script != null
     val scrollState = rememberScrollState()
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
     val largeCodeThreshold = 5000
     val isLargeCode = code.length > largeCodeThreshold
+
+    fun openCodeEditor() {
+        if (!UserScriptStorage.isFileReference(code)) {
+            showCodeEditor = true
+            return
+        }
+        scope.launch {
+            val loaded = withContext(Dispatchers.IO) {
+                UserScriptStorage.loadScriptCode(context, code)
+            }
+            if (loaded.isEmpty()) return@launch
+            code = loaded
+            showCodeEditor = true
+        }
+    }
 
     val jsFilePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
@@ -312,46 +333,65 @@ fun UserScriptEditorDialog(
                     OutlinedCard(
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Column(modifier = Modifier.padding(12.dp)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = Strings.scriptFileLoaded.format(lineCount, sizeText),
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                                TextButton(
-                                    onClick = { code = "" },
-                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
-                                ) {
-                                    Icon(
-                                        Icons.Outlined.Delete,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Text(Strings.scriptClearCode, style = MaterialTheme.typography.labelSmall)
-                                }
-                            }
-                            Spacer(modifier = Modifier.height(8.dp))
+                        Column(
+                            modifier = Modifier.padding(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = Strings.scriptFileLoaded.format(lineCount, sizeText),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.primary,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis
+                            )
                             Surface(
                                 color = if (com.webtoapp.ui.theme.LocalIsDarkTheme.current) Color.White.copy(alpha = 0.10f) else Color.White.copy(alpha = 0.72f),
                                 shape = RoundedCornerShape(4.dp),
-                                modifier = Modifier.fillMaxWidth()
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(4.dp))
+                                    .clickable(onClickLabel = Strings.scriptViewCode) { openCodeEditor() }
                             ) {
                                 Text(
                                     text = preview + if (lineCount > 6) "\n..." else "",
                                     style = MaterialTheme.typography.bodySmall.copy(
-                                        fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                                        fontFamily = FontFamily.Monospace,
                                         fontSize = 11.sp
                                     ),
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     maxLines = 8,
                                     overflow = TextOverflow.Ellipsis,
                                     modifier = Modifier.padding(8.dp)
+                                )
+                            }
+                            PremiumOutlinedButton(
+                                onClick = { openCodeEditor() },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Icon(
+                                    Icons.Outlined.Code,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(Strings.scriptViewCode, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            }
+                            TextButton(
+                                onClick = { code = "" },
+                                modifier = Modifier.align(Alignment.End),
+                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
+                            ) {
+                                Icon(
+                                    Icons.Outlined.Delete,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    Strings.scriptClearCode,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                             }
                         }
@@ -374,6 +414,20 @@ fun UserScriptEditorDialog(
                         } else null,
                         modifier = Modifier.fillMaxWidth()
                     )
+                    if (code.isNotBlank()) {
+                        PremiumOutlinedButton(
+                            onClick = { openCodeEditor() },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(
+                                Icons.Outlined.Code,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(Strings.scriptViewCode, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        }
+                    }
                 }
             }
         },
@@ -402,4 +456,18 @@ fun UserScriptEditorDialog(
             }
         }
     )
+
+    if (showCodeEditor) {
+        WtaCodeEditorDialog(
+            language = "JavaScript",
+            initialContent = code,
+            placeholder = Strings.scriptCodePlaceholder,
+            onSave = { edited ->
+                code = edited
+                codeError = false
+                showCodeEditor = false
+            },
+            onDismiss = { showCodeEditor = false }
+        )
+    }
 }
