@@ -2930,6 +2930,7 @@ fun WebViewScreen(
             }
 
             override fun onShowCustomView(view: View?, callback: WebChromeClient.CustomViewCallback?) {
+                errorMessage = null
                 view?.let { onShowCustomView(it, callback) }
             }
 

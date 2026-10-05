@@ -1327,6 +1327,12 @@ class WebViewManager(
     private val LOOPBACK_MAIN_FRAME_MAX_RETRIES = 3
     private val LOOPBACK_MAIN_FRAME_RETRY_DELAY_MS = 150L
 
+    // One silent reload per main-frame 403. The first hit on some video hosts is
+    // rejected (hotlink / Referer); the retry is the request the user otherwise
+    // makes by tapping the error page. A repeat 403 still shows that page.
+    private val mainFrameHttpRetry = MainFrameHttpRetry()
+    private var mainFrameRefererUrl: String? = null
+
     // Cross-URL budget over all app-initiated auto-reloads (#654): per-path counters
     // reset when the URL changes, so only this breaker can stop error-navigation
     // cycles (e.g. login redirect loops) from reloading forever.
@@ -2460,6 +2466,9 @@ class WebViewManager(
 
             override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
                 super.onPageStarted(view, url, favicon)
+                if (!url.isNullOrBlank() && url != "about:blank" && url != currentMainFrameUrl) {
+                    rememberMainFrameReferer(currentMainFrameUrl)
+                }
                 currentMainFrameUrl = url
                 if (TlsMitmBridge.isRunning()) {
                     TlsMitmBridge.allowHost(runCatching { android.net.Uri.parse(url ?: "").host }.getOrNull())
@@ -2978,6 +2987,27 @@ class WebViewManager(
                                 return
                             }
                         }
+                    }
+
+                    if (!isCloudflareResponse &&
+                        view != null &&
+                        failedUrl != null &&
+                        mainFrameHttpRetry.shouldSilentRetry(failedUrl, statusCode)
+                    ) {
+                        val headers = mainFrameHttpRetryHeaders(failedUrl, mainFrameRefererUrl)
+                        AppLogger.w(
+                            "WebViewManager",
+                            "Silent retry main-frame HTTP 403: $failedUrl referer=${headers["Referer"] ?: "(none)"}"
+                        )
+                        view.post {
+                            try {
+                                view.stopLoading()
+                                if (headers.isEmpty()) view.loadUrl(failedUrl) else view.loadUrl(failedUrl, headers)
+                            } catch (e: Exception) {
+                                AppLogger.w("WebViewManager", "Silent HTTP 403 retry failed: $failedUrl", e)
+                            }
+                        }
+                        return
                     }
 
                     val errorUiEnabled = when {
@@ -3559,6 +3589,12 @@ class WebViewManager(
         } else {
             parts.takeLast(2).joinToString(".")
         }
+    }
+
+    private fun rememberMainFrameReferer(url: String?) {
+        if (url.isNullOrBlank() || url == "about:blank") return
+        if (url.startsWith("file:") || url.startsWith("data:")) return
+        mainFrameRefererUrl = url
     }
 
     private fun extractHostFromUrl(url: String?): String? {

@@ -54,6 +54,9 @@ fun createShellWebViewCallbacks(
     return object : WebViewCallbacks {
         override fun onPageStarted(url: String?) {
             if (url == "about:blank") return
+            // A main-frame navigation replaces whatever failed before it. The HTTP error
+            // card is otherwise left on top of a player that recovered on retry.
+            updateError(null)
             // Issue #943: a share arriving mid-navigation must not be pushed into the document
             // that is on its way out.
             (context as? ShellActivity)?.onShellPageStarted()
@@ -186,6 +189,9 @@ fun createShellWebViewCallbacks(
         }
 
         override fun onShowCustomView(view: View?, callback: WebChromeClient.CustomViewCallback?) {
+            // Fullscreen playback can start without another navigation. Drop a 403 card
+            // that was painted for the request the player just recovered from.
+            updateError(null)
             view?.let { handleShowCustomView(it, callback) }
         }
 
