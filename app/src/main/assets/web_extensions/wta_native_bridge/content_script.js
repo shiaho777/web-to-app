@@ -15,8 +15,10 @@
 
   const NATIVE_APP = "wta_native_bridge";
 
-  // Runs in the content-script sandbox. Bridges a page-world call into a
-  // native message round-trip. Exposed to the page via exportFunction.
+  // Content-script compartment only. Returning this Promise through
+  // exportFunction makes the page read .then across compartments, and Firefox
+  // throws "permission denied to access property 'then'" (#1206). The page
+  // creates its own Promise and passes the callbacks in.
   function sendNative(payloadJson) {
     return new Promise((resolve, reject) => {
       try {
@@ -32,6 +34,29 @@
         reject(e);
       }
     });
+  }
+
+  function sandboxSendNative(payloadJson, resolve, reject) {
+    const payload = payloadJson == null ? '' : String(payloadJson);
+    const ok = (value) => {
+      try { resolve(value == null ? '' : String(value)); } catch (e) {}
+    };
+    const fail = (value) => {
+      const message = value == null ? 'Native message failed' : String(value);
+      try { reject(message); } catch (e) {}
+    };
+    try {
+      browser.runtime.sendNativeMessage(NATIVE_APP, payload, (response) => {
+        const err = browser.runtime.lastError;
+        if (err) {
+          fail(typeof err === 'string' ? err : (err.message || 'Native message failed'));
+          return;
+        }
+        ok(response);
+      });
+    } catch (e) {
+      fail(e && e.message ? e.message : e);
+    }
   }
 
   // The whole fetch/XHR hijack lives in a function that gets .toSource()'d
@@ -117,9 +142,20 @@
       try { return new URL(String(u), window.location.href).protocol === 'http:' || new URL(String(u), window.location.href).protocol === 'https:'; }
       catch (e) { return false; }
     }
+    // The Promise is born in this compartment. sendNativeExported only takes
+    // callbacks, so page code never touches a sandbox Promise's .then (#1206).
+    function callNative(payloadJson) {
+      return new Promise((resolve, reject) => {
+        try {
+          sendNativeExported(String(payloadJson), resolve, reject);
+        } catch (e) {
+          reject(e);
+        }
+      });
+    }
     function nativeHttpRequest(payload) {
       return bodyToBase64(payload.body).then((bodyBase64) => {
-        return sendNativeExported(JSON.stringify({ url: payload.url, method: payload.method || 'GET', headers: payload.headers || {}, bodyBase64 }));
+        return callNative(JSON.stringify({ url: payload.url, method: payload.method || 'GET', headers: payload.headers || {}, bodyBase64 }));
       }).then((raw) => {
         const result = JSON.parse(String(raw || '{}'));
         if (!result.ok) throw new TypeError(result.message || result.error || 'Native HTTP request failed');
@@ -203,17 +239,23 @@
   // GeckoView/Firefox content scripts run in a sandbox; exportFunction bridges
   // a callable into the page's compartment (Xray-safe).
   try {
-    const sandboxSendNative = function (payloadJson) {
-      return sendNative(payloadJson);
-    };
     if (typeof exportFunction === 'function') {
-      exportFunction(sandboxSendNative, window, { defineAs: '__wtaSendNative' });
+      exportFunction(sandboxSendNative, window, {
+        defineAs: '__wtaSendNative',
+        allowCrossOriginArguments: true
+      });
       window.wrappedJSObject.__wta_gecko_bridge_installed__ = false;
       const setupSrc = '(' + pageWorldSetup.toString() + ')(window.__wtaSendNative);';
       window.wrappedJSObject.eval(setupSrc);
     } else {
       // Non-Firefox-Gecko fallback (shouldn't happen on GeckoView, but be safe).
-      pageWorldSetup(sendNative);
+      // Same compartment, so bridging the sandbox Promise into callbacks is fine.
+      pageWorldSetup(function (payloadJson, resolve, reject) {
+        sendNative(payloadJson).then(
+          (value) => resolve(value == null ? '' : String(value)),
+          (err) => reject(err && err.message ? err.message : String(err))
+        );
+      });
     }
   } catch (e) {
     console.error('[WTA Native Bridge] install failed:', e);

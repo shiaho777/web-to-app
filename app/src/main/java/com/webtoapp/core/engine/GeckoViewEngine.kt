@@ -65,10 +65,24 @@ class GeckoViewEngine(
         @Volatile
         private var nativeBridgeExtension: WebExtension? = null
 
-        @Volatile
-        private var activeNativeBridge: com.webtoapp.core.webview.NativeBridge? = null
+        /**
+         * One bridge per [GeckoSession]. The extension is installed once on the
+         * shared runtime and its content script runs in every session, so a
+         * single process-wide bridge would authorize one site's fetch as
+         * another's page (#1206).
+         */
+        private val bridgesBySession =
+            java.util.concurrent.ConcurrentHashMap<GeckoSession, com.webtoapp.core.webview.NativeBridge>()
 
         private const val NATIVE_BRIDGE_APP = "wta_native_bridge"
+
+        private fun bindNativeBridge(session: GeckoSession, bridge: com.webtoapp.core.webview.NativeBridge) {
+            bridgesBySession[session] = bridge
+        }
+
+        private fun unbindNativeBridge(session: GeckoSession) {
+            bridgesBySession.remove(session)
+        }
 
         fun ensureNativeBridgeExtension(runtime: GeckoRuntime): WebExtension? {
             nativeBridgeExtension?.let { return it }
@@ -84,7 +98,7 @@ class GeckoViewEngine(
                             message: Any,
                             sender: WebExtension.MessageSender
                         ): GeckoResult<Any>? {
-                            val bridge = activeNativeBridge
+                            val bridge = sender.session?.let { bridgesBySession[it] }
                             if (bridge == null) {
                                 return GeckoResult.fromValue(errorJson("REQUEST_FAILED", "Native bridge not ready"))
                             }
@@ -510,6 +524,7 @@ class GeckoViewEngine(
     private var geckoView: GeckoView? = null
     private var session: GeckoSession? = null
     private var callback: BrowserEngineCallback? = null
+    private var nativeBridge: com.webtoapp.core.webview.NativeBridge? = null
 
     /**
      * Media session delegate to re-attach on every session (re)creation —
@@ -557,6 +572,7 @@ class GeckoViewEngine(
         // Doing this before ensureRuntimeForConfig also keeps a stale session
         // owned by this engine from counting against the recreate decision.
         session?.let { old ->
+            unbindNativeBridge(old)
             try { old.close() } catch (_: Exception) {}
             liveSessions.remove(old)
             session = null
@@ -596,8 +612,10 @@ class GeckoViewEngine(
                 appOriginUrl = appOriginUrl,
                 callerPageUrlProvider = { currentUrl }
             )
-            activeNativeBridge = bridge
+            nativeBridge = bridge
             ensureNativeBridgeExtension(runtime)
+        } else {
+            nativeBridge = null
         }
 
         val geckoUaMode = when {
@@ -638,6 +656,7 @@ class GeckoViewEngine(
         newSession.open(runtime)
         liveSessions.add(newSession)
         session = newSession
+        nativeBridge?.let { bindNativeBridge(newSession, it) }
 
         val view = GeckoView(context)
         // GeckoView renders on an opaque surface that defaults to white until the first
@@ -1773,6 +1792,7 @@ class GeckoViewEngine(
         try {
 
             session?.let { old ->
+                unbindNativeBridge(old)
                 try { old.close() } catch (_: Exception) { }
                 liveSessions.remove(old)
             }
@@ -1797,6 +1817,7 @@ class GeckoViewEngine(
             )
             newSession.open(runtime)
             liveSessions.add(newSession)
+            nativeBridge?.let { bindNativeBridge(newSession, it) }
 
             lastUserAgentOverride?.let {
                 newSession.settings.userAgentOverride = it
@@ -1922,6 +1943,7 @@ class GeckoViewEngine(
 
     override fun destroy() {
         session?.let { s ->
+            unbindNativeBridge(s)
             try {
                 s.close()
             } catch (e: Exception) {
@@ -1929,6 +1951,7 @@ class GeckoViewEngine(
             }
             liveSessions.remove(s)
         }
+        nativeBridge = null
         session = null
         geckoView = null
         callback = null
