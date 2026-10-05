@@ -6,6 +6,7 @@ import com.webtoapp.core.activation.ActivationCodeType
 import com.webtoapp.core.appearance.BrowserDisguiseConfig
 import com.webtoapp.core.appearance.DeviceDisguiseConfig
 import com.webtoapp.core.privacy.IsolationConfig
+import com.webtoapp.core.shell.MultiWebShellConfig
 import com.webtoapp.core.shell.ShellConfig
 import com.webtoapp.data.model.AdConfig
 import com.webtoapp.data.model.Announcement
@@ -27,8 +28,12 @@ import com.webtoapp.data.model.TranslateConfig
 import com.webtoapp.data.model.TranslateEngine
 import com.webtoapp.data.model.TranslateLanguage
 import com.webtoapp.data.model.UserAgentMode
+import com.webtoapp.data.model.MultiWebConfig
 import com.webtoapp.data.model.WebApp
 import com.webtoapp.data.model.WebViewConfig
+import com.webtoapp.ui.shell.MULTI_WEB_DEFAULT_CARD_ASPECT
+import com.webtoapp.ui.shell.resolvedCardAspect
+import com.webtoapp.ui.shell.resolvedGridColumns
 import com.webtoapp.util.GsonProvider
 import org.junit.Test
 
@@ -379,6 +384,35 @@ class ConfigRoundTripSentinelTest {
         )
         val shell = roundTrip(app)
         assertThat(shell.engineType).isEqualTo("GECKOVIEW")
+        assertThat(shell.multiWebConfig.cardColumns).isEqualTo(2)
+        assertThat(shell.multiWebConfig.drawerColumns).isEqualTo(1)
+        assertThat(shell.multiWebConfig.cardAspectRatio).isEqualTo(MULTI_WEB_DEFAULT_CARD_ASPECT)
+    }
+
+    @Test
+    fun `multi-web column and card height round-trip and a missing key stays on the old layout`() {
+        val app = baseApp(AppType.MULTI_WEB).copy(
+            multiWebConfig = MultiWebConfig(
+                cardColumns = 4,
+                drawerColumns = 3,
+                cardAspectRatio = 2.4f
+            )
+        )
+        val shell = roundTrip(app)
+        assertThat(shell.multiWebConfig.cardColumns).isEqualTo(4)
+        assertThat(shell.multiWebConfig.drawerColumns).isEqualTo(3)
+        assertThat(shell.multiWebConfig.cardAspectRatio).isWithin(0.001f).of(2.4f)
+
+        // A shell JSON written before these keys existed still deserializes to the
+        // historical layout. A raw 0 (primitive default from a stricter decoder)
+        // resolves to that same layout instead of a zero-column grid.
+        val legacy = GsonProvider.gson.fromJson("""{"displayMode":"CARDS"}""", MultiWebShellConfig::class.java)
+        assertThat(legacy.cardColumns).isEqualTo(2)
+        assertThat(legacy.drawerColumns).isEqualTo(1)
+        assertThat(legacy.cardAspectRatio).isEqualTo(MULTI_WEB_DEFAULT_CARD_ASPECT)
+        assertThat(resolvedGridColumns(0, 2, 4)).isEqualTo(2)
+        assertThat(resolvedGridColumns(0, 1, 3)).isEqualTo(1)
+        assertThat(resolvedCardAspect(0f)).isEqualTo(MULTI_WEB_DEFAULT_CARD_ASPECT)
     }
 
     @Test

@@ -133,6 +133,13 @@ object Strings {
     val multiWebModeDrawerDesc: String get() = StringsA.multiWebModeDrawerDesc
     val multiWebModeFeedDesc: String get() = StringsA.multiWebModeFeedDesc
     val multiWebShowSiteIcons: String get() = StringsA.multiWebShowSiteIcons
+    val multiWebCardColumns: String get() = StringsA.multiWebCardColumns
+    val multiWebCardColumnsHint: String get() = StringsA.multiWebCardColumnsHint
+    val multiWebDrawerColumns: String get() = StringsA.multiWebDrawerColumns
+    val multiWebDrawerColumnsHint: String get() = StringsA.multiWebDrawerColumnsHint
+    val multiWebCardHeight: String get() = StringsA.multiWebCardHeight
+    val multiWebCardHeightHint: String get() = StringsA.multiWebCardHeightHint
+    val multiWebDragToReorder: String get() = StringsA.multiWebDragToReorder
     val multiWebSitesInheritConfig: String get() = StringsA.multiWebSitesInheritConfig
     val multiWebSitesInheritConfigHint: String get() = StringsA.multiWebSitesInheritConfigHint
     val multiWebFeedEmpty: String get() = StringsA.multiWebFeedEmpty

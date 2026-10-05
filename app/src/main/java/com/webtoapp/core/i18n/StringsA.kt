@@ -1052,6 +1052,97 @@ object StringsA {
         AppLanguage.KOREAN -> "사이트 아이콘 표시"
     }
 
+    val multiWebCardColumns: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "卡片主页列数"
+        AppLanguage.ENGLISH -> "Card home columns"
+        AppLanguage.ARABIC -> "أعمدة الصفحة الرئيسية للبطاقات"
+        AppLanguage.PORTUGUESE -> "Colunas da página de cartões"
+        AppLanguage.SPANISH -> "Columnas de la página de tarjetas"
+        AppLanguage.FRENCH -> "Colonnes de la page en cartes"
+        AppLanguage.GERMAN -> "Spalten der Karten-Startseite"
+        AppLanguage.RUSSIAN -> "Столбцы главной с карточками"
+        AppLanguage.JAPANESE -> "カードホームの列数"
+        AppLanguage.KOREAN -> "카드 홈 열 수"
+    }
+
+    val multiWebCardColumnsHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "每行几张站点卡片，列数越多卡片越小"
+        AppLanguage.ENGLISH -> "How many site cards per row. More columns makes each card smaller"
+        AppLanguage.ARABIC -> "عدد بطاقات المواقع في كل صف. كلما زادت الأعمدة صغرت البطاقة"
+        AppLanguage.PORTUGUESE -> "Quantos cartões por linha. Mais colunas deixam cada cartão menor"
+        AppLanguage.SPANISH -> "Cuántas tarjetas por fila. Más columnas hacen cada tarjeta más pequeña"
+        AppLanguage.FRENCH -> "Combien de cartes par ligne. Plus de colonnes rend chaque carte plus petite"
+        AppLanguage.GERMAN -> "Wie viele Karten pro Zeile. Mehr Spalten macht jede Karte kleiner"
+        AppLanguage.RUSSIAN -> "Сколько карточек в ряду. Чем больше столбцов, тем меньше карточка"
+        AppLanguage.JAPANESE -> "1行に並べるカード数。列が多いほどカードは小さくなります"
+        AppLanguage.KOREAN -> "한 줄에 놓을 카드 수. 열이 많을수록 카드가 작아집니다"
+    }
+
+    val multiWebDrawerColumns: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "侧边抽屉列数"
+        AppLanguage.ENGLISH -> "Side drawer columns"
+        AppLanguage.ARABIC -> "أعمدة الدرج الجانبي"
+        AppLanguage.PORTUGUESE -> "Colunas da gaveta lateral"
+        AppLanguage.SPANISH -> "Columnas del cajón lateral"
+        AppLanguage.FRENCH -> "Colonnes du tiroir latéral"
+        AppLanguage.GERMAN -> "Spalten der Seitenschublade"
+        AppLanguage.RUSSIAN -> "Столбцы боковой панели"
+        AppLanguage.JAPANESE -> "サイドドロワーの列数"
+        AppLanguage.KOREAN -> "사이드 서랍 열 수"
+    }
+
+    val multiWebDrawerColumnsHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "抽屉里每行几个站点"
+        AppLanguage.ENGLISH -> "How many sites per row inside the drawer"
+        AppLanguage.ARABIC -> "عدد المواقع في كل صف داخل الدرج"
+        AppLanguage.PORTUGUESE -> "Quantos sites por linha dentro da gaveta"
+        AppLanguage.SPANISH -> "Cuántos sitios por fila dentro del cajón"
+        AppLanguage.FRENCH -> "Combien de sites par ligne dans le tiroir"
+        AppLanguage.GERMAN -> "Wie viele Seiten pro Zeile in der Schublade"
+        AppLanguage.RUSSIAN -> "Сколько сайтов в ряду внутри панели"
+        AppLanguage.JAPANESE -> "ドロワー内で1行に並べるサイト数"
+        AppLanguage.KOREAN -> "서랍 안에서 한 줄에 놓을 사이트 수"
+    }
+
+    val multiWebCardHeight: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "卡片高度"
+        AppLanguage.ENGLISH -> "Card height"
+        AppLanguage.ARABIC -> "ارتفاع البطاقة"
+        AppLanguage.PORTUGUESE -> "Altura do cartão"
+        AppLanguage.SPANISH -> "Altura de la tarjeta"
+        AppLanguage.FRENCH -> "Hauteur de la carte"
+        AppLanguage.GERMAN -> "Kartenhöhe"
+        AppLanguage.RUSSIAN -> "Высота карточки"
+        AppLanguage.JAPANESE -> "カードの高さ"
+        AppLanguage.KOREAN -> "카드 높이"
+    }
+
+    val multiWebCardHeightHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "把整张站点卡片调矮，往右更紧凑"
+        AppLanguage.ENGLISH -> "Shortens the whole site card. Further right is more compact"
+        AppLanguage.ARABIC -> "يقلل ارتفاع بطاقة الموقع بالكامل. كلما اتجهت يميناً صارت أكثر إحكاماً"
+        AppLanguage.PORTUGUESE -> "Deixa o cartão do site mais baixo. Mais à direita fica mais compacto"
+        AppLanguage.SPANISH -> "Baja toda la tarjeta del sitio. Más a la derecha, más compacta"
+        AppLanguage.FRENCH -> "Réduit toute la carte du site. Plus à droite, plus compact"
+        AppLanguage.GERMAN -> "Macht die ganze Seitenkarte flacher. Weiter rechts ist kompakter"
+        AppLanguage.RUSSIAN -> "Делает всю карточку сайта ниже. Правее — компактнее"
+        AppLanguage.JAPANESE -> "サイトカード全体を低くします。右に行くほど詰まります"
+        AppLanguage.KOREAN -> "사이트 카드 전체를 낮춥니다. 오른쪽으로 갈수록 더 촘촘합니다"
+    }
+
+    val multiWebDragToReorder: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "长按左侧图标拖动排序"
+        AppLanguage.ENGLISH -> "Long-press the icon on the left to drag and reorder"
+        AppLanguage.ARABIC -> "اضغط مطولاً على الأيقونة اليسرى للسحب وإعادة الترتيب"
+        AppLanguage.PORTUGUESE -> "Pressione o ícone à esquerda para arrastar e reordenar"
+        AppLanguage.SPANISH -> "Mantén pulsado el icono de la izquierda para arrastrar y reordenar"
+        AppLanguage.FRENCH -> "Appui long sur l'icône à gauche pour faire glisser et réordonner"
+        AppLanguage.GERMAN -> "Linkes Symbol lange drücken, um zu ziehen und zu sortieren"
+        AppLanguage.RUSSIAN -> "Удерживайте значок слева, чтобы перетащить и изменить порядок"
+        AppLanguage.JAPANESE -> "左のアイコンを長押ししてドラッグすると並べ替えできます"
+        AppLanguage.KOREAN -> "왼쪽 아이콘을 길게 눌러 끌어 순서를 바꿉니다"
+    }
+
     val multiWebSitesInheritConfig: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "子站点跟随主应用配置"
         AppLanguage.ENGLISH -> "Sites inherit the main app's config"

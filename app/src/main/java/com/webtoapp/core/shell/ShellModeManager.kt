@@ -896,6 +896,16 @@ data class MultiWebShellConfig(
     @SerializedName("showSiteIcons")
     val showSiteIcons: Boolean = true,
 
+    // A missing key keeps the default below. Runtime treats a raw 0 as the old layout.
+    @SerializedName("cardColumns")
+    val cardColumns: Int = 2,
+
+    @SerializedName("drawerColumns")
+    val drawerColumns: Int = 1,
+
+    @SerializedName("cardAspectRatio")
+    val cardAspectRatio: Float = 1.2f,
+
     @SerializedName("sitesUseOwnConfig")
     val sitesUseOwnConfig: Boolean = false,
 

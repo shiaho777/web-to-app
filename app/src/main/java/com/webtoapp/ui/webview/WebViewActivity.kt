@@ -3722,6 +3722,17 @@ fun WebViewScreen(
                             displayMode = multiWebConfig.displayMode,
                             refreshInterval = multiWebConfig.refreshInterval,
                             showSiteIcons = multiWebConfig.showSiteIcons,
+                            cardColumns = com.webtoapp.ui.shell.resolvedGridColumns(
+                                multiWebConfig.cardColumns,
+                                com.webtoapp.ui.shell.MULTI_WEB_DEFAULT_CARD_COLUMNS,
+                                com.webtoapp.ui.shell.MULTI_WEB_MAX_CARD_COLUMNS
+                            ),
+                            drawerColumns = com.webtoapp.ui.shell.resolvedGridColumns(
+                                multiWebConfig.drawerColumns,
+                                com.webtoapp.ui.shell.MULTI_WEB_DEFAULT_DRAWER_COLUMNS,
+                                com.webtoapp.ui.shell.MULTI_WEB_MAX_DRAWER_COLUMNS
+                            ),
+                            cardAspectRatio = com.webtoapp.ui.shell.resolvedCardAspect(multiWebConfig.cardAspectRatio),
                             sitesUseOwnConfig = multiWebConfig.sitesUseOwnConfig,
                             projectId = multiWebConfig.projectId
                         ),

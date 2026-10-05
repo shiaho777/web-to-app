@@ -753,6 +753,8 @@ private fun CardsMode(
             sites = sites,
             appName = config.appName,
             showIcons = multiWebConfig.showSiteIcons,
+            columns = multiWebConfig.cardColumns,
+            cardAspect = multiWebConfig.cardAspectRatio,
             onSiteClicked = { openSiteId = it.id }
         )
     }
@@ -763,8 +765,13 @@ private fun CardsHomeGrid(
     sites: List<MultiWebSiteShellConfig>,
     appName: String,
     showIcons: Boolean,
+    columns: Int,
+    cardAspect: Float,
     onSiteClicked: (MultiWebSiteShellConfig) -> Unit
 ) {
+    val gridColumns = resolvedGridColumns(columns, MULTI_WEB_DEFAULT_CARD_COLUMNS, MULTI_WEB_MAX_CARD_COLUMNS)
+    val aspect = resolvedCardAspect(cardAspect)
+    val metrics = siteCardMetrics(gridColumns, aspect)
     val grouped = remember(sites) {
         val categorized = sites.groupBy { it.category.ifBlank { "" } }
         categorized.entries.sortedBy { if (it.key.isBlank()) "zzz" else it.key }
@@ -823,13 +830,13 @@ private fun CardsHomeGrid(
                 }
             }
 
-            val chunked = categorySites.chunked(2)
+            val chunked = categorySites.chunked(gridColumns)
             items(chunked) { pair ->
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    pair.forEachIndexed { i, site ->
+                    pair.forEach { site ->
                         val colorIndex = (sites.indexOf(site)) % cardColors.size
                         val (colorStart, colorEnd) = cardColors[colorIndex]
                         SiteCard(
@@ -837,11 +844,13 @@ private fun CardsHomeGrid(
                             colorStart = colorStart,
                             colorEnd = colorEnd,
                             showIcon = showIcons,
+                            aspect = aspect,
+                            metrics = metrics,
                             onClick = { onSiteClicked(site) },
                             modifier = Modifier.weight(1f)
                         )
                     }
-                    if (pair.size == 1) {
+                    repeat(gridColumns - pair.size) {
                         Spacer(modifier = Modifier.weight(1f))
                     }
                 }
@@ -858,22 +867,25 @@ private fun SiteCard(
     colorStart: Color,
     colorEnd: Color,
     showIcon: Boolean,
+    aspect: Float,
+    metrics: SiteCardMetrics,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val corner = metrics.cornerDp.dp
     Surface(
         modifier = modifier
-            .aspectRatio(1.2f)
-            .clip(RoundedCornerShape(20.dp))
+            .aspectRatio(aspect)
+            .clip(RoundedCornerShape(corner))
             .clickable(onClick = onClick),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(corner),
         shadowElevation = 4.dp
     ) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(brush = Brush.linearGradient(colors = listOf(colorStart, colorEnd)))
-                .padding(16.dp)
+                .padding(metrics.paddingDp.dp)
         ) {
             Column(
                 modifier = Modifier.fillMaxSize(),
@@ -882,15 +894,20 @@ private fun SiteCard(
                 if (showIcon) {
                     Box(
                         modifier = Modifier
-                            .size(44.dp)
-                            .clip(RoundedCornerShape(12.dp))
+                            .size(metrics.iconDp.dp)
+                            .clip(RoundedCornerShape((metrics.cornerDp - 6).coerceAtLeast(8).dp))
                             .background(Color.White.copy(alpha = 0.25f)),
                         contentAlignment = Alignment.Center
                     ) {
                         if (site.iconEmoji.isNotBlank()) {
-                            Text(site.iconEmoji, fontSize = 22.sp)
+                            Text(site.iconEmoji, fontSize = metrics.emojiSp.sp)
                         } else {
-                            Icon(Icons.Outlined.Language, null, tint = Color.White, modifier = Modifier.size(24.dp))
+                            Icon(
+                                Icons.Outlined.Language,
+                                null,
+                                tint = Color.White,
+                                modifier = Modifier.size((metrics.iconDp * 24 / 44).dp)
+                            )
                         }
                     }
                 }
@@ -1163,6 +1180,11 @@ private fun DrawerMode(
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val registry = remember { SiteRuntimeRegistry() }
+    val drawerColumns = resolvedGridColumns(
+        multiWebConfig.drawerColumns,
+        MULTI_WEB_DEFAULT_DRAWER_COLUMNS,
+        MULTI_WEB_MAX_DRAWER_COLUMNS
+    )
 
     LaunchedEffect(drawerVisible) {
         if (drawerVisible) scope.launch { drawerState.open() } else scope.launch { drawerState.close() }
@@ -1178,7 +1200,7 @@ private fun DrawerMode(
             // #1075: the IME padding at window level already lifts the sheet
             // above the keyboard — keep the nav inset from double-stacking.
             ModalDrawerSheet(
-                modifier = Modifier.width(300.dp),
+                modifier = Modifier.width(drawerSheetWidthDp(drawerColumns).dp),
                 windowInsets = DrawerDefaults.windowInsets.exclude(WindowInsets.ime)
             ) {
                 Column(
@@ -1198,9 +1220,32 @@ private fun DrawerMode(
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(vertical = 8.dp)) {
-                    items(sites) { site ->
-                        val isSelected = selectedSiteId == site.id
-                        DrawerSiteItem(site = site, isSelected = isSelected, onClick = { selectedSiteId = site.id; drawerVisible = false })
+                    if (drawerColumns <= 1) {
+                        items(sites) { site ->
+                            val isSelected = selectedSiteId == site.id
+                            DrawerSiteItem(site = site, isSelected = isSelected, onClick = { selectedSiteId = site.id; drawerVisible = false })
+                        }
+                    } else {
+                        val rows = sites.chunked(drawerColumns)
+                        items(rows) { row ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                row.forEach { site ->
+                                    val isSelected = selectedSiteId == site.id
+                                    DrawerSiteTile(
+                                        site = site,
+                                        isSelected = isSelected,
+                                        onClick = { selectedSiteId = site.id; drawerVisible = false },
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                }
+                                repeat(drawerColumns - row.size) {
+                                    Spacer(modifier = Modifier.weight(1f))
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -1329,6 +1374,45 @@ private fun DrawerSiteItem(site: MultiWebSiteShellConfig, isSelected: Boolean, o
             )
         }
         if (isSelected) Icon(Icons.Default.Check, null, tint = MaterialTheme.colorScheme.onSecondaryContainer, modifier = Modifier.size(20.dp))
+    }
+}
+
+@Composable
+private fun DrawerSiteTile(
+    site: MultiWebSiteShellConfig,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val backgroundColor by animateColorAsState(
+        targetValue = if (isSelected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
+        animationSpec = spring(stiffness = Spring.StiffnessMedium),
+        label = "drawerTileBg"
+    )
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(12.dp))
+            .background(backgroundColor)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 8.dp, vertical = 10.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Box(
+            modifier = Modifier.size(36.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primaryContainer),
+            contentAlignment = Alignment.Center
+        ) {
+            if (site.iconEmoji.isNotBlank()) Text(site.iconEmoji, fontSize = 16.sp)
+            else Icon(Icons.Outlined.Language, null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(18.dp))
+        }
+        Spacer(modifier = Modifier.height(6.dp))
+        Text(
+            site.name.ifBlank { extractDomain(site.url) },
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+            color = if (isSelected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurface,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis
+        )
     }
 }
 

@@ -1038,6 +1038,11 @@ data class MultiWebConfig(
     val displayMode: String = "TABS",
     val refreshInterval: Int = 30,
     val showSiteIcons: Boolean = true,
+    // A missing key keeps these defaults. The shell also treats a raw 0 as the
+    // historical layout (2 card columns, 1 drawer column, aspect 1.2).
+    val cardColumns: Int = 2,
+    val drawerColumns: Int = 1,
+    val cardAspectRatio: Float = 1.2f,
     // Inverted storage: stored JSON predating this field deserializes to false,
     // so existing and new apps both default to "sites follow the parent config".
     val sitesUseOwnConfig: Boolean = false,

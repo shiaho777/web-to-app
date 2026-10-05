@@ -1,10 +1,12 @@
 package com.webtoapp.ui.screens
 
 import android.net.Uri
+import android.view.HapticFeedbackConstants
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -19,14 +21,28 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.ui.shell.MULTI_WEB_DEFAULT_CARD_ASPECT
+import com.webtoapp.ui.shell.MULTI_WEB_DEFAULT_CARD_COLUMNS
+import com.webtoapp.ui.shell.MULTI_WEB_DEFAULT_DRAWER_COLUMNS
+import com.webtoapp.ui.shell.MULTI_WEB_MAX_CARD_COLUMNS
+import com.webtoapp.ui.shell.MULTI_WEB_MAX_DRAWER_COLUMNS
+import com.webtoapp.ui.shell.moveListItem
+import com.webtoapp.ui.shell.resolvedCardAspect
+import com.webtoapp.ui.shell.resolvedGridColumns
 import com.webtoapp.ui.theme.LocalShowDescriptions
+import kotlin.math.roundToInt
 import com.webtoapp.data.model.MultiWebConfig
 import com.webtoapp.data.model.MultiWebSite
 import com.webtoapp.data.model.HtmlFileType
@@ -73,6 +89,9 @@ fun CreateMultiWebAppScreen(
     var refreshInterval by remember { mutableStateOf(30) }
     var displayMode by remember { mutableStateOf("TABS") }
     var showSiteIcons by remember { mutableStateOf(true) }
+    var cardColumns by remember { mutableIntStateOf(MULTI_WEB_DEFAULT_CARD_COLUMNS) }
+    var drawerColumns by remember { mutableIntStateOf(MULTI_WEB_DEFAULT_DRAWER_COLUMNS) }
+    var cardAspectRatio by remember { mutableFloatStateOf(MULTI_WEB_DEFAULT_CARD_ASPECT) }
     var sitesInheritConfig by remember { mutableStateOf(true) }
 
     var selectedAppIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
@@ -102,6 +121,17 @@ fun CreateMultiWebAppScreen(
                     refreshInterval = config.refreshInterval
                     displayMode = config.displayMode.ifBlank { "TABS" }
                     showSiteIcons = config.showSiteIcons
+                    cardColumns = resolvedGridColumns(
+                        config.cardColumns,
+                        MULTI_WEB_DEFAULT_CARD_COLUMNS,
+                        MULTI_WEB_MAX_CARD_COLUMNS
+                    )
+                    drawerColumns = resolvedGridColumns(
+                        config.drawerColumns,
+                        MULTI_WEB_DEFAULT_DRAWER_COLUMNS,
+                        MULTI_WEB_MAX_DRAWER_COLUMNS
+                    )
+                    cardAspectRatio = resolvedCardAspect(config.cardAspectRatio)
                     sitesInheritConfig = !config.sitesUseOwnConfig
                 }
                 injectScripts = app.webViewConfig.injectScripts
@@ -129,6 +159,9 @@ fun CreateMultiWebAppScreen(
                             displayMode = displayMode,
                             refreshInterval = refreshInterval,
                             showSiteIcons = showSiteIcons,
+                            cardColumns = cardColumns,
+                            drawerColumns = drawerColumns,
+                            cardAspectRatio = cardAspectRatio,
                             sitesUseOwnConfig = !sitesInheritConfig,
                             projectId = ""
                         ),
@@ -195,6 +228,28 @@ fun CreateMultiWebAppScreen(
                                 )
                             }
                         }
+                        if (displayMode == "CARDS") {
+                            MultiWebIntSlider(
+                                label = Strings.multiWebCardColumns,
+                                hint = Strings.multiWebCardColumnsHint,
+                                value = cardColumns,
+                                range = 1..MULTI_WEB_MAX_CARD_COLUMNS,
+                                onValueChange = { cardColumns = it }
+                            )
+                            MultiWebCardHeightSlider(
+                                value = cardAspectRatio,
+                                onValueChange = { cardAspectRatio = it }
+                            )
+                        }
+                        if (displayMode == "DRAWER") {
+                            MultiWebIntSlider(
+                                label = Strings.multiWebDrawerColumns,
+                                hint = Strings.multiWebDrawerColumnsHint,
+                                value = drawerColumns,
+                                range = 1..MULTI_WEB_MAX_DRAWER_COLUMNS,
+                                onValueChange = { drawerColumns = it }
+                            )
+                        }
                         Spacer(modifier = Modifier.height(12.dp))
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -244,31 +299,90 @@ fun CreateMultiWebAppScreen(
                                 )
                             }
 
+                            if (LocalShowDescriptions.current) {
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    Strings.multiWebDragToReorder,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+
                             Spacer(modifier = Modifier.height(12.dp))
 
+                            val view = LocalView.current
+                            val latestSites = rememberUpdatedState(sites)
+                            var draggingId by remember { mutableStateOf<String?>(null) }
+                            val dragTranslation = remember { mutableFloatStateOf(0f) }
+                            val rowHeightPx = remember { mutableFloatStateOf(0f) }
                             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 sites.forEachIndexed { index, site ->
-                                    SiteItem(
-                                        site = site,
-                                        showFeedConfig = false,
-                                        onDelete = {
-                                            sites = sites.toMutableList().also { it.removeAt(index) }
-                                        },
-                                        onToggleEnabled = { enabled ->
-                                            sites = sites.toMutableList().also {
-                                                it[index] = site.copy(enabled = enabled)
-                                            }
-                                        },
-                                        onMoveUp = if (index > 0) {
-                                            { sites = sites.toMutableList().also { val item = it.removeAt(index); it.add(index - 1, item) } }
-                                        } else null,
-                                        onMoveDown = if (index < sites.size - 1) {
-                                            { sites = sites.toMutableList().also { val item = it.removeAt(index); it.add(index + 1, item) } }
-                                        } else null,
-                                        onEdit = if (site.sourceAppId == 0L) {
-                                            { siteDialog = SiteDialogData(site.id, site.name, site.url) }
-                                        } else null
-                                    )
+                                    key(site.id) {
+                                        val dragging = draggingId == site.id
+                                        SiteItem(
+                                            site = site,
+                                            showFeedConfig = false,
+                                            modifier = Modifier
+                                                .onSizeChanged { size ->
+                                                    if (size.height > 0) rowHeightPx.floatValue = size.height.toFloat()
+                                                }
+                                                .zIndex(if (dragging) 1f else 0f)
+                                                .graphicsLayer {
+                                                    translationY = if (dragging) dragTranslation.floatValue else 0f
+                                                    shadowElevation = if (dragging) 8.dp.toPx() else 0f
+                                                },
+                                            dragHandleModifier = Modifier.pointerInput(site.id) {
+                                                val rowGapPx = 8.dp.toPx()
+                                                detectDragGesturesAfterLongPress(
+                                                    onDragStart = {
+                                                        draggingId = site.id
+                                                        dragTranslation.floatValue = 0f
+                                                        view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+                                                    },
+                                                    onDragEnd = {
+                                                        draggingId = null
+                                                        dragTranslation.floatValue = 0f
+                                                    },
+                                                    onDragCancel = {
+                                                        draggingId = null
+                                                        dragTranslation.floatValue = 0f
+                                                    },
+                                                    onDrag = { change, amount ->
+                                                        change.consume()
+                                                        val height = rowHeightPx.floatValue + rowGapPx
+                                                        if (rowHeightPx.floatValue <= 0f) return@detectDragGesturesAfterLongPress
+                                                        dragTranslation.floatValue += amount.y
+                                                        val steps = (dragTranslation.floatValue / height).toInt()
+                                                        if (steps == 0) return@detectDragGesturesAfterLongPress
+                                                        val list = latestSites.value
+                                                        val from = list.indexOfFirst { it.id == site.id }
+                                                        if (from < 0) return@detectDragGesturesAfterLongPress
+                                                        val to = (from + steps).coerceIn(0, list.lastIndex)
+                                                        if (to == from) return@detectDragGesturesAfterLongPress
+                                                        sites = moveListItem(list, from, to).reindexed()
+                                                        dragTranslation.floatValue -= (to - from) * height
+                                                    }
+                                                )
+                                            },
+                                            onDelete = {
+                                                sites = sites.toMutableList().also { it.removeAt(index) }.reindexed()
+                                            },
+                                            onToggleEnabled = { enabled ->
+                                                sites = sites.toMutableList().also {
+                                                    it[index] = site.copy(enabled = enabled)
+                                                }
+                                            },
+                                            onMoveUp = if (index > 0) {
+                                                { sites = moveListItem(sites, index, index - 1).reindexed() }
+                                            } else null,
+                                            onMoveDown = if (index < sites.size - 1) {
+                                                { sites = moveListItem(sites, index, index + 1).reindexed() }
+                                            } else null,
+                                            onEdit = if (site.sourceAppId == 0L) {
+                                                { siteDialog = SiteDialogData(site.id, site.name, site.url) }
+                                            } else null
+                                        )
+                                    }
                                 }
                             }
 
@@ -863,12 +977,14 @@ private fun SiteItem(
     onToggleEnabled: (Boolean) -> Unit,
     onMoveUp: (() -> Unit)? = null,
     onMoveDown: (() -> Unit)? = null,
-    onEdit: (() -> Unit)? = null
+    onEdit: (() -> Unit)? = null,
+    modifier: Modifier = Modifier,
+    dragHandleModifier: Modifier = Modifier
 ) {
     var showMenu by remember { mutableStateOf(false) }
 
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         color = if (site.enabled)
             MaterialTheme.colorScheme.surfaceContainerLow
@@ -887,11 +1003,13 @@ private fun SiteItem(
                 modifier = Modifier
                     .size(36.dp)
                     .clip(RoundedCornerShape(10.dp))
-                    .background(MaterialTheme.colorScheme.primaryContainer),
+                    .background(MaterialTheme.colorScheme.primaryContainer)
+                    .then(dragHandleModifier),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    Icons.Outlined.Apps, null,
+                    Icons.Outlined.Apps,
+                    contentDescription = Strings.multiWebDragToReorder,
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(20.dp)
                 )
@@ -989,6 +1107,84 @@ private fun SiteItem(
     }
 }
 
+
+@Composable
+private fun MultiWebIntSlider(
+    label: String,
+    hint: String,
+    value: Int,
+    range: IntRange,
+    onValueChange: (Int) -> Unit
+) {
+    Column(modifier = Modifier.fillMaxWidth().padding(top = 12.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(label, style = MaterialTheme.typography.bodyMedium)
+            Text(
+                value.toString(),
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
+        if (LocalShowDescriptions.current) {
+            Text(
+                hint,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        Slider(
+            value = value.toFloat(),
+            onValueChange = { onValueChange(it.roundToInt().coerceIn(range.first, range.last)) },
+            valueRange = range.first.toFloat()..range.last.toFloat(),
+            steps = (range.last - range.first - 1).coerceAtLeast(0)
+        )
+    }
+}
+
+@Composable
+private fun MultiWebCardHeightSlider(
+    value: Float,
+    onValueChange: (Float) -> Unit
+) {
+    val percent = (MULTI_WEB_DEFAULT_CARD_ASPECT / value * 100f).roundToInt().coerceIn(40, 100)
+    Column(modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(Strings.multiWebCardHeight, style = MaterialTheme.typography.bodyMedium)
+            Text(
+                "$percent%",
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
+        if (LocalShowDescriptions.current) {
+            Text(
+                Strings.multiWebCardHeightHint,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        Slider(
+            value = value,
+            onValueChange = { raw ->
+                val snapped = (raw * 5f).roundToInt() / 5f
+                onValueChange(snapped.coerceIn(MULTI_WEB_DEFAULT_CARD_ASPECT, 2.8f))
+            },
+            valueRange = MULTI_WEB_DEFAULT_CARD_ASPECT..2.8f,
+            steps = 7
+        )
+    }
+}
+
+private fun List<MultiWebSite>.reindexed(): List<MultiWebSite> =
+    mapIndexed { index, site -> if (site.sortIndex == index) site else site.copy(sortIndex = index) }
 
 private fun appTypeFilterInfo(typeName: String): Pair<androidx.compose.ui.graphics.vector.ImageVector, String> {
     return when (typeName) {

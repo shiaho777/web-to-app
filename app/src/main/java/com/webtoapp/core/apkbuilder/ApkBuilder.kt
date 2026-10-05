@@ -5012,6 +5012,17 @@ private fun WebApp.buildMultiWebBlock(context: android.content.Context?, package
         displayMode = multiWebConfig?.displayMode ?: "TABS",
         refreshInterval = multiWebConfig?.refreshInterval ?: 30,
         showSiteIcons = multiWebConfig?.showSiteIcons ?: true,
+        cardColumns = com.webtoapp.ui.shell.resolvedGridColumns(
+            multiWebConfig?.cardColumns ?: com.webtoapp.ui.shell.MULTI_WEB_DEFAULT_CARD_COLUMNS,
+            com.webtoapp.ui.shell.MULTI_WEB_DEFAULT_CARD_COLUMNS,
+            com.webtoapp.ui.shell.MULTI_WEB_MAX_CARD_COLUMNS
+        ),
+        drawerColumns = com.webtoapp.ui.shell.resolvedGridColumns(
+            multiWebConfig?.drawerColumns ?: com.webtoapp.ui.shell.MULTI_WEB_DEFAULT_DRAWER_COLUMNS,
+            com.webtoapp.ui.shell.MULTI_WEB_DEFAULT_DRAWER_COLUMNS,
+            com.webtoapp.ui.shell.MULTI_WEB_MAX_DRAWER_COLUMNS
+        ),
+        cardAspectRatio = com.webtoapp.ui.shell.resolvedCardAspect(multiWebConfig?.cardAspectRatio ?: 0f),
         sitesUseOwnConfig = multiWebConfig?.sitesUseOwnConfig ?: false,
         projectId = multiWebConfig?.projectId ?: ""
     )

@@ -920,6 +920,9 @@ data class MultiWebBlock(
     val displayMode: String = "TABS",
     val refreshInterval: Int = 30,
     val showSiteIcons: Boolean = true,
+    val cardColumns: Int = 2,
+    val drawerColumns: Int = 1,
+    val cardAspectRatio: Float = 1.2f,
     val sitesUseOwnConfig: Boolean = false,
     val projectId: String = ""
 )

@@ -561,6 +561,9 @@ internal object ApkConfigJsonFactory {
         "displayMode" to multiWeb.displayMode,
         "refreshInterval" to multiWeb.refreshInterval,
         "showSiteIcons" to multiWeb.showSiteIcons,
+        "cardColumns" to multiWeb.cardColumns,
+        "drawerColumns" to multiWeb.drawerColumns,
+        "cardAspectRatio" to multiWeb.cardAspectRatio,
         "sitesUseOwnConfig" to multiWeb.sitesUseOwnConfig,
         "projectId" to multiWeb.projectId
     )
