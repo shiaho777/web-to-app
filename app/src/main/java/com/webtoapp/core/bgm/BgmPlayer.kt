@@ -2,6 +2,7 @@ package com.webtoapp.core.bgm
 
 import android.content.Context
 import android.content.res.AssetFileDescriptor
+import android.media.AudioAttributes
 import android.media.MediaPlayer
 import com.webtoapp.core.crypto.AssetDecryptor
 import com.webtoapp.core.logging.AppLogger
@@ -68,6 +69,7 @@ class BgmPlayer(private val context: Context) {
             shuffledIndices = bgmConfig.playlist.indices.shuffled()
         }
 
+        onTrackChangedListener?.invoke(getCurrentTrack())
         if (bgmConfig.autoPlay) {
             playCurrentTrack()
         }
@@ -88,6 +90,12 @@ class BgmPlayer(private val context: Context) {
             releaseMediaPlayer()
 
             mediaPlayer = MediaPlayer().apply {
+                setAudioAttributes(
+                    AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_MEDIA)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                        .build()
+                )
 
                 if (bgmItem.path.startsWith("asset:///")) {
                     val assetPath = bgmItem.path.removePrefix("asset:///")
@@ -167,7 +175,11 @@ class BgmPlayer(private val context: Context) {
         val cfg = config ?: return
         if (cfg.playlist.isEmpty()) return
 
-        currentIndex = if (currentIndex > 0) currentIndex - 1 else cfg.playlist.size - 1
+        if (bgmPreviousAction(getCurrentPosition()) == BgmPreviousAction.RESTART) {
+            seekTo(0L)
+            return
+        }
+        currentIndex = bgmPreviousLinearIndex(currentIndex, cfg.playlist.size)
         playCurrentTrack()
     }
 

@@ -4778,7 +4778,9 @@ private fun WebApp.buildBgmBlock(): BgmBlock {
         volume = bgmConfig?.volume ?: 0.5f,
         autoPlay = bgmConfig?.autoPlay ?: true,
         showLyrics = bgmConfig?.showLyrics ?: true,
-        lrcTheme = theme
+        lrcTheme = theme,
+        showFloatingPlayer = bgmConfig?.showFloatingPlayer != false,
+        showNotificationPlayer = bgmConfig?.showNotificationPlayer != false
     )
 }
 

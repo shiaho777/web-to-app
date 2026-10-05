@@ -107,6 +107,8 @@ internal object ApkConfigJsonFactory {
         "bgmAutoPlay" to bgm.autoPlay,
         "bgmShowLyrics" to bgm.showLyrics,
         "bgmLrcTheme" to bgm.lrcTheme,
+        "bgmShowFloatingPlayer" to bgm.showFloatingPlayer,
+        "bgmShowNotificationPlayer" to bgm.showNotificationPlayer,
         "themeType" to meta.themeType,
         "darkMode" to meta.darkMode,
         "translateEnabled" to translate.enabled,

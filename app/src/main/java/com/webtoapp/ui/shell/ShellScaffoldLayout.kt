@@ -24,6 +24,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
+import com.webtoapp.core.bgm.bgmControlEnabled
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.shell.ShellConfig
 import com.webtoapp.ui.shared.PageEdgeChrome
@@ -291,6 +292,16 @@ fun BoxScope.ShellScaffoldLayout(
             )
 
             ShellLyricsOverlay(config = config, bgmState = bgmState)
+
+            if (config.bgmEnabled && bgmControlEnabled(config.bgmShowFloatingPlayer) && bgmState.player != null) {
+                BgmFloatingPlayer(
+                    title = bgmState.title,
+                    playing = bgmState.isPlaying,
+                    onToggle = { bgmState.toggle() },
+                    onPrevious = { bgmState.previous() },
+                    onNext = { bgmState.next() }
+                )
+            }
 
             if (autoRefreshRemaining > 0 && autoRefreshController?.countdownVisible == true) {
                 com.webtoapp.ui.components.AutoRefreshCountdownChip(

@@ -6,6 +6,7 @@ import com.webtoapp.core.activation.ActivationCodeType
 import com.webtoapp.core.appearance.BrowserDisguiseConfig
 import com.webtoapp.core.appearance.DeviceDisguiseConfig
 import com.webtoapp.core.privacy.IsolationConfig
+import com.webtoapp.core.bgm.bgmControlEnabled
 import com.webtoapp.core.shell.MultiWebShellConfig
 import com.webtoapp.core.shell.ShellConfig
 import com.webtoapp.data.model.AdConfig
@@ -235,6 +236,30 @@ class ConfigRoundTripSentinelTest {
         assertThat(shell.bgmVolume).isEqualTo(0.25f)
         assertThat(shell.bgmAutoPlay).isFalse()
         assertThat(shell.bgmShowLyrics).isFalse()
+        assertThat(shell.bgmShowFloatingPlayer).isTrue()
+        assertThat(shell.bgmShowNotificationPlayer).isTrue()
+    }
+
+    @Test
+    fun `bgm player switches round-trip explicit off and a missing key stays on`() {
+        val app = baseApp().copy(
+            bgmEnabled = true,
+            bgmConfig = BgmConfig(
+                showFloatingPlayer = false,
+                showNotificationPlayer = true
+            )
+        )
+        val shell = roundTrip(app)
+        assertThat(shell.bgmShowFloatingPlayer).isFalse()
+        assertThat(shell.bgmShowNotificationPlayer).isTrue()
+        assertThat(bgmControlEnabled(shell.bgmShowFloatingPlayer)).isFalse()
+        assertThat(bgmControlEnabled(shell.bgmShowNotificationPlayer)).isTrue()
+
+        val legacy = GsonProvider.gson.fromJson("""{"bgmEnabled":true}""", ShellConfig::class.java)
+        assertThat(legacy.bgmShowFloatingPlayer).isNull()
+        assertThat(legacy.bgmShowNotificationPlayer).isNull()
+        assertThat(bgmControlEnabled(legacy.bgmShowFloatingPlayer)).isTrue()
+        assertThat(bgmControlEnabled(null)).isTrue()
     }
 
     @Test

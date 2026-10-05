@@ -1262,7 +1262,14 @@ data class BgmConfig(
     val volume: Float = 0.5f,
     val autoPlay: Boolean = true,
     val showLyrics: Boolean = true,
-    val lrcTheme: LrcTheme? = null
+    val lrcTheme: LrcTheme? = null,
+    /**
+     * Null means the author never saved the switch. Playback treats that as
+     * on, so an older app gains controls until one of them is turned off.
+     * The two players are independent: both, either, or neither.
+     */
+    val showFloatingPlayer: Boolean? = null,
+    val showNotificationPlayer: Boolean? = null
 )
 
 enum class ApkArchitecture(

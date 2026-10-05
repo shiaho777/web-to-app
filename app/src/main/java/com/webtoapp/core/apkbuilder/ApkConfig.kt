@@ -782,7 +782,9 @@ data class BgmBlock(
     val volume: Float = 0.5f,
     val autoPlay: Boolean = true,
     val showLyrics: Boolean = true,
-    val lrcTheme: LrcShellTheme? = null
+    val lrcTheme: LrcShellTheme? = null,
+    val showFloatingPlayer: Boolean = true,
+    val showNotificationPlayer: Boolean = true
 )
 
 data class TranslateBlock(

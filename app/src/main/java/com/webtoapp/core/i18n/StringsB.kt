@@ -2978,6 +2978,96 @@ object StringsB {
         AppLanguage.KOREAN -> "가사 표시"
     }
 
+    val bgmFloatingPlayer: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "悬浮播放器"
+        AppLanguage.ENGLISH -> "Floating player"
+        AppLanguage.ARABIC -> "مشغل عائم"
+        AppLanguage.PORTUGUESE -> "Reprodutor flutuante"
+        AppLanguage.SPANISH -> "Reproductor flotante"
+        AppLanguage.FRENCH -> "Lecteur flottant"
+        AppLanguage.GERMAN -> "Schwebender Player"
+        AppLanguage.RUSSIAN -> "Плавающий плеер"
+        AppLanguage.JAPANESE -> "フローティングプレーヤー"
+        AppLanguage.KOREAN -> "플로팅 플레이어"
+    }
+
+    val bgmFloatingPlayerHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "小条可以拖动，松手后吸到屏幕左右边缘，上面有暂停、上一首和下一首。"
+        AppLanguage.ENGLISH -> "A small bar you can drag. It snaps to the left or right edge and has pause, previous, and next."
+        AppLanguage.ARABIC -> "شريط صغير يمكن سحبه. يلتصق بالحافة اليسرى أو اليمنى وفيه إيقاف مؤقت والسابق والتالي."
+        AppLanguage.PORTUGUESE -> "Uma barra pequena que você arrasta. Ela gruda na borda esquerda ou direita e tem pausa, anterior e próxima."
+        AppLanguage.SPANISH -> "Una barra pequeña que puedes arrastrar. Se pega al borde izquierdo o derecho y tiene pausa, anterior y siguiente."
+        AppLanguage.FRENCH -> "Une petite barre à faire glisser. Elle se colle au bord gauche ou droit, avec pause, précédent et suivant."
+        AppLanguage.GERMAN -> "Eine kleine Leiste zum Ziehen. Sie rastet links oder rechts ein und hat Pause, Zurück und Weiter."
+        AppLanguage.RUSSIAN -> "Небольшую полоску можно перетаскивать. Она прилипает к левому или правому краю: пауза, предыдущий и следующий трек."
+        AppLanguage.JAPANESE -> "小さなバーはドラッグでき、離すと左右の端に吸着します。一時停止、前へ、次へが付いています。"
+        AppLanguage.KOREAN -> "작은 막대를 끌어 놓을 수 있습니다. 손에서 떼면 왼쪽이나 오른쪽 가장자리에 붙고, 일시정지·이전·다음이 있습니다."
+    }
+
+    val bgmNotificationPlayer: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "通知栏播放器"
+        AppLanguage.ENGLISH -> "Notification player"
+        AppLanguage.ARABIC -> "مشغل الإشعار"
+        AppLanguage.PORTUGUESE -> "Reprodutor na notificação"
+        AppLanguage.SPANISH -> "Reproductor en la notificación"
+        AppLanguage.FRENCH -> "Lecteur dans la notification"
+        AppLanguage.GERMAN -> "Player in der Benachrichtigung"
+        AppLanguage.RUSSIAN -> "Плеер в уведомлении"
+        AppLanguage.JAPANESE -> "通知プレーヤー"
+        AppLanguage.KOREAN -> "알림 플레이어"
+    }
+
+    val bgmNotificationPlayerHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "在通知栏和锁屏上使用系统媒体控件，可以暂停、切歌和拖动进度。"
+        AppLanguage.ENGLISH -> "System media controls in the notification shade and on the lock screen: pause, skip, and scrub."
+        AppLanguage.ARABIC -> "عناصر تحكم الوسائط في لوحة الإشعارات وشاشة القفل: إيقاف مؤقت وتخطٍ وسحب التقدم."
+        AppLanguage.PORTUGUESE -> "Controles de mídia do sistema na barra de notificações e na tela de bloqueio: pausar, trocar e arrastar o progresso."
+        AppLanguage.SPANISH -> "Controles de medios del sistema en las notificaciones y en la pantalla de bloqueo: pausa, cambio de pista y progreso."
+        AppLanguage.FRENCH -> "Contrôles média du système dans les notifications et sur l'écran de verrouillage : pause, piste et progression."
+        AppLanguage.GERMAN -> "System-Mediensteuerung in der Benachrichtigung und auf dem Sperrbildschirm: Pause, Titelwechsel und Spulen."
+        AppLanguage.RUSSIAN -> "Системные кнопки в шторке и на экране блокировки: пауза, переключение трека и перемотка."
+        AppLanguage.JAPANESE -> "通知とロック画面のシステムメディア操作で、一時停止、曲送り、シークができます。"
+        AppLanguage.KOREAN -> "알림창과 잠금 화면의 시스템 미디어 컨트롤로 일시정지, 곡 이동, 탐색을 할 수 있습니다."
+    }
+
+    val bgmPrevious: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "上一首"
+        AppLanguage.ENGLISH -> "Previous"
+        AppLanguage.ARABIC -> "السابق"
+        AppLanguage.PORTUGUESE -> "Anterior"
+        AppLanguage.SPANISH -> "Anterior"
+        AppLanguage.FRENCH -> "Précédent"
+        AppLanguage.GERMAN -> "Zurück"
+        AppLanguage.RUSSIAN -> "Предыдущий"
+        AppLanguage.JAPANESE -> "前へ"
+        AppLanguage.KOREAN -> "이전"
+    }
+
+    val bgmNext: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "下一首"
+        AppLanguage.ENGLISH -> "Next"
+        AppLanguage.ARABIC -> "التالي"
+        AppLanguage.PORTUGUESE -> "Próxima"
+        AppLanguage.SPANISH -> "Siguiente"
+        AppLanguage.FRENCH -> "Suivant"
+        AppLanguage.GERMAN -> "Weiter"
+        AppLanguage.RUSSIAN -> "Следующий"
+        AppLanguage.JAPANESE -> "次へ"
+        AppLanguage.KOREAN -> "다음"
+    }
+
+    val bgmNotificationChannel: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "背景音乐"
+        AppLanguage.ENGLISH -> "Background music"
+        AppLanguage.ARABIC -> "موسيقى الخلفية"
+        AppLanguage.PORTUGUESE -> "Música de fundo"
+        AppLanguage.SPANISH -> "Música de fondo"
+        AppLanguage.FRENCH -> "Musique de fond"
+        AppLanguage.GERMAN -> "Hintergrundmusik"
+        AppLanguage.RUSSIAN -> "Фоновая музыка"
+        AppLanguage.JAPANESE -> "バックグラウンド音楽"
+        AppLanguage.KOREAN -> "배경 음악"
+    }
 
     val allTag: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "全部"

@@ -54,7 +54,11 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.lifecycleScope
 import com.webtoapp.ui.components.WebSwipeRefreshLayout
 import com.webtoapp.WebToAppApplication
+import com.webtoapp.core.bgm.BgmMediaNotifier
 import com.webtoapp.core.bgm.BgmPlayer
+import com.webtoapp.core.bgm.BgmTransport
+import com.webtoapp.core.bgm.bgmControlEnabled
+import com.webtoapp.ui.shell.BgmFloatingPlayer
 import com.webtoapp.core.webview.HtmlRuntimeLoadInspector
 import com.webtoapp.core.port.PortConflictException
 import com.webtoapp.core.port.PortManager
@@ -1544,6 +1548,25 @@ fun WebViewScreen(
     var originalOrientation by remember { mutableIntStateOf(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED) }
 
     val bgmPlayer = remember { BgmPlayer(context) }
+    val bgmTransport = remember { BgmTransport() }
+    val bgmNotifier = remember { BgmMediaNotifier(context, bgmTransport) }
+    var bgmTrackTitle by remember { mutableStateOf("") }
+    var bgmPlaying by remember { mutableStateOf(false) }
+
+    DisposableEffect(bgmPlayer) {
+        bgmTransport.play = { bgmPlayer.play() }
+        bgmTransport.pause = { bgmPlayer.pause() }
+        bgmTransport.next = { bgmPlayer.playNext() }
+        bgmTransport.previous = { bgmPlayer.playPrevious() }
+        bgmTransport.seek = { bgmPlayer.seekTo(it) }
+        bgmPlayer.setOnTrackChangedListener { item ->
+            bgmTrackTitle = item?.name.orEmpty()
+        }
+        bgmPlayer.setOnPlayStateChangedListener { playing ->
+            bgmPlaying = playing
+        }
+        onDispose { }
+    }
 
     var webViewRef by remember { mutableStateOf<WebView?>(null) }
     var browserSurfaceRef by remember { mutableStateOf<BrowserSurface?>(null) }
@@ -1997,8 +2020,35 @@ fun WebViewScreen(
         }
 
         onDispose {
+            bgmNotifier.release()
             bgmPlayer.release()
             announcement.stopNetworkMonitoring()
+        }
+    }
+
+    val bgmNotificationOn = webApp?.bgmEnabled == true &&
+        isActivated &&
+        bgmControlEnabled(webApp?.bgmConfig?.showNotificationPlayer) &&
+        webApp?.bgmConfig?.playlist?.isNotEmpty() == true
+    LaunchedEffect(bgmNotificationOn) {
+        if (!bgmNotificationOn) {
+            bgmNotifier.hide()
+            return@LaunchedEffect
+        }
+        while (true) {
+            val track = bgmPlayer.getCurrentTrack()
+            if (track != null) {
+                val playing = bgmPlayer.isPlaying()
+                if (playing != bgmPlaying) bgmPlaying = playing
+                if (track.name.isNotBlank() && track.name != bgmTrackTitle) bgmTrackTitle = track.name
+                bgmNotifier.publish(
+                    title = track.name,
+                    playing = playing,
+                    positionMs = bgmPlayer.getCurrentPosition(),
+                    durationMs = bgmPlayer.getDuration()
+                )
+            }
+            delay(500)
         }
     }
 
@@ -4338,6 +4388,20 @@ fun WebViewScreen(
             alpha = if (overlayIsDark) statusBarBackgroundAlphaDark else statusBarBackgroundAlpha,
             heightDp = statusBarHeightDp,
             modifier = Modifier.align(Alignment.TopStart)
+        )
+    }
+
+    val previewBgm = webApp
+    if (previewBgm != null && previewBgm.bgmEnabled && isActivated &&
+        bgmControlEnabled(previewBgm.bgmConfig?.showFloatingPlayer) &&
+        previewBgm.bgmConfig?.playlist?.isNotEmpty() == true
+    ) {
+        BgmFloatingPlayer(
+            title = bgmTrackTitle,
+            playing = bgmPlaying,
+            onToggle = { if (bgmPlayer.isPlaying()) bgmPlayer.pause() else bgmPlayer.play() },
+            onPrevious = { bgmPlayer.playPrevious() },
+            onNext = { bgmPlayer.playNext() }
         )
     }
 

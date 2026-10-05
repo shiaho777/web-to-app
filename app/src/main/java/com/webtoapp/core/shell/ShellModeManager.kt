@@ -352,6 +352,14 @@ data class ShellConfig(
     @SerializedName("bgmLrcTheme")
     val bgmLrcTheme: LrcShellTheme? = null,
 
+    /** Null in an older export means the floating player is on. */
+    @SerializedName("bgmShowFloatingPlayer")
+    val bgmShowFloatingPlayer: Boolean? = null,
+
+    /** Null in an older export means the notification player is on. */
+    @SerializedName("bgmShowNotificationPlayer")
+    val bgmShowNotificationPlayer: Boolean? = null,
+
     @SerializedName("themeType")
     val themeType: String = "AURORA",
 

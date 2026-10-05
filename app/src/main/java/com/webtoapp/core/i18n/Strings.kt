@@ -1295,6 +1295,13 @@ object Strings {
     val shuffleMode: String get() = StringsB.shuffleMode
     val volume: String get() = StringsB.volume
     val showLyrics: String get() = StringsB.showLyrics
+    val bgmFloatingPlayer: String get() = StringsB.bgmFloatingPlayer
+    val bgmFloatingPlayerHint: String get() = StringsB.bgmFloatingPlayerHint
+    val bgmNotificationPlayer: String get() = StringsB.bgmNotificationPlayer
+    val bgmNotificationPlayerHint: String get() = StringsB.bgmNotificationPlayerHint
+    val bgmPrevious: String get() = StringsB.bgmPrevious
+    val bgmNext: String get() = StringsB.bgmNext
+    val bgmNotificationChannel: String get() = StringsB.bgmNotificationChannel
     val allTag: String get() = StringsB.allTag
     val lyricsSaved: String get() = StringsB.lyricsSaved
     val lines: String get() = StringsB.lines

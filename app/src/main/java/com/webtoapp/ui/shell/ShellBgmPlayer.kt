@@ -2,8 +2,16 @@ package com.webtoapp.ui.shell
 
 import android.content.Context
 import android.content.res.AssetFileDescriptor
+import android.media.AudioAttributes
 import android.media.MediaPlayer
 import androidx.compose.runtime.*
+import com.webtoapp.core.bgm.BgmMediaNotifier
+import com.webtoapp.core.bgm.BgmPreviousAction
+import com.webtoapp.core.bgm.BgmTransport
+import com.webtoapp.core.bgm.bgmControlEnabled
+import com.webtoapp.core.bgm.bgmManualNextIndex
+import com.webtoapp.core.bgm.bgmPreviousAction
+import com.webtoapp.core.bgm.bgmPreviousLinearIndex
 import com.webtoapp.core.crypto.SecureAssetLoader
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.core.shell.ShellConfig
@@ -20,7 +28,9 @@ class BgmPlayerState internal constructor(
     private val _isPlaying: MutableState<Boolean>,
     private val _currentLrcData: MutableState<LrcData?>,
     private val _currentLrcLineIndex: MutableIntState,
-    private val _currentPosition: MutableLongState
+    private val _currentPosition: MutableLongState,
+    private val _title: MutableState<String>,
+    private val transport: BgmTransport
 ) {
     var player: MediaPlayer? by _player
     var currentIndex: Int by _currentIndex
@@ -28,6 +38,15 @@ class BgmPlayerState internal constructor(
     var currentLrcData: LrcData? by _currentLrcData
     var currentLrcLineIndex: Int by _currentLrcLineIndex
     var currentPosition: Long by _currentPosition
+    var title: String by _title
+
+    fun toggle() {
+        if (isPlaying) transport.pause() else transport.play()
+    }
+
+    fun next() = transport.next()
+
+    fun previous() = transport.previous()
 }
 
 /**
@@ -82,37 +101,177 @@ internal fun parseLrcText(text: String): LrcData? {
     return if (lines.isNotEmpty()) LrcData(lines = lines) else null
 }
 
-@Composable
-fun rememberBgmPlayerState(
-    context: Context,
-    config: ShellConfig,
-    enabled: Boolean = true
-): BgmPlayerState {
+private class ShellBgmSession(
+    private val context: Context,
+    initialConfig: ShellConfig,
+    private val secureAssetLoader: SecureAssetLoader,
+    private val playerState: MutableState<MediaPlayer?>,
+    private val indexState: MutableIntState,
+    private val playingState: MutableState<Boolean>,
+    private val lrcState: MutableState<LrcData?>,
+    private val lrcLineState: MutableIntState,
+    private val positionState: MutableLongState,
+    private val titleState: MutableState<String>,
+    private val tempFiles: MutableMap<String, File>
+) {
+    var config: ShellConfig = initialConfig
+    private var order: BgmShuffleOrder = BgmShuffleOrder()
 
-    val bgmPlayerState = remember { mutableStateOf<MediaPlayer?>(null) }
-    var bgmPlayer by bgmPlayerState
-    val currentBgmIndexState = remember { mutableIntStateOf(0) }
-    var currentBgmIndex by currentBgmIndexState
-    val isBgmPlayingState = remember { mutableStateOf(false) }
-    var isBgmPlaying by isBgmPlayingState
+    fun startInitial(autoPlay: Boolean) {
+        val playlist = config.bgmPlaylist
+        if (playlist.isEmpty()) return
+        order = initialBgmOrder(playlist.size, config.bgmPlayMode == "SHUFFLE")
+        val index = order.currentIndex().coerceIn(0, playlist.lastIndex)
+        preparePlayer(index, autoPlay)
+    }
 
-    val currentLrcDataState = remember { mutableStateOf<LrcData?>(null) }
-    var currentLrcData by currentLrcDataState
-    val currentLrcLineIndexState = remember { mutableIntStateOf(-1) }
-    var currentLrcLineIndex by currentLrcLineIndexState
-    val bgmCurrentPositionState = remember { mutableLongStateOf(0L) }
-    var bgmCurrentPosition by bgmCurrentPositionState
-    val secureAssetLoader = remember(context) { SecureAssetLoader.getInstance(context) }
-    val bgmTempFiles = remember { mutableMapOf<String, File>() }
+    fun play() {
+        val mp = playerState.value
+        if (mp == null) {
+            startInitial(autoPlay = true)
+            return
+        }
+        try {
+            mp.start()
+            playingState.value = true
+        } catch (e: Exception) {
+            AppLogger.e("ShellActivity", "恢复 BGM 失败", e)
+            startInitial(autoPlay = true)
+        }
+    }
 
-    fun normalizeBgmAssetPath(path: String): String {
+    fun pause() {
+        try {
+            playerState.value?.pause()
+        } catch (e: Exception) {
+            AppLogger.e("ShellActivity", "暂停 BGM 失败", e)
+        }
+        playingState.value = false
+    }
+
+    fun next() {
+        val size = config.bgmPlaylist.size
+        if (size == 0) return
+        val index = if (config.bgmPlayMode == "SHUFFLE") {
+            if (order.order.isEmpty()) order = initialBgmOrder(size, true)
+            order = advanceBgmOrder(order, size)
+            order.currentIndex()
+        } else {
+            bgmManualNextIndex(indexState.intValue, size)
+        }
+        preparePlayer(index, autoStart = true)
+    }
+
+    fun previous() {
+        val size = config.bgmPlaylist.size
+        if (size == 0) return
+        val position = try {
+            playerState.value?.currentPosition?.toLong() ?: positionState.longValue
+        } catch (e: Exception) {
+            positionState.longValue
+        }
+        if (bgmPreviousAction(position) == BgmPreviousAction.RESTART) {
+            seek(0L)
+            return
+        }
+        val index = if (config.bgmPlayMode == "SHUFFLE") {
+            if (order.order.isEmpty()) order = initialBgmOrder(size, true)
+            order = order.copy(pos = bgmPreviousLinearIndex(order.pos, order.order.size))
+            order.currentIndex()
+        } else {
+            bgmPreviousLinearIndex(indexState.intValue, size)
+        }
+        preparePlayer(index, autoStart = true)
+    }
+
+    fun seek(positionMs: Long) {
+        try {
+            playerState.value?.seekTo(positionMs.coerceAtLeast(0L).toInt())
+            positionState.longValue = positionMs.coerceAtLeast(0L)
+        } catch (e: Exception) {
+            AppLogger.e("ShellActivity", "BGM 拖动进度失败", e)
+        }
+    }
+
+    fun release() {
+        playerState.value?.let { player ->
+            runCatching {
+                if (player.isPlaying) player.stop()
+            }
+            runCatching { player.release() }
+        }
+        playerState.value = null
+        playingState.value = false
+        tempFiles.values.forEach { file ->
+            runCatching { if (file.exists()) file.delete() }
+        }
+        tempFiles.clear()
+    }
+
+    private fun preparePlayer(index: Int, autoStart: Boolean) {
+        val item = config.bgmPlaylist.getOrNull(index) ?: return
+        val player = playerState.value ?: MediaPlayer().also { playerState.value = it }
+        try {
+            player.reset()
+            player.setAudioAttributes(
+                AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_MEDIA)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                    .build()
+            )
+            setBgmDataSource(player, item.assetPath)
+            player.setVolume(config.bgmVolume, config.bgmVolume)
+            player.isLooping = config.bgmPlayMode == "LOOP" && config.bgmPlaylist.size == 1
+            player.setOnCompletionListener { onCompleted() }
+            player.prepare()
+            indexState.intValue = index
+            titleState.value = item.name
+            positionState.longValue = 0L
+            loadLrc(index)
+            if (autoStart) {
+                player.start()
+                playingState.value = true
+            } else {
+                playingState.value = false
+            }
+        } catch (e: Exception) {
+            AppLogger.e("ShellActivity", "播放 BGM 失败: ${item.name}", e)
+            playingState.value = false
+        }
+    }
+
+    private fun onCompleted() {
+        val size = config.bgmPlaylist.size
+        if (size == 0) {
+            playingState.value = false
+            return
+        }
+        val nextIndex = when (config.bgmPlayMode) {
+            "SHUFFLE" -> {
+                order = advanceBgmOrder(order, size)
+                order.currentIndex()
+            }
+            "SEQUENTIAL" -> {
+                val current = indexState.intValue
+                if (current + 1 < size) current + 1 else -1
+            }
+            else -> bgmManualNextIndex(indexState.intValue, size)
+        }
+        if (nextIndex in 0 until size) {
+            preparePlayer(nextIndex, autoStart = true)
+        } else {
+            playingState.value = false
+        }
+    }
+
+    private fun normalizeBgmAssetPath(path: String): String {
         return path.removePrefix("assets/").removePrefix("asset:///")
     }
 
-    fun setBgmDataSource(player: MediaPlayer, assetPath: String) {
+    private fun setBgmDataSource(player: MediaPlayer, assetPath: String) {
         val normalizedPath = normalizeBgmAssetPath(assetPath)
         if (secureAssetLoader.isEncrypted(normalizedPath)) {
-            val cachedFile = bgmTempFiles[normalizedPath]
+            val cachedFile = tempFiles[normalizedPath]
             if (cachedFile != null && cachedFile.exists()) {
                 player.setDataSource(cachedFile.absolutePath)
                 return
@@ -121,7 +280,7 @@ fun rememberBgmPlayerState(
             val decryptedData = secureAssetLoader.loadAsset(normalizedPath)
             val tempFile = File(context.cacheDir, "shell_bgm_${normalizedPath.hashCode()}.mp3")
             tempFile.writeBytes(decryptedData)
-            bgmTempFiles[normalizedPath] = tempFile
+            tempFiles[normalizedPath] = tempFile
             player.setDataSource(tempFile.absolutePath)
             AppLogger.d("ShellActivity", "BGM 解密加载成功: $normalizedPath (${decryptedData.size} bytes)")
             return
@@ -132,100 +291,94 @@ fun rememberBgmPlayerState(
         afd.close()
     }
 
-    fun loadLrcForCurrentBgm(bgmIndex: Int) {
+    private fun loadLrc(bgmIndex: Int) {
         if (!config.bgmShowLyrics) {
-            currentLrcData = null
+            lrcState.value = null
+            lrcLineState.intValue = -1
             return
         }
-
         val bgmItem = config.bgmPlaylist.getOrNull(bgmIndex) ?: return
-        val lrcPath = bgmItem.lrcAssetPath ?: return
-
+        val lrcPath = bgmItem.lrcAssetPath
+        if (lrcPath == null) {
+            lrcState.value = null
+            lrcLineState.intValue = -1
+            return
+        }
         try {
-            val lrcAssetPath = normalizeBgmAssetPath(lrcPath)
-            val lrcText = secureAssetLoader.loadAssetAsString(lrcAssetPath)
-            currentLrcData = parseLrcText(lrcText)
-            currentLrcLineIndex = -1
-            AppLogger.d("ShellActivity", "LRC 加载成功: $lrcPath, ${currentLrcData?.lines?.size} 行")
+            val lrcText = secureAssetLoader.loadAssetAsString(normalizeBgmAssetPath(lrcPath))
+            lrcState.value = parseLrcText(lrcText)
+            lrcLineState.intValue = -1
+            AppLogger.d("ShellActivity", "LRC 加载成功: $lrcPath, ${lrcState.value?.lines?.size} 行")
         } catch (e: Exception) {
             AppLogger.e("ShellActivity", "加载 LRC 失败: $lrcPath", e)
-            currentLrcData = null
+            lrcState.value = null
+            lrcLineState.intValue = -1
         }
     }
+}
+
+@Composable
+fun rememberBgmPlayerState(
+    context: Context,
+    config: ShellConfig,
+    enabled: Boolean = true
+): BgmPlayerState {
+    val bgmPlayerState = remember { mutableStateOf<MediaPlayer?>(null) }
+    var bgmPlayer by bgmPlayerState
+    val currentBgmIndexState = remember { mutableIntStateOf(0) }
+    val isBgmPlayingState = remember { mutableStateOf(false) }
+    var isBgmPlaying by isBgmPlayingState
+    val currentLrcDataState = remember { mutableStateOf<LrcData?>(null) }
+    var currentLrcData by currentLrcDataState
+    val currentLrcLineIndexState = remember { mutableIntStateOf(-1) }
+    var currentLrcLineIndex by currentLrcLineIndexState
+    val bgmCurrentPositionState = remember { mutableLongStateOf(0L) }
+    var bgmCurrentPosition by bgmCurrentPositionState
+    val titleState = remember { mutableStateOf("") }
+    val secureAssetLoader = remember(context) { SecureAssetLoader.getInstance(context) }
+    val bgmTempFiles = remember { mutableMapOf<String, File>() }
+    val transport = remember { BgmTransport() }
+    val notifier = remember(context) { BgmMediaNotifier(context, transport) }
+    val session = remember(context) {
+        ShellBgmSession(
+            context = context,
+            initialConfig = config,
+            secureAssetLoader = secureAssetLoader,
+            playerState = bgmPlayerState,
+            indexState = currentBgmIndexState,
+            playingState = isBgmPlayingState,
+            lrcState = currentLrcDataState,
+            lrcLineState = currentLrcLineIndexState,
+            positionState = bgmCurrentPositionState,
+            titleState = titleState,
+            tempFiles = bgmTempFiles
+        )
+    }
+    session.config = config
+    transport.play = { session.play() }
+    transport.pause = { session.pause() }
+    transport.next = { session.next() }
+    transport.previous = { session.previous() }
+    transport.seek = { session.seek(it) }
 
     LaunchedEffect(config.bgmEnabled, enabled) {
-        // Gated on activation resolution by the caller: an activation-gated app must not
-        // autoplay BGM behind the activation gate.
-        if (!enabled) return@LaunchedEffect
-        if (config.bgmEnabled && config.bgmPlaylist.isNotEmpty()) {
-            try {
-                val isShuffle = config.bgmPlayMode == "SHUFFLE"
-                var shuffleOrder = initialBgmOrder(config.bgmPlaylist.size, isShuffle)
-
-                val player = MediaPlayer()
-                val firstIndex = shuffleOrder.currentIndex()
-                val firstItem = config.bgmPlaylist[firstIndex]
-
-                setBgmDataSource(player, firstItem.assetPath)
-
-                player.setVolume(config.bgmVolume, config.bgmVolume)
-                player.isLooping = config.bgmPlayMode == "LOOP" && config.bgmPlaylist.size == 1
-
-                player.setOnCompletionListener {
-
-                    val nextIndex = when (config.bgmPlayMode) {
-                        "SHUFFLE" -> {
-                            shuffleOrder = advanceBgmOrder(shuffleOrder, config.bgmPlaylist.size)
-                            shuffleOrder.currentIndex()
-                        }
-                        "SEQUENTIAL" -> if (currentBgmIndex + 1 < config.bgmPlaylist.size) currentBgmIndex + 1 else -1
-                        else -> (currentBgmIndex + 1) % config.bgmPlaylist.size
-                    }
-
-                    if (nextIndex >= 0 && nextIndex < config.bgmPlaylist.size) {
-                        currentBgmIndex = nextIndex
-                        try {
-                            player.reset()
-                            val nextItem = config.bgmPlaylist[nextIndex]
-                            setBgmDataSource(player, nextItem.assetPath)
-                            player.prepare()
-                            player.start()
-
-                            loadLrcForCurrentBgm(nextIndex)
-                        } catch (e: Exception) {
-                            AppLogger.e("ShellActivity", "播放下一首 BGM 失败", e)
-                        }
-                    }
-                }
-
-                player.prepare()
-
-                if (config.bgmAutoPlay) {
-                    player.start()
-                    isBgmPlaying = true
-                }
-
-                bgmPlayer = player
-                currentBgmIndex = firstIndex
-
-                loadLrcForCurrentBgm(firstIndex)
-
-                AppLogger.d("ShellActivity", "BGM 播放器初始化成功: ${firstItem.name}")
-            } catch (e: Exception) {
-                AppLogger.e("ShellActivity", "初始化 BGM 播放器失败", e)
-            }
+        if (!enabled || !session.config.bgmEnabled || session.config.bgmPlaylist.isEmpty()) return@LaunchedEffect
+        try {
+            session.startInitial(autoPlay = session.config.bgmAutoPlay)
+            AppLogger.d("ShellActivity", "BGM 播放器初始化成功: ${session.config.bgmPlaylist.getOrNull(currentBgmIndexState.intValue)?.name}")
+        } catch (e: Exception) {
+            AppLogger.e("ShellActivity", "初始化 BGM 播放器失败", e)
         }
     }
 
-    LaunchedEffect(isBgmPlaying, currentLrcData) {
-        if (!isBgmPlaying || currentLrcData == null) return@LaunchedEffect
-
-        while (isBgmPlaying && currentLrcData != null) {
-            bgmPlayer?.let { mp ->
+    LaunchedEffect(isBgmPlaying) {
+        if (!isBgmPlaying) return@LaunchedEffect
+        while (isBgmPlaying) {
+            val mp = bgmPlayer
+            if (mp != null) {
                 try {
                     if (mp.isPlaying) {
                         bgmCurrentPosition = mp.currentPosition.toLong()
-
                         val lrcData = currentLrcData
                         if (lrcData != null) {
                             val newIndex = lrcData.lines.indexOfLast { it.startTime <= bgmCurrentPosition }
@@ -235,30 +388,49 @@ fun rememberBgmPlayerState(
                         }
                     }
                 } catch (e: Exception) {
-
                 }
             }
             delay(100)
         }
     }
 
+    val showNotification = enabled && config.bgmEnabled && bgmControlEnabled(config.bgmShowNotificationPlayer)
+    LaunchedEffect(showNotification) {
+        if (!showNotification) {
+            notifier.hide()
+            return@LaunchedEffect
+        }
+        while (true) {
+            val mp = bgmPlayerState.value
+            if (mp != null) {
+                val playing = try {
+                    mp.isPlaying
+                } catch (e: Exception) {
+                    false
+                }
+                if (playing != isBgmPlayingState.value) {
+                    isBgmPlayingState.value = playing
+                }
+                val position = try {
+                    mp.currentPosition.toLong()
+                } catch (e: Exception) {
+                    0L
+                }
+                val duration = try {
+                    mp.duration.toLong()
+                } catch (e: Exception) {
+                    0L
+                }
+                notifier.publish(titleState.value, playing, position, duration)
+            }
+            delay(500)
+        }
+    }
+
     DisposableEffect(Unit) {
         onDispose {
-            bgmPlayer?.let {
-                if (it.isPlaying) {
-                    it.stop()
-                }
-                it.release()
-            }
-            bgmTempFiles.values.forEach { file ->
-                try {
-                    if (file.exists()) file.delete()
-                } catch (e: Exception) {
-
-                }
-            }
-            bgmTempFiles.clear()
-            bgmPlayer = null
+            notifier.release()
+            session.release()
         }
     }
 
@@ -268,6 +440,8 @@ fun rememberBgmPlayerState(
         _isPlaying = isBgmPlayingState,
         _currentLrcData = currentLrcDataState,
         _currentLrcLineIndex = currentLrcLineIndexState,
-        _currentPosition = bgmCurrentPositionState
+        _currentPosition = bgmCurrentPositionState,
+        _title = titleState,
+        transport = transport
     )
 }
