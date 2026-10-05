@@ -153,6 +153,55 @@ class ApkExportPreflightTest {
     }
 
     @Test
+    fun `file mode still serves a cdn mdui module page over local http`() {
+        val projectDir = temp.newFolder("mdui-html")
+        File(projectDir, "index.html").writeText(
+            """
+            <html>
+              <link rel="stylesheet" href="https://unpkg.com/mdui@2/mdui.css">
+              <script type="module" src="https://unpkg.com/mdui@2/mdui.esm.js"></script>
+              <mdui-tabs><mdui-tab value="one">首页</mdui-tab></mdui-tabs>
+            </html>
+            """.trimIndent()
+        )
+        val app = WebApp(
+            name = "Mdui",
+            url = "",
+            appType = AppType.HTML,
+            htmlConfig = HtmlConfig(
+                projectDir = projectDir.absolutePath,
+                entryFile = "index.html",
+                loadMode = HtmlLoadMode.FILE
+            )
+        )
+
+        val config = app.toApkConfig("com.example.mdui", context)
+
+        assertThat(config.htmlUsesFileScheme).isFalse()
+    }
+
+    @Test
+    fun `saved project id is scanned when file mode references a cdn`() {
+        val projectId = "mdui1234"
+        val stored = File(context.filesDir, "html_projects/$projectId").apply { mkdirs() }
+        File(stored, "index.html").writeText(
+            "<html><script type=\"module\" src=\"https://unpkg.com/mdui@2/mdui.esm.js\"></script></html>"
+        )
+        val app = WebApp(
+            name = "MduiSaved",
+            url = "",
+            appType = AppType.HTML,
+            htmlConfig = HtmlConfig(
+                projectId = projectId,
+                entryFile = "index.html",
+                loadMode = HtmlLoadMode.FILE
+            )
+        )
+
+        assertThat(app.toApkConfig("com.example.mduisaved", context).htmlUsesFileScheme).isFalse()
+    }
+
+    @Test
     fun `frontend app with source project directory targets frontend asset`() {
         val app = WebApp(
             name = "Frontend",

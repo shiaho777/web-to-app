@@ -883,7 +883,7 @@ class MainViewModel(
         iconUri: Uri?,
         enableJavaScript: Boolean = true,
         enableLocalStorage: Boolean = true,
-        loadMode: HtmlLoadMode = HtmlLoadMode.FILE,
+        loadMode: HtmlLoadMode = HtmlLoadMode.AUTO,
         port: Int = 0,
         portConflictMode: com.webtoapp.data.model.PortConflictMode = com.webtoapp.data.model.PortConflictMode.AUTO_KILL
     ) = createApp("HTML", iconUri) { savedIconPath, currentThemeType, categoryId ->
@@ -1421,7 +1421,7 @@ class MainViewModel(
         iconUri: Uri?,
         enableJavaScript: Boolean = true,
         enableLocalStorage: Boolean = true,
-        loadMode: HtmlLoadMode = HtmlLoadMode.FILE,
+        loadMode: HtmlLoadMode = HtmlLoadMode.AUTO,
         port: Int = 0,
         portConflictMode: com.webtoapp.data.model.PortConflictMode = com.webtoapp.data.model.PortConflictMode.AUTO_KILL
     ) = updateApp(appId, "HTML", iconUri) { existingApp, savedIconPath ->

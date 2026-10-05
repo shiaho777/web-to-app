@@ -6313,16 +6313,16 @@ object StringsA {
     }
 
     val localServerFileDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "使用本地文件直接加载，离线可用"
-        AppLanguage.ENGLISH -> "Load local files directly, available offline"
-        AppLanguage.ARABIC -> "تحميل الملفات المحلية مباشرة، متاح دون اتصال"
-        AppLanguage.PORTUGUESE -> "Carregar arquivos locais diretamente, disponível offline"
-        AppLanguage.SPANISH -> "Cargar archivos locales directamente, disponible sin conexión"
-        AppLanguage.FRENCH -> "Charger les fichiers locaux directement, disponible hors ligne"
-        AppLanguage.GERMAN -> "Lokale Dateien direkt laden, offline verfügbar"
-        AppLanguage.RUSSIAN -> "Загружать локальные файлы напрямую, доступно офлайн"
-        AppLanguage.JAPANESE -> "ローカルファイルを直接読み込み、オフラインで利用可能"
-        AppLanguage.KOREAN -> "로컬 파일을 직접 로드, 오프라인 사용 가능"
+        AppLanguage.CHINESE -> "普通页面直接打开本地文件；用到 CDN、ES 模块或 fetch 时自动改走本地服务"
+        AppLanguage.ENGLISH -> "Plain pages open as local files. CDN, ES modules, or fetch switch to the local server automatically"
+        AppLanguage.ARABIC -> "الصفحات العادية تُفتح كملفات محلية. CDN أو وحدات ES أو fetch تنتقل تلقائيًا إلى الخادم المحلي"
+        AppLanguage.PORTUGUESE -> "Páginas simples abrem como arquivos locais. CDN, módulos ES ou fetch passam sozinhos ao servidor local"
+        AppLanguage.SPANISH -> "Las páginas simples se abren como archivos locales. CDN, módulos ES o fetch pasan solos al servidor local"
+        AppLanguage.FRENCH -> "Les pages simples s'ouvrent en fichiers locaux. Un CDN, des modules ES ou fetch passent seuls au serveur local"
+        AppLanguage.GERMAN -> "Einfache Seiten öffnen lokale Dateien. CDN, ES-Module oder fetch wechseln automatisch zum lokalen Server"
+        AppLanguage.RUSSIAN -> "Обычные страницы открываются как локальные файлы. CDN, ES-модули или fetch сами переходят на локальный сервер"
+        AppLanguage.JAPANESE -> "通常のページはローカルファイルで開きます。CDN、ES モジュール、fetch は自動でローカルサーバーに切り替わります"
+        AppLanguage.KOREAN -> "일반 페이지는 로컬 파일로 열고, CDN·ES 모듈·fetch를 쓰면 자동으로 로컬 서버를 사용합니다"
     }
 
     val localServerOnDesc: String get() = when (Strings.lang) {

@@ -4210,6 +4210,7 @@ object Strings {
     val codeEditorNoMatches: String get() = StringsE.codeEditorNoMatches
     val codeEditorBinaryFile: String get() = StringsE.codeEditorBinaryFile
     val codeEditorFileTooLarge: String get() = StringsE.codeEditorFileTooLarge
+    val codeEditorSoftWrap: String get() = StringsE.codeEditorSoftWrap
     val orWriteDirectly: String get() = StringsE.orWriteDirectly
     val deviceDisguiseTitle: String get() = StringsE.deviceDisguiseTitle
     val deviceDisguiseHint: String get() = StringsE.deviceDisguiseHint

@@ -4237,25 +4237,28 @@ private fun WebApp.computeEffectiveTargetUrl(packageName: String): String = when
     else -> url
 }
 
-@Suppress("UNUSED_PARAMETER")
-private fun com.webtoapp.data.model.HtmlConfig?.computeHtmlUsesFileScheme(context: android.content.Context?): Boolean {
+private fun com.webtoapp.data.model.HtmlConfig?.computeHtmlUsesFileScheme(
+    context: android.content.Context?,
+    crossOriginIsolation: Boolean
+): Boolean {
     val mode = this?.loadMode ?: com.webtoapp.data.model.HtmlLoadMode.AUTO
-    return when (mode) {
-        com.webtoapp.data.model.HtmlLoadMode.FILE -> true
-        com.webtoapp.data.model.HtmlLoadMode.LOCAL_HTTP -> false
-        com.webtoapp.data.model.HtmlLoadMode.AUTO -> {
-            val htmlDir = this?.projectDir?.let { java.io.File(it) }
-            if (htmlDir != null && htmlDir.exists()) {
-                com.webtoapp.core.webview.HtmlRuntimeLoadInspector.prefersFileScheme(htmlDir)
-            } else {
-                false
-            }
-        }
+    val explicitDir = this?.projectDir?.let { java.io.File(it) }?.takeIf { it.isDirectory }
+    val storedDir = if (explicitDir == null && context != null) {
+        this?.projectId?.takeIf { it.isNotBlank() }
+            ?.let { java.io.File(context.filesDir, "html_projects/$it") }
+            ?.takeIf { it.isDirectory }
+    } else {
+        null
     }
+    return com.webtoapp.core.webview.HtmlRuntimeLoadInspector.useFileScheme(
+        mode = mode,
+        rootDir = explicitDir ?: storedDir,
+        crossOriginIsolation = crossOriginIsolation
+    )
 }
 
 private fun WebApp.computeHtmlUsesFileScheme(context: android.content.Context?): Boolean =
-    htmlConfig.computeHtmlUsesFileScheme(context)
+    htmlConfig.computeHtmlUsesFileScheme(context, webViewConfig.enableCrossOriginIsolation)
 
 private fun WebApp.buildEffectiveRuntimePermissions(): ApkRuntimePermissions {
     val synced = withRuntimePermissionsSyncedFromFeatures()

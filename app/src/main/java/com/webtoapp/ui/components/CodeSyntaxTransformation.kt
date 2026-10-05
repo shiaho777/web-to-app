@@ -64,12 +64,26 @@ class CodeSyntaxTransformation(
     private val scheme: EditorColorScheme
 ) : VisualTransformation {
 
+    private var cachedSource: String? = null
+    private var cachedHighlighted: AnnotatedString? = null
+
     override fun filter(text: AnnotatedString): TransformedText {
-        val highlighted = when (language) {
-            "JavaScript", "JS", "Javascript" -> highlightJs(text)
-            "CSS" -> highlightCss(text)
-            else -> return TransformedText(text, OffsetMapping.Identity)
+        val src = text.text
+        if (src.length > MAX_HIGHLIGHT_CHARS) {
+            return TransformedText(text, OffsetMapping.Identity)
         }
+        val cached = cachedHighlighted
+        if (cached != null && cachedSource == src) {
+            return TransformedText(cached, OffsetMapping.Identity)
+        }
+        val highlighted = when (language.lowercase()) {
+            "javascript", "js" -> highlightJs(text)
+            "css" -> highlightCss(text)
+            "html", "htm" -> highlightHtml(text)
+            else -> text
+        }
+        cachedSource = src
+        cachedHighlighted = highlighted
         return TransformedText(highlighted, OffsetMapping.Identity)
     }
 
@@ -97,23 +111,23 @@ class CodeSyntaxTransformation(
         val ranges = mutableListOf<Range>()
         val src = text.text
 
-        Regex("""//[^\n]*|/\*[\s\S]*?\*/""").findAll(src).forEach { m ->
+        JS_COMMENT.findAll(src).forEach { m ->
             ranges.add(Range(m.range.first, m.range.last + 1, SpanStyle(color = scheme.comment)))
         }
 
-        Regex(""""(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`""").findAll(src).forEach { m ->
+        JS_STRING.findAll(src).forEach { m ->
             ranges.add(Range(m.range.first, m.range.last + 1, SpanStyle(color = scheme.string)))
         }
 
-        Regex("""\b(function|const|let|var|if|else|return|for|while|do|switch|case|break|continue|try|catch|finally|throw|new|class|extends|super|this|typeof|instanceof|in|of|void|delete|yield|async|await|import|export|default|from|window|document|console|true|false|null|undefined)\b""").findAll(src).forEach { m ->
+        JS_KEYWORD.findAll(src).forEach { m ->
             ranges.add(Range(m.range.first, m.range.last + 1, SpanStyle(color = scheme.keyword)))
         }
 
-        Regex("""\b\d+(?:\.\d+)?\b""").findAll(src).forEach { m ->
+        JS_NUMBER.findAll(src).forEach { m ->
             ranges.add(Range(m.range.first, m.range.last + 1, SpanStyle(color = scheme.number)))
         }
 
-        Regex("""\b[a-zA-Z_$][\w$]*(?=\s*\()""").findAll(src).forEach { m ->
+        JS_CALL.findAll(src).forEach { m ->
             ranges.add(Range(m.range.first, m.range.last + 1, SpanStyle(color = scheme.function)))
         }
 
@@ -124,26 +138,67 @@ class CodeSyntaxTransformation(
         val ranges = mutableListOf<Range>()
         val src = text.text
 
-        Regex("""/\*[\s\S]*?\*/""").findAll(src).forEach { m ->
+        CSS_COMMENT.findAll(src).forEach { m ->
             ranges.add(Range(m.range.first, m.range.last + 1, SpanStyle(color = scheme.comment)))
         }
 
-        Regex("""@[\w-]+""").findAll(src).forEach { m ->
+        CSS_AT.findAll(src).forEach { m ->
             ranges.add(Range(m.range.first, m.range.last + 1, SpanStyle(color = scheme.keyword)))
         }
 
-        Regex("""[\w-]+(?=\s*:)""").findAll(src).forEach { m ->
+        CSS_PROPERTY.findAll(src).forEach { m ->
             ranges.add(Range(m.range.first, m.range.last + 1, SpanStyle(color = scheme.keyword)))
         }
 
-        Regex(""""[^"]*"|'[^']*'""").findAll(src).forEach { m ->
+        CSS_STRING.findAll(src).forEach { m ->
             ranges.add(Range(m.range.first, m.range.last + 1, SpanStyle(color = scheme.string)))
         }
 
-        Regex("""\b\d+(?:\.\d+)?(?:px|em|rem|vh|vw|%|s|ms|deg|fr|pt)?\b""").findAll(src).forEach { m ->
+        CSS_NUMBER.findAll(src).forEach { m ->
             ranges.add(Range(m.range.first, m.range.last + 1, SpanStyle(color = scheme.number)))
         }
 
         return build(text, ranges)
+    }
+
+    private fun highlightHtml(text: AnnotatedString): AnnotatedString {
+        val ranges = mutableListOf<Range>()
+        val src = text.text
+
+        HTML_COMMENT.findAll(src).forEach { m ->
+            ranges.add(Range(m.range.first, m.range.last + 1, SpanStyle(color = scheme.comment)))
+        }
+
+        HTML_TAG.findAll(src).forEach { m ->
+            ranges.add(Range(m.range.first, m.range.last + 1, SpanStyle(color = scheme.keyword)))
+        }
+
+        HTML_ATTR.findAll(src).forEach { m ->
+            ranges.add(Range(m.range.first, m.range.last + 1, SpanStyle(color = scheme.function)))
+        }
+
+        HTML_STRING.findAll(src).forEach { m ->
+            ranges.add(Range(m.range.first, m.range.last + 1, SpanStyle(color = scheme.string)))
+        }
+
+        return build(text, ranges)
+    }
+
+    private companion object {
+        const val MAX_HIGHLIGHT_CHARS = 40_000
+        val JS_COMMENT = Regex("""//[^\n]*|/\*[\s\S]*?\*/""")
+        val JS_STRING = Regex(""""(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`""")
+        val JS_KEYWORD = Regex("""\b(function|const|let|var|if|else|return|for|while|do|switch|case|break|continue|try|catch|finally|throw|new|class|extends|super|this|typeof|instanceof|in|of|void|delete|yield|async|await|import|export|default|from|window|document|console|true|false|null|undefined)\b""")
+        val JS_NUMBER = Regex("""\b\d+(?:\.\d+)?\b""")
+        val JS_CALL = Regex("""\b[a-zA-Z_$][\w$]*(?=\s*\()""")
+        val CSS_COMMENT = Regex("""/\*[\s\S]*?\*/""")
+        val CSS_AT = Regex("""@[\w-]+""")
+        val CSS_PROPERTY = Regex("""[\w-]+(?=\s*:)""")
+        val CSS_STRING = Regex(""""[^"]*"|'[^']*'""")
+        val CSS_NUMBER = Regex("""\b\d+(?:\.\d+)?(?:px|em|rem|vh|vw|%|s|ms|deg|fr|pt)?\b""")
+        val HTML_COMMENT = Regex("""<!--[\s\S]*?-->""")
+        val HTML_TAG = Regex("""</?[A-Za-z][\w:-]*""")
+        val HTML_ATTR = Regex("""(?<=\s)[A-Za-z_:][\w:.-]*(?=\s*=)""")
+        val HTML_STRING = Regex(""""[^"]*"|'[^']*'""")
     }
 }

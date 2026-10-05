@@ -26,6 +26,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.automirrored.outlined.WrapText
 import androidx.compose.material.icons.outlined.FindReplace
 import androidx.compose.material.icons.outlined.Save
 import androidx.compose.material3.AlertDialog
@@ -57,6 +58,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -93,6 +95,14 @@ fun WtaCodeEditorDialog(
     val searchFocusRequester = remember { FocusRequester() }
     val verticalScrollState = rememberScrollState()
     val horizontalScrollState = rememberScrollState()
+    var softWrap by remember { mutableStateOf(true) }
+    val syntax = remember(language, scheme) { CodeSyntaxTransformation(language, scheme) }
+    val editorTextStyle = TextStyle(
+        fontFamily = FontFamily.Monospace,
+        fontSize = 13.sp,
+        lineHeight = 20.sp,
+        color = scheme.foreground
+    )
 
     val matches = remember(codeText, searchQuery, matchCase) {
         findMatchRanges(codeText, searchQuery, matchCase)
@@ -181,7 +191,7 @@ fun WtaCodeEditorDialog(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(0.dp),
-            color = scheme.background.copy(alpha = 0.98f),
+            color = scheme.background,
             shape = RectangleShape
         ) {
             Column(modifier = Modifier.fillMaxSize()) {
@@ -233,6 +243,14 @@ fun WtaCodeEditorDialog(
                                     .background(scheme.foreground.copy(alpha = 0.7f))
                             )
                             Spacer(modifier = Modifier.width(4.dp))
+                        }
+
+                        IconButton(onClick = { softWrap = !softWrap }) {
+                            Icon(
+                                Icons.AutoMirrored.Outlined.WrapText,
+                                contentDescription = Strings.codeEditorSoftWrap,
+                                tint = if (softWrap) accentColor else scheme.foreground
+                            )
                         }
 
                         IconButton(
@@ -443,58 +461,55 @@ fun WtaCodeEditorDialog(
                         .fillMaxWidth()
                         .weight(1f)
                 ) {
+                    val lineCount = maxOf(codeText.count { it == '\n' } + 1, 1)
+                    val showGutter = !softWrap && lineCount <= 5_000
+                    val gutterText = remember(lineCount, showGutter) {
+                        if (!showGutter) "" else (1..lineCount).joinToString("\n")
+                    }
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .verticalScroll(verticalScrollState)
                     ) {
-                        val lineCount = maxOf(codeText.count { it == '\n' } + 1, 1)
-                        Column(
-                            modifier = Modifier
-                                .width(44.dp)
-                                .background(scheme.background)
-                                .padding(end = 8.dp, top = 8.dp),
-                            horizontalAlignment = Alignment.End
-                        ) {
-                            for (i in 1..lineCount) {
-                                Text(
-                                    text = "$i",
-                                    style = TextStyle(
-                                        fontFamily = FontFamily.Monospace,
-                                        fontSize = 13.sp,
-                                        lineHeight = 20.sp,
-                                        color = scheme.gutter
-                                    )
-                                )
-                            }
+                        if (showGutter) {
+                            Text(
+                                text = gutterText,
+                                textAlign = TextAlign.End,
+                                modifier = Modifier
+                                    .width(44.dp)
+                                    .background(scheme.background)
+                                    .padding(end = 8.dp, top = 8.dp),
+                                style = editorTextStyle.copy(color = scheme.gutter)
+                            )
                         }
 
                         BasicTextField(
                             value = textFieldValue,
                             onValueChange = { textFieldValue = it },
-                            textStyle = TextStyle(
-                                fontFamily = FontFamily.Monospace,
-                                fontSize = 13.sp,
-                                lineHeight = 20.sp,
-                                color = scheme.foreground
-                            ),
+                            textStyle = editorTextStyle,
                             cursorBrush = SolidColor(accentColor),
-                            visualTransformation = CodeSyntaxTransformation(language, scheme),
+                            visualTransformation = syntax,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .horizontalScroll(horizontalScrollState)
-                                .padding(start = 9.dp, top = 8.dp, end = 8.dp, bottom = 8.dp),
+                                .then(
+                                    if (softWrap) {
+                                        Modifier
+                                    } else {
+                                        Modifier.horizontalScroll(horizontalScrollState)
+                                    }
+                                )
+                                .padding(
+                                    start = if (showGutter) 9.dp else 12.dp,
+                                    top = 8.dp,
+                                    end = 8.dp,
+                                    bottom = 8.dp
+                                ),
                             decorationBox = { innerTextField ->
                                 Box {
                                     if (codeText.isEmpty()) {
                                         Text(
                                             text = placeholder,
-                                            style = TextStyle(
-                                                fontFamily = FontFamily.Monospace,
-                                                fontSize = 13.sp,
-                                                lineHeight = 20.sp,
-                                                color = scheme.muted
-                                            )
+                                            style = editorTextStyle.copy(color = scheme.muted)
                                         )
                                     }
                                     innerTextField()

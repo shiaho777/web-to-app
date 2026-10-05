@@ -694,22 +694,26 @@ class WebViewManager(
                 suppressReloadUntil = Date.now() + 500;
             }, true);
 
-            var rawReload = location.reload.bind(location);
-            location.reload = function(forcedReload) {
-                if (Date.now() < suppressReloadUntil) {
-                    return;
-                }
-                return rawReload(forcedReload);
-            };
-            var rawGo = history.go.bind(history);
-            history.go = function(delta) {
-                if (arguments.length === 0) { return rawGo(); }
-                var d = Number(delta);
-                if (d === 0 && Date.now() < suppressReloadUntil) {
-                    return;
-                }
-                return rawGo(d);
-            };
+            try {
+                var rawReload = location.reload.bind(location);
+                location.reload = function(forcedReload) {
+                    if (Date.now() < suppressReloadUntil) {
+                        return;
+                    }
+                    return rawReload(forcedReload);
+                };
+            } catch (e) {}
+            try {
+                var rawGo = history.go.bind(history);
+                history.go = function(delta) {
+                    if (arguments.length === 0) { return rawGo(); }
+                    var d = Number(delta);
+                    if (d === 0 && Date.now() < suppressReloadUntil) {
+                        return;
+                    }
+                    return rawGo(d);
+                };
+            } catch (e) {}
         })();
         """
 

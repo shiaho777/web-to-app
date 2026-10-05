@@ -80,7 +80,7 @@ private data class HtmlEditorStateSnapshot(
     val appIcon: Uri? = null,
     val enableJavaScript: Boolean = true,
     val enableLocalStorage: Boolean = true,
-    val loadMode: HtmlLoadMode = HtmlLoadMode.FILE
+    val loadMode: HtmlLoadMode = HtmlLoadMode.AUTO
 )
 
 private fun HtmlProjectProcessor.ProjectIssue.isActionableAnalysisIssue(): Boolean {
@@ -149,7 +149,7 @@ fun CreateHtmlAppScreen(
 
     var enableJavaScript by remember { mutableStateOf(true) }
     var enableLocalStorage by remember { mutableStateOf(true) }
-    var loadMode by remember { mutableStateOf(HtmlLoadMode.FILE) }
+    var loadMode by remember { mutableStateOf(HtmlLoadMode.AUTO) }
     var serverPort by remember { mutableStateOf(0) }
     var portConflictMode by remember { mutableStateOf(PortConflictMode.AUTO_KILL) }
 
@@ -971,7 +971,7 @@ fun CreateHtmlAppScreen(
                         WtaSwitch(
                             checked = isLocalServer,
                             onCheckedChange = { enabled ->
-                                loadMode = if (enabled) HtmlLoadMode.LOCAL_HTTP else HtmlLoadMode.FILE
+                                loadMode = if (enabled) HtmlLoadMode.LOCAL_HTTP else HtmlLoadMode.AUTO
                             }
                         )
                     }

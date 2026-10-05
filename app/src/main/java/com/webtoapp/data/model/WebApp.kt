@@ -1094,7 +1094,7 @@ data class HtmlConfig(
     val enableLocalStorage: Boolean = true,
     val allowFileAccess: Boolean = true,
     val backgroundColor: String = "#FFFFFF",
-    val loadMode: HtmlLoadMode = HtmlLoadMode.FILE,
+    val loadMode: HtmlLoadMode = HtmlLoadMode.AUTO,
     val port: Int = 0,
     val portConflictMode: PortConflictMode = PortConflictMode.AUTO_KILL
 ) {

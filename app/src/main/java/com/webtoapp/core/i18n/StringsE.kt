@@ -4989,6 +4989,19 @@ object StringsE {
         AppLanguage.JAPANESE -> "ファイルが大きすぎる（1 MB 超）ため、アプリ内では編集できません"
         AppLanguage.KOREAN -> "파일이 너무 커서(1 MB 초과) 앱에서 편집할 수 없습니다"
     }
+
+    val codeEditorSoftWrap: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "自动换行"
+        AppLanguage.ENGLISH -> "Soft Wrap"
+        AppLanguage.ARABIC -> "التفاف النص"
+        AppLanguage.PORTUGUESE -> "Quebra de linha"
+        AppLanguage.SPANISH -> "Ajuste de línea"
+        AppLanguage.FRENCH -> "Retour à la ligne"
+        AppLanguage.GERMAN -> "Zeilenumbruch"
+        AppLanguage.RUSSIAN -> "Перенос строк"
+        AppLanguage.JAPANESE -> "折り返し"
+        AppLanguage.KOREAN -> "자동 줄바꿈"
+    }
     val orWriteDirectly: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "或直接编写"
         AppLanguage.ENGLISH -> "or write directly"

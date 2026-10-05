@@ -3309,12 +3309,11 @@ fun WebViewScreen(
                 if (htmlDir.exists()) {
                     try {
 
-                        val usesFileScheme = when (app.htmlConfig?.loadMode ?: HtmlLoadMode.AUTO) {
-                            HtmlLoadMode.FILE -> true
-                            HtmlLoadMode.LOCAL_HTTP -> false
-                            HtmlLoadMode.AUTO -> !app.webViewConfig.enableCrossOriginIsolation &&
-                                HtmlRuntimeLoadInspector.prefersFileScheme(htmlDir)
-                        }
+                        val usesFileScheme = HtmlRuntimeLoadInspector.useFileScheme(
+                            mode = app.htmlConfig?.loadMode ?: HtmlLoadMode.AUTO,
+                            rootDir = htmlDir,
+                            crossOriginIsolation = app.webViewConfig.enableCrossOriginIsolation
+                        )
                         if (usesFileScheme) {
                             localHttpServer.stop()
                             val normalizedEntry = entryFile.removePrefix("/").ifBlank { "index.html" }
