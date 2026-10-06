@@ -303,6 +303,26 @@ private fun TabsMode(
     }
     var sampledTop by remember { mutableStateOf<String?>(null) }
     var sampleGeneration by remember { mutableIntStateOf(0) }
+    // The highlighted page's tracker. Page-commit and page-finish bump a
+    // settled resample; the slot is read at callback time, not at remember.
+    val tabColorTracker = remember {
+        object {
+            var current: com.webtoapp.core.webview.StatusBarPageColorTracker? = null
+        }
+    }
+    val samplingCallbacks = remember(webViewCallbacks, tabColorTracker) {
+        object : com.webtoapp.core.webview.WebViewCallbacks by webViewCallbacks {
+            override fun onPageCommitVisible(url: String?) {
+                webViewCallbacks.onPageCommitVisible(url)
+                tabColorTracker.current?.scheduleSample(48L, settle = true)
+            }
+
+            override fun onPageFinished(url: String?) {
+                webViewCallbacks.onPageFinished(url)
+                tabColorTracker.current?.scheduleSample(48L, settle = true)
+            }
+        }
+    }
     LaunchedEffect(highlight) {
         if (adaptive) sampledTop = null
     }
@@ -310,6 +330,7 @@ private fun TabsMode(
     val sampleView = if (adaptive) sampleSiteId?.let { registry.webViews[it] } else null
     DisposableEffect(adaptive, sampleSiteId, sampleView, sampleGeneration) {
         if (!adaptive || sampleView == null) {
+            tabColorTracker.current = null
             onDispose { }
         } else {
             val tracker = com.webtoapp.core.webview.StatusBarPageColorTracker(
@@ -317,9 +338,13 @@ private fun TabsMode(
                 shouldSample = { true },
                 onColors = { colors -> sampledTop = colors.top }
             )
+            tabColorTracker.current = tracker
             tracker.attach()
-            tracker.scheduleSample(40L)
-            onDispose { tracker.detach() }
+            tracker.scheduleSample(40L, settle = true)
+            onDispose {
+                tracker.detach()
+                if (tabColorTracker.current === tracker) tabColorTracker.current = null
+            }
         }
     }
     val barHex = if (adaptive) {
@@ -617,7 +642,7 @@ private fun TabsMode(
                                 site = site,
                                 config = config,
                                 webViewConfig = webViewConfig,
-                                webViewCallbacks = webViewCallbacks,
+                                webViewCallbacks = samplingCallbacks,
                                 webViewManager = webViewManager,
                                 onWebViewCreated = { wv ->
                                     registry.webViews[site.id] = wv

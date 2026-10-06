@@ -429,7 +429,7 @@ fun ShellScreen(
                 }
             },
             scheduleStatusBarAutoColorSample = {
-                statusBarColorTracker?.scheduleSample(56L)
+                statusBarColorTracker?.scheduleSample(56L, settle = true)
             },
             onRefreshFinished = { isRefreshing = false },
             onConsoleLog = { entry -> consoleMessages = (consoleMessages + entry).takeLast(CONSOLE_LOG_CAP) }
@@ -564,7 +564,7 @@ fun ShellScreen(
             tracker.attach()
             statusBarColorTracker = tracker
             onWebViewCreated(webView)
-            tracker.scheduleSample(80L)
+            tracker.scheduleSample(80L, settle = true)
         }
     }
 

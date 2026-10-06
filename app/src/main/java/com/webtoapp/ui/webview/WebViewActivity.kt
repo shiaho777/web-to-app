@@ -1720,7 +1720,7 @@ fun WebViewScreen(
                 onStatusBarAutoColorChanged?.invoke(null)
                 onPageBottomColorChanged?.invoke(null)
             } else {
-                statusBarColorTracker?.scheduleSample(80L)
+                statusBarColorTracker?.scheduleSample(80L, settle = true)
             }
         }
     }
@@ -2877,7 +2877,7 @@ fun WebViewScreen(
             }
 
             override fun onPageCommitVisible(url: String?) {
-                statusBarColorTracker?.scheduleSample(48L)
+                statusBarColorTracker?.scheduleSample(48L, settle = true)
             }
 
             override fun onUrlChanged(webView: WebView?, url: String?) {
@@ -2887,7 +2887,7 @@ fun WebViewScreen(
                     canGoForward = it.canGoForward()
                 }
                 if (url != null) currentUrl = url
-                statusBarColorTracker?.scheduleSample(48L)
+                statusBarColorTracker?.scheduleSample(48L, settle = true)
             }
 
             override fun onNavigationStateChanged(newCanGoBack: Boolean, newCanGoForward: Boolean) {
@@ -2931,7 +2931,7 @@ fun WebViewScreen(
                             tc.showFloatingButton
                         )
                     }
-                    statusBarColorTracker?.scheduleSample(80L)
+                    statusBarColorTracker?.scheduleSample(80L, settle = true)
                 }
                 // WebViews without document-start script support lose the
                 // polyfill on every navigation; re-inject it (idempotent).
@@ -3836,7 +3836,7 @@ fun WebViewScreen(
                             statusBarColorTracker = tracker
                             webViewRef = wv
                             onWebViewCreated(wv, null)
-                            tracker.scheduleSample(80L)
+                            tracker.scheduleSample(80L, settle = true)
                         },
                         swipeRefreshEnabled = mwApp.webViewConfig.swipeRefreshEnabled,
                         isRefreshing = isRefreshing,
@@ -4092,7 +4092,7 @@ fun WebViewScreen(
 
                                     webViewRef = this
 
-                                    tracker.scheduleSample(80L)
+                                    tracker.scheduleSample(80L, settle = true)
                                     val host = context as? WebViewActivity
                                     val savedState = host?.consumeWebViewState()
                                     val restored = savedState?.let { restoreState(it) }

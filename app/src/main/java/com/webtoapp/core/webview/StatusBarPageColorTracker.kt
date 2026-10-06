@@ -137,41 +137,95 @@ object StatusBarPageColorSampler {
 
 data class PageEdgeColors(val top: String?, val bottom: String?)
 
+internal fun statusBarSampleDelays(firstDelayMs: Long, settle: Boolean): LongArray {
+    val first = firstDelayMs.coerceAtLeast(0L)
+    return if (settle) longArrayOf(first, first + 350L, first + 1200L) else longArrayOf(first)
+}
+
+/**
+ * `evaluateJavascript` callbacks are not ordered. A slow early read must not
+ * overwrite a color that a later read in the same burst already published,
+ * and a cancelled burst must not publish at all (#1218).
+ */
+internal class PageColorSampleGate {
+    private var generation = 0
+    private var nextId = 0
+    private var lastDelivered = 0
+
+    fun begin(): Int {
+        generation += 1
+        return generation
+    }
+
+    fun open(burst: Int): Int? {
+        if (burst != generation) return null
+        nextId += 1
+        return nextId
+    }
+
+    fun accept(burst: Int, sampleId: Int): Boolean {
+        if (burst != generation || sampleId <= lastDelivered) return false
+        lastDelivered = sampleId
+        return true
+    }
+}
+
 class StatusBarPageColorTracker(
     private val webView: WebView,
     private val shouldSample: () -> Boolean,
     private val onColors: (PageEdgeColors) -> Unit
 ) {
-    private val sampleRunnable = Runnable {
-        if (!shouldSample()) {
-            onColors(PageEdgeColors(null, null))
-            return@Runnable
-        }
-        StatusBarPageColorSampler.sample(webView, onColors)
-    }
+    private val gate = PageColorSampleGate()
+    private val pending = ArrayList<Runnable>(3)
 
     fun attach() {
         webView.setOnScrollChangeListener { _, _, _, _, _ ->
+            // One sample is enough once the user is moving the page.
             scheduleSample(48L)
         }
     }
 
     fun detach() {
-        webView.removeCallbacks(sampleRunnable)
+        cancelPending()
         webView.setOnScrollChangeListener(null)
     }
 
     fun reset() {
-        webView.removeCallbacks(sampleRunnable)
+        cancelPending()
         onColors(PageEdgeColors(null, null))
     }
 
-    fun scheduleSample(delayMs: Long = 0L) {
-        webView.removeCallbacks(sampleRunnable)
+    /**
+     * [settle] posts two later samples. A page's background often paints
+     * after the first `onPageFinished` tick, and a single early read stays
+     * on the light fallback until the next scroll or tab change (#1218).
+     */
+    fun scheduleSample(delayMs: Long = 0L, settle: Boolean = false) {
+        val burst = cancelPending()
         if (!shouldSample()) {
             onColors(PageEdgeColors(null, null))
             return
         }
-        webView.postDelayed(sampleRunnable, delayMs.coerceAtLeast(0L))
+        for (delay in statusBarSampleDelays(delayMs, settle)) {
+            val task = Runnable {
+                val sampleId = gate.open(burst) ?: return@Runnable
+                if (!shouldSample()) {
+                    if (gate.accept(burst, sampleId)) onColors(PageEdgeColors(null, null))
+                    return@Runnable
+                }
+                StatusBarPageColorSampler.sample(webView) { colors ->
+                    if (gate.accept(burst, sampleId)) onColors(colors)
+                }
+            }
+            pending.add(task)
+            webView.postDelayed(task, delay)
+        }
+    }
+
+    private fun cancelPending(): Int {
+        val burst = gate.begin()
+        for (task in pending) webView.removeCallbacks(task)
+        pending.clear()
+        return burst
     }
 }
