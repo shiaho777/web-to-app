@@ -23,13 +23,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onSizeChanged
 
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
@@ -41,9 +47,14 @@ import com.webtoapp.core.shell.MultiWebSiteShellConfig
 import com.webtoapp.core.shell.ShellConfig
 import com.webtoapp.core.webview.WebViewCallbacks
 import com.webtoapp.data.model.WebViewConfig
+import com.webtoapp.ui.design.WtaMotion
+import com.webtoapp.ui.design.performHaptic
 import com.webtoapp.ui.shared.TopTabChrome
 import com.webtoapp.ui.shared.effectiveBottomContentPadding
 import com.webtoapp.ui.shared.parseBandColor
+import com.webtoapp.ui.theme.LocalAnimationSettings
+import kotlin.math.roundToInt
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -264,12 +275,35 @@ private fun TabsMode(
     val tabsListState = rememberLazyListState()
     val registry = remember { SiteRuntimeRegistry() }
     val adaptive = placement == TabBarPlacement.TOP
+    val paging = adaptive && sites.size > 1
+    val pager = remember { TopTabPagerController(selectedTab.toFloat()) }
+    val pageAnim = remember { Animatable(selectedTab.toFloat()) }
+    val scope = rememberCoroutineScope()
+    val layoutDirection = LocalLayoutDirection.current
+    val hapticView = LocalView.current
+    val hapticsEnabled = LocalAnimationSettings.current.hapticsEnabled
+    val maxPage = (sites.size - 1).coerceAtLeast(0)
+    // Fractional position only invalidates when the on-screen page set, or the
+    // tab the bar should highlight, actually changes. The pixel offset is read
+    // later, from placement.
+    val visibleRange by remember(paging, maxPage) {
+        derivedStateOf {
+            if (!paging) selectedTab..selectedTab
+            else TopTabPager.visibleRange(pager.position, maxPage)
+        }
+    }
+    val highlight by remember(paging, maxPage) {
+        derivedStateOf {
+            if (!paging) selectedTab
+            else pager.position.roundToInt().coerceIn(0, maxPage)
+        }
+    }
     var sampledTop by remember { mutableStateOf<String?>(null) }
     var sampleGeneration by remember { mutableIntStateOf(0) }
-    LaunchedEffect(selectedTab) {
+    LaunchedEffect(highlight) {
         if (adaptive) sampledTop = null
     }
-    val sampleSiteId = if (adaptive) sites.getOrNull(selectedTab)?.id else null
+    val sampleSiteId = if (adaptive) sites.getOrNull(highlight)?.id else null
     val sampleView = if (adaptive) sampleSiteId?.let { registry.webViews[it] } else null
     DisposableEffect(adaptive, sampleSiteId, sampleView, sampleGeneration) {
         if (!adaptive || sampleView == null) {
@@ -288,48 +322,97 @@ private fun TabsMode(
     val barHex = if (adaptive) {
         TopTabChrome.backgroundHex(
             sampledTop,
-            sites.getOrNull(selectedTab)?.themeColor,
+            sites.getOrNull(highlight)?.themeColor,
             androidx.compose.foundation.isSystemInDarkTheme()
         )
     } else {
         null
     }
     SideEffect {
-        if (adaptive) onTopTabColor(if (sites.size > 1) barHex else null)
-        SiteTabSwipe.onSwipe = if (adaptive && sites.size > 1) {
-            { delta ->
-                val next = (selectedTab + delta).coerceIn(0, sites.lastIndex)
-                if (next != selectedTab) selectedTab = next
+        pager.pageCount = sites.size
+        pager.settledPage = selectedTab
+        pager.pagingEnabled = paging
+        pager.layoutSign = if (layoutDirection == LayoutDirection.Rtl) -1f else 1f
+        pager.onCommit = { page ->
+            val next = page.coerceIn(0, maxPage)
+            if (selectedTab != next) selectedTab = next
+        }
+        pager.requestSettle = { target, velocityPages, fromDrag ->
+            val page = target.coerceIn(0, maxPage)
+            pager.holding = false
+            val ticket = pager.nextTicket()
+            pager.pendingTarget = page
+            pager.settleJob?.cancel()
+            pager.settleJob = scope.launch {
+                try {
+                    pageAnim.snapTo(pager.position)
+                    pageAnim.animateTo(
+                        page.toFloat(),
+                        WtaMotion.settleSpring(),
+                        initialVelocity = velocityPages.coerceIn(-12f, 12f)
+                    ) {
+                        // A new finger owns the position. Keep running only
+                        // until the job is cancelled; don't write over the drag.
+                        if (ticket == pager.epoch && !pager.holding) {
+                            pager.position = value
+                        }
+                    }
+                    if (ticket == pager.epoch && !pager.holding) {
+                        pager.position = page.toFloat()
+                        pager.pendingTarget = null
+                        if (fromDrag && page != pager.gestureStartPage && hapticsEnabled) {
+                            performHaptic(hapticView)
+                        }
+                        if (selectedTab != page) selectedTab = page
+                    }
+                } catch (_: CancellationException) {
+                    // A newer drag or tap took the animatable's mutex.
+                }
             }
-        } else {
-            null
+        }
+        if (adaptive) onTopTabColor(if (sites.size > 1) barHex else null)
+        if (paging) {
+            SiteTabSwipe.handler = pager
+        } else if (SiteTabSwipe.handler === pager) {
+            SiteTabSwipe.handler = null
         }
     }
-    DisposableEffect(adaptive) {
+    DisposableEffect(pager) {
         onDispose {
-            SiteTabSwipe.onSwipe = null
+            if (SiteTabSwipe.handler === pager) SiteTabSwipe.handler = null
+            pager.close()
             if (adaptive) onTopTabColor(null)
         }
     }
 
-    LaunchedEffect(selectedTab, sites.size) {
+    LaunchedEffect(selectedTab, visibleRange, sites.size) {
         val site = sites.getOrNull(selectedTab)
         if (site != null) {
+            val alive = buildSet {
+                add(site.id)
+                visibleRange.forEach { index -> sites.getOrNull(index)?.id?.let(::add) }
+            }
             // Visited tabs stay composed for session restore, but a hidden
             // WebView has no reason to keep running layout/JS/media at full
             // speed — per-view onPause keeps the page, sheds the work (#1033).
+            // Cover anything that just left before showing anything new. A
+            // Gecko SurfaceView ignores Compose alpha, so it must be GONE while
+            // off-screen (#1161, #1192). Resume waits one frame so the offset
+            // layout lands first — showing it in the same turn would flash the
+            // neighbor at the old, stacked position.
             registry.webViews.forEach { (id, wv) ->
-                if (id != site.id) runCatching { wv.onPause() }
+                if (id !in alive) runCatching { wv.onPause() }
             }
-            registry.webViews[site.id]?.let { wv -> runCatching { wv.onResume() } }
-            // Engine surfaces too. Compose alpha() never reaches a GeckoView
-            // SurfaceView, and releaseSession() leaves that surface — and its
-            // last frame — in front of older tabs (#1161, #1192). onCovered
-            // sets the view to GONE so the surface is destroyed.
             registry.surfaces.forEach { (id, surface) ->
-                if (id != site.id) runCatching { surface.onCovered() }
+                if (id !in alive) runCatching { surface.onCovered() }
             }
-            registry.surfaces[site.id]?.let { surface -> runCatching { surface.onResume() } }
+            if (paging) withFrameNanos { }
+            registry.webViews.forEach { (id, wv) ->
+                if (id in alive) runCatching { wv.onResume() }
+            }
+            registry.surfaces.forEach { (id, surface) ->
+                if (id in alive) runCatching { surface.onResume() }
+            }
             registry.pushCurrent(site.id, onWebViewCreated, onBrowserSurfaceCreated)
             webViewCallbacks.onTitleChanged(site.name.ifBlank { extractDomain(site.url) })
             // onUrlChanged (not onPageStarted): the tab's page is already loaded;
@@ -339,9 +422,9 @@ private fun TabsMode(
     }
 
     // 选中项变化时把它滚动到可见区域，避免被挤出屏幕（站点多时可横向滚动）。
-    LaunchedEffect(selectedTab) {
+    LaunchedEffect(highlight) {
         if (sites.size > 1) {
-            tabsListState.animateScrollToItem(selectedTab)
+            tabsListState.animateScrollToItem(highlight)
         }
     }
 
@@ -362,8 +445,8 @@ private fun TabsMode(
             if (adaptive && sites.size > 1 && barHex != null) {
                 TopTabBar(
                     sites = sites,
-                    selectedTab = selectedTab,
-                    onSelect = { selectedTab = it },
+                    selectedTab = highlight,
+                    onSelect = { pager.jumpTo(it) },
                     listState = tabsListState,
                     showIcons = multiWebConfig.showSiteIcons,
                     barHex = barHex,
@@ -484,9 +567,19 @@ private fun TabsMode(
                     bottom = padBottom,
                     top = if (webViewConfig.hideToolbar) topPad else padTop
                 )
+                .then(
+                    if (paging) {
+                        Modifier
+                            .clipToBounds()
+                            .onSizeChanged { pager.widthPx = it.width }
+                    } else {
+                        Modifier
+                    }
+                )
         ) {
             val visitedTabs = remember { mutableStateMapOf<Int, Boolean>() }
             visitedTabs[selectedTab] = true
+            visibleRange.forEach { visitedTabs[it] = true }
 
             // Under kill-list pressure (TRIM_MEMORY_COMPLETE) drop every hidden
             // tab's composable — AndroidView.onRelease destroys each surface,
@@ -498,7 +591,7 @@ private fun TabsMode(
                     override fun onLowMemory() {}
                     override fun onTrimMemory(level: Int) {
                         if (!com.webtoapp.core.webview.WebViewMemoryTrimmer.shouldTeardownWebView(level)) return
-                        visitedTabs.keys.filter { it != selectedTab }.forEach { index ->
+                        visitedTabs.keys.filter { !pager.isPageVisible(it) }.forEach { index ->
                             val site = sites.getOrNull(index)
                             visitedTabs.remove(index)
                             if (site != null) {
@@ -515,15 +608,28 @@ private fun TabsMode(
             sites.forEachIndexed { index, site ->
                 val isVisited = visitedTabs.containsKey(index)
                 if (isVisited) {
-                    val isVisible = index == selectedTab
+                    val onScreen = index in visibleRange
                     key(site.id) {
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .zIndex(if (isVisible) 1f else 0f)
+                                .zIndex(if (index == selectedTab) 1f else 0f)
                                 .then(
-                                    if (isVisible) Modifier
-                                    else Modifier.alpha(0f)
+                                    when {
+                                        !onScreen -> Modifier.alpha(0f)
+                                        paging -> Modifier.offset {
+                                            IntOffset(
+                                                TopTabPager.translationX(
+                                                    index,
+                                                    pager.position,
+                                                    pager.widthPx,
+                                                    pager.layoutSign
+                                                ),
+                                                0
+                                            )
+                                        }
+                                        else -> Modifier
+                                    }
                                 )
                         ) {
                             SiteContent(
@@ -534,7 +640,7 @@ private fun TabsMode(
                                 webViewManager = webViewManager,
                                 onWebViewCreated = { wv ->
                                     registry.webViews[site.id] = wv
-                                    if (isVisible) {
+                                    if (index == pager.settledPage) {
                                         onWebViewCreated(wv)
                                         if (adaptive) sampleGeneration++
                                     }
@@ -544,7 +650,7 @@ private fun TabsMode(
                                 onRefresh = onRefresh,
                                 onBrowserSurfaceCreated = { surface ->
                                     registry.surfaces[site.id] = surface
-                                    if (isVisible) onBrowserSurfaceCreated(surface)
+                                    if (index == pager.settledPage) onBrowserSurfaceCreated(surface)
                                 }
                             )
                         }
@@ -642,19 +748,6 @@ private fun TopTabStrip(
                     }
                 }
             }
-        }
-    }
-}
-
-internal object SiteTabSwipe {
-    var onSwipe: ((Int) -> Unit)? = null
-
-    fun onUp(event: android.view.MotionEvent, downX: Float, downY: Float, touchSlop: Int) {
-        val dx = event.x - downX
-        val dy = event.y - downY
-        val threshold = touchSlop * 8
-        if (kotlin.math.abs(dx) > threshold && kotlin.math.abs(dx) > kotlin.math.abs(dy) * 1.5f) {
-            onSwipe?.invoke(if (dx < 0f) 1 else -1)
         }
     }
 }

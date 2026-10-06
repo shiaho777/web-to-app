@@ -988,16 +988,16 @@ object StringsA {
     }
 
     val multiWebModeTopTabsDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "顶部标签栏，左右滑动切换，颜色跟随网页"
-        AppLanguage.ENGLISH -> "Top bar, swipe sideways to switch, colors follow the page"
-        AppLanguage.ARABIC -> "شريط علوي، اسحب جانبياً للتبديل، الألوان تتبع الصفحة"
-        AppLanguage.PORTUGUESE -> "Barra superior, deslize para trocar, cores seguem a página"
-        AppLanguage.SPANISH -> "Barra superior, desliza para cambiar, los colores siguen la página"
-        AppLanguage.FRENCH -> "Barre supérieure, balayez pour changer, couleurs selon la page"
-        AppLanguage.GERMAN -> "Obere Leiste, seitlich wischen, Farben folgen der Seite"
-        AppLanguage.RUSSIAN -> "Верхняя панель, свайп для смены, цвета как у страницы"
-        AppLanguage.JAPANESE -> "上部バー、横スワイプで切り替え、色はページに追従"
-        AppLanguage.KOREAN -> "상단 바, 가로 스와이프로 전환, 색은 페이지를 따름"
+        AppLanguage.CHINESE -> "顶部标签栏，左右滑动页面跟手并带惯性，颜色跟随网页"
+        AppLanguage.ENGLISH -> "Top bar, the page follows a sideways swipe and coasts, colors follow the page"
+        AppLanguage.ARABIC -> "شريط علوي، الصفحة تتبع السحب وتكمل بحركتها، الألوان تتبع الصفحة"
+        AppLanguage.PORTUGUESE -> "Barra superior, a página segue o deslize e continua ao soltar, cores seguem a página"
+        AppLanguage.SPANISH -> "Barra superior, la página sigue el deslizamiento y continúa al soltar, los colores siguen la página"
+        AppLanguage.FRENCH -> "Barre supérieure, la page suit le balayage puis file, couleurs selon la page"
+        AppLanguage.GERMAN -> "Obere Leiste, die Seite folgt dem Wischen und gleitet nach, Farben folgen der Seite"
+        AppLanguage.RUSSIAN -> "Верхняя панель, страница следует за свайпом и доезжает, цвета как у страницы"
+        AppLanguage.JAPANESE -> "上部バー、横スワイプにページが追従し離すと惰性で着地、色はページに追従"
+        AppLanguage.KOREAN -> "상단 바, 페이지가 가로 스와이프를 따라가고 놓으면 미끄러져 안착, 색은 페이지를 따름"
     }
 
     val multiWebModeCardsDesc: String get() = when (Strings.lang) {
