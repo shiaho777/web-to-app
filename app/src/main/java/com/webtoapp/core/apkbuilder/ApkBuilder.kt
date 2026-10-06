@@ -5026,7 +5026,9 @@ private fun WebApp.buildMultiWebBlock(context: android.content.Context?, package
         ),
         cardAspectRatio = com.webtoapp.ui.shell.resolvedCardAspect(multiWebConfig?.cardAspectRatio ?: 0f),
         sitesUseOwnConfig = multiWebConfig?.sitesUseOwnConfig ?: false,
-        projectId = multiWebConfig?.projectId ?: ""
+        projectId = multiWebConfig?.projectId ?: "",
+        startTab = multiWebConfig?.startTab ?: "LAST",
+        startSiteId = multiWebConfig?.startSiteId ?: ""
     )
 }
 

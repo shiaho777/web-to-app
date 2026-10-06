@@ -1046,7 +1046,11 @@ data class MultiWebConfig(
     // Inverted storage: stored JSON predating this field deserializes to false,
     // so existing and new apps both default to "sites follow the parent config".
     val sitesUseOwnConfig: Boolean = false,
-    val projectId: String = ""
+    val projectId: String = "",
+    // LAST reopens the site from the last session. SITE opens startSiteId.
+    // A missing key stays LAST so existing apps keep resuming.
+    val startTab: String = "LAST",
+    val startSiteId: String = ""
 )
 
 data class MultiWebSite(

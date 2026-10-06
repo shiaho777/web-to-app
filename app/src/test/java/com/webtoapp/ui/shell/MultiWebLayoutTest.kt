@@ -35,6 +35,18 @@ class MultiWebLayoutTest {
     }
 
     @Test
+    fun `start tab resumes the last site unless a chosen site is pinned`() {
+        val ids = listOf("a", "b", "c")
+        assertThat(resolveMultiWebStartSiteId("LAST", "", ids, "b")).isEqualTo("b")
+        assertThat(resolveMultiWebStartSiteId("LAST", "c", ids, null)).isNull()
+        assertThat(resolveMultiWebStartSiteId("", "", ids, "gone")).isNull()
+        assertThat(resolveMultiWebStartSiteId("SITE", "c", ids, "a")).isEqualTo("c")
+        assertThat(resolveMultiWebStartSiteId("SITE", "gone", ids, "a")).isEqualTo("a")
+        assertThat(resolveMultiWebStartSiteId("SITE", "", ids, null)).isEqualTo("a")
+        assertThat(resolveMultiWebStartSiteId("SITE", "a", emptyList(), "a")).isNull()
+    }
+
+    @Test
     fun `moveListItem reorders inside bounds and ignores a bad index`() {
         assertThat(moveListItem(listOf("a", "b", "c"), 0, 2)).containsExactly("b", "c", "a").inOrder()
         assertThat(moveListItem(listOf("a", "b", "c"), 2, 0)).containsExactly("c", "a", "b").inOrder()

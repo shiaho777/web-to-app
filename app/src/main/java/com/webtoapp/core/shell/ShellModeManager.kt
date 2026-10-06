@@ -918,7 +918,15 @@ data class MultiWebShellConfig(
     val sitesUseOwnConfig: Boolean = false,
 
     @SerializedName("projectId")
-    val projectId: String = ""
+    val projectId: String = "",
+
+    // LAST reopens the last session's site. SITE opens startSiteId.
+    // A missing key stays LAST.
+    @SerializedName("startTab")
+    val startTab: String = "LAST",
+
+    @SerializedName("startSiteId")
+    val startSiteId: String = ""
 )
 
 data class MultiWebSiteShellConfig(

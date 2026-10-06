@@ -567,7 +567,9 @@ internal object ApkConfigJsonFactory {
         "drawerColumns" to multiWeb.drawerColumns,
         "cardAspectRatio" to multiWeb.cardAspectRatio,
         "sitesUseOwnConfig" to multiWeb.sitesUseOwnConfig,
-        "projectId" to multiWeb.projectId
+        "projectId" to multiWeb.projectId,
+        "startTab" to multiWeb.startTab,
+        "startSiteId" to multiWeb.startSiteId
     )
 
     private fun EmbeddedPlugin.toPayload(): Map<String, Any?> = linkedMapOf(

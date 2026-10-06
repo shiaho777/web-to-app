@@ -1169,6 +1169,58 @@ object StringsA {
         AppLanguage.KOREAN -> "사이트의 콘텐츠와 리소스만 로드하고 공통 설정은 메인 앱을 따릅니다"
     }
 
+    val multiWebStartTab: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "默认打开"
+        AppLanguage.ENGLISH -> "Open on launch"
+        AppLanguage.ARABIC -> "يفتح عند التشغيل"
+        AppLanguage.PORTUGUESE -> "Abrir ao iniciar"
+        AppLanguage.SPANISH -> "Abrir al iniciar"
+        AppLanguage.FRENCH -> "Ouverture au lancement"
+        AppLanguage.GERMAN -> "Beim Start öffnen"
+        AppLanguage.RUSSIAN -> "Открывать при запуске"
+        AppLanguage.JAPANESE -> "起動時に開く"
+        AppLanguage.KOREAN -> "실행할 때 열기"
+    }
+
+    val multiWebStartTabHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "重新打开时回到上次的站点，或直接进入指定站点。指定站点不可用时打开第一个。卡片主页选了指定站点后会跳过网格"
+        AppLanguage.ENGLISH -> "On a fresh launch, reopen the last site or go straight to a chosen one. If that site is unavailable, the first site opens. Card home skips the grid when a site is chosen"
+        AppLanguage.ARABIC -> "عند الفتح من جديد، يعود إلى آخر موقع أو يدخل موقعاً محدداً. إذا لم يعد الموقع متاحاً يُفتح الأول. الصفحة البطاقية تتجاوز الشبكة عند اختيار موقع"
+        AppLanguage.PORTUGUESE -> "Ao reabrir, volta ao último site ou entra direto no site escolhido. Se ele não existir, abre o primeiro. A página de cartões pula a grade quando um site é escolhido"
+        AppLanguage.SPANISH -> "Al reabrir, vuelve al último sitio o entra directo al sitio elegido. Si ya no está, abre el primero. El inicio de tarjetas se salta la cuadrícula cuando hay un sitio elegido"
+        AppLanguage.FRENCH -> "À la réouverture, revient au dernier site ou entre directement dans le site choisi. S'il n'est plus là, le premier s'ouvre. L'accueil en cartes saute la grille si un site est choisi"
+        AppLanguage.GERMAN -> "Beim erneuten Öffnen zur letzten Seite oder direkt zur gewählten Seite. Fehlt die, öffnet sich die erste. Die Karten-Startseite überspringt das Raster, wenn eine Seite gewählt ist"
+        AppLanguage.RUSSIAN -> "При новом запуске открывается прошлый сайт или выбранный. Если его нет, открывается первый. Карточки пропускают сетку, когда сайт задан"
+        AppLanguage.JAPANESE -> "開き直したとき、前回のサイトに戻るか指定したサイトへ直接入ります。指定先がないときは最初のサイトです。カードホームで指定するとグリッドを飛ばします"
+        AppLanguage.KOREAN -> "다시 열면 지난 사이트로 돌아가거나 지정한 사이트로 바로 들어갑니다. 지정한 사이트가 없으면 첫 사이트가 열립니다. 카드 홈은 사이트를 지정하면 격자를 건너뜁니다"
+    }
+
+    val multiWebStartLast: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "上次打开的标签"
+        AppLanguage.ENGLISH -> "Last opened tab"
+        AppLanguage.ARABIC -> "آخر لسان تم فتحه"
+        AppLanguage.PORTUGUESE -> "Última aba aberta"
+        AppLanguage.SPANISH -> "Última pestaña abierta"
+        AppLanguage.FRENCH -> "Dernier onglet ouvert"
+        AppLanguage.GERMAN -> "Zuletzt geöffneter Tab"
+        AppLanguage.RUSSIAN -> "Последняя открытая вкладка"
+        AppLanguage.JAPANESE -> "最後に開いたタブ"
+        AppLanguage.KOREAN -> "마지막으로 연 탭"
+    }
+
+    val multiWebStartSite: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "指定标签"
+        AppLanguage.ENGLISH -> "Chosen tab"
+        AppLanguage.ARABIC -> "لسان محدد"
+        AppLanguage.PORTUGUESE -> "Aba escolhida"
+        AppLanguage.SPANISH -> "Pestaña elegida"
+        AppLanguage.FRENCH -> "Onglet choisi"
+        AppLanguage.GERMAN -> "Gewählter Tab"
+        AppLanguage.RUSSIAN -> "Выбранная вкладка"
+        AppLanguage.JAPANESE -> "指定したタブ"
+        AppLanguage.KOREAN -> "지정한 탭"
+    }
+
     val multiWebFeedEmpty: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "暂无文章"
         AppLanguage.ENGLISH -> "No articles found"

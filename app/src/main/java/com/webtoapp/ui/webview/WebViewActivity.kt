@@ -3785,7 +3785,9 @@ fun WebViewScreen(
                             ),
                             cardAspectRatio = com.webtoapp.ui.shell.resolvedCardAspect(multiWebConfig.cardAspectRatio),
                             sitesUseOwnConfig = multiWebConfig.sitesUseOwnConfig,
-                            projectId = multiWebConfig.projectId
+                            projectId = multiWebConfig.projectId,
+                            startTab = multiWebConfig.startTab,
+                            startSiteId = multiWebConfig.startSiteId
                         ),
                         // App-level userscripts: MultiWebShellMode merges them into
                         // every site's effective config (site-level scripts win on

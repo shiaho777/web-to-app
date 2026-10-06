@@ -5,6 +5,12 @@ internal const val MULTI_WEB_MAX_CARD_COLUMNS = 4
 internal const val MULTI_WEB_DEFAULT_DRAWER_COLUMNS = 1
 internal const val MULTI_WEB_MAX_DRAWER_COLUMNS = 3
 internal const val MULTI_WEB_DEFAULT_CARD_ASPECT = 1.2f
+
+/** Cold start reopens the site recorded on the last switch. */
+internal const val MULTI_WEB_START_LAST = "LAST"
+
+/** Cold start opens [startSiteId], or the first site when that id is gone. */
+internal const val MULTI_WEB_START_SITE = "SITE"
 internal const val MULTI_WEB_MIN_CARD_ASPECT = 0.9f
 internal const val MULTI_WEB_MAX_CARD_ASPECT = 3.2f
 
@@ -51,6 +57,28 @@ internal fun siteCardMetrics(columns: Int, aspect: Float): SiteCardMetrics {
         cornerDp = if (compact) 14 else 20,
         emojiSp = if (tight) 16 else if (compact) 18 else 22
     )
+}
+
+/**
+ * Site id to show on a cold start. [siteIds] is the enabled list, in order.
+ *
+ * LAST returns [resumedSiteId] when it is still listed, otherwise null so
+ * tabs and the drawer can fall back to the first site and cards can reopen
+ * the grid. SITE returns the pinned id, or the first site when the pin is
+ * missing. Anything other than SITE is LAST, so an old config with no key
+ * keeps today's behavior.
+ */
+internal fun resolveMultiWebStartSiteId(
+    startTab: String,
+    startSiteId: String,
+    siteIds: List<String>,
+    resumedSiteId: String?
+): String? {
+    if (siteIds.isEmpty()) return null
+    if (startTab == MULTI_WEB_START_SITE) {
+        return startSiteId.takeIf { it in siteIds } ?: siteIds.first()
+    }
+    return resumedSiteId?.takeIf { it in siteIds }
 }
 
 internal fun <T> moveListItem(items: List<T>, fromIndex: Int, toIndex: Int): List<T> {

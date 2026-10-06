@@ -926,7 +926,9 @@ data class MultiWebBlock(
     val drawerColumns: Int = 1,
     val cardAspectRatio: Float = 1.2f,
     val sitesUseOwnConfig: Boolean = false,
-    val projectId: String = ""
+    val projectId: String = "",
+    val startTab: String = "LAST",
+    val startSiteId: String = ""
 )
 
 data class BackgroundRunConfig(

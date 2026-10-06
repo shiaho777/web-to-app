@@ -263,8 +263,12 @@ private fun TabsMode(
     // id is validated against the current site list before use (#1036).
     var selectedTab by rememberSaveable {
         mutableIntStateOf(
-            resumeStore.resumeSiteId(resumeKey)
-                ?.let { savedId -> sites.indexOfFirst { it.id == savedId }.takeIf { it >= 0 } }
+            resolveMultiWebStartSiteId(
+                multiWebConfig.startTab,
+                multiWebConfig.startSiteId,
+                sites.map { it.id },
+                resumeStore.resumeSiteId(resumeKey)
+            )?.let { savedId -> sites.indexOfFirst { it.id == savedId }.takeIf { it >= 0 } }
                 ?: 0
         )
     }
@@ -749,8 +753,12 @@ private fun CardsMode(
     // cold start must reopen the grid, not a site they already left (#1036).
     var openSiteId by rememberSaveable {
         mutableStateOf(
-            resumeStore.resumeSiteId(resumeKey)
-                ?.takeIf { savedId -> sites.any { it.id == savedId } }
+            resolveMultiWebStartSiteId(
+                multiWebConfig.startTab,
+                multiWebConfig.startSiteId,
+                sites.map { it.id },
+                resumeStore.resumeSiteId(resumeKey)
+            )
         )
     }
     LaunchedEffect(openSiteId) {
@@ -1237,9 +1245,12 @@ private fun DrawerMode(
     // recorded (#1036).
     var selectedSiteId by rememberSaveable {
         mutableStateOf(
-            resumeStore.resumeSiteId(resumeKey)
-                ?.takeIf { savedId -> sites.any { it.id == savedId } }
-                ?: sites.firstOrNull()?.id
+            resolveMultiWebStartSiteId(
+                multiWebConfig.startTab,
+                multiWebConfig.startSiteId,
+                sites.map { it.id },
+                resumeStore.resumeSiteId(resumeKey)
+            ) ?: sites.firstOrNull()?.id
         )
     }
     LaunchedEffect(selectedSiteId) {

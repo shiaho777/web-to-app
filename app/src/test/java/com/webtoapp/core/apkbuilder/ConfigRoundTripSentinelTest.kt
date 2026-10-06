@@ -441,6 +441,23 @@ class ConfigRoundTripSentinelTest {
     }
 
     @Test
+    fun `multi-web start tab round-trips and a missing key stays on the last site`() {
+        val app = baseApp(AppType.MULTI_WEB).copy(
+            multiWebConfig = MultiWebConfig(
+                startTab = "SITE",
+                startSiteId = "site_b"
+            )
+        )
+        val shell = roundTrip(app)
+        assertThat(shell.multiWebConfig.startTab).isEqualTo("SITE")
+        assertThat(shell.multiWebConfig.startSiteId).isEqualTo("site_b")
+
+        val legacy = GsonProvider.gson.fromJson("""{"displayMode":"TABS"}""", MultiWebShellConfig::class.java)
+        assertThat(legacy.startTab).isEqualTo("LAST")
+        assertThat(legacy.startSiteId).isEqualTo("")
+    }
+
+    @Test
     fun `runtimePermissions are derived from backgroundRun and notification`() {
         val app = baseApp().copy(
             apkExportConfig = ApkExportConfig(
