@@ -22,7 +22,7 @@ A broad set of browser behavior toggles. This card collects the advanced `WebVie
 
 ## Downloads
 
-- **Downloads** — enable downloads and choose location (`downloadEnabled`, `downloadLocationMode`: system / app-private / custom SAF dir).
+- **Downloads** — enable downloads and choose a location (`downloadEnabled`, `downloadLocationMode`: system Downloads, app-private, a custom SAF folder, or **Choose each time**). Choose each time opens the system save dialog for every download, including blob, data, and media files. Cancelling the dialog writes nothing. The default stays system Downloads.
 
 ## Networking & privacy
 

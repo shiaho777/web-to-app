@@ -23,7 +23,7 @@ The Web type's core config is the WebView behavior (backed by `WebViewConfig`).
 
 ### Injection
 
-- **JS/CSS injection** — inject scripts/styles at document-start, document-end, or idle (`injectScripts`).
+- **JS/CSS injection** — inject scripts/styles at document-start, document-end, or idle (`injectScripts`). **View Code** opens the built-in editor, including a userscript stored as a file. Saving the editor updates the draft. Leaving the script dialog without saving keeps the stored script.
 
 ### Popups & windows
 

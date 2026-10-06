@@ -21,7 +21,7 @@
 
 ### 加载
 
-- **加载模式**(`loadMode`)—— `AUTO`、`FILE`(文件协议)或 `LOCAL_HTTP`(本地服务器)。
+- **加载模式**(`loadMode`)—— `AUTO`(新建应用的默认值)、`FILE`(文件协议)或 `LOCAL_HTTP`(本地服务器)。
 - **端口**(`port`)—— 本地服务器端口(用于 `LOCAL_HTTP`)。
 - **端口冲突模式**(`portConflictMode`)—— `AUTO_KILL` 或 `ALERT`。
 
@@ -38,6 +38,7 @@
 ## 说明
 
 - 生成的应用获得 `allowFileAccess`,使纯文件加载可离线工作。
+- `AUTO` 对普通页面使用文件协议。页面需要真实源时改由本地 HTTP 服务器提供:CDN 地址、ES 模块(`type=module` 或动态 `import(`)、`.mjs`、`.wasm`、Service Worker、Web Manifest,或跨源隔离。已保存的 `FILE` 页面仍走文件协议,除非它需要这个源。只用 `fetch` 或 `localStorage` 不会强制走服务器。`LOCAL_HTTP` 始终走服务器。内置代码编辑器默认软换行,可以关掉,并会高亮 HTML。
 - **HTML vs 前端 vs 离线包:**
   - **HTML** —— 你已经有静态文件。
   - [前端](/zh/guide/app-types/frontend) —— 你有一个框架项目,打包其构建输出。

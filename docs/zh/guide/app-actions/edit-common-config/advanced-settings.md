@@ -22,7 +22,7 @@
 
 ## 下载
 
-- **下载** —— 启用下载并选择位置(`downloadEnabled`、`downloadLocationMode`:系统 / 应用私有 / 自定义 SAF 目录)。
+- **下载** —— 启用下载并选择位置(`downloadEnabled`、`downloadLocationMode`:系统下载目录 / 应用私有 / 自定义 SAF 目录 / **每次选择位置**)。每次选择位置会为每一次下载弹出系统保存对话框,包括 blob、data 和媒体文件。取消对话框则不写入。默认仍是系统下载目录。
 
 ## 网络与隐私
 

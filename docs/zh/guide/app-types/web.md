@@ -23,7 +23,7 @@
 
 ### 注入
 
-- **JS/CSS 注入** —— 在 document-start、document-end 或 idle 注入脚本/样式(`injectScripts`)。
+- **JS/CSS 注入** —— 在 document-start、document-end 或 idle 注入脚本/样式(`injectScripts`)。**查看代码**会打开内置编辑器,包括以文件保存的油猴脚本。在编辑器里保存会更新草稿。不保存就离开脚本对话框时,已存储的脚本保持原样。
 
 ### 弹窗与窗口
 

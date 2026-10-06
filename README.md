@@ -175,7 +175,7 @@ WebToApp has a large number of switches. The sections below group them by use ca
 - **Failover** — automatic fallback to mirror URLs when the primary target is unreachable.
 - **PWA** offline cache strategies, custom error pages, per-app host overrides, and payment-scheme handlers.
 - **Compatibility toggles** — blob download interception, scroll memory, image repair, clipboard / orientation / notification polyfills, private-network bridging, and Native Bridge capability gates.
-- **Download location** — system Downloads, app-private storage, or a user-picked SAF folder, wired through the full packaging passthrough chain.
+- **Download location** — system Downloads, app-private storage, a user-picked SAF folder, or the system save dialog on every download, wired through the full packaging passthrough chain.
 
 </details>
 
@@ -209,7 +209,7 @@ WebToApp has a large number of switches. The sections below group them by use ca
 <summary><b>🧩 Extensions & automation</b></summary>
 
 - **Built-in modules** — video download (YouTube / Bilibili / Douyin / Xiaohongshu extractors), video enhancer with YouTube cleanup (ad skip, max quality, background play, SponsorBlock), web analyzer, find-in-page, dark mode, privacy tools, content enhancer, element blocker, and YouTube launcher.
-- **Userscripts** — Greasemonkey/Tampermonkey-style `.user.js` with a `GM_*` bridge (storage, requests, styles, menu commands) and promise-based `GM.*` APIs gated by script grants.
+- **Userscripts** — Greasemonkey/Tampermonkey-style `.user.js` with a `GM_*` bridge (storage, requests, styles, menu commands) and promise-based `GM.*` APIs gated by script grants. View Code opens the built-in editor, including a script stored as a file.
 - **MV3 Chrome extension runtime** for manifest content scripts in isolated or main worlds, with `chrome.*` polyfills for runtime, storage, tabs, scripting, and declarative network-request parsing.
 - **In-app Chrome Web Store search** — browse and install browser extensions by keyword (or paste a store URL / extension ID), with offline fallback to manual import.
 - **Export codes** (`WTA1:` gzip + Base64) and QR sharing via ZXing.
@@ -221,9 +221,9 @@ WebToApp has a large number of switches. The sections below group them by use ca
 <summary><b>📱 App experience</b></summary>
 
 - **Splash screens** — image or video, with skip behavior, trim ranges, and fixed orientation.
-- **Background music** — playlists with synced LRC lyrics, lyric animations, custom font/color/stroke/shadow, and online music search.
+- **Background music** — playlists with synced LRC lyrics, lyric animations, custom font/color/stroke/shadow, online music search, a draggable floating player, and a notification player.
 - **Toolbar, status bar (light & dark), navigation, floating-window mode, and long-press menu styles.** The browser toolbar is a master toggle (off by default) with per-item buttons for title/URL/back/forward/refresh plus a native **find-in-page** bottom bar and a **console** panel for on-device debugging. Status bar color can follow theme, a custom color, full transparency, or **PAGE_TOP** (sample the page’s top pixels so the chrome matches the content).
-- **Download location mode** — system Downloads, app-private directory, or a custom SAF folder picked by the user.
+- **Download location mode** — system Downloads, app-private directory, a custom SAF folder, or the system save dialog on every download.
 - **Announcement templates** for launch, interval, and no-network moments.
 - **Host app language** — switch the entire builder UI among 10 languages (中文 / English / العربية / Português / Español / Français / Deutsch / Русский / 日本語 / 한국어); Arabic is full RTL.
 - **Translation overlay** — 20 target languages via Google, MyMemory, LibreTranslate, or Lingva engines, with automatic failover across them (in-page translate for the *content* of generated apps, separate from host UI language).
@@ -252,7 +252,7 @@ WebToApp has a large number of switches. The sections below group them by use ca
 
 - **File manager** — a single screen to view, share, install, open, and clear build outputs (APK builds, AAB exports, app clones, build logs) and a user-files directory, with a read-only build-log viewer.
 - **Website scraper** for offline packs — HTML, CSS, JS, images, fonts, `url()`, `srcset`, `@import`, path rewriting, same-domain limits, depth limits, and size limits; parallel streaming worker pool with main-thread progress callbacks.
-- **Multi-Web layouts** — tabs, cards, feeds, drawers, per-site icons/theme colors/extraction selectors/refresh intervals, and shared JS/CSS.
+- **Multi-Web layouts** — bottom tabs, top tabs that follow a sideways swipe, cards (1–4 columns and a height slider), feeds, drawers (1–3 columns), site order, the tab opened on launch, per-site icons/theme colors/extraction selectors/refresh intervals, and shared JS/CSS.
 - **Gallery apps** — categorized media, grid/list/timeline views, shuffle/single-loop, sorting, thumbnail bar, overlays, auto-next, and playback memory.
 - **App Modifier** — shortcut disguise or real binary clone with manifest/resource patching and re-signing.
 

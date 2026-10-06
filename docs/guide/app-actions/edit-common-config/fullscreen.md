@@ -20,6 +20,7 @@ Whether the in-app toolbar shows during fullscreen is governed by the [Browser T
 
 - When the status bar is visible, the splash countdown/skip chip sits below it so it is never covered.
 - The bottom content padding stays on the physical screen edge. Opening the keyboard keeps only the part of that band the keyboard does not cover. Once the keyboard is taller than the band, the page sits flush on the keyboard.
-- Transparent and follow-page modes sample the system WebView and paint the navigation bar and the fullscreen margin bands from the page. Theme and custom modes keep the colors you set. GeckoView cannot return that sample, so it keeps the previous bar colors.
+- Transparent and follow-page modes sample the system WebView and paint the navigation bar and the fullscreen margin bands from the page. The first paint is sampled again, so the first screen is not left on the light fallback. Theme and custom modes keep the colors you set. GeckoView cannot return that sample, so it keeps the previous bar colors.
+- Top and bottom tab pages use the fullscreen content padding once. Cards, the drawer, and the feed already did.
 - Fullscreen **video** orientation (landscape/sensor for fullscreen video playback, `fullscreenVideoOrientation`) is configured under [Special Settings](/guide/app-actions/edit-common-config/special-settings). The same card also has **hide status bar in video fullscreen** (`hideStatusBarInVideoFullscreen`, on by default), which force-hides the status bar while a web video is in HTML5 fullscreen even when "show status bar in fullscreen" is on.
 - Keyboard-avoidance behavior below Android 11 uses the classic window-resize path; see [Special Settings](/guide/app-actions/edit-common-config/special-settings) for the keyboard adjust mode.

@@ -26,7 +26,10 @@ Each site entry has:
 ### Layout & display
 
 - **Display mode** (`displayMode`) — chosen in the editor. **Bottom Tabs** (`TABS`, the default for new apps), **Top Tabs** (`TOP_TABS`), **Card Home** (`CARDS`), **Side Drawer** (`DRAWER`), or **Feed** (`FEED`).
-- **Top Tabs** — labels sit under the status bar. The selected site has a dot. A sideways swipe on the page switches sites. The bar background follows a live sample of the top of the current page, then the site's theme color. **Show site icons** applies here too. On GeckoView the sample is unavailable, so the bar uses the theme color. A covered Gecko tab is collapsed, so switching back shows that tab's page instead of the newest frame.
+- **Top Tabs** — labels sit under the status bar. The selected site has a dot. A sideways swipe follows the finger and coasts onto the neighboring site. One gesture stays on the current page or the next one; past the ends the page rubber-bands. Bottom tabs, cards, the drawer, and the feed stay a discrete switch. The bar background follows a live sample of the top of the current page, then the site's theme color. The first paint is sampled again, so the bar is not left on the light fallback. **Show site icons** applies here too. On GeckoView the sample is unavailable, so the bar uses the theme color. A covered Gecko tab is collapsed, so switching back shows that tab's page instead of the newest frame.
+- **Card home and drawer** — card home uses 1–4 columns (`cardColumns`, default 2). The side drawer uses 1–3 (`drawerColumns`, default 1). More columns shrink the whole card. A height slider shortens it further (`cardAspectRatio`, default 1.2). An old config that omits these keys keeps that layout.
+- **Site order** — long-press the grip in the site list. The order is saved with the app and written into the export, so the generated app shows the same sequence.
+- **Tab opened on launch** (`startTab`) — **Last opened** (`LAST`, the default) or a chosen site (`SITE` plus `startSiteId`). A pinned site that was removed or disabled falls back to the first site. Card home skips the grid when a site is pinned. Feed mode has no current tab, so the control is hidden there.
 - **Show site icons** (`showSiteIcons`).
 
 ### Refresh
