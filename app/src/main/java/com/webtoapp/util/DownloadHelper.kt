@@ -195,6 +195,13 @@ object DownloadHelper {
 
         val fileName = parseFileName(safeUrl, contentDisposition, mimeType)
 
+        if (downloadLocationMode == com.webtoapp.data.model.DownloadLocationMode.ASK) {
+            downloadToUserChoice(
+                context, safeUrl, userAgent, fileName, mimeType, scope
+            )
+            return
+        }
+
         if (saveToGallery && MediaSaver.isMediaFile(mimeType, fileName) && scope != null) {
             saveMediaToGallery(context, safeUrl, fileName, mimeType, scope)
             return
@@ -279,6 +286,11 @@ object DownloadHelper {
         }
 
         val fileName = parseFileName(safeUrl, contentDisposition, mimeType)
+
+        if (downloadLocationMode == com.webtoapp.data.model.DownloadLocationMode.ASK) {
+            downloadToUserChoice(context, safeUrl, userAgent, fileName, mimeType, scope)
+            return
+        }
 
         if (downloadLocationMode == com.webtoapp.data.model.DownloadLocationMode.CUSTOM && customDownloadDirUri.isNotBlank()) {
             downloadInApp(context, safeUrl, userAgent, fileName, mimeType, scope, downloadLocationMode, customDownloadDirUri)
@@ -387,7 +399,9 @@ object DownloadHelper {
                 com.webtoapp.data.model.DownloadLocationMode.APP_PRIVATE -> {
                     setDestinationInExternalFilesDir(context, Environment.DIRECTORY_DOWNLOADS, fileName)
                 }
-                else -> {
+                com.webtoapp.data.model.DownloadLocationMode.SYSTEM_DOWNLOAD,
+                com.webtoapp.data.model.DownloadLocationMode.CUSTOM,
+                com.webtoapp.data.model.DownloadLocationMode.ASK -> {
                     setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName)
                 }
             }
@@ -415,6 +429,81 @@ object DownloadHelper {
         com.webtoapp.WebToAppApplication.shellMode.isShellMode()
     } catch (_: Exception) {
         false
+    }
+
+    private fun downloadToUserChoice(
+        context: Context,
+        url: String,
+        userAgent: String,
+        fileName: String,
+        mimeType: String,
+        scope: CoroutineScope?
+    ) {
+        val mime = mimeType.ifBlank { "application/octet-stream" }
+        DownloadSavePrompter.prompt(context, fileName, mime) { uri ->
+            if (uri == null) {
+                Toast.makeText(context, Strings.downloadSaveCancelled, Toast.LENGTH_SHORT).show()
+                return@prompt
+            }
+            val notificationManager = DownloadNotificationManager.getInstance(context)
+            val notificationId = notificationManager.showIndeterminateProgress(fileName)
+            val worker = scope ?: CoroutineScope(Dispatchers.IO)
+            worker.launch(Dispatchers.IO) {
+                var connection: java.net.HttpURLConnection? = null
+                try {
+                    connection = (java.net.URL(url).openConnection() as java.net.HttpURLConnection).apply {
+                        connectTimeout = 30000
+                        readTimeout = 60000
+                        requestMethod = "GET"
+                        setRequestProperty("User-Agent", userAgent)
+                        CookieManager.getInstance().getCookie(url)?.let { cookie ->
+                            if (cookie.isNotBlank()) setRequestProperty("Cookie", cookie)
+                        }
+                        buildOriginHeader(url)?.let { origin ->
+                            setRequestProperty("Origin", origin)
+                            setRequestProperty("Referer", "$origin/")
+                        }
+                        instanceFollowRedirects = true
+                    }
+                    val responseCode = connection.responseCode
+                    if (responseCode !in 200..299) {
+                        throw java.io.IOException("HTTP $responseCode")
+                    }
+                    val actualMime = mimeType.ifBlank {
+                        connection.contentType?.substringBefore(';')?.trim().orEmpty()
+                    }.ifBlank { "application/octet-stream" }
+                    val output = context.contentResolver.openOutputStream(uri)
+                        ?: throw java.io.IOException("Cannot write file")
+                    output.use { out ->
+                        connection.inputStream.use { input ->
+                            input.copyTo(out, bufferSize = 64 * 1024)
+                        }
+                    }
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(context, Strings.savedTo.replace("%s", fileName), Toast.LENGTH_LONG).show()
+                        notificationManager.showSaveComplete(
+                            fileName = fileName,
+                            filePath = uri.toString(),
+                            mimeType = actualMime,
+                            progressNotificationId = notificationId,
+                            contentUri = uri.toString()
+                        )
+                    }
+                } catch (e: Exception) {
+                    AppLogger.e(TAG, "Save to chosen location failed", e)
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(
+                            context,
+                            Strings.saveFailedWithReason.replace("%s", e.message ?: ""),
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        notificationManager.showSaveFailed(fileName, e.message ?: Strings.unknownError, notificationId)
+                    }
+                } finally {
+                    connection?.disconnect()
+                }
+            }
+        }
     }
 
     private fun downloadInApp(
@@ -530,6 +619,9 @@ object DownloadHelper {
         val baseDir = when (downloadLocationMode) {
             com.webtoapp.data.model.DownloadLocationMode.APP_PRIVATE -> {
                 context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS) ?: context.filesDir
+            }
+            com.webtoapp.data.model.DownloadLocationMode.ASK -> {
+                throw IllegalStateException("ASK downloads use the system save dialog")
             }
             com.webtoapp.data.model.DownloadLocationMode.CUSTOM -> {
                 if (customDownloadDirUri.isNotBlank()) {

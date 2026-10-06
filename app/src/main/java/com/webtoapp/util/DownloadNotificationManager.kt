@@ -430,13 +430,14 @@ class DownloadNotificationManager(private val context: Context) {
         fileName: String,
         filePath: String,
         mimeType: String,
-        progressNotificationId: Int
+        progressNotificationId: Int,
+        contentUri: String? = null
     ) {
         notificationManager.cancel(progressNotificationId)
 
         val notificationId = CUSTOM_NOTIFICATION_ID_BASE + customNotificationIdCounter.incrementAndGet()
 
-        val openIntent = createOpenFileIntent("file://$filePath", mimeType)
+        val openIntent = createOpenFileIntent(contentUri ?: "file://$filePath", mimeType)
         val pendingIntent = if (openIntent != null) {
             PendingIntent.getActivity(
                 context, notificationId, openIntent,

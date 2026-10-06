@@ -1006,6 +1006,7 @@ object Strings {
     val savingVideo: String get() = StringsA.savingVideo
     val videoSavedToGallery: String get() = StringsA.videoSavedToGallery
     val startDownload: String get() = StringsA.startDownload
+    val downloadSaveCancelled: String get() = StringsA.downloadSaveCancelled
     val downloadFailedWithReason: String get() = StringsA.downloadFailedWithReason
     val previewAnnouncementEffect: String get() = StringsA.previewAnnouncementEffect
     val textGeneration: String get() = StringsA.textGeneration
@@ -4785,6 +4786,8 @@ object Strings {
     val downloadLocationSystem: String get() = StringsE.downloadLocationSystem
     val downloadLocationAppPrivate: String get() = StringsE.downloadLocationAppPrivate
     val downloadLocationCustom: String get() = StringsE.downloadLocationCustom
+    val downloadLocationAsk: String get() = StringsE.downloadLocationAsk
+    val downloadLocationAskHint: String get() = StringsE.downloadLocationAskHint
     val downloadLocationCustomPick: String get() = StringsE.downloadLocationCustomPick
     val downloadLocationCustomEmpty: String get() = StringsE.downloadLocationCustomEmpty
     val downloadLocationCustomHint: String get() = StringsE.downloadLocationCustomHint

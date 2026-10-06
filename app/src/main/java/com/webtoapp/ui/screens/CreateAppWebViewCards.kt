@@ -953,6 +953,35 @@ fun BrowserAdvancedConfigCard(
                     ),
                     verticalArrangement = Arrangement.spacedBy(WtaSpacing.SectionGap)
                 ) {
+                    WtaSection(
+                        title = Strings.downloadLocationLabel,
+                        headerStyle = WtaSectionHeaderStyle.Quiet,
+                        collapsible = true,
+                        initiallyExpanded = true
+                    ) {
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            WtaToggleRow(
+                                title = Strings.downloadLocationAsk,
+                                subtitle = Strings.downloadLocationAskHint.ifDescriptionsShown(),
+                                icon = Icons.Outlined.FolderOpen,
+                                checked = config.downloadLocationMode == com.webtoapp.data.model.DownloadLocationMode.ASK,
+                                onCheckedChange = { enabled ->
+                                    onConfigChange(
+                                        config.copy(
+                                            downloadLocationMode = if (enabled) {
+                                                com.webtoapp.data.model.DownloadLocationMode.ASK
+                                            } else if (config.downloadLocationMode == com.webtoapp.data.model.DownloadLocationMode.ASK) {
+                                                com.webtoapp.data.model.DownloadLocationMode.SYSTEM_DOWNLOAD
+                                            } else {
+                                                config.downloadLocationMode
+                                            }
+                                        )
+                                    )
+                                }
+                            )
+                        }
+                    }
+
                     // Documented home of User-Agent mode. The card below used to exist only as
                     // an unreferenced composable, so the editor could never persist CUSTOM and
                     // every exported APK kept the system WebView identity.
@@ -3953,7 +3982,8 @@ fun SpecialSettingsCard(
                                 options = listOf(
                                     com.webtoapp.data.model.DownloadLocationMode.SYSTEM_DOWNLOAD to Strings.downloadLocationSystem,
                                     com.webtoapp.data.model.DownloadLocationMode.APP_PRIVATE to Strings.downloadLocationAppPrivate,
-                                    com.webtoapp.data.model.DownloadLocationMode.CUSTOM to Strings.downloadLocationCustom
+                                    com.webtoapp.data.model.DownloadLocationMode.CUSTOM to Strings.downloadLocationCustom,
+                                    com.webtoapp.data.model.DownloadLocationMode.ASK to Strings.downloadLocationAsk
                                 ),
                                 selected = config.downloadLocationMode,
                                 onSelect = { onConfigChange(config.copy(downloadLocationMode = it)) }

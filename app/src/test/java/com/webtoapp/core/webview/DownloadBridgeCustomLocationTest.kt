@@ -2,6 +2,7 @@ package com.webtoapp.core.webview
 
 import android.content.Context
 import android.os.Environment
+import android.os.Looper
 import android.util.Base64
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
@@ -99,5 +100,26 @@ class DownloadBridgeCustomLocationTest {
         val saved = awaitFile(privateDir, "shot.png")
         assertThat(saved).isNotNull()
         assertThat(saved!!.name).isEqualTo("shot.png")
+    }
+
+    @Test
+    fun `ask mode opens the system save dialog and does not write a file`() {
+        bridge(DownloadLocationMode.ASK)
+            .saveBase64File(imagePngBase64(), "shot.png", "image/png")
+
+        val app = context.applicationContext as android.app.Application
+        val deadline = System.currentTimeMillis() + 5000
+        var started: android.content.Intent? = null
+        while (System.currentTimeMillis() < deadline && started == null) {
+            shadowOf(Looper.getMainLooper()).idle()
+            started = shadowOf(app).nextStartedActivity
+            if (started == null) Thread.sleep(40)
+        }
+        assertThat(started).isNotNull()
+        assertThat(started!!.component?.className).isEqualTo("com.webtoapp.ui.shell.DownloadSaveActivity")
+
+        val privateDir = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS) ?: context.filesDir
+        val written = privateDir.listFiles()?.any { it.name.startsWith("shot") } == true
+        assertThat(written).isFalse()
     }
 }

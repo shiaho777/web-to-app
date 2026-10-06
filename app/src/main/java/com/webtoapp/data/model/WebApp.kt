@@ -1855,7 +1855,9 @@ enum class DownloadLocationMode {
 
     APP_PRIVATE,
 
-    CUSTOM
+    CUSTOM,
+
+    ASK
 }
 
 enum class PrimeUserActivationMode {

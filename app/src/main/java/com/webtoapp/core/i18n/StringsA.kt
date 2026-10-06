@@ -12888,6 +12888,19 @@ object StringsA {
         AppLanguage.KOREAN -> "다운로드 시작: %s"
     }
 
+    val downloadSaveCancelled: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "已取消保存"
+        AppLanguage.ENGLISH -> "Save cancelled"
+        AppLanguage.ARABIC -> "تم إلغاء الحفظ"
+        AppLanguage.PORTUGUESE -> "Salvamento cancelado"
+        AppLanguage.SPANISH -> "Guardado cancelado"
+        AppLanguage.FRENCH -> "Enregistrement annulé"
+        AppLanguage.GERMAN -> "Speichern abgebrochen"
+        AppLanguage.RUSSIAN -> "Сохранение отменено"
+        AppLanguage.JAPANESE -> "保存をキャンセルしました"
+        AppLanguage.KOREAN -> "저장이 취소되었습니다"
+    }
+
     val downloadFailedWithReason: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "下载失败: %s"
         AppLanguage.ENGLISH -> "Download failed: %s"

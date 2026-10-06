@@ -656,6 +656,20 @@ class DownloadBridge(
 
                 AppLogger.d("DownloadBridge", "Chunked download complete, saving file: ${download.filename}")
 
+                if (downloadLocationMode == DownloadLocationMode.ASK) {
+                    saveViaSystemPicker(
+                        filename = download.filename,
+                        mimeType = download.mimeType,
+                        progressNotificationId = download.notificationId,
+                        onFinished = { cleanupChunkedDownload(downloadId, true) }
+                    ) { output ->
+                        java.io.FileInputStream(download.file).use { input ->
+                            input.copyTo(output, bufferSize = 64 * 1024)
+                        }
+                    }
+                    return@launch
+                }
+
                 if (downloadLocationMode == DownloadLocationMode.SYSTEM_DOWNLOAD &&
                     com.webtoapp.util.MediaSaver.isMediaFile(download.mimeType, download.filename)) {
 
@@ -742,6 +756,13 @@ class DownloadBridge(
 
                 val safeFilename = sanitizeFilename(filename)
 
+                if (downloadLocationMode == DownloadLocationMode.ASK) {
+                    saveViaSystemPicker(safeFilename, mimeType, progressNotificationId) { output ->
+                        output.write(decodedBytes)
+                    }
+                    return@launch
+                }
+
                 if (downloadLocationMode == DownloadLocationMode.SYSTEM_DOWNLOAD &&
                     com.webtoapp.util.MediaSaver.isMediaFile(mimeType, safeFilename)) {
 
@@ -801,9 +822,53 @@ class DownloadBridge(
         }
     }
 
+    private fun saveViaSystemPicker(
+        filename: String,
+        mimeType: String,
+        progressNotificationId: Int,
+        onFinished: () -> Unit = {},
+        write: (java.io.OutputStream) -> Unit
+    ) {
+        val mime = mimeType.ifBlank { getMimeType(filename) }
+        com.webtoapp.util.DownloadSavePrompter.prompt(context, filename, mime) { uri ->
+            if (uri == null) {
+                notificationManager.showSaveFailed(filename, Strings.downloadSaveCancelled, progressNotificationId)
+                Toast.makeText(context, Strings.downloadSaveCancelled, Toast.LENGTH_SHORT).show()
+                onFinished()
+                return@prompt
+            }
+            scope.launch(Dispatchers.IO) {
+                try {
+                    val output = context.contentResolver.openOutputStream(uri)
+                        ?: throw java.io.IOException("Cannot write file")
+                    output.use { write(it) }
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(context, Strings.savedTo.replace("%s", filename), Toast.LENGTH_LONG).show()
+                        notificationManager.showSaveComplete(
+                            fileName = filename,
+                            filePath = uri.toString(),
+                            mimeType = mime,
+                            progressNotificationId = progressNotificationId,
+                            contentUri = uri.toString()
+                        )
+                    }
+                } catch (e: Exception) {
+                    AppLogger.e("DownloadBridge", "Save to chosen location failed", e)
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(context, Strings.saveFailedWithReason.replace("%s", e.message ?: ""), Toast.LENGTH_SHORT).show()
+                        notificationManager.showSaveFailed(filename, e.message ?: Strings.unknownError, progressNotificationId)
+                    }
+                } finally {
+                    onFinished()
+                }
+            }
+        }
+    }
+
     private fun saveToDownloadsInternal(bytes: ByteArray, filename: String): File? {
         return when (downloadLocationMode) {
             DownloadLocationMode.APP_PRIVATE -> saveToAppPrivateDir(bytes, filename)
+            DownloadLocationMode.ASK -> null
             DownloadLocationMode.CUSTOM -> {
                 saveToCustomDir(bytes, filename) ?: saveToAppPrivateDir(bytes, filename)
             }
@@ -820,6 +885,7 @@ class DownloadBridge(
     private fun saveToDownloadsInternalFromFile(sourceFile: File, filename: String): File? {
         return when (downloadLocationMode) {
             DownloadLocationMode.APP_PRIVATE -> saveToAppPrivateDirFromFile(sourceFile, filename)
+            DownloadLocationMode.ASK -> null
             DownloadLocationMode.CUSTOM -> {
                 saveToCustomDirFromFile(sourceFile, filename) ?: saveToAppPrivateDirFromFile(sourceFile, filename)
             }
@@ -1061,6 +1127,7 @@ class DownloadBridge(
                 context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)?.absolutePath
                     ?: context.filesDir.absolutePath
             }
+            DownloadLocationMode.ASK -> ""
             DownloadLocationMode.CUSTOM -> {
                 if (customDownloadDirUri.isNotBlank()) customDownloadDirUri
                 else getPublicDownloadsDir().absolutePath

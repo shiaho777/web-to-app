@@ -209,6 +209,12 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".ui.shell.DownloadSaveActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:theme="@style/Theme.WebToApp.Transparent" />
+
         
         <service
             android:name=".core.background.BackgroundRunService"

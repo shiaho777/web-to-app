@@ -919,7 +919,9 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
 
         val (downloadLocationMode, customDownloadDirUri) = resolveDownloadLocationConfig()
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        if (downloadLocationMode == com.webtoapp.data.model.DownloadLocationMode.ASK ||
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
+        ) {
             DownloadHelper.handleDownload(
                 context = activity,
                 url = url,
