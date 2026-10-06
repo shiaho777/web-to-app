@@ -61,13 +61,17 @@ class ScreenEdgePaddingTest {
     fun `fullscreen bottom padding is anchored at every call site`() {
         listOf(
             "com/webtoapp/ui/shell/ShellScaffoldLayout.kt",
-            "com/webtoapp/ui/shell/MultiWebShellMode.kt",
             "com/webtoapp/ui/webview/WebViewActivity.kt"
         ).forEach { path ->
             assertWithMessage(path)
                 .that(readSanitized(path))
                 .contains("effectiveBottomContentPadding(")
         }
+        // TabsMode is already inside that padded box. A second call doubles
+        // the gap under top and bottom tabs (#1220).
+        assertWithMessage("MultiWebShellMode must not pad the screen edge again")
+            .that(readSanitized("com/webtoapp/ui/shell/MultiWebShellMode.kt"))
+            .doesNotContain("effectiveBottomContentPadding(")
     }
 
     private fun readSanitized(relativePath: String): String {

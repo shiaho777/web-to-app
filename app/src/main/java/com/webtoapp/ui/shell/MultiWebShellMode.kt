@@ -50,7 +50,6 @@ import com.webtoapp.data.model.WebViewConfig
 import com.webtoapp.ui.design.WtaMotion
 import com.webtoapp.ui.design.performHaptic
 import com.webtoapp.ui.shared.TopTabChrome
-import com.webtoapp.ui.shared.effectiveBottomContentPadding
 import com.webtoapp.ui.shared.parseBandColor
 import com.webtoapp.ui.theme.LocalAnimationSettings
 import kotlin.math.roundToInt
@@ -537,36 +536,14 @@ private fun TabsMode(
             }
         }
     ) { padding ->
-        // 全屏模式下可选的内容内边距，与单站点 ShellScaffoldLayout 行为一致：
-        // 把网页交互区从屏幕边缘内移，让角落按钮易于点按，并缓解与系统返回手势边缘带的冲突。
-        // Issue #771: transparent/image 状态栏覆盖在内容上（常驻微信式），顶部不预留；
-        // 实色栏保留预留，避免遮挡页面顶部控件。
-        // #916: per-side overrides; an unset side follows the uniform base.
-        val padTop = webViewConfig.fullscreenPadTop.dp
-        val padStart = webViewConfig.fullscreenPadStart.dp
-        val padEnd = webViewConfig.fullscreenPadEnd.dp
-        // #1172: keep the bottom band on the screen edge when the keyboard opens.
-        val padBottom = effectiveBottomContentPadding(webViewConfig.fullscreenPadBottom.dp)
-        val multiDark = androidx.compose.foundation.isSystemInDarkTheme()
-        val multiBgType = if (multiDark) webViewConfig.statusBarBackgroundTypeDark else webViewConfig.statusBarBackgroundType
-        val multiMode = if (multiDark) webViewConfig.statusBarColorModeDark else webViewConfig.statusBarColorMode
-        val multiOverlaysContent = multiBgType == com.webtoapp.data.model.StatusBarBackgroundType.IMAGE ||
-            multiMode == com.webtoapp.data.model.StatusBarColorMode.TRANSPARENT
-        val topPad = if (webViewConfig.hideToolbar && webViewConfig.showStatusBarInFullscreen) {
-            (if (multiOverlaysContent) 0.dp else WindowInsets.statusBars.asPaddingValues().calculateTopPadding()) + padTop
-        } else {
-            padTop
-        }
+        // Fullscreen content padding is already applied by the parent scaffold
+        // (ShellScaffoldLayout, and the same box in the host preview). TabsMode
+        // sits inside that box, so padding again here doubles every edge —
+        // a bottom value of 48 becomes 96 under the page (#1220).
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(
-                    start = padStart,
-                    end = padEnd,
-                    bottom = padBottom,
-                    top = if (webViewConfig.hideToolbar) topPad else padTop
-                )
                 .then(
                     if (paging) {
                         Modifier
