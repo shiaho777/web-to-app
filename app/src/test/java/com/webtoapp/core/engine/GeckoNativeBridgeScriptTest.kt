@@ -11,6 +11,10 @@ import org.junit.Test
  * Firefox throws "permission denied to access property 'then'" (#1206). The
  * page has to own the Promise. Each GeckoSession also needs its own bridge:
  * the extension is installed once on the shared runtime.
+ *
+ * The built-in extension stays in the Gecko profile. Without
+ * nativeMessagingFromContent, the next process start injects the content
+ * script but browser.runtime.sendNativeMessage is missing (#1242).
  */
 class GeckoNativeBridgeScriptTest {
 
@@ -49,5 +53,23 @@ class GeckoNativeBridgeScriptTest {
         assertThat(src).doesNotContain("activeNativeBridge")
         assertThat(src).contains("bindNativeBridge(newSession, it)")
         assertThat(src).contains("unbindNativeBridge(")
+    }
+
+    @Test
+    fun `persisted gecko bridge keeps content-script native messaging`() {
+        val manifest = repoFile("app/src/main/assets/web_extensions/wta_native_bridge/manifest.json").readText()
+        assertThat(manifest).contains("\"id\": \"wta-native-bridge@webtoapp\"")
+        assertThat(manifest).contains("\"nativeMessaging\"")
+        assertThat(manifest).contains("\"nativeMessagingFromContent\"")
+        assertThat(manifest).contains("\"geckoViewAddons\"")
+        assertWithMessage("version must move so an already-installed 1.0 extension updates")
+            .that(manifest).contains("\"version\": \"1.1\"")
+
+        val engine = repoFile("app/src/main/java/com/webtoapp/core/engine/GeckoViewEngine.kt").readText()
+        assertThat(engine).contains("wta-native-bridge@webtoapp")
+        assertThat(engine).contains("webExtensionController.setMessageDelegate")
+        assertThat(engine).doesNotContain("ext?.setMessageDelegate")
+        assertThat(engine).contains("pendingLoadUrl")
+        assertThat(engine).contains("uninstall")
     }
 }

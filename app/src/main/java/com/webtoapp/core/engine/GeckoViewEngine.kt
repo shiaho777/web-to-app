@@ -20,6 +20,7 @@ import org.mozilla.geckoview.StorageController
 import org.mozilla.geckoview.WebRequestError
 import org.mozilla.geckoview.WebResponse
 import org.mozilla.geckoview.WebExtension
+import org.mozilla.geckoview.WebExtensionController
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
@@ -65,6 +66,12 @@ class GeckoViewEngine(
         @Volatile
         private var nativeBridgeExtension: WebExtension? = null
 
+        @Volatile
+        private var nativeBridgeInstallStarted = false
+
+        @Volatile
+        private var nativeBridgeInstallFailed = false
+
         /**
          * One bridge per [GeckoSession]. The extension is installed once on the
          * shared runtime and its content script runs in every session, so a
@@ -74,7 +81,42 @@ class GeckoViewEngine(
         private val bridgesBySession =
             java.util.concurrent.ConcurrentHashMap<GeckoSession, com.webtoapp.core.webview.NativeBridge>()
 
+        /**
+         * Sessions waiting until the built-in extension is installed and its
+         * content-script delegate is attached. The first document must not
+         * start before that: a profile left by an older build still injects
+         * the previous content script at document_start (#1242).
+         */
+        private val readyListeners =
+            java.util.concurrent.ConcurrentHashMap<GeckoSession, Runnable>()
+
+        private const val NATIVE_BRIDGE_ID = "wta-native-bridge@webtoapp"
+        private const val NATIVE_BRIDGE_LOCATION =
+            "resource://android/assets/web_extensions/wta_native_bridge/"
         private const val NATIVE_BRIDGE_APP = "wta_native_bridge"
+
+        private val nativeBridgeMessageDelegate = object : WebExtension.MessageDelegate {
+            override fun onMessage(
+                nativeApp: String,
+                message: Any,
+                sender: WebExtension.MessageSender
+            ): GeckoResult<Any>? {
+                val bridge = sender.session?.let { bridgesBySession[it] }
+                if (bridge == null) {
+                    return GeckoResult.fromValue(errorJson("REQUEST_FAILED", "Native bridge not ready"))
+                }
+                val requestJson = when (message) {
+                    is String -> message
+                    else -> message.toString()
+                }
+                return try {
+                    val response = bridge.httpRequest(requestJson)
+                    GeckoResult.fromValue(response)
+                } catch (e: Exception) {
+                    GeckoResult.fromValue(errorJson("REQUEST_FAILED", e.message ?: e::class.java.simpleName))
+                }
+            }
+        }
 
         private fun bindNativeBridge(session: GeckoSession, bridge: com.webtoapp.core.webview.NativeBridge) {
             bridgesBySession[session] = bridge
@@ -82,42 +124,178 @@ class GeckoViewEngine(
 
         private fun unbindNativeBridge(session: GeckoSession) {
             bridgesBySession.remove(session)
+            readyListeners.remove(session)
+            val extension = nativeBridgeExtension ?: return
+            try {
+                session.webExtensionController.setMessageDelegate(extension, null, NATIVE_BRIDGE_APP)
+            } catch (e: Exception) {
+                AppLogger.w(TAG, "Clearing native bridge delegate failed: ${e.message}")
+            }
         }
 
-        fun ensureNativeBridgeExtension(runtime: GeckoRuntime): WebExtension? {
-            nativeBridgeExtension?.let { return it }
+        /**
+         * Installs the CORS bridge and keeps it privileged across process
+         * restarts. [WebExtensionController.installBuiltIn] updates an
+         * extension when its manifest version increases, so 1.0 profiles pick
+         * up [nativeMessagingFromContent]. Copies installed before the
+         * extension had an id are uninstalled first; otherwise both content
+         * scripts inject and the old one still lacks sendNativeMessage.
+         *
+         * Content-script messages are delivered only through
+         * [GeckoSession.getWebExtensionController], not the extension-level
+         * delegate (that one is for a background script, which this extension
+         * does not have).
+         */
+        fun ensureNativeBridgeExtension(runtime: GeckoRuntime) {
+            if (nativeBridgeExtension != null || nativeBridgeInstallStarted) return
             synchronized(this) {
-                nativeBridgeExtension?.let { return it }
-                val url = "resource://android/assets/web_extensions/wta_native_bridge/"
-                val controller = runtime.webExtensionController
-                val installResult = controller.installBuiltIn(url)
-                installResult.accept { ext ->
-                    ext?.setMessageDelegate(object : WebExtension.MessageDelegate {
-                        override fun onMessage(
-                            nativeApp: String,
-                            message: Any,
-                            sender: WebExtension.MessageSender
-                        ): GeckoResult<Any>? {
-                            val bridge = sender.session?.let { bridgesBySession[it] }
-                            if (bridge == null) {
-                                return GeckoResult.fromValue(errorJson("REQUEST_FAILED", "Native bridge not ready"))
-                            }
-                            val requestJson = when (message) {
-                                is String -> message
-                                else -> message.toString()
-                            }
-                            return try {
-                                val response = bridge.httpRequest(requestJson)
-                                GeckoResult.fromValue(response)
-                            } catch (e: Exception) {
-                                GeckoResult.fromValue(errorJson("REQUEST_FAILED", e.message ?: e::class.java.simpleName))
-                            }
-                        }
-                    }, NATIVE_BRIDGE_APP)
-                    nativeBridgeExtension = ext
-                    AppLogger.d(TAG, "Native bridge WebExtension installed")
+                if (nativeBridgeExtension != null || nativeBridgeInstallStarted) return
+                nativeBridgeInstallStarted = true
+                installNativeBridge(runtime.webExtensionController)
+            }
+        }
+
+        private fun installNativeBridge(controller: WebExtensionController) {
+            controller.list().accept(
+                { installed ->
+                    removeForeignBridges(controller, installed ?: emptyList()) {
+                        installBuiltInBridge(controller)
+                    }
+                },
+                { error ->
+                    AppLogger.w(TAG, "WebExtension list failed, installing bridge anyway: ${error?.message}")
+                    installBuiltInBridge(controller)
                 }
-                return null
+            )
+        }
+
+        private fun installBuiltInBridge(controller: WebExtensionController) {
+            controller.installBuiltIn(NATIVE_BRIDGE_LOCATION).accept(
+                { extension ->
+                    if (extension == null) {
+                        onNativeBridgeInstallFailed(IllegalStateException("installBuiltIn returned null"))
+                        return@accept
+                    }
+                    controller.list().accept(
+                        { installed ->
+                            removeForeignBridges(controller, installed ?: emptyList()) {
+                                onNativeBridgeInstalled(extension)
+                            }
+                        },
+                        { error ->
+                            AppLogger.w(TAG, "WebExtension list after install failed: ${error?.message}")
+                            onNativeBridgeInstalled(extension)
+                        }
+                    )
+                },
+                { error ->
+                    onNativeBridgeInstallFailed(
+                        error ?: IllegalStateException("native bridge install failed")
+                    )
+                }
+            )
+        }
+
+        private fun isForeignNativeBridge(extension: WebExtension): Boolean {
+            if (extension.id == NATIVE_BRIDGE_ID) return false
+            // list() leaves location empty and puts the install URI in metaData.downloadUrl.
+            val meta = extension.metaData
+            val downloadUrl = meta?.downloadUrl.orEmpty()
+            return meta?.name == "WTA Native Bridge" ||
+                downloadUrl.contains("wta_native_bridge") ||
+                extension.location.contains("wta_native_bridge")
+        }
+
+        private fun removeForeignBridges(
+            controller: WebExtensionController,
+            installed: List<WebExtension>,
+            then: () -> Unit
+        ) {
+            val stale = installed.filter { isForeignNativeBridge(it) }
+            if (stale.isEmpty()) {
+                then()
+                return
+            }
+            val remaining = java.util.concurrent.atomic.AtomicInteger(stale.size)
+            fun finished() {
+                if (remaining.decrementAndGet() == 0) then()
+            }
+            stale.forEach { extension ->
+                AppLogger.i(TAG, "Removing stale native bridge ${extension.id}")
+                controller.uninstall(extension).accept(
+                    { _ -> finished() },
+                    { error ->
+                        AppLogger.w(TAG, "Uninstall stale native bridge ${extension.id} failed: ${error?.message}")
+                        controller.disable(extension, WebExtensionController.EnableSource.APP).accept(
+                            { _ -> finished() },
+                            { disableError ->
+                                AppLogger.w(
+                                    TAG,
+                                    "Disable stale native bridge ${extension.id} failed: ${disableError?.message}"
+                                )
+                                finished()
+                            }
+                        )
+                    }
+                )
+            }
+        }
+
+        private fun onNativeBridgeInstalled(extension: WebExtension) {
+            onMain {
+                nativeBridgeExtension = extension
+                AppLogger.d(TAG, "Native bridge WebExtension installed id=${extension.id}")
+                bridgesBySession.keys.toList().forEach { session ->
+                    attachNativeBridgeDelegate(session, extension)
+                }
+                val listeners = readyListeners.toMap()
+                readyListeners.clear()
+                listeners.values.forEach { it.run() }
+            }
+        }
+
+        private fun onNativeBridgeInstallFailed(error: Throwable) {
+            AppLogger.e(TAG, "Native bridge WebExtension install failed", error)
+            onMain {
+                nativeBridgeInstallFailed = true
+                val listeners = readyListeners.toMap()
+                readyListeners.clear()
+                listeners.values.forEach { it.run() }
+            }
+        }
+
+        private fun whenNativeBridgeReady(session: GeckoSession, onReady: () -> Unit) {
+            onMain {
+                val extension = nativeBridgeExtension
+                if (extension != null) {
+                    attachNativeBridgeDelegate(session, extension)
+                    onReady()
+                } else if (nativeBridgeInstallFailed) {
+                    onReady()
+                } else {
+                    readyListeners[session] = Runnable { onReady() }
+                }
+            }
+        }
+
+        private fun attachNativeBridgeDelegate(session: GeckoSession, extension: WebExtension) {
+            try {
+                session.webExtensionController.setMessageDelegate(
+                    extension,
+                    nativeBridgeMessageDelegate,
+                    NATIVE_BRIDGE_APP
+                )
+            } catch (e: Exception) {
+                AppLogger.w(TAG, "Attaching native bridge delegate failed: ${e.message}")
+            }
+        }
+
+        private fun onMain(block: () -> Unit) {
+            val main = android.os.Looper.getMainLooper()
+            if (android.os.Looper.myLooper() == main) {
+                block()
+            } else {
+                android.os.Handler(main).post(block)
             }
         }
 
@@ -527,6 +705,14 @@ class GeckoViewEngine(
     private var nativeBridge: com.webtoapp.core.webview.NativeBridge? = null
 
     /**
+     * False until this session's content-script delegate is attached, or the
+     * install has failed. [loadUrl] holds the first document so a stale
+     * profile extension cannot inject first (#1242).
+     */
+    private var nativeBridgeReady = false
+    private var pendingLoadUrl: String? = null
+
+    /**
      * Media session delegate to re-attach on every session (re)creation —
      * GeckoView rebuilds sessions per createView, so a delegate installed
      * once would be lost (#593).
@@ -657,6 +843,12 @@ class GeckoViewEngine(
         liveSessions.add(newSession)
         session = newSession
         nativeBridge?.let { bindNativeBridge(newSession, it) }
+        if (nativeBridge != null) {
+            armBridgeGate(newSession)
+        } else {
+            nativeBridgeReady = true
+            pendingLoadUrl = null
+        }
 
         val view = GeckoView(context)
         // GeckoView renders on an opaque surface that defaults to white until the first
@@ -1818,6 +2010,13 @@ class GeckoViewEngine(
             newSession.open(runtime)
             liveSessions.add(newSession)
             nativeBridge?.let { bindNativeBridge(newSession, it) }
+            session = newSession
+            if (nativeBridge != null) {
+                armBridgeGate(newSession)
+            } else {
+                nativeBridgeReady = true
+                pendingLoadUrl = null
+            }
 
             lastUserAgentOverride?.let {
                 newSession.settings.userAgentOverride = it
@@ -1828,10 +2027,9 @@ class GeckoViewEngine(
             if (!displayDetached) {
                 view.setSession(newSession)
             }
-            session = newSession
 
             if (!urlToRestore.isNullOrBlank() && urlToRestore != "about:blank") {
-                newSession.loadUri(urlToRestore)
+                loadUrl(urlToRestore)
                 AppLogger.i(TAG, "Crash recovery successful, restoring URL: $urlToRestore")
             } else {
                 AppLogger.i(TAG, "Crash recovery successful (no URL to restore)")
@@ -1843,7 +2041,23 @@ class GeckoViewEngine(
     }
 
     override fun loadUrl(url: String) {
+        if (nativeBridge != null && !nativeBridgeReady) {
+            AppLogger.d(TAG, "Holding load until native bridge is ready")
+            pendingLoadUrl = url
+            return
+        }
         session?.loadUri(url)
+    }
+
+    private fun armBridgeGate(target: GeckoSession) {
+        nativeBridgeReady = false
+        whenNativeBridgeReady(target) {
+            if (session !== target) return@whenNativeBridgeReady
+            nativeBridgeReady = true
+            val url = pendingLoadUrl
+            pendingLoadUrl = null
+            if (!url.isNullOrEmpty()) target.loadUri(url)
+        }
     }
 
     override fun evaluateJavascript(script: String, resultCallback: ((String?) -> Unit)?) {
@@ -1952,6 +2166,8 @@ class GeckoViewEngine(
             liveSessions.remove(s)
         }
         nativeBridge = null
+        nativeBridgeReady = false
+        pendingLoadUrl = null
         session = null
         geckoView = null
         callback = null
