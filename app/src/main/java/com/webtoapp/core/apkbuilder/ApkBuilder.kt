@@ -3858,7 +3858,15 @@ builtins.__import__ = _w2a_import
             "$id:$sha"
         }.ifEmpty { "none" }
 
-    internal fun buildRequiredPermissions(config: ApkConfig): List<String> {
+    /**
+     * Same permission list the APK manifest gets. Kept separate from
+     * [buildRequiredPermissions] so that method stays private: unit tests
+     * look it up by its unmangled JVM name.
+     */
+    internal fun permissionsForExport(config: ApkConfig): List<String> =
+        buildRequiredPermissions(config)
+
+    private fun buildRequiredPermissions(config: ApkConfig): List<String> {
 
         val permissions = linkedSetOf<String>()
 

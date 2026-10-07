@@ -208,7 +208,7 @@ class AppSourcePackager(private val context: Context) {
             val packageName = config.packageName
             val packagePath = packageName.replace('.', '/')
             val launchUrl = launchUrl(webApp)
-            val permissions = ApkBuilder(context).buildRequiredPermissions(config)
+            val permissions = ApkBuilder(context).permissionsForExport(config)
             val permissionXml = permissions.joinToString("\n") { name ->
                 """    <uses-permission android:name="${xml(name)}" />"""
             }
