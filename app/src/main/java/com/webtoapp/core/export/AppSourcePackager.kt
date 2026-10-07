@@ -22,12 +22,11 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
 /**
- * Source bundle for one app (#1138).
+ * Compilable Android project for one app.
  *
- * The generated APK is the shell plus this definition. The zip carries the
- * runtime config the shell reads, the network-trust files, and the local
- * content the build embeds. It is not a compilable Android project and it
- * does not include the signing keystore.
+ * The zip is an Android Studio project: Gradle build files, a WebView
+ * activity, the manifest, and the app's own files. It is not the WebToApp
+ * shell runtime, and it does not include the signing keystore.
  */
 class AppSourcePackager(private val context: Context) {
 
@@ -40,13 +39,16 @@ class AppSourcePackager(private val context: Context) {
         try {
             ZipOutputStream(BufferedOutputStream(FileOutputStream(tmp))).use { zip ->
                 writer.attach(zip)
+                val packageName = ApkBuilder.resolvePackageName(webApp)
+                val config = webApp.toApkConfig(packageName, context)
                 writer.text("README.md", Strings.sourceBundleReadme(webApp.name))
-                writer.config(webApp)
+                writer.androidProject(webApp, config)
+                writer.config(config)
                 writer.networkTrust(webApp)
                 writer.content(webApp)
                 if (writer.truncated) {
                     writer.text(
-                        "content/TRUNCATED.txt",
+                        "app/src/main/assets/TRUNCATED.txt",
                         "Further files were omitted because the archive reached its size limit."
                     )
                 }
@@ -89,6 +91,97 @@ class AppSourcePackager(private val context: Context) {
         }
     }
 
+    private fun launchUrl(webApp: WebApp): String {
+        if (webApp.appType == AppType.HTML || webApp.appType == AppType.FRONTEND) {
+            val entry = webApp.htmlConfig?.getValidEntryFile() ?: "index.html"
+            if (projectDir(webApp.htmlConfig?.projectId) != null) {
+                return "file:///android_asset/www/$entry"
+            }
+        }
+        val url = webApp.url.trim()
+        if (url.startsWith("http://") || url.startsWith("https://")) return url
+        return "about:blank"
+    }
+
+    private fun projectDir(projectId: String?): File? {
+        val id = projectId?.takeIf { it.isNotBlank() } ?: return null
+        val dir = File(context.filesDir, "html_projects/$id")
+        return dir.takeIf { it.isDirectory }
+    }
+
+    private fun appBuildGradle(config: com.webtoapp.core.apkbuilder.ApkConfig): String {
+        val targetSdk = (config.targetSdkOverride ?: 35).coerceIn(23, 36)
+        return """
+            plugins {
+                id("com.android.application")
+                id("org.jetbrains.kotlin.android")
+            }
+
+            android {
+                namespace = "${kotlinString(config.packageName)}"
+                compileSdk = $targetSdk
+
+                defaultConfig {
+                    applicationId = "${kotlinString(config.packageName)}"
+                    minSdk = 23
+                    targetSdk = $targetSdk
+                    versionCode = ${config.versionCode}
+                    versionName = "${kotlinString(config.versionName)}"
+                }
+
+                buildTypes {
+                    release {
+                        isMinifyEnabled = false
+                    }
+                }
+
+                compileOptions {
+                    sourceCompatibility = JavaVersion.VERSION_17
+                    targetCompatibility = JavaVersion.VERSION_17
+                }
+
+                kotlinOptions {
+                    jvmTarget = "17"
+                }
+            }
+
+            dependencies {
+                implementation("androidx.core:core-ktx:1.15.0")
+            }
+        """.trimIndent()
+    }
+
+    private fun mainActivity(packageName: String, launchUrl: String, javaScriptEnabled: Boolean): String {
+        return """
+            package $packageName
+
+            import android.app.Activity
+            import android.os.Bundle
+            import android.webkit.WebView
+            import android.webkit.WebViewClient
+
+            class MainActivity : Activity() {
+                private lateinit var webView: WebView
+
+                override fun onCreate(savedInstanceState: Bundle?) {
+                    super.onCreate(savedInstanceState)
+                    webView = WebView(this)
+                    webView.settings.javaScriptEnabled = $javaScriptEnabled
+                    webView.settings.domStorageEnabled = true
+                    webView.settings.allowFileAccess = true
+                    webView.webViewClient = WebViewClient()
+                    setContentView(webView)
+                    webView.loadUrl("${kotlinString(launchUrl)}")
+                }
+
+                @Deprecated("Kept so the exported project builds without extra AndroidX callbacks.")
+                override fun onBackPressed() {
+                    if (webView.canGoBack()) webView.goBack() else super.onBackPressed()
+                }
+            }
+        """.trimIndent()
+    }
+
     private inner class BundleWriter {
         private lateinit var zip: ZipOutputStream
         private val usedEntries = HashSet<String>()
@@ -111,15 +204,79 @@ class AppSourcePackager(private val context: Context) {
             zip.closeEntry()
         }
 
-        fun config(webApp: WebApp) {
+        fun androidProject(webApp: WebApp, config: com.webtoapp.core.apkbuilder.ApkConfig) {
+            val packageName = config.packageName
+            val packagePath = packageName.replace('.', '/')
+            val launchUrl = launchUrl(webApp)
+            val permissions = ApkBuilder(context).buildRequiredPermissions(config)
+            val permissionXml = permissions.joinToString("\n") { name ->
+                """    <uses-permission android:name="${xml(name)}" />"""
+            }
+            val iconName = copyIcon(webApp)
+            val iconAttr = if (iconName == null) "" else """
+        android:icon="@drawable/$iconName"
+        android:roundIcon="@drawable/$iconName""""
+            text("settings.gradle.kts", SETTINGS_GRADLE)
+            text("build.gradle.kts", ROOT_BUILD_GRADLE)
+            text("gradle.properties", GRADLE_PROPERTIES)
+            text(
+                "gradle/wrapper/gradle-wrapper.properties",
+                "distributionUrl=https\\://services.gradle.org/distributions/gradle-8.11.1-bin.zip\n"
+            )
+            text("app/build.gradle.kts", appBuildGradle(config))
+            text(
+                "app/src/main/AndroidManifest.xml",
+                """
+                <?xml version="1.0" encoding="utf-8"?>
+                <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                $permissionXml
+                    <application
+                        android:label="@string/app_name"
+                        android:networkSecurityConfig="@xml/network_security_config"
+                        android:theme="@android:style/Theme.DeviceDefault.NoActionBar"$iconAttr>
+                        <activity
+                            android:name=".MainActivity"
+                            android:exported="true">
+                            <intent-filter>
+                                <action android:name="android.intent.action.MAIN" />
+                                <category android:name="android.intent.category.LAUNCHER" />
+                            </intent-filter>
+                        </activity>
+                    </application>
+                </manifest>
+                """.trimIndent()
+            )
+            text(
+                "app/src/main/res/values/strings.xml",
+                """
+                <?xml version="1.0" encoding="utf-8"?>
+                <resources>
+                    <string name="app_name">${xml(config.appName)}</string>
+                </resources>
+                """.trimIndent()
+            )
+            text("app/src/main/java/$packagePath/MainActivity.kt", mainActivity(packageName, launchUrl, config.javaScriptEnabled))
+        }
+
+        private fun copyIcon(webApp: WebApp): String? {
+            val path = webApp.iconPath?.trim().orEmpty()
+            if (path.isEmpty()) return null
+            val source = localFile(path) ?: return null
+            val extension = source.extension.lowercase().takeIf { it in setOf("png", "webp", "jpg", "jpeg") } ?: "png"
+            file("app/src/main/res/drawable/ic_launcher.$extension", source)
+            return "ic_launcher"
+        }
+
+        fun config(config: com.webtoapp.core.apkbuilder.ApkConfig) {
             try {
-                val packageName = ApkBuilder.resolvePackageName(webApp)
-                val json = ApkConfigJsonFactory.create(webApp.toApkConfig(packageName, context))
-                text("app_config.json", json)
+                text(
+                    "app/src/main/assets/app_config.json",
+                    ApkConfigJsonFactory.create(config)
+                )
             } catch (e: Exception) {
                 AppLogger.e(TAG, "app_config.json was not written", e)
                 text(
-                    "app_config_error.txt",
+                    "app/src/main/assets/app_config_error.txt",
                     e.message ?: "app_config.json could not be written"
                 )
             }
@@ -133,27 +290,27 @@ class AppSourcePackager(private val context: Context) {
                 raw
             }
             text(
-                "network_security_config.xml",
+                "app/src/main/res/xml/network_security_config.xml",
                 NetworkSecurityConfigBuilder.build(effective)
             )
             NetworkSecurityConfigBuilder.customRawEntries(effective).forEach { entry ->
-                file("certs/${entry.resourceName}.cer", entry.sourceFile)
+                file("app/src/main/res/raw/${entry.resourceName}.cer", entry.sourceFile)
             }
         }
 
         fun content(webApp: WebApp) {
             when (webApp.appType) {
                 AppType.HTML, AppType.FRONTEND -> {
-                    projectDir(webApp.htmlConfig?.projectId)?.let { tree("content/project", it) }
+                    projectDir(webApp.htmlConfig?.projectId)?.let { tree("app/src/main/assets/www", it) }
                 }
                 AppType.MULTI_WEB -> {
-                    projectDir(webApp.multiWebConfig?.projectId)?.let { tree("content/project", it) }
+                    projectDir(webApp.multiWebConfig?.projectId)?.let { tree("app/src/main/assets/www", it) }
                     webApp.multiWebConfig?.sites.orEmpty().forEachIndexed { index, site ->
                         val segment = sanitize(site.id).ifBlank { "site-$index" }
-                        projectDir(site.sourceProjectId)?.let { tree("content/sites/$segment", it) }
-                        localFile(site.localFilePath)?.let { file("content/sites/$segment/local", it) }
+                        projectDir(site.sourceProjectId)?.let { tree("app/src/main/assets/www/sites/$segment", it) }
+                        localFile(site.localFilePath)?.let { file("app/src/main/assets/www/sites/$segment/local", it) }
                         if (site.inlineHtml.isNotBlank()) {
-                            text("content/sites/$segment/inline.html", site.inlineHtml)
+                            text("app/src/main/assets/www/sites/$segment/inline.html", site.inlineHtml)
                         }
                     }
                 }
@@ -206,7 +363,7 @@ class AppSourcePackager(private val context: Context) {
             val trimmed = path.trim()
             when {
                 trimmed.startsWith("content://") -> contentUri(trimmed)
-                else -> localFile(trimmed)?.let { file("content/files/${looseIndex++}-${it.name}", it) }
+                else -> localFile(trimmed)?.let { file("app/src/main/assets/files/${looseIndex++}-${it.name}", it) }
             }
         }
 
@@ -230,7 +387,7 @@ class AppSourcePackager(private val context: Context) {
         private fun contentUri(uri: String) {
             if (truncated) return
             val name = Uri.parse(uri).lastPathSegment?.substringAfterLast('/') ?: "file"
-            val entry = safeEntry("content/files/${looseIndex++}-${sanitize(name)}") ?: return
+            val entry = safeEntry("app/src/main/assets/files/${looseIndex++}-${sanitize(name)}") ?: return
             if (!usedEntries.add(entry)) return
             try {
                 context.contentResolver.openInputStream(Uri.parse(uri))?.use { input ->
@@ -313,6 +470,53 @@ class AppSourcePackager(private val context: Context) {
 
         private fun sanitize(name: String): String =
             name.replace(Regex("[^a-zA-Z0-9._\\-\\u4e00-\\u9fa5]"), "_").take(60)
+
+        private fun xml(text: String): String = text
+            .replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+            .replace("\"", "&quot;")
+            .replace("'", "&apos;")
+
+        private fun kotlinString(text: String): String = text
+            .replace("\\", "\\\\")
+            .replace("\"", "\\\"")
+            .replace("$", "\${'$'}")
+            .replace("\n", "\\n")
+
+        private val SETTINGS_GRADLE = """
+            pluginManagement {
+                repositories {
+                    google()
+                    mavenCentral()
+                    gradlePluginPortal()
+                }
+            }
+
+            dependencyResolutionManagement {
+                repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+                repositories {
+                    google()
+                    mavenCentral()
+                }
+            }
+
+            rootProject.name = "app"
+            include(":app")
+        """.trimIndent()
+
+        private val ROOT_BUILD_GRADLE = """
+            plugins {
+                id("com.android.application") version "8.7.3" apply false
+                id("org.jetbrains.kotlin.android") version "2.0.21" apply false
+            }
+        """.trimIndent()
+
+        private val GRADLE_PROPERTIES = """
+            android.useAndroidX=true
+            org.gradle.jvmargs=-Xmx2048m
+            kotlin.code.style=official
+        """.trimIndent()
 
         private fun safeEntry(raw: String): String? {
             val normalized = raw.replace('\\', '/').trim('/')

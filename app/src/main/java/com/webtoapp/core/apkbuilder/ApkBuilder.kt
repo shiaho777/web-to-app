@@ -3858,7 +3858,7 @@ builtins.__import__ = _w2a_import
             "$id:$sha"
         }.ifEmpty { "none" }
 
-    private fun buildRequiredPermissions(config: ApkConfig): List<String> {
+    internal fun buildRequiredPermissions(config: ApkConfig): List<String> {
 
         val permissions = linkedSetOf<String>()
 

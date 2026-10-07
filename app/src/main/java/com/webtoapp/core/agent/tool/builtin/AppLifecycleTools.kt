@@ -96,7 +96,7 @@ class ExportAppTool : Tool {
     override val name = "ExportApp"
     override val description = """
         Export an app as a source zip or a config JSON.
-        - format "template": writes a source zip (app_config.json, network trust files, and local content) and returns its path. This is the definition the shell runs. It is not a compilable Android Studio project and does not include the signing keystore.
+        - format "template": writes an Android Studio project zip (Gradle files, WebView activity, manifest, app_config.json, and local content) and returns its path. It does not include the signing keystore or the WebToApp shell runtime.
         - format "config": exports the app's configuration as a JSON string.
     """.trimIndent()
     override val parametersSchema: JsonElement = jsonSchema {

@@ -3615,112 +3615,132 @@ object StringsA {
         AppLanguage.CHINESE -> """
             # $name
 
-            这是 WebToApp 构建该应用时使用的源码包。
+            这是可以在 Android Studio 中打开并编译的应用工程。
 
-            - app_config.json：写入 APK 的运行时配置。资源加密的安装包里这份文件是密文，这里是明文。
-            - network_security_config.xml 与 certs/：网络信任设置。完整证书链（根 CA 与中间 CA）用这两处。
-            - content/：属于该应用的本地 HTML、前端、画廊、启动画面和音频。不含 node_modules 与 .git。
+            - app/src/main/java 里的 MainActivity：用 WebView 打开这个应用的页面或本地文件。
+            - app/src/main/AndroidManifest.xml：包名、权限和图标。
+            - app/src/main/assets/app_config.json：WebToApp 写入 APK 的运行时配置。资源加密的安装包里这份文件是密文，这里是明文。
+            - app/src/main/res/xml/network_security_config.xml 与 res/raw/：网络信任设置。
+            - app/src/main/assets/www/ 与 assets/files/：本地 HTML、前端、画廊、启动画面和音频。不含 node_modules 与 .git。
 
-            可安装的 APK 是 WebToApp 的壳加上这些文件。此压缩包不含签名密钥库。它可能包含你配置的激活密钥和代理凭据。
+            用 Android Studio 打开这个文件夹即可同步并构建。压缩包不含签名密钥库，也不包含 WebToApp 壳的全部运行时。它可能包含你配置的激活密钥和代理凭据。
         """.trimIndent()
         AppLanguage.ENGLISH -> """
             # $name
 
-            This is the source bundle WebToApp used to build the app.
+            This is an Android Studio project you can open and build.
 
-            - app_config.json: the runtime configuration embedded in the APK. An encrypted build stores that file as ciphertext; this copy is plaintext.
-            - network_security_config.xml and certs/: network trust settings. Use these for full certificate-chain validation (root and intermediate).
-            - content/: local HTML, frontend, gallery, splash, and audio files that belong to the app. node_modules and .git are omitted.
+            - MainActivity under app/src/main/java opens this app's page or local files in a WebView.
+            - app/src/main/AndroidManifest.xml holds the package name, permissions, and icon.
+            - app/src/main/assets/app_config.json is the runtime configuration WebToApp embeds in the APK. An encrypted build stores that file as ciphertext; this copy is plaintext.
+            - app/src/main/res/xml/network_security_config.xml and res/raw/ are the network-trust settings.
+            - app/src/main/assets/www/ and assets/files/ hold local HTML, frontend, gallery, splash, and audio. node_modules and .git are omitted.
 
-            The installable APK is the WebToApp shell plus these files. This archive does not include the signing keystore. It may include activation secrets and proxy credentials you configured.
+            Open this folder in Android Studio to sync and build it. The archive does not include the signing keystore or the full WebToApp shell runtime. It may include activation secrets and proxy credentials you configured.
         """.trimIndent()
         AppLanguage.ARABIC -> """
             # $name
 
-            هذه حزمة المصدر التي استخدمها WebToApp لبناء التطبيق.
+            هذا مشروع Android Studio يمكن فتحه وبناؤه.
 
-            - app_config.json: إعدادات التشغيل المضمّنة في APK. البناء المشفّر يخزّن هذا الملف كنص مشفّر، وهذه النسخة نص واضح.
-            - network_security_config.xml و certs/: إعدادات الثقة بالشبكة. استعملها للتحقق من سلسلة الشهادات الكاملة (الجذر والوسيط).
-            - content/: ملفات HTML والواجهة والمعرض وشاشة البدء والصوت الخاصة بالتطبيق. يُستبعد node_modules و .git.
+            - MainActivity ضمن app/src/main/java يفتح صفحة التطبيق أو ملفاته المحلية في WebView.
+            - app/src/main/AndroidManifest.xml يحتوي اسم الحزمة والأذونات والأيقونة.
+            - app/src/main/assets/app_config.json هو إعداد التشغيل الذي يضمّنه WebToApp في APK. البناء المشفّر يخزّنه كنص مشفّر، وهذه النسخة نص واضح.
+            - app/src/main/res/xml/network_security_config.xml و res/raw/ إعدادات الثقة بالشبكة.
+            - app/src/main/assets/www/ و assets/files/ ملفات HTML والواجهة والمعرض وشاشة البدء والصوت. يُستبعد node_modules و .git.
 
-            ملف APK القابل للتثبيت هو غلاف WebToApp مع هذه الملفات. هذا الأرشيف لا يحتوي مخزن مفاتيح التوقيع. قد يحتوي أسرار التفعيل وبيانات اعتماد الوكيل التي أعددتها.
+            افتح هذا المجلد في Android Studio للمزامنة والبناء. الأرشيف لا يحتوي مخزن مفاتيح التوقيع ولا كامل بيئة WebToApp. قد يحتوي أسرار التفعيل وبيانات اعتماد الوكيل.
         """.trimIndent()
         AppLanguage.PORTUGUESE -> """
             # $name
 
-            Este é o pacote de código que o WebToApp usou para construir o aplicativo.
+            Este é um projeto Android Studio que você pode abrir e compilar.
 
-            - app_config.json: a configuração de execução embutida no APK. Um build criptografado guarda esse arquivo como texto cifrado; esta cópia é texto puro.
-            - network_security_config.xml e certs/: ajustes de confiança de rede. Use-os para validar a cadeia completa de certificados (raiz e intermediário).
-            - content/: arquivos locais de HTML, frontend, galeria, splash e áudio do aplicativo. node_modules e .git ficam de fora.
+            - MainActivity em app/src/main/java abre a página ou os arquivos locais deste aplicativo num WebView.
+            - app/src/main/AndroidManifest.xml traz o nome do pacote, as permissões e o ícone.
+            - app/src/main/assets/app_config.json é a configuração de execução que o WebToApp embute no APK. Um build criptografado guarda esse arquivo como texto cifrado; esta cópia é texto puro.
+            - app/src/main/res/xml/network_security_config.xml e res/raw/ são os ajustes de confiança de rede.
+            - app/src/main/assets/www/ e assets/files/ guardam HTML, frontend, galeria, splash e áudio locais. node_modules e .git ficam de fora.
 
-            O APK instalável é o shell do WebToApp mais estes arquivos. Este arquivo não inclui a keystore de assinatura. Pode incluir segredos de ativação e credenciais de proxy que você configurou.
+            Abra esta pasta no Android Studio para sincronizar e compilar. O arquivo não inclui a keystore de assinatura nem todo o runtime do shell WebToApp. Pode incluir segredos de ativação e credenciais de proxy.
         """.trimIndent()
         AppLanguage.SPANISH -> """
             # $name
 
-            Este es el paquete de código que WebToApp usó para construir la aplicación.
+            Este es un proyecto de Android Studio que puedes abrir y compilar.
 
-            - app_config.json: la configuración de ejecución incluida en el APK. Una compilación cifrada guarda ese archivo como texto cifrado; esta copia es texto plano.
-            - network_security_config.xml y certs/: ajustes de confianza de red. Úsalos para validar la cadena completa de certificados (raíz e intermedio).
-            - content/: archivos locales de HTML, frontend, galería, splash y audio de la aplicación. Se omiten node_modules y .git.
+            - MainActivity en app/src/main/java abre la página o los archivos locales de esta aplicación en un WebView.
+            - app/src/main/AndroidManifest.xml lleva el nombre del paquete, los permisos y el icono.
+            - app/src/main/assets/app_config.json es la configuración de ejecución que WebToApp incluye en el APK. Una compilación cifrada guarda ese archivo como texto cifrado; esta copia es texto plano.
+            - app/src/main/res/xml/network_security_config.xml y res/raw/ son los ajustes de confianza de red.
+            - app/src/main/assets/www/ y assets/files/ guardan HTML, frontend, galería, splash y audio locales. Se omiten node_modules y .git.
 
-            El APK instalable es el shell de WebToApp más estos archivos. Este archivo no incluye el almacén de claves de firma. Puede incluir secretos de activación y credenciales de proxy que configuraste.
+            Abre esta carpeta en Android Studio para sincronizar y compilar. El archivo no incluye el almacén de claves de firma ni todo el runtime del shell de WebToApp. Puede incluir secretos de activación y credenciales de proxy.
         """.trimIndent()
         AppLanguage.FRENCH -> """
             # $name
 
-            Ceci est le paquet source que WebToApp a utilisé pour construire l'application.
+            Ceci est un projet Android Studio que vous pouvez ouvrir et compiler.
 
-            - app_config.json : la configuration d'exécution intégrée à l'APK. Une compilation chiffrée stocke ce fichier en texte chiffré ; cette copie est en clair.
-            - network_security_config.xml et certs/ : réglages de confiance réseau. Utilisez-les pour la validation complète de la chaîne de certificats (racine et intermédiaire).
-            - content/ : fichiers locaux HTML, frontend, galerie, écran de démarrage et audio de l'application. node_modules et .git sont omis.
+            - MainActivity sous app/src/main/java ouvre la page ou les fichiers locaux de cette application dans une WebView.
+            - app/src/main/AndroidManifest.xml contient le nom du paquet, les autorisations et l'icône.
+            - app/src/main/assets/app_config.json est la configuration d'exécution que WebToApp intègre à l'APK. Une compilation chiffrée stocke ce fichier en texte chiffré ; cette copie est en clair.
+            - app/src/main/res/xml/network_security_config.xml et res/raw/ sont les réglages de confiance réseau.
+            - app/src/main/assets/www/ et assets/files/ contiennent le HTML, le frontend, la galerie, l'écran de démarrage et l'audio locaux. node_modules et .git sont omis.
 
-            L'APK installable est le shell WebToApp plus ces fichiers. Cette archive ne contient pas le keystore de signature. Elle peut contenir les secrets d'activation et les identifiants de proxy que vous avez configurés.
+            Ouvrez ce dossier dans Android Studio pour le synchroniser et le compiler. L'archive ne contient pas le keystore de signature ni tout le runtime du shell WebToApp. Elle peut contenir des secrets d'activation et des identifiants de proxy.
         """.trimIndent()
         AppLanguage.GERMAN -> """
             # $name
 
-            Dies ist das Quellpaket, mit dem WebToApp die App gebaut hat.
+            Dies ist ein Android-Studio-Projekt, das Sie öffnen und bauen können.
 
-            - app_config.json: die Laufzeitkonfiguration, die in der APK steckt. Ein verschlüsselter Build speichert diese Datei als Geheimtext; diese Kopie ist Klartext.
-            - network_security_config.xml und certs/: Netzvertrauens-Einstellungen. Damit lässt sich die volle Zertifikatskette prüfen (Root und Intermediate).
-            - content/: lokale HTML-, Frontend-, Galerie-, Startbildschirm- und Audiodateien der App. node_modules und .git fehlen.
+            - MainActivity unter app/src/main/java öffnet die Seite oder die lokalen Dateien dieser App in einer WebView.
+            - app/src/main/AndroidManifest.xml enthält Paketname, Berechtigungen und Symbol.
+            - app/src/main/assets/app_config.json ist die Laufzeitkonfiguration, die WebToApp in die APK einbettet. Ein verschlüsselter Build speichert diese Datei als Geheimtext; diese Kopie ist Klartext.
+            - app/src/main/res/xml/network_security_config.xml und res/raw/ sind die Netzvertrauens-Einstellungen.
+            - app/src/main/assets/www/ und assets/files/ enthalten lokale HTML-, Frontend-, Galerie-, Startbildschirm- und Audiodateien. node_modules und .git fehlen.
 
-            Die installierbare APK ist die WebToApp-Shell plus diese Dateien. Dieses Archiv enthält keinen Signatur-Keystore. Es kann Aktivierungsgeheimnisse und Proxy-Zugangsdaten enthalten, die Sie festgelegt haben.
+            Öffnen Sie diesen Ordner in Android Studio, um ihn zu synchronisieren und zu bauen. Das Archiv enthält keinen Signatur-Keystore und nicht die gesamte WebToApp-Shell. Es kann Aktivierungsgeheimnisse und Proxy-Zugangsdaten enthalten.
         """.trimIndent()
         AppLanguage.RUSSIAN -> """
             # $name
 
-            Это пакет исходников, из которого WebToApp собрал приложение.
+            Это проект Android Studio, который можно открыть и собрать.
 
-            - app_config.json: конфигурация выполнения, встроенная в APK. В зашифрованной сборке этот файл хранится как шифротекст; здесь он в открытом виде.
-            - network_security_config.xml и certs/: параметры доверия сети. Они нужны для полной проверки цепочки сертификатов (корневой и промежуточный).
-            - content/: локальные файлы HTML, фронтенда, галереи, заставки и аудио приложения. node_modules и .git не включаются.
+            - MainActivity в app/src/main/java открывает страницу или локальные файлы этого приложения в WebView.
+            - app/src/main/AndroidManifest.xml содержит имя пакета, разрешения и значок.
+            - app/src/main/assets/app_config.json — конфигурация выполнения, которую WebToApp встраивает в APK. В зашифрованной сборке этот файл хранится как шифротекст; здесь он в открытом виде.
+            - app/src/main/res/xml/network_security_config.xml и res/raw/ — параметры доверия сети.
+            - app/src/main/assets/www/ и assets/files/ — локальные HTML, фронтенд, галерея, заставка и аудио. node_modules и .git не включаются.
 
-            Устанавливаемый APK — это оболочка WebToApp плюс эти файлы. Архив не содержит хранилище ключа подписи. В нём могут быть секреты активации и учётные данные прокси, которые вы задали.
+            Откройте эту папку в Android Studio, чтобы синхронизировать и собрать проект. Архив не содержит хранилище ключа подписи и не включает всю оболочку WebToApp. В нём могут быть секреты активации и данные прокси.
         """.trimIndent()
         AppLanguage.JAPANESE -> """
             # $name
 
-            これは WebToApp がこのアプリをビルドするときに使ったソース一式です。
+            これは Android Studio で開いてビルドできるアプリプロジェクトです。
 
-            - app_config.json: APK に埋め込まれる実行時設定です。リソース暗号化ビルドではこのファイルは暗号文になり、ここにあるのは平文です。
-            - network_security_config.xml と certs/: ネットワーク信頼の設定です。証明書チェーン全体（ルートと中間）の検証に使います。
-            - content/: このアプリのローカル HTML、フロントエンド、ギャラリー、スプラッシュ、音声ファイルです。node_modules と .git は含みません。
+            - app/src/main/java の MainActivity は、このアプリのページまたはローカルファイルを WebView で開きます。
+            - app/src/main/AndroidManifest.xml はパッケージ名、権限、アイコンです。
+            - app/src/main/assets/app_config.json は WebToApp が APK に埋め込む実行時設定です。リソース暗号化ビルドでは暗号文になり、ここにあるのは平文です。
+            - app/src/main/res/xml/network_security_config.xml と res/raw/ はネットワーク信頼の設定です。
+            - app/src/main/assets/www/ と assets/files/ はローカル HTML、フロントエンド、ギャラリー、スプラッシュ、音声です。node_modules と .git は含みません。
 
-            インストールできる APK は WebToApp のシェルにこれらのファイルを足したものです。この書庫に署名キーストアは含まれません。設定した認証の秘密やプロキシ資格情報が含まれることがあります。
+            このフォルダを Android Studio で開くと同期してビルドできます。書庫に署名キーストアと WebToApp シェルの全ランタイムは含まれません。設定した認証の秘密やプロキシ資格情報が含まれることがあります。
         """.trimIndent()
         AppLanguage.KOREAN -> """
             # $name
 
-            이것은 WebToApp이 이 앱을 빌드할 때 사용한 소스 묶음입니다.
+            이것은 Android Studio에서 열어 빌드할 수 있는 앱 프로젝트입니다.
 
-            - app_config.json: APK에 들어가는 런타임 설정입니다. 리소스 암호화 빌드에서는 이 파일이 암호문이고, 여기 있는 것은 평문입니다.
-            - network_security_config.xml 및 certs/: 네트워크 신뢰 설정입니다. 전체 인증서 체인(루트와 중간) 검증에 사용합니다.
-            - content/: 이 앱의 로컬 HTML, 프런트엔드, 갤러리, 스플래시, 오디오 파일입니다. node_modules와 .git은 빠집니다.
+            - app/src/main/java 의 MainActivity 는 이 앱의 페이지나 로컬 파일을 WebView 로 엽니다.
+            - app/src/main/AndroidManifest.xml 에는 패키지 이름, 권한, 아이콘이 있습니다.
+            - app/src/main/assets/app_config.json 은 WebToApp 이 APK 에 넣는 런타임 설정입니다. 리소스 암호화 빌드에서는 암호문이고, 여기 있는 것은 평문입니다.
+            - app/src/main/res/xml/network_security_config.xml 과 res/raw/ 는 네트워크 신뢰 설정입니다.
+            - app/src/main/assets/www/ 와 assets/files/ 는 로컬 HTML, 프런트엔드, 갤러리, 스플래시, 오디오입니다. node_modules 와 .git 은 빠집니다.
 
-            설치 가능한 APK는 WebToApp 셸에 이 파일들을 더한 것입니다. 이 압축 파일에는 서명 키 저장소가 없습니다. 설정한 활성화 비밀과 프록시 자격 증명이 들어 있을 수 있습니다.
+            이 폴더를 Android Studio 에서 열면 동기화하고 빌드할 수 있습니다. 압축 파일에는 서명 키 저장소와 WebToApp 셸의 전체 런타임이 없습니다. 설정한 활성화 비밀과 프록시 자격 증명이 들어 있을 수 있습니다.
         """.trimIndent()
     }
 

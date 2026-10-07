@@ -36,11 +36,17 @@ class AppSourcePackagerTest {
 
         assertThat(entries).containsKey("README.md")
         assertThat(entries.getValue("README.md")).contains("Demo")
-        assertThat(entries).containsKey("app_config.json")
-        assertThat(entries.getValue("app_config.json")).contains("https://example.com/app")
-        assertThat(entries.getValue("app_config.json")).contains("com.w2a.")
-        assertThat(entries.getValue("network_security_config.xml")).contains("network-security-config")
-        assertThat(entries.keys).doesNotContain("app_config_error.txt")
+        assertThat(entries).containsKey("settings.gradle.kts")
+        assertThat(entries).containsKey("app/build.gradle.kts")
+        assertThat(entries).containsKey("app/src/main/AndroidManifest.xml")
+        assertThat(entries.getValue("app/src/main/AndroidManifest.xml")).contains("android.permission.INTERNET")
+        val activity = entries.entries.first { it.key.endsWith("MainActivity.kt") }.value
+        assertThat(activity).contains("https://example.com/app")
+        assertThat(entries).containsKey("app/src/main/assets/app_config.json")
+        assertThat(entries.getValue("app/src/main/assets/app_config.json")).contains("https://example.com/app")
+        assertThat(entries.getValue("app/src/main/assets/app_config.json")).contains("com.w2a.")
+        assertThat(entries.getValue("app/src/main/res/xml/network_security_config.xml")).contains("network-security-config")
+        assertThat(entries.keys).doesNotContain("app/src/main/assets/app_config_error.txt")
     }
 
     @Test
@@ -70,8 +76,11 @@ class AppSourcePackagerTest {
 
         val entries = zipEntries(AppSourcePackager(context).pack(app))
 
-        assertThat(entries.getValue("content/project/index.html")).isEqualTo("<h1>hi</h1>")
-        assertThat(entries.getValue("content/project/js/app.js")).isEqualTo("console.log(1)")
+        assertThat(entries.getValue("app/src/main/assets/www/index.html")).isEqualTo("<h1>hi</h1>")
+        assertThat(entries.getValue("app/src/main/assets/www/js/app.js")).isEqualTo("console.log(1)")
+        val activity = entries.entries.first { it.key.endsWith("MainActivity.kt") }.value
+        assertThat(activity).contains("file:///android_asset/www/index.html")
+        assertThat(entries.getValue("app/src/main/AndroidManifest.xml")).doesNotContain("android.permission.INTERNET")
         assertThat(entries.keys.none { it.contains("node_modules") }).isTrue()
         assertThat(entries.values).doesNotContain("secret-bytes")
         assertThat(entries.values).doesNotContain("skip-me")

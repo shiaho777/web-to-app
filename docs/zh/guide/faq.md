@@ -139,7 +139,7 @@ Android 6.0(API 23)或更高。
 
 ### 如何备份或迁移我的应用?
 
-整份工作区用[数据备份](/zh/guide/more-features/data-backup)(主页 ⋮ 菜单)。[导出源码](/zh/guide/app-actions/export-apk)分享单个应用的配置和本地文件。
+整份工作区用[数据备份](/zh/guide/more-features/data-backup)(主页 ⋮ 菜单)。[导出源码](/zh/guide/app-actions/export-apk)把单个应用打成 Android Studio 工程。
 
 ### 去哪里获取帮助?
 
