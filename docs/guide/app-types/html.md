@@ -38,6 +38,7 @@ Backed by `HtmlConfig`.
 ## Notes
 
 - The generated app gets `allowFileAccess` so pure file-based loads work offline.
+- **Local file** does not request the `INTERNET` permission when the page can stay on disk. Automatic does the same for a plain page. A page that needs a CDN, ES modules, or WASM still uses the local server and keeps the permission, as does **Local server**.
 - `AUTO` uses the file scheme for a plain page. A page that needs a real origin is served from the local HTTP server: a CDN URL, an ES module (`type=module` or a dynamic `import(`), `.mjs`, `.wasm`, a service worker, a web manifest, or cross-origin isolation. A saved `FILE` page stays on the file scheme unless it needs that origin. `fetch` or `localStorage` alone does not force the server. `LOCAL_HTTP` always uses it. The built-in code editor soft-wraps by default, with a toggle, and highlights HTML.
 - **HTML vs Frontend vs Offline Pack:**
   - **HTML** — you already have static files.

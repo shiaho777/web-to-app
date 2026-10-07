@@ -4084,11 +4084,19 @@ builtins.__import__ = _w2a_import
         return components
     }
 
+    private fun String.isLoopbackHttpUrl(): Boolean {
+        val host = runCatching { java.net.URI(this).host }.getOrNull()?.lowercase() ?: return false
+        return host == "127.0.0.1" || host == "localhost" || host == "::1"
+    }
+
     private fun ApkConfig.requiresNetworkPermissions(): Boolean {
         if (appType != "HTML" && appType != "FRONTEND") return true
         if (!htmlUsesFileScheme) return true
-        if (targetUrl.startsWith("http://", ignoreCase = true) ||
-            targetUrl.startsWith("https://", ignoreCase = true)) return true
+        // File-scheme packages still record the loopback shell entry as
+        // targetUrl. That URL is not loaded, so it is not a network use (#1254).
+        if ((targetUrl.startsWith("http://", ignoreCase = true) ||
+                targetUrl.startsWith("https://", ignoreCase = true)) &&
+            !targetUrl.isLoopbackHttpUrl()) return true
         if (adsEnabled || adBannerEnabled || adInterstitialEnabled || adSplashEnabled) return true
         if (announcementEnabled &&
             (announcementLink.startsWith("http://", ignoreCase = true) ||
@@ -4101,7 +4109,9 @@ builtins.__import__ = _w2a_import
         if (dnsMode != "SYSTEM") return true
         if (tlsFingerprintEnabled || tlsFingerprintForceHttp3) return true
         if (pwaOfflineEnabled) return true
-        if (enablePrivateNetworkBridge) return true
+        // The private-network bridge defaults on. It only opens a socket when a
+        // page asks for a remote or LAN URL, so it must not force INTERNET onto
+        // a file:// package (#1254).
         if (enableCloudflareCompat && webViewBehavior.cloudflareCompatMode == "ALWAYS_ON") return true
         if (failoverEnabled && failoverUrls.isNotEmpty()) return true
         return false

@@ -38,6 +38,7 @@
 ## 说明
 
 - 生成的应用获得 `allowFileAccess`,使纯文件加载可离线工作。
+- **本地文件**在页面能留在磁盘上时不申请 `INTERNET` 权限。自动模式对普通页面同样如此。必须使用 CDN、ES 模块或 WASM 的页面仍走本地服务并保留该权限,**本地服务**也始终保留。
 - `AUTO` 对普通页面使用文件协议。页面需要真实源时改由本地 HTTP 服务器提供:CDN 地址、ES 模块(`type=module` 或动态 `import(`)、`.mjs`、`.wasm`、Service Worker、Web Manifest,或跨源隔离。已保存的 `FILE` 页面仍走文件协议,除非它需要这个源。只用 `fetch` 或 `localStorage` 不会强制走服务器。`LOCAL_HTTP` 始终走服务器。内置代码编辑器默认软换行,可以关掉,并会高亮 HTML。
 - **HTML vs 前端 vs 离线包:**
   - **HTML** —— 你已经有静态文件。

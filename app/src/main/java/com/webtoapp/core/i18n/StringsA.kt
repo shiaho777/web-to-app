@@ -6481,6 +6481,71 @@ object StringsA {
         AppLanguage.KOREAN -> "로컬 HTTP로 제공, fetch, 모듈, WASM, PWA와 호환"
     }
 
+    val htmlLoadModeTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "加载模式"
+        AppLanguage.ENGLISH -> "Load mode"
+        AppLanguage.ARABIC -> "وضع التحميل"
+        AppLanguage.PORTUGUESE -> "Modo de carregamento"
+        AppLanguage.SPANISH -> "Modo de carga"
+        AppLanguage.FRENCH -> "Mode de chargement"
+        AppLanguage.GERMAN -> "Lademodus"
+        AppLanguage.RUSSIAN -> "Режим загрузки"
+        AppLanguage.JAPANESE -> "読み込み方式"
+        AppLanguage.KOREAN -> "로드 방식"
+    }
+
+    val htmlLoadModeAuto: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "自动"
+        AppLanguage.ENGLISH -> "Automatic"
+        AppLanguage.ARABIC -> "تلقائي"
+        AppLanguage.PORTUGUESE -> "Automático"
+        AppLanguage.SPANISH -> "Automático"
+        AppLanguage.FRENCH -> "Automatique"
+        AppLanguage.GERMAN -> "Automatisch"
+        AppLanguage.RUSSIAN -> "Авто"
+        AppLanguage.JAPANESE -> "自動"
+        AppLanguage.KOREAN -> "자동"
+    }
+
+    val htmlLoadModeFile: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "本地文件"
+        AppLanguage.ENGLISH -> "Local file"
+        AppLanguage.ARABIC -> "ملف محلي"
+        AppLanguage.PORTUGUESE -> "Arquivo local"
+        AppLanguage.SPANISH -> "Archivo local"
+        AppLanguage.FRENCH -> "Fichier local"
+        AppLanguage.GERMAN -> "Lokale Datei"
+        AppLanguage.RUSSIAN -> "Локальный файл"
+        AppLanguage.JAPANESE -> "ローカルファイル"
+        AppLanguage.KOREAN -> "로컬 파일"
+    }
+
+    val htmlLoadModeServer: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "本地服务"
+        AppLanguage.ENGLISH -> "Local server"
+        AppLanguage.ARABIC -> "خادم محلي"
+        AppLanguage.PORTUGUESE -> "Servidor local"
+        AppLanguage.SPANISH -> "Servidor local"
+        AppLanguage.FRENCH -> "Serveur local"
+        AppLanguage.GERMAN -> "Lokaler Server"
+        AppLanguage.RUSSIAN -> "Локальный сервер"
+        AppLanguage.JAPANESE -> "ローカルサーバー"
+        AppLanguage.KOREAN -> "로컬 서버"
+    }
+
+    val htmlLoadModeHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "选「本地文件」时，能留在磁盘上的页面不申请网络权限。必须使用 CDN、ES 模块或 WASM 的页面仍会改走本地服务，并保留网络权限。"
+        AppLanguage.ENGLISH -> "Local file does not request the network permission when the page can stay on disk. A page that needs a CDN, ES modules, or WASM still uses the local server and keeps the permission."
+        AppLanguage.ARABIC -> "الملف المحلي لا يطلب إذن الشبكة إذا بقيت الصفحة على القرص. الصفحة التي تحتاج إلى CDN أو وحدات ES أو WASM تبقى على الخادم المحلي وتحتفظ بالإذن."
+        AppLanguage.PORTUGUESE -> "Arquivo local não pede a permissão de rede quando a página pode ficar no disco. Uma página que precisa de CDN, módulos ES ou WASM continua no servidor local e mantém a permissão."
+        AppLanguage.SPANISH -> "Archivo local no pide el permiso de red si la página puede quedarse en disco. Una página que necesita CDN, módulos ES o WASM sigue en el servidor local y conserva el permiso."
+        AppLanguage.FRENCH -> "Fichier local ne demande pas l'autorisation réseau si la page peut rester sur le disque. Une page qui a besoin d'un CDN, de modules ES ou de WASM passe au serveur local et garde l'autorisation."
+        AppLanguage.GERMAN -> "Lokale Datei fordert die Netzwerkberechtigung nicht an, wenn die Seite auf dem Speicher bleiben kann. Eine Seite mit CDN, ES-Modulen oder WASM nutzt weiter den lokalen Server und behält die Berechtigung."
+        AppLanguage.RUSSIAN -> "Локальный файл не запрашивает разрешение сети, если страница может остаться на диске. Странице с CDN, ES-модулями или WASM всё равно нужен локальный сервер и это разрешение."
+        AppLanguage.JAPANESE -> "ローカルファイルは、ページをディスク上のまま開けるときネットワーク権限を要求しません。CDN、ES モジュール、WASM が必要なページはローカルサーバーのまま、権限も残します。"
+        AppLanguage.KOREAN -> "로컬 파일은 페이지를 디스크에서 열 수 있으면 네트워크 권한을 요청하지 않습니다. CDN, ES 모듈, WASM이 필요한 페이지는 로컬 서버를 쓰고 권한도 유지합니다."
+    }
+
     val portConfigTitle: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "端口配置"
         AppLanguage.ENGLISH -> "Port Configuration"

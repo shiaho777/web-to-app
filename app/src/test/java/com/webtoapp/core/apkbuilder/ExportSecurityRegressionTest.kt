@@ -541,4 +541,69 @@ class ExportSecurityRegressionTest {
         assertThat(permissions).contains("android.permission.INTERNET")
         assertThat(permissions).contains("android.permission.ACCESS_NETWORK_STATE")
     }
+
+    @Test
+    fun `file scheme html export omits internet permission`() {
+        val context = ApplicationProvider.getApplicationContext<android.content.Context>()
+        val builder = ApkBuilder(context)
+        val method = ApkBuilder::class.java.getDeclaredMethod(
+            "buildRequiredPermissions",
+            ApkConfig::class.java
+        ).apply { isAccessible = true }
+        val projectDir = temp.newFolder("file-html")
+        File(projectDir, "index.html").writeText(
+            "<html><script>localStorage.setItem('k','v');fetch('data.json')</script></html>"
+        )
+
+        val config = WebApp(
+            name = "Offline",
+            url = "",
+            appType = AppType.HTML,
+            htmlConfig = HtmlConfig(
+                projectDir = projectDir.absolutePath,
+                entryFile = "index.html",
+                loadMode = HtmlLoadMode.FILE
+            ),
+            apkExportConfig = ApkExportConfig()
+        ).toApkConfig("com.example.fileoffline", context)
+
+        @Suppress("UNCHECKED_CAST")
+        val permissions = method.invoke(builder, config) as List<String>
+
+        assertThat(config.htmlUsesFileScheme).isTrue()
+        assertThat(permissions).doesNotContain("android.permission.INTERNET")
+        assertThat(permissions).doesNotContain("android.permission.ACCESS_NETWORK_STATE")
+    }
+
+    @Test
+    fun `file mode promoted to a real origin keeps internet permission`() {
+        val context = ApplicationProvider.getApplicationContext<android.content.Context>()
+        val builder = ApkBuilder(context)
+        val method = ApkBuilder::class.java.getDeclaredMethod(
+            "buildRequiredPermissions",
+            ApkConfig::class.java
+        ).apply { isAccessible = true }
+        val projectDir = temp.newFolder("cdn-html")
+        File(projectDir, "index.html").writeText(
+            """<html><script type="module" src="https://unpkg.com/mdui@2/mdui.esm.js"></script></html>"""
+        )
+
+        val config = WebApp(
+            name = "Cdn",
+            url = "",
+            appType = AppType.HTML,
+            htmlConfig = HtmlConfig(
+                projectDir = projectDir.absolutePath,
+                entryFile = "index.html",
+                loadMode = HtmlLoadMode.FILE
+            ),
+            apkExportConfig = ApkExportConfig()
+        ).toApkConfig("com.example.cdnhtml", context)
+
+        @Suppress("UNCHECKED_CAST")
+        val permissions = method.invoke(builder, config) as List<String>
+
+        assertThat(config.htmlUsesFileScheme).isFalse()
+        assertThat(permissions).contains("android.permission.INTERNET")
+    }
 }

@@ -512,6 +512,11 @@ object Strings {
     val localServerToggle: String get() = StringsA.localServerToggle
     val localServerFileDesc: String get() = StringsA.localServerFileDesc
     val localServerOnDesc: String get() = StringsA.localServerOnDesc
+    val htmlLoadModeTitle: String get() = StringsA.htmlLoadModeTitle
+    val htmlLoadModeAuto: String get() = StringsA.htmlLoadModeAuto
+    val htmlLoadModeFile: String get() = StringsA.htmlLoadModeFile
+    val htmlLoadModeServer: String get() = StringsA.htmlLoadModeServer
+    val htmlLoadModeHint: String get() = StringsA.htmlLoadModeHint
     val portConfigTitle: String get() = StringsA.portConfigTitle
     val portAutoAssign: String get() = StringsA.portAutoAssign
     val portAutoAssignHint: String get() = StringsA.portAutoAssignHint
