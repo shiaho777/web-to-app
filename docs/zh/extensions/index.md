@@ -1,26 +1,26 @@
-# 插件开发
+#插件开发
 
 WebToApp 生成的应用依然可扩展。三种插件共用同一个管理界面和注入管线：
 
-| 类型 | 是什么 | 适合 |
+| 类型 |是什么|合适|
 | --- | --- | --- |
-| **[HCJ 插件](/zh/extensions/js-module)** | `plugin.json` + 单文件 `plugin.html` 的包——纯 HTML + CSS + JS，无 DSL | 自定义功能、面板、设置界面 |
-| **[油猴脚本](/zh/extensions/userscript)** | Tampermonkey/Greasemonkey 风格的 `.user.js` | 移植现成脚本；`GM_*` API |
-| **[Chrome MV3](/zh/extensions/chrome-mv3)** | Manifest V3 Chrome 扩展 | 移植浏览器扩展；`chrome.*` API |
+| **[HCJ插件](/zh/extensions/js-module)** | `plugin.json` + 单文件 `plugin.html`的包--纯HTML+CSS+JS，无DSL|自定义功能、面板、设置界面|
+| **[油猴脚本](/zh/extensions/userscript)** |TamperMonkey/Greasemonkey风格的`.user.js` | 移植现成脚本；`总经理_*`API|
+| **[铬MV3](/zh/extensions/chrome-MV3)** |清单V3Chrome扩展| 移植浏览器扩展；`铬。*`API|
 
-HCJ（HTML+CSS+JS）是原生格式——可以理解为带真实 UI 能力的油猴脚本升级版。
+HCJ(HTML+CSS+JS)是原生格式--可以理解为带真实UI能力的油猴脚本升级版.
 
 ## 注入机制
 
 脚本类插件按配置的**运行时机**注入：
 
-| 运行时机 | 触发点 |
+| 运行时机 |接触点|
 | --- | --- |
-| `document_start` | `onPageStarted`，早于页面脚本 |
-| `document_end` | DOMContentLoaded（默认） |
+| `document_start` | `onPageStarted`，早于页面脚本|
+| `文档结束(_E)` |DOMContentLoaded（默认）|
 | `document_idle` | 页面加载完成后 |
 
-`hcj.addStyle()`（或旧版 `style.css`）在 document-start 注入页面 CSS，视觉类插件在首帧渲染前生效。**URL 匹配规则**（Chrome 风格 glob 或 `/正则/`）决定插件在哪些页面运行。Chrome 扩展走 MV3 引擎——隐藏 WebView 跑后台 service worker + 动态注册 content script。
+`hcj.addStyle()`（或旧版 `style.css`)在document-start注入页岩面css，视觉类插入件在颈肛门纹染前生效。**URL匹配规则**(Chrome风格glob或`/正则/`）决定插件在哪些页面运行。铬扩展走MV3引擎--隐藏WebView跑后台服务人员+动态注册内容脚本。
 
 ## 插件入口在哪
 
