@@ -725,7 +725,6 @@ private fun ContactGrid() {
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(WtaSpacing.CardGap)) {
             GitHubRepoCard(onClick = { context.openUrl("https://github.com/shiaho777/web-to-app") })
-            SwiftproxySponsorCard()
             entries.chunked(2).forEach { pair ->
                 Row(horizontalArrangement = Arrangement.spacedBy(WtaSpacing.CardGap)) {
                     pair.forEach { entry ->
@@ -823,76 +822,6 @@ private fun GitHubRepoCard(onClick: () -> Unit) {
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontFamily = FontFamily.Monospace,
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-            }
-            Spacer(Modifier.width(8.dp))
-            Box(
-                modifier = Modifier
-                    .size(30.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surfaceContainerHigh),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    Icons.Outlined.NorthEast,
-                    contentDescription = null,
-                    modifier = Modifier.size(16.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun SwiftproxySponsorCard() {
-    val isDark = LocalIsDarkTheme.current
-    val context = LocalContext.current
-
-    WtaCard(
-        onClick = { context.openUrl("https://www.swiftproxy.net/") },
-        modifier = Modifier.fillMaxWidth(),
-        tone = WtaCardTone.Elevated,
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(18.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(RoundedCornerShape(14.dp))
-                    .background(if (isDark) Color(0xFF12211F) else Color(0xFFE8FBF4)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_swiftproxy_mark),
-                    contentDescription = null,
-                    modifier = Modifier.size(26.dp),
-                    tint = Color.Unspecified
-                )
-            }
-            Spacer(Modifier.width(14.dp))
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(2.dp)
-            ) {
-                Text(
-                    text = "Swiftproxy",
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                AnimatedVisibility(visible = LocalShowDescriptions.current) {
-                    Text(
-                        text = Strings.sponsorSwiftproxyDesc,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 2,
                         overflow = TextOverflow.Ellipsis
                     )
                 }

@@ -4162,8 +4162,6 @@ object Strings {
     val legalDisclaimerTitle5: String get() = StringsE.legalDisclaimerTitle5
     val legalDisclaimerContent5: String get() = StringsE.legalDisclaimerContent5
     val madeWithLove: String get() = StringsE.madeWithLove
-    val sponsorSectionTitle: String get() = StringsE.sponsorSectionTitle
-    val sponsorSwiftproxyDesc: String get() = StringsE.sponsorSwiftproxyDesc
     val shortcutPermissionTitle: String get() = StringsE.shortcutPermissionTitle
     val shortcutPermissionGoToSettings: String get() = StringsE.shortcutPermissionGoToSettings
     val shortcutPermissionLater: String get() = StringsE.shortcutPermissionLater

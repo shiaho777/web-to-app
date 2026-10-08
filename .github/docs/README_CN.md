@@ -43,13 +43,6 @@
 </div>
 
 <p align="center">
-  <a href="https://www.swiftproxy.net/?ref=shiaho">
-    <img src="../assets/sponsors/swiftproxy-logo-full.png" alt="Swiftproxy" width="220" />
-  </a><br/>
-  <a href="https://www.swiftproxy.net/?ref=shiaho"><b>由 Swiftproxy 赞助</b></a> —— 高质量纯净住宅IP提供商
-</p>
-
-<p align="center">
   <a href="#应用截图">应用截图</a> ·
   <a href="#webtoapp-有什么不同">有什么不同</a> ·
   <a href="#能力速览">能力速览</a> ·
@@ -426,16 +419,6 @@ Release 构建请通过 `local.properties` 和 `app/build.gradle.kts` 配置签�
 ## 鸣谢
 
 [daoxe.com](https://daoxe.com) — 自用中转站。
-
-<p align="center">
-  <a href="https://www.swiftproxy.net/?ref=shiaho">
-    <img src="../assets/sponsors/swiftproxy-banner-zh.png" width="640" alt="Swiftproxy —— 全球高质量纯净住宅IP,动态流量不过期,支持HTTP(S)/SOCKS5,九折优惠码:PROXY90" />
-  </a>
-</p>
-
-<p align="center">
-  <a href="https://www.swiftproxy.net/?ref=shiaho"><b>由 Swiftproxy 赞助</b></a> —— Swiftproxy 提供 9000万+ 纯净住宅 IP,覆盖全球 220+ 个国家和地区,支持 HTTP(S)/SOCKS5、动态轮换、Sticky Session 及精准地域定位。适用于 Web App、自动化、网页抓取及全球网络访问等场景,提供稳定可靠的代理服务。支持免费测试,使用优惠码 <code>PROXY90</code> 可享 9 折优惠。
-</p>
 
 ---
 

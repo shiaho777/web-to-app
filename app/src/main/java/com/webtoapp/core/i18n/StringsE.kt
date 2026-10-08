@@ -5,32 +5,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
 
 object StringsE {
-    val sponsorSectionTitle: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "赞助商"
-        AppLanguage.ENGLISH -> "Sponsor"
-        AppLanguage.ARABIC -> "الراعي"
-        AppLanguage.PORTUGUESE -> "Patrocinador"
-        AppLanguage.SPANISH -> "Patrocinador"
-        AppLanguage.FRENCH -> "Sponsor"
-        AppLanguage.GERMAN -> "Sponsor"
-        AppLanguage.RUSSIAN -> "Спонсор"
-        AppLanguage.JAPANESE -> "スポンサー"
-        AppLanguage.KOREAN -> "스폰서"
-    }
-
-    val sponsorSwiftproxyDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "高性能轮换住宅代理提供商,专注反封禁解决方案,提升数据采集成功率。"
-        AppLanguage.ENGLISH -> "High-performance rotating residential proxies with anti-ban solutions that boost data-collection success rates."
-        AppLanguage.ARABIC -> "بروكسي سكنية دوّارة عالية الأداء مع حلول مضادة للحظر ترفع معدل نجاح جمع البيانات."
-        AppLanguage.PORTUGUESE -> "Proxies residenciais rotativos de alto desempenho com soluções antibanimento que aumentam a taxa de sucesso da coleta de dados."
-        AppLanguage.SPANISH -> "Proxies residenciales rotativos de alto rendimiento con soluciones antibloqueo que aumentan la tasa de éxito de la recolección de datos."
-        AppLanguage.FRENCH -> "Proxies résidentiels rotatifs haute performance avec des solutions anti-blocage qui augmentent le taux de succès de la collecte de données."
-        AppLanguage.GERMAN -> "Hochleistungs-Rotating-Residential-Proxies mit Anti-Ban-Lösungen, die die Erfolgsquote beim Datensammeln erhöhen."
-        AppLanguage.RUSSIAN -> "Высокопроизводительные ротационные резидентные прокси с антиблокировочными решениями, повышающими успешность сбора данных."
-        AppLanguage.JAPANESE -> "アンチバソリューションでデータ収集の成功率を高める、高性能ローテーティングレジデンシャルプロキシ。"
-        AppLanguage.KOREAN -> "안티밴 솔루션으로 데이터 수집 성공률을 높이는 고성능 로테이팅 레지덴셜 프록시입니다."
-    }
-
     val communityExtStoreTitle: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "插件市场"
         AppLanguage.ENGLISH -> "Plugin Market"
