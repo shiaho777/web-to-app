@@ -25,6 +25,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlin.math.roundToInt
 import org.mozilla.geckoview.MediaSession as GeckoMediaSession
 
 data class ProxyConfig(
@@ -728,6 +729,8 @@ class GeckoViewEngine(
     private var lastGeckoViewportMode: Int = GeckoSessionSettings.VIEWPORT_MODE_MOBILE
     private var lastAllowJavascript: Boolean = true
     private var lastUserAgentOverride: String? = null
+    /** URL we already injected page zoom into, so a javascript: eval cannot loop. */
+    private var pageZoomInjectedUrl: String? = null
 
     /**
      * True while the session is detached from its GeckoView for a hidden
@@ -768,6 +771,7 @@ class GeckoViewEngine(
 
         this.callback = callback
         this.lastConfig = config
+        pageZoomInjectedUrl = null
 
         val echInfo = if (config.dnsMode != "SYSTEM") {
             applyDnsConfig(config.dnsConfig)
@@ -1891,16 +1895,46 @@ class GeckoViewEngine(
         else -> error.message ?: "net::ERR_FAILED"
     }
 
+    /**
+     * GeckoView has no `setInitialScale`. The same viewport script the system
+     * WebView runs at document-start is applied once the page has stopped, so
+     * a non-100 `pageZoomPercent` is not a WebView-only feature (#1264).
+     * `evaluateJavascript` loads a `javascript:` URI; skip those URLs so the
+     * injection cannot schedule itself again.
+     */
+    private fun injectPageZoomIfNeeded(url: String?) {
+        val cfg = lastConfig ?: return
+        if (!cfg.javaScriptEnabled) return
+        val cssWidth = geckoView?.let { view ->
+            val density = view.resources.displayMetrics.density
+            if (view.width > 0 && density > 0f) (view.width / density).roundToInt() else 0
+        } ?: 0
+        val script = com.webtoapp.core.webview.pageZoomDocumentScript(
+            cfg.pageZoomPercent,
+            cfg.zoomEnabled,
+            cssWidth
+        ) ?: return
+        if (url.isNullOrBlank() || url.startsWith("javascript:") || url.startsWith("about:")) return
+        if (pageZoomInjectedUrl == url) return
+        pageZoomInjectedUrl = url
+        evaluateJavascript(script, null)
+    }
+
     private fun setupProgressDelegate(session: GeckoSession, callback: BrowserEngineCallback) {
         session.progressDelegate = object : GeckoSession.ProgressDelegate {
             override fun onPageStart(session: GeckoSession, url: String) {
-
+                // A new document dropped the previous zoom script. Clear the
+                // guard so onPageStop installs it again. javascript: evals
+                // that also land here are ignored by [injectPageZoomIfNeeded].
+                if (!url.startsWith("javascript:")) {
+                    pageZoomInjectedUrl = null
+                }
                 callback.onPageStarted(url)
-
             }
 
             override fun onPageStop(session: GeckoSession, success: Boolean) {
                 callback.onPageFinished(currentUrl)
+                if (success) injectPageZoomIfNeeded(currentUrl)
             }
 
             override fun onProgressChange(session: GeckoSession, progress: Int) {

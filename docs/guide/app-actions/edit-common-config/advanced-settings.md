@@ -9,7 +9,7 @@ A broad set of browser behavior toggles. This card collects the advanced `WebVie
 - **User agent** — the first block of this card. System default, a desktop flavor, or a custom string (`userAgentMode`, `customUserAgent`). Export writes this choice. The HTTP `User-Agent` and `Sec-CH-UA*` stay a pair, including architecture and model. Choosing Custom clears a leftover kernel flavor and turns kernel disguise off, so the typed string is the identity. A desktop flavor also turns desktop mode on.
 - **Desktop mode** — request the desktop site (`desktopMode`). The switch sits on the same block.
 - **Zoom** — enable pinch zoom (`zoomEnabled`).
-- **Page zoom** — build-time per-app whole-page zoom as a percentage, chosen from Chrome-style presets (50%–150%) or entered freely (`pageZoomPercent`, default 100). Applied via `setInitialScale` on every run, including cold starts — it scales text and layout/images/canvas together (unlike `textZoom`, which only scales glyphs), so no runtime toolbar needed. A stored legacy value of `0` is treated as 100.
+- **Page zoom** — build-time per-app whole-page zoom as a percentage, chosen from Chrome-style presets (50%–150%) or entered freely (`pageZoomPercent`, default 100). Applied on every run, including cold starts, by locking the layout viewport to that zoom — text, layout, images, and canvas scale together (unlike `textZoom`, which only scales glyphs). A page's own viewport meta cannot pin the scale back to 100%. No runtime toolbar. A stored legacy value of `0` is treated as 100.
 - **Viewport mode** — default or a custom viewport width (`viewportMode`, `customViewportWidth`).
 
 ## Navigation & refresh

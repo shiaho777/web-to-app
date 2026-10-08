@@ -401,11 +401,12 @@ data class WebViewConfig(
     val popupBlockerToggleEnabled: Boolean = false,
 
     val initialScale: Int = 0,
-    // Build-time per-app page zoom in percent (100 = default), applied via initialScale
-    // (whole-page scaling: text AND layout/images) on every run (#654). This is THE page
-    // zoom for the app — the tool was transferred from the runtime hidden toolbar into
-    // the editor's Advanced Settings, so there is no runtime override layer anymore.
-    // 0 (legacy data) is treated as 100.
+    // Build-time per-app page zoom in percent (100 = default). A document-start
+    // script rewrites the viewport (layout width = cssWidth / zoom) so text,
+    // layout, images, and canvas scale together (#654, #1264). setInitialScale
+    // loses to the page's own viewport meta and is not the mechanism.
+    // This is THE page zoom — it moved from the runtime toolbar into Advanced
+    // Settings, so there is no runtime override layer. 0 (legacy) is 100.
     val pageZoomPercent: Int = 100,
     val viewportMode: ViewportMode = ViewportMode.DEFAULT,
     val customViewportWidth: Int = 0,
