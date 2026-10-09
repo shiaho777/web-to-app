@@ -1,5 +1,6 @@
 package com.webtoapp.core.engine
 
+import android.content.ComponentCallbacks
 import android.content.Context
 import android.content.ContextWrapper
 import android.os.Build
@@ -218,7 +219,7 @@ object GeckoRuntimeProvisioner {
             val omniJa = fileManager.getOmniJaFile(EngineType.GECKOVIEW)
             val container = ensureOmniContainer(omniJa)
             if (container != null) {
-                GeckoPreviewContext(context, container.absolutePath)
+                newPreviewContext(context, container.absolutePath)
             } else {
                 context
             }
@@ -345,12 +346,21 @@ object GeckoRuntimeProvisioner {
         return true
     }
 
+    internal fun newPreviewContext(base: Context, resourcePath: String): Context =
+        GeckoPreviewContext(base, resourcePath)
+
     /**
      * Returns the container zip path for `getPackageResourcePath()` — the
      * value GeckoThread bakes into `-greomni` — while delegating everything
      * else to the real context. `getApplicationContext()` returns the wrapper
      * itself so `GeckoAppShell.sApplicationContext` keeps these overrides for
      * the lifetime of the runtime.
+     *
+     * That self-return is unsafe for [registerComponentCallbacks] on Android 12
+     * and below: the framework method is `getApplicationContext().register…`,
+     * so GeckoRuntime.create's memory-callback registration recurses until the
+     * stack overflows (#1274). Forward those two calls to the real Application,
+     * which stores the callback itself.
      */
     private class GeckoPreviewContext(
         base: Context,
@@ -358,5 +368,13 @@ object GeckoRuntimeProvisioner {
     ) : ContextWrapper(base) {
         override fun getApplicationContext(): Context = this
         override fun getPackageResourcePath(): String = resourcePathOverride
+
+        override fun registerComponentCallbacks(callback: ComponentCallbacks) {
+            baseContext.applicationContext.registerComponentCallbacks(callback)
+        }
+
+        override fun unregisterComponentCallbacks(callback: ComponentCallbacks) {
+            baseContext.applicationContext.unregisterComponentCallbacks(callback)
+        }
     }
 }

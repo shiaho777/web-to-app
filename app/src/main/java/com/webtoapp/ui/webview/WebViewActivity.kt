@@ -1237,14 +1237,16 @@ open class WebViewActivity : AppCompatActivity() {
     private fun applySeparateTaskDescription(label: String) {
         if (this !is WebViewDocumentActivity) return
         try {
-            val description = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            // Builder exists only from API 33. Gating on P (28) resolves a missing
+            // class on Android 12, and NoClassDefFoundError is not an Exception.
+            val description = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 ActivityManager.TaskDescription.Builder().setLabel(label).build()
             } else {
                 @Suppress("DEPRECATION")
                 ActivityManager.TaskDescription(label)
             }
             setTaskDescription(description)
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             AppLogger.w("WebViewActivity", "setTaskDescription failed: ${e.message}")
         }
     }
