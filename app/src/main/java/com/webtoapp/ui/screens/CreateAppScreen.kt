@@ -197,6 +197,11 @@ fun CreateAppScreen(
                     onSelectIcon = { imagePickerLauncher.launch("image/*") },
                     onSelectIconFromLibrary = { path ->
                         viewModel.updateEditState { copy(savedIconPath = path, iconUri = null) }
+                    },
+                    onIconBackgroundColorChange = { color ->
+                        viewModel.updateEditState {
+                            copy(apkExportConfig = apkExportConfig.copy(iconBackgroundColor = color))
+                        }
                     }
                 )
             }
@@ -823,7 +828,8 @@ fun BasicInfoCard(
     onNameChange: (String) -> Unit,
     onUrlChange: (String) -> Unit,
     onSelectIcon: () -> Unit,
-    onSelectIconFromLibrary: (String) -> Unit = {}
+    onSelectIconFromLibrary: (String) -> Unit = {},
+    onIconBackgroundColorChange: (String?) -> Unit = {}
 ) {
     WtaSettingCard {
         val coroutineScope = rememberCoroutineScope()
@@ -842,6 +848,8 @@ fun BasicInfoCard(
                     iconUri = editState.iconUri,
                     iconPath = editState.savedIconPath,
                     websiteUrl = if (editState.appType == AppType.WEB) editState.url else null,
+                    iconBackgroundColor = editState.apkExportConfig.iconBackgroundColor,
+                    onIconBackgroundColorChange = onIconBackgroundColorChange,
                     onSelectFromGallery = onSelectIcon,
                     onSelectFromLibrary = onSelectIconFromLibrary
                 )

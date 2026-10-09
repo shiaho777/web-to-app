@@ -994,6 +994,7 @@ class ApkBuilder(private val context: Context) {
                             outputApk = unsignedApk,
                             config = config,
                             iconPath = webApp.iconPath,
+                            iconBackgroundColor = webApp.apkExportConfig?.iconBackgroundColor,
                             splashMediaPath = webApp.getSplashMediaPath(),
                             mediaContentPath = mediaContentPath,
                             bgmPlaylistPaths = bgmPlaylistPaths,
@@ -1037,6 +1038,7 @@ class ApkBuilder(private val context: Context) {
                             outputApk = unsignedApk,
                             config = config,
                             iconPath = webApp.iconPath,
+                            iconBackgroundColor = webApp.apkExportConfig?.iconBackgroundColor,
                             splashMediaPath = webApp.getSplashMediaPath(),
                             mediaContentPath = mediaContentPath,
                             bgmPlaylistPaths = bgmPlaylistPaths,
@@ -1083,6 +1085,7 @@ class ApkBuilder(private val context: Context) {
                         outputApk = unsignedApk,
                         config = config,
                         iconPath = webApp.iconPath,
+                        iconBackgroundColor = webApp.apkExportConfig?.iconBackgroundColor,
                         splashMediaPath = webApp.getSplashMediaPath(),
                         mediaContentPath = mediaContentPath,
                         bgmPlaylistPaths = bgmPlaylistPaths,
@@ -1432,6 +1435,7 @@ class ApkBuilder(private val context: Context) {
         outputApk: File,
         config: ApkConfig,
         iconPath: String?,
+        iconBackgroundColor: String? = null,
         splashMediaPath: String?,
         mediaContentPath: String? = null,
         bgmPlaylistPaths: List<String> = emptyList(),
@@ -1825,9 +1829,15 @@ class ApkBuilder(private val context: Context) {
 
                         // Solid backing color — never the user image itself, or launchers
                         // composite the picture twice (background + safe-zone foreground).
-                        val bgBytes = ApkTemplate.createSolidBackgroundIcon(iconBitmap, ADAPTIVE_ICON_PX)
+                        val bgColor = ApkTemplate.parseIconBackgroundColor(iconBackgroundColor)
+                        val bgBytes = ApkTemplate.createSolidBackgroundIcon(
+                            iconBitmap, ADAPTIVE_ICON_PX, bgColor
+                        )
                         writeEntryDeflated(zipOut, ArscRebuilder.LAUNCHER_BACKGROUND_DRAWABLE_PATH, bgBytes)
-                        logger.log("Added solid launcher background drawable (${bgBytes.size} bytes)")
+                        logger.log(
+                            "Added solid launcher background drawable (${bgBytes.size} bytes, " +
+                                "color=${iconBackgroundColor ?: "auto"})"
+                        )
                     }
                 }
 

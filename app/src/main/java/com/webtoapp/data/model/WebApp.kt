@@ -1353,6 +1353,14 @@ data class ApkExportConfig(
     val forceFullRebuild: Boolean = false,
 
     /**
+     * Solid plate behind the adaptive launcher icon. `null` means derive from the
+     * image (opaque icons keep their border color; transparent icons use white).
+     * Hex `#RRGGBB` / `#AARRGGBB`. Host-side export only — not written into the
+     * generated app's shell config JSON.
+     */
+    val iconBackgroundColor: String? = null,
+
+    /**
      * When the target package is already installed on this device with a higher
      * versionCode, raise the build's version so the update can install
      * (`ApkBuilder.suggestedVersionForInstall`). When false the build ships exactly

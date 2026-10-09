@@ -47,10 +47,32 @@ class LauncherIconGenerationTest {
     }
 
     @Test
-    fun `transparent logo with light subject derives a black background`() {
+    fun `transparent logo with light subject derives a white background`() {
         val logo = transparentLogo(subjectColor = Color.WHITE)
 
-        assertThat(ApkTemplate.deriveLauncherBackgroundColor(logo)).isEqualTo(0xFF000000.toInt())
+        assertThat(ApkTemplate.deriveLauncherBackgroundColor(logo)).isEqualTo(0xFFFFFFFF.toInt())
+    }
+
+    @Test
+    fun `explicit background color overrides derivation`() {
+        val logo = transparentLogo(subjectColor = Color.WHITE)
+
+        val png = ApkTemplate.createSolidBackgroundIcon(logo, 64, 0xFF3366CC.toInt())
+        val decoded = BitmapFactory.decodeByteArray(png, 0, png.size)
+        val pixels = IntArray(64 * 64)
+        decoded.getPixels(pixels, 0, 64, 0, 0, 64, 64)
+
+        assertThat(pixels.distinct()).containsExactly(0xFF3366CC.toInt())
+    }
+
+    @Test
+    fun `parseIconBackgroundColor accepts rgb and argb hex`() {
+        assertThat(ApkTemplate.parseIconBackgroundColor(null)).isNull()
+        assertThat(ApkTemplate.parseIconBackgroundColor("")).isNull()
+        assertThat(ApkTemplate.parseIconBackgroundColor("#FFFFFF")).isEqualTo(0xFFFFFFFF.toInt())
+        assertThat(ApkTemplate.parseIconBackgroundColor("#000000")).isEqualTo(0xFF000000.toInt())
+        assertThat(ApkTemplate.parseIconBackgroundColor("#80FF0000")).isEqualTo(0xFFFF0000.toInt())
+        assertThat(ApkTemplate.parseIconBackgroundColor("not-a-color")).isNull()
     }
 
     @Test

@@ -39,8 +39,10 @@ class ApkTemplate(private val context: Context) {
          * background + foreground, so an image-backed background shows the whole picture
          * behind the safe-zone subject (issue: "transparent background icon duplicates it
          * behind the subject"). Opaque images keep their dominant border color so the icon
-         * still reads as a full tile; transparent logos fall back to white/black by
-         * luminance contrast against the subject.
+         * still reads as a full tile. Transparent images use white (#1094): a light
+         * subject used to force black, which is what NP Manager's white mipmap vs a
+         * black installed tile was showing. Authors who want a dark plate pick
+         * [com.webtoapp.data.model.ApkExportConfig.iconBackgroundColor].
          */
         fun deriveLauncherBackgroundColor(bitmap: Bitmap): Int {
             // Sample a coarse grid straight from the source pixels; downscaling through
@@ -50,7 +52,6 @@ class ApkTemplate(private val context: Context) {
             val band = maxOf(1, minOf(cols, rows) / 8)
 
             val borderCounts = HashMap<Int, Int>()
-            val allCounts = HashMap<Int, Int>()
             var borderOpaque = 0
             var borderCells = 0
 
@@ -66,10 +67,8 @@ class ApkTemplate(private val context: Context) {
 
                     val pixel = bitmap.getPixel(x, y)
                     if ((pixel ushr 24) < 128) continue
-
-                    val quantized = quantizeColor(pixel)
-                    allCounts[quantized] = (allCounts[quantized] ?: 0) + 1
                     if (isBorder) {
+                        val quantized = quantizeColor(pixel)
                         borderCounts[quantized] = (borderCounts[quantized] ?: 0) + 1
                         borderOpaque++
                     }
@@ -79,15 +78,35 @@ class ApkTemplate(private val context: Context) {
             if (borderOpaque * 2 >= borderCells) {
                 borderCounts.maxByOrNull { it.value }?.let { return it.key }
             }
-
-            val dominant = allCounts.maxByOrNull { it.value }?.key
-                ?: return 0xFFFFFFFF.toInt()
-            return if (luminance(dominant) >= 0.5f) 0xFF000000.toInt() else 0xFFFFFFFF.toInt()
+            return 0xFFFFFFFF.toInt()
         }
 
-        fun createSolidBackgroundIcon(bitmap: Bitmap, size: Int): ByteArray {
+        /**
+         * Parses an author-picked launcher plate color (`#RRGGBB` or `#AARRGGBB`).
+         * Alpha is forced opaque. Blank / malformed values mean "derive".
+         */
+        fun parseIconBackgroundColor(hex: String?): Int? {
+            if (hex.isNullOrBlank()) return null
+            return try {
+                val digits = hex.trim().removePrefix("#")
+                val rgb = when (digits.length) {
+                    6 -> digits
+                    8 -> digits.takeLast(6)
+                    else -> return null
+                }
+                android.graphics.Color.parseColor("#$rgb")
+            } catch (_: Exception) {
+                null
+            }
+        }
+
+        fun createSolidBackgroundIcon(
+            bitmap: Bitmap,
+            size: Int,
+            backgroundColor: Int? = null
+        ): ByteArray {
             val output = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
-            output.eraseColor(deriveLauncherBackgroundColor(bitmap))
+            output.eraseColor(backgroundColor ?: deriveLauncherBackgroundColor(bitmap))
 
             val baos = ByteArrayOutputStream()
             output.compress(Bitmap.CompressFormat.PNG, 100, baos)
@@ -100,13 +119,6 @@ class ApkTemplate(private val context: Context) {
             val g = (color shr 8) and 0xF8
             val b = color and 0xF8
             return 0xFF000000.toInt() or (r shl 16) or (g shl 8) or b
-        }
-
-        private fun luminance(color: Int): Float {
-            val r = (color shr 16) and 0xFF
-            val g = (color shr 8) and 0xFF
-            val b = color and 0xFF
-            return (0.299f * r + 0.587f * g + 0.114f * b) / 255f
         }
     }
 

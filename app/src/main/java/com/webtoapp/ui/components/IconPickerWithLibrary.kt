@@ -2,9 +2,11 @@ package com.webtoapp.ui.components
 
 import android.net.Uri
 import android.widget.Toast
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
@@ -12,6 +14,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.platform.LocalContext
@@ -19,15 +22,20 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.ui.design.WtaChip
+import com.webtoapp.ui.theme.ifDescriptionsShown
 import com.webtoapp.util.FaviconFetcher
 import kotlinx.coroutines.launch
 import java.io.File
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun IconPickerWithLibrary(
     iconUri: Uri? = null,
     iconPath: String? = null,
     websiteUrl: String? = null,
+    iconBackgroundColor: String? = null,
+    onIconBackgroundColorChange: ((String?) -> Unit)? = null,
     onSelectFromGallery: () -> Unit,
     onSelectFromLibrary: (String) -> Unit
 ) {
@@ -35,13 +43,18 @@ fun IconPickerWithLibrary(
     val scope = rememberCoroutineScope()
     var showLibraryDialog by remember { mutableStateOf(false) }
     var showAiGeneratorDialog by remember { mutableStateOf(false) }
+    var showBackgroundPicker by remember { mutableStateOf(false) }
     var isFetchingFavicon by remember { mutableStateOf(false) }
 
     val hasIcon = iconUri != null || iconPath != null
+    val plateColor = remember(iconBackgroundColor) {
+        iconBackgroundColor?.let { parseColor(it) } ?: Color.White
+    }
 
     val canFetchFavicon = !websiteUrl.isNullOrBlank() &&
         (websiteUrl.contains(".") || websiteUrl.startsWith("http"))
 
+    Column(modifier = Modifier.fillMaxWidth()) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
@@ -58,7 +71,7 @@ fun IconPickerWithLibrary(
                     shape = MaterialTheme.shapes.medium
                 )
                 .clickable { onSelectFromGallery() },
-            color = MaterialTheme.colorScheme.surfaceVariant
+            color = if (hasIcon) plateColor else MaterialTheme.colorScheme.surfaceVariant
         ) {
             when {
                 iconUri != null -> {
@@ -68,8 +81,10 @@ fun IconPickerWithLibrary(
                             .crossfade(true)
                             .build(),
                         contentDescription = Strings.labelIcon,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(12.dp),
+                        contentScale = ContentScale.Fit
                     )
                 }
                 iconPath != null -> {
@@ -79,8 +94,10 @@ fun IconPickerWithLibrary(
                             .crossfade(true)
                             .build(),
                         contentDescription = Strings.labelIcon,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(12.dp),
+                        contentScale = ContentScale.Fit
                     )
                 }
                 else -> {
@@ -172,6 +189,70 @@ fun IconPickerWithLibrary(
                 }
             }
         }
+    }
+
+    if (onIconBackgroundColorChange != null) {
+        Spacer(modifier = Modifier.height(12.dp))
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(
+                text = Strings.iconBackground,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
+            Strings.iconBackgroundDesc.ifDescriptionsShown()?.let { desc ->
+                Text(
+                    text = desc,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                WtaChip(
+                    selected = iconBackgroundColor == null,
+                    onClick = { onIconBackgroundColorChange(null) },
+                    label = Strings.tagAuto,
+                    showSelectedCheck = false
+                )
+                WtaChip(
+                    selected = iconBackgroundColor != null,
+                    onClick = { showBackgroundPicker = true },
+                    label = iconBackgroundColor?.uppercase() ?: Strings.backgroundColor,
+                    showSelectedCheck = false,
+                    leadingContent = {
+                        Box(
+                            modifier = Modifier
+                                .size(14.dp)
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(plateColor)
+                                .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(4.dp))
+                        )
+                    }
+                )
+            }
+        }
+    }
+    }
+
+    if (showBackgroundPicker && onIconBackgroundColorChange != null) {
+        ColorPickerDialog(
+            currentColor = iconBackgroundColor ?: "#FFFFFF",
+            onColorSelected = { picked ->
+                val digits = picked.removePrefix("#")
+                onIconBackgroundColorChange(
+                    when {
+                        digits.length == 8 && digits.startsWith("00") -> null
+                        digits.length == 8 -> "#${digits.takeLast(6)}"
+                        digits.length == 6 -> "#$digits"
+                        else -> "#FFFFFF"
+                    }
+                )
+                showBackgroundPicker = false
+            },
+            onDismiss = { showBackgroundPicker = false }
+        )
     }
 
     if (showLibraryDialog) {

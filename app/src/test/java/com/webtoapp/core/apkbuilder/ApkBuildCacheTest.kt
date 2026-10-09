@@ -92,6 +92,54 @@ class ApkBuildCacheTest {
     }
 
     @Test
+    fun `icon background color changes the identity fingerprint`() {
+        val context = RuntimeEnvironment.getApplication()
+        val cache = ApkBuildCache(context)
+        val template = File(context.cacheDir, "shell_icon_bg.apk").apply {
+            writeBytes(ByteArray(16) { 4 })
+        }
+        val config = ApkConfig(
+            meta = MetaBlock(
+                appName = "IconBg",
+                packageName = "com.demo.iconbg",
+                targetUrl = "https://example.com",
+                versionCode = 1,
+                versionName = "1.0",
+                appType = "WEB"
+            )
+        )
+
+        fun planFor(color: String?) = cache.plan(
+            webApp = com.webtoapp.data.model.WebApp(
+                id = 56,
+                name = "IconBg",
+                url = "https://example.com",
+                apkExportConfig = com.webtoapp.data.model.ApkExportConfig(
+                    iconBackgroundColor = color
+                )
+            ),
+            packageName = "com.demo.iconbg",
+            config = config,
+            templateApk = template,
+            encryptionEnabled = false,
+            abiFilters = emptyList(),
+            projectDirs = emptyList(),
+            mediaContentPath = null,
+            splashMediaPath = null,
+            bgmPlaylistPaths = emptyList(),
+            htmlFiles = emptyList(),
+            galleryItems = emptyList(),
+            errorPageMediaPath = null,
+            forceFullRebuild = false
+        )
+
+        assertThat(planFor("#FFFFFF").identityFingerprint)
+            .isNotEqualTo(planFor(null).identityFingerprint)
+        assertThat(planFor("#000000").identityFingerprint)
+            .isNotEqualTo(planFor("#FFFFFF").identityFingerprint)
+    }
+
+    @Test
     fun `SAEP toggle forces full rebuild both ways while unchanged policy reuses cache`() {
         val context = RuntimeEnvironment.getApplication()
         val cache = ApkBuildCache(context)

@@ -123,6 +123,7 @@ class ApkBuildCache(private val context: Context) {
             encryptionEnabled = encryptionEnabled,
             abiFilters = abiFilters,
             iconPath = webApp.iconPath,
+            iconBackgroundColor = webApp.apkExportConfig?.iconBackgroundColor,
             nativeLibsFingerprint = nativeLibsFingerprint,
             hostVersionCode = hostVersionCode,
             manifestFingerprint = manifestFingerprint.orEmpty() +
@@ -362,6 +363,7 @@ class ApkBuildCache(private val context: Context) {
         encryptionEnabled: Boolean,
         abiFilters: List<String>,
         iconPath: String?,
+        iconBackgroundColor: String? = null,
         nativeLibsFingerprint: String? = null,
         hostVersionCode: Int = 0,
         manifestFingerprint: String? = null,
@@ -387,6 +389,7 @@ class ApkBuildCache(private val context: Context) {
         parts += "abi=${abiFilters.sorted().joinToString(",")}"
         parts += "enc=$encryptionEnabled"
         parts += "icon=${fileFingerprint(iconPath)}"
+        parts += "iconBg=${iconBackgroundColor ?: "auto"}"
         parts += "deeplinkHosts=${config.deepLinkHosts.sorted().joinToString(",")}"
         parts += "deeplinkSchemes=${config.deepLinkSchemes.sorted().joinToString(",")}"
         // Inbound share sheet (#943) also rewrites the manifest — the ACTION_SEND

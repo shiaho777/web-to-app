@@ -3965,6 +3965,32 @@ object StringsA {
         AppLanguage.KOREAN -> "앱 아이콘"
     }
 
+    val iconBackground: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "图标背景"
+        AppLanguage.ENGLISH -> "Icon background"
+        AppLanguage.ARABIC -> "خلفية الأيقونة"
+        AppLanguage.PORTUGUESE -> "Fundo do ícone"
+        AppLanguage.SPANISH -> "Fondo del icono"
+        AppLanguage.FRENCH -> "Fond de l'icône"
+        AppLanguage.GERMAN -> "Icon-Hintergrund"
+        AppLanguage.RUSSIAN -> "Фон значка"
+        AppLanguage.JAPANESE -> "アイコンの背景"
+        AppLanguage.KOREAN -> "아이콘 배경"
+    }
+
+    val iconBackgroundDesc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "自适应图标的底板颜色。透明图片默认用白色，也可以自己选。"
+        AppLanguage.ENGLISH -> "Plate color behind the adaptive icon. Transparent images default to white."
+        AppLanguage.ARABIC -> "لون اللوحة خلف الأيقونة التكيفية. الصور الشفافة تكون بيضاء افتراضيًا."
+        AppLanguage.PORTUGUESE -> "Cor da placa atrás do ícone adaptativo. Imagens transparentes usam branco por padrão."
+        AppLanguage.SPANISH -> "Color de la placa detrás del icono adaptativo. Las imágenes transparentes usan blanco por defecto."
+        AppLanguage.FRENCH -> "Couleur de la plaque derrière l'icône adaptative. Les images transparentes utilisent le blanc par défaut."
+        AppLanguage.GERMAN -> "Plattenfarbe hinter dem Adaptive Icon. Transparente Bilder verwenden standardmäßig Weiß."
+        AppLanguage.RUSSIAN -> "Цвет подложки адаптивного значка. Прозрачные изображения по умолчанию белые."
+        AppLanguage.JAPANESE -> "アダプティブアイコンの下地色です。透明な画像は既定で白になります。"
+        AppLanguage.KOREAN -> "적응형 아이콘 뒤의 바탕 색입니다. 투명 이미지는 기본값이 흰색입니다."
+    }
+
     val labelBasicInfo: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "基本信息"
         AppLanguage.ENGLISH -> "Basic Info"
