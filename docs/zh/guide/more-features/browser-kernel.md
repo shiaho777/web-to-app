@@ -41,7 +41,7 @@ GeckoView 是独立于系统 WebView 的完整第二引擎,而不是 WebView 的
 - blob / data: 下载拦截
 - [长按菜单](/zh/guide/app-actions/edit-common-config/long-press-menu)(保存图片 / 视频、复制链接等)
 - 状态栏自动取色(跟随页面顶部颜色;纯色 / 主题模式不受影响)
-- 页面缩放设置(缩放比例 / 初始缩放 / 文字缩放;GeckoView 仅保留自带的双指缩放)
+- 文字缩放(GeckoView 会在页面加载完成后改写布局视口,从而应用页面缩放百分比,并保留自己的双指缩放)
 - 跟随系统深色模式
 - Cookie 策略(GeckoView 固定接受全部 Cookie)
 - Hosts 映射(域名 → IP)

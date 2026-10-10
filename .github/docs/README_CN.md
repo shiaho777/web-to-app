@@ -131,7 +131,7 @@
 | 输入 | 输出 | 适合场景 |
 | --- | --- | --- |
 | 网站 URL | 基于 WebView 的 APK | 官网、工具、后台、文档、内部系统 |
-| HTML / 静态前端 | 走 localhost 的 APK | React、Vue、Vite、静态构建、离线 Web 应用 |
+| HTML / 静态前端 | 本地文件或 localhost APK | React、Vue、Vite、静态构建。普通页面可以不申请网络权限 |
 | Node.js / PHP / Python / Go | 带设备端本地服务的 APK | 小型服务端应用、管理工具、演示、原型 |
 | WordPress | 本地 PHP + SQLite 承载的 APK | 便携站点、主题/插件演示、本地内容包 |
 | 图片 / 视频 / 图库 | 媒体型 APK | 相册、课程材料、作品集、离线浏览 |
@@ -166,6 +166,7 @@ WebToApp 的开关非常多。下面按使用场景分组,并用可折叠区段�
 - **双引擎** —— 默认系统 WebView,可选 GeckoView(Firefox)运行时(首次使用时下载)。
 - **内核风味伪装** —— 对外表现为 Chrome、Edge、Samsung Internet、Firefox 或 Safari 风格,但真实引擎不变。
 - **桌面模式**、自定义 User-Agent,以及 document-start / end / idle 三种时机的 JS/CSS 注入。
+- **页面缩放** —— 按应用设置的百分比会锁住布局视口,文字、布局、图片和画布在系统 WebView 和 GeckoView 上一起缩放。
 - **弹窗处理** —— 当前窗口、外部浏览器、弹窗窗口或直接拦截。
 - **代理** —— 静态 HTTP/HTTPS/SOCKS5、PAC、身份验证、绕过规则和本地 HTTP-to-SOCKS 桥。
 - **DNS-over-HTTPS** —— Cloudflare、Google、AdGuard、NextDNS、CleanBrowsing、Quad9、Mullvad,以及自定义 endpoint;支持 strict / automatic 模式。
@@ -237,7 +238,7 @@ WebToApp 的开关非常多。下面按使用场景分组,并用可折叠区段�
 <details>
 <summary><b>🔧 APK / AAB 导出与签名</b></summary>
 
-- **自定义包名**、`versionName`、`versionCode`、图标、名称、架构目标和导出格式。
+- **自定义包名**、`versionName`、`versionCode`、图标、名称、架构目标和导出格式。透明图标默认使用白色自适应底板,也可以自己选颜色。不透明图标沿用边缘颜色。
 - **按生成 APK 的实际勾选注入权限**,并从模板 manifest 中裁剪未使用权限。
 - **一键 AAB 导出** —— 按需自动构建 APK,转换成可直接上架的签名 AAB(自动把 `targetSdk` 改写到 Play 要求的级别,目前为 36,并在本地生成 protobuf 元数据);支持中途取消。除服务端运行时应用类型和开启资源加密的构建外全部可用 —— 见[哪些应用可以上架](https://shiaho777.github.io/web-to-app/zh/guide/more-features/google-play)。
 - **密钥库管理** —— 创建、导入、导出、删除和证书指纹查看;支持 PKCS12/PFX/JKS/BKS 导入,包括 Android Studio upload key 那种 store 密码和 key 密码不同的情况。
@@ -251,6 +252,7 @@ WebToApp 的开关非常多。下面按使用场景分组,并用可折叠区段�
 <summary><b>🗂 文件管理与项目工具</b></summary>
 
 - **文件管理** —— 一个界面统一查看、分享、安装、打开和清空构建产物(APK 构建、AAB 导出、应用克隆、构建日志)和用户文件目录,并提供只读的构建日志查看器。
+- **导出源码** —— 可以在 Android Studio 里打开的 Gradle 工程:清单、WebView Activity、配置和本地文件。密钥库、`node_modules`、`.git` 和完整的 shell 运行时不会打进去。
 - **网站爬虫**用于生成离线包 —— HTML、CSS、JS、图片、字体、`url()`、`srcset`、`@import`、路径重写、同域限制、深度限制和体积限制;并行流式 worker 池,进度回调回到主线程。
 - **多网站应用** —— 底部标签、跟手滑动的顶部标签、卡片(1–4 列和高度滑杆)、信息流、抽屉(1–3 列)、站点顺序、启动时打开的标签,以及每站点独立图标/主题色/提取选择器/刷新间隔和共享 JS/CSS。
 - **图库应用** —— 媒体分类、网格/列表/时间线视图、随机/单循、排序、缩略图条、浮层、视频自动下一个和播放记忆。
@@ -329,6 +331,7 @@ App 会同时拉取 `registry.json` 和 `submissions.json`,只展示两边都存
 | 开发者文档 | [/zh/developer/](https://shiaho777.github.io/web-to-app/zh/developer/) | 架构、导出管线、shell 同步、配置漂移、i18n、常见改动配方 |
 | 扩展开发 | [/zh/extensions/](https://shiaho777.github.io/web-to-app/zh/extensions/) | JS/CSS 模块、油猴脚本、Chrome MV3、API 参考、发布流程 |
 | English | [/](https://shiaho777.github.io/web-to-app/) | 上述全部页面的英文原版 |
+| 隐私政策 | [/zh/privacy](https://shiaho777.github.io/web-to-app/zh/privacy) | 构建器本身的隐私政策。用它打包出去的应用需要自己的政策 |
 
 ## 架构说明
 

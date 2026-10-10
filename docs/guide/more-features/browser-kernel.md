@@ -41,7 +41,7 @@ GeckoView is a complete second engine independent of the system WebView, not a W
 - blob / data: download interception
 - The [long-press menu](/guide/app-actions/edit-common-config/long-press-menu) (save image/video, copy link, etc.)
 - Status-bar auto color sampling (follow page-top color; solid-color / theme modes are unaffected)
-- Page zoom settings (zoom percent / initial scale / text zoom; GeckoView keeps only its built-in pinch zoom)
+- Text zoom (GeckoView applies the page-zoom percent by rewriting the layout viewport when the page finishes loading, and keeps its own pinch zoom)
 - Follow-system dark mode
 - Cookie policy (GeckoView always accepts all cookies)
 - Hosts mapping (domain → IP)

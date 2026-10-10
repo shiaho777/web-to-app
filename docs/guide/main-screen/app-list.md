@@ -21,7 +21,7 @@ Each card shows:
 | **Tap ⋮ on the card** | Open the [action menu](/guide/app-actions/edit-core-config) |
 | **Swipe the card left** | Quick [delete](/guide/app-actions/delete) (with confirmation) |
 
-[About → Separate WebApp tasks](/guide/more-features/about) is off by default. When it is on, each home preview and each desktop shortcut gets its own recents entry.
+[About → Separate WebApp tasks](/guide/more-features/about) is off by default. When it is on, each home preview and each desktop shortcut gets its own recents entry. Opening the same app again brings that card forward. A shortcut created on an older build still starts a new card; create it again.
 
 ## Sort
 

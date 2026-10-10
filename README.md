@@ -131,7 +131,7 @@ A quick scan of what's in the box. Each links to the detailed feature map below.
 | Input | Output | Good for |
 | --- | --- | --- |
 | Website URL | WebView-based APK | Landing pages, tools, dashboards, docs, internal systems |
-| HTML / static front-end | Localhost-backed APK | React, Vue, Vite, static builds, offline web apps |
+| HTML / static front-end | Local file or localhost APK | React, Vue, Vite, static builds. A plain page can omit the internet permission |
 | Node.js / PHP / Python / Go | APK with an on-device local server | Small server apps, admin tools, demos, prototypes |
 | WordPress | APK running WordPress over local PHP + SQLite | Portable sites, theme/plugin demos, content packages |
 | Images / video / galleries | Media-focused APK | Albums, course materials, portfolios, offline viewers |
@@ -166,6 +166,7 @@ WebToApp has a large number of switches. The sections below group them by use ca
 - **Dual engine** — System WebView by default, or an optional GeckoView (Firefox) runtime downloaded on first use.
 - **Kernel flavor disguise** — present as Chrome, Edge, Samsung Internet, Firefox, or Safari-style while keeping the real engine.
 - **Desktop mode**, custom User-Agent, and JS/CSS injection at document-start / end / idle.
+- **Page zoom** — a per-app percent that locks the layout viewport, so text, layout, images, and canvas scale together on the system WebView and on GeckoView.
 - **Popup handling** — same window, external browser, popup window, or block.
 - **Proxies** — static HTTP/HTTPS/SOCKS5, PAC, authentication, bypass rules, and a local HTTP-to-SOCKS bridge.
 - **DNS-over-HTTPS** — Cloudflare, Google, AdGuard, NextDNS, CleanBrowsing, Quad9, Mullvad, plus custom endpoints; strict or automatic modes.
@@ -237,7 +238,7 @@ WebToApp has a large number of switches. The sections below group them by use ca
 <details>
 <summary><b>🔧 APK / AAB export & signing</b></summary>
 
-- **Custom package name**, `versionName`, `versionCode`, icon, label, architecture target, and export format.
+- **Custom package name**, `versionName`, `versionCode`, icon, label, architecture target, and export format. A transparent icon gets a white adaptive plate by default, or a color you pick. An opaque icon keeps its edge color.
 - **Build-time permission injection** with unused permissions pruned from the template manifest.
 - **One-tap AAB export** — auto-builds the APK on demand, converts it to a Play-ready signed AAB with `targetSdk` rewritten to the Play-required level (currently 36) and protobuf metadata generated locally; cancellable mid-build. Available for every app type except the server-runtime ones and encrypted builds — see [which apps can be published](https://shiaho777.github.io/web-to-app/guide/more-features/google-play).
 - **Keystore management** — create, import, export, delete, and certificate-fingerprint viewing; PKCS12/PFX/JKS/BKS import including Android Studio upload-key cases where store and key passwords differ.
@@ -251,6 +252,7 @@ WebToApp has a large number of switches. The sections below group them by use ca
 <summary><b>🗂 File manager & project tooling</b></summary>
 
 - **File manager** — a single screen to view, share, install, open, and clear build outputs (APK builds, AAB exports, app clones, build logs) and a user-files directory, with a read-only build-log viewer.
+- **Export source** — a Gradle project you can open in Android Studio: manifest, WebView activity, config, and local files. The keystore, `node_modules`, `.git`, and the full shell runtime stay out.
 - **Website scraper** for offline packs — HTML, CSS, JS, images, fonts, `url()`, `srcset`, `@import`, path rewriting, same-domain limits, depth limits, and size limits; parallel streaming worker pool with main-thread progress callbacks.
 - **Multi-Web layouts** — bottom tabs, top tabs that follow a sideways swipe, cards (1–4 columns and a height slider), feeds, drawers (1–3 columns), site order, the tab opened on launch, per-site icons/theme colors/extraction selectors/refresh intervals, and shared JS/CSS.
 - **Gallery apps** — categorized media, grid/list/timeline views, shuffle/single-loop, sorting, thumbnail bar, overlays, auto-next, and playback memory.
@@ -329,6 +331,7 @@ The official documentation site is published at **[shiaho777.github.io/web-to-ap
 | Developer | [/developer/](https://shiaho777.github.io/web-to-app/developer/) | Architecture, export pipeline, shell sync, config drift, i18n, change recipes |
 | Extensions | [/extensions/](https://shiaho777.github.io/web-to-app/extensions/) | JS/CSS modules, userscripts, Chrome MV3, API reference, publishing |
 | 简体中文 | [/zh/](https://shiaho777.github.io/web-to-app/zh/) | Full Chinese mirror of every page above |
+| Privacy | [/privacy](https://shiaho777.github.io/web-to-app/privacy) | Privacy policy for the builder app. Apps you build need their own |
 
 ## Architecture
 

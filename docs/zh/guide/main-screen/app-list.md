@@ -21,7 +21,7 @@
 | **点卡片上的 ⋮** | 打开[操作菜单](/zh/guide/app-actions/edit-core-config) |
 | **向左滑动卡片** | 快速[删除](/zh/guide/app-actions/delete)(带确认) |
 
-[关于 → WebApp 独立任务](/zh/guide/more-features/about)默认关闭。开启后,每次首页预览和每个桌面快捷方式都会单独占用一条最近任务。
+[关于 → WebApp 独立任务](/zh/guide/more-features/about)默认关闭。开启后,每次首页预览和每个桌面快捷方式都会单独占用一条最近任务。再次打开同一个应用会把那张卡片调到前面。旧版本创建的快捷方式仍会新开一张卡片,需要重新创建。
 
 ## 排序
 
