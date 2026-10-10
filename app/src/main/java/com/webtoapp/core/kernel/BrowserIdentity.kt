@@ -145,14 +145,14 @@ internal object UserAgentProfileDeriver {
 
         val brands = when {
             isEdge && chromeMajor != null -> listOf(
+                KernelBrand("Not_A Brand", "24", "24.0.0.0"),
                 KernelBrand("Chromium", chromeMajor, "$chromeMajor.0.0.0"),
-                KernelBrand("Microsoft Edge", chromeMajor, "$chromeMajor.0.0.0"),
-                KernelBrand("Not_A Brand", "24", "24.0.0.0")
+                KernelBrand("Microsoft Edge", chromeMajor, "$chromeMajor.0.0.0")
             )
             isChromium && chromeMajor != null -> listOf(
+                KernelBrand("Not_A Brand", "24", "24.0.0.0"),
                 KernelBrand("Chromium", chromeMajor, "$chromeMajor.0.0.0"),
-                KernelBrand("Google Chrome", chromeMajor, "$chromeMajor.0.0.0"),
-                KernelBrand("Not_A Brand", "24", "24.0.0.0")
+                KernelBrand("Google Chrome", chromeMajor, "$chromeMajor.0.0.0")
             )
             // Firefox and Safari do not ship UA client hints; an empty brand list is what makes
             // `Sec-CH-UA` absent for them, which is what those browsers really do.

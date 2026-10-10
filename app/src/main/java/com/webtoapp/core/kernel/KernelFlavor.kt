@@ -66,8 +66,22 @@ data class KernelFlavorProfile(
     val isNoOp: Boolean
         get() = flavor == KernelFlavor.SYSTEM_DEFAULT
 
+    /**
+     * JS the page (and its iframes) must see before their own scripts run.
+     *
+     * Derived identities from device disguise keep [flavor] = [KernelFlavor.SYSTEM_DEFAULT]
+     * but still carry a Chrome UA. Those used to emit nothing, so a challenge iframe saw a
+     * Chrome User-Agent with a WebView `window.chrome` / `navigator.webdriver`.
+     */
     fun buildFlavorJs(): String {
-        if (isNoOp) return ""
+        if (isNoOp && userAgent.isNullOrBlank()) return ""
+
+        val formFactorsJs = if (mobile) "['Mobile']" else "['Desktop']"
+        val productSub = if (hasWindowChrome) "20030107" else "20100101"
+        val uaLiteral = userAgent?.takeIf { it.isNotBlank() }?.let { jsString(it) }
+        val appVersionLiteral = userAgent?.takeIf { it.isNotBlank() }
+            ?.removePrefix("Mozilla/")
+            ?.let { jsString(it) }
 
         val clientHintsJs = if (supportsClientHints && brands.isNotEmpty()) {
             val brandsArrayJs = brands.joinToString(",") { b ->
@@ -83,7 +97,7 @@ data class KernelFlavorProfile(
                 brands:uadBrands,
                 mobile:$mobile,
                 platform:${jsString(platform)},
-                getHighEntropyValues:function(hints){
+                getHighEntropyValues:_mn(function(hints){
                     return Promise.resolve({
                         brands:uadBrands,
                         mobile:$mobile,
@@ -93,51 +107,127 @@ data class KernelFlavorProfile(
                         bitness:${jsString(bitness)},
                         model:${jsString(model)},
                         uaFullVersion:${jsString(fullVersion)},
-                        fullVersionList:uadFullList
+                        fullVersionList:uadFullList,
+                        wow64:false,
+                        formFactors:$formFactorsJs
                     });
-                },
-                toJSON:function(){return {brands:uadBrands,mobile:$mobile,platform:${jsString(platform)}};}
+                }),
+                toJSON:_mn(function(){return {brands:uadBrands,mobile:$mobile,platform:${jsString(platform)}};} )
             };
-            try{Object.defineProperty(navigator,'userAgentData',{get:function(){return uadObj;},configurable:true});}catch(e){}
+            _proto(Navigator,'userAgentData',function(){return uadObj;});
             """
         } else {
             """
-            try{Object.defineProperty(navigator,'userAgentData',{get:function(){return undefined;},configurable:true});}catch(e){}
+            _proto(Navigator,'userAgentData',function(){return undefined;});
             """
         }
 
         val windowChromeJs = if (hasWindowChrome) {
             """
-            if(!window.chrome){window.chrome={};}
-            if(!window.chrome.runtime){window.chrome.runtime={
-                OnInstalledReason:{CHROME_UPDATE:'chrome_update',INSTALL:'install'},
-                connect:function(){return{onDisconnect:{addListener:function(){}},postMessage:function(){},disconnect:function(){}};}
-            };}
-            if(!window.chrome.loadTimes){window.chrome.loadTimes=function(){return{commitLoadTime:Date.now()/1000,firstPaintTime:Date.now()/1000,navigationType:'Other'};};}
-            if(!window.chrome.csi){window.chrome.csi=function(){return{onloadT:Date.now(),pageT:performance.now(),tran:15};};}
+            if(!window.chrome)window.chrome={};
+            if(!window.chrome.app)window.chrome.app={
+                isInstalled:false,
+                InstallState:{DISABLED:'disabled',INSTALLED:'installed',NOT_INSTALLED:'not_installed'},
+                RunningState:{CANNOT_RUN:'cannot_run',READY_TO_RUN:'ready_to_run',RUNNING:'running'},
+                getDetails:_mn(function(){return null;}),
+                getIsInstalled:_mn(function(){return false;}),
+                installState:_mn(function(cb){if(cb)cb('not_installed');return 'not_installed';})
+            };
+            if(!window.chrome.runtime)window.chrome.runtime={
+                OnInstalledReason:{CHROME_UPDATE:'chrome_update',INSTALL:'install',SHARED_MODULE_UPDATE:'shared_module_update',UPDATE:'update'},
+                OnRestartRequiredReason:{APP_UPDATE:'app_update',OS_UPDATE:'os_update',PERIODIC:'periodic'},
+                PlatformArch:{ARM:'arm',ARM64:'arm64',MIPS:'mips',MIPS64:'mips64',X86_32:'x86-32',X86_64:'x86-64'},
+                PlatformOs:{ANDROID:'android',CROS:'cros',LINUX:'linux',MAC:'mac',WIN:'win'},
+                connect:_mn(function(){return{onDisconnect:{addListener:function(){}},onMessage:{addListener:function(){}},postMessage:function(){},disconnect:function(){}};}),
+                sendMessage:_mn(function(){}),
+                id:undefined
+            };
+            if(!window.chrome.loadTimes){
+                window.chrome.loadTimes=_mn(function(){
+                    var n=performance.now()/1000;
+                    return{requestTime:n-0.3,startLoadTime:n-0.25,commitLoadTime:n-0.1,
+                        finishDocumentLoadTime:n-0.05,finishLoadTime:n,firstPaintTime:n-0.08,
+                        firstPaintAfterLoadTime:0,navigationType:'Other',
+                        wasFetchedViaSpdy:true,wasNpnNegotiated:true,npnNegotiatedProtocol:'h2',
+                        wasAlternateProtocolAvailable:false,connectionInfo:'h2'};
+                });
+            }
+            if(!window.chrome.csi){
+                window.chrome.csi=_mn(function(){return{onloadT:Date.now(),startE:Date.now()-300,pageT:performance.now(),tran:15};});
+            }
+            _proto(Navigator,'pdfViewerEnabled',function(){return true;});
+            _proto(Navigator,'productSub',function(){return '$productSub';});
+            $chromePluginSpoofJs
             """
         } else {
             """
             try{delete window.chrome;}catch(e){}
-            try{Object.defineProperty(window,'chrome',{get:function(){return undefined;},configurable:true});}catch(e){}
+            _proto(Window,'chrome',function(){return undefined;});
             """
         }
 
-        val uaJs = if (!userAgent.isNullOrBlank()) {
-            "try{Object.defineProperty(navigator,'userAgent',{get:function(){return ${jsString(userAgent)};},configurable:true});}catch(e){}"
+        val uaJs = if (uaLiteral != null && appVersionLiteral != null) {
+            """
+            _proto(Navigator,'userAgent',function(){return $uaLiteral;});
+            _proto(Navigator,'appVersion',function(){return $appVersionLiteral;});
+            """
         } else {
             ""
         }
 
         return """(function(){'use strict';
-            if(window.__wta_kernel_flavor__)return;
-            window.__wta_kernel_flavor__='${flavor.name}';
+            var KEY=Symbol.for('wta.kf');
+            if(window[KEY])return;
+            try{Object.defineProperty(window,KEY,{value:1,enumerable:false,configurable:false});}catch(e){window[KEY]=1;}
+
+            var _ots=Function.prototype.toString;
+            var _ht=typeof WeakSet==='function'?new WeakSet():null;
+            var _nativeToString=function(){
+                if(_ht&&_ht.has(this))return'function '+(this.name||'')+'() { [native code] }';
+                return _ots.call(this);
+            };
+            if(_ht)_ht.add(_nativeToString);
+            try{Object.defineProperty(Function.prototype,'toString',{value:_nativeToString,writable:true,configurable:true});}catch(e){}
+            function _mn(fn){if(_ht)_ht.add(fn);return fn;}
+            function _proto(ctor,prop,getter){
+                var g=_mn(getter);
+                try{Object.defineProperty(ctor.prototype,prop,{get:g,enumerable:true,configurable:true});return;}catch(e){}
+                try{Object.defineProperty(ctor===Navigator?navigator:ctor===Window?window:navigator,prop,{get:g,enumerable:true,configurable:true});}catch(e2){}
+            }
+
+            _proto(Navigator,'webdriver',function(){return false;});
+            try{delete window.__selenium_unwrapped;delete window.__webdriver_evaluate;delete window.__webdriver_script_function;delete window.domAutomation;delete window.domAutomationController;}catch(e){}
             $uaJs
-            try{Object.defineProperty(navigator,'vendor',{get:function(){return ${jsString(vendor)};},configurable:true});}catch(e){}
+            _proto(Navigator,'vendor',function(){return ${jsString(vendor)};});
             $windowChromeJs
             $clientHintsJs
+            if(!window.outerWidth){_proto(Window,'outerWidth',function(){return window.innerWidth;});}
+            if(!window.outerHeight){_proto(Window,'outerHeight',function(){return window.innerHeight;});}
         })();""".trimIndent()
     }
+
+    private val chromePluginSpoofJs: String
+        get() = """
+            (function(){
+                var pdf={type:'application/pdf',suffixes:'pdf',description:'Portable Document Format',enabledPlugin:null};
+                function mkPlugin(name){
+                    var p={name:name,description:'Portable Document Format',filename:'internal-pdf-viewer',length:1,0:pdf};
+                    p[pdf.type]=pdf;
+                    if(typeof Plugin!=='undefined')try{Object.setPrototypeOf(p,Plugin.prototype);}catch(e){}
+                    return p;
+                }
+                var list=[mkPlugin('PDF Viewer'),mkPlugin('Chrome PDF Viewer'),mkPlugin('Chromium PDF Viewer')];
+                pdf.enabledPlugin=list[0];
+                var plugins={length:list.length,item:_mn(function(i){return list[i]||null;}),namedItem:_mn(function(n){for(var i=0;i<list.length;i++)if(list[i].name===n)return list[i];return null;}),refresh:_mn(function(){})};
+                var mimes={length:1,item:_mn(function(i){return i===0?pdf:null;}),namedItem:_mn(function(n){return n==='application/pdf'?pdf:null;})};
+                for(var i=0;i<list.length;i++)plugins[i]=list[i];
+                mimes[0]=pdf;mimes['application/pdf']=pdf;
+                if(typeof PluginArray!=='undefined')try{Object.setPrototypeOf(plugins,PluginArray.prototype);}catch(e){}
+                if(typeof MimeTypeArray!=='undefined')try{Object.setPrototypeOf(mimes,MimeTypeArray.prototype);}catch(e){}
+                _proto(Navigator,'plugins',function(){return plugins;});
+                _proto(Navigator,'mimeTypes',function(){return mimes;});
+            })();
+        """.trimIndent()
 
     private fun jsString(value: String): String {
         val escaped = value
@@ -171,9 +261,9 @@ data class KernelFlavorProfile(
                 hasWindowChrome = true,
                 supportsClientHints = true,
                 brands = listOf(
+                    KernelBrand("Not_A Brand", "24", "24.0.0.0"),
                     KernelBrand("Chromium", UserAgentVersions.CHROME, "${UserAgentVersions.CHROME}.0.0.0"),
-                    KernelBrand("Google Chrome", UserAgentVersions.CHROME, "${UserAgentVersions.CHROME}.0.0.0"),
-                    KernelBrand("Not_A Brand", "24", "24.0.0.0")
+                    KernelBrand("Google Chrome", UserAgentVersions.CHROME, "${UserAgentVersions.CHROME}.0.0.0")
                 ),
                 mobile = true,
                 platform = "Android",
@@ -191,9 +281,9 @@ data class KernelFlavorProfile(
                 hasWindowChrome = true,
                 supportsClientHints = true,
                 brands = listOf(
+                    KernelBrand("Not_A Brand", "24", "24.0.0.0"),
                     KernelBrand("Chromium", UserAgentVersions.CHROME, "${UserAgentVersions.CHROME}.0.0.0"),
-                    KernelBrand("Microsoft Edge", UserAgentVersions.CHROME, "${UserAgentVersions.CHROME}.0.0.0"),
-                    KernelBrand("Not_A Brand", "24", "24.0.0.0")
+                    KernelBrand("Microsoft Edge", UserAgentVersions.CHROME, "${UserAgentVersions.CHROME}.0.0.0")
                 ),
                 mobile = true,
                 platform = "Android",
@@ -211,9 +301,9 @@ data class KernelFlavorProfile(
                 hasWindowChrome = true,
                 supportsClientHints = true,
                 brands = listOf(
+                    KernelBrand("Not_A Brand", "24", "24.0.0.0"),
                     KernelBrand("Chromium", UserAgentVersions.CHROME, "${UserAgentVersions.CHROME}.0.0.0"),
-                    KernelBrand("Samsung Internet", "27", "27.0.0.0"),
-                    KernelBrand("Not_A Brand", "24", "24.0.0.0")
+                    KernelBrand("Samsung Internet", "27", "27.0.0.0")
                 ),
                 mobile = true,
                 platform = "Android",
@@ -263,9 +353,9 @@ data class KernelFlavorProfile(
                 hasWindowChrome = true,
                 supportsClientHints = true,
                 brands = listOf(
+                    KernelBrand("Not_A Brand", "24", "24.0.0.0"),
                     KernelBrand("Chromium", UserAgentVersions.CHROME, "${UserAgentVersions.CHROME}.0.0.0"),
-                    KernelBrand("Google Chrome", UserAgentVersions.CHROME, "${UserAgentVersions.CHROME}.0.0.0"),
-                    KernelBrand("Not_A Brand", "24", "24.0.0.0")
+                    KernelBrand("Google Chrome", UserAgentVersions.CHROME, "${UserAgentVersions.CHROME}.0.0.0")
                 ),
                 mobile = false,
                 platform = "Windows",
@@ -283,9 +373,9 @@ data class KernelFlavorProfile(
                 hasWindowChrome = true,
                 supportsClientHints = true,
                 brands = listOf(
+                    KernelBrand("Not_A Brand", "24", "24.0.0.0"),
                     KernelBrand("Chromium", UserAgentVersions.CHROME, "${UserAgentVersions.CHROME}.0.0.0"),
-                    KernelBrand("Microsoft Edge", UserAgentVersions.CHROME, "${UserAgentVersions.CHROME}.0.0.0"),
-                    KernelBrand("Not_A Brand", "24", "24.0.0.0")
+                    KernelBrand("Microsoft Edge", UserAgentVersions.CHROME, "${UserAgentVersions.CHROME}.0.0.0")
                 ),
                 mobile = false,
                 platform = "Windows",

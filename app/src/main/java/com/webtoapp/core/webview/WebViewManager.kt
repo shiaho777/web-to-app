@@ -61,6 +61,7 @@ class WebViewManager(
     private val shareInboxScriptHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
     private val cosmeticFilterScriptHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
     private val pageZoomScriptHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
+    private val kernelFlavorScriptHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
 
     companion object {
 
@@ -1526,11 +1527,9 @@ class WebViewManager(
         // applied together below, so a page can never see a UA that contradicts `Sec-CH-UA`.
         this.resolvedBrowserIdentity = resolveBrowserIdentityFor(config)
 
-        // The JS layer only needs a script for real flavors: a derived profile (custom UA or
-        // device disguise) is already backed by the metadata, and `navigator.userAgent` follows
-        // the overridden UA string on its own.
+        // Flavor JS now also covers SYSTEM_DEFAULT plus a derived Chrome UA (device disguise).
+        // Challenge iframes must see window.chrome / webdriver before their own scripts run.
         this.cachedKernelFlavorJs = resolvedBrowserIdentity.profile
-            ?.takeIf { it.flavor != com.webtoapp.core.kernel.KernelFlavor.SYSTEM_DEFAULT }
             ?.buildFlavorJs()
             ?.takeIf { it.isNotEmpty() }
             ?.also { js ->
@@ -1915,6 +1914,7 @@ class WebViewManager(
             webChromeClient = createWebChromeClient(config, callbacks)
 
             installPageZoomDocumentStart(this, config)
+            installKernelFlavorDocumentStart(this)
 
             if (config.enablePrivateNetworkBridge || config.enableCorsBypass) {
                 installPrivateNetworkApiBridge(this, config)
@@ -4358,6 +4358,10 @@ class WebViewManager(
             runCatching { handler.remove() }
         }
         pageZoomScriptHandlers.clear()
+        kernelFlavorScriptHandlers.values.toList().forEach { handler ->
+            runCatching { handler.remove() }
+        }
+        kernelFlavorScriptHandlers.clear()
         managedWebViews.keys.toList().forEach { webView ->
             destroyWebView(webView)
         }
@@ -4421,6 +4425,34 @@ class WebViewManager(
             config.zoomEnabled,
             webViewCssWidth(webView)
         )
+    }
+
+    /**
+     * Chrome (and other kernel) flavor JS must run before the page's own scripts,
+     * including challenge iframes. [evaluateJavascript] on onPageStarted loses that
+     * race, which is why device disguise (Chrome UA, no early JS) still tripped
+     * z.ai / Turnstile (#1121).
+     */
+    private fun installKernelFlavorDocumentStart(webView: WebView) {
+        kernelFlavorScriptHandlers.remove(webView)?.let { handler ->
+            runCatching { handler.remove() }
+        }
+        val script = cachedKernelFlavorJs?.takeIf { it.isNotEmpty() } ?: return
+        if (currentConfig?.javaScriptEnabled == false) return
+        if (!WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
+            AppLogger.d("WebViewManager", "Document-start unsupported; kernel flavor JS will use onPageStarted")
+            return
+        }
+        try {
+            kernelFlavorScriptHandlers[webView] = WebViewCompat.addDocumentStartJavaScript(
+                webView,
+                script,
+                setOf("*")
+            )
+            AppLogger.d("WebViewManager", "Kernel flavor JS installed at document start")
+        } catch (e: Exception) {
+            AppLogger.w("WebViewManager", "Document-start kernel flavor JS install failed", e)
+        }
     }
 
     /**

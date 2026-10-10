@@ -184,10 +184,10 @@ class BrowserIdentityTest {
         assertThat(profile.architecture).isEqualTo("x86")
         assertThat(profile.model).isEmpty()
         assertThat(profile.brands.map { it.brand }).containsExactly(
+            "Not_A Brand",
             "Chromium",
-            "Google Chrome",
-            "Not_A Brand"
-        )
+            "Google Chrome"
+        ).inOrder()
     }
 
     @Test
