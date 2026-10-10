@@ -238,7 +238,7 @@ WebToApp 的开关非常多。下面按使用场景分组,并用可折叠区段�
 <details>
 <summary><b>🔧 APK / AAB 导出与签名</b></summary>
 
-- **自定义包名**、`versionName`、`versionCode`、图标、名称、架构目标和导出格式。透明图标默认使用白色自适应底板,也可以自己选颜色。不透明图标沿用边缘颜色。
+- **自定义包名**、`versionName`、`versionCode`、图标、名称、架构目标和导出格式。透明图标默认使用白色自适应底板,也可以选纯色,或选透明让底板空着。不透明图标沿用边缘颜色。
 - **按生成 APK 的实际勾选注入权限**,并从模板 manifest 中裁剪未使用权限。
 - **一键 AAB 导出** —— 按需自动构建 APK,转换成可直接上架的签名 AAB(自动把 `targetSdk` 改写到 Play 要求的级别,目前为 36,并在本地生成 protobuf 元数据);支持中途取消。除服务端运行时应用类型和开启资源加密的构建外全部可用 —— 见[哪些应用可以上架](https://shiaho777.github.io/web-to-app/zh/guide/more-features/google-play)。
 - **密钥库管理** —— 创建、导入、导出、删除和证书指纹查看;支持 PKCS12/PFX/JKS/BKS 导入,包括 Android Studio upload key 那种 store 密码和 key 密码不同的情况。

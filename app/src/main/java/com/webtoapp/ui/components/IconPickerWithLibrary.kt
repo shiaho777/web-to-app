@@ -21,6 +21,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.webtoapp.core.apkbuilder.ApkTemplate
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.ui.design.WtaChip
 import com.webtoapp.ui.theme.ifDescriptionsShown
@@ -47,8 +48,18 @@ fun IconPickerWithLibrary(
     var isFetchingFavicon by remember { mutableStateOf(false) }
 
     val hasIcon = iconUri != null || iconPath != null
+    val transparentPlate = iconBackgroundColor.equals("#00000000", ignoreCase = true)
     val plateColor = remember(iconBackgroundColor) {
         iconBackgroundColor?.let { parseColor(it) } ?: Color.White
+    }
+    val plateFill = if (transparentPlate) {
+        Modifier.background(
+            brush = androidx.compose.ui.graphics.Brush.linearGradient(
+                colors = listOf(Color.White, Color.LightGray)
+            )
+        )
+    } else {
+        Modifier.background(plateColor)
     }
 
     val canFetchFavicon = !websiteUrl.isNullOrBlank() &&
@@ -64,6 +75,7 @@ fun IconPickerWithLibrary(
             modifier = Modifier
                 .size(72.dp)
                 .clip(MaterialTheme.shapes.medium)
+                .then(if (hasIcon) plateFill else Modifier)
                 .border(
                     width = 2.dp,
                     color = if (hasIcon) MaterialTheme.colorScheme.primary
@@ -71,7 +83,7 @@ fun IconPickerWithLibrary(
                     shape = MaterialTheme.shapes.medium
                 )
                 .clickable { onSelectFromGallery() },
-            color = if (hasIcon) plateColor else MaterialTheme.colorScheme.surfaceVariant
+            color = if (hasIcon) Color.Transparent else MaterialTheme.colorScheme.surfaceVariant
         ) {
             when {
                 iconUri != null -> {
@@ -226,7 +238,7 @@ fun IconPickerWithLibrary(
                             modifier = Modifier
                                 .size(14.dp)
                                 .clip(RoundedCornerShape(4.dp))
-                                .background(plateColor)
+                                .then(plateFill)
                                 .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(4.dp))
                         )
                     }
@@ -240,15 +252,7 @@ fun IconPickerWithLibrary(
         ColorPickerDialog(
             currentColor = iconBackgroundColor ?: "#FFFFFF",
             onColorSelected = { picked ->
-                val digits = picked.removePrefix("#")
-                onIconBackgroundColorChange(
-                    when {
-                        digits.length == 8 && digits.startsWith("00") -> null
-                        digits.length == 8 -> "#${digits.takeLast(6)}"
-                        digits.length == 6 -> "#$digits"
-                        else -> "#FFFFFF"
-                    }
-                )
+                onIconBackgroundColorChange(ApkTemplate.normalizeIconBackgroundColor(picked))
                 showBackgroundPicker = false
             },
             onDismiss = { showBackgroundPicker = false }

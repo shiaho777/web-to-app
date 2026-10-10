@@ -82,19 +82,42 @@ class ApkTemplate(private val context: Context) {
         }
 
         /**
+         * Canonical value stored on [com.webtoapp.data.model.ApkExportConfig.iconBackgroundColor].
+         * Fully transparent (`#00RRGGBB`) stays `#00000000`. Other 8-digit values drop
+         * to opaque `#RRGGBB`. Blank / malformed strings mean "derive".
+         */
+        fun normalizeIconBackgroundColor(picked: String?): String? {
+            if (picked.isNullOrBlank()) return null
+            val digits = picked.trim().removePrefix("#")
+            return when {
+                digits.length == 8 && digits.take(2).equals("00", ignoreCase = true) -> "#00000000"
+                digits.length == 8 -> "#${digits.takeLast(6).uppercase()}"
+                digits.length == 6 -> "#${digits.uppercase()}"
+                else -> null
+            }
+        }
+
+        /**
          * Parses an author-picked launcher plate color (`#RRGGBB` or `#AARRGGBB`).
-         * Alpha is forced opaque. Blank / malformed values mean "derive".
+         * Alpha 0 is [android.graphics.Color.TRANSPARENT]; any other alpha is
+         * forced opaque. Blank / malformed values mean "derive".
          */
         fun parseIconBackgroundColor(hex: String?): Int? {
             if (hex.isNullOrBlank()) return null
             return try {
                 val digits = hex.trim().removePrefix("#")
-                val rgb = when (digits.length) {
-                    6 -> digits
-                    8 -> digits.takeLast(6)
-                    else -> return null
+                when (digits.length) {
+                    6 -> android.graphics.Color.parseColor("#$digits")
+                    8 -> {
+                        val color = android.graphics.Color.parseColor("#$digits")
+                        if (android.graphics.Color.alpha(color) == 0) {
+                            android.graphics.Color.TRANSPARENT
+                        } else {
+                            android.graphics.Color.parseColor("#FF${digits.takeLast(6)}")
+                        }
+                    }
+                    else -> null
                 }
-                android.graphics.Color.parseColor("#$rgb")
             } catch (_: Exception) {
                 null
             }

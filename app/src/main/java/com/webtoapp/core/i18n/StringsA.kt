@@ -3979,16 +3979,16 @@ object StringsA {
     }
 
     val iconBackgroundDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "自适应图标的底板颜色。透明图片默认用白色，也可以自己选。"
-        AppLanguage.ENGLISH -> "Plate color behind the adaptive icon. Transparent images default to white."
-        AppLanguage.ARABIC -> "لون اللوحة خلف الأيقونة التكيفية. الصور الشفافة تكون بيضاء افتراضيًا."
-        AppLanguage.PORTUGUESE -> "Cor da placa atrás do ícone adaptativo. Imagens transparentes usam branco por padrão."
-        AppLanguage.SPANISH -> "Color de la placa detrás del icono adaptativo. Las imágenes transparentes usan blanco por defecto."
-        AppLanguage.FRENCH -> "Couleur de la plaque derrière l'icône adaptative. Les images transparentes utilisent le blanc par défaut."
-        AppLanguage.GERMAN -> "Plattenfarbe hinter dem Adaptive Icon. Transparente Bilder verwenden standardmäßig Weiß."
-        AppLanguage.RUSSIAN -> "Цвет подложки адаптивного значка. Прозрачные изображения по умолчанию белые."
-        AppLanguage.JAPANESE -> "アダプティブアイコンの下地色です。透明な画像は既定で白になります。"
-        AppLanguage.KOREAN -> "적응형 아이콘 뒤의 바탕 색입니다. 투명 이미지는 기본값이 흰색입니다."
+        AppLanguage.CHINESE -> "自适应图标的底板颜色。透明图片默认用白色。也可以选纯色，或选透明让底板空着。"
+        AppLanguage.ENGLISH -> "Plate color behind the adaptive icon. Transparent images default to white. Pick a solid color, or transparent to leave the plate empty."
+        AppLanguage.ARABIC -> "لون اللوحة خلف الأيقونة التكيفية. الصور الشفافة تكون بيضاء افتراضيًا. اختر لونًا ثابتًا، أو شفافًا لترك اللوحة فارغة."
+        AppLanguage.PORTUGUESE -> "Cor da placa atrás do ícone adaptativo. Imagens transparentes usam branco por padrão. Escolha uma cor sólida, ou transparente para deixar a placa vazia."
+        AppLanguage.SPANISH -> "Color de la placa detrás del icono adaptativo. Las imágenes transparentes usan blanco por defecto. Elige un color sólido, o transparente para dejar la placa vacía."
+        AppLanguage.FRENCH -> "Couleur de la plaque derrière l'icône adaptative. Les images transparentes utilisent le blanc par défaut. Choisissez une couleur unie, ou transparent pour laisser la plaque vide."
+        AppLanguage.GERMAN -> "Plattenfarbe hinter dem Adaptive Icon. Transparente Bilder verwenden standardmäßig Weiß. Wähle eine Vollfarbe, oder Transparent, um die Platte leer zu lassen."
+        AppLanguage.RUSSIAN -> "Цвет подложки адаптивного значка. Прозрачные изображения по умолчанию белые. Выберите сплошной цвет или прозрачный, чтобы оставить подложку пустой."
+        AppLanguage.JAPANESE -> "アダプティブアイコンの下地色です。透明な画像は既定で白になります。単色を選ぶか、透明にして下地を空にできます。"
+        AppLanguage.KOREAN -> "적응형 아이콘 뒤의 바탕 색입니다. 투명 이미지는 기본값이 흰색입니다. 단색을 고르거나, 투명을 골라 바탕을 비울 수 있습니다."
     }
 
     val labelBasicInfo: String get() = when (Strings.lang) {

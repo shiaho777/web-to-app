@@ -238,7 +238,7 @@ WebToApp has a large number of switches. The sections below group them by use ca
 <details>
 <summary><b>🔧 APK / AAB export & signing</b></summary>
 
-- **Custom package name**, `versionName`, `versionCode`, icon, label, architecture target, and export format. A transparent icon gets a white adaptive plate by default, or a color you pick. An opaque icon keeps its edge color.
+- **Custom package name**, `versionName`, `versionCode`, icon, label, architecture target, and export format. A transparent icon gets a white adaptive plate by default, or a solid color you pick, or a transparent plate. An opaque icon keeps its edge color.
 - **Build-time permission injection** with unused permissions pruned from the template manifest.
 - **One-tap AAB export** — auto-builds the APK on demand, converts it to a Play-ready signed AAB with `targetSdk` rewritten to the Play-required level (currently 36) and protobuf metadata generated locally; cancellable mid-build. Available for every app type except the server-runtime ones and encrypted builds — see [which apps can be published](https://shiaho777.github.io/web-to-app/guide/more-features/google-play).
 - **Keystore management** — create, import, export, delete, and certificate-fingerprint viewing; PKCS12/PFX/JKS/BKS import including Android Studio upload-key cases where store and key passwords differ.

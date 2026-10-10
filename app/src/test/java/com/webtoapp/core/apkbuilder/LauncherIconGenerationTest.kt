@@ -72,7 +72,30 @@ class LauncherIconGenerationTest {
         assertThat(ApkTemplate.parseIconBackgroundColor("#FFFFFF")).isEqualTo(0xFFFFFFFF.toInt())
         assertThat(ApkTemplate.parseIconBackgroundColor("#000000")).isEqualTo(0xFF000000.toInt())
         assertThat(ApkTemplate.parseIconBackgroundColor("#80FF0000")).isEqualTo(0xFFFF0000.toInt())
+        assertThat(ApkTemplate.parseIconBackgroundColor("#00000000")).isEqualTo(Color.TRANSPARENT)
         assertThat(ApkTemplate.parseIconBackgroundColor("not-a-color")).isNull()
+    }
+
+    @Test
+    fun `normalizeIconBackgroundColor keeps fully transparent plates`() {
+        assertThat(ApkTemplate.normalizeIconBackgroundColor(null)).isNull()
+        assertThat(ApkTemplate.normalizeIconBackgroundColor("#000000")).isEqualTo("#000000")
+        assertThat(ApkTemplate.normalizeIconBackgroundColor("#00000000")).isEqualTo("#00000000")
+        assertThat(ApkTemplate.normalizeIconBackgroundColor("#00FFFFFF")).isEqualTo("#00000000")
+        assertThat(ApkTemplate.normalizeIconBackgroundColor("#80FF0000")).isEqualTo("#FF0000")
+        assertThat(ApkTemplate.normalizeIconBackgroundColor("aabbcc")).isEqualTo("#AABBCC")
+    }
+
+    @Test
+    fun `explicit transparent plate stays fully transparent`() {
+        val logo = transparentLogo(subjectColor = Color.WHITE)
+
+        val png = ApkTemplate.createSolidBackgroundIcon(logo, 64, Color.TRANSPARENT)
+        val decoded = BitmapFactory.decodeByteArray(png, 0, png.size)
+        val pixels = IntArray(64 * 64)
+        decoded.getPixels(pixels, 0, 64, 0, 0, 64, 64)
+
+        assertThat(pixels.distinct()).containsExactly(Color.TRANSPARENT)
     }
 
     @Test
