@@ -105,6 +105,15 @@ class AppListOrderTest {
     }
 
     @Test
+    fun `a drag from another sort can pin the visible list as custom order`() {
+        val recentlyUpdated = listOf(8L, 1L, 3L)
+        val previousCustom = listOf(1L, 3L, 8L)
+        assertThat(mergeVisibleOrder(previousCustom, recentlyUpdated))
+            .containsExactly(8L, 1L, 3L)
+            .inOrder()
+    }
+
+    @Test
     fun `stored sort falls back to recently updated`() {
         assertThat(AppListSort.fromStored(null)).isEqualTo(AppListSort.UPDATED_DESC)
         assertThat(AppListSort.fromStored("nope")).isEqualTo(AppListSort.UPDATED_DESC)

@@ -154,7 +154,7 @@ fun HomeScreen(
     val allWebApps by viewModel.webApps.collectAsStateWithLifecycle()
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
     val appListSort by viewModel.appListSort.collectAsStateWithLifecycle()
-    val reorderEnabled = appListSort == AppListSort.CUSTOM && searchQuery.isBlank()
+    val reorderEnabled = searchQuery.isBlank()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     val categories by viewModel.categories.collectAsStateWithLifecycle()
@@ -613,6 +613,7 @@ fun HomeScreen(
                     val listState = rememberLazyListState()
                     val listDrag = remember { HomeListDragState() }
                     val latestApps = rememberUpdatedState(apps)
+                    val latestSort = rememberUpdatedState(appListSort)
                     val haptic = LocalHapticFeedback.current
                     val density = LocalDensity.current
                     val displayedApps = listDrag.order ?: apps
@@ -747,10 +748,14 @@ fun HomeScreen(
                                         if (!listDrag.tracking) {
                                             listDrag.settleJob?.cancel()
                                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                            listDrag.order = latestApps.value
+                                            val visible = latestApps.value
+                                            listDrag.order = visible
                                             listDrag.dy = 0f
                                             listDrag.id = app.id
                                             listDrag.tracking = true
+                                            if (latestSort.value != AppListSort.CUSTOM) {
+                                                viewModel.switchToCustomOrder(visible.map { it.id })
+                                            }
                                         }
                                     },
                                     onDrag = { delta ->

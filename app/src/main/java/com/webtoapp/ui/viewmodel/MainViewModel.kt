@@ -101,6 +101,19 @@ class MainViewModel(
     }
 
     /**
+     * Starts a drag from a non-custom sort: pin the list the user is looking
+     * at as custom order so the rows do not jump, then keep later drops.
+     */
+    fun switchToCustomOrder(visibleIds: List<Long>) {
+        if (visibleIds.isEmpty()) return
+        if (_appListSort.value != AppListSort.CUSTOM) {
+            _appListSort.value = AppListSort.CUSTOM
+            appListSortStore.save(AppListSort.CUSTOM)
+        }
+        saveVisibleHomeOrder(visibleIds)
+    }
+
+    /**
      * Writes custom order for the whole library. [visibleIdsInOrder] is the
      * list the user just dragged, which may be one category; hidden apps keep
      * their slots. Does not change `updatedAt`.

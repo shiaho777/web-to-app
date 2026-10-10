@@ -43,9 +43,11 @@ class HomeListDragState {
 }
 
 /**
- * Long-press, then vertical drag. The listener runs on the initial pass and
- * does not consume the pointer until the long-press lands, so a tap still
- * opens the app and a horizontal swipe can still delete.
+ * Long-press, then vertical drag. Available on the home list whenever search
+ * is empty; the first drag from another sort mode pins that list as custom
+ * order. The listener runs on the initial pass and does not consume the
+ * pointer until the long-press lands, so a tap still opens the app and a
+ * horizontal swipe can still delete.
  *
  * [onDrag] receives the vertical delta in pixels. [onEnd] receives velocity
  * in pixels per second.
