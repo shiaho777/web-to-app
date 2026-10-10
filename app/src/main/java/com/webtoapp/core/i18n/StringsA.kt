@@ -150,19 +150,6 @@ object StringsA {
         AppLanguage.KOREAN -> "앱 수정기"
     }
 
-    val menuExtensionModules: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "扩展模块"
-        AppLanguage.ENGLISH -> "Extension Modules"
-        AppLanguage.ARABIC -> "الوحدات الإضافية"
-        AppLanguage.PORTUGUESE -> "Módulos de Extensão"
-        AppLanguage.SPANISH -> "Módulos de Extensión"
-        AppLanguage.FRENCH -> "Modules d'Extension"
-        AppLanguage.GERMAN -> "Erweiterungsmodule"
-        AppLanguage.RUSSIAN -> "Модули расширений"
-        AppLanguage.JAPANESE -> "拡張モジュール"
-        AppLanguage.KOREAN -> "확장 모듈"
-    }
-
     val menuAbout: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "关于"
         AppLanguage.ENGLISH -> "About"

@@ -33,4 +33,4 @@ Agent 使用 [AI 设置](/zh/guide/more-features/ai-settings) 中配置的模型
 
 ## 说明
 
-Agent 既生成*源码*也执行*操作*。要安装生成的扩展,请通过[插件](/zh/guide/more-features/extension-modules)流程安装。
+Agent 既生成*源码*也执行*操作*。要安装生成的扩展,请通过[管理插件](/zh/guide/more-features/extension-modules)流程安装。

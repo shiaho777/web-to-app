@@ -12,5 +12,5 @@
 
 ## 说明
 
-- 在[插件](/zh/guide/more-features/extension-modules)中管理和创建插件。
+- 在[管理插件](/zh/guide/more-features/extension-modules)中管理和创建插件。
 - 编写插件见[插件开发](/zh/extensions/)。

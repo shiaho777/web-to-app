@@ -33,4 +33,4 @@ Agent uses the model and keys configured in [AI Settings](/guide/more-features/a
 
 ## Notes
 
-Agent produces *source* and performs *actions*. To install a generated extension, save it through the [Plugins](/guide/more-features/extension-modules) flow.
+Agent produces *source* and performs *actions*. To install a generated extension, save it through the [Manage Plugins](/guide/more-features/extension-modules) flow.

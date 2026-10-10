@@ -15607,6 +15607,20 @@ object StringsE {
         AppLanguage.KOREAN -> "플러그인"
     }
 
+    /** ⋮ menu + PluginManagerScreen title. Distinct from [pluginsTitle] on the editor card. */
+    val pluginsManageTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "管理插件"
+        AppLanguage.ENGLISH -> "Manage Plugins"
+        AppLanguage.ARABIC -> "إدارة الإضافات"
+        AppLanguage.PORTUGUESE -> "Gerenciar plugins"
+        AppLanguage.SPANISH -> "Gestionar plugins"
+        AppLanguage.FRENCH -> "Gérer les plugins"
+        AppLanguage.GERMAN -> "Plugins verwalten"
+        AppLanguage.RUSSIAN -> "Управление плагинами"
+        AppLanguage.JAPANESE -> "プラグインを管理"
+        AppLanguage.KOREAN -> "플러그인 관리"
+    }
+
     val searchPlugins: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "搜索插件…"
         AppLanguage.ENGLISH -> "Search plugins…"

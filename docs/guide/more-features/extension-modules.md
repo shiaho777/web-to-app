@@ -1,6 +1,6 @@
-# Plugins
+# Manage Plugins
 
-Manage the plugins that run inside your generated apps. Open it from [⋮ → Plugins](/guide/main-screen/more).
+Manage the plugins that run inside your generated apps. Open it from [⋮ → Manage Plugins](/guide/main-screen/more).
 
 ## What you can manage
 

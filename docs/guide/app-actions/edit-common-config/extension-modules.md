@@ -12,5 +12,5 @@ Attaches plugins (HCJ packages, userscripts, MV3 Chrome extensions) to the app.
 
 ## Notes
 
-- Manage and create plugins in [Plugins](/guide/more-features/extension-modules).
+- Manage and create plugins in [Manage Plugins](/guide/more-features/extension-modules).
 - To author plugins, see [Plugin Authoring](/extensions/).

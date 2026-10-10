@@ -11,7 +11,7 @@
 | **Agent** | [Agent](/zh/guide/more-features/agent) |
 | **AI 设置** | [AI 设置](/zh/guide/more-features/ai-settings) |
 | ── | ── |
-| **扩展模块** | [扩展模块](/zh/guide/more-features/extension-modules) |
+| **管理插件** | [管理插件](/zh/guide/more-features/extension-modules) |
 | **应用修改器** | [应用修改器](/zh/guide/more-features/app-modifier) |
 | **Linux 环境** | [Linux 环境](/zh/guide/more-features/linux-environment) |
 | **运行时管理** | [运行时管理](/zh/guide/more-features/runtime-management) |

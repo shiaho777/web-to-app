@@ -128,7 +128,7 @@ fork+exec Node.js、PHP、Python、Go 原生二进制,在本地端口提供服�
 
 <div class="wta-tile">
 
-[**扩展模块**](/zh/guide/more-features/extension-modules)
+[**管理插件**](/zh/guide/more-features/extension-modules)
 
 向任何生成的应用注入 JS/CSS、油猴脚本或 MV3 Chrome 扩展。
 

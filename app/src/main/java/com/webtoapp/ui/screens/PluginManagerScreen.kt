@@ -131,7 +131,7 @@ fun PluginManagerScreen(
         containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
-                title = { Text(Strings.pluginsTitle) },
+                title = { Text(Strings.pluginsManageTitle) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = Strings.back)

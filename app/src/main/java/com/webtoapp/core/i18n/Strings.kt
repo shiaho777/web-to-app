@@ -60,7 +60,7 @@ object Strings {
     val menuAgent: String get() = StringsA.menuAgent
     val menuAiSettings: String get() = StringsA.menuAiSettings
     val menuAppModifier: String get() = StringsA.menuAppModifier
-    val menuExtensionModules: String get() = StringsA.menuExtensionModules
+    val menuExtensionModules: String get() = StringsE.pluginsManageTitle
     val menuAbout: String get() = StringsA.menuAbout
     val tabMore: String get() = StringsA.tabMore
     val moreSectionAiTools: String get() = StringsA.moreSectionAiTools
@@ -5189,6 +5189,7 @@ object Strings {
 
     // Plugins (unified HCJ / userscript / Chrome surface)
     val pluginsTitle: String get() = StringsE.pluginsTitle
+    val pluginsManageTitle: String get() = StringsE.pluginsManageTitle
     val searchPlugins: String get() = StringsE.searchPlugins
     val pluginKindHcj: String get() = StringsE.pluginKindHcj
     val pluginKindUserscript: String get() = StringsE.pluginKindUserscript

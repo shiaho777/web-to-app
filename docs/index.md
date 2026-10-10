@@ -128,7 +128,7 @@ A tool-calling assistant with up to 60 built-in tools that can build, edit, and 
 
 <div class="wta-tile">
 
-[**Extension modules**](/guide/more-features/extension-modules)
+[**Manage Plugins**](/guide/more-features/extension-modules)
 
 Inject JS/CSS, userscripts, or MV3 Chrome extensions into any generated app.
 

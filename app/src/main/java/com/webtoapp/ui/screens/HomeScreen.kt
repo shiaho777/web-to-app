@@ -394,7 +394,7 @@ fun HomeScreen(
                             )
                             HorizontalDivider()
                             DropdownMenuItem(
-                                text = { Text(Strings.pluginsTitle) },
+                                text = { Text(Strings.pluginsManageTitle) },
                                 onClick = { showMoreMenu = false; onOpenPlugins() },
                                 leadingIcon = { Icon(Icons.Outlined.Extension, null, Modifier.size(20.dp)) }
                             )

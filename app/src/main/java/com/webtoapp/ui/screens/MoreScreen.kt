@@ -97,7 +97,7 @@ fun MoreScreen(
                         .collectAsStateWithLifecycle()
                     WtaSettingCard {
                         MoreMenuItem(
-                            title = Strings.pluginsTitle,
+                            title = Strings.pluginsManageTitle,
                             icon = painterResource(R.drawable.ic_sidebar_extensions),
                             onClick = onOpenPlugins
                         )

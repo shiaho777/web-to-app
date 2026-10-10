@@ -11,7 +11,7 @@ Grouped with dividers, top to bottom:
 | **Agent** | [Agent](/guide/more-features/agent) |
 | **AI Settings** | [AI Settings](/guide/more-features/ai-settings) |
 | ── | ── |
-| **Extension Modules** | [Extension Modules](/guide/more-features/extension-modules) |
+| **Manage Plugins** | [Manage Plugins](/guide/more-features/extension-modules) |
 | **App Modifier** | [App Modifier](/guide/more-features/app-modifier) |
 | **Linux Environment** | [Linux Environment](/guide/more-features/linux-environment) |
 | **Runtime Management** | [Runtime Management](/guide/more-features/runtime-management) |
