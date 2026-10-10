@@ -20,7 +20,7 @@
   {
     "name": "turn-mcp",
     "description": "Achieve infinite conversation turns in a single API request via turn-mcp.             Self-hosted MCP server with browser console for human-in-the-loop AI agents.",
-    "stargazers_count": 39,
+    "stargazers_count": 38,
     "forks_count": 9,
     "language": "JavaScript",
     "pushed_at": "2026-05-02T08:31:52Z",
@@ -29,7 +29,7 @@
   {
     "name": "LuaXIDE",
     "description": "Android Lua IDE with built-in interpreter, visual UI designer, debugger, and APK builder — all on-device, no root required.",
-    "stargazers_count": 20,
+    "stargazers_count": 21,
     "forks_count": 0,
     "language": "C",
     "pushed_at": "2026-10-09T04:04:33Z",
@@ -45,6 +45,24 @@
     "html_url": "https://github.com/shiaho777/andmx"
   },
   {
+    "name": "NexFiles",
+    "description": "An open source Material Design file manager, for Android 5.0+.",
+    "stargazers_count": 18,
+    "forks_count": 0,
+    "language": "Kotlin",
+    "pushed_at": "2026-10-08T08:26:18Z",
+    "html_url": "https://github.com/shiaho777/NexFiles"
+  },
+  {
+    "name": "revx",
+    "description": "Rust reverse-engineering toolkit with CLI and local MCP server.",
+    "stargazers_count": 18,
+    "forks_count": 0,
+    "language": "Rust",
+    "pushed_at": "2026-09-17T08:50:31Z",
+    "html_url": "https://github.com/shiaho777/revx"
+  },
+  {
     "name": "zv-codec",
     "description": "Tiny video/audio codec optimized for screen recordings. 24% smaller than x265 lossless RGB at the same speed, ~1100 lines of C, no NN, no external deps.",
     "stargazers_count": 18,
@@ -54,31 +72,22 @@
     "html_url": "https://github.com/shiaho777/zv-codec"
   },
   {
-    "name": "NexFiles",
-    "description": "An open source Material Design file manager, for Android 5.0+.",
-    "stargazers_count": 17,
-    "forks_count": 0,
-    "language": "Kotlin",
-    "pushed_at": "2026-10-08T08:26:18Z",
-    "html_url": "https://github.com/shiaho777/NexFiles"
-  },
-  {
-    "name": "revx",
-    "description": "Rust reverse-engineering toolkit with CLI and local MCP server.",
-    "stargazers_count": 17,
-    "forks_count": 0,
-    "language": "Rust",
-    "pushed_at": "2026-09-17T08:50:31Z",
-    "html_url": "https://github.com/shiaho777/revx"
-  },
-  {
     "name": "wgsql",
     "description": "GPU-accelerated columnar OLAP via WebGPU. One WGSL kernel, four backends.",
-    "stargazers_count": 16,
+    "stargazers_count": 17,
     "forks_count": 0,
     "language": "Rust",
     "pushed_at": "2026-09-17T06:30:59Z",
     "html_url": "https://github.com/shiaho777/wgsql"
+  },
+  {
+    "name": "LogSleuth",
+    "description": "Root-free Android logcat viewer & embeddable zero-permission logging SDK",
+    "stargazers_count": 16,
+    "forks_count": 0,
+    "language": "Kotlin",
+    "pushed_at": "2026-10-06T14:21:27Z",
+    "html_url": "https://github.com/shiaho777/LogSleuth"
   },
   {
     "name": "An-Harness",
@@ -90,21 +99,12 @@
     "html_url": "https://github.com/shiaho777/An-Harness"
   },
   {
-    "name": "LogSleuth",
-    "description": "Root-free Android logcat viewer & embeddable zero-permission logging SDK",
-    "stargazers_count": 15,
-    "forks_count": 0,
-    "language": "Kotlin",
-    "pushed_at": "2026-10-06T14:21:27Z",
-    "html_url": "https://github.com/shiaho777/LogSleuth"
-  },
-  {
     "name": "qsyy",
     "description": "汽水音乐第三方 Web 播放器 · 全端可用 · 本地缓存直读 / 在线播放 / 逐字歌词 / 音效 / 下载",
     "stargazers_count": 14,
     "forks_count": 0,
     "language": "JavaScript",
-    "pushed_at": "2026-10-09T02:27:17Z",
+    "pushed_at": "2026-10-09T16:08:13Z",
     "html_url": "https://github.com/shiaho777/qsyy"
   },
   {
@@ -162,22 +162,31 @@
     "html_url": "https://github.com/shiaho777/clipshelf"
   },
   {
+    "name": "stratum",
+    "description": "Pure-C transformer inference engine for Apple Silicon — wired memory independent of model size (mmap streaming, NEON/Metal)",
+    "stargazers_count": 12,
+    "forks_count": 0,
+    "language": "C",
+    "pushed_at": "2026-10-07T08:11:29Z",
+    "html_url": "https://github.com/shiaho777/stratum"
+  },
+  {
     "name": "pyj-j",
     "description": "J as a tensor engine inside Python — zero-copy numpy bridge, reverse-mode autodiff written in J, tape-to-J compiler",
     "stargazers_count": 11,
     "forks_count": 0,
     "language": "Python",
-    "pushed_at": "2026-10-09T07:07:45Z",
+    "pushed_at": "2026-10-09T18:49:43Z",
     "html_url": "https://github.com/shiaho777/pyj-j"
   },
   {
-    "name": "stratum",
-    "description": "Pure-C transformer inference engine for Apple Silicon — wired memory independent of model size (mmap streaming, NEON/Metal)",
+    "name": "vaultx",
+    "description": "VaultX — local-only encrypted vault for Android (Argon2id + Tink Streaming AEAD + Compose)",
     "stargazers_count": 11,
-    "forks_count": 0,
-    "language": "C",
-    "pushed_at": "2026-10-07T08:11:29Z",
-    "html_url": "https://github.com/shiaho777/stratum"
+    "forks_count": 1,
+    "language": "Kotlin",
+    "pushed_at": "2026-09-22T04:31:43Z",
+    "html_url": "https://github.com/shiaho777/vaultx"
   },
   {
     "name": "zcode-exports",
@@ -196,15 +205,6 @@
     "language": "TypeScript",
     "pushed_at": "2026-10-07T03:40:00Z",
     "html_url": "https://github.com/shiaho777/browser-engine-shia"
-  },
-  {
-    "name": "vaultx",
-    "description": "VaultX — local-only encrypted vault for Android (Argon2id + Tink Streaming AEAD + Compose)",
-    "stargazers_count": 10,
-    "forks_count": 1,
-    "language": "Kotlin",
-    "pushed_at": "2026-09-22T04:31:43Z",
-    "html_url": "https://github.com/shiaho777/vaultx"
   },
   {
     "name": "hard-metric-bench",
