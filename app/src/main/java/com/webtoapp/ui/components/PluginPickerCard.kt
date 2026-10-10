@@ -24,6 +24,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.plugin.Plugin
 import com.webtoapp.core.plugin.PluginStore
+import com.webtoapp.core.plugin.localizedDescription
+import com.webtoapp.core.plugin.localizedName
 import com.webtoapp.ui.animation.CardCollapseTransition
 import com.webtoapp.ui.animation.CardExpandTransition
 import com.webtoapp.ui.design.*
@@ -190,7 +192,7 @@ private fun PluginAttachRow(plugin: Plugin, trailing: @Composable () -> Unit) {
         )
         Spacer(modifier = Modifier.width(10.dp))
         Text(
-            plugin.name,
+            plugin.localizedName(),
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Medium,
             maxLines = 1,
@@ -252,15 +254,15 @@ private fun PluginSelectorDialog(
                         Spacer(modifier = Modifier.width(10.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                plugin.name,
+                                plugin.localizedName(),
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.Medium,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
-                            if (plugin.description.isNotBlank()) {
+                            if (plugin.localizedDescription().isNotBlank()) {
                                 Text(
-                                    plugin.description,
+                                    plugin.localizedDescription(),
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     maxLines = 1,

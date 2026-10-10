@@ -2210,6 +2210,10 @@ object Strings {
     val builtinContentEnhancerDesc: String get() = StringsC.builtinContentEnhancerDesc
     val builtinElementBlocker: String get() = StringsC.builtinElementBlocker
     val builtinElementBlockerDesc: String get() = StringsC.builtinElementBlockerDesc
+    val builtinPageMenu: String get() = StringsC.builtinPageMenu
+    val builtinPageMenuDesc: String get() = StringsC.builtinPageMenuDesc
+    fun builtinPluginName(id: String, fallback: String): String = StringsC.builtinPluginName(id, fallback)
+    fun builtinPluginDescription(id: String, fallback: String): String = StringsC.builtinPluginDescription(id, fallback)
     val triggerAuto: String get() = StringsC.triggerAuto
     val triggerAutoDesc: String get() = StringsC.triggerAutoDesc
     val triggerManual: String get() = StringsC.triggerManual

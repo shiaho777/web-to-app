@@ -1670,7 +1670,7 @@ object StringsC {
 
     val builtinMediaDownloader: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "媒体下载"
-        AppLanguage.ENGLISH -> "Media Download"
+        AppLanguage.ENGLISH -> "Media Downloader"
         AppLanguage.ARABIC -> "تحميل الوسائط"
         AppLanguage.PORTUGUESE -> "Download de Mídia"
         AppLanguage.SPANISH -> "Descarga de Medios"
@@ -1694,7 +1694,7 @@ object StringsC {
     }
     val builtinVideoEnhancer: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "视频增强"
-        AppLanguage.ENGLISH -> "Video Enhance"
+        AppLanguage.ENGLISH -> "Video Enhancer"
         AppLanguage.ARABIC -> "تحسين الفيديو"
         AppLanguage.PORTUGUESE -> "Aprimoramento de Vídeo"
         AppLanguage.SPANISH -> "Mejora de Vídeo"
@@ -1705,16 +1705,16 @@ object StringsC {
         AppLanguage.KOREAN -> "동영상 향상"
     }
     val builtinVideoEnhancerDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "倍速播放、画中画、后台播放、YouTube 净化"
-        AppLanguage.ENGLISH -> "Speed control, picture-in-picture, background play, YouTube cleanup"
-        AppLanguage.ARABIC -> "التحكم في السرعة، صورة داخل صورة، التشغيل في الخلفية، تنظيف يوتيوب"
-        AppLanguage.PORTUGUESE -> "Controle de velocidade, picture-in-picture, reprodução em segundo plano, limpeza do YouTube"
-        AppLanguage.SPANISH -> "Control de velocidad, imagen en imagen, reproducción en segundo plano, limpieza de YouTube"
-        AppLanguage.FRENCH -> "Contrôle de vitesse, image dans l'image, lecture en arrière-plan, nettoyage YouTube"
-        AppLanguage.GERMAN -> "Geschwindigkeitskontrolle, Bild-in-Bild, Hintergrundwiedergabe, YouTube-Bereinigung"
-        AppLanguage.RUSSIAN -> "Управление скоростью, картинка в картинке, фоновое воспроизведение, очистка YouTube"
-        AppLanguage.JAPANESE -> "速度制御、ピクチャーインピクチャー、バックグラウンド再生、YouTubeのクリーンアップ"
-        AppLanguage.KOREAN -> "속도 제어, PIP(Picture-in-Picture), 백그라운드 재생, YouTube 정리"
+        AppLanguage.CHINESE -> "倍速播放、画中画、循环、跳转，以及 YouTube 净化"
+        AppLanguage.ENGLISH -> "Playback speed, picture-in-picture, loop, seek, plus YouTube cleanup"
+        AppLanguage.ARABIC -> "سرعة التشغيل، صورة داخل صورة، تكرار، انتقال، بالإضافة إلى تنظيف يوتيوب"
+        AppLanguage.PORTUGUESE -> "Velocidade de reprodução, picture-in-picture, loop, busca, além da limpeza do YouTube"
+        AppLanguage.SPANISH -> "Velocidad de reproducción, imagen en imagen, bucle, salto, más limpieza de YouTube"
+        AppLanguage.FRENCH -> "Vitesse de lecture, image dans l'image, boucle, déplacement, plus le nettoyage YouTube"
+        AppLanguage.GERMAN -> "Wiedergabegeschwindigkeit, Bild-in-Bild, Schleife, Springen, plus YouTube-Bereinigung"
+        AppLanguage.RUSSIAN -> "Скорость воспроизведения, картинка в картинке, повтор, перемотка, плюс очистка YouTube"
+        AppLanguage.JAPANESE -> "再生速度、ピクチャーインピクチャー、ループ、シーク、さらに YouTube のクリーンアップ"
+        AppLanguage.KOREAN -> "재생 속도, PIP, 반복, 탐색, 그리고 YouTube 정리"
     }
     val builtinWebAnalyzer: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "网页分析"
@@ -1729,16 +1729,16 @@ object StringsC {
         AppLanguage.KOREAN -> "웹 분석기"
     }
     val builtinWebAnalyzerDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "查看页面元素、网络请求、性能数据"
-        AppLanguage.ENGLISH -> "View page elements, network requests, performance data"
-        AppLanguage.ARABIC -> "عرض عناصر الصفحة، طلبات الشبكة، بيانات الأداء"
-        AppLanguage.PORTUGUESE -> "Ver elementos da página, solicitações de rede, dados de desempenho"
-        AppLanguage.SPANISH -> "Ver elementos de la página, solicitudes de red, datos de rendimiento"
-        AppLanguage.FRENCH -> "Afficher les éléments de la page, les requêtes réseau, les données de performance"
-        AppLanguage.GERMAN -> "Seitenelemente, Netzwerkanfragen, Leistungsdaten anzeigen"
-        AppLanguage.RUSSIAN -> "Просмотр элементов страницы, сетевых запросов, данных о производительности"
-        AppLanguage.JAPANESE -> "ページ要素、ネットワークリクエスト、パフォーマンスデータを表示"
-        AppLanguage.KOREAN -> "페이지 요소, 네트워크 요청, 성능 데이터 보기"
+        AppLanguage.CHINESE -> "查看页面信息、加载性能和元素统计"
+        AppLanguage.ENGLISH -> "Inspect page info, load performance and element statistics"
+        AppLanguage.ARABIC -> "فحص معلومات الصفحة وأداء التحميل وإحصاءات العناصر"
+        AppLanguage.PORTUGUESE -> "Inspecionar informações da página, desempenho de carregamento e estatísticas de elementos"
+        AppLanguage.SPANISH -> "Inspeccionar información de la página, rendimiento de carga y estadísticas de elementos"
+        AppLanguage.FRENCH -> "Inspecter les infos de la page, les performances de chargement et les statistiques d'éléments"
+        AppLanguage.GERMAN -> "Seiteninfos, Ladeleistung und Elementstatistiken prüfen"
+        AppLanguage.RUSSIAN -> "Просмотр сведений о странице, производительности загрузки и статистики элементов"
+        AppLanguage.JAPANESE -> "ページ情報、読み込み性能、要素の統計を確認"
+        AppLanguage.KOREAN -> "페이지 정보, 로드 성능, 요소 통계 확인"
     }
     val builtinFindInPage: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "页内查找"
@@ -1777,16 +1777,16 @@ object StringsC {
         AppLanguage.KOREAN -> "다크 모드"
     }
     val builtinDarkModeDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "智能反色，护眼阅读"
-        AppLanguage.ENGLISH -> "Smart inversion, eye-friendly reading"
-        AppLanguage.ARABIC -> "عكس ذكي، قراءة مريحة للعين"
-        AppLanguage.PORTUGUESE -> "Inversão inteligente, leitura confortável para os olhos"
-        AppLanguage.SPANISH -> "Inversión inteligente, lectura cómoda para los ojos"
-        AppLanguage.FRENCH -> "Inversion intelligente, lecture confortable pour les yeux"
-        AppLanguage.GERMAN -> "Intelligente Invertierung, augenfreundliches Lesen"
-        AppLanguage.RUSSIAN -> "Умная инверсия, удобное чтение для глаз"
-        AppLanguage.JAPANESE -> "スマート反転、目に優しい読書"
-        AppLanguage.KOREAN -> "스마트 반전, 눈에 편안한 읽기"
+        AppLanguage.CHINESE -> "智能反色，适用于任意页面，可从工具栏或面板开关"
+        AppLanguage.ENGLISH -> "Smart inversion for any page. Toggle from the toolbar or the panel"
+        AppLanguage.ARABIC -> "عكس ذكي لأي صفحة. التبديل من شريط الأدوات أو اللوحة"
+        AppLanguage.PORTUGUESE -> "Inversão inteligente para qualquer página. Alterne pela barra de ferramentas ou pelo painel"
+        AppLanguage.SPANISH -> "Inversión inteligente para cualquier página. Actívalo desde la barra o el panel"
+        AppLanguage.FRENCH -> "Inversion intelligente pour n'importe quelle page. Activez-la depuis la barre d'outils ou le panneau"
+        AppLanguage.GERMAN -> "Intelligente Invertierung für jede Seite. Umschalten über die Symbolleiste oder das Panel"
+        AppLanguage.RUSSIAN -> "Умная инверсия для любой страницы. Переключение с панели инструментов или из панели"
+        AppLanguage.JAPANESE -> "どのページでも使えるスマート反転。ツールバーまたはパネルから切り替え"
+        AppLanguage.KOREAN -> "모든 페이지에 적용되는 스마트 반전. 툴바 또는 패널에서 전환"
     }
     val builtinPrivacyProtection: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "隐私保护"
@@ -1801,20 +1801,20 @@ object StringsC {
         AppLanguage.KOREAN -> "개인정보 보호"
     }
     val builtinPrivacyProtectionDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "阻止追踪、清理指纹、保护隐私"
-        AppLanguage.ENGLISH -> "Block tracking, clear fingerprints, protect privacy"
-        AppLanguage.ARABIC -> "حظر التتبع، مسح البصمات، حماية الخصوصية"
-        AppLanguage.PORTUGUESE -> "Bloquear rastreamento, limpar impressões digitais, proteger privacidade"
-        AppLanguage.SPANISH -> "Bloquear rastreo, borrar huellas digitales, proteger privacidad"
-        AppLanguage.FRENCH -> "Bloquer le suivi, effacer les empreintes numériques, protéger la vie privée"
-        AppLanguage.GERMAN -> "Tracking blockieren, Fingerabdrücke löschen, Datenschutz schützen"
-        AppLanguage.RUSSIAN -> "Блокировать отслеживание, очищать отпечатки, защищать конфиденциальность"
-        AppLanguage.JAPANESE -> "トラッキングブロック、フィンガープリント消去、プライバシー保護"
-        AppLanguage.KOREAN -> "추적 차단, 지문 삭제, 개인정보 보호"
+        AppLanguage.CHINESE -> "阻止追踪、模糊指纹信号，退出时清除 Cookie"
+        AppLanguage.ENGLISH -> "Block trackers, blur fingerprint signals, clear cookies on exit"
+        AppLanguage.ARABIC -> "حظر المتعقبات، طمس إشارات البصمة، مسح ملفات تعريف الارتباط عند الخروج"
+        AppLanguage.PORTUGUESE -> "Bloquear rastreadores, ofuscar sinais de impressão digital, limpar cookies ao sair"
+        AppLanguage.SPANISH -> "Bloquear rastreadores, difuminar señales de huella digital, borrar cookies al salir"
+        AppLanguage.FRENCH -> "Bloquer les traqueurs, flouter les signaux d'empreinte, effacer les cookies à la sortie"
+        AppLanguage.GERMAN -> "Tracker blockieren, Fingerabdrucksignale unkenntlich machen, Cookies beim Beenden löschen"
+        AppLanguage.RUSSIAN -> "Блокировать трекеры, размывать сигналы отпечатка, очищать cookie при выходе"
+        AppLanguage.JAPANESE -> "トラッカーをブロック、フィンガープリント信号をぼかし、終了時に Cookie を消去"
+        AppLanguage.KOREAN -> "추적기 차단, 지문 신호 흐리기, 종료 시 쿠키 삭제"
     }
     val builtinContentEnhancer: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "内容增强"
-        AppLanguage.ENGLISH -> "Content Enhance"
+        AppLanguage.ENGLISH -> "Content Enhancer"
         AppLanguage.ARABIC -> "تحسين المحتوى"
         AppLanguage.PORTUGUESE -> "Aprimoramento de Conteúdo"
         AppLanguage.SPANISH -> "Mejora de Contenido"
@@ -1825,16 +1825,16 @@ object StringsC {
         AppLanguage.KOREAN -> "콘텐츠 향상"
     }
     val builtinContentEnhancerDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "解除复制限制、翻译、长截图"
-        AppLanguage.ENGLISH -> "Remove copy restrictions, translate, long screenshot"
-        AppLanguage.ARABIC -> "إزالة قيود النسخ، الترجمة، لقطة شاشة طويلة"
-        AppLanguage.PORTUGUESE -> "Remover restrições de cópia, traduzir, captura de tela longa"
-        AppLanguage.SPANISH -> "Eliminar restricciones de copia, traducir, captura de pantalla larga"
-        AppLanguage.FRENCH -> "Supprimer les restrictions de copie, traduire, capture d'écran longue"
-        AppLanguage.GERMAN -> "Kopierbeschränkungen entfernen, übersetzen, langer Screenshot"
-        AppLanguage.RUSSIAN -> "Снять ограничения копирования, перевод, длинный скриншот"
-        AppLanguage.JAPANESE -> "コピー制限の解除、翻訳、長いスクリーンショット"
-        AppLanguage.KOREAN -> "복사 제한 제거, 번역, 긴 스크린샷"
+        AppLanguage.CHINESE -> "解除复制限制，复制页面文本或 HTML，快速滚到顶部或底部"
+        AppLanguage.ENGLISH -> "Unlock copy, copy page text or HTML, jump to the top or bottom"
+        AppLanguage.ARABIC -> "إلغاء قيود النسخ، نسخ نص الصفحة أو HTML، الانتقال إلى الأعلى أو الأسفل"
+        AppLanguage.PORTUGUESE -> "Liberar cópia, copiar texto ou HTML da página, ir ao topo ou ao fim"
+        AppLanguage.SPANISH -> "Desbloquear copia, copiar texto o HTML de la página, ir al inicio o al final"
+        AppLanguage.FRENCH -> "Débloquer la copie, copier le texte ou le HTML de la page, aller en haut ou en bas"
+        AppLanguage.GERMAN -> "Kopiersperre aufheben, Seitentext oder HTML kopieren, nach oben oder unten springen"
+        AppLanguage.RUSSIAN -> "Снять запрет копирования, копировать текст или HTML страницы, перейти вверх или вниз"
+        AppLanguage.JAPANESE -> "コピー制限を解除し、ページのテキストや HTML をコピー、先頭や末尾へ移動"
+        AppLanguage.KOREAN -> "복사 제한 해제, 페이지 텍스트 또는 HTML 복사, 맨 위 또는 맨 아래로 이동"
     }
     val builtinElementBlocker: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "元素屏蔽器"
@@ -1849,16 +1849,69 @@ object StringsC {
         AppLanguage.KOREAN -> "요소 차단기"
     }
     val builtinElementBlockerDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "单击选择元素，双击屏蔽，去除页面烦人元素"
-        AppLanguage.ENGLISH -> "Click to select, double-click to block annoying elements"
-        AppLanguage.ARABIC -> "انقر للتحديد، انقر مرتين لحظر العناصر المزعجة"
-        AppLanguage.PORTUGUESE -> "Clique para selecionar, clique duplo para bloquear elementos irritantes"
-        AppLanguage.SPANISH -> "Hacer clic para seleccionar, doble clic para bloquear elementos molestos"
-        AppLanguage.FRENCH -> "Cliquer pour sélectionner, double-cliquer pour bloquer les éléments gênants"
-        AppLanguage.GERMAN -> "Klicken zum Auswählen, Doppelklick zum Blockieren störender Elemente"
-        AppLanguage.RUSSIAN -> "Клик для выбора, двойной клик для блокировки раздражающих элементов"
-        AppLanguage.JAPANESE -> "クリックで選択、ダブルクリックで煩わしい要素をブロック"
-        AppLanguage.KOREAN -> "클릭하여 선택, 더블클릭으로 성가신 요소 차단"
+        AppLanguage.CHINESE -> "单击选择、双击屏蔽烦人元素，规则按网站保存"
+        AppLanguage.ENGLISH -> "Click to select, double-click to hide elements. Rules persist per site"
+        AppLanguage.ARABIC -> "انقر للتحديد، انقر مرتين لإخفاء العناصر. تُحفظ القواعد لكل موقع"
+        AppLanguage.PORTUGUESE -> "Clique para selecionar, clique duplo para ocultar. As regras persistem por site"
+        AppLanguage.SPANISH -> "Clic para seleccionar, doble clic para ocultar. Las reglas se conservan por sitio"
+        AppLanguage.FRENCH -> "Cliquer pour sélectionner, double-cliquer pour masquer. Les règles persistent par site"
+        AppLanguage.GERMAN -> "Klicken zum Auswählen, Doppelklick zum Ausblenden. Regeln gelten pro Website"
+        AppLanguage.RUSSIAN -> "Клик для выбора, двойной клик для скрытия. Правила сохраняются для сайта"
+        AppLanguage.JAPANESE -> "クリックで選択、ダブルクリックで非表示。ルールはサイトごとに保存"
+        AppLanguage.KOREAN -> "클릭하여 선택, 더블클릭으로 숨김. 규칙은 사이트별로 유지"
+    }
+
+    val builtinPageMenu: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "页面菜单"
+        AppLanguage.ENGLISH -> "Page Menu"
+        AppLanguage.ARABIC -> "قائمة الصفحة"
+        AppLanguage.PORTUGUESE -> "Menu da Página"
+        AppLanguage.SPANISH -> "Menú de la Página"
+        AppLanguage.FRENCH -> "Menu de la Page"
+        AppLanguage.GERMAN -> "Seitenmenü"
+        AppLanguage.RUSSIAN -> "Меню страницы"
+        AppLanguage.JAPANESE -> "ページメニュー"
+        AppLanguage.KOREAN -> "페이지 메뉴"
+    }
+    val builtinPageMenuDesc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "浮动页面工具：刷新、前进后退、跳转网址、分享链接、外部打开、清除数据、隐藏菜单、退出"
+        AppLanguage.ENGLISH -> "Floating page tools: refresh, back/forward, jump to a URL, share, open externally, clear data, hide menu, exit"
+        AppLanguage.ARABIC -> "أدوات صفحة عائمة: تحديث، رجوع/تقدم، الانتقال إلى رابط، مشاركة، فتح خارجيًا، مسح البيانات، إخفاء القائمة، خروج"
+        AppLanguage.PORTUGUESE -> "Ferramentas flutuantes: atualizar, voltar/avançar, ir a um URL, compartilhar, abrir externamente, limpar dados, ocultar menu, sair"
+        AppLanguage.SPANISH -> "Herramientas flotantes: actualizar, atrás/adelante, ir a una URL, compartir, abrir externamente, borrar datos, ocultar menú, salir"
+        AppLanguage.FRENCH -> "Outils flottants : actualiser, précédent/suivant, aller à une URL, partager, ouvrir à l'extérieur, effacer les données, masquer le menu, quitter"
+        AppLanguage.GERMAN -> "Schwebende Seitenwerkzeuge: Aktualisieren, Zurück/Vor, URL öffnen, teilen, extern öffnen, Daten löschen, Menü ausblenden, beenden"
+        AppLanguage.RUSSIAN -> "Плавающие инструменты: обновить, назад/вперёд, перейти по URL, поделиться, открыть внешне, очистить данные, скрыть меню, выход"
+        AppLanguage.JAPANESE -> "フローティングのページツール：更新、戻る/進む、URL へ移動、共有、外部で開く、データ消去、メニュー非表示、終了"
+        AppLanguage.KOREAN -> "플로팅 페이지 도구: 새로고침, 뒤로/앞으로, URL 이동, 공유, 외부에서 열기, 데이터 지우기, 메뉴 숨기기, 종료"
+    }
+
+    // Qualify through the facade so generateShellStrings follows the closure
+    // into each name/desc property (bare identifiers in this object are not scanned).
+    fun builtinPluginName(id: String, fallback: String): String = when (id) {
+        "builtin-media-downloader" -> Strings.builtinMediaDownloader
+        "builtin-video-enhancer" -> Strings.builtinVideoEnhancer
+        "builtin-web-analyzer" -> Strings.builtinWebAnalyzer
+        "builtin-find-in-page" -> Strings.builtinFindInPage
+        "builtin-dark-mode" -> Strings.builtinDarkMode
+        "builtin-privacy-protection" -> Strings.builtinPrivacyProtection
+        "builtin-content-enhancer" -> Strings.builtinContentEnhancer
+        "builtin-element-blocker" -> Strings.builtinElementBlocker
+        "builtin-page-menu" -> Strings.builtinPageMenu
+        else -> fallback
+    }
+
+    fun builtinPluginDescription(id: String, fallback: String): String = when (id) {
+        "builtin-media-downloader" -> Strings.builtinMediaDownloaderDesc
+        "builtin-video-enhancer" -> Strings.builtinVideoEnhancerDesc
+        "builtin-web-analyzer" -> Strings.builtinWebAnalyzerDesc
+        "builtin-find-in-page" -> Strings.builtinFindInPageDesc
+        "builtin-dark-mode" -> Strings.builtinDarkModeDesc
+        "builtin-privacy-protection" -> Strings.builtinPrivacyProtectionDesc
+        "builtin-content-enhancer" -> Strings.builtinContentEnhancerDesc
+        "builtin-element-blocker" -> Strings.builtinElementBlockerDesc
+        "builtin-page-menu" -> Strings.builtinPageMenuDesc
+        else -> fallback
     }
 
     val triggerAuto: String get() = when (Strings.lang) {

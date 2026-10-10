@@ -218,7 +218,7 @@ class PluginSession(
                 .map { r ->
                     PluginHostState.Entry(
                         pluginId = r.plugin.id,
-                        name = r.plugin.name,
+                        name = r.plugin.localizedName(),
                         icon = r.plugin.icon,
                         kind = r.plugin.kind,
                         matchesCurrentUrl = r.plugin.matchesUrl(currentUrl),

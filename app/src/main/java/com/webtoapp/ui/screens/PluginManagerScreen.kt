@@ -73,10 +73,14 @@ fun PluginManagerScreen(
 
     var chromePreview by remember { mutableStateOf<ChromeExtensionParser.ParseResult?>(null) }
 
-    fun matches(p: Plugin): Boolean =
-        searchQuery.isBlank() ||
-            p.name.contains(searchQuery, ignoreCase = true) ||
-            p.description.contains(searchQuery, ignoreCase = true)
+    fun matches(p: Plugin): Boolean {
+        if (searchQuery.isBlank()) return true
+        val q = searchQuery
+        return p.name.contains(q, ignoreCase = true) ||
+            p.description.contains(q, ignoreCase = true) ||
+            p.localizedName().contains(q, ignoreCase = true) ||
+            p.localizedDescription().contains(q, ignoreCase = true)
+    }
 
     suspend fun importFrom(uri: Uri) {
         val name = importer.fileNameFor(uri)?.lowercase().orEmpty()
@@ -369,7 +373,7 @@ fun PluginManagerScreen(
         WtaAlertDialog(
             onDismissRequest = { pendingDelete = null },
             title = Strings.pluginDeleteConfirmTitle,
-            text = plugin.name,
+            text = plugin.localizedName(),
             confirmButton = {
                 PremiumButton(onClick = {
                     scope.launch {
@@ -543,7 +547,7 @@ private fun PluginRow(
             Column(modifier = Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        plugin.name,
+                        plugin.localizedName(),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.SemiBold,
                         maxLines = 1,
@@ -563,9 +567,9 @@ private fun PluginRow(
                         )
                     }
                 }
-                if (plugin.description.isNotBlank()) {
+                if (plugin.localizedDescription().isNotBlank()) {
                     Text(
-                        plugin.description,
+                        plugin.localizedDescription(),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
