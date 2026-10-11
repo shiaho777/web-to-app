@@ -2,7 +2,7 @@
   {
     "name": "WebToApp",
     "description": "Turn any website into an installable app across iOS, Android, Windows, macOS and Linux, and generate a sharing link.",
-    "stargazers_count": 133,
+    "stargazers_count": 134,
     "forks_count": 29,
     "language": "Python",
     "pushed_at": "2026-10-08T09:56:33Z",
@@ -45,6 +45,15 @@
     "html_url": "https://github.com/shiaho777/andmx"
   },
   {
+    "name": "LogSleuth",
+    "description": "Root-free Android logcat viewer & embeddable zero-permission logging SDK",
+    "stargazers_count": 18,
+    "forks_count": 0,
+    "language": "Kotlin",
+    "pushed_at": "2026-10-10T14:10:21Z",
+    "html_url": "https://github.com/shiaho777/LogSleuth"
+  },
+  {
     "name": "NexFiles",
     "description": "An open source Material Design file manager, for Android 5.0+.",
     "stargazers_count": 18,
@@ -79,15 +88,6 @@
     "language": "Rust",
     "pushed_at": "2026-09-17T06:30:59Z",
     "html_url": "https://github.com/shiaho777/wgsql"
-  },
-  {
-    "name": "LogSleuth",
-    "description": "Root-free Android logcat viewer & embeddable zero-permission logging SDK",
-    "stargazers_count": 16,
-    "forks_count": 0,
-    "language": "Kotlin",
-    "pushed_at": "2026-10-06T14:21:27Z",
-    "html_url": "https://github.com/shiaho777/LogSleuth"
   },
   {
     "name": "An-Harness",
@@ -176,7 +176,7 @@
     "stargazers_count": 11,
     "forks_count": 0,
     "language": "Python",
-    "pushed_at": "2026-10-10T06:45:14Z",
+    "pushed_at": "2026-10-10T22:15:13Z",
     "html_url": "https://github.com/shiaho777/pyj-j"
   },
   {
