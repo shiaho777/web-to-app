@@ -72,4 +72,19 @@ class GeckoNativeBridgeScriptTest {
         assertThat(engine).contains("pendingLoadUrl")
         assertThat(engine).contains("uninstall")
     }
+
+    @Test
+    fun `gecko native messages do not call the http bridge on the message thread`() {
+        val engine = repoFile("app/src/main/java/com/webtoapp/core/engine/GeckoViewEngine.kt").readText()
+        val delegate = engine.substringAfter("private val nativeBridgeMessageDelegate")
+            .substringBefore("private fun bindNativeBridge")
+        val onMessage = delegate.substringAfter("override fun onMessage(")
+            .substringBefore("dispatchGeckoNativeHttp")
+        assertWithMessage("onMessage is on the UI thread and must hand the request off")
+            .that(onMessage).doesNotContain("httpRequest")
+        assertThat(delegate).contains("dispatchGeckoNativeHttp")
+        val dispatch = engine.substringAfter("fun dispatchGeckoNativeHttp")
+            .substringBefore("private fun bindNativeBridge")
+        assertThat(dispatch).contains("Dispatchers.IO")
+    }
 }

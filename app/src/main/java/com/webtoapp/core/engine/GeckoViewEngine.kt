@@ -21,7 +21,9 @@ import org.mozilla.geckoview.WebRequestError
 import org.mozilla.geckoview.WebResponse
 import org.mozilla.geckoview.WebExtension
 import org.mozilla.geckoview.WebExtensionController
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -110,13 +112,40 @@ class GeckoViewEngine(
                     is String -> message
                     else -> message.toString()
                 }
-                return try {
-                    val response = bridge.httpRequest(requestJson)
-                    GeckoResult.fromValue(response)
-                } catch (e: Exception) {
-                    GeckoResult.fromValue(errorJson("REQUEST_FAILED", e.message ?: e::class.java.simpleName))
+                // onMessage runs on the UI thread. The blocking OkHttp call has to
+                // leave it, or Android throws NetworkOnMainThreadException and the
+                // page fetch fails (#1283).
+                return dispatchGeckoNativeHttp(nativeBridgeHttpScope) {
+                    bridge.httpRequest(requestJson)
                 }
             }
+        }
+
+        private val nativeBridgeHttpScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+        /**
+         * Runs a native-bridge HTTP call off the UI thread and completes the
+         * [GeckoResult] Gecko is waiting on. [perform] is the bridge's blocking
+         * `httpRequest` for production callers.
+         */
+        internal fun dispatchGeckoNativeHttp(
+            scope: CoroutineScope,
+            perform: () -> String
+        ): GeckoResult<Any> {
+            val result = GeckoResult<Any>()
+            scope.launch(Dispatchers.IO) {
+                val response = try {
+                    perform()
+                } catch (e: Exception) {
+                    errorJson("REQUEST_FAILED", e.message ?: e::class.java.simpleName)
+                }
+                try {
+                    result.complete(response)
+                } catch (e: Exception) {
+                    AppLogger.w(TAG, "Native bridge response dropped: ${e.message}")
+                }
+            }
+            return result
         }
 
         private fun bindNativeBridge(session: GeckoSession, bridge: com.webtoapp.core.webview.NativeBridge) {
@@ -719,6 +748,12 @@ class GeckoViewEngine(
      * once would be lost (#593).
      */
     private var mediaSessionDelegate: GeckoMediaSession.Delegate? = null
+
+    /**
+     * Navigation writes this on the UI thread. The CORS bridge reads it from
+     * the IO dispatcher while classifying the caller page (#1283).
+     */
+    @Volatile
     private var currentUrl: String? = null
     private var currentTitle: String? = null
     private var canGoBackFlag = false
