@@ -89,53 +89,66 @@ class OfflineManager(private val context: Context) {
     }
 
     private fun updateNetworkState() {
-        val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        try {
+            val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
 
-        val network = connectivityManager.activeNetwork
-        val capabilities = connectivityManager.getNetworkCapabilities(network)
+            val network = connectivityManager.activeNetwork
+            val capabilities = connectivityManager.getNetworkCapabilities(network)
 
-        if (capabilities != null && capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)) {
-            _networkState.value = NetworkState.ONLINE
-            _networkType.value = when {
-                capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> NetworkType.WIFI
-                capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> NetworkType.MOBILE
-                capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) -> NetworkType.ETHERNET
-                else -> NetworkType.UNKNOWN
+            if (capabilities != null && capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)) {
+                _networkState.value = NetworkState.ONLINE
+                _networkType.value = when {
+                    capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> NetworkType.WIFI
+                    capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> NetworkType.MOBILE
+                    capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) -> NetworkType.ETHERNET
+                    else -> NetworkType.UNKNOWN
+                }
+            } else {
+                markOffline()
             }
-        } else {
-            _networkState.value = NetworkState.OFFLINE
-            _networkType.value = NetworkType.NONE
+        } catch (e: SecurityException) {
+            // File-scheme HTML exports omit ACCESS_NETWORK_STATE (#1254 / #1294).
+            markOffline()
+        } catch (e: Exception) {
+            AppLogger.w(TAG, "Failed to read network state: ${e.message}")
+            markOffline()
         }
     }
 
+    private fun markOffline() {
+        _networkState.value = NetworkState.OFFLINE
+        _networkType.value = NetworkType.NONE
+    }
+
     private fun registerNetworkCallback() {
-        val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-
-        networkCallback = object : ConnectivityManager.NetworkCallback() {
-            override fun onAvailable(network: Network) {
-                _networkState.value = NetworkState.ONLINE
-                updateNetworkState()
-                AppLogger.d(TAG, "网络已连接")
-            }
-
-            override fun onLost(network: Network) {
-                _networkState.value = NetworkState.OFFLINE
-                _networkType.value = NetworkType.NONE
-                AppLogger.d(TAG, "网络已断开")
-            }
-
-            override fun onCapabilitiesChanged(network: Network, capabilities: NetworkCapabilities) {
-                updateNetworkState()
-                updateNetworkQuality(capabilities)
-            }
-        }
-
-        val request = NetworkRequest.Builder()
-            .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-            .build()
-
         try {
+            val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+
+            networkCallback = object : ConnectivityManager.NetworkCallback() {
+                override fun onAvailable(network: Network) {
+                    _networkState.value = NetworkState.ONLINE
+                    updateNetworkState()
+                    AppLogger.d(TAG, "网络已连接")
+                }
+
+                override fun onLost(network: Network) {
+                    markOffline()
+                    AppLogger.d(TAG, "网络已断开")
+                }
+
+                override fun onCapabilitiesChanged(network: Network, capabilities: NetworkCapabilities) {
+                    updateNetworkState()
+                    updateNetworkQuality(capabilities)
+                }
+            }
+
+            val request = NetworkRequest.Builder()
+                .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                .build()
+
             connectivityManager.registerNetworkCallback(request, networkCallback!!)
+        } catch (e: SecurityException) {
+            markOffline()
         } catch (e: Exception) {
             AppLogger.e(TAG, "注册网络监听失败", e)
         }

@@ -14,6 +14,7 @@ import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.data.model.Announcement
+import com.webtoapp.util.isNetworkAvailable
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
@@ -36,35 +37,34 @@ class AnnouncementManager(private val context: Context) {
     }
 
     private fun checkNetworkStatus() {
-        val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        val network = connectivityManager.activeNetwork
-        val capabilities = connectivityManager.getNetworkCapabilities(network)
-        _isNetworkAvailable.value = capabilities?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) == true
+        _isNetworkAvailable.value = context.isNetworkAvailable()
     }
 
     fun startNetworkMonitoring() {
-        val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-
-        networkCallback = object : ConnectivityManager.NetworkCallback() {
-            override fun onAvailable(network: Network) {
-                _isNetworkAvailable.value = true
-            }
-
-            override fun onLost(network: Network) {
-                _isNetworkAvailable.value = false
-            }
-
-            override fun onCapabilitiesChanged(network: Network, capabilities: NetworkCapabilities) {
-                _isNetworkAvailable.value = capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-            }
-        }
-
-        val request = NetworkRequest.Builder()
-            .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-            .build()
-
         try {
+            val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+
+            networkCallback = object : ConnectivityManager.NetworkCallback() {
+                override fun onAvailable(network: Network) {
+                    _isNetworkAvailable.value = true
+                }
+
+                override fun onLost(network: Network) {
+                    _isNetworkAvailable.value = false
+                }
+
+                override fun onCapabilitiesChanged(network: Network, capabilities: NetworkCapabilities) {
+                    _isNetworkAvailable.value = capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                }
+            }
+
+            val request = NetworkRequest.Builder()
+                .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                .build()
+
             connectivityManager.registerNetworkCallback(request, networkCallback!!)
+        } catch (e: SecurityException) {
+            _isNetworkAvailable.value = false
         } catch (e: Exception) {
             AppLogger.e(TAG, "Operation failed", e)
         }

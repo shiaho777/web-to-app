@@ -20,17 +20,32 @@ fun Context.toast(message: String, duration: Int = Toast.LENGTH_SHORT) {
 }
 
 fun Context.isNetworkAvailable(): Boolean {
-    val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-    val network = connectivityManager.activeNetwork ?: return false
-    val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
-    return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+    return try {
+        val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val network = connectivityManager.activeNetwork ?: return false
+        val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
+        capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+    } catch (e: SecurityException) {
+        // File-scheme HTML exports omit ACCESS_NETWORK_STATE (#1254 / #1294).
+        false
+    } catch (e: Exception) {
+        AppLogger.w("Network", "isNetworkAvailable failed: ${e.message}")
+        false
+    }
 }
 
 fun Context.isWifiConnected(): Boolean {
-    val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-    val network = connectivityManager.activeNetwork ?: return false
-    val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
-    return capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
+    return try {
+        val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val network = connectivityManager.activeNetwork ?: return false
+        val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
+        capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
+    } catch (e: SecurityException) {
+        false
+    } catch (e: Exception) {
+        AppLogger.w("Network", "isWifiConnected failed: ${e.message}")
+        false
+    }
 }
 
 fun Context.openUrl(url: String) {
