@@ -8,10 +8,10 @@ import java.io.File
 import java.util.zip.ZipFile
 
 /**
- * Verifies [AxmlRebuilder.expandAndModifyFull] rewrites the `<uses-sdk
- * android:targetSdkVersion>` attribute on the generated APK's manifest. The shell template
- * ships targetSdk 35; exports may pin another value (issue #503) and the rewrite must
- * land in the binary AXML that gets packaged into the APK.
+ * Verifies [AxmlRebuilder.expandAndModifyFull] rewrites the `<uses-sdk>`
+ * attributes on the generated APK's manifest. The shell template ships
+ * minSdk 23 / targetSdk 35; exports may pin other values (issues #503, #1295)
+ * and the rewrite must land in the binary AXML that gets packaged into the APK.
  */
 class AxmlRebuilderTargetSdkTest {
 
@@ -26,7 +26,7 @@ class AxmlRebuilderTargetSdkTest {
         }
     }
 
-    private fun targetSdkOf(axml: ByteArray): Int? {
+    private fun usesSdkInt(axml: ByteArray, attrName: String): Int? {
         val node = AxmlToProtoXml.convert(axml)
         assertThat(node.hasElement()).isTrue()
         val manifest = node.element
@@ -35,11 +35,15 @@ class AxmlRebuilderTargetSdkTest {
             .map { it.element }
             .firstOrNull { it.name == "uses-sdk" }
             ?: return null
-        val attr = usesSdk.attributeList.firstOrNull { it.name == "targetSdkVersion" }
+        val attr = usesSdk.attributeList.firstOrNull { it.name == attrName }
             ?: return null
         assertThat(attr.compiledItem.hasPrim()).isTrue()
         return attr.compiledItem.prim.intDecimalValue
     }
+
+    private fun targetSdkOf(axml: ByteArray): Int? = usesSdkInt(axml, "targetSdkVersion")
+
+    private fun minSdkOf(axml: ByteArray): Int? = usesSdkInt(axml, "minSdkVersion")
 
     @Test
     fun `targetSdk rewrite raises uses-sdk value in binary AXML`() {
@@ -112,5 +116,70 @@ class AxmlRebuilderTargetSdkTest {
         )
 
         assertThat(targetSdkOf(twice)).isEqualTo(34)
+    }
+
+    @Test
+    fun `minSdk rewrite raises uses-sdk value in binary AXML`() {
+        val original = loadTemplateManifest()
+        assumeTrue(
+            "shell template not built — run :app:syncShellTemplateApk first",
+            original != null
+        )
+
+        assertThat(minSdkOf(original!!)).isEqualTo(23)
+
+        val rewritten = rebuilder.expandAndModifyFull(
+            original,
+            originalPackage = "com.webtoapp",
+            newPackage = "com.example.minraised",
+            versionCode = 1,
+            versionName = "1.0.0",
+            minSdk = 26
+        )
+
+        assertThat(minSdkOf(rewritten)).isEqualTo(26)
+        assertThat(targetSdkOf(rewritten)).isEqualTo(35)
+    }
+
+    @Test
+    fun `null minSdk leaves uses-sdk untouched at template default`() {
+        val original = loadTemplateManifest()
+        assumeTrue(
+            "shell template not built — run :app:syncShellTemplateApk first",
+            original != null
+        )
+
+        val rewritten = rebuilder.expandAndModifyFull(
+            original!!,
+            originalPackage = "com.webtoapp",
+            newPackage = "com.example.minuntouched",
+            versionCode = 1,
+            versionName = "1.0.0",
+            minSdk = null
+        )
+
+        assertThat(minSdkOf(rewritten)).isEqualTo(23)
+    }
+
+    @Test
+    fun `minSdk and targetSdk rewrites land together`() {
+        val original = loadTemplateManifest()
+        assumeTrue(
+            "shell template not built — run :app:syncShellTemplateApk first",
+            original != null
+        )
+
+        val rewritten = rebuilder.expandAndModifyFull(
+            original!!,
+            originalPackage = "com.webtoapp",
+            newPackage = "com.example.bothsdk",
+            versionCode = 1,
+            versionName = "1.0.0",
+            targetSdk = 34,
+            minSdk = 28
+        )
+
+        assertThat(minSdkOf(rewritten)).isEqualTo(28)
+        assertThat(targetSdkOf(rewritten)).isEqualTo(34)
     }
 }

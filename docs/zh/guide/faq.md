@@ -59,7 +59,7 @@ Android 6.0(API 23)或更高。
 
 ### 生成的应用使用什么 targetSdk?
 
-生成的 APK 继承 shell 模板的 `targetSdk`(当前 35)。Node.js、PHP、Python、Go、WordPress 会被固定到 28,以便执行内置运行时,自定义 targetSdk 对它们无效。其他类型可在[APK导出配置](/zh/guide/app-actions/edit-common-config/apk-export)里固定 28/34/35/36。面向 Play 时,AAB 导出器会把 `targetSdk` 重写到 Play 要求的级别。
+生成的 APK 继承 shell 模板的 `targetSdk`(当前 35)和 `minSdk` 23。Node.js、PHP、Python、Go、WordPress 会被固定到 targetSdk 28,以便执行内置运行时,自定义 targetSdk 对它们无效。其他类型可在[APK导出配置](/zh/guide/app-actions/edit-common-config/apk-export)里固定 targetSdk 28/31/33/34/35/36,任意类型都可以把 minSdk 从 23 提高到当前 targetSdk。面向 Play 时,AAB 导出器会把 `targetSdk` 重写到 Play 要求的级别。
 
 ### 如何用自己的密钥签名?
 

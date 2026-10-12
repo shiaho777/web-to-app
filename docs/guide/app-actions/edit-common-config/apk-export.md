@@ -10,7 +10,8 @@ Packaging and identity settings for the generated APK. This is the export drawer
 - **Version code / version name** — the APK version.
 - **Auto-bump version** — when this package is already installed with a higher versionCode, the builder raises the version so the update can install. On by default; turn it off to always keep the version set above (a downgrade install may then fail).
 - **Engine type** — System WebView or GeckoView for the exported app.
-- **Override targetSdk** — pin a different `targetSdkVersion` for the generated APK (choices 28/34/35/36); off keeps the shell template's 35. For Play distribution the AAB export still forces the Play-required level.
+- **Override minSdk** — raise `minSdkVersion` above the shell template's 23 (choices 23/24/26/28/31/33/34/35/36, never above the current targetSdk). Off keeps 23. The packed runtime is compiled for API 23, so the floor cannot go lower.
+- **Override targetSdk** — pin a different `targetSdkVersion` for the generated APK (choices 28/31/33/34/35/36); off keeps the shell template's 35. Server-runtime types stay pinned at 28. For Play distribution the AAB export still forces the Play-required level.
 
 ## Signing
 

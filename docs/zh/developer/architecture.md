@@ -37,7 +37,7 @@ app/ 源码
 
 ## 唯一的 shell 模板
 
-只有**一个** shell 模板:来自 `:shell` release 的 `webview_shell.apk`。不要引入第二个模板 APK。shell 携带 `targetSdk` 35,同步的运行时已适配其行为(运行时权限、前台服务类型、精确闹钟兜底)—— 若该值再次变动,保持这些路径可用。`ApkExportConfig.targetSdk` 可按应用固定其他值。
+只有**一个** shell 模板:来自 `:shell` release 的 `webview_shell.apk`。不要引入第二个模板 APK。shell 携带 `minSdk` 23 / `targetSdk` 35,同步的运行时已适配 target 35 的行为(运行时权限、前台服务类型、精确闹钟兜底)—— 若该值再次变动,保持这些路径可用。`ApkExportConfig.targetSdk` 可按应用固定其他 target;`ApkExportConfig.minSdk` 可提高下限(不能低于 23)。
 
 ## 配置中心
 

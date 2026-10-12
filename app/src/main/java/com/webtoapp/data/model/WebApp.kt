@@ -1331,9 +1331,19 @@ data class ApkExportConfig(
      * Why: the shell template ships targetSdk = 35; this pins a different value for
      * compat or store requirements. Server-runtime types (`AppType.requiresProcessExec`)
      * ignore it and are pinned to 28 so bundled binaries can execve. `null`/`<= 0`
-     * means "leave the template's 35 alone" for every other type.
+     * means "leave the template's 35 alone" for every other type. Values outside
+     * 23..36 are clamped at export; the editor offers a whitelist of chips.
      */
     val targetSdk: Int? = null,
+
+    /**
+     * Override the generated APK's `minSdkVersion` (manifest `<uses-sdk>`).
+     *
+     * Raise-only: the shell DEX is compiled at minSdk 23, so a lower value would
+     * install on devices that then crash. `null`/`<= 0` keeps the template's 23.
+     * Export clamps to `23..effectiveTargetSdk`.
+     */
+    val minSdk: Int? = null,
 
     /**
      * Sign this app with a dedicated, per-package identity instead of the host-wide signer.

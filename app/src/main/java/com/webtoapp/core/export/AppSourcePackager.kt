@@ -7,6 +7,7 @@ import android.net.Uri
 import androidx.core.content.FileProvider
 import com.webtoapp.core.apkbuilder.ApkBuilder
 import com.webtoapp.core.apkbuilder.ApkConfigJsonFactory
+import com.webtoapp.core.apkbuilder.GeneratedSdkLevels
 import com.webtoapp.core.apkbuilder.NetworkSecurityConfigBuilder
 import com.webtoapp.core.apkbuilder.toApkConfig
 import com.webtoapp.core.i18n.Strings
@@ -110,7 +111,10 @@ class AppSourcePackager(private val context: Context) {
     }
 
     private fun appBuildGradle(config: com.webtoapp.core.apkbuilder.ApkConfig): String {
-        val targetSdk = (config.targetSdkOverride ?: 35).coerceIn(23, 36)
+        val targetSdk = (config.targetSdkOverride ?: GeneratedSdkLevels.TEMPLATE_TARGET_SDK)
+            .coerceIn(GeneratedSdkLevels.TEMPLATE_MIN_SDK, GeneratedSdkLevels.COMPILE_SDK_CAP)
+        val minSdk = (config.minSdkOverride ?: GeneratedSdkLevels.TEMPLATE_MIN_SDK)
+            .coerceIn(GeneratedSdkLevels.TEMPLATE_MIN_SDK, targetSdk)
         return """
             plugins {
                 id("com.android.application")
@@ -123,7 +127,7 @@ class AppSourcePackager(private val context: Context) {
 
                 defaultConfig {
                     applicationId = "${kotlinString(config.packageName)}"
-                    minSdk = 23
+                    minSdk = $minSdk
                     targetSdk = $targetSdk
                     versionCode = ${config.versionCode}
                     versionName = "${kotlinString(config.versionName)}"

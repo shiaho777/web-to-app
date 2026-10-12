@@ -59,7 +59,7 @@ Usually yes. Web, Multi-Web, HTML, Offline Pack, Frontend, Media, and Gallery ap
 
 ### What targetSdk do generated apps use?
 
-Generated APKs inherit the shell template's `targetSdk` (currently 35). Node.js, PHP, Python, Go, and WordPress APKs are pinned to 28 so they can exec bundled binaries; the override does not apply to them. Other types can pin 28/34/35/36 from [APK Export Config](/guide/app-actions/edit-common-config/apk-export). The AAB exporter rewrites `targetSdk` to the Play-required level.
+Generated APKs inherit the shell template's `targetSdk` (currently 35) and `minSdk` 23. Node.js, PHP, Python, Go, and WordPress APKs are pinned to targetSdk 28 so they can exec bundled binaries; the targetSdk override does not apply to them. Other types can pin targetSdk 28/31/33/34/35/36, and any type can raise minSdk from 23 up to the current targetSdk, from [APK Export Config](/guide/app-actions/edit-common-config/apk-export). The AAB exporter rewrites `targetSdk` to the Play-required level.
 
 ### How do I sign with my own key?
 

@@ -1084,8 +1084,9 @@ class JarSigner(private val context: Context) {
     fun sign(
         inputApk: File,
         outputApk: File,
-        targetSdk: Int = 35,
-        identity: SigningIdentity? = null
+        targetSdk: Int = GeneratedSdkLevels.TEMPLATE_TARGET_SDK,
+        identity: SigningIdentity? = null,
+        minSdk: Int = GeneratedSdkLevels.TEMPLATE_MIN_SDK
     ): Boolean {
 
         if (!validateInputs(inputApk, outputApk)) {
@@ -1111,7 +1112,14 @@ class JarSigner(private val context: Context) {
         AppLogger.d(TAG, "Signing APK: input=${inputApk.absolutePath} (size=${inputApk.length()})")
         AppLogger.d(TAG, "Signer type: ${identity?.let { "PER_APP" } ?: currentSignerType.toString()}")
 
-        return trySignWithRetry(inputApk, outputApk, maxRetries = 2, targetSdk = targetSdk, identity = identity)
+        return trySignWithRetry(
+            inputApk,
+            outputApk,
+            maxRetries = 2,
+            targetSdk = targetSdk,
+            minSdk = minSdk,
+            identity = identity
+        )
     }
 
     private fun validateInputs(inputApk: File, outputApk: File): Boolean {
@@ -1151,6 +1159,7 @@ class JarSigner(private val context: Context) {
         outputApk: File,
         maxRetries: Int,
         targetSdk: Int,
+        minSdk: Int,
         identity: SigningIdentity? = null
     ): Boolean {
         val errorMessages = mutableListOf<String>()
@@ -1162,13 +1171,13 @@ class JarSigner(private val context: Context) {
         val v1Name = resolveV1SignerName(options.v1SignerName, identity?.certificate)
         AppLogger.d(TAG, "Signing scheme options: $options (resolved V1 name=$v1Name)")
 
-        // The shell template manifest declares minSdk 23 and generated APKs keep it, so
-        // a V1-less signature set cannot install on API 23 devices (and apksig itself
-        // refuses V1-less signing below minSdk 24). Force V1 on.
+        // apksig refuses a V1-less signature set below minSdk 24, and API 23 devices
+        // cannot install one. Force V1 only while the packed manifest still targets
+        // those devices. Raised minSdk (>= 24) may drop V1 if the user turned it off.
         var v1Enabled = options.v1Enabled
-        if (!v1Enabled) {
+        if (!v1Enabled && minSdk < 24) {
             v1Enabled = true
-            AppLogger.w(TAG, "V1 signing forced on: shell minSdk 23 requires a JAR signature")
+            AppLogger.w(TAG, "V1 signing forced on: minSdk $minSdk requires a JAR signature")
         }
         // Android 11+ rejects apps with targetSdk >= 30 that carry only a V1 signature —
         // the build would succeed and produce an APK that fails to install. Force V2 on.
@@ -1213,7 +1222,8 @@ class JarSigner(private val context: Context) {
 
                 val success = attemptSign(
                     inputApk, outputApk, config.v1, config.v2, config.v3, v1Name,
-                    identity
+                    identity,
+                    minSdk
                 )
                 if (success) {
                     AppLogger.d(TAG, "Signed successfully: ${config.name}")
@@ -1268,16 +1278,16 @@ class JarSigner(private val context: Context) {
         inputApk: File, outputApk: File,
         v1: Boolean, v2: Boolean, v3: Boolean,
         v1SignerName: String,
-        identity: SigningIdentity? = null
+        identity: SigningIdentity? = null,
+        minSdk: Int = GeneratedSdkLevels.TEMPLATE_MIN_SDK
     ): Boolean {
         val key = (identity?.privateKey ?: privateKey) ?: throw IllegalStateException("私钥为空")
         val cert = (identity?.certificate ?: certificate) ?: throw IllegalStateException("证书为空")
 
-        // The real manifest minSdk of every shell-based output is 23 (shell template
-        // defaultConfig). Deriving minSdk from the scheme toggles made apksig skip
-        // V1 with a V2-only config on a manifest that installs on API 23 — the
-        // previous "effectiveMinSdk 24" lied about the manifest contents.
-        val effectiveMinSdk = 23
+        // apksig's minSdk must match the packed manifest. Deriving it from the
+        // scheme toggles used to skip V1 on a V2-only config while the manifest
+        // still installed on API 23.
+        val effectiveMinSdk = minSdk.coerceAtLeast(GeneratedSdkLevels.TEMPLATE_MIN_SDK)
 
         AppLogger.d(TAG, "Certificate: subject=${cert.subjectX500Principal.name}, algo=${cert.sigAlgName}")
         AppLogger.d(TAG, "Key: algo=${key.algorithm}, format=${key.format}")

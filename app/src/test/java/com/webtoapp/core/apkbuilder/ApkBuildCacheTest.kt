@@ -509,6 +509,70 @@ class ApkBuildCacheTest {
     }
 
     @Test
+    fun `minSdk override change forces full rebuild instead of reuse`() {
+        val context = RuntimeEnvironment.getApplication()
+        val cache = ApkBuildCache(context)
+        cache.clearAll()
+
+        val webApp = com.webtoapp.data.model.WebApp(
+            id = 34,
+            name = "WebMinRaised",
+            url = "https://example.com"
+        )
+        val template = File(context.cacheDir, "shell_msdk.apk").apply {
+            writeBytes(ByteArray(16) { 9 })
+        }
+
+        fun configWith(minSdkOverride: Int?) = ApkConfig(
+            meta = MetaBlock(
+                appName = "WebMinRaised",
+                packageName = "com.demo.webminraised",
+                targetUrl = "https://example.com",
+                versionCode = 1,
+                versionName = "1.0",
+                appType = "WEB",
+                minSdkOverride = minSdkOverride
+            )
+        )
+
+        val defaultPlan = cache.plan(
+            webApp = webApp,
+            packageName = "com.demo.webminraised",
+            config = configWith(null),
+            templateApk = template,
+            encryptionEnabled = false,
+            abiFilters = emptyList(),
+            projectDirs = emptyList(),
+            mediaContentPath = null,
+            splashMediaPath = null,
+            bgmPlaylistPaths = emptyList(),
+            htmlFiles = emptyList(),
+            galleryItems = emptyList(),
+            errorPageMediaPath = null,
+            nativeLibsFingerprint = null,
+            forceFullRebuild = false
+        )
+        val raisedPlan = cache.plan(
+            webApp = webApp,
+            packageName = "com.demo.webminraised",
+            config = configWith(26),
+            templateApk = template,
+            encryptionEnabled = false,
+            abiFilters = emptyList(),
+            projectDirs = emptyList(),
+            mediaContentPath = null,
+            splashMediaPath = null,
+            bgmPlaylistPaths = emptyList(),
+            htmlFiles = emptyList(),
+            galleryItems = emptyList(),
+            errorPageMediaPath = null,
+            nativeLibsFingerprint = null,
+            forceFullRebuild = false
+        )
+        assertThat(raisedPlan.identityFingerprint).isNotEqualTo(defaultPlan.identityFingerprint)
+    }
+
+    @Test
     fun `host versionCode change forces full rebuild instead of reuse`() {
         val context = RuntimeEnvironment.getApplication()
         val cache = ApkBuildCache(context)

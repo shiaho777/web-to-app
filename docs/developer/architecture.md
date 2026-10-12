@@ -37,7 +37,7 @@ Miss any step and you get one of three symptoms: the editor shows a switch that 
 
 ## One shell template
 
-There is exactly **one** shell template: `webview_shell.apk` from `:shell` release. Do not introduce a second template APK. The shell ships `targetSdk` 35 and the synced runtime is adapted to it (runtime permissions, FGS types, exact-alarm fallback) — keep those paths working if the value moves again. `ApkExportConfig.targetSdk` can pin a different value per app.
+There is exactly **one** shell template: `webview_shell.apk` from `:shell` release. Do not introduce a second template APK. The shell ships `minSdk` 23 / `targetSdk` 35 and the synced runtime is adapted to target 35 (runtime permissions, FGS types, exact-alarm fallback) — keep those paths working if the value moves again. `ApkExportConfig.targetSdk` can pin a different target per app; `ApkExportConfig.minSdk` can raise the floor (never below 23).
 
 ## Configuration center
 

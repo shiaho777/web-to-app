@@ -54,6 +54,7 @@ data class ApkConfig(
     val language: String get() = meta.language
     val engineType: String get() = meta.engineType
     val targetSdkOverride: Int? get() = meta.targetSdkOverride
+    val minSdkOverride: Int? get() = meta.minSdkOverride
 
     val activationEnabled: Boolean get() = activation.enabled
     val activationCodes: List<String> get() = activation.codes
@@ -423,7 +424,8 @@ data class MetaBlock(
     val engineType: String = "SYSTEM_WEBVIEW",
     val htmlUsesFileScheme: Boolean = false,
     val loggingEnabled: Boolean = false,
-    val targetSdkOverride: Int? = null
+    val targetSdkOverride: Int? = null,
+    val minSdkOverride: Int? = null
 )
 
 data class ActivationBlock(

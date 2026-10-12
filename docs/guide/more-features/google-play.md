@@ -37,5 +37,5 @@ Create, import, and manage the signing keys used for the AAB.
 ## Notes
 
 - You can also launch AAB export for a specific app from its [Build APK](/guide/app-actions/build-apk) dialog.
-- WebView APKs inherit the shell template's `targetSdk` 35. Server-runtime APKs are pinned to 28 and ignore the override. Only the AAB is rewritten for Play. See [Build APK](/guide/app-actions/build-apk).
+- WebView APKs inherit the shell template's `targetSdk` 35 (overridable in APK export config). Server-runtime APKs are pinned to 28 and ignore the target override. minSdk stays 23 unless raised in the same drawer. Only the AAB is rewritten for Play. See [Build APK](/guide/app-actions/build-apk).
 - A pre-upload advisory and warning are shown before exporting.

@@ -135,6 +135,25 @@ class ConvertersTest {
     }
 
     @Test
+    fun `apk export config keeps minSdk and targetSdk overrides across a roundtrip`() {
+        val config = ApkExportConfig(minSdk = 26, targetSdk = 34)
+
+        val decoded = converters.toApkExportConfig(converters.fromApkExportConfig(config))
+
+        assertThat(decoded?.minSdk).isEqualTo(26)
+        assertThat(decoded?.targetSdk).isEqualTo(34)
+    }
+
+    @Test
+    fun `legacy export config json without minSdk decodes as null`() {
+        val decoded = converters.toApkExportConfig("""{"engineType":"GECKOVIEW"}""")
+
+        assertThat(decoded?.engineType).isEqualTo("GECKOVIEW")
+        assertThat(decoded?.minSdk).isNull()
+        assertThat(decoded?.targetSdk).isNull()
+    }
+
+    @Test
     fun `static SAEP defaults off and legacy json remains compatible`() {
         assertThat(ApkExportConfig().saepEnabled).isFalse()
         val decoded = converters.toApkExportConfig("""{"engineType":"GECKOVIEW"}""")

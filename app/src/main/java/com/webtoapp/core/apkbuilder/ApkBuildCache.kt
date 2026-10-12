@@ -406,9 +406,10 @@ class ApkBuildCache(private val context: Context) {
         // unsigned APK. Otherwise REUSE_UNSIGNED serves a stale unaligned lib that dlopen
         // rejects on Android 15+ (16KB-page) devices.
         parts += "nativeLibs=${nativeLibsFingerprint ?: "none"}"
-        // targetSdk override changes the manifest's <uses-sdk>; without this a cached unsigned
-        // APK would be reused after the user changes it, defeating the override.
-        parts += "targetSdk=${config.targetSdkOverride ?: 35}"
+        // targetSdk / minSdk overrides change the manifest's <uses-sdk>; without
+        // these a cached unsigned APK would be reused after the user changes them.
+        parts += "targetSdk=${config.targetSdkOverride ?: GeneratedSdkLevels.TEMPLATE_TARGET_SDK}"
+        parts += "minSdk=${config.minSdkOverride ?: GeneratedSdkLevels.TEMPLATE_MIN_SDK}"
         // The derived manifest permission/component set: CONTENT_OVERLAY reuses the
         // cached base's AndroidManifest, so a config change that alters this set without
         // touching any other identity part (e.g. enabling scheduled start →

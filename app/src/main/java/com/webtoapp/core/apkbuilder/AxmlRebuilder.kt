@@ -1580,6 +1580,7 @@ class AxmlRebuilder {
         permissions: List<String> = BASELINE_RUNTIME_PERMISSIONS,
         requiredComponents: Set<String> = DEFAULT_RUNTIME_COMPONENTS,
         targetSdk: Int? = null,
+        minSdk: Int? = null,
         /**
          * Resolved mime filters for the inbound share channel (issue #943). Non-empty
          * registers an `ACTION_SEND` / `ACTION_SEND_MULTIPLE` intent-filter on
@@ -1614,6 +1615,9 @@ class AxmlRebuilder {
 
             if (targetSdk != null) {
                 modifyTargetSdk(parsed, targetSdk)
+            }
+            if (minSdk != null) {
+                modifyMinSdk(parsed, minSdk)
             }
 
             stripTestOnlyFlag(parsed)
@@ -1808,10 +1812,27 @@ class AxmlRebuilder {
      * (e.g. to 34+) for Play Store compliance without changing the template.
      */
     private fun modifyTargetSdk(parsed: ParsedAxml, targetSdk: Int) {
+        modifyUsesSdkIntAttr(parsed, ATTR_TARGET_SDK_VERSION, targetSdk, "targetSdkVersion")
+    }
+
+    /**
+     * Rewrites the `<uses-sdk android:minSdkVersion>` integer attribute in place. Raise-only
+     * from the template's 23 — the packed DEX cannot run below that API.
+     */
+    private fun modifyMinSdk(parsed: ParsedAxml, minSdk: Int) {
+        modifyUsesSdkIntAttr(parsed, ATTR_MIN_SDK_VERSION, minSdk, "minSdkVersion")
+    }
+
+    private fun modifyUsesSdkIntAttr(
+        parsed: ParsedAxml,
+        attrResId: Int,
+        value: Int,
+        attrName: String
+    ) {
         val resourceMap = parsed.resourceMap ?: return
-        val targetSdkAttrIndex = resourceMap.indexOf(ATTR_TARGET_SDK_VERSION)
-        if (targetSdkAttrIndex < 0) {
-            AppLogger.d(TAG, "targetSdkVersion attribute not in resource map, skipping targetSdk rewrite")
+        val attrIndex = resourceMap.indexOf(attrResId)
+        if (attrIndex < 0) {
+            AppLogger.d(TAG, "$attrName attribute not in resource map, skipping uses-sdk rewrite")
             return
         }
 
@@ -1838,29 +1859,29 @@ class AxmlRebuilder {
 
                 buffer.position(attrOffset)
                 val attrNs = buffer.int
-                val attrName = buffer.int
+                val nameIndex = buffer.int
                 buffer.position(attrOffset + 15)
                 val attrValueType = buffer.get().toInt() and 0xFF
 
-                if (attrName == targetSdkAttrIndex) {
+                if (nameIndex == attrIndex) {
                     if (attrValueType == 0x10) {
                         buffer.position(attrOffset + 16)
-                        buffer.putInt(targetSdk)
-                        AppLogger.d(TAG, "Modified targetSdkVersion to $targetSdk")
+                        buffer.putInt(value)
+                        AppLogger.d(TAG, "Modified $attrName to $value")
                     } else {
                         AppLogger.w(
                             TAG,
-                            "uses-sdk targetSdkVersion has unexpected type 0x" +
+                            "uses-sdk $attrName has unexpected type 0x" +
                                 attrValueType.toString(16) + ", skipping rewrite"
                         )
                     }
                     return
                 }
             }
-            AppLogger.w(TAG, "<uses-sdk> found but targetSdkVersion attribute absent, skipping rewrite")
+            AppLogger.w(TAG, "<uses-sdk> found but $attrName attribute absent, skipping rewrite")
             return
         }
-        AppLogger.d(TAG, "No <uses-sdk> element found, skipping targetSdk rewrite")
+        AppLogger.d(TAG, "No <uses-sdk> element found, skipping $attrName rewrite")
     }
 
     private fun stripTestOnlyFlag(parsed: ParsedAxml) {

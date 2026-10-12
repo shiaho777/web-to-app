@@ -7,6 +7,8 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.text.KeyboardOptions
@@ -24,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import com.webtoapp.core.apkbuilder.GeneratedSdkLevels
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.ui.theme.LocalShowDescriptions
 import com.webtoapp.ui.theme.ifDescriptionsShown
@@ -279,6 +282,17 @@ fun ApkExportSection(
                         )
                     }
                 }
+                WtaSectionDivider()
+                val effectiveTargetSdk = if (canOverrideTargetSdk) {
+                    config.targetSdk ?: GeneratedSdkLevels.TEMPLATE_TARGET_SDK
+                } else {
+                    GeneratedSdkLevels.PROCESS_EXEC_TARGET_SDK
+                }
+                MinSdkOverrideRows(
+                    config = config,
+                    effectiveTargetSdk = effectiveTargetSdk,
+                    onConfigChange = onConfigChange
+                )
                 if (canOverrideTargetSdk) {
                     WtaSectionDivider()
                     TargetSdkOverrideRows(
@@ -1512,6 +1526,53 @@ private fun copyToClipboard(context: android.content.Context, label: String, tex
     clipboard.setPrimaryClip(android.content.ClipData.newPlainText(label, text))
 }
 
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun MinSdkOverrideRows(
+    config: ApkExportConfig,
+    effectiveTargetSdk: Int,
+    onConfigChange: (ApkExportConfig) -> Unit
+) {
+    val enabled = config.minSdk != null
+    val choices = GeneratedSdkLevels.MIN_SDK_CHOICES.filter { it <= effectiveTargetSdk }
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        WtaToggleRow(
+            title = Strings.minSdkOverrideTitle,
+            subtitle = (if (enabled) Strings.minSdkOverrideOnHint else Strings.minSdkOverrideOffHint)
+                .ifDescriptionsShown(),
+            icon = Icons.Outlined.Devices,
+            checked = enabled,
+            onCheckedChange = { on ->
+                onConfigChange(
+                    config.copy(
+                        minSdk = if (on) {
+                            GeneratedSdkLevels.defaultRaisedMinSdk(effectiveTargetSdk)
+                        } else {
+                            null
+                        }
+                    )
+                )
+            }
+        )
+
+        AnimatedVisibility(
+            visible = enabled,
+            enter = CardExpandTransition,
+            exit = CardCollapseTransition
+        ) {
+            SdkChoiceChips(
+                choices = choices,
+                selected = config.minSdk,
+                onSelect = { value ->
+                    onConfigChange(config.copy(minSdk = value))
+                }
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun TargetSdkOverrideRows(
     config: ApkExportConfig,
@@ -1527,8 +1588,17 @@ private fun TargetSdkOverrideRows(
             icon = Icons.Outlined.SystemUpdate,
             checked = enabled,
             onCheckedChange = { on ->
+                val newTarget = if (on) {
+                    GeneratedSdkLevels.TEMPLATE_TARGET_SDK
+                } else {
+                    null
+                }
+                val cap = newTarget ?: GeneratedSdkLevels.TEMPLATE_TARGET_SDK
                 onConfigChange(
-                    config.copy(targetSdk = if (on) TARGET_SDK_OVERRIDE_DEFAULT else null)
+                    config.copy(
+                        targetSdk = newTarget,
+                        minSdk = GeneratedSdkLevels.clampMinSdk(config.minSdk, cap)
+                    )
                 )
             }
         )
@@ -1538,28 +1608,46 @@ private fun TargetSdkOverrideRows(
             enter = CardExpandTransition,
             exit = CardCollapseTransition
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(
-                        horizontal = WtaSpacing.RowHorizontal,
-                        vertical = WtaSpacing.ContentGap
-                    ),
-                horizontalArrangement = Arrangement.spacedBy(WtaSpacing.ContentGap)
-            ) {
-                TARGET_SDK_OVERRIDE_CHOICES.forEach { value ->
-                    WtaChip(
-                        selected = config.targetSdk == value,
-                        onClick = { onConfigChange(config.copy(targetSdk = value)) },
-                        label = value.toString(),
-                        showSelectedCheck = false
+            SdkChoiceChips(
+                choices = GeneratedSdkLevels.TARGET_SDK_CHOICES,
+                selected = config.targetSdk,
+                onSelect = { value ->
+                    onConfigChange(
+                        config.copy(
+                            targetSdk = value,
+                            minSdk = GeneratedSdkLevels.clampMinSdk(config.minSdk, value)
+                        )
                     )
                 }
-            }
+            )
         }
     }
 }
 
-private const val TARGET_SDK_OVERRIDE_DEFAULT = 35
-
-private val TARGET_SDK_OVERRIDE_CHOICES = listOf(28, 34, 35, 36)
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun SdkChoiceChips(
+    choices: List<Int>,
+    selected: Int?,
+    onSelect: (Int) -> Unit
+) {
+    FlowRow(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(
+                horizontal = WtaSpacing.RowHorizontal,
+                vertical = WtaSpacing.ContentGap
+            ),
+        horizontalArrangement = Arrangement.spacedBy(WtaSpacing.ContentGap),
+        verticalArrangement = Arrangement.spacedBy(WtaSpacing.ContentGap)
+    ) {
+        choices.forEach { value ->
+            WtaChip(
+                selected = selected == value,
+                onClick = { onSelect(value) },
+                label = value.toString(),
+                showSelectedCheck = false
+            )
+        }
+    }
+}

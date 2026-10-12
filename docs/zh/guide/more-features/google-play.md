@@ -37,5 +37,5 @@ WebView 类型可以导出 Play 级 AAB。Node.js、PHP、Python、Go、WordPres
 ## 说明
 
 - 你也可以从某个应用的[构建 APK](/zh/guide/app-actions/build-apk) 对话框直接针对该应用启动 AAB 导出。
-- WebView APK 继承 shell 模板的 `targetSdk` 35。服务端运行时 APK 固定为 28,并忽略自定义值。只有 AAB 会为 Play 重写。见[构建 APK](/zh/guide/app-actions/build-apk)。
+- WebView APK 继承 shell 模板的 `targetSdk` 35(可在 APK 导出配置里覆盖)。服务端运行时 APK 固定为 28,并忽略自定义 target。minSdk 默认 23,可在同一抽屉里提高。只有 AAB 会为 Play 重写。见[构建 APK](/zh/guide/app-actions/build-apk)。
 - 导出前会显示上传前建议和警告。

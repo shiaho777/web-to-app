@@ -1235,7 +1235,8 @@ class ApkBuilder(private val context: Context) {
             try {
                 signer.sign(
                     unsignedApk, signedApk,
-                    targetSdk = config.targetSdkOverride ?: 35,
+                    targetSdk = config.targetSdkOverride ?: GeneratedSdkLevels.TEMPLATE_TARGET_SDK,
+                    minSdk = config.minSdkOverride ?: GeneratedSdkLevels.TEMPLATE_MIN_SDK,
                     identity = perAppIdentity?.toSigningIdentity()
                 )
             } catch (e: Exception) {
@@ -1622,6 +1623,7 @@ class ApkBuilder(private val context: Context) {
                                 buildRequiredPermissions(config),
                                 buildRequiredComponents(config),
                                 targetSdk = config.targetSdkOverride,
+                                minSdk = config.minSdkOverride,
                                 shareReceiveMimeTypes = config.shareReceiveMimeTypes,
                                 openWithEnabled = config.openWithEnabled
                             )
@@ -4293,30 +4295,35 @@ private fun WebApp.buildEffectiveRuntimePermissions(): ApkRuntimePermissions {
     return synced.apkExportConfig?.runtimePermissions ?: ApkRuntimePermissions()
 }
 
-private fun WebApp.buildMetaBlock(packageName: String, effectiveTargetUrl: String, htmlUsesFileScheme: Boolean, darkMode: String): MetaBlock = MetaBlock(
-    appName = name,
-    packageName = packageName,
-    targetUrl = effectiveTargetUrl,
-    versionCode = apkExportConfig?.customVersionCode ?: 1,
-    versionName = apkExportConfig?.customVersionName?.takeIf { it.isNotBlank() } ?: "1.0.0",
-    iconPath = iconPath,
-    runtimePermissions = buildEffectiveRuntimePermissions(),
-    networkTrustConfig = apkExportConfig?.networkTrustConfig ?: com.webtoapp.data.model.NetworkTrustConfig(),
-    appType = appType.name,
-    themeType = themeType,
-    darkMode = darkMode,
-    language = com.webtoapp.core.i18n.Strings.currentLanguage.value.name,
-    engineType = apkExportConfig?.engineType ?: "SYSTEM_WEBVIEW",
-    htmlUsesFileScheme = htmlUsesFileScheme,
-    loggingEnabled = apkExportConfig?.loggingEnabled ?: false,
+private fun WebApp.buildMetaBlock(packageName: String, effectiveTargetUrl: String, htmlUsesFileScheme: Boolean, darkMode: String): MetaBlock {
     // Server runtimes exec binaries from app storage. targetSdk >= 29 turns on
     // W^X and blocks that. The shell template stays 35; these exports pin 28.
-    targetSdkOverride = if (appType.requiresProcessExec) {
-        28
-    } else {
-        apkExportConfig?.targetSdk?.takeIf { it > 0 }
-    }
-)
+    // minSdk is raise-only from the template's 23. See GeneratedSdkLevels.
+    val sdk = GeneratedSdkLevels.resolve(
+        requiresProcessExec = appType.requiresProcessExec,
+        minSdkOverride = apkExportConfig?.minSdk,
+        targetSdkOverride = apkExportConfig?.targetSdk
+    )
+    return MetaBlock(
+        appName = name,
+        packageName = packageName,
+        targetUrl = effectiveTargetUrl,
+        versionCode = apkExportConfig?.customVersionCode ?: 1,
+        versionName = apkExportConfig?.customVersionName?.takeIf { it.isNotBlank() } ?: "1.0.0",
+        iconPath = iconPath,
+        runtimePermissions = buildEffectiveRuntimePermissions(),
+        networkTrustConfig = apkExportConfig?.networkTrustConfig ?: com.webtoapp.data.model.NetworkTrustConfig(),
+        appType = appType.name,
+        themeType = themeType,
+        darkMode = darkMode,
+        language = com.webtoapp.core.i18n.Strings.currentLanguage.value.name,
+        engineType = apkExportConfig?.engineType ?: "SYSTEM_WEBVIEW",
+        htmlUsesFileScheme = htmlUsesFileScheme,
+        loggingEnabled = apkExportConfig?.loggingEnabled ?: false,
+        targetSdkOverride = sdk.targetSdkRewrite,
+        minSdkOverride = sdk.minSdkRewrite
+    )
+}
 
 private fun WebApp.buildActivationBlock(): ActivationBlock = ActivationBlock(
     enabled = activationEnabled,
