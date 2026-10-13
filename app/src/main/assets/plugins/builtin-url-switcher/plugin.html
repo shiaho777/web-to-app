@@ -1,0 +1,362 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, -apple-system, sans-serif; padding: 12px 16px 20px; color: var(--wta-on-surface, #1f2937); }
+  h1 { font-size: 16px; font-weight: 600; }
+  .hint { font-size: 12px; color: var(--wta-on-surface-variant, #6b7280); margin: 4px 0 12px; line-height: 1.45; }
+  .empty { font-size: 13px; color: var(--wta-on-surface-variant, #6b7280); padding: 12px 0 16px; line-height: 1.5; }
+  .list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+  .row { display: flex; align-items: center; gap: 8px; padding: 10px 10px 10px 8px; border-radius: 12px; background: var(--wta-surface-dim, #f8fafc); border: 1px solid var(--wta-outline, #e5e7eb); touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+  .row.current { border-color: var(--wta-accent, #6366f1); background: var(--wta-accent-soft, rgba(99,102,241,.1)); }
+  .row.dragging { opacity: .92; box-shadow: 0 8px 24px rgba(0,0,0,.18); transform: scale(1.02); z-index: 5; touch-action: none; }
+  .grip { width: 16px; height: 18px; flex-shrink: 0; opacity: .38; background: radial-gradient(circle, currentColor 1.15px, transparent 1.25px) 0 0 / 8px 6px; }
+  .row-text { flex: 1; min-width: 0; }
+  .row-name { font-size: 14px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .row-url { font-size: 12px; color: var(--wta-on-surface-variant, #6b7280); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 2px; }
+  .badge { font-size: 10px; font-weight: 600; color: var(--wta-accent, #6366f1); margin-left: 6px; vertical-align: middle; }
+  .del { border: none; background: none; color: var(--wta-on-surface-variant, #9ca3af); font-size: 18px; line-height: 1; padding: 6px 8px; cursor: pointer; }
+  .form { display: flex; flex-direction: column; gap: 8px; }
+  input { width: 100%; border: 1px solid var(--wta-outline, #e5e7eb); background: var(--wta-surface-dim, #f8fafc); color: inherit; border-radius: 10px; padding: 10px 12px; font-size: 14px; outline: none; }
+  .btns { display: flex; gap: 8px; }
+  button.primary, button.secondary { flex: 1; border: none; border-radius: 10px; padding: 10px 12px; font-size: 14px; cursor: pointer; }
+  button.primary { background: var(--wta-accent, #6366f1); color: #fff; }
+  button.secondary { background: var(--wta-surface-dim, #f3f4f6); color: var(--wta-on-surface, #374151); border: 1px solid var(--wta-outline, #e5e7eb); }
+</style>
+<script type="hcj/page">
+(function () {
+  'use strict';
+  function normalize(u) {
+    u = String(u || '').trim();
+    if (!u) return '';
+    if (!/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(u)) u = 'https://' + u;
+    return u;
+  }
+  function canon(u) {
+    try {
+      var x = new URL(normalize(u));
+      x.hash = '';
+      var path = x.pathname || '/';
+      if (path.length > 1 && path.charAt(path.length - 1) === '/') path = path.slice(0, -1);
+      x.pathname = path;
+      return x.href;
+    } catch (e) { return normalize(u); }
+  }
+  function hello() {
+    hcj.panel.send({
+      type: 'hello',
+      lang: hcj.lang || '',
+      url: location.href || '',
+      title: document.title || ''
+    });
+  }
+  hcj.panel.onMessage(function (m) {
+    if (!m) return;
+    if (m.type === 'hello' || m.type === 'askCurrent') { hello(); return; }
+    if (m.type === 'go' && m.url) {
+      var url = normalize(m.url);
+      if (!url) return;
+      if (canon(url) === canon(location.href)) return;
+      try { location.assign(url); } catch (e) { location.href = url; }
+    }
+  });
+  hcj.on('action', function () { hcj.panel.open(); });
+})();
+</script>
+</head>
+<body>
+<h1 id="title"></h1>
+<div id="hint" class="hint"></div>
+<div id="empty" class="empty" hidden></div>
+<div id="list" class="list"></div>
+<div class="form">
+  <input id="name" autocomplete="off">
+  <input id="url" inputmode="url" autocomplete="url">
+  <div class="btns">
+    <button id="add" class="primary" type="button"></button>
+    <button id="addCurrent" class="secondary" type="button"></button>
+  </div>
+</div>
+<script>
+(function () {
+  var MAX = 50;
+  var LONG_MS = 380;
+  var MOVE_PX = 10;
+  var pendingCurrent = false;
+  var pageUrl = '';
+  var drag = null;
+
+  function langOf(s) {
+    s = String(s || '').toLowerCase();
+    if (s.indexOf('zh') === 0) return 'zh';
+    if (s.indexOf('ar') === 0) return 'ar';
+    if (s.indexOf('pt') === 0) return 'pt';
+    if (s.indexOf('es') === 0) return 'es';
+    if (s.indexOf('fr') === 0) return 'fr';
+    if (s.indexOf('de') === 0) return 'de';
+    if (s.indexOf('ru') === 0) return 'ru';
+    if (s.indexOf('ja') === 0) return 'ja';
+    if (s.indexOf('ko') === 0) return 'ko';
+    return 'en';
+  }
+  var I18N = {
+    zh: { title: '网址切换', hint: '点一行打开；长按拖动排序。', empty: '还没有保存的网址。添加一个即可在任意页面切换。', namePh: '名称（可选）', urlPh: 'https://…', add: '添加', addCurrent: '添加当前页', invalid: '网址无效', added: '已添加', already: '已经保存过了', current: '当前', tooMany: '最多保存 50 个网址' },
+    en: { title: 'URL Switcher', hint: 'Tap a row to open. Long-press and drag to reorder.', empty: 'No saved URLs yet. Add one to switch pages from any app.', namePh: 'Name (optional)', urlPh: 'https://…', add: 'Add', addCurrent: 'Add this page', invalid: 'Invalid URL', added: 'Added', already: 'Already saved', current: 'Now', tooMany: 'You can save up to 50 URLs' },
+    ar: { title: 'تبديل الروابط', hint: 'انقر لفتح الصف. اضغط مطولاً واسحب لإعادة الترتيب.', empty: 'لا توجد روابط محفوظة. أضف رابطاً للتبديل من أي تطبيق.', namePh: 'الاسم (اختياري)', urlPh: 'https://…', add: 'إضافة', addCurrent: 'إضافة الصفحة الحالية', invalid: 'رابط غير صالح', added: 'تمت الإضافة', already: 'محفوظ مسبقاً', current: 'الحالي', tooMany: 'يمكن حفظ 50 رابطاً كحد أقصى' },
+    pt: { title: 'Alternar URL', hint: 'Toque para abrir. Pressione e arraste para reordenar.', empty: 'Nenhum URL salvo. Adicione um para alternar em qualquer app.', namePh: 'Nome (opcional)', urlPh: 'https://…', add: 'Adicionar', addCurrent: 'Adicionar esta página', invalid: 'URL inválido', added: 'Adicionado', already: 'Já salvo', current: 'Atual', tooMany: 'Pode guardar até 50 URLs' },
+    es: { title: 'Cambiar URL', hint: 'Toca para abrir. Mantén pulsado y arrastra para reordenar.', empty: 'Aún no hay URLs. Añade una para cambiar desde cualquier app.', namePh: 'Nombre (opcional)', urlPh: 'https://…', add: 'Añadir', addCurrent: 'Añadir esta página', invalid: 'URL no válida', added: 'Añadida', already: 'Ya está guardada', current: 'Actual', tooMany: 'Puedes guardar hasta 50 URLs' },
+    fr: { title: 'Changer d’URL', hint: 'Touchez pour ouvrir. Appui long puis glisser pour réordonner.', empty: 'Aucun URL enregistré. Ajoutez-en un pour changer depuis n’importe quelle app.', namePh: 'Nom (facultatif)', urlPh: 'https://…', add: 'Ajouter', addCurrent: 'Ajouter cette page', invalid: 'URL invalide', added: 'Ajouté', already: 'Déjà enregistré', current: 'Actuel', tooMany: '50 URL maximum' },
+    de: { title: 'URL wechseln', hint: 'Tippen zum Öffnen. Lange drücken und ziehen zum Sortieren.', empty: 'Noch keine URLs. Fügen Sie eine hinzu, um in jeder App zu wechseln.', namePh: 'Name (optional)', urlPh: 'https://…', add: 'Hinzufügen', addCurrent: 'Diese Seite hinzufügen', invalid: 'Ungültige URL', added: 'Hinzugefügt', already: 'Bereits gespeichert', current: 'Aktuell', tooMany: 'Höchstens 50 URLs' },
+    ru: { title: 'Смена URL', hint: 'Нажмите, чтобы открыть. Удерживайте и перетащите, чтобы изменить порядок.', empty: 'Нет сохранённых адресов. Добавьте один, чтобы переключаться в любом приложении.', namePh: 'Имя (необязательно)', urlPh: 'https://…', add: 'Добавить', addCurrent: 'Добавить эту страницу', invalid: 'Некорректный URL', added: 'Добавлено', already: 'Уже сохранено', current: 'Сейчас', tooMany: 'Не больше 50 адресов' },
+    ja: { title: 'URL切り替え', hint: 'タップで開く。長押しドラッグで並べ替え。', empty: '保存したURLはありません。追加するとどのアプリからでも切り替えできます。', namePh: '名前（任意）', urlPh: 'https://…', add: '追加', addCurrent: 'このページを追加', invalid: 'URLが無効です', added: '追加しました', already: 'すでに保存済み', current: '表示中', tooMany: '保存できるのは50件まで' },
+    ko: { title: 'URL 전환', hint: '탭하여 열기. 길게 눌러 끌어 순서 변경.', empty: '저장된 URL이 없습니다. 추가하면 어떤 앱에서든 전환할 수 있습니다.', namePh: '이름(선택)', urlPh: 'https://…', add: '추가', addCurrent: '현재 페이지 추가', invalid: '잘못된 URL', added: '추가됨', already: '이미 저장됨', current: '현재', tooMany: '최대 50개까지 저장' }
+  };
+  var T = I18N.en;
+
+  function sites() {
+    var list = hcjPanel.config.get('sites', []);
+    return Array.isArray(list) ? list : [];
+  }
+  function save(list) { hcjPanel.config.set('sites', list); }
+  function normalize(u) {
+    u = String(u || '').trim();
+    if (!u) return '';
+    if (!/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(u)) u = 'https://' + u;
+    try { new URL(u); return u; } catch (e) { return ''; }
+  }
+  function canon(u) {
+    try {
+      var x = new URL(normalize(u));
+      x.hash = '';
+      var path = x.pathname || '/';
+      if (path.length > 1 && path.charAt(path.length - 1) === '/') path = path.slice(0, -1);
+      x.pathname = path;
+      return x.href;
+    } catch (e) { return normalize(u); }
+  }
+  function hostOf(u) {
+    try { return new URL(u).host || u; } catch (e) { return u; }
+  }
+  function isCurrent(url) {
+    return pageUrl && canon(url) === canon(pageUrl);
+  }
+  function clientY(e) {
+    if (e.touches && e.touches[0]) return e.touches[0].clientY;
+    if (e.changedTouches && e.changedTouches[0]) return e.changedTouches[0].clientY;
+    return e.clientY;
+  }
+  function clientX(e) {
+    if (e.touches && e.touches[0]) return e.touches[0].clientX;
+    if (e.changedTouches && e.changedTouches[0]) return e.changedTouches[0].clientX;
+    return e.clientX;
+  }
+
+  function persistOrder() {
+    var listEl = document.getElementById('list');
+    var map = {};
+    sites().forEach(function (s) { map[s.id] = s; });
+    var next = [];
+    Array.prototype.forEach.call(listEl.children, function (row) {
+      if (map[row.dataset.id]) next.push(map[row.dataset.id]);
+    });
+    save(next);
+  }
+
+  function endDrag() {
+    if (!drag) return { moved: false, armed: false };
+    if (drag.timer) clearTimeout(drag.timer);
+    if (drag.row) {
+      drag.row.classList.remove('dragging');
+      try { drag.row.releasePointerCapture(drag.pointerId); } catch (e) {}
+    }
+    if (drag.moved) persistOrder();
+    var result = { moved: drag.moved, armed: drag.armed, cancelled: drag.cancelled };
+    drag = null;
+    return result;
+  }
+
+  function startDrag(row) {
+    if (!drag) return;
+    drag.armed = true;
+    row.classList.add('dragging');
+    try { row.setPointerCapture(drag.pointerId); } catch (e) {}
+  }
+
+  function dragTo(y) {
+    if (!drag || !drag.armed) return;
+    drag.moved = true;
+    var listEl = document.getElementById('list');
+    var row = drag.row;
+    var kids = Array.prototype.slice.call(listEl.children);
+    for (var i = 0; i < kids.length; i++) {
+      var other = kids[i];
+      if (other === row) continue;
+      var r = other.getBoundingClientRect();
+      var mid = r.top + r.height / 2;
+      if (y < mid) {
+        if (other.previousSibling !== row) listEl.insertBefore(row, other);
+        return;
+      }
+    }
+    if (kids[kids.length - 1] !== row) listEl.appendChild(row);
+  }
+
+  function bindRow(row, item) {
+    row.addEventListener('pointerdown', function (e) {
+      if (e.button && e.button !== 0) return;
+      if (e.target && e.target.closest && e.target.closest('.del')) return;
+      endDrag();
+      drag = {
+        row: row,
+        pointerId: e.pointerId,
+        x: clientX(e),
+        y: clientY(e),
+        armed: false,
+        moved: false,
+        cancelled: false,
+        timer: setTimeout(function () { startDrag(row); }, LONG_MS)
+      };
+    });
+    row.addEventListener('pointermove', function (e) {
+      if (!drag || drag.row !== row) return;
+      var dx = clientX(e) - drag.x;
+      var dy = clientY(e) - drag.y;
+      if (!drag.armed) {
+        if (Math.abs(dx) > MOVE_PX || Math.abs(dy) > MOVE_PX) {
+          clearTimeout(drag.timer);
+          drag.timer = null;
+          drag.cancelled = true;
+        }
+        return;
+      }
+      e.preventDefault();
+      dragTo(clientY(e));
+    }, { passive: false });
+    function up() {
+      if (!drag || drag.row !== row) return;
+      var ended = endDrag();
+      if (ended.moved || ended.armed || ended.cancelled) return;
+      hcjPanel.send({ type: 'go', url: item.url });
+      hcjPanel.close();
+    }
+    row.addEventListener('pointerup', up);
+    row.addEventListener('pointercancel', function () { endDrag(); });
+  }
+
+  function render() {
+    var list = sites();
+    var emptyEl = document.getElementById('empty');
+    var listEl = document.getElementById('list');
+    var hintEl = document.getElementById('hint');
+    emptyEl.hidden = list.length > 0;
+    hintEl.hidden = list.length === 0;
+    listEl.innerHTML = '';
+    list.forEach(function (item) {
+      var row = document.createElement('div');
+      row.className = 'row' + (isCurrent(item.url) ? ' current' : '');
+      row.dataset.id = item.id;
+      var grip = document.createElement('span');
+      grip.className = 'grip';
+      var text = document.createElement('div');
+      text.className = 'row-text';
+      var name = document.createElement('div');
+      name.className = 'row-name';
+      name.textContent = item.name || hostOf(item.url);
+      if (isCurrent(item.url)) {
+        var badge = document.createElement('span');
+        badge.className = 'badge';
+        badge.textContent = T.current;
+        name.appendChild(badge);
+      }
+      var url = document.createElement('div');
+      url.className = 'row-url';
+      url.textContent = item.url;
+      text.appendChild(name);
+      text.appendChild(url);
+      var del = document.createElement('button');
+      del.className = 'del';
+      del.type = 'button';
+      del.textContent = '×';
+      del.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
+      del.addEventListener('click', function (e) {
+        e.stopPropagation();
+        endDrag();
+        save(sites().filter(function (s) { return s.id !== item.id; }));
+        render();
+      });
+      row.appendChild(grip);
+      row.appendChild(text);
+      row.appendChild(del);
+      bindRow(row, item);
+      listEl.appendChild(row);
+    });
+  }
+
+  function addUrl(name, url) {
+    var href = normalize(url);
+    if (!href) { hcjPanel.toast(T.invalid); return; }
+    var list = sites();
+    if (list.some(function (s) { return canon(s.url) === canon(href); })) {
+      hcjPanel.toast(T.already);
+      return;
+    }
+    if (list.length >= MAX) { hcjPanel.toast(T.tooMany); return; }
+    var label = String(name || '').trim();
+    list.push({
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+      name: label,
+      url: href
+    });
+    save(list);
+    render();
+    document.getElementById('name').value = '';
+    document.getElementById('url').value = '';
+    hcjPanel.toast(T.added);
+  }
+
+  function applyLang(code) {
+    T = I18N[langOf(code || '')] || I18N.en;
+    document.getElementById('title').textContent = T.title;
+    document.getElementById('hint').textContent = T.hint;
+    document.getElementById('empty').textContent = T.empty;
+    document.getElementById('name').placeholder = T.namePh;
+    document.getElementById('url').placeholder = T.urlPh;
+    document.getElementById('add').textContent = T.add;
+    document.getElementById('addCurrent').textContent = T.addCurrent;
+  }
+
+  applyLang('zh');
+  render();
+  hcjPanel.onMessage(function (m) {
+    if (!m) return;
+    if (m.type === 'hello') {
+      pageUrl = m.url || '';
+      applyLang(m.lang || '');
+      render();
+      if (pendingCurrent) {
+        pendingCurrent = false;
+        addUrl(m.title, m.url);
+      }
+    }
+  });
+  hcjPanel.send({ type: 'hello' });
+  document.getElementById('add').addEventListener('click', function () {
+    addUrl(document.getElementById('name').value, document.getElementById('url').value);
+  });
+  document.getElementById('url').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addUrl(document.getElementById('name').value, document.getElementById('url').value);
+    }
+  });
+  document.getElementById('addCurrent').addEventListener('click', function () {
+    pendingCurrent = true;
+    hcjPanel.send({ type: 'askCurrent' });
+  });
+})();
+</script>
+</body>
+</html>

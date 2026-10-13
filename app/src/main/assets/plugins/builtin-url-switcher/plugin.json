@@ -1,0 +1,16 @@
+{
+  "id": "builtin-url-switcher",
+  "name": "URL Switcher",
+  "version": "1.1.0",
+  "description": "Save URLs and switch between them in any app.",
+  "author": "WebToApp",
+  "icon": "language",
+  "matches": [
+    "*"
+  ],
+  "runAt": "document_idle",
+  "permissions": [
+    "STORAGE"
+  ],
+  "toolbar": true
+}

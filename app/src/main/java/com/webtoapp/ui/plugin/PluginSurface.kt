@@ -2,9 +2,12 @@ package com.webtoapp.ui.plugin
 
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,6 +31,7 @@ import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Extension
 import androidx.compose.material.icons.filled.FindInPage
 import androidx.compose.material.icons.filled.Insights
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Palette
@@ -55,13 +59,21 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInParent
+import androidx.compose.ui.layout.positionInWindow
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
+import com.webtoapp.ui.design.WtaMotion
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -167,6 +179,7 @@ internal fun pluginIcon(icon: String): ImageVector = when (icon) {
     "visibility", "eye" -> Icons.Filled.Visibility
     "palette", "content_enhancer", "auto_awesome" -> Icons.Filled.Palette
     "menu", "page_menu", "quick_menu", "apps" -> Icons.Filled.Menu
+    "language", "public", "link", "url_switcher" -> Icons.Filled.Language
     else -> Icons.Filled.Extension
 }
 
@@ -236,34 +249,42 @@ fun PluginToolbarEntries(
 // ---------------------------------------------------------------------------
 
 /**
- * Draggable native handle for apps without a toolbar. Lives in the Compose
- * layer — page CSS can never move or hide it.
+ * Shared overlay handle. Lives in the Compose layer — page CSS can never
+ * move or hide it. Set [draggable] false when a parent owns the drag.
  */
 @Composable
-fun PluginFloatingHandle(
+fun DraggableFloatingHandle(
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    contentDescription: String,
+    modifier: Modifier = Modifier,
+    icon: ImageVector = Icons.Filled.Extension,
+    badge: String? = null,
+    draggable: Boolean = true
 ) {
-    val entries by PluginHostState.entries.collectAsStateWithLifecycle()
-    val explicitBadge = entries.firstOrNull { it.badge.isNotBlank() }?.badge
     var offsetX by remember { mutableStateOf(0f) }
     var offsetY by remember { mutableStateOf(0f) }
-    val density = LocalDensity.current
 
     Box(
         modifier = modifier
-            .offset { IntOffset(offsetX.roundToInt(), offsetY.roundToInt()) }
-            .pointerInput(Unit) {
-                detectDragGestures { change, dragAmount ->
-                    change.consume()
-                    offsetX += dragAmount.x
-                    offsetY += dragAmount.y
+            .then(
+                if (draggable) {
+                    Modifier
+                        .offset { IntOffset(offsetX.roundToInt(), offsetY.roundToInt()) }
+                        .pointerInput(Unit) {
+                            detectDragGestures { change, dragAmount ->
+                                change.consume()
+                                offsetX += dragAmount.x
+                                offsetY += dragAmount.y
+                            }
+                        }
+                } else {
+                    Modifier
                 }
-            }
+            )
     ) {
         BadgedBox(
             badge = {
-                if (explicitBadge != null) Badge { Text(explicitBadge.take(4)) }
+                if (badge != null) Badge { Text(badge.take(4)) }
             }
         ) {
             Surface(
@@ -273,14 +294,34 @@ fun PluginFloatingHandle(
                 shadowElevation = 4.dp
             ) {
                 Icon(
-                    Icons.Filled.Extension,
-                    contentDescription = pluginsTitle,
+                    icon,
+                    contentDescription = contentDescription,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(10.dp).size(22.dp)
                 )
             }
         }
     }
+}
+
+/**
+ * Plugin entry on [DraggableFloatingHandle]. Badge comes from plugin state.
+ */
+@Composable
+fun PluginFloatingHandle(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    draggable: Boolean = true
+) {
+    val entries by PluginHostState.entries.collectAsStateWithLifecycle()
+    val explicitBadge = entries.firstOrNull { it.badge.isNotBlank() }?.badge
+    DraggableFloatingHandle(
+        onClick = onClick,
+        contentDescription = pluginsTitle,
+        modifier = modifier,
+        badge = explicitBadge,
+        draggable = draggable
+    )
 }
 
 // ---------------------------------------------------------------------------
@@ -489,11 +530,131 @@ fun PluginSurfaceHost(
     // floating handle (or a hidden toolbar) renders the draggable launcher.
     val wantsHandle = entries.any { it.entryStyle == PluginEntryStyle.FLOATING_HANDLE }
     if (entryStyle == PluginEntryStyle.FLOATING_HANDLE || wantsHandle || !toolbarVisible) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomEnd) {
-            PluginFloatingHandle(
-                onClick = { PluginHostState.openPluginSheet() },
-                modifier = floatingHandleModifier.padding(20.dp)
+        PluginHandleCluster(modifier = floatingHandleModifier)
+    }
+}
+
+/**
+ * Floating hub: one plugin opens directly, many fan out in place (PUBG-style),
+ * none still opens the sheet. Satellites are siblings of the hub so they stay
+ * hittable outside the hub's measured box.
+ */
+@Composable
+private fun PluginHandleCluster(modifier: Modifier = Modifier) {
+    val entries by PluginHostState.entries.collectAsStateWithLifecycle()
+    val session = PluginHostState.session
+    var expanded by remember { mutableStateOf(false) }
+    var offsetX by remember { mutableStateOf(0f) }
+    var offsetY by remember { mutableStateOf(0f) }
+    var fanRight by remember { mutableStateOf(false) }
+    var hubPos by remember { mutableStateOf(IntOffset.Zero) }
+    var hubSize by remember { mutableStateOf(IntSize.Zero) }
+    val density = LocalDensity.current
+    val screenWidthPx = with(density) {
+        LocalConfiguration.current.screenWidthDp.dp.toPx()
+    }
+    val radiusPx = with(density) { 84.dp.toPx() }
+    val satPx = with(density) { 42.dp.roundToPx() }
+    val progress by animateFloatAsState(
+        targetValue = if (expanded) 1f else 0f,
+        animationSpec = WtaMotion.bouncySpring(),
+        label = "pluginFan"
+    )
+    val fanEntries = entries
+    val offsets = remember(fanEntries.size, fanRight, radiusPx) {
+        pluginFanOffsets(fanEntries.size, radiusPx, fanRight)
+    }
+
+    BackHandler(enabled = expanded) { expanded = false }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        if (progress > 0.01f) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) { expanded = false }
             )
+        }
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(20.dp)
+                .then(modifier)
+                .offset { IntOffset(offsetX.roundToInt(), offsetY.roundToInt()) }
+                .onGloballyPositioned { coords ->
+                    val parent = coords.positionInParent()
+                    hubPos = IntOffset(parent.x.roundToInt(), parent.y.roundToInt())
+                    hubSize = coords.size
+                    val window = coords.positionInWindow()
+                    fanRight = window.x + coords.size.width / 2f < screenWidthPx / 2f
+                }
+                .pointerInput(Unit) {
+                    detectDragGestures(
+                        onDragStart = { expanded = false },
+                        onDrag = { change, dragAmount ->
+                            change.consume()
+                            offsetX += dragAmount.x
+                            offsetY += dragAmount.y
+                        }
+                    )
+                }
+                .zIndex(2f)
+        ) {
+            PluginFloatingHandle(
+                onClick = {
+                    when (pluginHandleClickAction(entries.size)) {
+                        PluginHandleClick.OPEN_SHEET ->
+                            PluginHostState.openPluginSheet()
+                        PluginHandleClick.ACTIVATE_ONLY ->
+                            session?.activateEntry(entries.first().pluginId)
+                        PluginHandleClick.FAN_OUT ->
+                            expanded = !expanded
+                    }
+                },
+                draggable = false
+            )
+        }
+        if (progress > 0.01f) {
+            fanEntries.forEachIndexed { i, entry ->
+                val target = offsets.getOrElse(i) { IntOffset.Zero }
+                Box(
+                    modifier = Modifier
+                        .zIndex(1f)
+                        .offset {
+                            IntOffset(
+                                hubPos.x + hubSize.width / 2 +
+                                    (target.x * progress).roundToInt() - satPx / 2,
+                                hubPos.y + hubSize.height / 2 +
+                                    (target.y * progress).roundToInt() - satPx / 2
+                            )
+                        }
+                        .graphicsLayer {
+                            scaleX = 0.55f + 0.45f * progress
+                            scaleY = 0.55f + 0.45f * progress
+                            alpha = progress
+                        }
+                ) {
+                    Surface(
+                        onClick = {
+                            expanded = false
+                            session?.activateEntry(entry.pluginId)
+                        },
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.96f),
+                        shadowElevation = 4.dp
+                    ) {
+                        Icon(
+                            pluginIcon(entry.icon),
+                            contentDescription = entry.name,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(10.dp).size(20.dp)
+                        )
+                    }
+                }
+            }
         }
     }
 }

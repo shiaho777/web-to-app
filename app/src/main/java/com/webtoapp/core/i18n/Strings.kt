@@ -2212,6 +2212,8 @@ object Strings {
     val builtinElementBlockerDesc: String get() = StringsC.builtinElementBlockerDesc
     val builtinPageMenu: String get() = StringsC.builtinPageMenu
     val builtinPageMenuDesc: String get() = StringsC.builtinPageMenuDesc
+    val builtinUrlSwitcher: String get() = StringsC.builtinUrlSwitcher
+    val builtinUrlSwitcherDesc: String get() = StringsC.builtinUrlSwitcherDesc
     fun builtinPluginName(id: String, fallback: String): String = StringsC.builtinPluginName(id, fallback)
     fun builtinPluginDescription(id: String, fallback: String): String = StringsC.builtinPluginDescription(id, fallback)
     val triggerAuto: String get() = StringsC.triggerAuto

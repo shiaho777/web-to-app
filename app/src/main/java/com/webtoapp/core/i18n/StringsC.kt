@@ -1886,6 +1886,31 @@ object StringsC {
         AppLanguage.KOREAN -> "플로팅 페이지 도구: 새로고침, 뒤로/앞으로, URL 이동, 공유, 외부에서 열기, 데이터 지우기, 메뉴 숨기기, 종료"
     }
 
+    val builtinUrlSwitcher: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "网址切换"
+        AppLanguage.ENGLISH -> "URL Switcher"
+        AppLanguage.ARABIC -> "تبديل الروابط"
+        AppLanguage.PORTUGUESE -> "Alternar URL"
+        AppLanguage.SPANISH -> "Cambiar URL"
+        AppLanguage.FRENCH -> "Changer d’URL"
+        AppLanguage.GERMAN -> "URL wechseln"
+        AppLanguage.RUSSIAN -> "Смена URL"
+        AppLanguage.JAPANESE -> "URL切り替え"
+        AppLanguage.KOREAN -> "URL 전환"
+    }
+    val builtinUrlSwitcherDesc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "保存网址并在任意应用里切换，不占用页面高度"
+        AppLanguage.ENGLISH -> "Save URLs and switch between them in any app without taking page space"
+        AppLanguage.ARABIC -> "احفظ الروابط وبدّل بينها في أي تطبيق دون شغل الصفحة"
+        AppLanguage.PORTUGUESE -> "Salve URLs e alterne entre eles em qualquer app sem ocupar a página"
+        AppLanguage.SPANISH -> "Guarda URLs y cámbiate entre ellas en cualquier app sin ocupar la página"
+        AppLanguage.FRENCH -> "Enregistrez des URL et basculez depuis n’importe quelle app sans occuper la page"
+        AppLanguage.GERMAN -> "URLs speichern und in jeder App wechseln, ohne Seitenplatz zu belegen"
+        AppLanguage.RUSSIAN -> "Сохраняйте адреса и переключайтесь в любом приложении, не занимая место"
+        AppLanguage.JAPANESE -> "URLを保存し、どのアプリからでも切り替え。ページ領域を占有しない"
+        AppLanguage.KOREAN -> "URL을 저장하고 어떤 앱에서든 전환, 페이지 영역을 차지하지 않음"
+    }
+
     // Qualify through the facade so generateShellStrings follows the closure
     // into each name/desc property (bare identifiers in this object are not scanned).
     fun builtinPluginName(id: String, fallback: String): String = when (id) {
@@ -1898,6 +1923,7 @@ object StringsC {
         "builtin-content-enhancer" -> Strings.builtinContentEnhancer
         "builtin-element-blocker" -> Strings.builtinElementBlocker
         "builtin-page-menu" -> Strings.builtinPageMenu
+        "builtin-url-switcher" -> Strings.builtinUrlSwitcher
         else -> fallback
     }
 
@@ -1911,6 +1937,7 @@ object StringsC {
         "builtin-content-enhancer" -> Strings.builtinContentEnhancerDesc
         "builtin-element-blocker" -> Strings.builtinElementBlockerDesc
         "builtin-page-menu" -> Strings.builtinPageMenuDesc
+        "builtin-url-switcher" -> Strings.builtinUrlSwitcherDesc
         else -> fallback
     }
 
