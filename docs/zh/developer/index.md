@@ -41,3 +41,4 @@
 - [导出管线](/zh/developer/export-pipeline) —— `WebApp` 如何变成已签名的 APK。
 - [Shell 同步与模板](/zh/developer/shell-sync) —— 运行时代码如何抵达生成的应用。
 - [配置字段漂移](/zh/developer/config-drift) —— 最常见的静默失败。
+- [F-Droid](/zh/developer/fdroid) —— `-Pfdroid=true` 变体、商店文案、fdroiddata 配方。

@@ -14,6 +14,23 @@ import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
 
+// Same switch as :app. -Pfdroid=true drops Firebase and Play Services from the
+// template that the host embeds, and from every APK exported by that host.
+val isFdroidBuild: Boolean = run {
+    val raw = findProperty("fdroid")?.toString()?.trim()?.lowercase()
+    raw != null && raw != "false" && raw != "0" && raw != "no"
+}
+
+if (isFdroidBuild) {
+    // Same cutoff as :app. GeckoView's FIDO client is the remaining Play Services
+    // edge; WebAuthn is the only path that loads it.
+    configurations.configureEach {
+        exclude(group = "com.google.android.gms")
+        exclude(group = "com.google.firebase")
+        exclude(group = "com.google.android.libraries.identity.googleid")
+    }
+}
+
 android {
     namespace = "com.webtoapp"
     compileSdk = 36
@@ -27,6 +44,7 @@ android {
         versionName = "2.6.9"
 
         buildConfigField("boolean", "SHELL_RUNTIME_ONLY", "true")
+        buildConfigField("boolean", "FDROID", isFdroidBuild.toString())
 
         // Generated APKs inherit this targetSdk; export can still pin a different
         // value via `targetSdk` override, and the Play/AAB path forces 36.
@@ -88,6 +106,14 @@ android {
             )
             res.srcDirs("../app/src/main/res")
             assets.srcDirs("src/main/assets", "build/generated/shellRuntimeAssets")
+        }
+        if (isFdroidBuild) {
+            getByName("debug") {
+                manifest.srcFile("src/fdroid/AndroidManifest.xml")
+            }
+            getByName("release") {
+                manifest.srcFile("src/fdroid/AndroidManifest.xml")
+            }
         }
     }
 
@@ -188,6 +214,12 @@ val syncShellRuntimeSources by tasks.registering(Sync::class) {
     group = "build"
 
     from("../app/src/main/java")
+    // Google-typed sources live outside main. The fdroid tree is the no-op twin.
+    if (isFdroidBuild) {
+        from("../app/src/fdroid/java")
+    } else {
+        from("../app/src/google/java")
+    }
 
     include(
 
@@ -541,10 +573,12 @@ dependencies {
     implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
     implementation("androidx.documentfile:documentfile:1.0.1")
 
-    // Native Google sign-in through the Jetpack Credential Manager (NativeBridge).
-    implementation("androidx.credentials:credentials:1.5.0")
-    implementation("androidx.credentials:credentials-play-services-auth:1.5.0")
-    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
+    // Native Google sign-in. Omitted from -Pfdroid=true builds.
+    if (!isFdroidBuild) {
+        implementation("androidx.credentials:credentials:1.5.0")
+        implementation("androidx.credentials:credentials-play-services-auth:1.5.0")
+        implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
+    }
 
     implementation("com.google.android.material:material:1.10.0")
     implementation("androidx.activity:activity-compose:1.8.1")
@@ -572,8 +606,10 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.squareup.okhttp3:okhttp-dnsoverhttps:4.12.0")
 
-    implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
-    implementation("com.google.firebase:firebase-messaging")
+    if (!isFdroidBuild) {
+        implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
+        implementation("com.google.firebase:firebase-messaging")
+    }
 
     implementation("org.bouncycastle:bcpkix-jdk15to18:1.78.1")
     implementation("org.bouncycastle:bcprov-jdk15to18:1.78.1")

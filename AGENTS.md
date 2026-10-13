@@ -365,6 +365,9 @@ After every host UI change — editor cards, dialogs, About, home, not only conf
 ./gradlew :app:compileStandardDebugKotlin -x syncCloneHostDex --no-configuration-cache
 ./gradlew :app:checkConfigFieldDrift --no-configuration-cache
 python3 scripts/check_config_field_drift.py
+./gradlew --no-configuration-cache -PskipShellTemplateSync=true -Pfdroid=true \
+  :app:compileStandardReleaseKotlin :shell:compileReleaseKotlin \
+  :app:processStandardReleaseManifest :shell:processReleaseManifest
 ```
 
 Use these when you change shell membership, export packaging, or config fields. For host-only UI/string work, targeted compile on `:app` is usually enough.

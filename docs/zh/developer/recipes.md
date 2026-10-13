@@ -71,6 +71,9 @@
 ./gradlew :app:compileStandardDebugKotlin -x syncCloneHostDex --no-configuration-cache
 ./gradlew :app:checkConfigFieldDrift --no-configuration-cache
 python3 scripts/check_config_field_drift.py
+./gradlew --no-configuration-cache -PskipShellTemplateSync=true -Pfdroid=true \
+  :app:compileStandardReleaseKotlin :shell:compileReleaseKotlin \
+  :app:processStandardReleaseManifest :shell:processReleaseManifest
 ```
 
 当你改动 shell 成员、导出打包或配置字段时使用这些。对于宿主专属的 UI/字符串工作,通常对 `:app` 做定向编译即可。

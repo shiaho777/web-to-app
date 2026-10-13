@@ -1,0 +1,1 @@
+F-Droid flavor: omit Firebase Cloud Messaging, Google Sign-In, and AdMob. Leave the release APK unsigned.

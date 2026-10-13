@@ -117,6 +117,27 @@ class ShellManifestComponentParityTest {
     }
 
     @Test
+    fun `fdroid manifest overlay removes the FCM service`() {
+        val overlays = listOf(
+            resolveExistingFile(
+                "app/src/fdroid/AndroidManifest.xml",
+                "src/fdroid/AndroidManifest.xml",
+            ),
+            resolveExistingFile(
+                "shell/src/fdroid/AndroidManifest.xml",
+                "../shell/src/fdroid/AndroidManifest.xml",
+            ),
+        )
+        for (manifest in overlays) {
+            val text = manifest.readText()
+            assertWithMessage("${manifest.path} must name NotificationFcmService")
+                .that(text.contains("NotificationFcmService")).isTrue()
+            assertWithMessage("${manifest.path} must remove that service from the merged manifest")
+                .that(text.contains("tools:node=\"remove\"")).isTrue()
+        }
+    }
+
+    @Test
     fun `host manifest components from synced packages are declared in shell`() {
         val sources = collectShellSources()
         val shellClassFqcns = allClassFqcns(sources)
@@ -147,6 +168,10 @@ class ShellManifestComponentParityTest {
     /** Relative path -> sanitized source text (app synced files + shell java-overrides). */
     private fun collectShellSources(): Map<String, String> {
         val appJava = resolveExistingDir("app/src/main/java", "src/main/java")
+        // Play Services / Firebase sources are synced for the default template.
+        // The F-Droid no-op twins are a different Gradle invocation and are not
+        // part of this manifest.
+        val googleJava = resolveExistingDir("app/src/google/java", "src/google/java")
         val shellMain = resolveExistingDir("shell/src/main", "../shell/src/main")
         val shellBuild = resolveExistingFile("shell/build.gradle.kts", "../shell/build.gradle.kts")
 
@@ -158,16 +183,20 @@ class ShellManifestComponentParityTest {
         val excludeRegexes = excludes.map(::globToRegex)
 
         val result = mutableMapOf<String, String>()
-        appJava.walkTopDown()
-            .filter { it.isFile && it.extension == "kt" }
-            .forEach { file ->
-                val relative = file.relativeTo(appJava).path.replace(File.separatorChar, '/')
-                if (includeRegexes.any { it.matches(relative) } &&
-                    excludeRegexes.none { it.matches(relative) }
-                ) {
-                    result["app/$relative"] = stripCodeNoise(file.readText())
+        fun addTree(root: File) {
+            root.walkTopDown()
+                .filter { it.isFile && it.extension == "kt" }
+                .forEach { file ->
+                    val relative = file.relativeTo(root).path.replace(File.separatorChar, '/')
+                    if (includeRegexes.any { it.matches(relative) } &&
+                        excludeRegexes.none { it.matches(relative) }
+                    ) {
+                        result["app/$relative"] = stripCodeNoise(file.readText())
+                    }
                 }
-            }
+        }
+        addTree(appJava)
+        addTree(googleJava)
 
         val overrides = File(shellMain, "java-overrides")
         if (overrides.isDirectory) {

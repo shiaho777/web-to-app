@@ -4073,7 +4073,9 @@ builtins.__import__ = _w2a_import
         if (config.notificationEnabled) {
             components += "com.webtoapp.core.notification.NotificationPollingService"
             components += "com.webtoapp.core.notification.NotificationWebSocketService"
-            components += "com.webtoapp.core.notification.NotificationFcmService"
+            if (!com.webtoapp.BuildConfig.FDROID) {
+                components += "com.webtoapp.core.notification.NotificationFcmService"
+            }
         }
 
         if (config.enableNativeBridge && config.webViewBehavior.nativeBridgeNotificationScheduled) {
@@ -4369,17 +4371,34 @@ private fun WebApp.buildAnnouncementBlock(): AnnouncementBlock = AnnouncementBlo
     hasCustomIcon = !announcement?.customIconPath.isNullOrBlank()
 )
 
-private fun WebApp.buildAdsBlock(): AdsBlock = AdsBlock(
-    enabled = adsEnabled,
-    appId = adConfig?.appId ?: "",
-    bannerEnabled = adConfig?.bannerEnabled ?: false,
-    bannerId = adConfig?.bannerId ?: "",
-    interstitialEnabled = adConfig?.interstitialEnabled ?: false,
-    interstitialId = adConfig?.interstitialId ?: "",
-    splashEnabled = adConfig?.splashEnabled ?: false,
-    splashId = adConfig?.splashId ?: "",
-    testMode = adConfig?.testMode ?: false
-)
+private fun WebApp.buildAdsBlock(): AdsBlock {
+    // The F-Droid host does not carry the admob stack, so exported apps cannot
+    // graft it. Keep the saved editor flag, and write a disabled block.
+    if (com.webtoapp.BuildConfig.FDROID) {
+        return AdsBlock(
+            enabled = false,
+            appId = "",
+            bannerEnabled = false,
+            bannerId = "",
+            interstitialEnabled = false,
+            interstitialId = "",
+            splashEnabled = false,
+            splashId = "",
+            testMode = false
+        )
+    }
+    return AdsBlock(
+        enabled = adsEnabled,
+        appId = adConfig?.appId ?: "",
+        bannerEnabled = adConfig?.bannerEnabled ?: false,
+        bannerId = adConfig?.bannerId ?: "",
+        interstitialEnabled = adConfig?.interstitialEnabled ?: false,
+        interstitialId = adConfig?.interstitialId ?: "",
+        splashEnabled = adConfig?.splashEnabled ?: false,
+        splashId = adConfig?.splashId ?: "",
+        testMode = adConfig?.testMode ?: false
+    )
+}
 
 private fun com.webtoapp.data.model.WebViewConfig.toWebViewBlock(context: android.content.Context?): WebViewBlock {
     val resolvedInjectScripts = buildList {

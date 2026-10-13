@@ -22,6 +22,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.webtoapp.BuildConfig
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.data.model.NotificationExportConfig
 import com.webtoapp.data.model.NotificationType
@@ -156,13 +157,15 @@ fun NotificationConfigCard(
                             },
                             label = Strings.notificationTypeWebsocket
                         )
-                        WtaChip(
-                            selected = config.type == NotificationType.FCM,
-                            onClick = {
-                                onConfigChange(config.copy(type = NotificationType.FCM))
-                            },
-                            label = Strings.notificationTypeFcm
-                        )
+                        if (!BuildConfig.FDROID) {
+                            WtaChip(
+                                selected = config.type == NotificationType.FCM,
+                                onClick = {
+                                    onConfigChange(config.copy(type = NotificationType.FCM))
+                                },
+                                label = Strings.notificationTypeFcm
+                            )
+                        }
                     }
 
                     when (config.type) {

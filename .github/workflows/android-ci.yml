@@ -62,6 +62,17 @@ jobs:
             :app:testStandardDebugUnitTest \
             :app:checkConfigFieldDrift
 
+      - name: Compile F-Droid variant
+        run: |
+          ./gradlew --no-daemon --no-configuration-cache \
+            -Dkotlin.compiler.execution.strategy=in-process \
+            -PskipShellTemplateSync=true \
+            -Pfdroid=true \
+            :app:compileStandardReleaseKotlin \
+            :shell:compileReleaseKotlin \
+            :app:processStandardReleaseManifest \
+            :shell:processReleaseManifest
+
   package-apks:
     if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest

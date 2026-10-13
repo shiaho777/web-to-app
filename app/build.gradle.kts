@@ -37,6 +37,25 @@ val hasReleaseSigningConfig = releaseSigningStoreFile?.isFile == true &&
     !localProperties.getProperty("signing.keyAlias").isNullOrBlank() &&
     !localProperties.getProperty("signing.keyPassword").isNullOrBlank()
 
+// -Pfdroid=true builds the host and the embedded shell template without Firebase,
+// Play Services, or AdMob, and leaves the release APK unsigned for F-Droid to sign.
+// One Gradle invocation is one mode: do not mix this flag with a normal release.
+val isFdroidBuild: Boolean = run {
+    val raw = findProperty("fdroid")?.toString()?.trim()?.lowercase()
+    raw != null && raw != "false" && raw != "0" && raw != "no"
+}
+
+if (isFdroidBuild) {
+    // Direct Firebase / sign-in / ads deps are already omitted. This also drops
+    // GeckoView's Play Services FIDO client (WebAuthn only). Those two GeckoView
+    // classes fail if WebAuthn runs; nothing else in the engine references them.
+    configurations.configureEach {
+        exclude(group = "com.google.android.gms")
+        exclude(group = "com.google.firebase")
+        exclude(group = "com.google.android.libraries.identity.googleid")
+    }
+}
+
 android {
 
     signingConfigs {
@@ -60,6 +79,7 @@ android {
         versionCode = 76
         versionName = "2.7.8"
         buildConfigField("boolean", "SHELL_RUNTIME_ONLY", "false")
+        buildConfigField("boolean", "FDROID", isFdroidBuild.toString())
 
         vectorDrawables {
             useSupportLibrary = true
@@ -103,23 +123,19 @@ android {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
-            signingConfig = if (hasReleaseSigningConfig) {
-                signingConfigs.getByName("release")
-            } else {
-                val allowDebugSigned = (project.findProperty("allowDebugSignedRelease") as? String) == "true"
-                if (allowDebugSigned) {
-
+            signingConfig = when {
+                isFdroidBuild -> null
+                hasReleaseSigningConfig -> signingConfigs.getByName("release")
+                (project.findProperty("allowDebugSignedRelease") as? String) == "true" ->
                     signingConfigs.getByName("debug")
-                } else {
-                    throw GradleException(
-                        "Release build has no valid signing config. Configure signing.storeFile / " +
-                            "signing.storePassword / signing.keyAlias / signing.keyPassword in local.properties " +
-                            "before assembling a release APK for distribution. Refusing to silently sign with " +
-                            "the debug key — a debug-signed release breaks upgrades for existing users " +
-                            "('signatures do not match'). For a throwaway debug-signed build (e.g. CI smoke " +
-                            "build, never distribute it), pass -PallowDebugSignedRelease=true."
-                    )
-                }
+                else -> throw GradleException(
+                    "Release build has no valid signing config. Configure signing.storeFile / " +
+                        "signing.storePassword / signing.keyAlias / signing.keyPassword in local.properties " +
+                        "before assembling a release APK for distribution. Refusing to silently sign with " +
+                        "the debug key — a debug-signed release breaks upgrades for existing users " +
+                        "('signatures do not match'). For a throwaway debug-signed build (e.g. CI smoke " +
+                        "build, never distribute it), pass -PallowDebugSignedRelease=true."
+                )
             }
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -215,9 +231,29 @@ android {
         // Django gettext sources (*.po, runtime reads .mo only) and Gecko's
         // omni.ja (downloaded on demand). packaging.resources.excludes does
         // NOT cover assets, hence aapt-level filtering (verified by APK audit).
-        ignoreAssetsPattern = "*.po:*.ja"
+        ignoreAssetsPattern = if (isFdroidBuild) "*.po:*.ja:admob.zip" else "*.po:*.ja"
 
         localeFilters += listOf("zh", "en", "ar")
+    }
+
+    sourceSets {
+        getByName("main") {
+            // Google-typed sources stay out of src/main so shell-synced call sites
+            // compile against either the real client or the F-Droid no-op.
+            if (isFdroidBuild) {
+                java.srcDir("src/fdroid/java")
+            } else {
+                java.srcDir("src/google/java")
+            }
+        }
+        if (isFdroidBuild) {
+            getByName("debug") {
+                manifest.srcFile("src/fdroid/AndroidManifest.xml")
+            }
+            getByName("release") {
+                manifest.srcFile("src/fdroid/AndroidManifest.xml")
+            }
+        }
     }
 }
 
@@ -237,7 +273,7 @@ tasks.matching { it.name == "preBuild" }.configureEach {
     if (!skipShellTemplateSync.get()) {
         dependsOn("syncShellTemplateApk")
     }
-    if (!skipStackBundlesSync.get()) {
+    if (!isFdroidBuild && !skipStackBundlesSync.get()) {
         dependsOn("syncStackBundles")
     }
 }
@@ -249,17 +285,20 @@ val skipStackBundlesSync = providers.gradleProperty("skipStackBundlesSync").map(
 
 // Pre-configure the stack module during this script's configuration phase —
 // deferring it to task-graph resolution trips Gradle's class-loader-scope
-// locking under configuration-on-demand.
-evaluationDependsOn(":feature-stacks:admob")
+// locking under configuration-on-demand. F-Droid builds skip the module so
+// the proprietary ads SDK is neither compiled nor copied into assets.
+if (!isFdroidBuild) {
+    evaluationDependsOn(":feature-stacks:admob")
 
-tasks.register<Copy>("syncStackBundles") {
-    description = "Copies built feature-stack bundles into app assets for optional APK grafting."
-    group = "build"
-    dependsOn(":feature-stacks:admob:bundleAdmobStack")
-    from(rootProject.layout.projectDirectory.dir("feature-stacks/admob/build/outputs/stack")) {
-        include("*.zip")
+    tasks.register<Copy>("syncStackBundles") {
+        description = "Copies built feature-stack bundles into app assets for optional APK grafting."
+        group = "build"
+        dependsOn(":feature-stacks:admob:bundleAdmobStack")
+        from(rootProject.layout.projectDirectory.dir("feature-stacks/admob/build/outputs/stack")) {
+            include("*.zip")
+        }
+        into(file("src/main/assets/stacks"))
     }
-    into(file("src/main/assets/stacks"))
 }
 
 val cloneHostAar = rootProject.layout.projectDirectory.file("clone-host/build/outputs/aar/clone-host-release.aar")
@@ -622,8 +661,10 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.squareup.okhttp3:okhttp-dnsoverhttps:4.12.0")
 
-    implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
-    implementation("com.google.firebase:firebase-messaging")
+    if (!isFdroidBuild) {
+        implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
+        implementation("com.google.firebase:firebase-messaging")
+    }
 
     implementation("org.bouncycastle:bcpkix-jdk15to18:1.78.1")
     implementation("org.bouncycastle:bcprov-jdk15to18:1.78.1")
@@ -652,9 +693,12 @@ dependencies {
     implementation("com.google.zxing:core:3.5.2")
 
     // Native Google sign-in through the Jetpack Credential Manager (NativeBridge).
-    implementation("androidx.credentials:credentials:1.5.0")
-    implementation("androidx.credentials:credentials-play-services-auth:1.5.0")
-    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
+    // Omitted from -Pfdroid=true builds; GoogleSignInRuntime is a no-op there.
+    if (!isFdroidBuild) {
+        implementation("androidx.credentials:credentials:1.5.0")
+        implementation("androidx.credentials:credentials-play-services-auth:1.5.0")
+        implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
+    }
     implementation("androidx.browser:browser:1.8.0")
 
     implementation("androidx.media:media:1.7.0")

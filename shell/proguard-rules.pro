@@ -199,6 +199,9 @@
 -keep class org.mozilla.gecko.** { *; }
 -keepclassmembers class * extends org.mozilla.geckoview.GeckoSession$* { *; }
 -dontwarn org.mozilla.geckoview.**
+# GeckoView's bundled ExoPlayer references Checker Framework annotations.
+# Play Services used to pull those types in; the F-Droid flavor excludes GMS.
+-dontwarn org.checkerframework.**
 
 # ============================================================
 # ZXing — shell 未依赖，仅兜底

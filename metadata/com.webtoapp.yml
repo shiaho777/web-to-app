@@ -1,0 +1,41 @@
+Categories:
+  - Development
+  - Internet
+License: Unlicense
+AuthorName: shiaho
+WebSite: https://shiaho777.github.io/web-to-app/
+SourceCode: https://github.com/shiaho777/web-to-app
+IssueTracker: https://github.com/shiaho777/web-to-app/issues
+Changelog: https://github.com/shiaho777/web-to-app/releases
+
+AutoName: WebToApp
+
+RepoType: git
+Repo: https://github.com/shiaho777/web-to-app.git
+
+Builds:
+  - versionName: "2.7.8"
+    versionCode: 76
+    commit: v2.7.8
+    subdir: app
+    gradle:
+      - standard
+    gradleprops:
+      - fdroid=true
+    ndk: r28c
+    rm:
+      - feature-stacks/admob
+      - app/src/google
+
+MaintainerNotes: |-
+  One source tree. -Pfdroid=true drops Firebase, Play Services Google
+  Sign-In, AdMob, and GeckoView's FIDO client, and leaves the APK
+  unsigned. Do not mix with a normal release in the same Gradle run.
+  UpdateCheckData is pinned to app/build.gradle.kts because the shell
+  template carries an older versionCode.
+
+AutoUpdateMode: Version
+UpdateCheckMode: Tags ^v[0-9.]+$
+UpdateCheckData: app/build.gradle.kts|versionCode = (\d+)|.|versionName = "([^"]+)"
+CurrentVersion: "2.7.8"
+CurrentVersionCode: 76

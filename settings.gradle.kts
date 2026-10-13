@@ -20,4 +20,9 @@ rootProject.name = "WebToApp"
 include(":app")
 include(":shell")
 include(":clone-host")
-include(":feature-stacks:admob")
+
+val fdroidRaw = providers.gradleProperty("fdroid").orNull?.trim()?.lowercase()
+val isFdroidBuild = fdroidRaw != null && fdroidRaw != "false" && fdroidRaw != "0" && fdroidRaw != "no"
+if (!isFdroidBuild) {
+    include(":feature-stacks:admob")
+}

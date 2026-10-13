@@ -115,6 +115,7 @@ const t = {
       configDrift: 'Config Field Drift',
       i18n: 'Internationalization',
       recipes: 'Change Recipes',
+      fdroid: 'F-Droid',
       contributing: 'Contributing'
     },
     ext: {
@@ -236,6 +237,7 @@ const t = {
       configDrift: '配置字段漂移',
       i18n: '国际化',
       recipes: '常见改动配方',
+      fdroid: 'F-Droid',
       contributing: '贡献指南'
     },
     ext: {
@@ -455,6 +457,7 @@ function sidebar(lang: Lang, prefix: string) {
           { text: s.dev.configDrift, link: `${prefix}/developer/config-drift` },
           { text: s.dev.i18n, link: `${prefix}/developer/i18n` },
           { text: s.dev.recipes, link: `${prefix}/developer/recipes` },
+          { text: s.dev.fdroid, link: `${prefix}/developer/fdroid` },
           { text: s.dev.contributing, link: `${prefix}/developer/contributing` }
         ]
       }

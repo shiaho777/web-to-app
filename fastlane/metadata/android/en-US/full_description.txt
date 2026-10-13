@@ -1,0 +1,16 @@
+WebToApp is an on-device workshop for turning websites and local web projects into Android apps. It runs on your phone: no PC and no remote build server.
+
+You can wrap a URL, package HTML or frontend files, ship a gallery or media player, or run a local Node.js, PHP, Python, Go, or WordPress server inside the generated app. The system WebView is the default engine; an optional GeckoView (Firefox) runtime can be downloaded later.
+
+This F-Droid build omits Firebase Cloud Messaging, Google Sign-In, and AdMob. Push still works through the Web Notification polyfill, HTTP polling, and WebSocket. Optional engine and runtime downloads are explicit opt-in.
+
+Features include:
+
+• Twelve app types (Web, Multi-Web, HTML, Frontend, Gallery, Media, Node.js, PHP, Python, Go, WordPress, Offline pack)
+• On-device APK export (this host is signed by F-Droid; generated apps use the keystore you configure)
+• DNS-over-HTTPS, proxies, ad blocking, userscripts, and MV3 extensions
+• Ten UI languages, including Arabic RTL
+
+Server runtimes and GeckoView native libraries download only when you choose those features. Advanced app types stay hidden until you enable them in About.
+
+License: Unlicense.

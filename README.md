@@ -388,9 +388,11 @@ Two distribution flavors exist, sharing all code and build rules:
 ```bash
 ./gradlew assembleStandardRelease   # signed release APK
 ./gradlew bundleGplayRelease        # Play-ready signed AAB
+./gradlew :app:assembleStandardRelease -Pfdroid=true
+# unsigned F-Droid APK (no Firebase, Google Sign-In, or AdMob)
 ```
 
-For release builds, configure signing through `local.properties` and `app/build.gradle.kts`.
+For signed GitHub/Play releases, configure signing through `local.properties` and `app/build.gradle.kts`. The F-Droid flavor leaves the APK unsigned. See [F-Droid](https://shiaho777.github.io/web-to-app/developer/fdroid).
 
 ## Contributing
 

@@ -41,3 +41,4 @@ Native C++ lives under `app/src/main/cpp/` (crypto, integrity, anti-debug, `node
 - [Export Pipeline](/developer/export-pipeline) — how a `WebApp` becomes a signed APK.
 - [Shell Sync & Template](/developer/shell-sync) — how runtime code reaches generated apps.
 - [Config Field Drift](/developer/config-drift) — the most common silent failure.
+- [F-Droid](/developer/fdroid) — `-Pfdroid=true` flavor, listing copy, fdroiddata recipe.

@@ -1,0 +1,7 @@
+WebToApp は、サイトやローカルの Web プロジェクトを Android アプリにする、端末上の工房です。パソコンもリモートのビルドサーバーも不要です。
+
+URL を包む、HTML / フロントエンドを梱包する、ギャラリーやメディアプレイヤーにする、生成アプリ内で Node.js / PHP / Python / Go / WordPress を動かす、ができます。既定エンジンはシステム WebView で、GeckoView（Firefox）は後からダウンロードできます。
+
+この F-Droid ビルドには Firebase Cloud Messaging、Google ログイン、AdMob は含まれません。プッシュは Web Notification の polyfill、HTTP ポーリング、WebSocket で動作します。エンジンとランタイムのダウンロードは明示的な選択です。
+
+ライセンス: Unlicense。

@@ -388,9 +388,11 @@ cd web-to-app
 ```bash
 ./gradlew assembleStandardRelease   # 签名 release APK
 ./gradlew bundleGplayRelease        # 可上架 Play 的签名 AAB
+./gradlew :app:assembleStandardRelease -Pfdroid=true
+# 未签名的 F-Droid APK（不含 Firebase、Google 登录、AdMob）
 ```
 
-Release 构建请通过 `local.properties` 和 `app/build.gradle.kts` 配置签名。
+GitHub/Play 的签名 release 通过 `local.properties` 和 `app/build.gradle.kts` 配置。F-Droid 变体保持未签名。见 [F-Droid](https://shiaho777.github.io/web-to-app/zh/developer/fdroid)。
 
 ## 参与贡献
 

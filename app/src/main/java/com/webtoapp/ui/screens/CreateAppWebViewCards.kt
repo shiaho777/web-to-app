@@ -43,6 +43,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
+import com.webtoapp.BuildConfig
 import com.webtoapp.R
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.ui.theme.LocalShowDescriptions
@@ -3776,33 +3777,37 @@ fun SpecialSettingsCard(
                                     label = Strings.nativeBridgeCapsPrint,
                                     showSelectedCheck = false
                                 )
-                                WtaChip(
-                                    selected = caps.googleSignIn,
-                                    onClick = { onConfigChange(config.copy(nativeBridgeCapabilities = caps.copy(googleSignIn = !caps.googleSignIn))) },
-                                    label = Strings.nativeBridgeCapsGoogleSignIn,
-                                    showSelectedCheck = false
-                                )
+                                if (!BuildConfig.FDROID) {
+                                    WtaChip(
+                                        selected = caps.googleSignIn,
+                                        onClick = { onConfigChange(config.copy(nativeBridgeCapabilities = caps.copy(googleSignIn = !caps.googleSignIn))) },
+                                        label = Strings.nativeBridgeCapsGoogleSignIn,
+                                        showSelectedCheck = false
+                                    )
+                                }
                             }
 
-                            AnimatedVisibility(
-                                visible = caps.googleSignIn,
-                                enter = CardExpandTransition,
-                                exit = CardCollapseTransition
-                            ) {
-                                Column(verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)) {
-                                    Text(
-                                        text = Strings.googleSignInHint,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                    PremiumTextField(
-                                        value = caps.googleSignInClientId,
-                                        onValueChange = { onConfigChange(config.copy(nativeBridgeCapabilities = caps.copy(googleSignInClientId = it))) },
-                                        label = { Text(Strings.googleSignInClientIdLabel) },
-                                        placeholder = { Text(Strings.googleSignInClientIdPlaceholder) },
-                                        modifier = Modifier.fillMaxWidth(),
-                                        singleLine = true
-                                    )
+                            if (!BuildConfig.FDROID) {
+                                AnimatedVisibility(
+                                    visible = caps.googleSignIn,
+                                    enter = CardExpandTransition,
+                                    exit = CardCollapseTransition
+                                ) {
+                                    Column(verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)) {
+                                        Text(
+                                            text = Strings.googleSignInHint,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                        PremiumTextField(
+                                            value = caps.googleSignInClientId,
+                                            onValueChange = { onConfigChange(config.copy(nativeBridgeCapabilities = caps.copy(googleSignInClientId = it))) },
+                                            label = { Text(Strings.googleSignInClientIdLabel) },
+                                            placeholder = { Text(Strings.googleSignInClientIdPlaceholder) },
+                                            modifier = Modifier.fillMaxWidth(),
+                                            singleLine = true
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -4189,12 +4194,14 @@ fun SpecialSettingsCard(
                         }
                     }
 
-                    AdsMonetizationSection(
-                        enabled = adsEnabled,
-                        config = adConfig,
-                        onEnabledChange = onAdsEnabledChange,
-                        onConfigChange = onAdConfigChange
-                    )
+                    if (!BuildConfig.FDROID) {
+                        AdsMonetizationSection(
+                            enabled = adsEnabled,
+                            config = adConfig,
+                            onEnabledChange = onAdsEnabledChange,
+                            onConfigChange = onAdConfigChange
+                        )
+                    }
                 }
             }
         }

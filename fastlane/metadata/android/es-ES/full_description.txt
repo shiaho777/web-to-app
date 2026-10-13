@@ -1,0 +1,7 @@
+WebToApp es un taller en el dispositivo para convertir sitios y proyectos web locales en apps Android. Funciona en el teléfono: sin PC y sin servidor de compilación remoto.
+
+Puedes envolver una URL, empaquetar HTML o frontend, crear una galería o reproductor, o ejecutar un servidor local Node.js, PHP, Python, Go o WordPress en la app generada. El WebView del sistema es el motor por defecto; GeckoView (Firefox) se puede descargar después.
+
+Esta compilación de F-Droid omite Firebase Cloud Messaging, el inicio de sesión de Google y AdMob. Las notificaciones siguen funcionando con el polyfill de Web Notification, sondeo HTTP y WebSocket. Las descargas de motores y runtimes son explícitas.
+
+Licencia: Unlicense.

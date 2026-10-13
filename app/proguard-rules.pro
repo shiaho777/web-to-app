@@ -219,6 +219,9 @@
 -keep class org.mozilla.gecko.** { *; }
 -keepclassmembers class * extends org.mozilla.geckoview.GeckoSession$* { *; }
 -dontwarn org.mozilla.geckoview.**
+# GeckoView's bundled ExoPlayer references Checker Framework annotations.
+# Play Services used to pull those types in; the F-Droid flavor excludes GMS.
+-dontwarn org.checkerframework.**
 
 # ============================================================
 # ZXing — 反射查找编码格式 (仅 core，embedded 已移除)
