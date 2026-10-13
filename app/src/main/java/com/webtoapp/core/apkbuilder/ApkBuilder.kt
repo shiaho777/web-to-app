@@ -4371,34 +4371,19 @@ private fun WebApp.buildAnnouncementBlock(): AnnouncementBlock = AnnouncementBlo
     hasCustomIcon = !announcement?.customIconPath.isNullOrBlank()
 )
 
-private fun WebApp.buildAdsBlock(): AdsBlock {
-    // The F-Droid host does not carry the admob stack, so exported apps cannot
-    // graft it. Keep the saved editor flag, and write a disabled block.
-    if (com.webtoapp.BuildConfig.FDROID) {
-        return AdsBlock(
-            enabled = false,
-            appId = "",
-            bannerEnabled = false,
-            bannerId = "",
-            interstitialEnabled = false,
-            interstitialId = "",
-            splashEnabled = false,
-            splashId = "",
-            testMode = false
-        )
-    }
-    return AdsBlock(
-        enabled = adsEnabled,
-        appId = adConfig?.appId ?: "",
-        bannerEnabled = adConfig?.bannerEnabled ?: false,
-        bannerId = adConfig?.bannerId ?: "",
-        interstitialEnabled = adConfig?.interstitialEnabled ?: false,
-        interstitialId = adConfig?.interstitialId ?: "",
-        splashEnabled = adConfig?.splashEnabled ?: false,
-        splashId = adConfig?.splashId ?: "",
-        testMode = adConfig?.testMode ?: false
-    )
-}
+private fun WebApp.buildAdsBlock(): AdsBlock = AdsBlock(
+    // F-Droid hosts do not ship the admob stack, so export cannot graft it.
+    // Keep saved unit ids; only the enabled flag is forced off.
+    enabled = adsEnabled && !com.webtoapp.BuildConfig.FDROID,
+    appId = adConfig?.appId ?: "",
+    bannerEnabled = adConfig?.bannerEnabled ?: false,
+    bannerId = adConfig?.bannerId ?: "",
+    interstitialEnabled = adConfig?.interstitialEnabled ?: false,
+    interstitialId = adConfig?.interstitialId ?: "",
+    splashEnabled = adConfig?.splashEnabled ?: false,
+    splashId = adConfig?.splashId ?: "",
+    testMode = adConfig?.testMode ?: false
+)
 
 private fun com.webtoapp.data.model.WebViewConfig.toWebViewBlock(context: android.content.Context?): WebViewBlock {
     val resolvedInjectScripts = buildList {

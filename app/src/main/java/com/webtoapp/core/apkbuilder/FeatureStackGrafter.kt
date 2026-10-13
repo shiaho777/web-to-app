@@ -18,7 +18,7 @@ object FeatureStacks {
 
     /** Stack ids enabled by this export config, in deterministic order. */
     fun enabledFor(config: ApkConfig): List<String> = buildList {
-        if (config.adsEnabled) add("admob")
+        if (!com.webtoapp.BuildConfig.FDROID && config.adsEnabled) add("admob")
     }
 }
 
