@@ -202,7 +202,8 @@ WebToApp has a large number of switches. The sections below group them by use ca
 <details>
 <summary><b>🧩 Extensions & automation</b></summary>
 
-- **Built-in modules** — video download (YouTube / Bilibili / Douyin / Xiaohongshu extractors), video enhancer with YouTube cleanup (ad skip, max quality, background play, SponsorBlock), web analyzer, find-in-page, dark mode, privacy tools, content enhancer, element blocker, and YouTube launcher.
+- **Built-in modules** — video download (YouTube / Bilibili / Douyin / Xiaohongshu extractors), video enhancer with YouTube cleanup (ad skip, max quality, background play, SponsorBlock), web analyzer, find-in-page, dark mode, privacy tools, content enhancer, element blocker, URL Switcher, and YouTube launcher. Names and descriptions follow the host language.
+- **Floating plugin handle** — one enabled plugin opens directly. Several fan out from the handle.
 - **Userscripts** — Greasemonkey/Tampermonkey-style `.user.js` with a `GM_*` bridge (storage, requests, styles, menu commands) and promise-based `GM.*` APIs gated by script grants. View Code opens the built-in editor, including a script stored as a file.
 - **MV3 Chrome extension runtime** for manifest content scripts in isolated or main worlds, with `chrome.*` polyfills for runtime, storage, tabs, scripting, and declarative network-request parsing.
 - **In-app Chrome Web Store search** — browse and install browser extensions by keyword (or paste a store URL / extension ID), with offline fallback to manual import.
@@ -232,7 +233,8 @@ WebToApp has a large number of switches. The sections below group them by use ca
 <summary><b>🔧 APK / AAB export & signing</b></summary>
 
 - **Custom package name**, `versionName`, `versionCode`, icon, label, architecture target, and export format. A transparent icon gets a white adaptive plate by default, or a solid color you pick, or a transparent plate. An opaque icon keeps its edge color.
-- **Build-time permission injection** with unused permissions pruned from the template manifest.
+- **SDK levels** — raise minSdk above 23, and pin targetSdk to 28, 31, 33, 34, 35, or 36. Server-runtime types stay at 28. Play AAB export still rewrites targetSdk to 36.
+- **Build-time permission injection** — one row per permission a third-party app can declare from API 23 through Android 17. Unused permissions are pruned from the template manifest.
 - **One-tap AAB export** — auto-builds the APK on demand, converts it to a Play-ready signed AAB with `targetSdk` rewritten to the Play-required level (currently 36) and protobuf metadata generated locally; cancellable mid-build. Available for every app type except the server-runtime ones and encrypted builds — see [which apps can be published](https://shiaho777.github.io/web-to-app/guide/more-features/google-play).
 - **Keystore management** — create, import, export, delete, and certificate-fingerprint viewing; PKCS12/PFX/JKS/BKS import including Android Studio upload-key cases where store and key passwords differ.
 - **Signature schemes** — V1, V2, V3 independently controlled, with auto-fallback for legacy certificates; custom V1 signer filename for `META-INF/<name>.SF` / `.RSA`.

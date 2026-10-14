@@ -76,8 +76,8 @@ android {
         minSdk = 23
 
         targetSdk = 36
-        versionCode = 76
-        versionName = "2.7.8"
+        versionCode = 77
+        versionName = "2.7.9"
         buildConfigField("boolean", "SHELL_RUNTIME_ONLY", "false")
         buildConfigField("boolean", "FDROID", isFdroidBuild.toString())
 

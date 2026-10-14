@@ -30,4 +30,6 @@ Each card shows:
 - **Recently updated** — newest edit first.
 - **Recently created**.
 - **By name**.
-- **Custom** — long-press a card, then drag it up or down. A swipe to the left still deletes. Drag is off while the search box has text. A category filter reorders only the apps you can see; the others keep their places. New and duplicated apps go to the top. Dragging does not change the updated time, so switching back to recently updated still follows real edits.
+- **Custom** — the order saved by dragging. A swipe to the left still deletes. Drag is off while the search box has text. A category filter reorders only the apps you can see; the others keep their places. New and duplicated apps go to the top. Dragging does not change the updated time, so switching back to recently updated still follows real edits.
+
+Long-press a card in any of these sorts, then drag. The first drag from Recently updated, Recently created, or By name saves the list you see as Custom, so the rows stay where you drop them.

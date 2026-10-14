@@ -1,0 +1,12 @@
+Added
+- Generated APKs can raise minSdk and pin more targetSdk levels.
+- URL Switcher. One floating plugin opens directly; several fan out.
+
+Improved
+- One permission per row. HTML shares can skip the upload toast and read files over 5 MB.
+- Drag the home list in any sort. Manage Plugins follows the host language.
+- Debug builds can be inspected in Chrome DevTools.
+
+Fixed
+- Gecko requests no longer fail on the UI thread.
+- Local HTML no longer crashes at startup without network permission.

@@ -202,7 +202,8 @@ WebToApp 的开关非常多。下面按使用场景分组,并用可折叠区段�
 <details>
 <summary><b>🧩 扩展与自动化</b></summary>
 
-- **内置模块** —— 视频下载(YouTube / B 站 / 抖音 / 小红书提取器)、带 YouTube 净化(跳过广告、最高画质、后台播放、SponsorBlock)的视频增强、网页分析、页内查找、暗色模式、隐私工具、内容增强、元素拦截和 YouTube 启动器。
+- **内置模块** —— 视频下载(YouTube / B 站 / 抖音 / 小红书提取器)、带 YouTube 净化(跳过广告、最高画质、后台播放、SponsorBlock)的视频增强、网页分析、页内查找、暗色模式、隐私工具、内容增强、元素拦截、网址切换和 YouTube 启动器。名称和说明跟随宿主语言。
+- **悬浮插件手柄** —— 只启用一个插件时直接打开它。启用多个时从手柄扇形展开。
 - **油猴脚本** —— Greasemonkey/Tampermonkey 风格的 `.user.js`,配套 `GM_*` 桥接(存储、请求、样式、菜单命令)和按授权开放的 Promise 风格 `GM.*` API。查看代码会打开内置编辑器,包括以文件保存的脚本。
 - **MV3 Chrome 扩展运行时**,支持 manifest 内容脚本在 isolated 或 main world 注入,并提供覆盖 runtime、storage、tabs、scripting 和 declarative network request 解析的 `chrome.*` polyfill。
 - **应用内 Chrome 网上应用店搜索** —— 按关键词浏览并安装浏览器扩展(也可粘贴商店链接 / 扩展 ID),离线时回退到手动导入。
@@ -232,7 +233,8 @@ WebToApp 的开关非常多。下面按使用场景分组,并用可折叠区段�
 <summary><b>🔧 APK / AAB 导出与签名</b></summary>
 
 - **自定义包名**、`versionName`、`versionCode`、图标、名称、架构目标和导出格式。透明图标默认使用白色自适应底板,也可以选纯色,或选透明让底板空着。不透明图标沿用边缘颜色。
-- **按生成 APK 的实际勾选注入权限**,并从模板 manifest 中裁剪未使用权限。
+- **SDK 级别** —— 可以把 minSdk 提高到 23 以上,并把 targetSdk 固定为 28、31、33、34、35 或 36。服务端运行时类型仍固定 28。Play AAB 导出仍会把 targetSdk 改写到 36。
+- **按生成 APK 的实际勾选注入权限** —— 第三方应用从 API 23 到 Android 17 可以声明的权限,一行一个。未使用的权限会从模板 manifest 中裁掉。
 - **一键 AAB 导出** —— 按需自动构建 APK,转换成可直接上架的签名 AAB(自动把 `targetSdk` 改写到 Play 要求的级别,目前为 36,并在本地生成 protobuf 元数据);支持中途取消。除服务端运行时应用类型和开启资源加密的构建外全部可用 —— 见[哪些应用可以上架](https://shiaho777.github.io/web-to-app/zh/guide/more-features/google-play)。
 - **密钥库管理** —— 创建、导入、导出、删除和证书指纹查看;支持 PKCS12/PFX/JKS/BKS 导入,包括 Android Studio upload key 那种 store 密码和 key 密码不同的情况。
 - **签名方案** —— V1、V2、V3 独立控制,可对旧证书兼容性自动回退;自定义 V1 签名文件名,对应 `META-INF/<name>.SF` / `.RSA`。
