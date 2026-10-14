@@ -534,7 +534,15 @@ fun CreateAppScreen(
                     },
                     autoStartConfig = editState.autoStartConfig,
                     bgmEnabled = editState.bgmEnabled,
-                    appType = editState.appType
+                    appType = editState.appType,
+                    featureDefaults = permissionFeatureDefaults(
+                        appType = editState.appType,
+                        htmlLoadMode = editState.htmlConfig?.loadMode,
+                        enableMediaSession = editState.webViewConfig.enableMediaSession,
+                        bgmEnabled = editState.bgmEnabled,
+                        scheduledStartEnabled = editState.autoStartConfig?.scheduledStartEnabled == true,
+                        activationEnabled = editState.activationEnabled
+                    )
                 )
             }
 
@@ -582,7 +590,8 @@ private fun ExportAndPermissionDrawer(
     onClientCertificateAuthEnabledChange: (Boolean) -> Unit,
     autoStartConfig: AutoStartConfig?,
     bgmEnabled: Boolean,
-    appType: AppType
+    appType: AppType,
+    featureDefaults: PermissionFeatureDefaults
 ) {
     var expanded by rememberSaveable { mutableStateOf(false) }
     val featureReasons = remember(
@@ -640,7 +649,8 @@ private fun ExportAndPermissionDrawer(
                             permissions = exportConfig.runtimePermissions,
                             onPermissionsTransform = onRuntimePermissionsTransform,
                             showDescription = false,
-                            featureReasons = featureReasons
+                            featureReasons = featureReasons,
+                            featureDefaults = featureDefaults
                         )
                     }
                 }

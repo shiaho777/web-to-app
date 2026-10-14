@@ -4362,6 +4362,7 @@ object Strings {
     val exportPermGroupContacts: String get() = StringsE.exportPermGroupContacts
     val exportPermGroupPhone: String get() = StringsE.exportPermGroupPhone
     val exportPermGroupSystem: String get() = StringsE.exportPermGroupSystem
+    val exportPermGroupAdvanced: String get() = StringsE.exportPermGroupAdvanced
     val permissionCamera: String get() = StringsE.permissionCamera
     val permissionCameraDesc: String get() = StringsE.permissionCameraDesc
     val permissionLocation: String get() = StringsE.permissionLocation
@@ -4393,6 +4394,8 @@ object Strings {
     val permissionNfcDesc: String get() = StringsE.permissionNfcDesc
     val permissionWifiState: String get() = StringsE.permissionWifiState
     val permissionWifiStateDesc: String get() = StringsE.permissionWifiStateDesc
+    val permissionNearbyWifiDevices: String get() = StringsE.permissionNearbyWifiDevices
+    val permissionNearbyWifiDevicesDesc: String get() = StringsE.permissionNearbyWifiDevicesDesc
     val permissionBodySensors: String get() = StringsE.permissionBodySensors
     val permissionBodySensorsDesc: String get() = StringsE.permissionBodySensorsDesc
     val permissionActivityRecognition: String get() = StringsE.permissionActivityRecognition
@@ -4447,6 +4450,13 @@ object Strings {
     val permissionConflictMediaVsLegacy: String get() = StringsE.permissionConflictMediaVsLegacy
     val permissionConflictSmsRisk: String get() = StringsE.permissionConflictSmsRisk
     val permissionConflictCallRisk: String get() = StringsE.permissionConflictCallRisk
+    val permissionConflictQueryAllPackages: String get() = StringsE.permissionConflictQueryAllPackages
+    val permissionPlayRestrictedTag: String get() = StringsE.permissionPlayRestrictedTag
+    val permissionPlayRestrictedWarning: String get() = StringsE.permissionPlayRestrictedWarning
+    val permissionQueryAllPackages: String get() = StringsE.permissionQueryAllPackages
+    val permissionQueryAllPackagesDesc: String get() = StringsE.permissionQueryAllPackagesDesc
+    val permissionBackgroundLocation: String get() = StringsE.permissionBackgroundLocation
+    val permissionBackgroundLocationDesc: String get() = StringsE.permissionBackgroundLocationDesc
     val projectSyncFailed: String get() = StringsE.projectSyncFailed
     val r2CdnAccelerate: String get() = StringsE.r2CdnAccelerate
     val r2CdnDesc: String get() = StringsE.r2CdnDesc

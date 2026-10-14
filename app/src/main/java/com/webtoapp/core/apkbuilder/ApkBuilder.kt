@@ -22,7 +22,9 @@ import com.webtoapp.core.crypto.toHexString
 import com.webtoapp.core.shell.BgmShellItem
 import com.webtoapp.core.shell.LrcShellTheme
 import com.webtoapp.data.model.ApkRuntimePermissions
+import com.webtoapp.data.model.ExportPermissionCatalog
 import com.webtoapp.data.model.LrcData
+import com.webtoapp.data.model.PermissionFeatureDefaults
 import com.webtoapp.data.model.AnnouncementTemplateType
 import com.webtoapp.data.model.HtmlLoadMode
 import com.webtoapp.data.model.WebApp
@@ -3879,179 +3881,23 @@ builtins.__import__ = _w2a_import
         buildRequiredPermissions(config)
 
     private fun buildRequiredPermissions(config: ApkConfig): List<String> {
-
-        val permissions = linkedSetOf<String>()
-
-        permissions += "${config.packageName}.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
-
-        if (config.requiresNetworkPermissions()) {
-            permissions += "android.permission.INTERNET"
-            permissions += "android.permission.ACCESS_NETWORK_STATE"
-        }
-
-        val rp = config.runtimePermissions
-
-        if (rp.camera) {
-            permissions += "android.permission.CAMERA"
-        }
-        if (rp.microphone) {
-            permissions += "android.permission.RECORD_AUDIO"
-            permissions += "android.permission.MODIFY_AUDIO_SETTINGS"
-        }
-        if (rp.location) {
-            permissions += "android.permission.ACCESS_COARSE_LOCATION"
-            permissions += "android.permission.ACCESS_FINE_LOCATION"
-        }
-        if (rp.notifications) {
-            permissions += "android.permission.POST_NOTIFICATIONS"
-        }
-
-        if (rp.readExternalStorage) {
-            permissions += "android.permission.READ_EXTERNAL_STORAGE"
-        }
-        if (rp.writeExternalStorage) {
-            permissions += "android.permission.WRITE_EXTERNAL_STORAGE"
-        }
-        if (rp.readMediaImages) {
-            permissions += "android.permission.READ_MEDIA_IMAGES"
-        }
-        if (rp.readMediaVideo) {
-            permissions += "android.permission.READ_MEDIA_VIDEO"
-        }
-        if (rp.readMediaAudio) {
-            permissions += "android.permission.READ_MEDIA_AUDIO"
-        }
-
-        if (rp.bluetooth) {
-            permissions += "android.permission.BLUETOOTH"
-            permissions += "android.permission.BLUETOOTH_ADMIN"
-            permissions += "android.permission.BLUETOOTH_SCAN"
-            permissions += "android.permission.BLUETOOTH_CONNECT"
-            permissions += "android.permission.BLUETOOTH_ADVERTISE"
-        }
-        if (rp.nfc) {
-            permissions += "android.permission.NFC"
-        }
-        if (rp.wifiState) {
-            permissions += "android.permission.ACCESS_WIFI_STATE"
-            permissions += "android.permission.CHANGE_WIFI_STATE"
-        }
-
-        if (rp.bodySensors) {
-            permissions += "android.permission.BODY_SENSORS"
-            permissions += "android.permission.BODY_SENSORS_BACKGROUND"
-        }
-        if (rp.activityRecognition) {
-            permissions += "android.permission.ACTIVITY_RECOGNITION"
-        }
-
-        if (rp.readPhoneState) {
-            permissions += "android.permission.READ_PHONE_STATE"
-        }
-        if (rp.callPhone) {
-            permissions += "android.permission.CALL_PHONE"
-        }
-        if (rp.readContacts) {
-            permissions += "android.permission.READ_CONTACTS"
-        }
-        if (rp.writeContacts) {
-            permissions += "android.permission.WRITE_CONTACTS"
-        }
-        if (rp.readCalendar) {
-            permissions += "android.permission.READ_CALENDAR"
-        }
-        if (rp.writeCalendar) {
-            permissions += "android.permission.WRITE_CALENDAR"
-        }
-        if (rp.readSms) {
-            permissions += "android.permission.READ_SMS"
-        }
-        if (rp.sendSms) {
-            permissions += "android.permission.SEND_SMS"
-        }
-        if (rp.receiveSms) {
-            permissions += "android.permission.RECEIVE_SMS"
-        }
-        if (rp.readCallLog) {
-            permissions += "android.permission.READ_CALL_LOG"
-        }
-        if (rp.writeCallLog) {
-            permissions += "android.permission.WRITE_CALL_LOG"
-        }
-        if (rp.processOutgoingCalls) {
-            permissions += "android.permission.PROCESS_OUTGOING_CALLS"
-        }
-
-        if (rp.foregroundService) {
-            permissions += "android.permission.FOREGROUND_SERVICE"
-            permissions += "android.permission.FOREGROUND_SERVICE_SPECIAL_USE"
-            permissions += "android.permission.FOREGROUND_SERVICE_DATA_SYNC"
-            // WebMediaPlaybackService (enableMediaSession) and BgmService both run
-            // as mediaPlayback foreground services — without this, startForeground
-            // throws SecurityException on Android 10+.
-            if (config.bgmEnabled || config.enableMediaSession) {
-                permissions += "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
-            }
-        }
-        if (rp.wakeLock) {
-            permissions += "android.permission.WAKE_LOCK"
-        }
-        if (rp.requestIgnoreBatteryOptimizations) {
-            permissions += "android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"
-        }
-        if (rp.bootCompleted) {
-            permissions += "android.permission.RECEIVE_BOOT_COMPLETED"
-        }
-        if (rp.vibration) {
-            permissions += "android.permission.VIBRATE"
-        }
-        if (rp.installPackages) {
-            permissions += "android.permission.REQUEST_INSTALL_PACKAGES"
-        }
-        if (rp.requestDeletePackages) {
-            permissions += "android.permission.REQUEST_DELETE_PACKAGES"
-        }
-        if (rp.systemAlertWindow) {
-            permissions += "android.permission.SYSTEM_ALERT_WINDOW"
-        }
-        if (rp.location) {
-            permissions += "android.permission.FOREGROUND_SERVICE_LOCATION"
-        }
-        if (rp.camera) {
-            permissions += "android.permission.FOREGROUND_SERVICE_CAMERA"
-        }
-        if (rp.microphone) {
-            permissions += "android.permission.FOREGROUND_SERVICE_MICROPHONE"
-        }
-        if (config.scheduledStartEnabled) {
-            permissions += "android.permission.SCHEDULE_EXACT_ALARM"
-            permissions += "android.permission.USE_EXACT_ALARM"
-        }
-
-        if (config.activationEnabled) {
-            permissions += "android.permission.USE_BIOMETRIC"
-            permissions += "android.permission.USE_FINGERPRINT"
-        }
-
-        if (rp.wifiState) {
-            permissions += "android.permission.ACCESS_WIFI_STATE"
-            permissions += "android.permission.CHANGE_WIFI_STATE"
-            permissions += "android.permission.CHANGE_NETWORK_STATE"
-        }
-
-        if (config.downloadEnabled) {
-            permissions += "android.permission.DOWNLOAD_WITHOUT_NOTIFICATION"
-        }
-
-        if (rp.bluetooth) {
-            permissions += "android.permission.NEARBY_WIFI_DEVICES"
-        }
-
-        if (rp.bodySensors) {
-            permissions += "android.permission.HIGH_SAMPLING_RATE_SENSORS"
-        }
-
-        return permissions.toList()
+        // One row in ExportPermissionCatalog is one manifest permission.
+        // Legacy booleans still expand to the bundles older configs saved
+        // (camera still implies the camera foreground-service type). An
+        // explicit grant false drops that one row. Local network follows
+        // INTERNET unless that row is off. File HTML with no network omits
+        // INTERNET, ACCESS_NETWORK_STATE, and ACCESS_LOCAL_NETWORK.
+        return ExportPermissionCatalog.manifestPermissions(
+            packageName = config.packageName,
+            permissions = config.runtimePermissions,
+            defaults = PermissionFeatureDefaults(
+                network = config.requiresNetworkPermissions(),
+                mediaSessionOrBgm = config.bgmEnabled || config.enableMediaSession,
+                scheduledExactAlarm = config.scheduledStartEnabled,
+                activationBiometric = config.activationEnabled
+            ),
+            downloadWithoutNotification = config.downloadEnabled
+        )
     }
 
     private fun buildRequiredComponents(config: ApkConfig): Set<String> {

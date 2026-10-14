@@ -6367,6 +6367,18 @@ object StringsE {
         AppLanguage.JAPANESE -> "システムサービス"
         AppLanguage.KOREAN -> "시스템 서비스"
     }
+    val exportPermGroupAdvanced: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "高级 / Play 受限"
+        AppLanguage.ENGLISH -> "Advanced / Play-restricted"
+        AppLanguage.ARABIC -> "متقدم / مقيّد في Play"
+        AppLanguage.PORTUGUESE -> "Avançado / restrito na Play"
+        AppLanguage.SPANISH -> "Avanzado / restringido en Play"
+        AppLanguage.FRENCH -> "Avancé / restreint Play"
+        AppLanguage.GERMAN -> "Erweitert / Play-eingeschränkt"
+        AppLanguage.RUSSIAN -> "Дополнительно / ограничено Play"
+        AppLanguage.JAPANESE -> "上級 / Play 制限"
+        AppLanguage.KOREAN -> "고급 / Play 제한"
+    }
     val permissionCamera: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "相机"
         AppLanguage.ENGLISH -> "Camera"
@@ -6477,16 +6489,16 @@ object StringsE {
         AppLanguage.KOREAN -> "권한 설정"
     }
     val permissionConfigDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "选择构建 APK 时需要声明的权限。仅勾选你的应用实际需要的权限，多余的权限可能导致 Play Store 审核被拒。"
-        AppLanguage.ENGLISH -> "Select permissions to declare in the built APK. Only check permissions your app actually needs — excessive permissions may cause Play Store rejection."
-        AppLanguage.ARABIC -> "حدد الأذونات التي يجب إعلانها في APK المُنشأ. تحقق فقط من الأذونات التي يحتاجها تطبيقك فعليًا — الأذونات الزائدة قد تؤدي إلى رفض Play Store."
-        AppLanguage.PORTUGUESE -> "Selecione as permissões a declarar no APK gerado. Marque apenas as permissões que seu app realmente precisa — permissões em excesso podem causar rejeição na Play Store."
-        AppLanguage.SPANISH -> "Selecciona los permisos a declarar en el APK generado. Marca solo los permisos que tu app realmente necesita — los permisos excesivos pueden causar rechazo en Play Store."
-        AppLanguage.FRENCH -> "Sélectionnez les permissions à déclarer dans l'APK généré. Cochez uniquement les permissions dont votre application a réellement besoin — des permissions excessives peuvent entraîner un rejet du Play Store."
-        AppLanguage.GERMAN -> "Wählen Sie die im erstellten APK zu deklarierenden Berechtigungen. Aktivieren Sie nur Berechtigungen, die Ihre App tatsächlich benötigt — zu viele Berechtigungen können zur Ablehnung im Play Store führen."
-        AppLanguage.RUSSIAN -> "Выберите разрешения для объявления в собранном APK. Отмечайте только те разрешения, которые действительно нужны вашему приложению — избыточные разрешения могут привести к отклонению в Play Store."
-        AppLanguage.JAPANESE -> "ビルドした APK で宣言する権限を選択します。アプリが実際に必要とする権限のみをオンにしてください — 過剰な権限は Play Store で却下される原因になります。"
-        AppLanguage.KOREAN -> "빌드된 APK에 선언할 권한을 선택하세요. 앱이 실제로 필요로 하는 권한만 체크하세요 — 과도한 권한은 Play Store 거절의 원인이 될 수 있습니다."
+        AppLanguage.CHINESE -> "按官方权限表填写，从 API 23 到 Android 17。每一行是一条第三方能声明的权限，标了引入和废弃的 API。签名级和系统内部权限不在这里。有网络时默认带上局域网，可以单独关掉。读取应用列表要勾了才写入生成的 APK，Play 可能拒审。"
+        AppLanguage.ENGLISH -> "Filled from the official table, API 23 through Android 17. Each row is one permission a third-party app can declare, with the API that added or deprecated it. Signature and internal permissions are absent. Local network is included with the network unless you turn that row off. Installed-app list is written into the generated APK only when checked, and Play may reject it."
+        AppLanguage.ARABIC -> "مملوء من الجدول الرسمي، من API 23 إلى أندرويد 17. كل صف إذن واحد يمكن لتطبيق طرف ثالث إعلانه، مع واجهة الإضافة أو الإهمال. أذونات التوقيع والداخلية غير موجودة. الشبكة المحلية تأتي مع الشبكة ما لم توقف ذلك الصف. قائمة التطبيقات تُكتب في APK المولَّد فقط عند التحديد، وقد ترفضها Play."
+        AppLanguage.PORTUGUESE -> "Preenchido pela tabela oficial, da API 23 ao Android 17. Cada linha é uma permissão que um app de terceiros pode declarar, com a API que a adicionou ou tornou obsoleta. Permissões de assinatura e internas não aparecem. A rede local entra com a rede, salvo se você desligar essa linha. A lista de apps só vai para o APK gerado se marcada, e a Play pode recusar."
+        AppLanguage.SPANISH -> "Rellenado con la tabla oficial, de la API 23 a Android 17. Cada fila es un permiso que una app de terceros puede declarar, con la API que lo añadió o dejó obsoleto. No están los de firma ni los internos. La red local va con la red salvo que apagues esa fila. La lista de apps solo entra en el APK generado si la marcas, y Play puede rechazarla."
+        AppLanguage.FRENCH -> "Rempli d’après la table officielle, de l’API 23 à Android 17. Chaque ligne est une permission qu’une app tierce peut déclarer, avec l’API qui l’ajoute ou la déprécie. Les permissions de signature et internes sont absentes. Le réseau local suit le réseau, sauf si vous coupez cette ligne. La liste d’apps n’entre dans l’APK généré que si elle est cochée, et Play peut la refuser."
+        AppLanguage.GERMAN -> "Aus der offiziellen Tabelle, API 23 bis Android 17. Jede Zeile ist eine Berechtigung, die eine Drittanbieter-App erklären kann, mit der API, die sie einführt oder veraltet. Signatur- und interne Berechtigungen fehlen. Das lokale Netz kommt mit dem Netz, außer Sie schalten die Zeile aus. Die App-Liste steht nur im erzeugten APK, wenn sie an ist, und Play kann ablehnen."
+        AppLanguage.RUSSIAN -> "Заполнено по официальной таблице, от API 23 до Android 17. Каждая строка — разрешение, которое может объявить стороннее приложение, с API добавления или устаревания. Подпись и внутренние разрешения отсутствуют. Локальная сеть идёт вместе с сетью, пока вы не выключите эту строку. Список приложений попадает в собранный APK только если отмечен, и Play может отклонить."
+        AppLanguage.JAPANESE -> "公式の権限表に沿って、API 23 から Android 17 まで記入しています。各行はサードパーティが宣言できる権限 1 件で、追加または非推奨の API を示します。署名レベルと内部権限はありません。ネットワークがあるときはローカルネットワークも入り、その行だけ外せます。アプリ一覧はオンにしたときだけ生成 APK に入り、Play で却下されることがあります。"
+        AppLanguage.KOREAN -> "공식 권한 표에 맞춰 API 23부터 Android 17까지 채웁니다. 각 행은 서드파티 앱이 선언할 수 있는 권한 하나이며, 추가되거나 폐기된 API를 표시합니다. 서명 및 내부 권한은 없습니다. 네트워크가 있으면 로컬 네트워크도 들어가며 그 행만 끌 수 있습니다. 앱 목록은 체크해야 생성 APK에 들어가며 Play에서 거절될 수 있습니다."
     }
     val permissionEnabledCount: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "已启用 %d 项权限"
@@ -6740,6 +6752,30 @@ object StringsE {
         AppLanguage.RUSSIAN -> "ACCESS_WIFI_STATE / CHANGE_WIFI_STATE — Просмотр и изменение подключения Wi-Fi"
         AppLanguage.JAPANESE -> "ACCESS_WIFI_STATE / CHANGE_WIFI_STATE — Wi-Fi 接続の表示と変更"
         AppLanguage.KOREAN -> "ACCESS_WIFI_STATE / CHANGE_WIFI_STATE — Wi-Fi 연결 보기 및 변경"
+    }
+    val permissionNearbyWifiDevices: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "附近的 Wi-Fi 设备"
+        AppLanguage.ENGLISH -> "Nearby Wi-Fi devices"
+        AppLanguage.ARABIC -> "أجهزة Wi-Fi القريبة"
+        AppLanguage.PORTUGUESE -> "Dispositivos Wi-Fi próximos"
+        AppLanguage.SPANISH -> "Dispositivos Wi-Fi cercanos"
+        AppLanguage.FRENCH -> "Appareils Wi-Fi à proximité"
+        AppLanguage.GERMAN -> "Wi-Fi-Geräte in der Nähe"
+        AppLanguage.RUSSIAN -> "Ближайшие Wi-Fi устройства"
+        AppLanguage.JAPANESE -> "近くの Wi-Fi デバイス"
+        AppLanguage.KOREAN -> "주변 Wi-Fi 기기"
+    }
+    val permissionNearbyWifiDevicesDesc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "NEARBY_WIFI_DEVICES — Android 13+ 扫描附近 Wi-Fi 设备，与蓝牙分开"
+        AppLanguage.ENGLISH -> "NEARBY_WIFI_DEVICES — Android 13+ scan for nearby Wi-Fi devices, separate from Bluetooth"
+        AppLanguage.ARABIC -> "NEARBY_WIFI_DEVICES — أندرويد 13+ لمسح أجهزة Wi-Fi القريبة، منفصل عن البلوتوث"
+        AppLanguage.PORTUGUESE -> "NEARBY_WIFI_DEVICES — Android 13+ para procurar Wi-Fi próximos, separado do Bluetooth"
+        AppLanguage.SPANISH -> "NEARBY_WIFI_DEVICES — Android 13+ para escanear Wi-Fi cercanos, aparte de Bluetooth"
+        AppLanguage.FRENCH -> "NEARBY_WIFI_DEVICES — Android 13+ pour scanner le Wi-Fi proche, distinct du Bluetooth"
+        AppLanguage.GERMAN -> "NEARBY_WIFI_DEVICES — Android 13+ Scan naher Wi-Fi-Geräte, getrennt von Bluetooth"
+        AppLanguage.RUSSIAN -> "NEARBY_WIFI_DEVICES — Android 13+ поиск ближайших Wi-Fi, отдельно от Bluetooth"
+        AppLanguage.JAPANESE -> "NEARBY_WIFI_DEVICES — Android 13+ 付近の Wi-Fi をスキャン。Bluetooth とは別"
+        AppLanguage.KOREAN -> "NEARBY_WIFI_DEVICES — Android 13+ 주변 Wi-Fi 검색, Bluetooth와 별개"
     }
 
     val permissionBodySensors: String get() = when (Strings.lang) {
@@ -7394,6 +7430,90 @@ object StringsE {
         AppLanguage.RUSSIAN -> "CALL_PHONE / PROCESS_OUTGOING_CALLS высокочувствительны. Google Play может отклонить публикацию"
         AppLanguage.JAPANESE -> "CALL_PHONE / PROCESS_OUTGOING_CALLS は高度に機密性が高いです。Google Play は公開を却下する場合があります"
         AppLanguage.KOREAN -> "CALL_PHONE / PROCESS_OUTGOING_CALLS는 고도로 민감합니다. Google Play에서 등록을 거부할 수 있습니다"
+    }
+    val permissionConflictQueryAllPackages: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "QUERY_ALL_PACKAGES（读取应用列表）是 Play 受限权限，上架需要单独申报；侧载安装一般会直接授予"
+        AppLanguage.ENGLISH -> "QUERY_ALL_PACKAGES (installed-app list) is Play-restricted and needs a declaration for listing. Sideload installs usually grant it"
+        AppLanguage.ARABIC -> "QUERY_ALL_PACKAGES (قائمة التطبيقات) مقيّد في Play ويحتاج إعلاناً للنشر. التثبيت الجانبي يمنحه عادة"
+        AppLanguage.PORTUGUESE -> "QUERY_ALL_PACKAGES (lista de apps) é restrito na Play e exige declaração. Instalações sideload costumam concedê-lo"
+        AppLanguage.SPANISH -> "QUERY_ALL_PACKAGES (lista de apps) está restringido en Play y requiere declaración. Sideload suele concederlo"
+        AppLanguage.FRENCH -> "QUERY_ALL_PACKAGES (liste d’apps) est restreint sur Play et exige une déclaration. Le sideload l’accorde souvent"
+        AppLanguage.GERMAN -> "QUERY_ALL_PACKAGES (App-Liste) ist bei Play eingeschränkt und braucht eine Erklärung. Sideload gewährt sie meist"
+        AppLanguage.RUSSIAN -> "QUERY_ALL_PACKAGES (список приложений) ограничен в Play и требует декларации. Sideload обычно выдаёт его"
+        AppLanguage.JAPANESE -> "QUERY_ALL_PACKAGES（インストール済みアプリ一覧）は Play 制限で申告が必要。サイドロードでは通常付与されます"
+        AppLanguage.KOREAN -> "QUERY_ALL_PACKAGES(설치 앱 목록)는 Play 제한 권한이라 신고가 필요합니다. 사이드로드는 보통 부여됩니다"
+    }
+    val permissionPlayRestrictedTag: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Play 受限权限 — 上架通常会被拒，除非你是默认短信/电话应用或已申报"
+        AppLanguage.ENGLISH -> "Play-restricted — listing is usually rejected unless you are the default SMS/phone app or filed a declaration"
+        AppLanguage.ARABIC -> "مقيّد في Play — يُرفض النشر عادة إلا إذا كنت تطبيق الرسائل/الهاتف الافتراضي أو قدّمت إعلاناً"
+        AppLanguage.PORTUGUESE -> "Restrito na Play — a listagem costuma ser recusada salvo app padrão de SMS/telefone ou declaração"
+        AppLanguage.SPANISH -> "Restringido en Play — suelen rechazar la ficha salvo app SMS/teléfono predeterminada o declaración"
+        AppLanguage.FRENCH -> "Restreint Play — la fiche est souvent refusée sauf app SMS/téléphone par défaut ou déclaration"
+        AppLanguage.GERMAN -> "Play-eingeschränkt — Listung wird meist abgelehnt, außer Standard-SMS/Telefon-App oder Erklärung"
+        AppLanguage.RUSSIAN -> "Ограничено Play — публикацию обычно отклоняют, кроме приложения SMS/телефона по умолчанию или декларации"
+        AppLanguage.JAPANESE -> "Play 制限 — デフォルトの SMS/電話アプリか申告済みでないと公開はほぼ却下"
+        AppLanguage.KOREAN -> "Play 제한 — 기본 SMS/전화 앱이거나 신고하지 않으면 등록이 거절되는 경우가 많습니다"
+    }
+    val permissionPlayRestrictedWarning: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "这条权限网页套壳很少真正用到。打开只会写进清单并可能弹系统框；页面 JS 没有对应 API。Play 审核很容易拒绝。"
+        AppLanguage.ENGLISH -> "Wrapper pages rarely use this. Enabling it only declares it and may show a system prompt; page JS has no matching API. Play review often rejects it."
+        AppLanguage.ARABIC -> "صفحات الغلاف نادراً ما تستخدم هذا. تفعيله يعلنه فقط وقد يظهر مطالبة نظام؛ لا يوجد API في JS. مراجعة Play ترفضه غالباً."
+        AppLanguage.PORTUGUESE -> "Páginas wrapper quase não usam isto. Ativar só declara e pode mostrar um aviso do sistema; JS não tem API. A Play costuma recusar."
+        AppLanguage.SPANISH -> "Las páginas wrapper casi no lo usan. Activarlo solo lo declara y puede mostrar un aviso; JS no tiene API. Play suele rechazarlo."
+        AppLanguage.FRENCH -> "Les pages wrapper l’utilisent rarement. L’activer le déclare seulement et peut afficher une invite ; pas d’API JS. Play le refuse souvent."
+        AppLanguage.GERMAN -> "Wrapper-Seiten nutzen dies selten. Aktivieren erklärt es nur und kann eine Systemabfrage zeigen; kein JS-API. Play lehnt oft ab."
+        AppLanguage.RUSSIAN -> "Страницы-обёртки почти не используют это. Включение только объявляет разрешение и может показать запрос; в JS нет API. Play часто отклоняет."
+        AppLanguage.JAPANESE -> "ラッパーページが使うことはほぼありません。有効化は宣言とシステム確認のみで、JS に対応 API はありません。Play 審査で却下されやすいです。"
+        AppLanguage.KOREAN -> "래퍼 페이지는 거의 쓰지 않습니다. 켜면 선언과 시스템 프롬프트만 있고 JS API는 없습니다. Play 심사에서 거절되기 쉽습니다."
+    }
+    val permissionQueryAllPackages: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "读取应用列表"
+        AppLanguage.ENGLISH -> "Installed app list"
+        AppLanguage.ARABIC -> "قائمة التطبيقات المثبتة"
+        AppLanguage.PORTUGUESE -> "Lista de apps instalados"
+        AppLanguage.SPANISH -> "Lista de apps instaladas"
+        AppLanguage.FRENCH -> "Liste des applications installées"
+        AppLanguage.GERMAN -> "Liste installierter Apps"
+        AppLanguage.RUSSIAN -> "Список установленных приложений"
+        AppLanguage.JAPANESE -> "インストール済みアプリ一覧"
+        AppLanguage.KOREAN -> "설치된 앱 목록"
+    }
+    val permissionQueryAllPackagesDesc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "QUERY_ALL_PACKAGES — 枚举设备上已安装的应用。Play 受限；侧载一般会授予"
+        AppLanguage.ENGLISH -> "QUERY_ALL_PACKAGES — Enumerate installed apps. Play-restricted; sideload usually grants it"
+        AppLanguage.ARABIC -> "QUERY_ALL_PACKAGES — تعداد التطبيقات المثبتة. مقيّد في Play؛ التثبيت الجانبي يمنحه عادة"
+        AppLanguage.PORTUGUESE -> "QUERY_ALL_PACKAGES — Listar apps instalados. Restrito na Play; sideload costuma conceder"
+        AppLanguage.SPANISH -> "QUERY_ALL_PACKAGES — Enumerar apps instaladas. Restringido en Play; sideload suele concederlo"
+        AppLanguage.FRENCH -> "QUERY_ALL_PACKAGES — Énumérer les apps installées. Restreint Play ; le sideload l’accorde souvent"
+        AppLanguage.GERMAN -> "QUERY_ALL_PACKAGES — Installierte Apps auflisten. Play-eingeschränkt; Sideload gewährt meist"
+        AppLanguage.RUSSIAN -> "QUERY_ALL_PACKAGES — Перечисление установленных приложений. Ограничено Play; sideload обычно выдаёт"
+        AppLanguage.JAPANESE -> "QUERY_ALL_PACKAGES — インストール済みアプリを列挙。Play 制限。サイドロードでは通常付与"
+        AppLanguage.KOREAN -> "QUERY_ALL_PACKAGES — 설치된 앱 열거. Play 제한. 사이드로드는 보통 부여"
+    }
+    val permissionBackgroundLocation: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "后台位置"
+        AppLanguage.ENGLISH -> "Background location"
+        AppLanguage.ARABIC -> "الموقع في الخلفية"
+        AppLanguage.PORTUGUESE -> "Localização em segundo plano"
+        AppLanguage.SPANISH -> "Ubicación en segundo plano"
+        AppLanguage.FRENCH -> "Localisation en arrière-plan"
+        AppLanguage.GERMAN -> "Standort im Hintergrund"
+        AppLanguage.RUSSIAN -> "Фоновая геолокация"
+        AppLanguage.JAPANESE -> "バックグラウンド位置情報"
+        AppLanguage.KOREAN -> "백그라운드 위치"
+    }
+    val permissionBackgroundLocationDesc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "ACCESS_BACKGROUND_LOCATION — 应用不在前台时仍可定位。会同时打开「位置」"
+        AppLanguage.ENGLISH -> "ACCESS_BACKGROUND_LOCATION — Location while the app is not in the foreground. Also turns on Location"
+        AppLanguage.ARABIC -> "ACCESS_BACKGROUND_LOCATION — الموقع والتطبيق في الخلفية. يشغّل أيضاً الموقع"
+        AppLanguage.PORTUGUESE -> "ACCESS_BACKGROUND_LOCATION — Localização com o app em segundo plano. Também liga Localização"
+        AppLanguage.SPANISH -> "ACCESS_BACKGROUND_LOCATION — Ubicación con la app en segundo plano. También activa Ubicación"
+        AppLanguage.FRENCH -> "ACCESS_BACKGROUND_LOCATION — Position hors premier plan. Active aussi Localisation"
+        AppLanguage.GERMAN -> "ACCESS_BACKGROUND_LOCATION — Standort im Hintergrund. Schaltet auch Standort ein"
+        AppLanguage.RUSSIAN -> "ACCESS_BACKGROUND_LOCATION — Геолокация не на переднем плане. Также включает «Местоположение»"
+        AppLanguage.JAPANESE -> "ACCESS_BACKGROUND_LOCATION — フォアグラウンド以外でも位置情報。「位置情報」もオンになります"
+        AppLanguage.KOREAN -> "ACCESS_BACKGROUND_LOCATION — 포그라운드가 아닐 때도 위치. 위치 권한도 켭니다"
     }
 
     val projectSyncFailed: String get() = when (Strings.lang) {

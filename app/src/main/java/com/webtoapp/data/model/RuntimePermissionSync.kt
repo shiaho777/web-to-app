@@ -15,6 +15,7 @@ fun ApkRuntimePermissions.enableFrom(required: ApkRuntimePermissions): ApkRuntim
         bluetooth = bluetooth || required.bluetooth,
         nfc = nfc || required.nfc,
         wifiState = wifiState || required.wifiState,
+        nearbyWifiDevices = nearbyWifiDevices || required.nearbyWifiDevices,
         bodySensors = bodySensors || required.bodySensors,
         activityRecognition = activityRecognition || required.activityRecognition,
         readPhoneState = readPhoneState || required.readPhoneState,
@@ -36,7 +37,9 @@ fun ApkRuntimePermissions.enableFrom(required: ApkRuntimePermissions): ApkRuntim
         vibration = vibration || required.vibration,
         installPackages = installPackages || required.installPackages,
         requestDeletePackages = requestDeletePackages || required.requestDeletePackages,
-        systemAlertWindow = systemAlertWindow || required.systemAlertWindow
+        systemAlertWindow = systemAlertWindow || required.systemAlertWindow,
+        backgroundLocation = backgroundLocation || required.backgroundLocation,
+        queryAllPackages = queryAllPackages || required.queryAllPackages
     )
 }
 

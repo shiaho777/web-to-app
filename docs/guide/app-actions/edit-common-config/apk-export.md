@@ -20,7 +20,14 @@ Packaging and identity settings for the generated APK. This is the export drawer
 
 ## Runtime permissions
 
-- Permissions are derived from the enabled features (feature-driven), and unused permissions are pruned from the template manifest at build time.
+This list is the official set a **third-party app can declare and request**, from API 23 through Android 17. Each row is one manifest permission, marked with the API that added it. Deprecated rows stay marked, and are not requested past that API. Signature, internal, role-only, and OEM-private permissions are not listed.
+
+- Older saved switches still export as the same bundle. Camera still declares `CAMERA` and `FOREGROUND_SERVICE_CAMERA`. Turning one row off in this list affects only that permission.
+- Features still auto-check the permissions they need (`RuntimePermissionSync`). Export prunes template permissions the app does not use.
+- **Local network** (`ACCESS_LOCAL_NETWORK`) is declared when the app needs the network, so Android 16/17 LAN loads do not fail. You can turn that row off. File HTML with no network omits `INTERNET`, `ACCESS_NETWORK_STATE`, and this permission.
+- **Installed app list** (`QUERY_ALL_PACKAGES`) is off by default. It is written into the generated APK only when checked, and Play may reject it. The GitHub host flavor already declares it for the builder; that does not apply to generated APKs.
+- SMS, call log, outgoing-call processing, all-files access, usage access, unknown-app install, and exact alarms are each their own row and marked Play-restricted. Turning one on writes it into the manifest. Dangerous permissions prompt on first launch. Page JS has no matching API.
+- Bluetooth no longer pulls in nearby Wi-Fi devices. Reading images no longer pulls in user-selected photos and videos. Those are separate rows. Background location is its own row; turning it on also turns on approximate and precise location.
 
 ## Static SAEP policy
 

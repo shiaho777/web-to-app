@@ -181,6 +181,7 @@ class ExportSecurityRegressionTest {
             "com.example.zenbox.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION",
             "android.permission.INTERNET",
             "android.permission.ACCESS_NETWORK_STATE",
+            "android.permission.ACCESS_LOCAL_NETWORK",
             "android.permission.FOREGROUND_SERVICE",
             "android.permission.FOREGROUND_SERVICE_SPECIAL_USE",
             "android.permission.FOREGROUND_SERVICE_DATA_SYNC",
@@ -215,7 +216,8 @@ class ExportSecurityRegressionTest {
         assertThat(permissions).containsExactly(
             "com.example.zenbox.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION",
             "android.permission.INTERNET",
-            "android.permission.ACCESS_NETWORK_STATE"
+            "android.permission.ACCESS_NETWORK_STATE",
+            "android.permission.ACCESS_LOCAL_NETWORK"
         ).inOrder()
     }
 
@@ -270,6 +272,7 @@ class ExportSecurityRegressionTest {
             "com.example.recorder.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION",
             "android.permission.INTERNET",
             "android.permission.ACCESS_NETWORK_STATE",
+            "android.permission.ACCESS_LOCAL_NETWORK",
             "android.permission.CAMERA",
             "android.permission.RECORD_AUDIO",
             "android.permission.MODIFY_AUDIO_SETTINGS",
@@ -573,6 +576,7 @@ class ExportSecurityRegressionTest {
         assertThat(config.htmlUsesFileScheme).isTrue()
         assertThat(permissions).doesNotContain("android.permission.INTERNET")
         assertThat(permissions).doesNotContain("android.permission.ACCESS_NETWORK_STATE")
+        assertThat(permissions).doesNotContain("android.permission.ACCESS_LOCAL_NETWORK")
     }
 
     @Test

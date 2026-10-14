@@ -1419,6 +1419,7 @@ data class ApkRuntimePermissions(
     val bluetooth: Boolean = false,
     val nfc: Boolean = false,
     val wifiState: Boolean = false,
+    val nearbyWifiDevices: Boolean = false,
 
     val bodySensors: Boolean = false,
     val activityRecognition: Boolean = false,
@@ -1443,7 +1444,17 @@ data class ApkRuntimePermissions(
     val vibration: Boolean = false,
     val installPackages: Boolean = false,
     val requestDeletePackages: Boolean = false,
-    val systemAlertWindow: Boolean = false
+    val systemAlertWindow: Boolean = false,
+    val backgroundLocation: Boolean = false,
+    val queryAllPackages: Boolean = false,
+    /**
+     * Per-permission overrides keyed by [ExportPermissionCatalog] id.
+     * Null (missing JSON, or no override) means "follow the boolean bundles
+     * and feature defaults". An explicit false wins over both, so a row can
+     * be turned off without clearing the legacy bundle that still covers its
+     * siblings. Gson leaves this null on configs saved before the field existed.
+     */
+    val grants: Map<String, Boolean>? = null
 ) {
     /**
      * Permissions enabled in this set but NOT in [auto] — i.e. permissions the user added
@@ -1464,6 +1475,7 @@ data class ApkRuntimePermissions(
         bluetooth = bluetooth && !auto.bluetooth,
         nfc = nfc && !auto.nfc,
         wifiState = wifiState && !auto.wifiState,
+        nearbyWifiDevices = nearbyWifiDevices && !auto.nearbyWifiDevices,
         bodySensors = bodySensors && !auto.bodySensors,
         activityRecognition = activityRecognition && !auto.activityRecognition,
         readPhoneState = readPhoneState && !auto.readPhoneState,
@@ -1485,7 +1497,9 @@ data class ApkRuntimePermissions(
         vibration = vibration && !auto.vibration,
         installPackages = installPackages && !auto.installPackages,
         requestDeletePackages = requestDeletePackages && !auto.requestDeletePackages,
-        systemAlertWindow = systemAlertWindow && !auto.systemAlertWindow
+        systemAlertWindow = systemAlertWindow && !auto.systemAlertWindow,
+        backgroundLocation = backgroundLocation && !auto.backgroundLocation,
+        queryAllPackages = queryAllPackages && !auto.queryAllPackages
     )
 }
 

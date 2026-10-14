@@ -4,20 +4,66 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.DirectionsRun
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.outlined.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.outlined.AdminPanelSettings
+import androidx.compose.material.icons.outlined.Block
+import androidx.compose.material.icons.outlined.Bluetooth
+import androidx.compose.material.icons.outlined.Bolt
+import androidx.compose.material.icons.outlined.Bookmarks
+import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.Call
+import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.ChevronRight
+import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.Contacts
+import androidx.compose.material.icons.automirrored.outlined.DirectionsWalk
+import androidx.compose.material.icons.outlined.Folder
+import androidx.compose.material.icons.outlined.History
+import androidx.compose.material.icons.outlined.Language
+import androidx.compose.material.icons.outlined.LocationOn
+import androidx.compose.material.icons.outlined.Mic
+import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material.icons.outlined.PhotoCamera
+import androidx.compose.material.icons.outlined.PlayCircleOutline
+import androidx.compose.material.icons.outlined.PrivacyTip
+import androidx.compose.material.icons.outlined.SelectAll
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.Sms
+import androidx.compose.material.icons.outlined.Verified
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -28,7 +74,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.data.model.ApkRuntimePermissions
+import com.webtoapp.data.model.AppType
+import com.webtoapp.data.model.ExportPerm
+import com.webtoapp.data.model.ExportPermGroup
+import com.webtoapp.data.model.ExportPermissionCatalog
+import com.webtoapp.data.model.HtmlLoadMode
+import com.webtoapp.data.model.PermissionFeatureDefaults
 import com.webtoapp.data.model.PermissionFeatureReason
+import com.webtoapp.data.model.exportGranted
+import com.webtoapp.data.model.withExportGrant
 import com.webtoapp.ui.components.IconSwitchCard
 import com.webtoapp.ui.components.PremiumButton
 import com.webtoapp.ui.components.PremiumTextField
@@ -39,32 +93,40 @@ import com.webtoapp.ui.design.WtaSettingRow
 import com.webtoapp.ui.design.WtaSectionDivider
 import com.webtoapp.ui.design.WtaStatusBanner
 import com.webtoapp.ui.design.WtaStatusTone
+import com.webtoapp.ui.theme.LocalShowDescriptions
+import com.webtoapp.ui.theme.ifDescriptionsShown
 import com.webtoapp.util.PermissionPresetStorage
 import com.webtoapp.util.SavedPermissionPreset
 
-private val DANGEROUS_PERMISSION_KEYS = setOf(
-    "readSms", "sendSms", "receiveSms",
-    "callPhone", "processOutgoingCalls",
-    "readContacts", "writeContacts",
-    "readCallLog", "writeCallLog",
-    "readPhoneState",
-    "systemAlertWindow", "installPackages"
-)
+/**
+ * Checkbox approximation of what export will treat as already required.
+ * Export itself uses [com.webtoapp.core.apkbuilder] network detection, so a
+ * file HTML page that still loads the network can differ until build time.
+ * An explicit off on the local-network row still wins at export.
+ */
+fun permissionFeatureDefaults(
+    appType: AppType,
+    htmlLoadMode: HtmlLoadMode?,
+    enableMediaSession: Boolean,
+    bgmEnabled: Boolean,
+    scheduledStartEnabled: Boolean,
+    activationEnabled: Boolean
+): PermissionFeatureDefaults {
+    val fileOnly = (appType == AppType.HTML || appType == AppType.FRONTEND) &&
+        htmlLoadMode == HtmlLoadMode.FILE
+    return PermissionFeatureDefaults(
+        network = !fileOnly,
+        mediaSessionOrBgm = bgmEnabled || enableMediaSession,
+        scheduledExactAlarm = scheduledStartEnabled,
+        activationBiometric = activationEnabled
+    )
+}
 
 private data class PermissionPreset(
     val label: () -> String,
     val icon: ImageVector,
     val apply: (ApkRuntimePermissions) -> ApkRuntimePermissions,
     val match: (ApkRuntimePermissions) -> Boolean
-)
-
-private data class PermissionItem(
-    val key: String,
-    val icon: ImageVector,
-    val title: () -> String,
-    val subtitle: () -> String,
-    val checked: (ApkRuntimePermissions) -> Boolean,
-    val update: (ApkRuntimePermissions, Boolean) -> ApkRuntimePermissions
 )
 
 private val PERMISSION_PRESETS = listOf(
@@ -83,124 +145,73 @@ private val PERMISSION_PRESETS = listOf(
     PermissionPreset(
         label = { Strings.permissionPresetStandard },
         icon = Icons.Outlined.Verified,
-        apply = { ApkRuntimePermissions(
-            camera = true, location = true, notifications = true,
-            readMediaImages = true, readMediaVideo = true
-        ) },
-        match = { it == ApkRuntimePermissions(
-            camera = true, location = true, notifications = true,
-            readMediaImages = true, readMediaVideo = true
-        ) }
+        apply = {
+            ApkRuntimePermissions(
+                camera = true, location = true, notifications = true,
+                readMediaImages = true, readMediaVideo = true
+            )
+        },
+        match = {
+            it == ApkRuntimePermissions(
+                camera = true, location = true, notifications = true,
+                readMediaImages = true, readMediaVideo = true
+            )
+        }
     ),
     PermissionPreset(
         label = { Strings.permissionPresetFull },
         icon = Icons.Outlined.SelectAll,
-        apply = { ApkRuntimePermissions(
-            camera = true, microphone = true, location = true, notifications = true,
-            readMediaImages = true, readMediaVideo = true, readMediaAudio = true,
-            bluetooth = true, nfc = true, bodySensors = true
-        ) },
-        match = { it == ApkRuntimePermissions(
-            camera = true, microphone = true, location = true, notifications = true,
-            readMediaImages = true, readMediaVideo = true, readMediaAudio = true,
-            bluetooth = true, nfc = true, bodySensors = true
-        ) }
+        apply = {
+            ApkRuntimePermissions(
+                camera = true, microphone = true, location = true, notifications = true,
+                readMediaImages = true, readMediaVideo = true, readMediaAudio = true,
+                bluetooth = true, nfc = true, bodySensors = true
+            )
+        },
+        match = {
+            it == ApkRuntimePermissions(
+                camera = true, microphone = true, location = true, notifications = true,
+                readMediaImages = true, readMediaVideo = true, readMediaAudio = true,
+                bluetooth = true, nfc = true, bodySensors = true
+            )
+        }
     )
 )
 
-private data class PermissionGroup(
-    val title: () -> String,
-    val icon: ImageVector,
-    val items: List<PermissionItem>
-)
+private fun groupIcon(group: ExportPermGroup): ImageVector = when (group) {
+    ExportPermGroup.CALENDAR -> Icons.Outlined.CalendarMonth
+    ExportPermGroup.CAMERA -> Icons.Outlined.PhotoCamera
+    ExportPermGroup.CONTACTS -> Icons.Outlined.Contacts
+    ExportPermGroup.LOCATION -> Icons.Outlined.LocationOn
+    ExportPermGroup.MICROPHONE -> Icons.Outlined.Mic
+    ExportPermGroup.PHONE -> Icons.Outlined.Call
+    ExportPermGroup.CALL_LOG -> Icons.Outlined.History
+    ExportPermGroup.ACTIVITY -> Icons.AutoMirrored.Outlined.DirectionsWalk
+    ExportPermGroup.SENSORS -> Icons.AutoMirrored.Outlined.DirectionsRun
+    ExportPermGroup.SMS -> Icons.Outlined.Sms
+    ExportPermGroup.STORAGE -> Icons.Outlined.Folder
+    ExportPermGroup.NEARBY -> Icons.Outlined.Bluetooth
+    ExportPermGroup.NOTIFICATIONS -> Icons.Outlined.Notifications
+    ExportPermGroup.SPECIAL -> Icons.Outlined.PrivacyTip
+    ExportPermGroup.FOREGROUND -> Icons.Outlined.PlayCircleOutline
+    ExportPermGroup.SYSTEM -> Icons.Outlined.Settings
+}
 
-private val PERMISSION_GROUPS = listOf(
-    PermissionGroup(
-        title = { Strings.exportPermGroupBasic },
-        icon = Icons.Outlined.Tune,
-        items = listOf(
-            PermissionItem("camera", Icons.Outlined.PhotoCamera, { Strings.permissionCamera }, { Strings.permissionCameraDesc }, { it.camera }) { p, v -> p.copy(camera = v) },
-            PermissionItem("microphone", Icons.Outlined.Mic, { Strings.permissionMicrophone }, { Strings.permissionMicrophoneDesc }, { it.microphone }) { p, v -> p.copy(microphone = v) },
-            PermissionItem("location", Icons.Outlined.LocationOn, { Strings.permissionLocation }, { Strings.permissionLocationDesc }, { it.location }) { p, v -> p.copy(location = v) },
-            PermissionItem("notifications", Icons.Outlined.Notifications, { Strings.permissionNotifications }, { Strings.permissionNotificationsDesc }, { it.notifications }) { p, v -> p.copy(notifications = v) },
-        )
-    ),
-    PermissionGroup(
-        title = { Strings.exportPermGroupStorage },
-        icon = Icons.Outlined.Folder,
-        items = listOf(
-            PermissionItem("readExternalStorage", Icons.Outlined.FolderOpen, { Strings.permissionReadExternalStorage }, { Strings.permissionReadExternalStorageDesc }, { it.readExternalStorage }) { p, v -> p.copy(readExternalStorage = v) },
-            PermissionItem("writeExternalStorage", Icons.Outlined.SaveAlt, { Strings.permissionWriteExternalStorage }, { Strings.permissionWriteExternalStorageDesc }, { it.writeExternalStorage }) { p, v -> p.copy(writeExternalStorage = v) },
-            PermissionItem("readMediaImages", Icons.Outlined.Image, { Strings.permissionReadMediaImages }, { Strings.permissionReadMediaImagesDesc }, { it.readMediaImages }) { p, v -> p.copy(readMediaImages = v) },
-            PermissionItem("readMediaVideo", Icons.Outlined.Videocam, { Strings.permissionReadMediaVideo }, { Strings.permissionReadMediaVideoDesc }, { it.readMediaVideo }) { p, v -> p.copy(readMediaVideo = v) },
-            PermissionItem("readMediaAudio", Icons.Outlined.LibraryMusic, { Strings.permissionReadMediaAudio }, { Strings.permissionReadMediaAudioDesc }, { it.readMediaAudio }) { p, v -> p.copy(readMediaAudio = v) },
-        )
-    ),
-    PermissionGroup(
-        title = { Strings.exportPermGroupNetwork },
-        icon = Icons.Outlined.Wifi,
-        items = listOf(
-            PermissionItem("bluetooth", Icons.Outlined.Bluetooth, { Strings.permissionBluetooth }, { Strings.permissionBluetoothDesc }, { it.bluetooth }) { p, v -> p.copy(bluetooth = v) },
-            PermissionItem("nfc", Icons.Outlined.Nfc, { Strings.permissionNfc }, { Strings.permissionNfcDesc }, { it.nfc }) { p, v -> p.copy(nfc = v) },
-            PermissionItem("wifiState", Icons.Outlined.Wifi, { Strings.permissionWifiState }, { Strings.permissionWifiStateDesc }, { it.wifiState }) { p, v -> p.copy(wifiState = v) },
-        )
-    ),
-    PermissionGroup(
-        title = { Strings.exportPermGroupSensors },
-        icon = Icons.Outlined.Sensors,
-        items = listOf(
-            PermissionItem("bodySensors", Icons.AutoMirrored.Outlined.DirectionsRun, { Strings.permissionBodySensors }, { Strings.permissionBodySensorsDesc }, { it.bodySensors }) { p, v -> p.copy(bodySensors = v) },
-            PermissionItem("activityRecognition", Icons.Outlined.DirectionsWalk, { Strings.permissionActivityRecognition }, { Strings.permissionActivityRecognitionDesc }, { it.activityRecognition }) { p, v -> p.copy(activityRecognition = v) },
-        )
-    ),
-    PermissionGroup(
-        title = { Strings.exportPermGroupContacts },
-        icon = Icons.Outlined.Contacts,
-        items = listOf(
-            PermissionItem("readContacts", Icons.Outlined.Contacts, { Strings.permissionReadContacts }, { Strings.permissionReadContactsDesc }, { it.readContacts }) { p, v -> p.copy(readContacts = v) },
-            PermissionItem("writeContacts", Icons.Outlined.EditNote, { Strings.permissionWriteContacts }, { Strings.permissionWriteContactsDesc }, { it.writeContacts }) { p, v -> p.copy(writeContacts = v) },
-            PermissionItem("readCalendar", Icons.Outlined.CalendarMonth, { Strings.permissionReadCalendar }, { Strings.permissionReadCalendarDesc }, { it.readCalendar }) { p, v -> p.copy(readCalendar = v) },
-            PermissionItem("writeCalendar", Icons.Outlined.EventAvailable, { Strings.permissionWriteCalendar }, { Strings.permissionWriteCalendarDesc }, { it.writeCalendar }) { p, v -> p.copy(writeCalendar = v) },
-        )
-    ),
-    PermissionGroup(
-        title = { Strings.exportPermGroupPhone },
-        icon = Icons.Outlined.Phone,
-        items = listOf(
-            PermissionItem("readPhoneState", Icons.Outlined.Smartphone, { Strings.permissionReadPhoneState }, { Strings.permissionReadPhoneStateDesc }, { it.readPhoneState }) { p, v -> p.copy(readPhoneState = v) },
-            PermissionItem("callPhone", Icons.Outlined.Call, { Strings.permissionCallPhone }, { Strings.permissionCallPhoneDesc }, { it.callPhone }) { p, v -> p.copy(callPhone = v) },
-            PermissionItem("readSms", Icons.Outlined.Sms, { Strings.permissionReadSms }, { Strings.permissionReadSmsDesc }, { it.readSms }) { p, v -> p.copy(readSms = v) },
-            PermissionItem("sendSms", Icons.Outlined.Send, { Strings.permissionSendSms }, { Strings.permissionSendSmsDesc }, { it.sendSms }) { p, v -> p.copy(sendSms = v) },
-            PermissionItem("receiveSms", Icons.Outlined.Markunread, { Strings.permissionReceiveSms }, { Strings.permissionReceiveSmsDesc }, { it.receiveSms }) { p, v -> p.copy(receiveSms = v) },
-            PermissionItem("readCallLog", Icons.Outlined.History, { Strings.permissionReadCallLog }, { Strings.permissionReadCallLogDesc }, { it.readCallLog }) { p, v -> p.copy(readCallLog = v) },
-            PermissionItem("writeCallLog", Icons.Outlined.EditCalendar, { Strings.permissionWriteCallLog }, { Strings.permissionWriteCallLogDesc }, { it.writeCallLog }) { p, v -> p.copy(writeCallLog = v) },
-            PermissionItem("processOutgoingCalls", Icons.Outlined.PhoneForwarded, { Strings.permissionProcessOutgoingCalls }, { Strings.permissionProcessOutgoingCallsDesc }, { it.processOutgoingCalls }) { p, v -> p.copy(processOutgoingCalls = v) },
-        )
-    ),
-    PermissionGroup(
-        title = { Strings.exportPermGroupSystem },
-        icon = Icons.Outlined.Settings,
-        items = listOf(
-            PermissionItem("foregroundService", Icons.Outlined.PlayCircleOutline, { Strings.permissionForegroundService }, { Strings.permissionForegroundServiceDesc }, { it.foregroundService }) { p, v -> p.copy(foregroundService = v) },
-            PermissionItem("wakeLock", Icons.Outlined.LightMode, { Strings.permissionWakeLock }, { Strings.permissionWakeLockDesc }, { it.wakeLock }) { p, v -> p.copy(wakeLock = v) },
-            PermissionItem("requestIgnoreBatteryOptimizations", Icons.Outlined.BatteryChargingFull, { Strings.permissionRequestIgnoreBatteryOptimizations }, { Strings.permissionRequestIgnoreBatteryOptimizationsDesc }, { it.requestIgnoreBatteryOptimizations }) { p, v -> p.copy(requestIgnoreBatteryOptimizations = v) },
-            PermissionItem("bootCompleted", Icons.Outlined.PowerSettingsNew, { Strings.permissionBootCompleted }, { Strings.permissionBootCompletedDesc }, { it.bootCompleted }) { p, v -> p.copy(bootCompleted = v) },
-            PermissionItem("vibration", Icons.Outlined.Vibration, { Strings.permissionVibration }, { Strings.permissionVibrationDesc }, { it.vibration }) { p, v -> p.copy(vibration = v) },
-            PermissionItem("installPackages", Icons.Outlined.SystemUpdateAlt, { Strings.permissionInstallPackages }, { Strings.permissionInstallPackagesDesc }, { it.installPackages }) { p, v -> p.copy(installPackages = v) },
-            PermissionItem("requestDeletePackages", Icons.Outlined.DeleteOutline, { Strings.permissionRequestDeletePackages }, { Strings.permissionRequestDeletePackagesDesc }, { it.requestDeletePackages }) { p, v -> p.copy(requestDeletePackages = v) },
-            PermissionItem("systemAlertWindow", Icons.Outlined.PictureInPictureAlt, { Strings.permissionSystemAlertWindow }, { Strings.permissionSystemAlertWindowDesc }, { it.systemAlertWindow }) { p, v -> p.copy(systemAlertWindow = v) },
-        )
-    )
-)
-
-private val PERMISSION_ITEMS = PERMISSION_GROUPS.flatMap { it.items }
+private fun rowMatches(perm: ExportPerm, query: String): Boolean {
+    if (query.isBlank()) return true
+    val q = query.trim()
+    return perm.key.contains(q, ignoreCase = true) ||
+        perm.manifest.contains(q, ignoreCase = true) ||
+        exportPermissionTitle(perm.key).contains(q, ignoreCase = true)
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PermissionConfigScreen(
     permissions: ApkRuntimePermissions,
     onPermissionsChange: (ApkRuntimePermissions) -> Unit,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    featureDefaults: PermissionFeatureDefaults = PermissionFeatureDefaults()
 ) {
     val scrollState = rememberScrollState()
 
@@ -221,7 +232,6 @@ fun PermissionConfigScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-
                     containerColor = Color.Transparent,
                     scrolledContainerColor = Color.Transparent
                 )
@@ -239,7 +249,8 @@ fun PermissionConfigScreen(
             ) {
                 PermissionConfigPanel(
                     permissions = permissions,
-                    onPermissionsTransform = { transform -> onPermissionsChange(transform(permissions)) }
+                    onPermissionsTransform = { transform -> onPermissionsChange(transform(permissions)) },
+                    featureDefaults = featureDefaults
                 )
             }
         }
@@ -252,34 +263,49 @@ fun PermissionConfigPanel(
     onPermissionsTransform: ((ApkRuntimePermissions) -> ApkRuntimePermissions) -> Unit,
     modifier: Modifier = Modifier,
     showDescription: Boolean = true,
-    featureReasons: Map<String, List<PermissionFeatureReason>> = emptyMap()
+    featureReasons: Map<String, List<PermissionFeatureReason>> = emptyMap(),
+    featureDefaults: PermissionFeatureDefaults = PermissionFeatureDefaults()
 ) {
     val context = LocalContext.current
     var schemeName by remember { mutableStateOf("") }
+    var query by rememberSaveable { mutableStateOf("") }
     var savedPresets by remember { mutableStateOf(PermissionPresetStorage.load(context)) }
-    val enabledCount = countEnabledPermissions(permissions)
-    val conflicts = detectConflicts(permissions)
-    val autoHintCount = featureReasons.count { (key, reasons) ->
-        reasons.isNotEmpty() && isPermissionKeyEnabled(permissions, key)
+    val enabledCount = countEnabledPermissions(permissions, featureDefaults)
+    val conflicts = detectConflicts(permissions, featureDefaults)
+    val autoHintCount = ExportPermissionCatalog.entries.count { perm ->
+        perm.reasonKeys.any { key -> featureReasons[key].orEmpty().isNotEmpty() } &&
+            permissions.exportGranted(perm, featureDefaults)
+    }
+    val visibleGroups = ExportPermGroup.entries.mapNotNull { group ->
+        val items = ExportPermissionCatalog.entries.filter { it.group == group && rowMatches(it, query) }
+        if (items.isEmpty()) null else group to items
     }
 
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        if (showDescription) {
+        if (showDescription && LocalShowDescriptions.current) {
             WtaStatusBanner(
                 message = Strings.permissionConfigDesc,
                 tone = WtaStatusTone.Info
             )
         }
 
-        if (autoHintCount > 0) {
+        if (autoHintCount > 0 && LocalShowDescriptions.current) {
             WtaStatusBanner(
                 message = Strings.permissionAutoEnabledSummary.format(autoHintCount),
                 tone = WtaStatusTone.Info
             )
         }
+
+        PremiumTextField(
+            value = query,
+            onValueChange = { query = it },
+            label = { Text(Strings.search) },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth()
+        )
 
         Row(
             modifier = Modifier
@@ -349,7 +375,7 @@ fun PermissionConfigPanel(
                     color = if (enabledCount > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(modifier = Modifier.weight(1f))
-                if (enabledCount > 0) {
+                if (permissions != ApkRuntimePermissions()) {
                     TextButton(onClick = { onPermissionsTransform { ApkRuntimePermissions() } }) {
                         Text(Strings.permissionClearAll, style = MaterialTheme.typography.labelSmall)
                     }
@@ -357,11 +383,22 @@ fun PermissionConfigPanel(
             }
         }
 
+        if (visibleGroups.isEmpty()) {
+            Text(
+                text = exportPermSearchEmpty(),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            PERMISSION_GROUPS.forEach { group ->
+            visibleGroups.forEach { (group, items) ->
                 PermissionGroupCard(
                     group = group,
+                    items = items,
                     permissions = permissions,
+                    featureDefaults = featureDefaults,
+                    forceExpand = query.isNotBlank(),
                     onPermissionsTransform = onPermissionsTransform,
                     featureReasons = featureReasons
                 )
@@ -374,17 +411,18 @@ fun PermissionConfigPanel(
 fun PermissionSummaryCard(
     permissions: ApkRuntimePermissions,
     onClick: (() -> Unit)? = null,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    featureDefaults: PermissionFeatureDefaults = PermissionFeatureDefaults()
 ) {
-    val enabledCount = countEnabledPermissions(permissions)
-    val dangerousEnabledCount = countDangerousEnabledPermissions(permissions)
+    val enabledCount = countEnabledPermissions(permissions, featureDefaults)
+    val restrictedCount = countPlayRestricted(permissions, featureDefaults)
     val summary = if (enabledCount == 0) {
         null
     } else {
         buildList {
             add(Strings.permissionEnabledCount.format(enabledCount))
-            if (dangerousEnabledCount > 0) {
-                add("${Strings.sensitive} $dangerousEnabledCount")
+            if (restrictedCount > 0) {
+                add("${Strings.sensitive} $restrictedCount")
             }
         }.joinToString(" · ")
     }
@@ -430,10 +468,10 @@ fun PermissionSummaryCard(
                     value = enabledCount.toString(),
                     tint = MaterialTheme.colorScheme.primary
                 )
-                if (dangerousEnabledCount > 0) {
+                if (restrictedCount > 0) {
                     PermissionSummaryPill(
                         label = Strings.sensitive,
-                        value = dangerousEnabledCount.toString(),
+                        value = restrictedCount.toString(),
                         tint = MaterialTheme.colorScheme.error
                     )
                 }
@@ -529,14 +567,18 @@ private fun PermissionSchemeCard(
 
 @Composable
 private fun PermissionGroupCard(
-    group: PermissionGroup,
+    group: ExportPermGroup,
+    items: List<ExportPerm>,
     permissions: ApkRuntimePermissions,
+    featureDefaults: PermissionFeatureDefaults,
+    forceExpand: Boolean,
     onPermissionsTransform: ((ApkRuntimePermissions) -> ApkRuntimePermissions) -> Unit,
-    featureReasons: Map<String, List<PermissionFeatureReason>> = emptyMap()
+    featureReasons: Map<String, List<PermissionFeatureReason>>
 ) {
-    val enabledInGroup = group.items.count { it.checked(permissions) }
-    var expanded by rememberSaveable { mutableStateOf(enabledInGroup > 0) }
-    val hasDangerous = group.items.any { it.key in DANGEROUS_PERMISSION_KEYS && it.checked(permissions) }
+    val enabledInGroup = items.count { permissions.exportGranted(it, featureDefaults) }
+    val hasRestricted = items.any { it.playRestricted && permissions.exportGranted(it, featureDefaults) }
+    var expanded by rememberSaveable(group) { mutableStateOf(enabledInGroup > 0) }
+    val shown = forceExpand || expanded
 
     Surface(
         shape = RoundedCornerShape(16.dp),
@@ -544,7 +586,6 @@ private fun PermissionGroupCard(
         tonalElevation = 0.dp
     ) {
         Column {
-
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -554,7 +595,7 @@ private fun PermissionGroupCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
-                    imageVector = group.icon,
+                    imageVector = groupIcon(group),
                     contentDescription = null,
                     modifier = Modifier.size(20.dp),
                     tint = if (enabledInGroup > 0) MaterialTheme.colorScheme.primary
@@ -563,15 +604,15 @@ private fun PermissionGroupCard(
                 Spacer(modifier = Modifier.width(12.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = group.title(),
+                        text = exportPermGroupTitle(group),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.SemiBold
                     )
                     if (enabledInGroup > 0) {
                         Text(
-                            text = Strings.nEnabledOfTotal.format(enabledInGroup, group.items.size),
+                            text = Strings.nEnabledOfTotal.format(enabledInGroup, items.size),
                             style = MaterialTheme.typography.labelSmall,
-                            color = if (hasDangerous) MaterialTheme.colorScheme.error
+                            color = if (hasRestricted) MaterialTheme.colorScheme.error
                             else MaterialTheme.colorScheme.primary
                         )
                     }
@@ -579,14 +620,14 @@ private fun PermissionGroupCard(
                 if (enabledInGroup > 0) {
                     Surface(
                         shape = RoundedCornerShape(999.dp),
-                        color = if (hasDangerous) MaterialTheme.colorScheme.errorContainer
+                        color = if (hasRestricted) MaterialTheme.colorScheme.errorContainer
                         else MaterialTheme.colorScheme.primaryContainer
                     ) {
                         Text(
                             text = enabledInGroup.toString(),
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold,
-                            color = if (hasDangerous) MaterialTheme.colorScheme.error
+                            color = if (hasRestricted) MaterialTheme.colorScheme.error
                             else MaterialTheme.colorScheme.primary,
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                         )
@@ -594,7 +635,7 @@ private fun PermissionGroupCard(
                     Spacer(modifier = Modifier.width(8.dp))
                 }
                 Icon(
-                    imageVector = if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                    imageVector = if (shown) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
                     contentDescription = null,
                     modifier = Modifier.size(20.dp),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
@@ -602,30 +643,24 @@ private fun PermissionGroupCard(
             }
 
             AnimatedVisibility(
-                visible = expanded,
+                visible = shown,
                 enter = expandVertically(),
                 exit = shrinkVertically()
             ) {
                 Column(
-                    modifier = Modifier.padding(
-                        start = 12.dp, end = 12.dp, bottom = 12.dp
-                    ),
+                    modifier = Modifier.padding(start = 12.dp, end = 12.dp, bottom = 12.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    group.items.forEach { item ->
-                        val reasons = featureReasons[item.key].orEmpty()
+                    items.forEach { perm ->
+                        val reasons = perm.reasonKeys.flatMap { featureReasons[it].orEmpty() }.distinct()
                         PermissionSwitch(
-                            key = item.key,
-                            icon = item.icon,
-                            title = item.title(),
-                            subtitle = item.subtitle(),
-                            checked = item.checked(permissions),
+                            perm = perm,
+                            checked = permissions.exportGranted(perm, featureDefaults),
                             featureReasonLabels = reasons.map { it.displayLabel() },
                             onCheckedChange = { checked ->
-                                // Transform semantics: applied against the *latest* permissions
-                                // in the ViewModel, so rapid consecutive toggles accumulate
-                                // instead of overwriting each other from a stale snapshot.
-                                onPermissionsTransform { current -> item.update(current, checked) }
+                                onPermissionsTransform { current ->
+                                    current.withExportGrant(perm.key, checked, featureDefaults)
+                                }
                             }
                         )
                     }
@@ -637,26 +672,18 @@ private fun PermissionGroupCard(
 
 @Composable
 private fun PermissionSwitch(
-    key: String,
-    icon: ImageVector,
-    title: String,
-    subtitle: String,
+    perm: ExportPerm,
     checked: Boolean,
-    featureReasonLabels: List<String> = emptyList(),
+    featureReasonLabels: List<String>,
     onCheckedChange: (Boolean) -> Unit
 ) {
-    val isDangerous = key in DANGEROUS_PERMISSION_KEYS
     val autoHint = if (featureReasonLabels.isNotEmpty()) {
-        Strings.permissionAutoEnabledBy.format(featureReasonLabels.joinToString(" · "))
+        Strings.permissionAutoEnabledBy.format(featureReasonLabels.joinToString(" · ")).ifDescriptionsShown()
     } else {
         null
     }
-    val combinedSubtitle = buildString {
-        append(subtitle)
-        if (isDangerous) {
-            append('\n')
-            append(Strings.permissionDangerTag)
-        }
+    val subtitle = buildString {
+        append(exportPermissionIdentity(perm))
         if (autoHint != null) {
             append('\n')
             append(autoHint)
@@ -665,15 +692,15 @@ private fun PermissionSwitch(
 
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         IconSwitchCard(
-            title = title,
-            subtitle = combinedSubtitle,
-            icon = icon,
+            title = exportPermissionTitle(perm.key),
+            subtitle = subtitle,
+            icon = groupIcon(perm.group),
             checked = checked,
             onCheckedChange = onCheckedChange
         )
-        if (isDangerous && checked) {
+        if (perm.playRestricted && checked) {
             Text(
-                text = Strings.permissionDangerWarning,
+                text = Strings.permissionPlayRestrictedWarning,
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.error,
                 modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 4.dp)
@@ -696,78 +723,16 @@ private fun PermissionFeatureReason.displayLabel(): String = when (this) {
     PermissionFeatureReason.CUSTOM_DOWNLOAD -> Strings.downloadLocationCustom
 }
 
-private fun isPermissionKeyEnabled(permissions: ApkRuntimePermissions, key: String): Boolean = when (key) {
-    "camera" -> permissions.camera
-    "microphone" -> permissions.microphone
-    "location" -> permissions.location
-    "notifications" -> permissions.notifications
-    "readExternalStorage" -> permissions.readExternalStorage
-    "writeExternalStorage" -> permissions.writeExternalStorage
-    "readMediaImages" -> permissions.readMediaImages
-    "readMediaVideo" -> permissions.readMediaVideo
-    "readMediaAudio" -> permissions.readMediaAudio
-    "bluetooth" -> permissions.bluetooth
-    "nfc" -> permissions.nfc
-    "wifiState" -> permissions.wifiState
-    "bodySensors" -> permissions.bodySensors
-    "activityRecognition" -> permissions.activityRecognition
-    "readPhoneState" -> permissions.readPhoneState
-    "callPhone" -> permissions.callPhone
-    "readContacts" -> permissions.readContacts
-    "writeContacts" -> permissions.writeContacts
-    "readCalendar" -> permissions.readCalendar
-    "writeCalendar" -> permissions.writeCalendar
-    "readSms" -> permissions.readSms
-    "sendSms" -> permissions.sendSms
-    "receiveSms" -> permissions.receiveSms
-    "readCallLog" -> permissions.readCallLog
-    "writeCallLog" -> permissions.writeCallLog
-    "processOutgoingCalls" -> permissions.processOutgoingCalls
-    "foregroundService" -> permissions.foregroundService
-    "wakeLock" -> permissions.wakeLock
-    "requestIgnoreBatteryOptimizations" -> permissions.requestIgnoreBatteryOptimizations
-    "bootCompleted" -> permissions.bootCompleted
-    "vibration" -> permissions.vibration
-    "installPackages" -> permissions.installPackages
-    "requestDeletePackages" -> permissions.requestDeletePackages
-    "systemAlertWindow" -> permissions.systemAlertWindow
-    else -> false
-}
+private fun countEnabledPermissions(
+    permissions: ApkRuntimePermissions,
+    defaults: PermissionFeatureDefaults
+): Int = ExportPermissionCatalog.entries.count { permissions.exportGranted(it, defaults) }
 
-private fun countEnabledPermissions(permissions: ApkRuntimePermissions): Int {
-    return listOf(
-        permissions.camera, permissions.microphone, permissions.location, permissions.notifications,
-        permissions.readExternalStorage, permissions.writeExternalStorage,
-        permissions.readMediaImages, permissions.readMediaVideo, permissions.readMediaAudio,
-        permissions.bluetooth, permissions.nfc, permissions.wifiState,
-        permissions.bodySensors, permissions.activityRecognition,
-        permissions.readPhoneState, permissions.callPhone,
-        permissions.readContacts, permissions.writeContacts,
-        permissions.readCalendar, permissions.writeCalendar,
-        permissions.readSms, permissions.sendSms, permissions.receiveSms,
-        permissions.readCallLog, permissions.writeCallLog, permissions.processOutgoingCalls,
-        permissions.foregroundService, permissions.wakeLock,
-        permissions.requestIgnoreBatteryOptimizations, permissions.bootCompleted,
-        permissions.vibration, permissions.installPackages,
-        permissions.requestDeletePackages, permissions.systemAlertWindow
-    ).count { it }
-}
-
-private fun countDangerousEnabledPermissions(permissions: ApkRuntimePermissions): Int {
-    return listOf(
-        permissions.readSms,
-        permissions.sendSms,
-        permissions.receiveSms,
-        permissions.callPhone,
-        permissions.processOutgoingCalls,
-        permissions.readContacts,
-        permissions.writeContacts,
-        permissions.readCallLog,
-        permissions.writeCallLog,
-        permissions.readPhoneState,
-        permissions.systemAlertWindow,
-        permissions.installPackages
-    ).count { it }
+private fun countPlayRestricted(
+    permissions: ApkRuntimePermissions,
+    defaults: PermissionFeatureDefaults
+): Int = ExportPermissionCatalog.entries.count {
+    it.playRestricted && permissions.exportGranted(it, defaults)
 }
 
 @Composable
@@ -800,24 +765,31 @@ private fun PermissionSummaryPill(
     }
 }
 
-private fun detectConflicts(permissions: ApkRuntimePermissions): List<String> {
+private fun detectConflicts(
+    permissions: ApkRuntimePermissions,
+    defaults: PermissionFeatureDefaults
+): List<String> {
+    fun on(key: String): Boolean {
+        val perm = ExportPermissionCatalog.byKey[key] ?: return false
+        return permissions.exportGranted(perm, defaults)
+    }
+
     val conflicts = mutableListOf<String>()
-
-    val hasMediaPerm = permissions.readMediaImages || permissions.readMediaVideo || permissions.readMediaAudio
-    val hasLegacyStorage = permissions.readExternalStorage || permissions.writeExternalStorage
-    if (hasMediaPerm && hasLegacyStorage) {
-        conflicts.add(Strings.permissionConflictMediaVsLegacy)
+    val hasMedia = on("READ_MEDIA_IMAGES") || on("READ_MEDIA_VIDEO") || on("READ_MEDIA_AUDIO")
+    val hasLegacy = on("READ_EXTERNAL_STORAGE") || on("WRITE_EXTERNAL_STORAGE")
+    if (hasMedia && hasLegacy) {
+        conflicts += Strings.permissionConflictMediaVsLegacy
     }
-
-    val hasSmsPerm = permissions.readSms || permissions.sendSms || permissions.receiveSms
-    if (hasSmsPerm) {
-        conflicts.add(Strings.permissionConflictSmsRisk)
+    val hasSms = on("READ_SMS") || on("SEND_SMS") || on("RECEIVE_SMS") ||
+        on("RECEIVE_WAP_PUSH") || on("RECEIVE_MMS")
+    if (hasSms) {
+        conflicts += Strings.permissionConflictSmsRisk
     }
-
-    val hasCallPerm = permissions.callPhone || permissions.processOutgoingCalls
-    if (hasCallPerm) {
-        conflicts.add(Strings.permissionConflictCallRisk)
+    if (on("CALL_PHONE") || on("PROCESS_OUTGOING_CALLS")) {
+        conflicts += Strings.permissionConflictCallRisk
     }
-
+    if (on("QUERY_ALL_PACKAGES")) {
+        conflicts += Strings.permissionConflictQueryAllPackages
+    }
     return conflicts
 }
