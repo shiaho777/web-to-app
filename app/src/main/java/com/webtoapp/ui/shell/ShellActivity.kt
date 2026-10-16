@@ -43,6 +43,7 @@ class ShellActivity : AppCompatActivity() {
     private var deepLinkUrl = mutableStateOf<String?>(null)
 
     val permissionDelegate = ShellPermissionDelegate(this)
+    private val directoryPickerHost = com.webtoapp.core.webview.DirectoryPickerHost(this)
     private val startupPermissions = ShellStartupPermissions(this)
 
     private var immersiveFullscreenEnabled: Boolean = false
@@ -480,6 +481,7 @@ class ShellActivity : AppCompatActivity() {
         }
 
         super.onCreate(savedInstanceState)
+        com.webtoapp.core.webview.DirectoryPickerRegistry.install(directoryPickerHost)
 
         if (!isTaskRoot &&
             intent?.action == Intent.ACTION_MAIN &&
@@ -835,6 +837,7 @@ class ShellActivity : AppCompatActivity() {
                                 print = config.webViewConfig.nativeBridgePrint,
                                 googleSignIn = config.webViewConfig.nativeBridgeGoogleSignIn,
                                 googleSignInClientId = config.webViewConfig.nativeBridgeGoogleSignInClientId,
+                                directory = config.webViewConfig.nativeBridgeDirectory,
                             )
                             val nativeBridge = com.webtoapp.core.webview.NativeBridge(
                                 context = this@ShellActivity,
@@ -844,9 +847,11 @@ class ShellActivity : AppCompatActivity() {
                                 corsBypass = config.webViewConfig.enableCorsBypass,
                                 downloadLocationMode = downloadLocationMode,
                                 customDownloadDirUri = config.webViewConfig.customDownloadDirUri,
-                                appOriginUrl = config.targetUrl
+                                appOriginUrl = config.targetUrl,
+                                directoryGrantKey = config.packageName
                             )
                             wv.addJavascriptInterface(nativeBridge, com.webtoapp.core.webview.NativeBridge.JS_INTERFACE_NAME)
+                            nativeBridge.installDirectoryHelper(wv)
                         } else if (config.webViewConfig.enablePrivateNetworkBridge || config.webViewConfig.enableCorsBypass) {
                             val privateNetworkBridge = com.webtoapp.core.webview.PrivateNetworkNativeBridgeAdapter(
                                 context = this@ShellActivity,
@@ -1317,6 +1322,8 @@ class ShellActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        directoryPickerHost.cancelPending()
+        com.webtoapp.core.webview.DirectoryPickerRegistry.uninstall(directoryPickerHost)
         com.webtoapp.core.shell.ShellLogger.logLifecycle("ShellActivity", "onDestroy")
 
         android.webkit.CookieManager.getInstance().flush()

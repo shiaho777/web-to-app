@@ -158,6 +158,9 @@ fun buildWebViewConfig(config: ShellConfig): WebViewConfig {
             orientation = config.webViewConfig.nativeBridgeOrientation,
             fullscreen = config.webViewConfig.nativeBridgeFullscreen,
             print = config.webViewConfig.nativeBridgePrint,
+            googleSignIn = config.webViewConfig.nativeBridgeGoogleSignIn,
+            googleSignInClientId = config.webViewConfig.nativeBridgeGoogleSignInClientId,
+            directory = config.webViewConfig.nativeBridgeDirectory,
         ),
         javaScriptCanOpenWindows = config.webViewConfig.javaScriptCanOpenWindows,
         jsOpenWindowsPolicy = try {

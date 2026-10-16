@@ -298,6 +298,7 @@ class FloatingWindowService : Service() {
                             fullscreen = shellConfig.webViewConfig.nativeBridgeFullscreen,
                             googleSignIn = shellConfig.webViewConfig.nativeBridgeGoogleSignIn,
                             googleSignInClientId = shellConfig.webViewConfig.nativeBridgeGoogleSignInClientId,
+                            directory = shellConfig.webViewConfig.nativeBridgeDirectory,
                         )
                         val nativeBridge = com.webtoapp.core.webview.NativeBridge(
                             context = this@FloatingWindowService,
@@ -307,12 +308,14 @@ class FloatingWindowService : Service() {
                             corsBypass = shellConfig.webViewConfig.enableCorsBypass,
                             downloadLocationMode = downloadLocationMode,
                             customDownloadDirUri = customDownloadDirUri,
-                            appOriginUrl = shellConfig.targetUrl
+                            appOriginUrl = shellConfig.targetUrl,
+                            directoryGrantKey = shellConfig.packageName
                         )
                         webView.addJavascriptInterface(
                             nativeBridge,
                             com.webtoapp.core.webview.NativeBridge.JS_INTERFACE_NAME
                         )
+                        nativeBridge.installDirectoryHelper(webView)
                     } else if (shellConfig.webViewConfig.enablePrivateNetworkBridge || shellConfig.webViewConfig.enableCorsBypass) {
                         val privateNetworkBridge = com.webtoapp.core.webview.PrivateNetworkNativeBridgeAdapter(
                             context = this@FloatingWindowService,

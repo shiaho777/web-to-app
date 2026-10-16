@@ -4799,6 +4799,8 @@ object Strings {
     val nativeBridgeCapsFullscreen: String get() = StringsE.nativeBridgeCapsFullscreen
     val nativeBridgeCapsPrint: String get() = StringsE.nativeBridgeCapsPrint
     val nativeBridgeCapsGoogleSignIn: String get() = StringsE.nativeBridgeCapsGoogleSignIn
+    val nativeBridgeCapsDirectory: String get() = StringsE.nativeBridgeCapsDirectory
+    val nativeBridgeDirectoryHint: String get() = StringsE.nativeBridgeDirectoryHint
     val googleSignInClientIdLabel: String get() = StringsE.googleSignInClientIdLabel
     val googleSignInClientIdPlaceholder: String get() = StringsE.googleSignInClientIdPlaceholder
     val googleSignInHint: String get() = StringsE.googleSignInHint

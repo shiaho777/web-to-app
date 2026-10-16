@@ -4396,6 +4396,7 @@ private fun WebApp.buildWebViewBehaviorBlock(): WebViewBehaviorBlock = WebViewBe
     nativeBridgePrint = webViewConfig.nativeBridgeCapabilities.print,
     nativeBridgeGoogleSignIn = webViewConfig.nativeBridgeCapabilities.googleSignIn,
     nativeBridgeGoogleSignInClientId = webViewConfig.nativeBridgeCapabilities.googleSignInClientId,
+    nativeBridgeDirectory = webViewConfig.nativeBridgeCapabilities.directory,
     javaScriptCanOpenWindows = webViewConfig.javaScriptCanOpenWindows,
     jsOpenWindowsPolicy = webViewConfig.jsOpenWindowsPolicy.name,
     databaseEnabled = webViewConfig.databaseEnabled,

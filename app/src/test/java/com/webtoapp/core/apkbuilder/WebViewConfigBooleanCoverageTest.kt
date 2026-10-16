@@ -182,6 +182,7 @@ class WebViewConfigBooleanCoverageTest {
             "nativeBridgeSecurityInfo", "nativeBridgeNetworkInfo", "nativeBridgeToast",
             "nativeBridgeLogging", "nativeBridgeFindInPage", "nativeBridgeOrientation",
             "nativeBridgeFullscreen", "nativeBridgePrint", "nativeBridgeGoogleSignIn",
+            "nativeBridgeDirectory",
             "failoverTriggerNetworkError", "failoverTriggerHttp5xx",
             "failoverTriggerHttp4xx", "failoverTriggerTimeout"
         )
@@ -223,7 +224,8 @@ class WebViewConfigBooleanCoverageTest {
                 fullscreenContentPaddingEndDp = 12,
                 nativeBridgeCapabilities = com.webtoapp.data.model.NativeBridgeCapabilities(
                     googleSignIn = true,
-                    googleSignInClientId = "test-client-id.apps.googleusercontent.com"
+                    googleSignInClientId = "test-client-id.apps.googleusercontent.com",
+                    directory = true
                 )
             )
         )
@@ -261,6 +263,7 @@ class WebViewConfigBooleanCoverageTest {
         // the export, or the generated app silently falls back to the disabled state.
         readShell("nativeBridgeGoogleSignIn", true)
         readShell("nativeBridgeGoogleSignInClientId", "test-client-id.apps.googleusercontent.com")
+        readShell("nativeBridgeDirectory", true)
     }
 
     @Test

@@ -1864,6 +1864,11 @@ data class NativeBridgeCapabilities(
     // project and provide its Web client ID.
     val googleSignIn: Boolean = false,
     val googleSignInClientId: String = "",
+    // One user-picked folder the page can list, read, and write. Off by default:
+    // a remote page that talks the user into choosing Downloads or DCIM can
+    // read everything in that tree. The grant is a persistable SAF permission,
+    // not a broad storage permission.
+    val directory: Boolean = false,
 )
 
 enum class GeolocationAccuracy {

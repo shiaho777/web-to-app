@@ -68,4 +68,21 @@ class ShellWebViewConfigMappingTest {
         assertThat(runtime.toolbarShowConsole).isTrue()
         assertThat(runtime.toolbarShowFind).isTrue()
     }
+
+    @Test
+    fun `directory capability survives shell config to runtime WebViewConfig`() {
+        val enabled = runtimeConfigOf(
+            WebApp(
+                name = "t",
+                url = "https://t.example.com",
+                webViewConfig = WebViewConfig(
+                    nativeBridgeCapabilities = com.webtoapp.data.model.NativeBridgeCapabilities(directory = true)
+                )
+            )
+        )
+        assertThat(enabled.nativeBridgeCapabilities.directory).isTrue()
+
+        val disabled = runtimeConfigOf(WebApp(name = "t", url = "https://t.example.com"))
+        assertThat(disabled.nativeBridgeCapabilities.directory).isFalse()
+    }
 }

@@ -365,6 +365,7 @@ open class WebViewActivity : AppCompatActivity() {
     }
 
     private var cameraPhotoUri: android.net.Uri? = null
+    private val directoryPickerHost = com.webtoapp.core.webview.DirectoryPickerHost(this)
 
     private val fileChooserActivityLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -884,6 +885,7 @@ open class WebViewActivity : AppCompatActivity() {
         }
 
         super.onCreate(savedInstanceState)
+        com.webtoapp.core.webview.DirectoryPickerRegistry.install(directoryPickerHost)
         HostPreviewMotion.install(this)
 
         requestNotificationPermissionIfNeeded()
@@ -1455,6 +1457,8 @@ open class WebViewActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        directoryPickerHost.cancelPending()
+        com.webtoapp.core.webview.DirectoryPickerRegistry.uninstall(directoryPickerHost)
 
         if (trackedAppId > 0) usageTracker?.trackClose(trackedAppId)
 
@@ -3996,12 +4000,18 @@ fun WebViewScreen(
                                                 corsBypass = effectiveWebApp.webViewConfig.enableCorsBypass,
                                                 downloadLocationMode = effectiveWebApp.webViewConfig.downloadLocationMode,
                                                 customDownloadDirUri = effectiveWebApp.webViewConfig.customDownloadDirUri,
-                                                appOriginUrl = effectiveWebApp.url
+                                                appOriginUrl = effectiveWebApp.url,
+                                                directoryGrantKey = if (effectiveWebApp.id > 0) {
+                                                    "app-${effectiveWebApp.id}"
+                                                } else {
+                                                    "draft-${effectiveWebApp.packageName ?: effectiveWebApp.url}"
+                                                }
                                             )
                                             addJavascriptInterface(
                                                 nb,
                                                 com.webtoapp.core.webview.NativeBridge.JS_INTERFACE_NAME
                                             )
+                                            nb.installDirectoryHelper(this)
                                         } else if (effectiveWebApp.webViewConfig.enablePrivateNetworkBridge || effectiveWebApp.webViewConfig.enableCorsBypass) {
                                             val privateNetworkBridge = com.webtoapp.core.webview.PrivateNetworkNativeBridgeAdapter(
                                                 context = context,

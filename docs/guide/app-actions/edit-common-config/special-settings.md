@@ -10,7 +10,7 @@ Compatibility polyfills, bridges, and other specialized toggles. This card colle
 - **Notification polyfill** — Web Notification support (`enableNotificationPolyfill`).
 - **Orientation polyfill** — `enableOrientationPolyfill`.
 - **Compat polyfills** — a bundle of compatibility shims (`enableCompatPolyfills`).
-- **Native bridge** — expose a native bridge with capability gates (`enableNativeBridge`, `nativeBridgeCapabilities`).
+- **Native bridge** — expose a native bridge with capability gates (`enableNativeBridge`, `nativeBridgeCapabilities`). The **Folder** capability stays off until enabled. The page then picks one directory and can list, read, and write it through `WtaDirectory` on the system WebView. The grant is kept on that device, so an exported app asks again.
 - **Print bridge** — intercept `window.print()` and PDF output to the Android print framework (`enablePrintBridge`).
 - **Media Session bridge** — bridge web media to the system media notification and lock-screen controls, including Bluetooth headsets and Android Auto (`enableMediaSession`).
 - **Share bridge** — `enableShareBridge`.

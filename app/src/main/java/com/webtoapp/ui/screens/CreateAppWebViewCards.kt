@@ -3786,6 +3786,12 @@ fun SpecialSettingsCard(
                                     label = Strings.nativeBridgeCapsPrint,
                                     showSelectedCheck = false
                                 )
+                                WtaChip(
+                                    selected = caps.directory,
+                                    onClick = { onConfigChange(config.copy(nativeBridgeCapabilities = caps.copy(directory = !caps.directory))) },
+                                    label = Strings.nativeBridgeCapsDirectory,
+                                    showSelectedCheck = false
+                                )
                                 if (!BuildConfig.FDROID) {
                                     WtaChip(
                                         selected = caps.googleSignIn,
@@ -3794,6 +3800,18 @@ fun SpecialSettingsCard(
                                         showSelectedCheck = false
                                     )
                                 }
+                            }
+
+                            AnimatedVisibility(
+                                visible = caps.directory && LocalShowDescriptions.current,
+                                enter = CardExpandTransition,
+                                exit = CardCollapseTransition
+                            ) {
+                                Text(
+                                    text = Strings.nativeBridgeDirectoryHint,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
                             }
 
                             if (!BuildConfig.FDROID) {

@@ -603,6 +603,7 @@ data class WebViewBehaviorBlock(
     val nativeBridgePrint: Boolean = true,
     val nativeBridgeGoogleSignIn: Boolean = false,
     val nativeBridgeGoogleSignInClientId: String = "",
+    val nativeBridgeDirectory: Boolean = false,
     val databaseEnabled: Boolean = true,
     val enableCookiePersistence: Boolean = true,
     val enablePrivateNetworkBridge: Boolean = false,

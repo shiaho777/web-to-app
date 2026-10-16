@@ -79,8 +79,42 @@ class NativeBridge(
      * check sees an empty URL and rejects, killing the CORS-bypass / private-network bridge on
      * the Gecko engine.
      */
-    private val callerPageUrlProvider: (() -> String?)? = null
+    private val callerPageUrlProvider: (() -> String?)? = null,
+
+    /**
+     * Isolates persisted folder grants. The host preview passes the app id so
+     * two projects do not share a folder; a generated APK passes its package
+     * name, which is already unique.
+     */
+    private val directoryGrantKey: String = ""
 ) {
+    private val directoryStore by lazy {
+        LocalDirectoryStore(
+            context = context,
+            grantKey = directoryGrantKey.ifBlank { context.packageName ?: "default" }
+        )
+    }
+
+    /**
+     * Installs [WtaDirectory] for pages that opt into the folder capability.
+     * Document-start covers later navigations; the immediate evaluation covers
+     * the page that is already open.
+     */
+    fun installDirectoryHelper(webView: WebView) {
+        if (!capabilities.directory) return
+        val script = LocalDirectoryScript.SOURCE
+        try {
+            androidx.webkit.WebViewCompat.addDocumentStartJavaScript(webView, script, setOf("*"))
+        } catch (e: Exception) {
+            AppLogger.w("NativeBridge", "Directory helper document-start failed", e)
+        }
+        try {
+            webView.evaluateJavascript(script, null)
+        } catch (e: Exception) {
+            AppLogger.w("NativeBridge", "Directory helper injection failed", e)
+        }
+    }
+
     /** The URL of the page currently calling into the bridge, across both engines. */
     private fun resolveCallerPageUrl(): String {
         val webView = webViewProvider() ?: return callerPageUrlProvider?.invoke().orEmpty()
@@ -452,6 +486,40 @@ window.NativeBridgeGoogleSignInResult = function(requestId, payload) {
     }
 };
 NativeBridge.googleSignIn('sign-in-' + Date.now());
+```
+
+### 本地文件夹
+
+能力默认关闭。在编辑器的原生桥里打开「文件夹」后，系统 WebView 会注入 `window.WtaDirectory`。页面在用户点击里调用 `pick()`，系统弹出目录选择器；授权保存在本应用里，下次打开不用再选。导出的应用是另一个包名，需要再选一次。GeckoView 没有这组方法。
+
+#### directoryInfo()
+返回 `{ ok, granted, name?, writable? }`。未授权时 `granted` 为 false。
+
+#### pickDirectory(requestId)
+打开系统目录选择器。立即返回 `{ ok: true, pending: true }`，结果经 `window.NativeBridgeDirectoryResult(requestId, payload)` 送回。payload 与 `directoryInfo()` 相同，用户取消时为 `{ ok: false, error: "CANCELLED" }`。
+错误码：`DISABLED`、`CALLER_NOT_ALLOWED`、`NO_ACTIVITY`（悬浮窗）、`PERSIST_FAILED`。
+
+#### listDirectory(relativePath)
+列出授权目录下的条目。`relativePath` 为空表示根。返回 `{ ok, entries: [{ name, directory, size }], truncated }`。
+
+#### readDirectoryFile(relativePath, offset, length)
+按块读取。`length` 最大 256 KiB。返回 `{ ok, size, offset, length, data, eof }`，`data` 是 base64。
+
+#### writeDirectoryFile(relativePath, base64, append)
+按块写入。`append` 为 false 时创建或覆盖。中间目录会自动创建。每块最大 256 KiB。
+
+#### deleteDirectoryEntry(relativePath)
+删除文件或子目录。不能删除授权根目录本身。
+
+#### releaseDirectory()
+丢掉授权。
+
+```javascript
+const grant = await WtaDirectory.pick();
+if (!grant.granted) return;
+const entries = WtaDirectory.list('').entries;
+const font = await WtaDirectory.read('fonts/MyFont.ttf');
+await WtaDirectory.write('exports/image.png', pngBytes);
 ```
         """.trimIndent()
 
@@ -2110,6 +2178,138 @@ NativeBridge.googleSignIn('sign-in-' + Date.now());
             false
         }
     }
+
+    @JavascriptInterface
+    fun directoryInfo(): String {
+        if (!capabilities.directory) return directoryError("DISABLED", "The folder capability is off")
+        if (!directoryCallerAllowed()) return directoryError("CALLER_NOT_ALLOWED", "Only the app's own pages can use the folder")
+        return directoryStore.info()
+    }
+
+    /**
+     * Opens the system folder picker. The picker itself is asynchronous; a
+     * synchronous JSON reply reports whether it started. The chosen grant
+     * arrives through `window.NativeBridgeDirectoryResult(requestId, payload)`.
+     */
+    @JavascriptInterface
+    fun pickDirectory(requestId: String): String {
+        if (!capabilities.directory) return directoryError("DISABLED", "The folder capability is off")
+        if (!directoryCallerAllowed()) return directoryError("CALLER_NOT_ALLOWED", "Only the app's own pages can use the folder")
+        val host = DirectoryPickerRegistry.host
+            ?: return directoryError("NO_ACTIVITY", "The folder picker is unavailable in this window")
+        val callerPageUrl = resolveCallerPageUrl()
+        val callerOrigin = directoryCallerOrigin(callerPageUrl)
+        host.pick { uri ->
+            val payload = if (uri == null) {
+                directoryErrorObject("CANCELLED", "The folder picker was dismissed")
+            } else {
+                org.json.JSONObject(directoryStore.remember(uri))
+            }
+            dispatchDirectoryResult(requestId, payload, callerOrigin, callerPageUrl)
+        }
+        return org.json.JSONObject().apply {
+            put("ok", true)
+            put("pending", true)
+        }.toString()
+    }
+
+    @JavascriptInterface
+    fun releaseDirectory(): String {
+        if (!capabilities.directory) return directoryError("DISABLED", "The folder capability is off")
+        if (!directoryCallerAllowed()) return directoryError("CALLER_NOT_ALLOWED", "Only the app's own pages can use the folder")
+        return directoryStore.release()
+    }
+
+    @JavascriptInterface
+    fun listDirectory(relativePath: String): String {
+        if (!capabilities.directory) return directoryError("DISABLED", "The folder capability is off")
+        if (!directoryCallerAllowed()) return directoryError("CALLER_NOT_ALLOWED", "Only the app's own pages can use the folder")
+        return directoryStore.list(relativePath)
+    }
+
+    @JavascriptInterface
+    fun readDirectoryFile(relativePath: String, offset: Long, length: Int): String {
+        if (!capabilities.directory) return directoryError("DISABLED", "The folder capability is off")
+        if (!directoryCallerAllowed()) return directoryError("CALLER_NOT_ALLOWED", "Only the app's own pages can use the folder")
+        return directoryStore.read(relativePath, offset, length)
+    }
+
+    @JavascriptInterface
+    fun writeDirectoryFile(relativePath: String, base64: String, append: Boolean): String {
+        if (!capabilities.directory) return directoryError("DISABLED", "The folder capability is off")
+        if (!directoryCallerAllowed()) return directoryError("CALLER_NOT_ALLOWED", "Only the app's own pages can use the folder")
+        return directoryStore.write(relativePath, base64, append)
+    }
+
+    @JavascriptInterface
+    fun deleteDirectoryEntry(relativePath: String): String {
+        if (!capabilities.directory) return directoryError("DISABLED", "The folder capability is off")
+        if (!directoryCallerAllowed()) return directoryError("CALLER_NOT_ALLOWED", "Only the app's own pages can use the folder")
+        return directoryStore.delete(relativePath)
+    }
+
+    private fun directoryCallerAllowed(): Boolean {
+        val callerPageUrl = resolveCallerPageUrl()
+        if (callerPageUrl.isBlank()) return false
+        if (callerPageUrl.startsWith("file:") || callerPageUrl.startsWith("content:")) return true
+        if (isPrivateNetworkUrl(callerPageUrl)) return true
+        return isAppOriginCallerPage(callerPageUrl)
+    }
+
+    private fun directoryCallerOrigin(pageUrl: String): String? {
+        if (pageUrl.startsWith("file:") || pageUrl.startsWith("content:") || isPrivateNetworkUrl(pageUrl)) {
+            return pageUrl
+        }
+        return runCatching {
+            URI(pageUrl).let { u ->
+                "${u.scheme}://${u.host}${if (u.port > 0) ":${u.port}" else ""}"
+            }
+        }.getOrNull()
+    }
+
+    private fun directoryError(code: String, message: String): String =
+        directoryErrorObject(code, message).toString()
+
+    private fun directoryErrorObject(code: String, message: String): org.json.JSONObject =
+        org.json.JSONObject().apply {
+            put("ok", false)
+            put("error", code)
+            put("message", message)
+        }
+
+    private fun dispatchDirectoryResult(
+        requestId: String,
+        payload: org.json.JSONObject,
+        callerOrigin: String?,
+        callerPageUrl: String
+    ) {
+        val quotedRequestId = com.webtoapp.util.JsStrings.quote(requestId)
+        val js = "window.NativeBridgeDirectoryResult && window.NativeBridgeDirectoryResult($quotedRequestId, $payload);"
+        scope.launch(Dispatchers.Main) {
+            try {
+                val webView = webViewProvider() ?: return@launch
+                val current = webView.url.orEmpty()
+                if (!directoryDeliveryAllowed(current, callerOrigin, callerPageUrl)) {
+                    AppLogger.w("NativeBridge", "Directory picker result dropped: page origin changed")
+                    return@launch
+                }
+                webView.evaluateJavascript(js, null)
+            } catch (e: Exception) {
+                AppLogger.w("NativeBridge", "Failed to deliver directory picker result", e)
+            }
+        }
+    }
+
+    private fun directoryDeliveryAllowed(current: String, callerOrigin: String?, callerPageUrl: String): Boolean {
+        if (current.isBlank()) return false
+        val local = { url: String ->
+            url.startsWith("file:") || url.startsWith("content:") || isPrivateNetworkUrl(url)
+        }
+        if (local(callerPageUrl)) return local(current)
+        val callerHost = callerOrigin?.let { runCatching { URI(it).host }.getOrNull() } ?: return false
+        val currentHost = runCatching { URI(current).host }.getOrNull() ?: return false
+        return isSameSiteOrSubdomain(currentHost, callerHost)
+    }
 }
 
 private fun privateNetworkOnlyCapabilities(): com.webtoapp.data.model.NativeBridgeCapabilities {
@@ -2133,7 +2333,8 @@ private fun privateNetworkOnlyCapabilities(): com.webtoapp.data.model.NativeBrid
         findInPage = false,
         orientation = false,
         fullscreen = false,
-        print = false
+        print = false,
+        directory = false
     )
 }
 

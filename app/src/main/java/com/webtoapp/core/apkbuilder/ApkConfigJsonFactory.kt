@@ -291,6 +291,7 @@ internal object ApkConfigJsonFactory {
         "nativeBridgePrint" to webViewBehavior.nativeBridgePrint,
         "nativeBridgeGoogleSignIn" to webViewBehavior.nativeBridgeGoogleSignIn,
         "nativeBridgeGoogleSignInClientId" to webViewBehavior.nativeBridgeGoogleSignInClientId,
+        "nativeBridgeDirectory" to webViewBehavior.nativeBridgeDirectory,
         "javaScriptCanOpenWindows" to webViewBehavior.javaScriptCanOpenWindows,
         "jsOpenWindowsPolicy" to webViewBehavior.jsOpenWindowsPolicy,
         "databaseEnabled" to webViewBehavior.databaseEnabled,
