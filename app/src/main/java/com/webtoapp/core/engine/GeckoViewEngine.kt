@@ -1907,10 +1907,93 @@ class GeckoViewEngine(
                 session: GeckoSession,
                 uri: String
             ): GeckoResult<GeckoSession>? {
-                loadUrl(uri)
-                return null
+                // A new session is the opener relationship Google's popup
+                // sign-in uses. Loading the URI here instead drops
+                // window.opener and the completion page never closes (#1316).
+                return openScriptPopup(uri)
             }
         }
+    }
+
+    /**
+     * Child session for `window.open`. Gecko opens the session after this
+     * returns; the view is attached on the first paint so the popup can
+     * `postMessage` its opener and then `window.close()` (#1316).
+     */
+    private fun openScriptPopup(uri: String): GeckoResult<GeckoSession>? {
+        if (!ScriptPopupHost.canShow(context)) {
+            if (uri.isNotBlank() && uri != "about:blank") loadUrl(uri)
+            return null
+        }
+        val settings = GeckoSessionSettings.Builder()
+            .usePrivateMode(false)
+            .useTrackingProtection(false)
+            .userAgentMode(lastGeckoUaMode)
+            .viewportMode(lastGeckoViewportMode)
+            .allowJavascript(lastAllowJavascript)
+            .build()
+        val popupSession = GeckoSession(settings)
+        lastUserAgentOverride?.let { popupSession.settings.userAgentOverride = it }
+        val popupView = GeckoView(context)
+        var canGoBack = false
+        var closed = false
+        var attached = false
+        fun closePopup() {
+            if (closed) return
+            closed = true
+            ScriptPopupHost.dismiss(popupView)
+            liveSessions.remove(popupSession)
+            runCatching { popupView.releaseSession() }
+            runCatching { popupSession.close() }
+        }
+        fun attach() {
+            if (attached) return
+            try {
+                popupView.setSession(popupSession)
+                attached = true
+                ScriptPopupHost.show(
+                    context = context,
+                    content = popupView,
+                    onBack = {
+                        if (!canGoBack) return@show false
+                        popupSession.goBack()
+                        true
+                    },
+                    onDismiss = { closePopup() }
+                )
+            } catch (e: Exception) {
+                AppLogger.w(TAG, "Script popup not attached yet: ${e.message}")
+            }
+        }
+        popupSession.contentDelegate = object : GeckoSession.ContentDelegate {
+            override fun onCloseRequest(session: GeckoSession) {
+                closePopup()
+            }
+
+            override fun onFirstComposite(session: GeckoSession) {
+                attach()
+            }
+        }
+        popupSession.navigationDelegate = object : GeckoSession.NavigationDelegate {
+            override fun onCanGoBack(session: GeckoSession, value: Boolean) {
+                canGoBack = value
+            }
+
+            override fun onNewSession(
+                session: GeckoSession,
+                nextUri: String
+            ): GeckoResult<GeckoSession>? {
+                return openScriptPopup(nextUri)
+            }
+        }
+        popupSession.progressDelegate = object : GeckoSession.ProgressDelegate {
+            override fun onPageStart(session: GeckoSession, url: String) {
+                attach()
+            }
+        }
+        liveSessions.add(popupSession)
+        AppLogger.d(TAG, "Script popup session created for $uri")
+        return GeckoResult.fromValue(popupSession)
     }
 
     private fun isLoopbackHost(host: String): Boolean {

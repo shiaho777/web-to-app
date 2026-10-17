@@ -1913,7 +1913,13 @@ class WebViewManager(
                 setInitialScale(0)
             }
 
-            settings.setSupportMultipleWindows(config.newWindowBehavior != NewWindowBehavior.SAME_WINDOW)
+            // Scripted window.open must reach onCreateWindow even when popups are
+            // configured to fold into the same page. Otherwise Google's sign-in
+            // popup replaces the app and window.close() never returns (#1316).
+            val scriptWindowsAllowed = config.javaScriptCanOpenWindows &&
+                config.jsOpenWindowsPolicy != com.webtoapp.data.model.JsOpenWindowsPolicy.BLOCK &&
+                config.newWindowBehavior != NewWindowBehavior.BLOCK
+            settings.setSupportMultipleWindows(scriptWindowsAllowed)
 
             webViewClient = createWebViewClient(config, callbacks)
 
@@ -4008,6 +4014,12 @@ class WebViewManager(
 
                 AppLogger.d("WebViewManager", "onCreateWindow: href=$href, behavior=${config.newWindowBehavior}")
 
+                if (ScriptWindowPolicy.keepRealPopup(href, config.newWindowBehavior) &&
+                    com.webtoapp.core.engine.ScriptPopupHost.canShow(context)
+                ) {
+                    return openRealScriptPopup(view, resultMsg)
+                }
+
                 val originalWebView = view
 
                 // Load the popup URL into the main WebView through a transport.
@@ -4090,8 +4102,74 @@ class WebViewManager(
             override fun onCloseWindow(window: WebView?) {
                 super.onCloseWindow(window)
                 AppLogger.d("WebViewManager", "onCloseWindow")
+                if (window != null) {
+                    com.webtoapp.core.engine.ScriptPopupHost.dismiss(window)
+                }
             }
         }
+    }
+
+    /**
+     * Keeps a `window.open` child alive as its own WebView so `window.opener`
+     * and `window.close()` work. Google's popup sign-in depends on both (#1316).
+     */
+    @SuppressLint("SetJavaScriptEnabled")
+    private fun openRealScriptPopup(parent: WebView, resultMsg: android.os.Message?): Boolean {
+        val transport = resultMsg?.obj as? WebView.WebViewTransport ?: return false
+        val popup = WebView(context)
+        popup.settings.javaScriptEnabled = parent.settings.javaScriptEnabled
+        popup.settings.javaScriptCanOpenWindowsAutomatically = true
+        popup.settings.setSupportMultipleWindows(true)
+        popup.settings.domStorageEnabled = parent.settings.domStorageEnabled
+        popup.settings.databaseEnabled = parent.settings.databaseEnabled
+        val parentUa = parent.settings.userAgentString
+        if (!parentUa.isNullOrBlank()) {
+            popup.settings.userAgentString = parentUa
+        }
+        CookieManager.getInstance().setAcceptCookie(true)
+        CookieManager.getInstance().setAcceptThirdPartyCookies(popup, true)
+        popup.webViewClient = WebViewClient()
+        popup.webChromeClient = object : WebChromeClient() {
+            override fun onCloseWindow(window: WebView?) {
+                com.webtoapp.core.engine.ScriptPopupHost.dismiss(popup)
+            }
+
+            override fun onCreateWindow(
+                view: WebView?,
+                isDialog: Boolean,
+                isUserGesture: Boolean,
+                nested: android.os.Message?
+            ): Boolean {
+                val childParent = view ?: return false
+                return openRealScriptPopup(childParent, nested)
+            }
+        }
+        var destroyed = false
+        fun destroyPopup() {
+            if (destroyed) return
+            destroyed = true
+            runCatching { popup.stopLoading() }
+            runCatching { popup.destroy() }
+        }
+        // Attach before handing the transport over. A WebView with no window
+        // never becomes window.opener for the page that called window.open.
+        val shown = com.webtoapp.core.engine.ScriptPopupHost.show(
+            context = context,
+            content = popup,
+            onBack = {
+                if (!popup.canGoBack()) return@show false
+                popup.goBack()
+                true
+            },
+            onDismiss = { destroyPopup() }
+        )
+        if (!shown) {
+            destroyPopup()
+            return false
+        }
+        transport.webView = popup
+        resultMsg.sendToTarget()
+        return true
     }
 
     private fun normalizeHttpUrlForSecurity(url: String): String {
