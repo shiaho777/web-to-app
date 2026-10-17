@@ -78,10 +78,10 @@
     
     <!--
         Keep this list to the FGS types actually used by the services below
-        (specialUse + mediaPlayback). ApkBuilder rebuilds the generated app's
-        manifest permissions from config and injects extra FOREGROUND_SERVICE_*
-        types itself, so a catch-all list here only produces false-positive
-        Play Console foreground-service declarations via the embedded template.
+        (specialUse + mediaPlayback). Export keeps a type only when its service
+        survives. DATA_SYNC is host-only (build keep-alive and Agent) and must
+        not appear here — a catch-all list produces false-positive Play
+        Console foreground-service declarations.
     -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />

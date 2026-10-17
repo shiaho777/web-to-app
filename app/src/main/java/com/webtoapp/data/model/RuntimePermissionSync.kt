@@ -96,10 +96,9 @@ fun featureRequiredRuntimePermissions(
         required = required.copy(location = true)
     }
     if (bgmEnabled) {
-        required = required.copy(
-            foregroundService = true,
-            notifications = true
-        )
+        // BGM posts a media notification from the player. It does not start a
+        // foreground service, so it must not latch FOREGROUND_SERVICE_* (#1313).
+        required = required.copy(notifications = true)
     }
     if (webView.enableMediaSession) {
         // WebMediaPlaybackService runs as a mediaPlayback foreground service and
@@ -235,7 +234,6 @@ fun featurePermissionReasons(
         add("location", PermissionFeatureReason.GEOLOCATION)
     }
     if (bgmEnabled) {
-        add("foregroundService", PermissionFeatureReason.BGM)
         add("notifications", PermissionFeatureReason.BGM)
     }
     if (webView.enableMediaSession) {

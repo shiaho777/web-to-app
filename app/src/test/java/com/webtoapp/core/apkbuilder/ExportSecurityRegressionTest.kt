@@ -150,6 +150,8 @@ class ExportSecurityRegressionTest {
         val permissions = method.invoke(builder, config) as List<String>
         assertThat(permissions).contains("android.permission.POST_NOTIFICATIONS")
         assertThat(permissions).contains("android.permission.FOREGROUND_SERVICE")
+        assertThat(permissions).contains("android.permission.FOREGROUND_SERVICE_SPECIAL_USE")
+        assertThat(permissions).doesNotContain("android.permission.FOREGROUND_SERVICE_DATA_SYNC")
         assertThat(permissions).contains("android.permission.WAKE_LOCK")
         assertThat(permissions).contains("android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS")
     }
@@ -176,15 +178,14 @@ class ExportSecurityRegressionTest {
 
         // enableMediaSession defaults ON: WebMediaPlaybackService is a
         // mediaPlayback foreground service holding a wake lock, so the manifest
-        // baseline includes FOREGROUND_SERVICE* + WAKE_LOCK (#1034).
+        // baseline includes that type + WAKE_LOCK (#1034). specialUse and
+        // dataSync are not used by a plain web shell (#1313).
         assertThat(permissions).containsExactly(
             "com.example.zenbox.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION",
             "android.permission.INTERNET",
             "android.permission.ACCESS_NETWORK_STATE",
             "android.permission.ACCESS_LOCAL_NETWORK",
             "android.permission.FOREGROUND_SERVICE",
-            "android.permission.FOREGROUND_SERVICE_SPECIAL_USE",
-            "android.permission.FOREGROUND_SERVICE_DATA_SYNC",
             "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
             "android.permission.WAKE_LOCK"
         ).inOrder()
@@ -266,8 +267,8 @@ class ExportSecurityRegressionTest {
         @Suppress("UNCHECKED_CAST")
         val permissions = method.invoke(builder, config) as List<String>
 
-        // enableMediaSession defaults ON, adding the generic foreground-service
-        // block + mediaPlayback type + WAKE_LOCK to the explicitly enabled set.
+        // enableMediaSession defaults ON, adding the mediaPlayback foreground
+        // service + WAKE_LOCK. specialUse and dataSync stay out (#1313).
         assertThat(permissions).containsExactly(
             "com.example.recorder.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION",
             "android.permission.INTERNET",
@@ -280,8 +281,6 @@ class ExportSecurityRegressionTest {
             "android.permission.ACCESS_FINE_LOCATION",
             "android.permission.POST_NOTIFICATIONS",
             "android.permission.FOREGROUND_SERVICE",
-            "android.permission.FOREGROUND_SERVICE_SPECIAL_USE",
-            "android.permission.FOREGROUND_SERVICE_DATA_SYNC",
             "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
             "android.permission.WAKE_LOCK",
             "android.permission.FOREGROUND_SERVICE_LOCATION",
@@ -317,8 +316,32 @@ class ExportSecurityRegressionTest {
             // defaults ON, so the alarm receiver ships in the baseline. It is
             // inert (manifest entry only) unless a page calls scheduleNotification.
             "androidx.core.content.FileProvider",
-            "com.webtoapp.core.notification.BridgeAlarmReceiver"
+            "com.webtoapp.core.notification.BridgeAlarmReceiver",
+            "com.webtoapp.core.webview.WebMediaPlaybackService"
         ).inOrder()
+    }
+
+    @Test
+    fun `media session disabled drops the playback service component`() {
+        val context = ApplicationProvider.getApplicationContext<android.content.Context>()
+        val builder = ApkBuilder(context)
+        val method = ApkBuilder::class.java.getDeclaredMethod(
+            "buildRequiredComponents",
+            ApkConfig::class.java
+        ).apply { isAccessible = true }
+
+        val config = WebApp(
+            name = "Zenbox",
+            url = "https://example.com",
+            appType = AppType.WEB,
+            webViewConfig = WebViewConfig(enableMediaSession = false),
+            apkExportConfig = ApkExportConfig()
+        ).toApkConfig("com.example.zenbox", context)
+
+        @Suppress("UNCHECKED_CAST")
+        val components = method.invoke(builder, config) as Set<String>
+
+        assertThat(components).doesNotContain("com.webtoapp.core.webview.WebMediaPlaybackService")
     }
 
     @Test
@@ -441,6 +464,7 @@ class ExportSecurityRegressionTest {
         assertThat(componentNames).doesNotContain("com.webtoapp.core.notification.NotificationPollingService")
         assertThat(componentNames).doesNotContain("com.webtoapp.core.notification.BridgeAlarmReceiver")
         assertThat(componentNames).doesNotContain("com.webtoapp.core.floatingwindow.FloatingWindowService")
+        assertThat(componentNames).doesNotContain("com.webtoapp.core.webview.WebMediaPlaybackService")
         assertThat(componentNames).doesNotContain("com.webtoapp.core.nodejs.NodeService")
         assertThat(componentNames).doesNotContain("com.webtoapp.core.autostart.BootReceiver")
         assertThat(componentNames).doesNotContain("com.webtoapp.core.autostart.ScheduledStartReceiver")

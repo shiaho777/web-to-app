@@ -84,7 +84,10 @@ data class ExportPerm(
  */
 data class PermissionFeatureDefaults(
     val network: Boolean = false,
-    val mediaSessionOrBgm: Boolean = false,
+    /** WebMediaPlaybackService ships. Background music only posts a notification. */
+    val mediaPlayback: Boolean = false,
+    /** Background run, notification polling, or the floating window. */
+    val specialUse: Boolean = false,
     val scheduledExactAlarm: Boolean = false,
     val activationBiometric: Boolean = false
 )
@@ -287,16 +290,20 @@ object ExportPermissionCatalog {
         normal("QUERY_ALL_PACKAGES", ExportPermGroup.SPECIAL, 30,
             playRestricted = true, legacy = { it.queryAllPackages }),
 
-        // Foreground-service types. The legacy switch declares the base permission
-        // plus specialUse and dataSync, which is what the shell services use.
+        // Each Play foreground-service type follows the service that actually
+        // ships. DATA_SYNC is host-only (ApkBuildService, AgentService) and is
+        // never a feature default — declaring it makes Play ask for a video
+        // of a service the generated app does not have (#1313).
         normal("FOREGROUND_SERVICE", ExportPermGroup.FOREGROUND, 28,
-            legacy = { it.foregroundService }, reasonKeys = setOf("foregroundService")),
+            legacy = { it.foregroundService },
+            feature = { _, defaults -> defaults.specialUse || defaults.mediaPlayback },
+            reasonKeys = setOf("foregroundService")),
         normal("FOREGROUND_SERVICE_SPECIAL_USE", ExportPermGroup.FOREGROUND, 34,
-            legacy = { it.foregroundService }, reasonKeys = setOf("foregroundService")),
-        normal("FOREGROUND_SERVICE_DATA_SYNC", ExportPermGroup.FOREGROUND, 34,
-            legacy = { it.foregroundService }, reasonKeys = setOf("foregroundService")),
+            feature = { _, defaults -> defaults.specialUse },
+            reasonKeys = setOf("foregroundService")),
+        normal("FOREGROUND_SERVICE_DATA_SYNC", ExportPermGroup.FOREGROUND, 34),
         normal("FOREGROUND_SERVICE_MEDIA_PLAYBACK", ExportPermGroup.FOREGROUND, 34,
-            feature = { perms, defaults -> perms.foregroundService && defaults.mediaSessionOrBgm },
+            feature = { _, defaults -> defaults.mediaPlayback },
             reasonKeys = setOf("foregroundService")),
         normal("FOREGROUND_SERVICE_LOCATION", ExportPermGroup.FOREGROUND, 34,
             legacy = { it.location }, reasonKeys = setOf("location")),
@@ -454,7 +461,7 @@ private val permBundles = listOf(
         { it.wifiState }, { p, v -> p.copy(wifiState = v) }),
     PermBundle("BODY_SENSORS", setOf("BODY_SENSORS", "BODY_SENSORS_BACKGROUND", "HIGH_SAMPLING_RATE_SENSORS"),
         { it.bodySensors }, { p, v -> p.copy(bodySensors = v) }),
-    PermBundle("FOREGROUND_SERVICE", setOf("FOREGROUND_SERVICE", "FOREGROUND_SERVICE_SPECIAL_USE", "FOREGROUND_SERVICE_DATA_SYNC"),
+    PermBundle("FOREGROUND_SERVICE", setOf("FOREGROUND_SERVICE"),
         { it.foregroundService }, { p, v -> p.copy(foregroundService = v) })
 )
 

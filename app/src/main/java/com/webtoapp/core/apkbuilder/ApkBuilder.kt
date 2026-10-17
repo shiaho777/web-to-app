@@ -3892,7 +3892,10 @@ builtins.__import__ = _w2a_import
             permissions = config.runtimePermissions,
             defaults = PermissionFeatureDefaults(
                 network = config.requiresNetworkPermissions(),
-                mediaSessionOrBgm = config.bgmEnabled || config.enableMediaSession,
+                mediaPlayback = config.enableMediaSession,
+                specialUse = config.backgroundRunEnabled ||
+                    config.notificationEnabled ||
+                    config.floatingWindowEnabled,
                 scheduledExactAlarm = config.scheduledStartEnabled,
                 activationBiometric = config.activationEnabled
             ),
@@ -3930,6 +3933,10 @@ builtins.__import__ = _w2a_import
 
         if (config.floatingWindowEnabled) {
             components += "com.webtoapp.core.floatingwindow.FloatingWindowService"
+        }
+
+        if (config.enableMediaSession) {
+            components += "com.webtoapp.core.webview.WebMediaPlaybackService"
         }
 
         if (config.bootStartEnabled || config.scheduledStartEnabled) {

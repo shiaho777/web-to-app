@@ -222,19 +222,40 @@ class ExportPermissionCatalogTest {
     }
 
     @Test
+    fun `foreground service boolean does not declare specialUse or dataSync`() {
+        val names = manifest(ApkRuntimePermissions(foregroundService = true))
+        assertThat(names).contains("android.permission.FOREGROUND_SERVICE")
+        assertThat(names).doesNotContain("android.permission.FOREGROUND_SERVICE_SPECIAL_USE")
+        assertThat(names).doesNotContain("android.permission.FOREGROUND_SERVICE_DATA_SYNC")
+        assertThat(names).doesNotContain("android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK")
+    }
+
+    @Test
+    fun `special use default declares only specialUse`() {
+        val names = manifest(
+            ApkRuntimePermissions(),
+            PermissionFeatureDefaults(specialUse = true)
+        )
+        assertThat(names).contains("android.permission.FOREGROUND_SERVICE")
+        assertThat(names).contains("android.permission.FOREGROUND_SERVICE_SPECIAL_USE")
+        assertThat(names).doesNotContain("android.permission.FOREGROUND_SERVICE_DATA_SYNC")
+        assertThat(names).doesNotContain("android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK")
+    }
+
+    @Test
     fun `explicit false blocks the media playback type that a feature would add`() {
         val permissions = ApkRuntimePermissions(foregroundService = true).withExportGrant(
             "FOREGROUND_SERVICE_MEDIA_PLAYBACK",
             false,
-            PermissionFeatureDefaults(mediaSessionOrBgm = true)
+            PermissionFeatureDefaults(mediaPlayback = true)
         )
         assertThat(
             permissions.exportGranted(
                 ExportPermissionCatalog.byKey.getValue("FOREGROUND_SERVICE"),
-                PermissionFeatureDefaults(mediaSessionOrBgm = true)
+                PermissionFeatureDefaults(mediaPlayback = true)
             )
         ).isTrue()
-        val names = manifest(permissions, PermissionFeatureDefaults(mediaSessionOrBgm = true))
+        val names = manifest(permissions, PermissionFeatureDefaults(mediaPlayback = true))
         assertThat(names).contains("android.permission.FOREGROUND_SERVICE")
         assertThat(names).doesNotContain("android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK")
     }

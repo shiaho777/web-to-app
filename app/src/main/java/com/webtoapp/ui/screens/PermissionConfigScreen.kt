@@ -108,7 +108,9 @@ fun permissionFeatureDefaults(
     appType: AppType,
     htmlLoadMode: HtmlLoadMode?,
     enableMediaSession: Boolean,
-    bgmEnabled: Boolean,
+    backgroundRunEnabled: Boolean,
+    notificationEnabled: Boolean,
+    floatingWindowEnabled: Boolean,
     scheduledStartEnabled: Boolean,
     activationEnabled: Boolean
 ): PermissionFeatureDefaults {
@@ -116,7 +118,8 @@ fun permissionFeatureDefaults(
         htmlLoadMode == HtmlLoadMode.FILE
     return PermissionFeatureDefaults(
         network = !fileOnly,
-        mediaSessionOrBgm = bgmEnabled || enableMediaSession,
+        mediaPlayback = enableMediaSession,
+        specialUse = backgroundRunEnabled || notificationEnabled || floatingWindowEnabled,
         scheduledExactAlarm = scheduledStartEnabled,
         activationBiometric = activationEnabled
     )

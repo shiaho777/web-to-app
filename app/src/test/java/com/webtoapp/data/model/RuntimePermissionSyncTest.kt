@@ -18,6 +18,20 @@ class RuntimePermissionSyncTest {
     }
 
     @Test
+    fun `background music requires notifications and not a foreground service`() {
+        val app = WebApp(
+            name = "Bgm",
+            url = "https://example.com",
+            bgmEnabled = true,
+            webViewConfig = WebViewConfig(enableMediaSession = false)
+        )
+        val required = app.featureRequiredRuntimePermissions()
+        assertThat(required.notifications).isTrue()
+        assertThat(required.foregroundService).isFalse()
+        assertThat(app.featurePermissionReasons()["foregroundService"]).isNull()
+    }
+
+    @Test
     fun `media session disabled requires no runtime permissions`() {
         val app = WebApp(
             name = "Plain",

@@ -539,7 +539,9 @@ fun CreateAppScreen(
                         appType = editState.appType,
                         htmlLoadMode = editState.htmlConfig?.loadMode,
                         enableMediaSession = editState.webViewConfig.enableMediaSession,
-                        bgmEnabled = editState.bgmEnabled,
+                        backgroundRunEnabled = editState.apkExportConfig?.backgroundRunEnabled == true,
+                        notificationEnabled = editState.apkExportConfig?.notificationEnabled == true,
+                        floatingWindowEnabled = editState.webViewConfig.floatingWindowConfig.enabled,
                         scheduledStartEnabled = editState.autoStartConfig?.scheduledStartEnabled == true,
                         activationEnabled = editState.activationEnabled
                     )
