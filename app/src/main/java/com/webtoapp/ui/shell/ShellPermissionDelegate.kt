@@ -116,6 +116,7 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
 
         pendingFilePathCallback = null
         cameraPhotoUri = null
+        com.webtoapp.core.webview.FileChooserLifetime.markClosed()
     }
 
     private var pendingFileChooserParams: WebChromeClient.FileChooserParams? = null
@@ -153,6 +154,9 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
      * something the camera can supply, then the chooser itself.
      */
     private fun continueWithSystemPicker(fileChooserParams: WebChromeClient.FileChooserParams?) {
+        // Keep the WebView that owns the ValueCallback alive until the picker
+        // returns. Tearing it down here reloads the start URL (#1319).
+        com.webtoapp.core.webview.FileChooserLifetime.markOpen()
         val needsCamera = isCameraRequired(fileChooserParams)
         val hasCameraPermission = ContextCompat.checkSelfPermission(
             activity, Manifest.permission.CAMERA
@@ -421,6 +425,7 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
             AppLogger.e("ShellPermission", "Failed to launch file chooser", e)
             pendingFilePathCallback?.onReceiveValue(null)
             pendingFilePathCallback = null
+            com.webtoapp.core.webview.FileChooserLifetime.markClosed()
         }
     }
 

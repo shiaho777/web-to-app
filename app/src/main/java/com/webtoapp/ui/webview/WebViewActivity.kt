@@ -392,6 +392,7 @@ open class WebViewActivity : AppCompatActivity() {
         }
         filePathCallback = null
         cameraPhotoUri = null
+        com.webtoapp.core.webview.FileChooserLifetime.markClosed()
     }
 
     private var pendingFileChooserParams: android.webkit.WebChromeClient.FileChooserParams? = null
@@ -409,6 +410,7 @@ open class WebViewActivity : AppCompatActivity() {
         filePathCallback?.onReceiveValue(null)
         filePathCallback = callback
         if (callback == null) return false
+        com.webtoapp.core.webview.FileChooserLifetime.markOpen()
 
         val needsCamera = isCameraRequiredForChooser(params)
         val hasCam = androidx.core.content.ContextCompat.checkSelfPermission(
@@ -580,6 +582,7 @@ open class WebViewActivity : AppCompatActivity() {
             AppLogger.e("WebViewActivity", "File chooser launch failed", e)
             filePathCallback?.onReceiveValue(null)
             filePathCallback = null
+            com.webtoapp.core.webview.FileChooserLifetime.markClosed()
         }
     }
 
@@ -3241,6 +3244,7 @@ fun WebViewScreen(
     DisposableEffect(lifecycleOwner) {
         val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
             if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                if (com.webtoapp.core.webview.FileChooserLifetime.isOpen()) return@LifecycleEventObserver
                 if (memoryTeardownPending) {
                     memoryTeardownPending = false
                     webViewRecreationKey++
@@ -3278,6 +3282,10 @@ fun WebViewScreen(
             override fun onLowMemory() {}
             override fun onTrimMemory(level: Int) {
                 if (!com.webtoapp.core.webview.WebViewMemoryTrimmer.onTrimMemory(level, context)) return
+                if (com.webtoapp.core.webview.FileChooserLifetime.isOpen()) {
+                    AppLogger.w("WebViewActivity", "File chooser open — keeping the WebView through trim")
+                    return
+                }
                 val wv = webViewRef ?: return
                 if (memoryTeardownPending) return
                 val bundle = android.os.Bundle()

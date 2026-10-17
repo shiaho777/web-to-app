@@ -450,6 +450,9 @@ fun ShellScreen(
     DisposableEffect(lifecycleOwner) {
         val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
             if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                // A file picker is still out. Recreating the WebView now would
+                // drop the ValueCallback and reload the start URL (#1319).
+                if (com.webtoapp.core.webview.FileChooserLifetime.isOpen()) return@LifecycleEventObserver
                 if (memoryTeardownPending) {
                     memoryTeardownPending = false
                     webViewRecreationKey++
@@ -487,6 +490,10 @@ fun ShellScreen(
             override fun onLowMemory() {}
             override fun onTrimMemory(level: Int) {
                 if (!com.webtoapp.core.webview.WebViewMemoryTrimmer.onTrimMemory(level, context)) return
+                if (com.webtoapp.core.webview.FileChooserLifetime.isOpen()) {
+                    AppLogger.w("ShellScreen", "File chooser open — keeping the WebView through trim")
+                    return
+                }
                 val wv = webViewRef ?: return
                 if (memoryTeardownPending) return
                 val bundle = android.os.Bundle()
