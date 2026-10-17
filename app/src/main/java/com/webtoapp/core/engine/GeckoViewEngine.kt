@@ -2027,9 +2027,9 @@ class GeckoViewEngine(
     }
 
     /**
-     * GeckoView has no `setInitialScale`. The same viewport script the system
+     * GeckoView has no `setInitialScale`. The same CSS-zoom script the system
      * WebView runs at document-start is applied once the page has stopped, so
-     * a non-100 `pageZoomPercent` is not a WebView-only feature (#1264).
+     * a non-100 `pageZoomPercent` is not a WebView-only feature (#1264, #1317).
      * `evaluateJavascript` loads a `javascript:` URI; skip those URLs so the
      * injection cannot schedule itself again.
      */

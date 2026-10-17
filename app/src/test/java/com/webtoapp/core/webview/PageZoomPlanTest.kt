@@ -71,28 +71,21 @@ class PageZoomPlanTest {
     }
 
     @Test
-    fun `document script locks a pixel width and survives a page meta rewrite`() {
+    fun `document script zooms with css and does not rewrite the viewport meta`() {
         val script = pageZoomDocumentScript(pageZoomPercent = 75, pinchEnabled = true)
         assertThat(script).isNotNull()
         assertThat(script!!).contains("var PCT=75")
-        assertThat(script).contains("var PINCH=1")
-        assertThat(script).contains("var NATIVE=0")
-        assertThat(script).contains("initial-scale=")
+        assertThat(script).contains("style.zoom")
         assertThat(script).contains("MutationObserver")
         assertThat(script).contains("window.top")
+        assertThat(script).doesNotContain("initial-scale=")
+        assertThat(script).doesNotContain("viewport")
         assertThat(script).doesNotContain("device-width")
         assertThat(script).doesNotContain("innerWidth")
-        val measured = pageZoomDocumentScript(75, pinchEnabled = true, nativeCssWidth = 800)
-        assertThat(measured).contains("var NATIVE=800")
+        val measured = pageZoomDocumentScript(75, pinchEnabled = false, nativeCssWidth = 800)
+        assertThat(measured).contains("var PCT=75")
+        assertThat(measured).doesNotContain("initial-scale=")
         assertThat(pageZoomDocumentScript(pageZoomPercent = 100, pinchEnabled = true)).isNull()
         assertThat(pageZoomDocumentScript(pageZoomPercent = 0, pinchEnabled = false)).isNull()
-    }
-
-    @Test
-    fun `pinch disabled locks user scaling`() {
-        val script = pageZoomDocumentScript(pageZoomPercent = 125, pinchEnabled = false)
-        assertThat(script).isNotNull()
-        assertThat(script!!).contains("var PCT=125")
-        assertThat(script).contains("var PINCH=0")
     }
 }

@@ -4540,8 +4540,9 @@ class WebViewManager(
     }
 
     /**
-     * Page zoom must run before the page's own viewport meta is applied.
-     * [android.webkit.WebView.setInitialScale] loses that race (#1264).
+     * Page zoom is CSS `zoom` on the root, installed before page scripts.
+     * Rewriting the viewport meta reloaded pages such as OpenChamber (#1317).
+     * [android.webkit.WebView.setInitialScale] loses to that meta (#1264).
      * Re-installs on every configure so a pooled WebView does not keep the
      * previous app's percent. Default zoom (100) removes a stale handler.
      */
