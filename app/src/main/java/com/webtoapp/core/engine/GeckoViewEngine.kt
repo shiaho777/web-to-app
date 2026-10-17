@@ -112,6 +112,18 @@ class GeckoViewEngine(
                     is String -> message
                     else -> message.toString()
                 }
+                val op = runCatching {
+                    org.json.JSONObject(requestJson).optString("op")
+                }.getOrNull()
+                if (op == "scope") {
+                    return GeckoResult.fromValue(
+                        org.json.JSONObject().apply {
+                            put("ok", true)
+                            put("op", "scope")
+                            put("scope", bridge.networkBridgeScope())
+                        }.toString()
+                    )
+                }
                 // onMessage runs on the UI thread. The blocking OkHttp call has to
                 // leave it, or Android throws NetworkOnMainThreadException and the
                 // page fetch fails (#1283).
@@ -832,6 +844,7 @@ class GeckoViewEngine(
                 webViewProvider = { null },
                 capabilities = config.nativeBridgeCapabilities,
                 corsBypass = config.enableCorsBypass,
+                networkScope = config.privateNetworkScope.name,
                 downloadLocationMode = config.downloadLocationMode,
                 customDownloadDirUri = config.customDownloadDirUri,
                 appOriginUrl = appOriginUrl,

@@ -64,6 +64,12 @@ class NativeBridge(
 
     private val corsBypass: Boolean = false,
 
+    /**
+     * Used when [corsBypass] is off. CORS bypass forces `CORS_BYPASS`.
+     * `LOCAL_ONLY` bridges private hosts only; `ALL` bridges every other host.
+     */
+    private val networkScope: String = "LOCAL_ONLY",
+
     private val downloadLocationMode: com.webtoapp.data.model.DownloadLocationMode =
         com.webtoapp.data.model.DownloadLocationMode.SYSTEM_DOWNLOAD,
 
@@ -88,6 +94,10 @@ class NativeBridge(
      */
     private val directoryGrantKey: String = ""
 ) {
+    /** Scope the Gecko content script should apply. CORS bypass wins. */
+    fun networkBridgeScope(): String =
+        if (corsBypass) "CORS_BYPASS" else networkScope
+
     private val directoryStore by lazy {
         LocalDirectoryStore(
             context = context,

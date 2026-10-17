@@ -6,12 +6,36 @@
 // routed through native OkHttp, bypassing the browser same-origin / CORS rules.
 //
 // Only registered by GeckoViewEngine when enableCorsBypass (or
-// enablePrivateNetworkBridge) is on. GeckoView has no prior private-network
-// bridge, so scope is treated as CORS_BYPASS (any http(s) URL, any method).
+// enablePrivateNetworkBridge) is on. The wrapper is installed only on local
+// pages, and same-origin requests stay in Gecko. Remote documents — including
+// Cloudflare challenge frames — keep the engine's own cookies and TLS (#1314).
 //
 // run_at: document_start, all_frames, <all_urls>.
 (function () {
   if (window.wrappedJSObject.__wta_gecko_bridge_installed__) return;
+
+  function isPrivateHost(host) {
+    if (!host) return false;
+    host = String(host).toLowerCase().replace(/^\[/, '').replace(/\]$/, '');
+    if (host === 'localhost' || host === '127.0.0.1' || host === '10.0.2.2' || host === '::1') return true;
+    if (host.endsWith('.local')) return true;
+    const parts = host.split('.');
+    if (parts.length !== 4) return false;
+    const nums = [];
+    for (let i = 0; i < parts.length; i++) {
+      if (!/^\d+$/.test(parts[i])) return false;
+      const n = Number(parts[i]);
+      if (n < 0 || n > 255) return false;
+      nums.push(n);
+    }
+    return nums[0] === 10 ||
+      (nums[0] === 172 && nums[1] >= 16 && nums[1] <= 31) ||
+      (nums[0] === 192 && nums[1] === 168) ||
+      nums[0] === 127;
+  }
+
+  // ittf.com and challenges.cloudflare.com land here and must not wrap fetch.
+  if (!isPrivateHost(window.location.hostname)) return;
 
   const NATIVE_APP = "wta_native_bridge";
 
@@ -64,7 +88,7 @@
   // page's own JS context (so replacing window.fetch is visible to page
   // scripts) while still able to call back into sendNative through the
   // exported wrapper.
-  const pageWorldSetup = function (sendNativeExported) {
+  const pageWorldSetup = function (sendNativeExported, readScope) {
     if (window.__wta_gecko_bridge_installed__) return;
     window.__wta_gecko_bridge_installed__ = true;
 
@@ -142,6 +166,48 @@
       try { return new URL(String(u), window.location.href).protocol === 'http:' || new URL(String(u), window.location.href).protocol === 'https:'; }
       catch (e) { return false; }
     }
+    function isPrivateHost(host) {
+      if (!host) return false;
+      host = String(host).toLowerCase().replace(/^\[/, '').replace(/\]$/, '');
+      if (host === 'localhost' || host === '127.0.0.1' || host === '10.0.2.2' || host === '::1') return true;
+      if (host.endsWith('.local')) return true;
+      const parts = host.split('.');
+      if (parts.length !== 4) return false;
+      const nums = [];
+      for (let i = 0; i < parts.length; i++) {
+        if (!/^\d+$/.test(parts[i])) return false;
+        const n = Number(parts[i]);
+        if (n < 0 || n > 255) return false;
+        nums.push(n);
+      }
+      return nums[0] === 10 ||
+        (nums[0] === 172 && nums[1] >= 16 && nums[1] <= 31) ||
+        (nums[0] === 192 && nums[1] === 168) ||
+        nums[0] === 127;
+    }
+    function bridgeScope() {
+      try {
+        if (typeof readScope === 'function') {
+          const value = readScope();
+          if (value) return String(value);
+        }
+      } catch (e) {}
+      return 'CORS_BYPASS';
+    }
+    // Same rule as the system WebView bridge: the page's own host stays on
+    // the engine. OkHttp would answer without Gecko's cookie jar.
+    function shouldBridge(url) {
+      let parsed;
+      try { parsed = new URL(String(url), window.location.href); }
+      catch (e) { return false; }
+      if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return false;
+      if (parsed.hostname.toLowerCase() === window.location.hostname.toLowerCase() &&
+          String(parsed.port) === String(window.location.port)) return false;
+      const scope = bridgeScope();
+      if (scope === 'CORS_BYPASS') return true;
+      if (scope === 'LOCAL_ONLY' && !isPrivateHost(parsed.hostname)) return false;
+      return true;
+    }
     // The Promise is born in this compartment. sendNativeExported only takes
     // callbacks, so page code never touches a sandbox Promise's .then (#1206).
     function callNative(payloadJson) {
@@ -158,7 +224,15 @@
         return callNative(JSON.stringify({ url: payload.url, method: payload.method || 'GET', headers: payload.headers || {}, bodyBase64 }));
       }).then((raw) => {
         const result = JSON.parse(String(raw || '{}'));
-        if (!result.ok) throw new TypeError(result.message || result.error || 'Native HTTP request failed');
+        if (!result.ok) {
+          const code = String(result.error || '');
+          if (code === 'URL_NOT_ALLOWED' || code === 'CALLER_NOT_ALLOWED') {
+            const err = new Error(code);
+            err.wtaUseBrowserStack = true;
+            throw err;
+          }
+          throw new TypeError(result.message || result.error || 'Native HTTP request failed');
+        }
         return result;
       });
     }
@@ -173,10 +247,13 @@
     if (nativeFetch) {
       window.fetch = function (input, init) {
         const payload = normalizeFetchInput(input, init);
-        if (!isHttpUrl(payload.url)) return nativeFetch(input, init);
+        if (!isHttpUrl(payload.url) || !shouldBridge(payload.url)) return nativeFetch(input, init);
         return nativeHttpRequest(payload).then((result) => {
           const bytes = base64ToBytes(result.bodyBase64 || '');
           return new Response(bytes, { status: Number(result.status || 0), statusText: String(result.statusText || ''), headers: result.headers || {} });
+        }).catch((err) => {
+          if (err && err.wtaUseBrowserStack) return nativeFetch(input, init);
+          throw err;
         });
       };
     }
@@ -205,7 +282,7 @@
       };
       BridgedXHR.prototype.open = function (method, url, async, user, password) {
         this._method = String(method || 'GET').toUpperCase(); this._url = new URL(String(url), window.location.href).href; this._async = async !== false; this.readyState = 1;
-        if (!isHttpUrl(this._url)) { this._native = true; return this._xhr.open(method, url, async, user, password); }
+        if (!isHttpUrl(this._url) || !shouldBridge(this._url)) { this._native = true; return this._xhr.open(method, url, async, user, password); }
         this._native = false; this._dispatch('readystatechange');
       };
       BridgedXHR.prototype.setRequestHeader = function (n, v) { if (this._native) return this._xhr.setRequestHeader(n, v); this._headers[String(n)] = String(v); };
@@ -226,7 +303,20 @@
             else { self.responseText = new TextDecoder().decode(bytes); self.response = self.responseText; }
             self.readyState = 4; self._dispatch('readystatechange'); self._dispatch('load'); self._dispatch('loadend');
           })
-          .catch(() => { self.readyState = 4; self._dispatch('readystatechange'); self._dispatch('error', { type: 'error', target: self }); self._dispatch('loadend'); });
+          .catch((err) => {
+            if (err && err.wtaUseBrowserStack) {
+              self._native = true;
+              try {
+                self._xhr.open(self._method, self._url, true);
+                Object.keys(self._headers).forEach((name) => {
+                  try { self._xhr.setRequestHeader(name, self._headers[name]); } catch (e) {}
+                });
+                self._xhr.send(body);
+                return;
+              } catch (e) {}
+            }
+            self.readyState = 4; self._dispatch('readystatechange'); self._dispatch('error', { type: 'error', target: self }); self._dispatch('loadend');
+          });
       };
       BridgedXHR.prototype.abort = function () { if (this._native) return this._xhr.abort(); };
       BridgedXHR.prototype.addEventListener = function (t, fn) { if (this._native) return this._xhr.addEventListener(t, fn); (this._listeners[t] = this._listeners[t] || []).push(fn); };
@@ -238,14 +328,28 @@
   // Export sendNative into the page world, then run the setup there.
   // GeckoView/Firefox content scripts run in a sandbox; exportFunction bridges
   // a callable into the page's compartment (Xray-safe).
+  // Default matches a CORS-bypass app. The session answers with the real
+  // scope (LOCAL_ONLY / ALL / CORS_BYPASS) and later requests read it live.
+  let bridgeScope = 'CORS_BYPASS';
+  function currentBridgeScope() { return bridgeScope; }
+  try {
+    browser.runtime.sendNativeMessage(NATIVE_APP, JSON.stringify({ op: 'scope' }), (response) => {
+      try {
+        const parsed = JSON.parse(String(response || '{}'));
+        if (parsed && typeof parsed.scope === 'string' && parsed.scope) bridgeScope = parsed.scope;
+      } catch (e) {}
+    });
+  } catch (e) {}
+
   try {
     if (typeof exportFunction === 'function') {
       exportFunction(sandboxSendNative, window, {
         defineAs: '__wtaSendNative',
         allowCrossOriginArguments: true
       });
+      exportFunction(currentBridgeScope, window, { defineAs: '__wtaBridgeScope' });
       window.wrappedJSObject.__wta_gecko_bridge_installed__ = false;
-      const setupSrc = '(' + pageWorldSetup.toString() + ')(window.__wtaSendNative);';
+      const setupSrc = '(' + pageWorldSetup.toString() + ')(window.__wtaSendNative, window.__wtaBridgeScope);';
       window.wrappedJSObject.eval(setupSrc);
     } else {
       // Non-Firefox-Gecko fallback (shouldn't happen on GeckoView, but be safe).
@@ -255,7 +359,7 @@
           (value) => resolve(value == null ? '' : String(value)),
           (err) => reject(err && err.message ? err.message : String(err))
         );
-      });
+      }, currentBridgeScope);
     }
   } catch (e) {
     console.error('[WTA Native Bridge] install failed:', e);

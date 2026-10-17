@@ -63,7 +63,7 @@ class GeckoNativeBridgeScriptTest {
         assertThat(manifest).contains("\"nativeMessagingFromContent\"")
         assertThat(manifest).contains("\"geckoViewAddons\"")
         assertWithMessage("version must move so an already-installed 1.0 extension updates")
-            .that(manifest).contains("\"version\": \"1.1\"")
+            .that(manifest).contains("\"version\": \"1.2\"")
 
         val engine = repoFile("app/src/main/java/com/webtoapp/core/engine/GeckoViewEngine.kt").readText()
         assertThat(engine).contains("wta-native-bridge@webtoapp")
@@ -86,5 +86,27 @@ class GeckoNativeBridgeScriptTest {
         val dispatch = engine.substringAfter("fun dispatchGeckoNativeHttp")
             .substringBefore("private fun bindNativeBridge")
         assertThat(dispatch).contains("Dispatchers.IO")
+    }
+
+    @Test
+    fun `remote pages keep gecko fetch so cloudflare clearance can stick`() {
+        val src = repoFile("app/src/main/assets/web_extensions/wta_native_bridge/content_script.js").readText()
+        val guard = src.substringAfter("function isPrivateHost")
+            .substringBefore("const NATIVE_APP")
+        assertThat(guard).contains("if (!isPrivateHost(window.location.hostname)) return;")
+
+        val page = src.substringAfter("const pageWorldSetup")
+        assertThat(page).contains("function shouldBridge")
+        assertThat(page).contains(
+            "parsed.hostname.toLowerCase() === window.location.hostname.toLowerCase()"
+        )
+        assertThat(page).contains("if (!isHttpUrl(payload.url) || !shouldBridge(payload.url))")
+
+        val engine = repoFile("app/src/main/java/com/webtoapp/core/engine/GeckoViewEngine.kt").readText()
+        val onMessage = engine.substringAfter("override fun onMessage(")
+            .substringBefore("dispatchGeckoNativeHttp")
+        assertThat(onMessage).contains("op == \"scope\"")
+        assertThat(onMessage).contains("networkBridgeScope()")
+        assertThat(onMessage).doesNotContain("httpRequest")
     }
 }
