@@ -1,0 +1,12 @@
+Added
+- A page can keep one chosen folder and read or write the files in it.
+
+Improved
+- Page zoom uses CSS, so a restored viewport no longer reloads the page.
+- Script-opened windows stay real popups, so Google sign-in can finish.
+- Generated APKs declare a foreground-service type only for a service that ships.
+
+Fixed
+- Opening the file chooser no longer reloads the page and drops the file.
+- Gecko leaves remote fetches on the engine, so Cloudflare checks can finish.
+- Zhipu GLM chat uses the v4 completions endpoint.

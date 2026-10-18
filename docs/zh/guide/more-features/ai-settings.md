@@ -9,7 +9,7 @@
 - **推荐** —— Google Gemini、OpenRouter。
 - **国际** —— OpenAI、Anthropic、Grok。
 - **聚合** —— Together、Perplexity、Fireworks。
-- **中国** —— DeepSeek、Qwen、GLM。
+- **中国** —— DeepSeek、Qwen、GLM。内置 GLM 对话发到智谱的 `/api/paas/v4/chat/completions`。自定义密钥仍可覆盖聊天端点。
 - **自托管** —— Ollama、LM Studio、vLLM。
 
 其他一律走 **自定义**:目录之外的提供商(或历史版本移除的提供商)都按自定义端点处理;引用已移除提供商的旧配置会自动迁移为自定义,并保留原 base URL。

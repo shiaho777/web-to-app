@@ -159,8 +159,8 @@ WebToApp 的开关非常多。下面按使用场景分组,并用可折叠区段�
 - **双引擎** —— 默认系统 WebView,可选 GeckoView(Firefox)运行时(首次使用时下载)。
 - **内核风味伪装** —— 对外表现为 Chrome、Edge、Samsung Internet、Firefox 或 Safari 风格,但真实引擎不变。
 - **桌面模式**、自定义 User-Agent,以及 document-start / end / idle 三种时机的 JS/CSS 注入。
-- **页面缩放** —— 按应用设置的百分比会锁住布局视口,文字、布局、图片和画布在系统 WebView 和 GeckoView 上一起缩放。
-- **弹窗处理** —— 当前窗口、外部浏览器、弹窗窗口或直接拦截。
+- **页面缩放** —— 按应用设置的百分比用文档根上的 CSS zoom 应用,文字、布局、图片和画布在系统 WebView 和 GeckoView 上一起缩放。页面写回自己的 viewport meta 时不会刷新。
+- **弹窗处理** —— 当前窗口、外部浏览器、弹窗窗口或直接拦截。脚本打开的窗口保持为真正的子窗口,弹窗登录可以把结果交给 `window.opener`。
 - **代理** —— 静态 HTTP/HTTPS/SOCKS5、PAC、身份验证、绕过规则和本地 HTTP-to-SOCKS 桥。
 - **DNS-over-HTTPS** —— Cloudflare、Google、AdGuard、NextDNS、CleanBrowsing、Quad9、Mullvad,以及自定义 endpoint;支持 strict / automatic 模式。
 - **ECH(Encrypted Client Hello)** —— 在**两种引擎**上加密 TLS 握手中的 SNI:GeckoView 经 TRR + 自身 ECH 配置;系统 WebView 经本地 MITM 桥的 Chromium 上行链路(首次使用自动下载组件,导出的 APK 内置)。开关启用时自动联动 DoH;与 SOCKS 上游代理互斥。
@@ -168,7 +168,7 @@ WebToApp 的开关非常多。下面按使用场景分组,并用可折叠区段�
 - **CORS 绕过** —— 默认开启,让受限静态 SPA 能调用原本被 CORS 拦截的外部 API;同源请求不会被误拦,仅需 CORS/内网桥接时可用轻量 `PrivateNetworkNativeBridgeAdapter`,不必挂完整 Native Bridge。
 - **回退链** —— 主目标不可达时自动回退到镜像 URL。
 - **PWA** 离线缓存策略、自定义错误页、每应用 hosts 覆写和支付协议处理。
-- **兼容开关** —— blob 下载拦截、滚动记忆、图片修复、剪贴板 / 方向 / 通知 polyfill、内网桥接和 Native Bridge 能力门控。
+- **兼容开关** —— blob 下载拦截、滚动记忆、图片修复、剪贴板 / 方向 / 通知 polyfill、内网桥接和 Native Bridge 能力门控。文件夹能力让页面记住一个选定目录,并在其中读写文件。
 - **下载位置** —— 系统 Downloads、应用私有目录、用户用 SAF 自选文件夹,或每次下载弹出系统保存对话框,整条打包透传链已接通。
 
 </details>
@@ -235,6 +235,7 @@ WebToApp 的开关非常多。下面按使用场景分组,并用可折叠区段�
 - **自定义包名**、`versionName`、`versionCode`、图标、名称、架构目标和导出格式。透明图标默认使用白色自适应底板,也可以选纯色,或选透明让底板空着。不透明图标沿用边缘颜色。
 - **SDK 级别** —— 可以把 minSdk 提高到 23 以上,并把 targetSdk 固定为 28、31、33、34、35 或 36。服务端运行时类型仍固定 28。Play AAB 导出仍会把 targetSdk 改写到 36。
 - **按生成 APK 的实际勾选注入权限** —— 第三方应用从 API 23 到 Android 17 可以声明的权限,一行一个。未使用的权限会从模板 manifest 中裁掉。
+- **前台服务类型** —— 生成的 APK 只在对应服务还在时才声明该类型。媒体会话关闭时不带媒体播放类型。`DATA_SYNC` 只留在宿主上。
 - **一键 AAB 导出** —— 按需自动构建 APK,转换成可直接上架的签名 AAB(自动把 `targetSdk` 改写到 Play 要求的级别,目前为 36,并在本地生成 protobuf 元数据);支持中途取消。除服务端运行时应用类型和开启资源加密的构建外全部可用 —— 见[哪些应用可以上架](https://shiaho777.github.io/web-to-app/zh/guide/more-features/google-play)。
 - **密钥库管理** —— 创建、导入、导出、删除和证书指纹查看;支持 PKCS12/PFX/JKS/BKS 导入,包括 Android Studio upload key 那种 store 密码和 key 密码不同的情况。
 - **签名方案** —— V1、V2、V3 独立控制,可对旧证书兼容性自动回退;自定义 V1 签名文件名,对应 `META-INF/<name>.SF` / `.RSA`。

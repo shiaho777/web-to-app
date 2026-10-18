@@ -159,8 +159,8 @@ WebToApp has a large number of switches. The sections below group them by use ca
 - **Dual engine** — System WebView by default, or an optional GeckoView (Firefox) runtime downloaded on first use.
 - **Kernel flavor disguise** — present as Chrome, Edge, Samsung Internet, Firefox, or Safari-style while keeping the real engine.
 - **Desktop mode**, custom User-Agent, and JS/CSS injection at document-start / end / idle.
-- **Page zoom** — a per-app percent that locks the layout viewport, so text, layout, images, and canvas scale together on the system WebView and on GeckoView.
-- **Popup handling** — same window, external browser, popup window, or block.
+- **Page zoom** — a per-app percent applied with CSS zoom on the document root, so text, layout, images, and canvas scale together on the system WebView and on GeckoView. A page that restores its own viewport meta does not reload.
+- **Popup handling** — same window, external browser, popup window, or block. A script-opened window stays a real child, so popup sign-in can reach `window.opener`.
 - **Proxies** — static HTTP/HTTPS/SOCKS5, PAC, authentication, bypass rules, and a local HTTP-to-SOCKS bridge.
 - **DNS-over-HTTPS** — Cloudflare, Google, AdGuard, NextDNS, CleanBrowsing, Quad9, Mullvad, plus custom endpoints; strict or automatic modes.
 - **Encrypted Client Hello (ECH)** — encrypt the SNI in the TLS handshake on **both engines**: GeckoView via TRR + its ECH prefs, the system WebView via the MITM bridge's Chromium upstream (auto-downloaded on first use, embedded in exported APKs). Auto-wires DoH when toggled; a SOCKS upstream proxy takes precedence.
@@ -168,7 +168,7 @@ WebToApp has a large number of switches. The sections below group them by use ca
 - **CORS bypass** — on by default for static SPAs that call external APIs blocked by CORS; same-origin traffic is left alone, and CORS-only apps can use a lightweight `PrivateNetworkNativeBridgeAdapter` without the full Native Bridge surface.
 - **Failover** — automatic fallback to mirror URLs when the primary target is unreachable.
 - **PWA** offline cache strategies, custom error pages, per-app host overrides, and payment-scheme handlers.
-- **Compatibility toggles** — blob download interception, scroll memory, image repair, clipboard / orientation / notification polyfills, private-network bridging, and Native Bridge capability gates.
+- **Compatibility toggles** — blob download interception, scroll memory, image repair, clipboard / orientation / notification polyfills, private-network bridging, and Native Bridge capability gates. The folder gate lets a page keep one chosen directory and read and write files inside it.
 - **Download location** — system Downloads, app-private storage, a user-picked SAF folder, or the system save dialog on every download, wired through the full packaging passthrough chain.
 
 </details>
@@ -235,6 +235,7 @@ WebToApp has a large number of switches. The sections below group them by use ca
 - **Custom package name**, `versionName`, `versionCode`, icon, label, architecture target, and export format. A transparent icon gets a white adaptive plate by default, or a solid color you pick, or a transparent plate. An opaque icon keeps its edge color.
 - **SDK levels** — raise minSdk above 23, and pin targetSdk to 28, 31, 33, 34, 35, or 36. Server-runtime types stay at 28. Play AAB export still rewrites targetSdk to 36.
 - **Build-time permission injection** — one row per permission a third-party app can declare from API 23 through Android 17. Unused permissions are pruned from the template manifest.
+- **Foreground service types** — a generated APK declares a type only when that service ships. Media playback is omitted when media session is off. `DATA_SYNC` stays on the host.
 - **One-tap AAB export** — auto-builds the APK on demand, converts it to a Play-ready signed AAB with `targetSdk` rewritten to the Play-required level (currently 36) and protobuf metadata generated locally; cancellable mid-build. Available for every app type except the server-runtime ones and encrypted builds — see [which apps can be published](https://shiaho777.github.io/web-to-app/guide/more-features/google-play).
 - **Keystore management** — create, import, export, delete, and certificate-fingerprint viewing; PKCS12/PFX/JKS/BKS import including Android Studio upload-key cases where store and key passwords differ.
 - **Signature schemes** — V1, V2, V3 independently controlled, with auto-fallback for legacy certificates; custom V1 signer filename for `META-INF/<name>.SF` / `.RSA`.

@@ -30,6 +30,9 @@ GeckoView is a complete second engine independent of the system WebView, not a W
 - JS dialogs (alert / confirm / prompt)
 - Page-load error UI, back / forward history navigation, auto-refresh, find-in-page, console script execution
 - Media session / lock-screen playback controls (native Gecko implementation)
+- Page zoom — CSS `zoom` on the document root, the same script as the system WebView. Pinch zoom stays the engine's own
+- Remote `fetch` and XHR stay on the engine, so a Cloudflare challenge can finish. The native bridge wraps those calls only on local pages
+- Script-opened windows stay real child windows, so popup sign-in can post to `window.opener` and then close
 
 ### Not available yet (choose the system WebView kernel if you need these)
 
@@ -41,12 +44,11 @@ GeckoView is a complete second engine independent of the system WebView, not a W
 - blob / data: download interception
 - The [long-press menu](/guide/app-actions/edit-common-config/long-press-menu) (save image/video, copy link, etc.)
 - Status-bar auto color sampling (follow page-top color; solid-color / theme modes are unaffected)
-- Text zoom (GeckoView applies the page-zoom percent by rewriting the layout viewport when the page finishes loading, and keeps its own pinch zoom)
 - Follow-system dark mode
 - Cookie policy (GeckoView always accepts all cookies)
 - Hosts mapping (domain → IP)
 - Console message capture and eval result return (scripts do run, but the panel receives no messages or return values)
-- New-window policy (GeckoView popups always load in the current window)
+- New-window policy for ordinary links (same window, external browser, or block). A script-opened window is a real child window instead
 - Proxy username / password authentication
 - WebView state save / restore (session restore after process death)
 

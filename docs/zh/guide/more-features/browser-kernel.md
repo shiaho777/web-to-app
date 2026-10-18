@@ -30,6 +30,9 @@ GeckoView 是独立于系统 WebView 的完整第二引擎,而不是 WebView 的
 - JS 对话框(alert / confirm / prompt)
 - 页面加载错误提示、前进 / 后退历史导航、自动刷新、页内查找、控制台脚本执行
 - 媒体会话 / 锁屏播放控制(Gecko 原生实现)
+- 页面缩放 —— 文档根上的 CSS `zoom`,与系统 WebView 同一段脚本。双指缩放仍用引擎自己的
+- 远程页面的 `fetch` 和 XHR 留在引擎上,Cloudflare 验证可以完成。原生桥只在本地页面接管这些请求
+- 脚本打开的窗口保持为真正的子窗口,弹窗登录可以把结果交给 `window.opener` 然后关闭
 
 ### 暂不可用(需要这些功能请选择系统 WebView 内核)
 
@@ -41,12 +44,11 @@ GeckoView 是独立于系统 WebView 的完整第二引擎,而不是 WebView 的
 - blob / data: 下载拦截
 - [长按菜单](/zh/guide/app-actions/edit-common-config/long-press-menu)(保存图片 / 视频、复制链接等)
 - 状态栏自动取色(跟随页面顶部颜色;纯色 / 主题模式不受影响)
-- 文字缩放(GeckoView 会在页面加载完成后改写布局视口,从而应用页面缩放百分比,并保留自己的双指缩放)
 - 跟随系统深色模式
 - Cookie 策略(GeckoView 固定接受全部 Cookie)
 - Hosts 映射(域名 → IP)
 - 控制台消息回传与 eval 结果返回(脚本会执行,但面板收不到消息与返回值)
-- 新窗口策略(GeckoView 弹窗一律在当前窗口加载)
+- 普通链接的新窗口策略(当前窗口、外部浏览器或拦截)。脚本打开的窗口则是真正的子窗口
 - 代理的用户名 / 密码认证
 - WebView 状态保存 / 恢复(进程被杀后的会话还原)
 

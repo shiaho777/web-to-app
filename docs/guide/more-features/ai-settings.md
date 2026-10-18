@@ -9,7 +9,7 @@ The built-in catalog keeps well-known providers only, at most three per category
 - **Recommended** — Google Gemini, OpenRouter.
 - **International** — OpenAI, Anthropic, Grok.
 - **Aggregator** — Together, Perplexity, Fireworks.
-- **Chinese** — DeepSeek, Qwen, GLM.
+- **Chinese** — DeepSeek, Qwen, GLM. Built-in GLM chat posts to Zhipu's `/api/paas/v4/chat/completions`. A custom key can still override the chat endpoint.
 - **Self-hosted** — Ollama, LM Studio, vLLM.
 
 Anything else fits **Custom**: any provider not in the catalog (or removed by a past update) is handled as a custom endpoint, and legacy configs referencing a removed provider migrate to Custom automatically with their base URL preserved.
