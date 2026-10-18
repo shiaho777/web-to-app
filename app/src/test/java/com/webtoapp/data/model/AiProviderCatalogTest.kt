@@ -50,6 +50,15 @@ class AiProviderCatalogTest {
     }
 
     @Test
+    fun `glm chat endpoint is the v4 completions path`() {
+        val config = ApiKeyConfig(provider = AiProvider.GLM, apiKey = "sk-test")
+        assertThat(config.getEffectiveModelsEndpoint()).isEqualTo("/v4/models")
+        assertThat(config.getEffectiveChatEndpoint()).isEqualTo("/v4/chat/completions")
+        assertThat(config.copy(customChatEndpoint = "/custom/chat").getEffectiveChatEndpoint())
+            .isEqualTo("/custom/chat")
+    }
+
+    @Test
     fun `api format display names carry the wire endpoints`() {
         assertThat(ApiFormat.ANTHROPIC.displayName).contains("/v1/messages")
         assertThat(ApiFormat.OPENAI_COMPATIBLE.displayName).contains("/chat/completions")

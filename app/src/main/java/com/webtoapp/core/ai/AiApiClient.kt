@@ -136,7 +136,9 @@ class AiApiClient(private val context: Context) {
             when (apiKey.provider) {
                 AiProvider.GOOGLE -> chatWithGemini(baseUrl, apiKey.apiKey, model.id, probe, 0.7f)
                 AiProvider.ANTHROPIC -> chatWithAnthropic(baseUrl, apiKey.apiKey, model.id, probe, 0.7f)
-                AiProvider.GLM -> chatWithGLM(baseUrl, apiKey.apiKey, model.id, probe, 0.7f)
+                AiProvider.GLM -> chatWithGLM(
+                    baseUrl, apiKey.apiKey, model.id, probe, 0.7f, apiKey.getEffectiveChatEndpoint()
+                )
                 AiProvider.OLLAMA -> chatWithOllama(baseUrl, apiKey.apiKey, model.id, probe, 0.7f)
                 else -> probeOpenAICompatible(baseUrl, apiKey, model.id, probe)
             }
@@ -605,7 +607,10 @@ class AiApiClient(private val context: Context) {
 
             when (apiKey.provider) {
                 AiProvider.GOOGLE -> generateIconWithGemini(baseUrl, apiKey.apiKey.trim(), model.model.id, iconPrompt, imageDataList)
-                else -> generateIconWithOpenAIFormat(baseUrl, apiKey.apiKey.trim(), model.model.id, iconPrompt, imageDataList)
+                else -> generateIconWithOpenAIFormat(
+                    baseUrl, apiKey.apiKey.trim(), model.model.id, iconPrompt, imageDataList,
+                    apiKey.getEffectiveChatEndpoint()
+                )
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -666,7 +671,8 @@ class AiApiClient(private val context: Context) {
 
     private fun generateIconWithOpenAIFormat(
         baseUrl: String, apiKey: String, modelId: String,
-        prompt: String, images: List<String>
+        prompt: String, images: List<String>,
+        chatEndpoint: String
     ): Result<String> {
         val content = com.google.gson.JsonArray().apply {
             add(JsonObject().apply {
@@ -695,7 +701,7 @@ class AiApiClient(private val context: Context) {
         }
 
         val request = Request.Builder()
-            .url("$baseUrl/v1/chat/completions")
+            .url(buildApiUrl(baseUrl, chatEndpoint))
             .header("Authorization", "Bearer ${apiKey.sanitize()}")
             .post(gson.toJson(body).toRequestBody("application/json".toMediaType()))
             .build()
@@ -766,7 +772,9 @@ class AiApiClient(private val context: Context) {
             when (apiKey.provider) {
                 AiProvider.GOOGLE -> chatWithGemini(baseUrl, apiKey.apiKey, model.id, messages, temperature)
                 AiProvider.ANTHROPIC -> chatWithAnthropic(baseUrl, apiKey.apiKey, model.id, messages, temperature)
-                AiProvider.GLM -> chatWithGLM(baseUrl, apiKey.apiKey, model.id, messages, temperature)
+                AiProvider.GLM -> chatWithGLM(
+                    baseUrl, apiKey.apiKey, model.id, messages, temperature, apiKey.getEffectiveChatEndpoint()
+                )
                 AiProvider.OLLAMA -> chatWithOllama(baseUrl, apiKey.apiKey, model.id, messages, temperature)
                 else -> chatWithOpenAICompatible(baseUrl, apiKey.apiKey, model.id, messages, temperature)
             }
@@ -920,7 +928,8 @@ class AiApiClient(private val context: Context) {
         apiKey: String,
         modelId: String,
         messages: List<Map<String, String>>,
-        temperature: Float
+        temperature: Float,
+        chatEndpoint: String
     ): Result<String> {
         val messagesArray = com.google.gson.JsonArray()
         messages.forEach { msg ->
@@ -938,7 +947,7 @@ class AiApiClient(private val context: Context) {
         }
 
         val request = Request.Builder()
-            .url("$baseUrl/v4/chat/completions")
+            .url(buildApiUrl(baseUrl, chatEndpoint))
             .header("Authorization", "Bearer ${apiKey.sanitize()}")
             .header("Content-Type", "application/json")
             .post(gson.toJson(body).toRequestBody("application/json".toMediaType()))
@@ -1534,7 +1543,10 @@ val json = gson.fromJson(body, JsonObject::class.java)
             when (apiKey.provider) {
                 AiProvider.GOOGLE -> chatWithToolsGemini(baseUrl, apiKey.apiKey.trim(), model.id, messages, tools, temperature)
                 AiProvider.ANTHROPIC -> chatWithToolsAnthropic(baseUrl, apiKey.apiKey.sanitize(), model.id, messages, tools, temperature)
-                else -> chatWithToolsOpenAI(baseUrl, apiKey.apiKey.sanitize(), model.id, messages, tools, temperature)
+                else -> chatWithToolsOpenAI(
+                    baseUrl, apiKey.apiKey.sanitize(), model.id, messages, tools, temperature,
+                    apiKey.getEffectiveChatEndpoint()
+                )
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -1547,7 +1559,8 @@ val json = gson.fromJson(body, JsonObject::class.java)
         modelId: String,
         messages: List<Map<String, String>>,
         tools: List<Map<String, Any>>,
-        temperature: Float
+        temperature: Float,
+        chatEndpoint: String
     ): Result<ToolCallResponse> {
         val messagesArray = com.google.gson.JsonArray()
         messages.forEach { msg ->
@@ -1571,7 +1584,7 @@ val json = gson.fromJson(body, JsonObject::class.java)
         }
 
         val request = Request.Builder()
-            .url("$baseUrl/v1/chat/completions")
+            .url(buildApiUrl(baseUrl, chatEndpoint))
             .header("Authorization", "Bearer $apiKey")
             .header("Content-Type", "application/json")
             .post(gson.toJson(body).toRequestBody("application/json".toMediaType()))
@@ -2271,19 +2284,17 @@ val json = gson.fromJson(body, JsonObject::class.java)
             })
         }
 
-        val streamEndpoint = when (apiKey.provider) {
-            AiProvider.GLM -> "/v4/chat/completions"
-            else -> "/v1/chat/completions"
-        }
+        val streamEndpoint = apiKey.getEffectiveChatEndpoint()
+        val streamUrl = buildApiUrl(baseUrl, streamEndpoint)
 
         val requestBodyJson = gson.toJson(body)
-        AppLogger.d("AiApiClient", "🔧 Tool calling request URL: $baseUrl$streamEndpoint")
+        AppLogger.d("AiApiClient", "🔧 Tool calling request URL: $streamUrl")
         AppLogger.d("AiApiClient", "🔧 Tool calling request model: $modelId")
         AppLogger.d("AiApiClient", "🔧 Tool calling request tools count: ${tools.size}")
         AppLogger.d("AiApiClient", "🔧 Tool calling request body (first 1000 chars): ${requestBodyJson.take(1000)}")
 
         return Request.Builder()
-            .url("$baseUrl$streamEndpoint")
+            .url(streamUrl)
             .header("Authorization", "Bearer ${apiKey.apiKey.sanitize()}")
             .header("Content-Type", "application/json")
             .header("Accept", "text/event-stream")

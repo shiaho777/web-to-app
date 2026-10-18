@@ -352,6 +352,9 @@ data class ApiKeyConfig(
             AiProvider.ANTHROPIC -> "/v1/messages"
             AiProvider.GOOGLE -> "/v1beta/models"
             AiProvider.OLLAMA -> "/api/chat"
+            // Zhipu publishes Chat Completions under /api/paas/v4, the same version as
+            // modelsEndpoint. /v1/chat/completions is a different API and 404s (#1320).
+            AiProvider.GLM -> "/v4/chat/completions"
             AiProvider.CUSTOM -> when (apiFormat) {
                 ApiFormat.ANTHROPIC -> "/v1/messages"
                 ApiFormat.OPENAI_RESPONSES -> "/v1/responses"

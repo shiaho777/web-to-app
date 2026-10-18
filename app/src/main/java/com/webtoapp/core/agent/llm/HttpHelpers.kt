@@ -45,7 +45,11 @@ internal object HttpHelpers {
             400 -> "Bad request (400): ${body.take(300)}"
             401 -> "API key invalid or expired (401)"
             403 -> "Access denied (403)"
-            404 -> "Endpoint or model not found (404)"
+            404 -> {
+                val detail = body.take(300).trim()
+                if (detail.isEmpty()) "Endpoint or model not found (404)"
+                else "Endpoint or model not found (404): $detail"
+            }
             429 -> "Rate limited (429)"
             in 500..599 -> "Server error ($code)"
             else -> "Request failed ($code): ${body.take(300)}"
