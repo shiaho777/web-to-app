@@ -40,7 +40,7 @@ internal fun injectTranslateScript(webView: android.webkit.WebView, targetLangua
                             delete pendingCallbacks[callbackId];
                             reject('Translation timeout');
                         }
-                    }, 30000);
+                    }, 120000);
 
                     if (window._nativeTranslate && window._nativeTranslate.translate) {
                         window._nativeTranslate.translate(JSON.stringify(texts), targetLang, callbackId);

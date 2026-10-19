@@ -83,6 +83,11 @@ object LegacyProxyFetchBridge {
 
     fun configure(newSpec: Spec?) {
         spec = newSpec
+        when (newSpec?.kind) {
+            Kind.HTTP -> TranslateProxyRoute.useHttp(newSpec.host, newSpec.port)
+            Kind.SOCKS -> TranslateProxyRoute.useSocks(newSpec.host, newSpec.port)
+            Kind.BROKEN, null -> TranslateProxyRoute.clear()
+        }
         if (newSpec == null) {
             synchronized(lock) {
                 client?.dispatcher?.executorService?.shutdown()

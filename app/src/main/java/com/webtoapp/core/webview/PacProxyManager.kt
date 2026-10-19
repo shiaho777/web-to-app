@@ -148,9 +148,13 @@ class PacProxyManager(private val context: Context) {
                     LocalHttpToSocksBridge.Upstream(host, port, username, password)
                 )
                 if (bridgePort <= 0) {
+                    TranslateProxyRoute.clear()
                     AppLogger.e(TAG, "Local SOCKS5 bridge failed to start; aborting proxy apply")
                     return
                 }
+                // The bridge speaks HTTP CONNECT. Translation requests use the same hop
+                // because HttpURLConnection does not see ProxyController.
+                TranslateProxyRoute.useHttp("127.0.0.1", bridgePort)
                 AppLogger.i(
                     TAG,
                     "WebView SOCKS5 routed via local bridge 127.0.0.1:$bridgePort -> $host:$port"
@@ -160,8 +164,15 @@ class PacProxyManager(private val context: Context) {
 
                 LocalHttpToSocksBridge.stop()
                 when (upperType) {
-                    "HTTPS" -> "https://$host:$port"
-                    else -> "$host:$port"
+                    "HTTPS" -> {
+                        // java.net.Proxy cannot speak an HTTPS upstream proxy.
+                        TranslateProxyRoute.clear()
+                        "https://$host:$port"
+                    }
+                    else -> {
+                        TranslateProxyRoute.useHttp(host, port)
+                        "$host:$port"
+                    }
                 }
             }
 
@@ -211,6 +222,8 @@ class PacProxyManager(private val context: Context) {
                 clearProxy()
                 return
             }
+
+            publishTranslationRoute(proxyEntries)
 
             val builder = ProxyConfig.Builder()
 
@@ -267,6 +280,41 @@ class PacProxyManager(private val context: Context) {
         } catch (e: Exception) {
             AppLogger.e(TAG, "Failed to apply PAC proxy", e)
         }
+    }
+
+    /**
+     * Point translation requests at the same first hop the WebView just got.
+     * DIRECT and HTTPS-upstream entries stay direct: [java.net.Proxy] cannot speak
+     * an HTTPS proxy, and DIRECT must not be forced through a dead hop.
+     */
+    private fun publishTranslationRoute(entries: List<String>) {
+        for (entry in entries) {
+            val trimmed = entry.trim()
+            when {
+                trimmed.equals("DIRECT", ignoreCase = true) -> {
+                    TranslateProxyRoute.clear()
+                    return
+                }
+                trimmed.startsWith("SOCKS5 ", ignoreCase = true) ||
+                    trimmed.startsWith("SOCKS ", ignoreCase = true) -> {
+                    val server = trimmed.substringAfter(" ").trim()
+                    val (host, port) = LegacyProxyFetchBridge.splitHostPort(server) ?: continue
+                    TranslateProxyRoute.useSocks(host, port)
+                    return
+                }
+                trimmed.startsWith("PROXY ", ignoreCase = true) -> {
+                    val server = trimmed.substringAfter(" ").trim()
+                    val (host, port) = LegacyProxyFetchBridge.splitHostPort(server) ?: continue
+                    TranslateProxyRoute.useHttp(host, port)
+                    return
+                }
+                trimmed.startsWith("HTTPS ", ignoreCase = true) -> {
+                    TranslateProxyRoute.clear()
+                    return
+                }
+            }
+        }
+        TranslateProxyRoute.clear()
     }
 
     /**

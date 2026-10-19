@@ -2217,6 +2217,7 @@ class WebViewManager(
                     dnsManager = dnsManager
                 )
                 if (bridgePort > 0) {
+                    TranslateProxyRoute.useHttp("127.0.0.1", bridgePort)
                     val bridgeMode = if (hostsMappingCanApply && dohCanApplyViaLocalProxy) {
                         "hosts mapping + DoH"
                     } else if (dohCanApplyViaLocalProxy) {
