@@ -9,6 +9,8 @@ import com.webtoapp.core.agent.llm.LlmGateway
 import com.webtoapp.core.agent.llm.LlmMessage
 import com.webtoapp.core.agent.llm.LlmToolCall
 import com.webtoapp.core.agent.llm.ToolDeclaration
+import com.webtoapp.core.ai.ApiKeyRotation
+import com.webtoapp.core.ai.LimitScope
 import com.webtoapp.core.agent.permission.PermissionChecker
 import com.webtoapp.core.agent.permission.PermissionDecision
 import com.webtoapp.core.agent.tool.ToolContext
@@ -30,7 +32,8 @@ import kotlinx.coroutines.withTimeoutOrNull
 class AgentEngine(
     private val gateway: LlmGateway,
     private val permissionChecker: PermissionChecker,
-    private val abortController: AbortController = AbortController()
+    private val abortController: AbortController = AbortController(),
+    private val keyRotation: ApiKeyRotation = ApiKeyRotation.shared
 ) {
 
     data class Input(
@@ -92,11 +95,49 @@ class AgentEngine(
                 var finishReason = FinishReason.STOP
                 var hardError: String? = null
                 var continuationCount = 0
-                var retryableError: String? = null
-                var retryAfterMs: Long? = null
+                var attemptError: String? = null
+                var attemptRetryAfter: Long? = null
+                var attemptHttp: Int? = null
+                var attemptScope: LimitScope? = null
+                var attemptRecoverable = false
+                var attempts = 0
+                val boundKey = input.toolContext.textApiKey
+                val textPool = input.toolContext.textKeyPool.ifEmpty { listOf(boundKey) }
+                val modelId = input.toolContext.textModel.model.id
+                var textKey = boundKey
+                val attemptCap = textPool.size + ApiKeyRotation.MAX_SAME_KEY_RETRIES + 1
 
                 do {
                     if (abortController.aborted) { send(AgentEvent.Aborted); return@channelFlow }
+                    if (++attempts > attemptCap) {
+                        hardError = attemptError ?: Strings.agentNoReadyApiKey
+                        break
+                    }
+
+                    val picked = keyRotation.select(boundKey, textPool, modelId)
+                    if (picked == null) {
+                        val wait = keyRotation.soonestWaitMs(boundKey, textPool, modelId)
+                        if (wait != null && wait <= ApiKeyRotation.MAX_INLINE_WAIT_MS &&
+                            rateLimitRetries < ApiKeyRotation.MAX_SAME_KEY_RETRIES
+                        ) {
+                            rateLimitRetries++
+                            send(AgentEvent.Notice(Strings.agentRateLimitRetry(
+                                rateLimitRetries, ApiKeyRotation.MAX_SAME_KEY_RETRIES, wait
+                            )))
+                            delay(wait)
+                            continue
+                        }
+                        val minutes = wait?.let { ((it + 59_999) / 60_000).coerceAtLeast(1) }
+                        hardError = attemptError
+                            ?: if (minutes != null) Strings.agentKeysCooling(minutes) else Strings.agentNoReadyApiKey
+                        break
+                    }
+                    textKey = picked
+                    attemptError = null
+                    attemptRetryAfter = null
+                    attemptHttp = null
+                    attemptScope = null
+                    attemptRecoverable = false
 
                     val isContinuation = continuationCount > 0
                     val baseMessages = if (isContinuation && turnText.isNotEmpty()) {
@@ -118,7 +159,7 @@ class AgentEngine(
                     // turn then hangs forever on "thinking" (the #742 regression).
                     gateway.chatStream(
                         ChatRequest(
-                            apiKey = input.toolContext.textApiKey,
+                            apiKey = textKey,
                             model = input.toolContext.textModel.model,
                             messages = requestMessages,
                             tools = declarations,
@@ -128,7 +169,13 @@ class AgentEngine(
                         )
                     ).collectWithIdleTimeout(
                         idleTimeoutMs = STREAM_IDLE_TIMEOUT_MS,
-                        onTimeout = { retryableError = "LLM stream went idle for ${STREAM_IDLE_TIMEOUT_MS / 1000}s"; retryAfterMs = null }
+                        onTimeout = {
+                            attemptError = "LLM stream went idle for ${STREAM_IDLE_TIMEOUT_MS / 1000}s"
+                            attemptRetryAfter = null
+                            attemptHttp = null
+                            attemptScope = null
+                            attemptRecoverable = true
+                        }
                     ) { ev ->
                         when (ev) {
                             is LlmEvent.Started -> Unit
@@ -177,37 +224,65 @@ class AgentEngine(
                                 }
                             }
                             is LlmEvent.Done -> finishReason = ev.finishReason
-                            is LlmEvent.Error -> if (!ev.recoverable) hardError = ev.message
-                                                  else { retryableError = ev.message; retryAfterMs = ev.retryAfterMs }
+                            is LlmEvent.Error -> {
+                                val rotatable = ev.httpCode == 401 || ev.httpCode == 403 ||
+                                    ev.httpCode == 429 || ev.limitScope != null
+                                if (!ev.recoverable && !rotatable) {
+                                    hardError = ev.message
+                                } else {
+                                    attemptError = ev.message
+                                    attemptRetryAfter = ev.retryAfterMs
+                                    attemptHttp = ev.httpCode
+                                    attemptScope = ev.limitScope
+                                    attemptRecoverable = ev.recoverable || rotatable
+                                }
+                            }
                         }
                     }
 
                     if (hardError != null) break
-                    if (retryableError != null) {
-                        if (rateLimitRetries >= MAX_RATE_LIMIT_RETRIES) {
-                            hardError = retryableError
-                            break
+                    if (attemptError != null) {
+                        when (val decision = keyRotation.onFailure(
+                            current = textKey,
+                            bound = boundKey,
+                            pool = textPool,
+                            modelId = modelId,
+                            httpCode = attemptHttp,
+                            retryAfterMs = attemptRetryAfter,
+                            limitScope = attemptScope,
+                            recoverable = attemptRecoverable,
+                            sameKeyRetries = rateLimitRetries
+                        )) {
+                            is ApiKeyRotation.KeyDecision.Switch -> {
+                                AppLogger.i(TAG, "API key cooled, switching to ${decision.masked}")
+                                send(AgentEvent.Notice(Strings.agentKeySwitched(decision.masked)))
+                                // Drop this attempt's partial output before the next key
+                                // speaks, or the timeline and the saved message repeat it.
+                                rebuildAccFromPrefix()
+                                turnText.setLength(0)
+                                turnThinking.setLength(0)
+                                pending.clear()
+                                finishReason = FinishReason.STOP
+                                continue
+                            }
+                            is ApiKeyRotation.KeyDecision.Backoff -> {
+                                rateLimitRetries = decision.sameKeyRetries
+                                send(AgentEvent.Notice(Strings.agentRateLimitRetry(
+                                    rateLimitRetries, ApiKeyRotation.MAX_SAME_KEY_RETRIES, decision.waitMs
+                                )))
+                                rebuildAccFromPrefix()
+                                turnText.setLength(0)
+                                turnThinking.setLength(0)
+                                pending.clear()
+                                finishReason = FinishReason.STOP
+                                delay(decision.waitMs)
+                                continue
+                            }
+                            is ApiKeyRotation.KeyDecision.Fail -> {
+                                hardError = attemptError
+                                break
+                            }
                         }
-                        rateLimitRetries++
-                        val backoff = retryAfterMs ?: (1000L shl (rateLimitRetries - 1).coerceAtMost(4))
-                        send(AgentEvent.Notice(Strings.agentRateLimitRetry(rateLimitRetries, MAX_RATE_LIMIT_RETRIES, backoff)))
-
-                        // The retry regenerates this attempt from scratch: clear the
-                        // attempt-local accumulators (text, thinking, pending tool calls)
-                        // and rebuild the global accumulated text WITHOUT the attempt-1
-                        // partial output, otherwise the retry duplicates everything in the
-                        // UI timeline, the persisted message, and can resurrect phantom
-                        // tool calls from the aborted attempt.
-                        rebuildAccFromPrefix()
-                        turnText.setLength(0)
-                        turnThinking.setLength(0)
-                        pending.clear()
-                        finishReason = FinishReason.STOP
-
-                        delay(backoff)
-                        retryableError = null
-                        retryAfterMs = null
-                        continue
                     }
                     if (finishReason == FinishReason.LENGTH && continuationCount < maxContinuations && turnText.isNotEmpty()) {
                         continuationCount++
@@ -493,7 +568,6 @@ class AgentEngine(
     companion object {
         private const val TAG = "AgentEngine"
         private const val MAX_TOOL_RESULT_CHARS = 32_000
-        private const val MAX_RATE_LIMIT_RETRIES = 5
 
         // Some OpenAI-compat gateways reject tool messages with empty content;
         // always send a placeholder instead of "".

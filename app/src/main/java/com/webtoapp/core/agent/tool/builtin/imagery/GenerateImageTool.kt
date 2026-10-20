@@ -5,6 +5,8 @@ import com.google.gson.JsonObject
 import com.webtoapp.core.agent.files.ProjectFileManager
 import com.webtoapp.core.agent.imagery.ImageGenerator
 import com.webtoapp.core.agent.imagery.ImageGeneratorRegistry
+import com.webtoapp.core.ai.ApiKeyRotation
+import kotlinx.coroutines.delay
 import com.webtoapp.core.agent.tool.FileChange
 import com.webtoapp.core.agent.tool.ImageAttachment
 import com.webtoapp.core.agent.tool.Tool
@@ -61,33 +63,75 @@ class GenerateImageTool(private val registry: ImageGeneratorRegistry) : Tool {
             size = args.get("size")?.asString ?: "1024"
         )
 
-        val result = runCatching { generator.generate(req, model, key) }
-            .getOrElse { return ToolResult.error("GenerateImage: ${it.message ?: "generator threw"}") }
-
-        when (result) {
-            is ImageGenerator.Result.Error -> return ToolResult.error("GenerateImage: ${result.message}")
-            is ImageGenerator.Result.Ok -> {
-                val filename = decideFilename(args.get("filename")?.asString, prompt, result.mimeType)
-                val saved: ProjectFileManager.FileInfo = ctx.fileManager.writeBytes(
-                    ctx.sessionId,
-                    "assets/$filename",
-                    result.bytes
-                ) ?: return ToolResult.error("GenerateImage: failed to save image (path rejected).")
-
-                val text = buildString {
-                    append("Generated image saved to ${saved.relativePath} ")
-                    append("(${saved.formatSize()}).\n")
-                    append("Inline it with: <img src=\"${saved.relativePath}\" alt=\"\">\n")
-                    append("You can SEE this image in the multimodal payload — judge whether it matches the prompt and re-generate if needed.")
+        val pool = ctx.imageKeyPool.ifEmpty { listOf(key) }
+        val rotation = ApiKeyRotation.shared
+        var sameKeyRetries = 0
+        var attempts = 0
+        val cap = pool.size + ApiKeyRotation.MAX_SAME_KEY_RETRIES + 1
+        var lastError = "image generation failed"
+        while (attempts++ < cap) {
+            val current = rotation.select(key, pool, model.model.id)
+            if (current == null) {
+                val wait = rotation.soonestWaitMs(key, pool, model.model.id)
+                if (wait != null && wait <= ApiKeyRotation.MAX_INLINE_WAIT_MS &&
+                    sameKeyRetries < ApiKeyRotation.MAX_SAME_KEY_RETRIES
+                ) {
+                    sameKeyRetries++
+                    delay(wait)
+                    continue
                 }
-
-                return ToolResult.multimodal(
-                    text = text,
-                    images = listOf(ImageAttachment(result.bytes, result.mimeType, saved.relativePath)),
-                    fileChange = FileChange(saved.relativePath, FileChange.Kind.WRITE)
-                )
+                return ToolResult.error("GenerateImage: $lastError")
             }
+            val result = runCatching { generator.generate(req, model, current) }
+                .getOrElse { return ToolResult.error("GenerateImage: ${it.message ?: "generator threw"}") }
+            if (result !is ImageGenerator.Result.Ok) {
+                val error = result as ImageGenerator.Result.Error
+                lastError = error.message
+                val rotatable = error.httpCode == 401 || error.httpCode == 403 ||
+                    error.httpCode == 429 || error.limitScope != null
+                when (val decision = rotation.onFailure(
+                    current = current,
+                    bound = key,
+                    pool = pool,
+                    modelId = model.model.id,
+                    httpCode = error.httpCode,
+                    retryAfterMs = error.retryAfterMs,
+                    limitScope = error.limitScope,
+                    recoverable = rotatable || (error.httpCode != null && error.httpCode in 500..599),
+                    sameKeyRetries = sameKeyRetries
+                )) {
+                    is ApiKeyRotation.KeyDecision.Switch -> sameKeyRetries = 0
+                    is ApiKeyRotation.KeyDecision.Backoff -> {
+                        sameKeyRetries = decision.sameKeyRetries
+                        delay(decision.waitMs)
+                    }
+                    is ApiKeyRotation.KeyDecision.Fail ->
+                        return ToolResult.error("GenerateImage: ${error.message}")
+                }
+                continue
+            }
+
+            val filename = decideFilename(args.get("filename")?.asString, prompt, result.mimeType)
+            val saved: ProjectFileManager.FileInfo = ctx.fileManager.writeBytes(
+                ctx.sessionId,
+                "assets/$filename",
+                result.bytes
+            ) ?: return ToolResult.error("GenerateImage: failed to save image (path rejected).")
+
+            val text = buildString {
+                append("Generated image saved to ${saved.relativePath} ")
+                append("(${saved.formatSize()}).\n")
+                append("Inline it with: <img src=\"${saved.relativePath}\" alt=\"\">\n")
+                append("You can SEE this image in the multimodal payload — judge whether it matches the prompt and re-generate if needed.")
+            }
+
+            return ToolResult.multimodal(
+                text = text,
+                images = listOf(ImageAttachment(result.bytes, result.mimeType, saved.relativePath)),
+                fileChange = FileChange(saved.relativePath, FileChange.Kind.WRITE)
+            )
         }
+        return ToolResult.error("GenerateImage: $lastError")
     }
 
     private fun decideFilename(override: String?, prompt: String, mime: String): String {

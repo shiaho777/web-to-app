@@ -1,5 +1,7 @@
 package com.webtoapp.core.agent.llm
 
+import com.webtoapp.core.ai.ApiKeyRotation
+import com.webtoapp.core.ai.RatedFailure
 import com.webtoapp.data.model.AiProvider
 import com.webtoapp.data.model.ApiFormat
 import com.webtoapp.data.model.ApiKeyConfig
@@ -39,28 +41,32 @@ internal object HttpHelpers {
     }
 
     fun classifyHttpError(code: Int, body: String): Pair<String, Boolean> {
-        val lower = body.lowercase()
-        val toolRelated = "tool" in lower || "function" in lower
-        val msg = when (code) {
-            400 -> "Bad request (400): ${body.take(300)}"
-            401 -> "API key invalid or expired (401)"
-            403 -> "Access denied (403)"
-            404 -> {
-                val detail = body.take(300).trim()
-                if (detail.isEmpty()) "Endpoint or model not found (404)"
-                else "Endpoint or model not found (404): $detail"
-            }
-            429 -> "Rate limited (429)"
-            in 500..599 -> "Server error ($code)"
-            else -> "Request failed ($code): ${body.take(300)}"
-        }
-        return msg to (code == 429 || code == 500 || code == 502 || code == 503 || code == 504 || (code == 400 && toolRelated))
+        val failure = ApiKeyRotation.describe(code, body, null)
+        return failure.message to failure.recoverable
     }
 
-    fun parseRetryAfterMs(headerValue: String?): Long? {
-        if (headerValue.isNullOrBlank()) return null
-        val seconds = headerValue.trim().toLongOrNull()
-        if (seconds != null) return seconds * 1000
-        return null
+    fun describeHttp(
+        code: Int,
+        body: String,
+        retryAfterHeader: String?,
+        retryAfterMsHeader: String? = null
+    ): RatedFailure = ApiKeyRotation.describe(code, body, retryAfterHeader, retryAfterMsHeader)
+
+    fun llmHttpError(
+        code: Int,
+        body: String,
+        retryAfterHeader: String?,
+        retryAfterMsHeader: String? = null
+    ): LlmEvent.Error {
+        val failure = describeHttp(code, body, retryAfterHeader, retryAfterMsHeader)
+        return LlmEvent.Error(
+            message = failure.message,
+            recoverable = failure.recoverable,
+            retryAfterMs = failure.retryAfterMs,
+            httpCode = failure.httpCode,
+            limitScope = failure.limitScope
+        )
     }
+
+    fun parseRetryAfterMs(headerValue: String?): Long? = ApiKeyRotation.parseRetryAfterHeader(headerValue)
 }

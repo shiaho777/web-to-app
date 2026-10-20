@@ -16,8 +16,15 @@ data class ToolContext(
     val textModel: SavedModel,
     val textApiKey: ApiKeyConfig,
 
+    /**
+     * Sibling keys the text model may fall back to when [textApiKey] is
+     * rate-limited. Empty means "just [textApiKey]".
+     */
+    val textKeyPool: List<ApiKeyConfig> = emptyList(),
+
     val imageModel: SavedModel? = null,
     val imageApiKey: ApiKeyConfig? = null,
+    val imageKeyPool: List<ApiKeyConfig> = emptyList(),
 
     val prompter: PermissionPrompter,
 

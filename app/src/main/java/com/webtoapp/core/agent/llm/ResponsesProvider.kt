@@ -49,8 +49,7 @@ internal class ResponsesProvider(@Suppress("UNUSED_PARAMETER") context: Context)
                 if (!response.isSuccessful) {
                     val eb = runCatching { response.body?.string() }.getOrNull().orEmpty()
                     response.body?.close()
-                    val (msg, rec) = HttpHelpers.classifyHttpError(response.code, eb)
-                    trySend(LlmEvent.Error(msg, rec, HttpHelpers.parseRetryAfterMs(response.header("Retry-After")))); close(); return
+                    trySend(HttpHelpers.llmHttpError(response.code, eb, response.header("Retry-After"), response.header("retry-after-ms"))); close(); return
                 }
                 try {
                     val source = response.body?.source() ?: run { trySend(LlmEvent.Error("Empty response body")); close(); return }

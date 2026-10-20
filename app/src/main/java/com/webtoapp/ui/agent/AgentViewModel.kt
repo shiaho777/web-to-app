@@ -14,6 +14,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.webtoapp.core.ai.AiConfigManager
+import com.webtoapp.core.ai.ApiKeyRotation
+import com.webtoapp.data.model.ApiKeyConfig
 import com.webtoapp.core.agent.llm.LlmMessage
 import com.webtoapp.core.agent.engine.AgentEvent
 import com.webtoapp.core.agent.engine.CompactService
@@ -844,7 +846,7 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
 
             _ui.update { it.copy(compacting = true, info = Strings.agentCompacting) }
             val svc = compactService ?: CompactService(gateway).also { compactService = it }
-            val result = svc.compact(session.messages, textModel, textKey)
+            val result = svc.compact(session.messages, textModel, textKey, peerKeys(textKey, keys))
             if (result.didCompact) {
                 sessionStore.replaceMessages(session.id, result.messages)
                 _ui.update {
@@ -1264,6 +1266,9 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    private fun peerKeys(bound: ApiKeyConfig, keys: List<ApiKeyConfig>): List<ApiKeyConfig> =
+        ApiKeyRotation.poolFor(bound, keys)
+
     private suspend fun dispatchTurn(
         session: AgentSession,
         prompt: String
@@ -1332,7 +1337,7 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         )
         var didAutoCompact = false
         if (compactSvc.shouldCompactRequest(requestTokens, contextLength)) {
-            val result = compactSvc.compact(session.messages, textModel, textKey)
+            val result = compactSvc.compact(session.messages, textModel, textKey, peerKeys(textKey, keys))
             if (result.didCompact) {
                 sessionStore.replaceMessages(session.id, result.messages)
                 val compacted = sessionStore.get(session.id) ?: session
@@ -1368,8 +1373,10 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
             fileManager = files,
             textModel = textModel,
             textApiKey = textKey,
+            textKeyPool = peerKeys(textKey, keys),
             imageModel = imageModel,
             imageApiKey = imageKey,
+            imageKeyPool = imageKey?.let { peerKeys(it, keys) }.orEmpty(),
             prompter = service!!.permissionPrompter,
             todos = todoManager,
             appRepository = webAppRepository,
@@ -1420,7 +1427,7 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         val gateway = service?.gateway
         if (textModel != null && textKey != null && gateway != null) {
             val svc = compactService ?: CompactService(gateway).also { compactService = it }
-            val result = svc.compact(kept, textModel, textKey)
+            val result = svc.compact(kept, textModel, textKey, peerKeys(textKey, keys))
             if (result.didCompact) kept = result.messages
         }
 

@@ -30,6 +30,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.ui.window.Dialog
 import com.webtoapp.core.ai.AiApiClient
 import com.webtoapp.core.ai.AiConfigManager
+import com.webtoapp.core.ai.ApiKeyRotation
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.data.model.*
 import com.webtoapp.ui.components.*
@@ -42,6 +43,7 @@ import com.webtoapp.ui.design.WtaCard
 import com.webtoapp.ui.design.WtaScreen
 import com.webtoapp.ui.design.WtaSection
 import com.webtoapp.ui.design.WtaSpacing
+import com.webtoapp.ui.theme.ifDescriptionsShown
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -170,9 +172,16 @@ fun AiSettingsScreen(
     if (showAddApiKeyDialog) {
         AddApiKeyDialog(
             onDismiss = { showAddApiKeyDialog = false },
-            onConfirm = { config ->
+            onConfirm = { configs ->
                 scope.launch {
-                    if (configManager.addApiKey(config)) {
+                    var saved = true
+                    for (config in configs) {
+                        if (!configManager.addApiKey(config)) {
+                            saved = false
+                            break
+                        }
+                    }
+                    if (saved) {
                         showAddApiKeyDialog = false
                     } else {
                         snackbarHostState.showSnackbar(
@@ -192,9 +201,19 @@ fun AiSettingsScreen(
         AddApiKeyDialog(
             initialConfig = key,
             onDismiss = { editingApiKey = null },
-            onConfirm = { config ->
+            onConfirm = { configs ->
                 scope.launch {
-                    if (configManager.updateApiKey(config)) {
+                    val first = configs.firstOrNull()
+                    var saved = first != null && configManager.updateApiKey(first)
+                    if (saved) {
+                        for (extra in configs.drop(1)) {
+                            if (!configManager.addApiKey(extra)) {
+                                saved = false
+                                break
+                            }
+                        }
+                    }
+                    if (saved) {
                         editingApiKey = null
                     } else {
                         snackbarHostState.showSnackbar(
@@ -762,12 +781,47 @@ private fun SavedModelItem(
     }
 }
 
+private fun buildApiKeyConfigs(
+    initial: ApiKeyConfig?,
+    provider: AiProvider,
+    rawKey: String,
+    baseUrl: String,
+    modelsEndpoint: String,
+    chatEndpoint: String,
+    format: ApiFormat,
+    alias: String
+): List<ApiKeyConfig> {
+    val secrets = ApiKeyRotation.splitSecrets(rawKey).ifEmpty {
+        if (provider.requiresApiKey) emptyList() else listOf("")
+    }
+    if (secrets.isEmpty()) return emptyList()
+    val baseAlias = alias.trim().ifBlank { null }
+    return secrets.mapIndexed { index, secret ->
+        ApiKeyConfig(
+            id = if (index == 0 && initial != null) initial.id else java.util.UUID.randomUUID().toString(),
+            provider = provider,
+            apiKey = secret,
+            baseUrl = baseUrl.trim().ifBlank { null },
+            customModelsEndpoint = modelsEndpoint.trim().ifBlank { null },
+            customChatEndpoint = chatEndpoint.trim().ifBlank { null },
+            apiFormat = format,
+            alias = when {
+                baseAlias == null -> null
+                secrets.size == 1 || index == 0 -> baseAlias
+                else -> "$baseAlias ${index + 1}"
+            },
+            isActive = if (index == 0) initial?.isActive ?: true else true,
+            createdAt = if (index == 0) initial?.createdAt ?: System.currentTimeMillis() else System.currentTimeMillis()
+        )
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AddApiKeyDialog(
     initialConfig: ApiKeyConfig? = null,
     onDismiss: () -> Unit,
-    onConfirm: (ApiKeyConfig) -> Unit,
+    onConfirm: (List<ApiKeyConfig>) -> Unit,
     onTest: (ApiKeyConfig) -> Unit
 ) {
     var selectedProvider by remember { mutableStateOf(initialConfig?.provider ?: AiProvider.GOOGLE) }
@@ -788,6 +842,8 @@ private fun AddApiKeyDialog(
     var testResult by remember { mutableStateOf<String?>(null) }
     var isTesting by remember { mutableStateOf(false) }
     var showAdvancedOptions by remember { mutableStateOf(initialConfig?.customModelsEndpoint != null || initialConfig?.customChatEndpoint != null) }
+    val keyHint = Strings.apiKeyMultiHint.ifDescriptionsShown()
+    val parsedSecrets = ApiKeyRotation.splitSecrets(apiKey)
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val apiClient = remember { AiApiClient(context) }
@@ -893,7 +949,9 @@ private fun AddApiKeyDialog(
                     value = apiKey,
                     onValueChange = { apiKey = it },
                     label = { Text(if (selectedProvider.requiresApiKey) "API Key" else "API Key (${Strings.optionalLabel})") },
-                    singleLine = true,
+                    singleLine = false,
+                    minLines = 1,
+                    maxLines = 6,
                     visualTransformation = if (showApiKey) VisualTransformation.None
                                           else PasswordVisualTransformation(),
                     trailingIcon = {
@@ -905,6 +963,9 @@ private fun AddApiKeyDialog(
                             )
                         }
                     },
+                    supportingText = if (keyHint != null) {
+                        { Text(keyHint) }
+                    } else null,
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -1015,16 +1076,16 @@ private fun AddApiKeyDialog(
 
                 TextButton(
                     onClick = {
-                        val config = ApiKeyConfig(
-                            id = initialConfig?.id ?: java.util.UUID.randomUUID().toString(),
+                        val config = buildApiKeyConfigs(
+                            initial = initialConfig,
                             provider = selectedProvider,
-                            apiKey = apiKey,
-                            baseUrl = if (customBaseUrl.isNotBlank()) customBaseUrl else null,
-                            customModelsEndpoint = if (customModelsEndpoint.isNotBlank()) customModelsEndpoint else null,
-                            customChatEndpoint = if (customChatEndpoint.isNotBlank()) customChatEndpoint else null,
-                            apiFormat = selectedApiFormat,
-                            alias = if (alias.isNotBlank()) alias else null
-                        )
+                            rawKey = parsedSecrets.firstOrNull() ?: apiKey,
+                            baseUrl = customBaseUrl,
+                            modelsEndpoint = customModelsEndpoint,
+                            chatEndpoint = customChatEndpoint,
+                            format = selectedApiFormat,
+                            alias = alias
+                        ).firstOrNull() ?: return@TextButton
                         scope.launch {
                             isTesting = true
                             testResult = Strings.testing
@@ -1033,7 +1094,7 @@ private fun AddApiKeyDialog(
                             isTesting = false
                         }
                     },
-                    enabled = (apiKey.isNotBlank() || !selectedProvider.requiresApiKey) && !isTesting
+                    enabled = (parsedSecrets.isNotEmpty() || !selectedProvider.requiresApiKey) && !isTesting
                 ) {
                     if (isTesting) {
                         CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
@@ -1046,19 +1107,19 @@ private fun AddApiKeyDialog(
 
                 PremiumButton(
                     onClick = {
-                        val config = ApiKeyConfig(
-                            id = initialConfig?.id ?: java.util.UUID.randomUUID().toString(),
+                        val configs = buildApiKeyConfigs(
+                            initial = initialConfig,
                             provider = selectedProvider,
-                            apiKey = apiKey,
-                            baseUrl = if (customBaseUrl.isNotBlank()) customBaseUrl else null,
-                            customModelsEndpoint = if (customModelsEndpoint.isNotBlank()) customModelsEndpoint else null,
-                            customChatEndpoint = if (customChatEndpoint.isNotBlank()) customChatEndpoint else null,
-                            apiFormat = selectedApiFormat,
-                            alias = if (alias.isNotBlank()) alias else null
+                            rawKey = apiKey,
+                            baseUrl = customBaseUrl,
+                            modelsEndpoint = customModelsEndpoint,
+                            chatEndpoint = customChatEndpoint,
+                            format = selectedApiFormat,
+                            alias = alias
                         )
-                        onConfirm(config)
+                        if (configs.isNotEmpty()) onConfirm(configs)
                     },
-                    enabled = apiKey.isNotBlank() || !selectedProvider.requiresApiKey
+                    enabled = parsedSecrets.isNotEmpty() || !selectedProvider.requiresApiKey
                 ) {
                     Text(Strings.btnSave)
                 }

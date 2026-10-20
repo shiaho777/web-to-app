@@ -1728,6 +1728,9 @@ object Strings {
     val agentOutputTruncated: String get() = StringsB.agentOutputTruncated
     val agentContinuing: String get() = StringsB.agentContinuing
     val agentRateLimitRetry: (Int, Int, Long) -> String get() = StringsB.agentRateLimitRetry
+    val agentKeySwitched: (String) -> String get() = StringsB.agentKeySwitched
+    val agentKeysCooling: (Long) -> String get() = StringsB.agentKeysCooling
+    val agentNoReadyApiKey: String get() = StringsB.agentNoReadyApiKey
     val agentFileSaved: String get() = StringsB.agentFileSaved
     val agentFileOpen: String get() = StringsB.agentFileOpen
     val agentFileCopyPath: String get() = StringsB.agentFileCopyPath
@@ -2610,6 +2613,7 @@ object Strings {
     val customBaseUrlHint: String get() = StringsC.customBaseUrlHint
     val apiFormat: String get() = StringsC.apiFormat
     val apiKeyAliasPlaceholder: String get() = StringsC.apiKeyAliasPlaceholder
+    val apiKeyMultiHint: String get() = StringsC.apiKeyMultiHint
     val modelsEndpoint: String get() = StringsC.modelsEndpoint
     val modelsEndpointHint: String get() = StringsC.modelsEndpointHint
     val chatEndpoint: String get() = StringsC.chatEndpoint

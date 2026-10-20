@@ -71,8 +71,12 @@ internal class GeminiImageGenerator(context: Context) : ImageGenerator {
             client.newCall(req).execute().use { response ->
                 val raw = response.body?.string().orEmpty()
                 if (!response.isSuccessful) {
-                    val (msg, _) = HttpHelpers.classifyHttpError(response.code, raw)
-                    return@withContext ImageGenerator.Result.Error(msg)
+                    val failure = HttpHelpers.describeHttp(
+                        response.code, raw, response.header("Retry-After"), response.header("retry-after-ms")
+                    )
+                    return@withContext ImageGenerator.Result.Error(
+                        failure.message, failure.httpCode, failure.retryAfterMs, failure.limitScope
+                    )
                 }
                 parseGeminiResponse(raw)
             }

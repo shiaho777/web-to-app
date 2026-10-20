@@ -4,6 +4,7 @@ import com.webtoapp.core.agent.llm.ChatRequest
 import com.webtoapp.core.agent.llm.LlmEvent
 import com.webtoapp.core.agent.llm.LlmGateway
 import com.webtoapp.core.agent.llm.LlmMessage
+import com.webtoapp.core.ai.ApiKeyRotation
 import com.webtoapp.core.agent.session.AgentMessage
 import com.webtoapp.core.agent.session.RecordedToolCall
 import com.webtoapp.core.agent.tool.Tool
@@ -22,7 +23,9 @@ class CompactService(
 
     private val minRecentTokens: Int = 8_000,
 
-    private val autoCompactThresholdFraction: Float = 0.75f
+    private val autoCompactThresholdFraction: Float = 0.75f,
+
+    private val keyRotation: ApiKeyRotation = ApiKeyRotation.shared
 ) {
 
     fun shouldCompact(messages: List<AgentMessage>, contextLength: Int = 128_000): Boolean =
@@ -94,7 +97,8 @@ class CompactService(
     suspend fun compact(
         messages: List<AgentMessage>,
         textModel: SavedModel,
-        textApiKey: ApiKeyConfig
+        textApiKey: ApiKeyConfig,
+        keyPool: List<ApiKeyConfig> = emptyList()
     ): Result {
         if (messages.size <= minRecentMessages) {
             return Result(messages, summary = null, reason = "below threshold")
@@ -137,7 +141,7 @@ class CompactService(
         )
 
         val summaryText = try {
-            collectText(gateway, req)
+            collectText(req, textApiKey, keyPool, textModel.model.id)
         } catch (t: Throwable) {
             AppLogger.w(TAG, "compact summarisation failed: ${t.message}")
             return Result(messages, summary = null, reason = "summarisation failed: ${t.message}")
@@ -208,26 +212,74 @@ class CompactService(
         }
     }
 
-    private suspend fun collectText(gateway: LlmGateway, req: ChatRequest): String {
-        var retries = 0
-        while (true) {
+    private suspend fun collectText(
+        req: ChatRequest,
+        bound: ApiKeyConfig,
+        pool: List<ApiKeyConfig>,
+        modelId: String
+    ): String {
+        val peers = pool.ifEmpty { listOf(bound) }
+        var sameKeyRetries = 0
+        var attempts = 0
+        val cap = peers.size + ApiKeyRotation.MAX_SAME_KEY_RETRIES + 1
+        var lastError = "rate limited"
+        while (attempts++ < cap) {
+            val picked = keyRotation.select(bound, peers, modelId)
+            if (picked == null) {
+                val wait = keyRotation.soonestWaitMs(bound, peers, modelId)
+                if (wait != null && wait <= ApiKeyRotation.MAX_INLINE_WAIT_MS &&
+                    sameKeyRetries < ApiKeyRotation.MAX_SAME_KEY_RETRIES
+                ) {
+                    sameKeyRetries++
+                    kotlinx.coroutines.delay(wait)
+                    continue
+                }
+                throw IllegalStateException(lastError)
+            }
             val sb = StringBuilder()
             var retryable: String? = null
             var retryAfterMs: Long? = null
-            gateway.chatStream(req).fold(Unit) { _, ev ->
+            var httpCode: Int? = null
+            var scope: com.webtoapp.core.ai.LimitScope? = null
+            var recoverable = false
+            gateway.chatStream(req.copy(apiKey = picked)).fold(Unit) { _, ev ->
                 when (ev) {
                     is LlmEvent.TextDelta -> sb.append(ev.delta)
-                    is LlmEvent.Error -> if (!ev.recoverable) throw IllegalStateException(ev.message)
-                    else { retryable = ev.message; retryAfterMs = ev.retryAfterMs }
+                    is LlmEvent.Error -> {
+                        val rotatable = ev.httpCode == 401 || ev.httpCode == 403 ||
+                            ev.httpCode == 429 || ev.limitScope != null
+                        if (!ev.recoverable && !rotatable) throw IllegalStateException(ev.message)
+                        retryable = ev.message
+                        retryAfterMs = ev.retryAfterMs
+                        httpCode = ev.httpCode
+                        scope = ev.limitScope
+                        recoverable = ev.recoverable || rotatable
+                    }
                     else -> Unit
                 }
             }
             if (retryable == null) return sb.toString().trim()
-            if (retries >= 5) throw IllegalStateException(retryable)
-            retries++
-            val backoff = retryAfterMs ?: (1000L shl (retries - 1).coerceAtMost(4))
-            kotlinx.coroutines.delay(backoff)
+            lastError = retryable!!
+            when (val decision = keyRotation.onFailure(
+                current = picked,
+                bound = bound,
+                pool = peers,
+                modelId = modelId,
+                httpCode = httpCode,
+                retryAfterMs = retryAfterMs,
+                limitScope = scope,
+                recoverable = recoverable,
+                sameKeyRetries = sameKeyRetries
+            )) {
+                is ApiKeyRotation.KeyDecision.Switch -> sameKeyRetries = 0
+                is ApiKeyRotation.KeyDecision.Backoff -> {
+                    sameKeyRetries = decision.sameKeyRetries
+                    kotlinx.coroutines.delay(decision.waitMs)
+                }
+                is ApiKeyRotation.KeyDecision.Fail -> throw IllegalStateException(lastError)
+            }
         }
+        throw IllegalStateException(lastError)
     }
 
     private fun estimateTokens(m: AgentMessage): Int {

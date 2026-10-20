@@ -8232,6 +8232,45 @@ object StringsB {
         AppLanguage.KOREAN -> { attempt, max, ms -> "속도 제한, ${ms / 1000}초 후 재시도 (${attempt}/${max}번째)…" }
     }
 
+    val agentKeySwitched: (String) -> String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> { masked -> "这把密钥被限额了，已换到 $masked" }
+        AppLanguage.ENGLISH -> { masked -> "That key is rate-limited. Switched to $masked" }
+        AppLanguage.ARABIC -> { masked -> "وصل هذا المفتاح إلى الحد. تم التبديل إلى $masked" }
+        AppLanguage.PORTUGUESE -> { masked -> "Essa chave atingiu o limite. Trocada para $masked" }
+        AppLanguage.SPANISH -> { masked -> "Esa clave llegó al límite. Cambiada a $masked" }
+        AppLanguage.FRENCH -> { masked -> "Cette clé a atteint sa limite. Basculement vers $masked" }
+        AppLanguage.GERMAN -> { masked -> "Dieser Schlüssel ist am Limit. Wechsel zu $masked" }
+        AppLanguage.RUSSIAN -> { masked -> "Этот ключ упёрся в лимит. Переключились на $masked" }
+        AppLanguage.JAPANESE -> { masked -> "このキーは制限中です。$masked に切り替えました" }
+        AppLanguage.KOREAN -> { masked -> "이 키는 한도에 걸렸습니다. $masked 로 바꿨습니다" }
+    }
+
+    val agentKeysCooling: (Long) -> String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> { minutes -> "这组密钥都在冷却，大约 $minutes 分钟后可以再用" }
+        AppLanguage.ENGLISH -> { minutes -> "Every key for this model is cooling down. The next one frees up in about $minutes min" }
+        AppLanguage.ARABIC -> { minutes -> "كل المفاتيح لهذا النموذج في فترة تبريد. يتاح التالي بعد نحو $minutes د" }
+        AppLanguage.PORTUGUESE -> { minutes -> "Todas as chaves deste modelo estão em pausa. A próxima libera em cerca de $minutes min" }
+        AppLanguage.SPANISH -> { minutes -> "Todas las claves de este modelo están en pausa. La siguiente queda libre en unos $minutes min" }
+        AppLanguage.FRENCH -> { minutes -> "Toutes les clés de ce modèle sont en pause. La prochaine se libère dans environ $minutes min" }
+        AppLanguage.GERMAN -> { minutes -> "Alle Schlüssel für dieses Modell pausieren. Der nächste ist in etwa $minutes Min wieder frei" }
+        AppLanguage.RUSSIAN -> { minutes -> "Все ключи этой модели на паузе. Следующий освободится примерно через $minutes мин" }
+        AppLanguage.JAPANESE -> { minutes -> "このモデルのキーはすべて冷却中です。次に使えるまで約 $minutes 分" }
+        AppLanguage.KOREAN -> { minutes -> "이 모델의 키가 모두 냉각 중입니다. 다음은 약 $minutes 분 후에 풀립니다" }
+    }
+
+    val agentNoReadyApiKey: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "这组密钥现在都不可用"
+        AppLanguage.ENGLISH -> "None of the API keys for this model can be used right now"
+        AppLanguage.ARABIC -> "لا يمكن استخدام أي مفتاح API لهذا النموذج الآن"
+        AppLanguage.PORTUGUESE -> "Nenhuma chave de API deste modelo pode ser usada agora"
+        AppLanguage.SPANISH -> "Ninguna clave de API de este modelo se puede usar ahora"
+        AppLanguage.FRENCH -> "Aucune clé API de ce modèle n'est utilisable pour le moment"
+        AppLanguage.GERMAN -> "Keiner der API-Schlüssel für dieses Modell ist gerade nutzbar"
+        AppLanguage.RUSSIAN -> "Сейчас ни один ключ API этой модели недоступен"
+        AppLanguage.JAPANESE -> "このモデルの API キーは今どれも使えません"
+        AppLanguage.KOREAN -> "이 모델의 API 키는 지금 하나도 쓸 수 없습니다"
+    }
+
     val agentFileSaved: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "已保存 %s"
         AppLanguage.ENGLISH -> "Saved %s"

@@ -6858,6 +6858,19 @@ object StringsC {
         AppLanguage.KOREAN -> "예: 내 GPT-4 키"
     }
 
+    val apiKeyMultiHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "多把密钥用英文逗号或换行隔开。某一把被限额后会自动换下一把，冷却结束再回来。同一个 Google 项目里的密钥共用额度。"
+        AppLanguage.ENGLISH -> "Separate extra keys with a comma or a new line. A rate-limited key steps aside until its cooldown ends. Keys from the same Google project share one quota."
+        AppLanguage.ARABIC -> "افصل المفاتيح الإضافية بفاصلة أو سطر جديد. المفتاح الذي بلغ الحد يتنحى حتى تنتهي فترة التبريد. مفاتيح مشروع Google الواحد تشترك في الحصة."
+        AppLanguage.PORTUGUESE -> "Separe chaves extras com vírgula ou uma nova linha. A chave limitada sai de cena até o cooldown acabar. Chaves do mesmo projeto Google compartilham a cota."
+        AppLanguage.SPANISH -> "Separa las claves extra con una coma o un salto de línea. La clave limitada se aparta hasta que termina la pausa. Las claves del mismo proyecto de Google comparten la cuota."
+        AppLanguage.FRENCH -> "Séparez les clés supplémentaires par une virgule ou un retour à la ligne. Une clé limitée s'efface jusqu'à la fin du délai. Les clés d'un même projet Google partagent le quota."
+        AppLanguage.GERMAN -> "Trenne weitere Schlüssel mit Komma oder Zeilenumbruch. Ein begrenzter Schlüssel pausiert bis zum Ende der Sperre. Schlüssel desselben Google-Projekts teilen sich das Kontingent."
+        AppLanguage.RUSSIAN -> "Дополнительные ключи разделяйте запятой или новой строкой. Ключ на лимите отходит в сторону, пока не кончится пауза. Ключи одного проекта Google делят одну квоту."
+        AppLanguage.JAPANESE -> "追加のキーはカンマか改行で区切ります。制限に達したキーは冷却が終わるまで休み、その後戻ります。同じ Google プロジェクトのキーは枠を共有します。"
+        AppLanguage.KOREAN -> "키를 더 넣을 때는 쉼표나 줄바꿈으로 구분하세요. 한도에 걸린 키는 냉각이 끝날 때까지 빠졌다가 돌아옵니다. 같은 Google 프로젝트의 키는 할당량을 같이 씁니다."
+    }
+
     val modelsEndpoint: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "模型列表端点"
         AppLanguage.ENGLISH -> "Models Endpoint"

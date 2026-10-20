@@ -32,7 +32,12 @@ interface ImageGenerator {
 
     sealed class Result {
         data class Ok(val bytes: ByteArray, val mimeType: String = "image/png") : Result()
-        data class Error(val message: String) : Result()
+        data class Error(
+            val message: String,
+            val httpCode: Int? = null,
+            val retryAfterMs: Long? = null,
+            val limitScope: com.webtoapp.core.ai.LimitScope? = null
+        ) : Result()
     }
 }
 

@@ -14,6 +14,8 @@ import com.webtoapp.core.agent.tool.ToolRegistry
 import com.webtoapp.data.dao.WebAppDao
 import com.webtoapp.data.dao.WebAppStartupCandidate
 import com.webtoapp.data.dao.WebAppSummary
+import com.webtoapp.core.ai.ApiKeyRotation
+import com.webtoapp.core.ai.LimitScope
 import com.webtoapp.data.model.AiModel
 import com.webtoapp.data.model.AiProvider
 import com.webtoapp.data.model.ApiKeyConfig
@@ -216,10 +218,59 @@ class AgentEngineStreamTest {
         assertEquals("API key invalid or expired (401)", (failed as AgentEvent.Failed).message)
     }
 
+    @Test(timeout = 15_000)
+    fun `a rate-limited key switches to the next one without waiting out a long cooldown`() = runBlocking {
+        val keyA = ApiKeyConfig(id = "a", provider = AiProvider.GOOGLE, apiKey = "key-a-1111")
+        val keyB = ApiKeyConfig(id = "b", provider = AiProvider.GOOGLE, apiKey = "key-b-2222")
+        val seen = mutableListOf<String>()
+        val gateway = object : LlmGateway {
+            override fun chatStream(req: ChatRequest): Flow<LlmEvent> = callbackFlow {
+                seen += req.apiKey.id
+                trySend(LlmEvent.Started)
+                if (req.apiKey.id == "a") {
+                    trySend(LlmEvent.TextDelta("partial"))
+                    trySend(LlmEvent.Error(
+                        "Rate limited (429)",
+                        recoverable = true,
+                        retryAfterMs = 86_000_000,
+                        httpCode = 429,
+                        limitScope = LimitScope.MODEL
+                    ))
+                } else {
+                    trySend(LlmEvent.TextDelta("ok"))
+                    trySend(LlmEvent.Done(FinishReason.STOP))
+                }
+                close()
+                awaitClose { }
+            }
+        }
+
+        val events = AgentEngine(
+            gateway,
+            PermissionChecker(PermissionPrompter()),
+            keyRotation = ApiKeyRotation()
+        ).run(input(key = keyA, pool = listOf(keyA, keyB))).toList(mutableListOf())
+
+        assertEquals(listOf("a", "b"), seen)
+        assertTrue(events.filterIsInstance<AgentEvent.Notice>().any {
+            it.message.contains("2222")
+        })
+        val completed = events.last()
+        assertTrue(completed is AgentEvent.Completed)
+        assertEquals("ok", (completed as AgentEvent.Completed).summary)
+        assertEquals(
+            "ok",
+            events.filterIsInstance<AgentEvent.TextDelta>().last().accumulated
+        )
+    }
+
     private fun engine(gateway: LlmGateway) =
         AgentEngine(gateway, PermissionChecker(PermissionPrompter()))
 
-    private fun input(): AgentEngine.Input {
+    private fun input(
+        key: ApiKeyConfig = ApiKeyConfig(id = "key-1", provider = AiProvider.OPENAI, apiKey = "test-key"),
+        pool: List<ApiKeyConfig> = emptyList()
+    ): AgentEngine.Input {
         val ctx = ApplicationProvider.getApplicationContext<android.content.Context>()
         val toolContext = ToolContext(
             androidContext = ctx,
@@ -230,7 +281,8 @@ class AgentEngineStreamTest {
                 apiKeyId = "key-1",
                 capabilities = listOf(ModelCapability.TEXT)
             ),
-            textApiKey = ApiKeyConfig(provider = AiProvider.OPENAI, apiKey = "test-key"),
+            textApiKey = key,
+            textKeyPool = pool,
             prompter = PermissionPrompter(),
             todos = TodoManager(),
             appRepository = WebAppRepository(FakeWebAppDao())
