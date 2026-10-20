@@ -306,6 +306,7 @@ internal object ApkConfigJsonFactory {
         "blobInterceptThresholdMb" to webViewBehavior.blobInterceptThresholdMb,
         "enablePrintBridge" to webViewBehavior.enablePrintBridge,
         "enableMediaSession" to webViewBehavior.enableMediaSession,
+        "backgroundMediaPlayback" to webViewBehavior.backgroundMediaPlayback,
         "enableCloudflareCompat" to webViewBehavior.enableCloudflareCompat,
         "cloudflareCompatMode" to webViewBehavior.cloudflareCompatMode,
         "primeUserActivation" to webViewBehavior.primeUserActivation,

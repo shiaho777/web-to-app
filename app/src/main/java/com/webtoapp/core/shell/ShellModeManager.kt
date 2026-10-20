@@ -1431,6 +1431,9 @@ data class WebViewShellConfig(
     @SerializedName("enableMediaSession")
     val enableMediaSession: Boolean = false,
 
+    @SerializedName("backgroundMediaPlayback")
+    val backgroundMediaPlayback: Boolean = false,
+
     @SerializedName("enableCloudflareCompat")
     val enableCloudflareCompat: Boolean = true,
 

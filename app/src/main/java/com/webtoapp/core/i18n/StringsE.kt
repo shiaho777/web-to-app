@@ -12536,6 +12536,30 @@ object StringsE {
         AppLanguage.JAPANESE -> "ウェブメディアをシステム通知とロック画面コントロールに接続（Bluetooth、Android Auto）"
         AppLanguage.KOREAN -> "웹 미디어를 시스템 알림 및 잠금 화면 컨트롤에 연결 (Bluetooth, Android Auto)"
     }
+    val backgroundMediaPlaybackTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "后台继续播放"
+        AppLanguage.ENGLISH -> "Keep playing in background"
+        AppLanguage.ARABIC -> "متابعة التشغيل في الخلفية"
+        AppLanguage.PORTUGUESE -> "Continuar a reproduzir em segundo plano"
+        AppLanguage.SPANISH -> "Seguir reproduciendo en segundo plano"
+        AppLanguage.FRENCH -> "Continuer la lecture en arrière-plan"
+        AppLanguage.GERMAN -> "Wiedergabe im Hintergrund fortsetzen"
+        AppLanguage.RUSSIAN -> "Продолжать воспроизведение в фоне"
+        AppLanguage.JAPANESE -> "バックグラウンドで再生を続ける"
+        AppLanguage.KOREAN -> "백그라운드에서 계속 재생"
+    }
+    val backgroundMediaPlaybackDesc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "离开应用后，正在播放的声音会继续。通知栏可以暂停。画面会停，回到应用后从刚才的进度接着播"
+        AppLanguage.ENGLISH -> "Audio that is already playing continues after you leave. Pause it from the notification. The picture stops until you come back, then picks up where it left off"
+        AppLanguage.ARABIC -> "يستمر الصوت الذي يعمل عند مغادرة التطبيق. يمكن إيقافه من الإشعار. تتوقف الصورة حتى تعود، ثم تكمل من حيث توقفت"
+        AppLanguage.PORTUGUESE -> "O áudio que já está a tocar continua quando sai da aplicação. Pause pelo aviso. A imagem para até voltar e retoma de onde ficou"
+        AppLanguage.SPANISH -> "El audio que ya se está reproduciendo continúa al salir. Puedes pausarlo desde la notificación. La imagen se detiene hasta que vuelves y sigue desde el mismo punto"
+        AppLanguage.FRENCH -> "Le son déjà en lecture continue quand vous quittez l'application. Mettez-le en pause depuis la notification. L'image s'arrête jusqu'au retour, puis reprend au même endroit"
+        AppLanguage.GERMAN -> "Ton, der schon läuft, spielt weiter, wenn Sie die App verlassen. Pausieren geht über die Benachrichtigung. Das Bild hält an und läuft nach der Rückkehr an derselben Stelle weiter"
+        AppLanguage.RUSSIAN -> "Уже играющий звук не останавливается, когда вы уходите из приложения. Пауза — из уведомления. Картинка останавливается и продолжается с того же места, когда вы возвращаетесь"
+        AppLanguage.JAPANESE -> "再生中の音声はアプリを離れても続きます。通知から一時停止できます。映像は止まり、戻ると続きから再生されます"
+        AppLanguage.KOREAN -> "이미 재생 중인 소리는 앱을 나가도 이어집니다. 알림에서 일시정지할 수 있습니다. 화면은 멈추고, 돌아오면 그 지점부터 다시 재생됩니다"
+    }
     val previewBackendAppIntro: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "此项目是 %s 后端应用。"
         AppLanguage.ENGLISH -> "This project is a %s backend app."

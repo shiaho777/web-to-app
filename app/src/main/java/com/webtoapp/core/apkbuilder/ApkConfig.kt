@@ -180,6 +180,7 @@ data class ApkConfig(
     val enableBlobDownloadInterception: Boolean get() = webViewBehavior.enableBlobDownloadInterception
     val enablePrintBridge: Boolean get() = webViewBehavior.enablePrintBridge
     val enableMediaSession: Boolean get() = webViewBehavior.enableMediaSession
+    val backgroundMediaPlayback: Boolean get() = webViewBehavior.backgroundMediaPlayback
     val downloadEnabled: Boolean get() = webView.downloadEnabled
     val downloadLocationMode: String get() = webView.downloadLocationMode
     val customDownloadDirUri: String get() = webView.customDownloadDirUri
@@ -616,6 +617,7 @@ data class WebViewBehaviorBlock(
     val blobInterceptThresholdMb: Int = 5,
     val enablePrintBridge: Boolean = true,
     val enableMediaSession: Boolean = false,
+    val backgroundMediaPlayback: Boolean = false,
     val enableCloudflareCompat: Boolean = true,
     val cloudflareCompatMode: String = "AUTO_DETECT",
     val primeUserActivation: Boolean = false,

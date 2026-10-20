@@ -2,6 +2,7 @@ package com.webtoapp.core.webview
 
 import android.content.Context
 import android.content.res.Configuration
+import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
 import android.webkit.WebView
@@ -26,6 +27,32 @@ class WtaWebView(context: Context) : WebView(context) {
      * surface instead of blindly applying it to the first-created one (#1036).
      */
     var siteId: String? = null
+
+    /**
+     * While true, a backgrounded window must not be reported as GONE.
+     * Chromium pauses HTML media when it sees that, which is what
+     * [BackgroundMediaRuntime] is keeping alive.
+     */
+    var keepPlayingInBackground: Boolean = false
+
+    /** Synchronous flag the page script reads via [BackgroundMediaScript]. */
+    val backgroundHold: BackgroundMediaHold = BackgroundMediaHold()
+
+    private var backgroundInterfaceAdded = false
+
+    fun ensureBackgroundInterface() {
+        if (backgroundInterfaceAdded) return
+        backgroundInterfaceAdded = true
+        addJavascriptInterface(backgroundHold, BackgroundMediaScript.JS_INTERFACE)
+    }
+
+    override fun onWindowVisibilityChanged(visibility: Int) {
+        if (keepPlayingInBackground && visibility != View.VISIBLE) {
+            super.onWindowVisibilityChanged(View.VISIBLE)
+            return
+        }
+        super.onWindowVisibilityChanged(visibility)
+    }
 
     override fun onCreateInputConnection(outAttrs: EditorInfo): InputConnection? {
         val connection = super.onCreateInputConnection(outAttrs)

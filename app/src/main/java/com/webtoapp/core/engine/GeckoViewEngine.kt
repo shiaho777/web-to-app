@@ -778,6 +778,8 @@ class GeckoViewEngine(
     private var lastUserAgentOverride: String? = null
     /** URL we already injected page zoom into, so a javascript: eval cannot loop. */
     private var pageZoomInjectedUrl: String? = null
+    /** Same guard for the background-playback script. */
+    private var backgroundMediaInjectedUrl: String? = null
 
     /**
      * True while the session is detached from its GeckoView for a hidden
@@ -2033,6 +2035,15 @@ class GeckoViewEngine(
      * `evaluateJavascript` loads a `javascript:` URI; skip those URLs so the
      * injection cannot schedule itself again.
      */
+    private fun injectBackgroundMediaScript(url: String?) {
+        val cfg = lastConfig ?: return
+        if (!cfg.backgroundMediaPlayback || !cfg.javaScriptEnabled) return
+        if (url.isNullOrBlank() || url.startsWith("javascript:") || url.startsWith("about:")) return
+        if (backgroundMediaInjectedUrl == url) return
+        backgroundMediaInjectedUrl = url
+        evaluateJavascript(com.webtoapp.core.webview.BackgroundMediaScript.INSTALL, null)
+    }
+
     private fun injectPageZoomIfNeeded(url: String?) {
         val cfg = lastConfig ?: return
         if (!cfg.javaScriptEnabled) return
@@ -2059,13 +2070,17 @@ class GeckoViewEngine(
                 // that also land here are ignored by [injectPageZoomIfNeeded].
                 if (!url.startsWith("javascript:")) {
                     pageZoomInjectedUrl = null
+                    backgroundMediaInjectedUrl = null
                 }
                 callback.onPageStarted(url)
             }
 
             override fun onPageStop(session: GeckoSession, success: Boolean) {
                 callback.onPageFinished(currentUrl)
-                if (success) injectPageZoomIfNeeded(currentUrl)
+                if (success) {
+                    injectBackgroundMediaScript(currentUrl)
+                    injectPageZoomIfNeeded(currentUrl)
+                }
             }
 
             override fun onProgressChange(session: GeckoSession, progress: Int) {

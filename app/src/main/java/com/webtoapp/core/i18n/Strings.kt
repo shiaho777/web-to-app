@@ -4952,6 +4952,8 @@ object Strings {
     val enablePrintBridgeDesc: String get() = StringsE.enablePrintBridgeDesc
     val enableMediaSessionTitle: String get() = StringsE.enableMediaSessionTitle
     val enableMediaSessionDesc: String get() = StringsE.enableMediaSessionDesc
+    val backgroundMediaPlaybackTitle: String get() = StringsE.backgroundMediaPlaybackTitle
+    val backgroundMediaPlaybackDesc: String get() = StringsE.backgroundMediaPlaybackDesc
     val previewBackendAppIntro: String get() = StringsE.previewBackendAppIntro
     val previewEntryNotFound: String get() = StringsE.previewEntryNotFound
     val previewFileNotFound: String get() = StringsE.previewFileNotFound

@@ -3533,7 +3533,37 @@ fun SpecialSettingsCard(
                                 subtitle = Strings.enableMediaSessionDesc.ifDescriptionsShown(),
                                 icon = Icons.Outlined.PlayCircle,
                                 checked = config.enableMediaSession,
-                                onCheckedChange = { onConfigChange(config.copy(enableMediaSession = it)) }
+                                onCheckedChange = { enabled ->
+                                    onConfigChange(
+                                        config.copy(
+                                            enableMediaSession = enabled,
+                                            backgroundMediaPlayback = if (enabled) {
+                                                config.backgroundMediaPlayback
+                                            } else {
+                                                false
+                                            }
+                                        )
+                                    )
+                                }
+                            )
+                            WtaSectionDivider()
+                            WtaToggleRow(
+                                title = Strings.backgroundMediaPlaybackTitle,
+                                subtitle = Strings.backgroundMediaPlaybackDesc.ifDescriptionsShown(),
+                                icon = Icons.Outlined.Headphones,
+                                checked = config.backgroundMediaPlayback,
+                                onCheckedChange = { enabled ->
+                                    onConfigChange(
+                                        if (enabled) {
+                                            config.copy(
+                                                backgroundMediaPlayback = true,
+                                                enableMediaSession = true
+                                            )
+                                        } else {
+                                            config.copy(backgroundMediaPlayback = false)
+                                        }
+                                    )
+                                }
                             )
                         }
                         SpecialAdvancedRow(

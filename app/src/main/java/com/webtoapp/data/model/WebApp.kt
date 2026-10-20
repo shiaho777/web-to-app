@@ -548,6 +548,12 @@ data class WebViewConfig(
 
     val enableMediaSession: Boolean = true,
 
+    // Off by default. While on, audio that is already playing keeps going after
+    // the user leaves. The picture stops with the window and resumes on return.
+    // Requires the media-session foreground service; the editor turns that on
+    // together with this switch.
+    val backgroundMediaPlayback: Boolean = false,
+
     val primeUserActivation: Boolean = true,
     val primeUserActivationMode: PrimeUserActivationMode = PrimeUserActivationMode.SYNTHETIC_TAP,
     val primeUserActivationTiming: PrimeUserActivationTiming = PrimeUserActivationTiming.ON_PAGE_FINISHED,

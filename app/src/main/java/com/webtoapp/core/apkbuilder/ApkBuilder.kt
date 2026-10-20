@@ -3892,7 +3892,7 @@ builtins.__import__ = _w2a_import
             permissions = config.runtimePermissions,
             defaults = PermissionFeatureDefaults(
                 network = config.requiresNetworkPermissions(),
-                mediaPlayback = config.enableMediaSession,
+                mediaPlayback = config.enableMediaSession || config.backgroundMediaPlayback,
                 specialUse = config.backgroundRunEnabled ||
                     config.notificationEnabled ||
                     config.floatingWindowEnabled,
@@ -3935,7 +3935,7 @@ builtins.__import__ = _w2a_import
             components += "com.webtoapp.core.floatingwindow.FloatingWindowService"
         }
 
-        if (config.enableMediaSession) {
+        if (config.enableMediaSession || config.backgroundMediaPlayback) {
             components += "com.webtoapp.core.webview.WebMediaPlaybackService"
         }
 
@@ -4418,6 +4418,7 @@ private fun WebApp.buildWebViewBehaviorBlock(): WebViewBehaviorBlock = WebViewBe
     blobInterceptThresholdMb = webViewConfig.blobInterceptThresholdMb,
     enablePrintBridge = webViewConfig.enablePrintBridge,
     enableMediaSession = webViewConfig.enableMediaSession,
+    backgroundMediaPlayback = webViewConfig.backgroundMediaPlayback,
     enableCloudflareCompat = webViewConfig.enableCloudflareCompat,
     cloudflareCompatMode = webViewConfig.cloudflareCompatMode.name,
     primeUserActivation = webViewConfig.primeUserActivation,

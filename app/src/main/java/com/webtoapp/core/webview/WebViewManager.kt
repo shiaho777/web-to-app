@@ -56,6 +56,7 @@ class WebViewManager(
     private val blobCacheHookHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
     private val cloudflareCompatScriptHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
     private val backStateGuardScriptHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
+    private val backgroundMediaScriptHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
     private val printBridgeScriptHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
     private val geolocationShimHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
     private val shareInboxScriptHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
@@ -1940,6 +1941,10 @@ class WebViewManager(
                 installBackStateGuardDocumentStart(this)
             }
 
+            if (config.backgroundMediaPlayback) {
+                installBackgroundMediaDocumentStart(this)
+            }
+
             if (config.downloadEnabled) {
                 setDownloadListener { url, userAgent, contentDisposition, mimeType, contentLength ->
                     noteDownloadInterceptedUrl(url)
@@ -2521,6 +2526,10 @@ class WebViewManager(
                 }
 
                 view?.let { wv ->
+                    if (currentConfig?.backgroundMediaPlayback == true) {
+                        (wv as? WtaWebView)?.ensureBackgroundInterface()
+                        wv.evaluateJavascript(BackgroundMediaScript.INSTALL, null)
+                    }
                     try {
                         val list = wv.copyBackForwardList()
                         val currentIndex = list.currentIndex
@@ -4588,6 +4597,21 @@ class WebViewManager(
             AppLogger.d("WebViewManager", "Cloudflare compat installed at document start")
         } catch (e: Exception) {
             AppLogger.w("WebViewManager", "Document-start Cloudflare compat install failed", e)
+        }
+    }
+
+    private fun installBackgroundMediaDocumentStart(webView: WebView) {
+        (webView as? WtaWebView)?.ensureBackgroundInterface()
+        if (backgroundMediaScriptHandlers.containsKey(webView)) return
+        if (!WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) return
+        try {
+            backgroundMediaScriptHandlers[webView] = WebViewCompat.addDocumentStartJavaScript(
+                webView,
+                BackgroundMediaScript.INSTALL,
+                setOf("*")
+            )
+        } catch (e: Exception) {
+            AppLogger.w("WebViewManager", "Document-start background media install failed", e)
         }
     }
 

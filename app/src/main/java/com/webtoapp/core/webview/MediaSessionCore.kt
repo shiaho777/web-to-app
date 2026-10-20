@@ -70,6 +70,9 @@ class MediaSessionCore(
 
     private var playbackState = PlaybackState.STATE_NONE
 
+    private var playbackActiveListener: ((Boolean) -> Unit)? = null
+    private var lastNotifiedActive: Boolean? = null
+
     /**
      * `true` once any non-`none` playback state has ever been reported. Used to
      * guard [clearPlayback] so the initial `STATE_NONE` event (emitted during
@@ -329,8 +332,28 @@ class MediaSessionCore(
         }
 
         playbackState = state
+        notifyPlaybackActive()
 
         publish()
+    }
+
+    fun setPlaybackActiveListener(listener: ((Boolean) -> Unit)?) {
+        playbackActiveListener = listener
+        if (listener == null) {
+            lastNotifiedActive = null
+            return
+        }
+        notifyPlaybackActive(force = true)
+    }
+
+    private fun isActivePlayback(state: Int): Boolean =
+        state == PlaybackState.STATE_PLAYING || state == PlaybackState.STATE_BUFFERING
+
+    private fun notifyPlaybackActive(force: Boolean = false) {
+        val active = isActivePlayback(playbackState)
+        if (!force && lastNotifiedActive == active) return
+        lastNotifiedActive = active
+        playbackActiveListener?.invoke(active)
     }
 
     private fun cancelTeardown() {
@@ -756,6 +779,7 @@ class MediaSessionCore(
         hasActivePlaybackSession = false
 
         playbackState = PlaybackState.STATE_NONE
+        notifyPlaybackActive()
         positionSeconds = 0.0
         durationSeconds = 0.0
         lastPositionUpdateMs = 0L

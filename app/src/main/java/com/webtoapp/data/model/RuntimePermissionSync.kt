@@ -100,7 +100,7 @@ fun featureRequiredRuntimePermissions(
         // foreground service, so it must not latch FOREGROUND_SERVICE_* (#1313).
         required = required.copy(notifications = true)
     }
-    if (webView.enableMediaSession) {
+    if (webView.enableMediaSession || webView.backgroundMediaPlayback) {
         // WebMediaPlaybackService runs as a mediaPlayback foreground service and
         // acquires a partial wake lock whenever the page reports playback — a
         // missing WAKE_LOCK crashed generated APKs with SecurityException (#1034).
@@ -236,7 +236,7 @@ fun featurePermissionReasons(
     if (bgmEnabled) {
         add("notifications", PermissionFeatureReason.BGM)
     }
-    if (webView.enableMediaSession) {
+    if (webView.enableMediaSession || webView.backgroundMediaPlayback) {
         add("foregroundService", PermissionFeatureReason.MEDIA_SESSION)
         add("wakeLock", PermissionFeatureReason.MEDIA_SESSION)
     }

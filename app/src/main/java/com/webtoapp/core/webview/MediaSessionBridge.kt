@@ -230,6 +230,10 @@ class MediaSessionBridge(
         }
     }
 
+    fun setPlaybackActiveListener(listener: ((Boolean) -> Unit)?) {
+        core.setPlaybackActiveListener(listener)
+    }
+
     fun release() {
         core.release()
 
@@ -755,6 +759,9 @@ class MediaSessionBridge(
 
               window.__wtaMediaCommand =
                 async function(action, value) {
+                  if (action === "pause" || action === "stop") {
+                    window.__wtaAllowMediaPauseUntil = Date.now() + 2000;
+                  }
                   const handled =
                     await callHandler(action, value);
 

@@ -1,5 +1,6 @@
 package com.webtoapp.ui.webview
 import com.webtoapp.core.engine.BrowserSurface
+import com.webtoapp.core.webview.BackgroundMediaRuntime
 import com.webtoapp.core.engine.EngineViewFactory
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.webtoapp.ui.components.PremiumButton
@@ -213,6 +214,10 @@ open class WebViewActivity : AppCompatActivity() {
     private var filePathCallback: ValueCallback<Array<Uri>>? = null
     internal var mediaSessionBridge: com.webtoapp.core.webview.MediaSessionBridge? = null
     internal var geckoMediaAdapter: com.webtoapp.core.engine.GeckoMediaSessionAdapter? = null
+    internal val backgroundMedia = BackgroundMediaRuntime(
+        webView = { webView },
+        surface = { browserSurface }
+    )
 
     private var pendingPermissionRequest: PermissionRequest? = null
     private var pendingEnginePermissionCallback: ((Boolean) -> Unit)? = null
@@ -946,6 +951,7 @@ open class WebViewActivity : AppCompatActivity() {
         )
 
         enableBackStatePreservation = previewApp?.webViewConfig?.enableBackStatePreservation ?: false
+        backgroundMedia.enabled = previewApp?.webViewConfig?.backgroundMediaPlayback == true
         activeFollowSystemDarkMode = previewApp?.webViewConfig?.followSystemDarkMode
         com.webtoapp.core.engine.GeckoViewEngine.applyEnterpriseRootsEnabled(
             previewApp?.apkExportConfig?.networkTrustConfig?.trustUserCa == true
@@ -1018,6 +1024,7 @@ open class WebViewActivity : AppCompatActivity() {
                     // only covers intent-carried preview apps.
                     if (previewApp == null) {
                         enableBackStatePreservation = app.webViewConfig.enableBackStatePreservation
+                        backgroundMedia.enabled = app.webViewConfig.backgroundMediaPlayback
                         activeFollowSystemDarkMode = app.webViewConfig.followSystemDarkMode
                         com.webtoapp.core.engine.GeckoViewEngine.applyEnterpriseRootsEnabled(
                             app.apkExportConfig?.networkTrustConfig?.trustUserCa == true
@@ -1057,13 +1064,16 @@ open class WebViewActivity : AppCompatActivity() {
                     // install the media bridge, otherwise playback started from the
                     // app list never publishes a media session.
                     val effectiveMediaConfig = previewApp?.webViewConfig ?: loadedApp?.webViewConfig
-                    if (effectiveMediaConfig?.enableMediaSession == true) {
+                    if (effectiveMediaConfig?.enableMediaSession == true ||
+                        effectiveMediaConfig?.backgroundMediaPlayback == true
+                    ) {
                         val mediaBridge = com.webtoapp.core.webview.MediaSessionBridge(
                             this@WebViewActivity,
                             wv
                         )
                         mediaBridge.install()
                         mediaSessionBridge = mediaBridge
+                        backgroundMedia.bind(mediaBridge)
                     }
 
                     if (previewApp?.translateEnabled == true || loadedApp?.translateEnabled == true) {
@@ -1232,10 +1242,18 @@ open class WebViewActivity : AppCompatActivity() {
         return super.dispatchGenericMotionEvent(ev)
     }
 
+    override fun onUserLeaveHint() {
+        backgroundMedia.onFocusLost(!isFinishing && !isChangingConfigurations)
+        super.onUserLeaveHint()
+    }
+
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
         if (hasFocus) {
+            backgroundMedia.onFocusGained()
             applyImmersiveFullscreen(customView != null || immersiveFullscreenEnabled)
+        } else {
+            backgroundMedia.onFocusLost(!isFinishing && !isChangingConfigurations)
         }
     }
 
@@ -1316,15 +1334,20 @@ open class WebViewActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        backgroundMedia.onHostResume()
         webView?.onResume()
         webView?.resumeTimers()
+        browserSurface?.onResume()
         if (trackedAppId > 0) usageTracker?.trackResume(trackedAppId)
     }
 
     override fun onPause() {
         if (trackedAppId > 0) usageTracker?.trackPause(trackedAppId)
         persistResumeUrl()
-        webView?.onPause()
+        val keepMedia = backgroundMedia.onHostPause(!isFinishing && !isChangingConfigurations)
+        if (!keepMedia) {
+            webView?.onPause()
+        }
         android.webkit.CookieManager.getInstance().flush()
         super.onPause()
     }
@@ -1470,6 +1493,7 @@ open class WebViewActivity : AppCompatActivity() {
         // record so a cold restart can resume on the same page.
         if (isFinishing) resumeStore.clear(sessionKey)
 
+        backgroundMedia.close()
         mediaSessionBridge?.release()
         mediaSessionBridge = null
         geckoMediaAdapter?.runCatching { release() }
@@ -3866,12 +3890,15 @@ fun WebViewScreen(
                             // parity — MULTI_WEB previously never saw per-site surfaces).
                             browserSurfaceRef = surface
                             (context as? WebViewActivity)?.browserSurface = surface
-                            if (surface.webView == null && mwApp.webViewConfig.enableMediaSession) {
+                            if (surface.webView == null &&
+                                (mwApp.webViewConfig.enableMediaSession || mwApp.webViewConfig.backgroundMediaPlayback)
+                            ) {
                                 val geckoEngine = surface.engine as? com.webtoapp.core.engine.GeckoViewEngine
                                 if (geckoEngine != null) {
                                     (context as? WebViewActivity)?.let { host ->
                                         host.geckoMediaAdapter?.runCatching { release() }
                                         host.geckoMediaAdapter = com.webtoapp.core.engine.GeckoMediaSessionAdapter(host, geckoEngine)
+                                        host.backgroundMedia.bind(host.geckoMediaAdapter)
                                     }
                                 }
                             }
@@ -3979,7 +4006,8 @@ fun WebViewScreen(
                                 (context as? WebViewActivity)?.browserSurface = surface
                                 val createdWebView = surface.webView
                                 if (createdWebView == null &&
-                                    webApp?.webViewConfig?.enableMediaSession == true
+                                    (webApp?.webViewConfig?.enableMediaSession == true ||
+                                        webApp?.webViewConfig?.backgroundMediaPlayback == true)
                                 ) {
                                     // Gecko engine preview: bridge Gecko's own media
                                     // session events into the shared native core (#593).
@@ -3988,6 +4016,7 @@ fun WebViewScreen(
                                         (context as? WebViewActivity)?.let { host ->
                                             host.geckoMediaAdapter?.runCatching { release() }
                                             host.geckoMediaAdapter = com.webtoapp.core.engine.GeckoMediaSessionAdapter(host, geckoEngine)
+                                            host.backgroundMedia.bind(host.geckoMediaAdapter)
                                         }
                                     }
                                 }

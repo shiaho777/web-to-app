@@ -133,6 +133,10 @@ class GeckoMediaSessionAdapter(
         AppLogger.i(TAG, "Gecko media session adapter attached")
     }
 
+    fun setPlaybackActiveListener(listener: ((Boolean) -> Unit)?) {
+        core.setPlaybackActiveListener(listener)
+    }
+
     fun release() {
         engine.setMediaSessionDelegate(null)
         core.release()

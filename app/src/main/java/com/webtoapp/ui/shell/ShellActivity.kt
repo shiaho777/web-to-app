@@ -24,6 +24,7 @@ import kotlinx.coroutines.launch
 import com.webtoapp.WebToAppApplication
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.ui.theme.ShellTheme
+import com.webtoapp.core.webview.BackgroundMediaRuntime
 import com.webtoapp.core.webview.TranslateBridge
 import com.webtoapp.data.model.KeyboardAdjustMode
 import com.webtoapp.core.floatingwindow.FloatingWindowService
@@ -37,6 +38,11 @@ class ShellActivity : AppCompatActivity() {
 
     private var webView: WebView? = null
     private var browserSurface: BrowserSurface? = null
+    private val backgroundMedia = BackgroundMediaRuntime(
+        webView = { webView },
+        surface = { browserSurface },
+        dispatchHidden = { dispatchVisibilityEvent(visible = false) }
+    )
     private var customView: View? = null
     private var customViewCallback: WebChromeClient.CustomViewCallback? = null
 
@@ -522,6 +528,7 @@ class ShellActivity : AppCompatActivity() {
         }
         initAdStack(config)
         notificationPolyfillEnabled = config.webViewConfig.enableNotificationPolyfill
+        backgroundMedia.enabled = config.webViewConfig.backgroundMediaPlayback
         com.webtoapp.core.engine.GeckoViewEngine.applyEnterpriseRootsEnabled(
             config.networkTrustConfig.trustUserCa
         )
@@ -699,7 +706,7 @@ class ShellActivity : AppCompatActivity() {
                         com.webtoapp.core.shell.ShellLogger.i("ShellActivity", "Browser surface created (GeckoView), ECH engine active")
                         // GeckoView implements the web Media Session API itself;
                         // its engine events feed the shared native core (#593).
-                        if (config.webViewConfig.enableMediaSession) {
+                        if (config.webViewConfig.enableMediaSession || config.webViewConfig.backgroundMediaPlayback) {
                             val geckoEngine = surface.engine as? com.webtoapp.core.engine.GeckoViewEngine
                             if (geckoEngine != null) {
                                 geckoMediaAdapter?.release()
@@ -707,6 +714,7 @@ class ShellActivity : AppCompatActivity() {
                                     this@ShellActivity,
                                     geckoEngine
                                 )
+                                backgroundMedia.bind(geckoMediaAdapter)
                                 com.webtoapp.core.shell.ShellLogger.i("ShellActivity", "[MediaSession] Gecko adapter attached")
                             }
                         }
@@ -800,7 +808,7 @@ class ShellActivity : AppCompatActivity() {
                             }
                         }
 
-                        if (config.webViewConfig.enableMediaSession) {
+                        if (config.webViewConfig.enableMediaSession || config.webViewConfig.backgroundMediaPlayback) {
                             val mediaBridge = com.webtoapp.core.webview.MediaSessionBridge(
                                 this@ShellActivity,
                                 wv
@@ -811,6 +819,7 @@ class ShellActivity : AppCompatActivity() {
                                 com.webtoapp.core.shell.ShellLogger.w("ShellActivity", "[MediaSession] Document-start unsupported, will re-inject on page finish")
                             }
                             mediaSessionBridge = mediaBridge
+                            backgroundMedia.bind(mediaBridge)
                         }
 
                         if (config.webViewConfig.enableNativeBridge) {
@@ -1012,8 +1021,18 @@ class ShellActivity : AppCompatActivity() {
         finish()
     }
 
+    override fun onUserLeaveHint() {
+        backgroundMedia.onFocusLost(!isFinishing && !isChangingConfigurations)
+        super.onUserLeaveHint()
+    }
+
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
+        if (hasFocus) {
+            backgroundMedia.onFocusGained()
+        } else {
+            backgroundMedia.onFocusLost(!isFinishing && !isChangingConfigurations)
+        }
         if (hasFocus) {
             if (customView != null || immersiveFullscreenEnabled) {
                 applyImmersiveFullscreen(true, isDarkTheme = isSystemInDarkMode())
@@ -1251,6 +1270,7 @@ class ShellActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        backgroundMedia.onHostResume()
 
         if (pendingFloatingWindowLaunch) {
             val config = WebToAppApplication.shellMode.getConfig()
@@ -1270,11 +1290,16 @@ class ShellActivity : AppCompatActivity() {
     }
 
     override fun onPause() {
+        val keepMedia = backgroundMedia.onHostPause(!isFinishing && !isChangingConfigurations)
         super.onPause()
 
-        dispatchVisibilityEvent(visible = false)
+        if (!keepMedia) {
+            dispatchVisibilityEvent(visible = false)
+        }
 
-        if (notificationPolyfillEnabled && browserSurface == null) {
+        if (keepMedia) {
+            com.webtoapp.core.shell.ShellLogger.logLifecycle("ShellActivity", "onPause - background media playing, leaving the page running")
+        } else if (notificationPolyfillEnabled && browserSurface == null) {
             // Keep JavaScript timers running so background web notifications can fire.
             // Only applies to system WebView (NativeBridge is unavailable in GeckoView).
             // The foreground service keeps the process alive.
@@ -1284,7 +1309,10 @@ class ShellActivity : AppCompatActivity() {
         }
 
         android.webkit.CookieManager.getInstance().flush()
-        com.webtoapp.core.shell.ShellLogger.logLifecycle("ShellActivity", "onPause - WebView paused, cookies flushed")
+        com.webtoapp.core.shell.ShellLogger.logLifecycle(
+            "ShellActivity",
+            if (keepMedia) "onPause - media kept alive, cookies flushed" else "onPause - WebView paused, cookies flushed"
+        )
     }
 
     /**
@@ -1322,6 +1350,7 @@ class ShellActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        backgroundMedia.close()
         directoryPickerHost.cancelPending()
         com.webtoapp.core.webview.DirectoryPickerRegistry.uninstall(directoryPickerHost)
         com.webtoapp.core.shell.ShellLogger.logLifecycle("ShellActivity", "onDestroy")
