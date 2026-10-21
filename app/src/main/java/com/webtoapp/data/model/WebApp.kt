@@ -431,6 +431,12 @@ data class WebViewConfig(
      * registered app id (so it cannot be shipped as a general-purpose default).
      */
     val customAppReturnSchemes: List<String> = emptyList(),
+
+    /**
+     * Outbound Web Share. The page's `navigator.share({ text, url, files })` opens the
+     * system share sheet with the caption and the files together. The user picks the
+     * target app. On for new apps. Remote https pages get the same bridge as local ones.
+     */
     val enableShareBridge: Boolean = true,
 
     /**

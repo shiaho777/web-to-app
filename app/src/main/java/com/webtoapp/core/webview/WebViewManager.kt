@@ -57,6 +57,7 @@ class WebViewManager(
     private val cloudflareCompatScriptHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
     private val backStateGuardScriptHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
     private val backgroundMediaScriptHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
+    private val shareBridgeScriptHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
     private val printBridgeScriptHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
     private val geolocationShimHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
     private val shareInboxScriptHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
@@ -1960,6 +1961,7 @@ class WebViewManager(
 
             if (config.enableShareBridge) {
                 addJavascriptInterface(ShareBridge(context), "NativeShareBridge")
+                installShareBridgeDocumentStart(this)
             }
 
             if (config.enableShareReceive) {
@@ -2529,6 +2531,9 @@ class WebViewManager(
                     if (currentConfig?.backgroundMediaPlayback == true) {
                         (wv as? WtaWebView)?.ensureBackgroundInterface()
                         wv.evaluateJavascript(BackgroundMediaScript.INSTALL, null)
+                    }
+                    if (currentConfig?.enableShareBridge == true) {
+                        wv.evaluateJavascript(ShareBridgeScript.INSTALL, null)
                     }
                     try {
                         val list = wv.copyBackForwardList()
@@ -4600,6 +4605,20 @@ class WebViewManager(
         }
     }
 
+    private fun installShareBridgeDocumentStart(webView: WebView) {
+        if (shareBridgeScriptHandlers.containsKey(webView)) return
+        if (!WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) return
+        try {
+            shareBridgeScriptHandlers[webView] = WebViewCompat.addDocumentStartJavaScript(
+                webView,
+                ShareBridgeScript.INSTALL,
+                setOf("*")
+            )
+        } catch (e: Exception) {
+            AppLogger.w("WebViewManager", "Document-start share bridge install failed", e)
+        }
+    }
+
     private fun installBackgroundMediaDocumentStart(webView: WebView) {
         (webView as? WtaWebView)?.ensureBackgroundInterface()
         if (backgroundMediaScriptHandlers.containsKey(webView)) return
@@ -5268,72 +5287,9 @@ class WebViewManager(
                 """.trimIndent())
             }
 
-            if (config.enableShareBridge && !conservativeMode) {
-                scripts.add("""
-                    (function() {
-                        'use strict';
-
-                        if (typeof NativeShareBridge !== 'undefined') {
-                            function __wta_readFileAsBase64(file) {
-                                return new Promise(function(resolve, reject) {
-                                    var reader = new FileReader();
-                                    reader.onload = function() {
-                                        try {
-                                            var arr = new Uint8Array(reader.result);
-                                            var chunkSize = 0x8000;
-                                            var binary = '';
-                                            for (var i = 0; i < arr.length; i += chunkSize) {
-                                                binary += String.fromCharCode.apply(null, arr.subarray(i, i + chunkSize));
-                                            }
-                                            resolve(btoa(binary));
-                                        } catch(e) { reject(e); }
-                                    };
-                                    reader.onerror = function() { reject(reader.error); };
-                                    reader.readAsArrayBuffer(file);
-                                });
-                            }
-
-                            navigator.share = function(data) {
-                                return new Promise(function(resolve, reject) {
-                                    try {
-                                        var title = data.title || '';
-                                        var text = data.text || '';
-                                        var url = data.url || '';
-                                        var files = data.files;
-
-                                        if (files && files.length > 0) {
-                                            var file = files[0];
-                                            __wta_readFileAsBase64(file).then(function(base64) {
-                                                NativeShareBridge.shareFile(title, base64, file.type || 'application/octet-stream', file.name || 'shared_file');
-                                                resolve();
-                                            }).catch(function(e) { reject(e); });
-                                        } else {
-                                            NativeShareBridge.shareText(title, text, url);
-                                            resolve();
-                                        }
-                                    } catch(e) {
-                                        reject(e);
-                                    }
-                                });
-                            };
-
-                            navigator.canShare = function(data) {
-                                if (!data) return false;
-                                if (data.files && data.files.length > 0) {
-                                    return typeof NativeShareBridge.canShareFiles === 'function'
-                                        ? NativeShareBridge.canShareFiles() : true;
-                                }
-                                return !!(data.text || data.url || data.title);
-                            };
-                        }
-                    })();
-                """.trimIndent())
-            }
-
             // Inbound share bootstrap (#943). Added on every page phase because WebView
             // versions without DOCUMENT_START_SCRIPT never got the early install; the script
-            // is idempotent. Not gated on conservativeMode — unlike the navigator.share
-            // polyfill above, this only *adds* an API and overrides nothing the page owns.
+            // is idempotent. Not gated on conservativeMode — it only adds an API.
             if (config.enableShareReceive) {
                 scripts.add(com.webtoapp.core.share.SHARE_INBOX_BOOTSTRAP_JS)
             }

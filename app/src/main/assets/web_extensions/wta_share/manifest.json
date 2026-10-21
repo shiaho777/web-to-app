@@ -1,0 +1,25 @@
+{
+  "manifest_version": 2,
+  "name": "WTA Share",
+  "version": "1.0",
+  "description": "Lets pages share text and files through the Android share sheet.",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "wta-share@webtoapp"
+    }
+  },
+  "content_security_policy": "script-src 'self'; object-src 'self'",
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content_script.js"],
+      "run_at": "document_start",
+      "all_frames": true
+    }
+  ],
+  "permissions": [
+    "nativeMessaging",
+    "nativeMessagingFromContent",
+    "geckoViewAddons"
+  ]
+}

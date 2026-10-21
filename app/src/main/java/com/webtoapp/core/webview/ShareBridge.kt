@@ -1,68 +1,64 @@
 package com.webtoapp.core.webview
 
+import android.content.ClipData
 import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Handler
+import android.os.Looper
 import android.util.Base64
 import android.webkit.JavascriptInterface
 import androidx.core.content.FileProvider
 import com.webtoapp.core.logging.AppLogger
 import java.io.File
+import java.io.FileOutputStream
+import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 
+/**
+ * Page → system share sheet.
+ *
+ * Text and files travel in one [Intent.ACTION_SEND] (or [Intent.ACTION_SEND_MULTIPLE]).
+ * The user picks the target — WhatsApp, Telegram, mail, or anything else on the sheet.
+ * Files arrive in chunks so a photo never has to cross the JavascriptInterface
+ * binder limit as one string.
+ */
 class ShareBridge(private val context: Context) {
+
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private val sessions = ConcurrentHashMap<String, ShareUpload>()
 
     @JavascriptInterface
     fun shareText(title: String?, text: String?, url: String?) {
-        try {
-            val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
-                type = "text/plain"
-                if (!title.isNullOrEmpty()) {
-                    putExtra(android.content.Intent.EXTRA_SUBJECT, title)
-                }
-                val shareText = buildString {
-                    if (!text.isNullOrEmpty()) append(text)
-                    if (!url.isNullOrEmpty()) {
-                        if (isNotEmpty()) append("\n")
-                        append(url)
-                    }
-                }
-                putExtra(android.content.Intent.EXTRA_TEXT, shareText)
-            }
-            val chooser = android.content.Intent.createChooser(intent, title ?: "Share")
-            chooser.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
-            context.startActivity(chooser)
-        } catch (e: Exception) {
-            AppLogger.e("ShareBridge", "Share failed", e)
+        val caption = joinShareCaption(text, url)
+        mainHandler.post {
+            launchShare(title, caption, emptyList())
         }
     }
 
+    /**
+     * One-shot file share kept for older page scripts. New shares use the
+     * chunked session below so the caption and every file go out together.
+     */
     @JavascriptInterface
     fun shareFile(title: String?, base64Data: String?, mimeType: String?, fileName: String?) {
-        if (base64Data.isNullOrEmpty() || mimeType.isNullOrEmpty()) return
+        if (base64Data.isNullOrEmpty()) return
         try {
-            val bytes = Base64.decode(base64Data, Base64.NO_WRAP)
-            val safeName = if (!fileName.isNullOrBlank()) sanitizeFileName(fileName) else "shared_file"
-            val shareDir = File(context.cacheDir, "shared_files").apply { mkdirs() }
-            val file = File(shareDir, safeName)
-            file.writeBytes(bytes)
-
-            val contentUri = FileProvider.getUriForFile(
-                context,
-                context.packageName + ".fileprovider",
-                file
-            )
-            val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
-                type = mimeType
-                if (!title.isNullOrEmpty()) {
-                    putExtra(android.content.Intent.EXTRA_SUBJECT, title)
-                }
-                putExtra(android.content.Intent.EXTRA_STREAM, contentUri)
-                addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            val id = "legacy-" + UUID.randomUUID().toString()
+            val upload = ShareUpload()
+            val dir = shareDir(id)
+            if (!upload.beginFile(dir, fileName, mimeType)) return
+            var offset = 0
+            while (offset < base64Data.length) {
+                val end = minOf(offset + 400_000, base64Data.length)
+                if (!upload.appendChunk(base64Data.substring(offset, end))) return
+                offset = end
             }
-            val chooser = android.content.Intent.createChooser(intent, title ?: "Share")
-            chooser.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
-            context.startActivity(chooser)
+            val files = upload.finish() ?: return
+            mainHandler.post { launchShare(title, "", files.map { it.toShared(dir) }) }
         } catch (e: Exception) {
-            AppLogger.e("ShareBridge", "Share file failed", e)
+            AppLogger.e(TAG, "Share file failed", e)
         }
     }
 
@@ -72,7 +68,296 @@ class ShareBridge(private val context: Context) {
     @JavascriptInterface
     fun canShareFiles(): Boolean = true
 
-    private fun sanitizeFileName(name: String): String {
-        return name.replace(Regex("[^a-zA-Z0-9._-]"), "_")
+    @JavascriptInterface
+    fun beginShare(title: String?, text: String?, url: String?): String {
+        pruneOldShares()
+        val id = UUID.randomUUID().toString()
+        sessions[id] = ShareUpload(title.orEmpty(), joinShareCaption(text, url))
+        return id
+    }
+
+    @JavascriptInterface
+    fun beginFile(sessionId: String?, name: String?, mime: String?): Boolean {
+        val session = sessions[sessionId] ?: return false
+        return session.beginFile(shareDir(sessionId!!), name, mime)
+    }
+
+    @JavascriptInterface
+    fun appendChunk(sessionId: String?, chunk: String?): Boolean {
+        val session = sessions[sessionId] ?: return false
+        return session.appendChunk(chunk.orEmpty())
+    }
+
+    @JavascriptInterface
+    fun finishShare(sessionId: String?): Boolean {
+        val session = sessions.remove(sessionId) ?: return false
+        val dir = shareDir(sessionId!!)
+        val files = try {
+            session.finish()
+        } catch (e: Exception) {
+            AppLogger.e(TAG, "Finish share failed", e)
+            null
+        } ?: return false
+        val shared = files.map { it.toShared(dir) }
+        mainHandler.post { launchShare(session.title, session.caption, shared) }
+        return true
+    }
+
+    @JavascriptInterface
+    fun cancelShare(sessionId: String?) {
+        sessions.remove(sessionId)
+        if (!sessionId.isNullOrBlank()) {
+            shareDir(sessionId).deleteRecursively()
+        }
+    }
+
+    private fun shareDir(id: String): File =
+        File(context.cacheDir, "shared_files/$id").apply { mkdirs() }
+
+    private fun pruneOldShares() {
+        val root = File(context.cacheDir, "shared_files")
+        val cutoff = System.currentTimeMillis() - SHARE_TTL_MS
+        root.listFiles()?.forEach { child ->
+            if (child.lastModified() < cutoff) child.deleteRecursively()
+        }
+    }
+
+    private fun launchShare(title: String?, caption: String, files: List<SharedFile>) {
+        try {
+            val intent = buildShareIntent(title, caption, files)
+            grantRead(intent, files.map { it.uri })
+            val chooser = Intent.createChooser(intent, title?.takeIf { it.isNotBlank() } ?: "Share")
+            chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            intent.clipData?.let { chooser.clipData = it }
+            context.startActivity(chooser)
+        } catch (e: Exception) {
+            AppLogger.e(TAG, "Share failed", e)
+        }
+    }
+
+    private fun buildShareIntent(title: String?, caption: String, files: List<SharedFile>): Intent {
+        val intent = when {
+            files.isEmpty() -> Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_TEXT, caption)
+            }
+            files.size == 1 -> Intent(Intent.ACTION_SEND).apply {
+                val file = files[0]
+                type = file.mime
+                putExtra(Intent.EXTRA_STREAM, file.uri)
+                if (caption.isNotBlank()) putExtra(Intent.EXTRA_TEXT, caption)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                clipData = ClipData.newUri(context.contentResolver, file.name, file.uri)
+            }
+            else -> Intent(Intent.ACTION_SEND_MULTIPLE).apply {
+                type = commonShareMime(files.map { it.mime })
+                putParcelableArrayListExtra(Intent.EXTRA_STREAM, ArrayList(files.map { it.uri }))
+                if (caption.isNotBlank()) putExtra(Intent.EXTRA_TEXT, caption)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                val first = files[0]
+                val clip = ClipData.newUri(context.contentResolver, first.name, first.uri)
+                files.drop(1).forEach { clip.addItem(ClipData.Item(it.uri)) }
+                clipData = clip
+            }
+        }
+        if (!title.isNullOrBlank()) intent.putExtra(Intent.EXTRA_SUBJECT, title)
+        return intent
+    }
+
+    private fun grantRead(intent: Intent, uris: List<Uri>) {
+        if (uris.isEmpty()) return
+        val resolved = try {
+            context.packageManager.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY)
+        } catch (e: Exception) {
+            AppLogger.w(TAG, "queryIntentActivities failed: ${e.message}")
+            emptyList()
+        }
+        for (info in resolved) {
+            val pkg = info.activityInfo?.packageName ?: continue
+            for (uri in uris) {
+                try {
+                    context.grantUriPermission(pkg, uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                } catch (e: Exception) {
+                    AppLogger.w(TAG, "grantUriPermission $pkg failed: ${e.message}")
+                }
+            }
+        }
+    }
+
+    private fun PreparedFile.toShared(dir: File): SharedFile {
+        val file = File(dir, storedName)
+        val uri = FileProvider.getUriForFile(
+            context,
+            context.packageName + ".fileprovider",
+            file
+        )
+        return SharedFile(name, mime, uri)
+    }
+
+    private data class SharedFile(val name: String, val mime: String, val uri: Uri)
+
+    private companion object {
+        const val TAG = "ShareBridge"
+        const val SHARE_TTL_MS = 60L * 60L * 1000L
     }
 }
+
+internal fun joinShareCaption(text: String?, url: String?): String = buildString {
+    if (!text.isNullOrBlank()) append(text.trim())
+    if (!url.isNullOrBlank()) {
+        if (isNotEmpty()) append('\n')
+        append(url.trim())
+    }
+}
+
+internal fun shareMime(fileName: String?, declared: String?): String {
+    val given = declared?.substringBefore(';')?.trim()?.lowercase().orEmpty()
+    if (given.isNotEmpty() && given != "application/octet-stream") return given
+    return when (fileName?.substringAfterLast('.', "")?.lowercase()) {
+        "png" -> "image/png"
+        "jpg", "jpeg" -> "image/jpeg"
+        "gif" -> "image/gif"
+        "webp" -> "image/webp"
+        "heic", "heif" -> "image/heic"
+        "mp4" -> "video/mp4"
+        "webm" -> "video/webm"
+        "mp3" -> "audio/mpeg"
+        "pdf" -> "application/pdf"
+        "txt" -> "text/plain"
+        else -> if (given.isNotEmpty()) given else "application/octet-stream"
+    }
+}
+
+internal fun commonShareMime(mimes: List<String>): String {
+    if (mimes.isEmpty()) return "*/*"
+    val first = mimes.first()
+    if (mimes.all { it == first }) return first
+    val tops = mimes.map { it.substringBefore('/') }.distinct()
+    return if (tops.size == 1) "${tops[0]}/*" else "*/*"
+}
+
+internal fun sanitizeShareFileName(name: String?): String {
+    val cleaned = name?.substringAfterLast('/')?.substringAfterLast('\\')
+        ?.replace(Regex("[^a-zA-Z0-9._-]"), "_")
+        ?.trim('_', '.')
+        .orEmpty()
+    return cleaned.ifBlank { "shared_file" }.take(80)
+}
+
+/**
+ * Assembles one outbound share. Chunks are base64 and may split a quartet,
+ * so the remainder waits for the next call.
+ */
+internal class ShareUpload(
+    val title: String = "",
+    val caption: String = ""
+) {
+    private val files = mutableListOf<PreparedFile>()
+    private var dir: File? = null
+    private var stream: FileOutputStream? = null
+    private var currentName = ""
+    private var currentMime = ""
+    private var currentStored = ""
+    private var pending = StringBuilder()
+    private var totalBytes = 0L
+    private var failed = false
+
+    fun beginFile(directory: File, name: String?, mime: String?): Boolean {
+        if (failed) return false
+        if (files.size >= MAX_FILES) return fail()
+        if (!closeCurrent()) return fail()
+        dir = directory
+        directory.mkdirs()
+        currentName = sanitizeShareFileName(name)
+        currentMime = shareMime(currentName, mime)
+        currentStored = "${files.size}_$currentName"
+        return try {
+            stream = FileOutputStream(File(directory, currentStored))
+            true
+        } catch (e: Exception) {
+            fail()
+        }
+    }
+
+    fun appendChunk(chunk: String): Boolean {
+        if (failed || stream == null) return fail()
+        if (chunk.length > MAX_CHUNK_CHARS) return fail()
+        pending.append(chunk.filter { !it.isWhitespace() })
+        val usable = pending.length - (pending.length % 4)
+        if (usable <= 0) return true
+        val part = pending.substring(0, usable)
+        pending.delete(0, usable)
+        return writeDecoded(part)
+    }
+
+    fun finish(): List<PreparedFile>? {
+        if (failed || !closeCurrent()) return null
+        return files.toList()
+    }
+
+    private fun closeCurrent(): Boolean {
+        val open = stream ?: return pending.isEmpty() || fail()
+        if (pending.isNotEmpty()) {
+            val padded = pending.toString() + "=".repeat((4 - pending.length % 4) % 4)
+            pending.clear()
+            if (!writeDecoded(padded)) {
+                open.closeQuietly()
+                stream = null
+                return false
+            }
+        }
+        return try {
+            open.flush()
+            open.close()
+            stream = null
+            files += PreparedFile(currentName, currentMime, currentStored)
+            true
+        } catch (e: Exception) {
+            stream = null
+            fail()
+        }
+    }
+
+    private fun writeDecoded(part: String): Boolean {
+        if (part.isEmpty()) return true
+        val bytes = try {
+            Base64.decode(part, Base64.NO_WRAP)
+        } catch (e: Exception) {
+            return fail()
+        }
+        totalBytes += bytes.size
+        if (totalBytes > MAX_BYTES) return fail()
+        return try {
+            stream?.write(bytes)
+            true
+        } catch (e: Exception) {
+            fail()
+        }
+    }
+
+    private fun fail(): Boolean {
+        failed = true
+        stream?.closeQuietly()
+        stream = null
+        return false
+    }
+
+    private fun FileOutputStream.closeQuietly() {
+        try {
+            close()
+        } catch (_: Exception) {
+        }
+    }
+
+    companion object {
+        const val MAX_BYTES = 32L * 1024L * 1024L
+        const val MAX_FILES = 10
+        const val MAX_CHUNK_CHARS = 512_000
+    }
+}
+
+internal data class PreparedFile(
+    val name: String,
+    val mime: String,
+    val storedName: String
+)

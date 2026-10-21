@@ -15357,6 +15357,34 @@ object StringsE {
         AppLanguage.KOREAN -> "package.json을 찾을 수 없습니다"
     }
 
+    // ── Outbound Web Share ──────────────────────────────────────────────────────
+
+    val outboundShareTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "网页分享"
+        AppLanguage.ENGLISH -> "Share from the page"
+        AppLanguage.ARABIC -> "مشاركة من الصفحة"
+        AppLanguage.PORTUGUESE -> "Compartilhar a partir da página"
+        AppLanguage.SPANISH -> "Compartir desde la página"
+        AppLanguage.FRENCH -> "Partager depuis la page"
+        AppLanguage.GERMAN -> "Von der Seite teilen"
+        AppLanguage.RUSSIAN -> "Поделиться со страницы"
+        AppLanguage.JAPANESE -> "ページから共有"
+        AppLanguage.KOREAN -> "페이지에서 공유"
+    }
+
+    val outboundShareDesc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "网页可以把文字和文件交给系统分享面板，再由你选择 WhatsApp、Telegram 或其他应用"
+        AppLanguage.ENGLISH -> "The page can hand text and files to the system share sheet. You then pick WhatsApp, Telegram, or any other app"
+        AppLanguage.ARABIC -> "يمكن للصفحة تسليم النص والملفات إلى لوحة مشاركة النظام، ثم تختار واتساب أو تيليغرام أو أي تطبيق آخر"
+        AppLanguage.PORTUGUESE -> "A página pode entregar texto e arquivos ao menu de compartilhamento do sistema. Você escolhe o WhatsApp, o Telegram ou qualquer outro app"
+        AppLanguage.SPANISH -> "La página puede entregar texto y archivos a la hoja de compartir del sistema. Tú eliges WhatsApp, Telegram u otra aplicación"
+        AppLanguage.FRENCH -> "La page peut remettre le texte et les fichiers à la feuille de partage du système. Vous choisissez WhatsApp, Telegram ou une autre application"
+        AppLanguage.GERMAN -> "Die Seite kann Text und Dateien an das System-Teilen übergeben. Sie wählen WhatsApp, Telegram oder eine andere App"
+        AppLanguage.RUSSIAN -> "Страница может передать текст и файлы в системную панель «Поделиться». Дальше вы выбираете WhatsApp, Telegram или другое приложение"
+        AppLanguage.JAPANESE -> "ページはテキストとファイルをシステムの共有シートに渡せます。WhatsApp、Telegram、または他のアプリを選べます"
+        AppLanguage.KOREAN -> "페이지가 글과 파일을 시스템 공유 시트로 넘깁니다. WhatsApp, Telegram 또는 다른 앱을 고르면 됩니다"
+    }
+
     // ── Inbound share sheet (issue #943) ────────────────────────────────────────
 
     val receiveShare: String get() = when (Strings.lang) {

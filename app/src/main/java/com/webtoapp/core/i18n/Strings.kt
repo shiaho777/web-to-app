@@ -5185,6 +5185,8 @@ object Strings {
     // ── Inbound share sheet (issue #943) ────────────────────────────────────────
 
     val receiveShare: String get() = StringsE.receiveShare
+    val outboundShareTitle: String get() = StringsE.outboundShareTitle
+    val outboundShareDesc: String get() = StringsE.outboundShareDesc
     val receiveShareHint: String get() = StringsE.receiveShareHint
     val receiveShareImages: String get() = StringsE.receiveShareImages
     val receiveShareImagesHint: String get() = StringsE.receiveShareImagesHint

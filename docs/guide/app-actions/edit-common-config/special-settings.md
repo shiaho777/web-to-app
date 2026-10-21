@@ -14,7 +14,7 @@ Compatibility polyfills, bridges, and other specialized toggles. This card colle
 - **Print bridge** — intercept `window.print()` and PDF output to the Android print framework (`enablePrintBridge`).
 - **Media Session bridge** — bridge web media to the system media notification and lock-screen controls, including Bluetooth headsets and Android Auto (`enableMediaSession`).
 - **Keep playing in background** — audio that is already playing continues after you leave, and the notification can pause it. The picture stops until you come back (`backgroundMediaPlayback`, off by default; turning it on also turns on the media session).
-- **Share bridge** — `enableShareBridge`.
+- **Share from the page** — the page hands text and files to the system share sheet, and the user picks the target app (`enableShareBridge`, on by default).
 - **Zoom polyfill** — `enableZoomPolyfill`.
 
 ## Media & content

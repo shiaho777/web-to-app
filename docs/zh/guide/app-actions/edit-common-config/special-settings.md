@@ -14,7 +14,7 @@
 - **打印桥** —— 拦截 `window.print()` 和 PDF 输出到 Android 打印框架(`enablePrintBridge`)。
 - **媒体会话桥** —— 把网页媒体接入系统媒体通知和锁屏控制,支持蓝牙耳机和 Android Auto(`enableMediaSession`)。
 - **后台继续播放** —— 离开应用后，正在播放的声音继续，通知栏可以暂停。画面会停，回到应用后接着播(`backgroundMediaPlayback`，默认关闭；打开时会同时打开媒体会话)。
-- **分享桥** —— `enableShareBridge`。
+- **网页分享** —— 网页把文字和文件交给系统分享面板，由用户选择目标应用（`enableShareBridge`，默认开启）。
 - **缩放 polyfill** —— `enableZoomPolyfill`。
 
 ## 媒体与内容

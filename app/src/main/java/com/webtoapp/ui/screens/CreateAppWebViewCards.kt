@@ -3990,6 +3990,14 @@ fun SpecialSettingsCard(
                                 }
                             }
                             WtaSectionDivider()
+                            WtaToggleRow(
+                                title = Strings.outboundShareTitle,
+                                subtitle = Strings.outboundShareDesc.ifDescriptionsShown(),
+                                icon = Icons.Outlined.Share,
+                                checked = config.enableShareBridge,
+                                onCheckedChange = { onConfigChange(config.copy(enableShareBridge = it)) }
+                            )
+                            WtaSectionDivider()
                             ShareReceiveRows(
                                 webViewConfig = config,
                                 onWebViewConfigChange = onConfigChange

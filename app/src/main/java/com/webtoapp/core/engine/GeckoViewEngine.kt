@@ -811,6 +811,7 @@ class GeckoViewEngine(
         // owned by this engine from counting against the recreate decision.
         session?.let { old ->
             unbindNativeBridge(old)
+            GeckoShareExtension.detach(old)
             try { old.close() } catch (_: Exception) {}
             liveSessions.remove(old)
             session = null
@@ -896,6 +897,10 @@ class GeckoViewEngine(
         newSession.open(runtime)
         liveSessions.add(newSession)
         session = newSession
+        if (config.enableShareBridge) {
+            GeckoShareExtension.ensure(runtime, context)
+            GeckoShareExtension.attach(newSession)
+        }
         nativeBridge?.let { bindNativeBridge(newSession, it) }
         if (nativeBridge != null) {
             armBridgeGate(newSession)
@@ -1015,6 +1020,20 @@ class GeckoViewEngine(
              * Gecko. BasePrompt.confirm() is protected on AlertPrompt; dismiss() is the
              * public completion and carries the same meaning for an alert (no return value).
              */
+            override fun onSharePrompt(
+                session: GeckoSession,
+                prompt: GeckoSession.PromptDelegate.SharePrompt
+            ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
+                if (!config.enableShareBridge) {
+                    return GeckoResult.fromValue(prompt.dismiss())
+                }
+                com.webtoapp.core.webview.ShareBridge(viewContext.applicationContext)
+                    .shareText(null, prompt.text, prompt.uri)
+                return GeckoResult.fromValue(
+                    prompt.confirm(GeckoSession.PromptDelegate.SharePrompt.Result.SUCCESS)
+                )
+            }
+
             override fun onAlertPrompt(
                 session: GeckoSession,
                 prompt: GeckoSession.PromptDelegate.AlertPrompt
@@ -1935,6 +1954,9 @@ class GeckoViewEngine(
             .allowJavascript(lastAllowJavascript)
             .build()
         val popupSession = GeckoSession(settings)
+        if (lastConfig?.enableShareBridge == true) {
+            GeckoShareExtension.attach(popupSession)
+        }
         lastUserAgentOverride?.let { popupSession.settings.userAgentOverride = it }
         val popupView = GeckoView(context)
         var canGoBack = false
