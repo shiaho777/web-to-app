@@ -54,6 +54,8 @@ import java.util.Locale
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
+internal enum class GoogleSignInDelivery { DELIVER, WAIT, DROP }
+
 class NativeBridge(
     private val context: Context,
     private val scope: CoroutineScope,
@@ -1755,17 +1757,7 @@ await WtaDirectory.write('exports/image.png', pngBytes);
         val js = "window.NativeBridgeGoogleSignInResult && window.NativeBridgeGoogleSignInResult($quotedRequestId, $payload);"
         scope.launch(Dispatchers.Main) {
             try {
-                val webView = webViewProvider()
-                if (webView == null || !googleSignInDeliveryAllowed(webView.url, callerOrigin)) {
-                    // The page navigated (possibly to a foreign origin) while the
-                    // account picker was open: handing the ID token to whatever is
-                    // loaded now would leak it cross-origin.
-                    if (payload.optBoolean("ok", false)) {
-                        AppLogger.w("NativeBridge", "Google sign-in result dropped: page origin changed during the flow")
-                    }
-                    return@launch
-                }
-                webView.evaluateJavascript(js, null)
+                deliverGoogleSignInResult(js, payload, callerOrigin, attemptsLeft = 20)
             } catch (e: Exception) {
                 AppLogger.w("NativeBridge", "Failed to deliver Google sign-in result", e)
             }
@@ -1773,20 +1765,66 @@ await WtaDirectory.write('exports/image.png', pngBytes);
     }
 
     /**
-     * Delivery gate for the async sign-in result: the WebView must still be on the
-     * origin that started the flow (same site or subdomain) or another local
-     * packaged/server page. Blank/absent pages never receive the token.
+     * The account picker pauses the WebView, and [android.webkit.WebView.getUrl]
+     * is often blank until resume. Dropping the result in that window is what
+     * the page sees as silence after the picker. Wait briefly for the URL, and
+     * if it never comes back, still deliver when the caller was a local page.
      */
-    private fun googleSignInDeliveryAllowed(currentPageUrl: String?, callerOrigin: String?): Boolean {
-        val current = currentPageUrl.orEmpty()
-        if (current.isBlank()) return false
-        if (isPrivateNetworkUrl(current) || current.startsWith("file:") || current.startsWith("content://")) {
-            return true
+    private fun deliverGoogleSignInResult(
+        js: String,
+        payload: org.json.JSONObject,
+        callerOrigin: String?,
+        attemptsLeft: Int,
+    ) {
+        val webView = webViewProvider()
+        if (webView == null) {
+            logDroppedGoogleSignIn(payload)
+            return
         }
-        val caller = callerOrigin ?: return false
-        val currentHost = runCatching { URI(current).host }.getOrNull() ?: return false
-        val callerHost = runCatching { URI(caller).host }.getOrNull() ?: return false
-        return isSameSiteOrSubdomain(currentHost, callerHost)
+        when (googleSignInDeliveryDecision(webView.url, callerOrigin, giveUpWaiting = attemptsLeft <= 0)) {
+            GoogleSignInDelivery.DELIVER -> webView.evaluateJavascript(js, null)
+            GoogleSignInDelivery.WAIT -> webView.postDelayed({
+                deliverGoogleSignInResult(js, payload, callerOrigin, attemptsLeft - 1)
+            }, 50)
+            GoogleSignInDelivery.DROP -> logDroppedGoogleSignIn(payload)
+        }
+    }
+
+    private fun logDroppedGoogleSignIn(payload: org.json.JSONObject) {
+        if (payload.optBoolean("ok", false)) {
+            AppLogger.w("NativeBridge", "Google sign-in result dropped: page origin changed during the flow")
+        }
+    }
+
+    internal fun googleSignInDeliveryDecision(
+        currentPageUrl: String?,
+        callerOrigin: String?,
+        giveUpWaiting: Boolean,
+    ): GoogleSignInDelivery {
+        val current = currentPageUrl.orEmpty()
+        if (current.isBlank()) {
+            if (!giveUpWaiting) return GoogleSignInDelivery.WAIT
+            val caller = callerOrigin.orEmpty()
+            return if (caller.isNotEmpty() && isLocalSignInPage(caller)) {
+                GoogleSignInDelivery.DELIVER
+            } else {
+                GoogleSignInDelivery.DROP
+            }
+        }
+        if (isLocalSignInPage(current)) return GoogleSignInDelivery.DELIVER
+        val caller = callerOrigin ?: return GoogleSignInDelivery.DROP
+        val currentHost = runCatching { URI(current).host }.getOrNull() ?: return GoogleSignInDelivery.DROP
+        val callerHost = runCatching { URI(caller).host }.getOrNull() ?: return GoogleSignInDelivery.DROP
+        return if (isSameSiteOrSubdomain(currentHost, callerHost)) {
+            GoogleSignInDelivery.DELIVER
+        } else {
+            GoogleSignInDelivery.DROP
+        }
+    }
+
+    private fun isLocalSignInPage(url: String): Boolean {
+        if (url.startsWith("file:") || url.startsWith("content://")) return true
+        return isPrivateNetworkUrl(url)
     }
 
     @Volatile
