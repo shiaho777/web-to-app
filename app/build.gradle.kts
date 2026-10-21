@@ -91,7 +91,12 @@ android {
 
         externalNativeBuild {
             cmake {
-                // All native sources are C; no CXX flags or shared STL needed.
+                // libnode.so (nodejs-mobile) is linked against the shared C++
+                // runtime. The host must ship libc++_shared.so: on-device npm
+                // dlopens libnode from the download cache, and NODEJS_APP export
+                // copies this file out of nativeLibraryDir. The shell stays
+                // c++_static and strips the library from the template.
+                arguments += "-DANDROID_STL=c++_shared"
             }
         }
     }

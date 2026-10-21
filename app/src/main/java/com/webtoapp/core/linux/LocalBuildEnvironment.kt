@@ -6,6 +6,7 @@ import com.webtoapp.core.frontend.PackageManager
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.core.nodejs.NodeDependencyManager
+import com.webtoapp.core.nodejs.nodeLinkerPath
 import com.webtoapp.util.GsonProvider
 import com.webtoapp.util.destroyForciblyCompat
 import com.webtoapp.util.waitForCompat
@@ -688,11 +689,11 @@ object LocalBuildEnvironment {
 
         val nativeLibDir = context.applicationInfo.nativeLibraryDir
         val existingLdPath = processEnv["LD_LIBRARY_PATH"].orEmpty()
-        processEnv["LD_LIBRARY_PATH"] = if (existingLdPath.isBlank()) {
-            nativeLibDir
-        } else {
-            "$nativeLibDir${File.pathSeparator}$existingLdPath"
-        }
+        processEnv["LD_LIBRARY_PATH"] = nodeLinkerPath(
+            libnodeDir = File(nodeLib).parent,
+            nativeLibDir = nativeLibDir,
+            existing = existingLdPath,
+        )
         processEnv["NODE_PATH"] = buildNodePath(context, workingDir)
         processEnv["PATH"] = listOf(
             getBinDir(context).absolutePath,

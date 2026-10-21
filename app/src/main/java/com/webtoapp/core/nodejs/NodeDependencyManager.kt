@@ -190,6 +190,7 @@ object NodeDependencyManager {
     }
 
     const val NODE_BINARY_NAME = "libnode.so"
+    const val CXX_SHARED_NAME = "libc++_shared.so"
 
     fun isNodeReady(context: Context): Boolean {
         val nativeNode = File(context.applicationInfo.nativeLibraryDir, NODE_BINARY_NAME)
@@ -232,6 +233,7 @@ object NodeDependencyManager {
                 }
                 ensureLibnodePageAligned(staged)
                 if (staged.exists() && staged.length() > 0L && isElfPageAlignmentCompatible(staged)) {
+                    stageCxxSharedBeside(context, staged)
                     AppLogger.d(TAG, "libnode.so path (staged+aligned from nativeLibraryDir): ${staged.absolutePath}")
                     return staged.absolutePath
                 }
@@ -247,11 +249,35 @@ object NodeDependencyManager {
         val downloadedNode = File(getNodeDir(context), NODE_BINARY_NAME)
         if (downloadedNode.exists() && downloadedNode.length() > 0) {
             ensureLibnodePageAligned(downloadedNode)
+            stageCxxSharedBeside(context, downloadedNode)
             AppLogger.d(TAG, "libnode.so path (download cache): ${downloadedNode.absolutePath}")
             return downloadedNode.absolutePath
         }
         AppLogger.w(TAG, "libnode.so is missing from both nativeLibraryDir and download cache")
         return null
+    }
+
+    /**
+     * libnode.so's DT_NEEDED entry is libc++_shared.so. A dlopen from the
+     * download directory does not search the APK's lib dir unless that file
+     * is also beside libnode.so (and on LD_LIBRARY_PATH for the launcher).
+     */
+    fun stageCxxSharedBeside(context: Context, libnode: File) {
+        val dir = libnode.parentFile ?: return
+        val staged = File(dir, CXX_SHARED_NAME)
+        val source = File(context.applicationInfo.nativeLibraryDir, CXX_SHARED_NAME)
+        if (!source.isFile || source.length() <= 0L) {
+            if (!staged.isFile) {
+                AppLogger.e(TAG, "libc++_shared.so missing at ${source.absolutePath}")
+            }
+            return
+        }
+        if (source.absolutePath == staged.absolutePath) return
+        val stale = !staged.isFile || staged.length() != source.length() ||
+            staged.lastModified() < source.lastModified()
+        if (!stale) return
+        source.copyTo(staged, overwrite = true)
+        AppLogger.i(TAG, "Staged libc++_shared.so beside libnode.so: ${staged.absolutePath}")
     }
 
     private fun ensureLibnodePageAligned(lib: File) {
@@ -875,4 +901,13 @@ object NodeDependencyManager {
             dst[off + i] = ((value ushr (8 * i)) and 0xffL).toByte()
         }
     }
+}
+
+internal fun nodeLinkerPath(libnodeDir: String?, nativeLibDir: String, existing: String): String {
+    return listOfNotNull(libnodeDir, nativeLibDir, existing)
+        .flatMap { it.split(File.pathSeparator) }
+        .map { it.trim() }
+        .filter { it.isNotEmpty() }
+        .distinct()
+        .joinToString(File.pathSeparator)
 }

@@ -3,6 +3,7 @@ package com.webtoapp.core.nodejs
 import android.content.Context
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.core.shell.ShellLogger
+import java.io.File
 
 class NodeJniOutputBridge(
     private val callback: NodeBridge.OutputCallback
@@ -61,6 +62,15 @@ object NodeBridge {
 
         AppLogger.i(TAG, "加载 libnode.so (dlopen): $nodePath")
         ShellLogger.i(TAG, "加载 libnode.so (dlopen): $nodePath")
+        NodeDependencyManager.stageCxxSharedBeside(context, File(nodePath))
+        val cxxShared = File(File(nodePath).parentFile, NodeDependencyManager.CXX_SHARED_NAME)
+        if (cxxShared.isFile) {
+            try {
+                System.load(cxxShared.absolutePath)
+            } catch (e: UnsatisfiedLinkError) {
+                AppLogger.w(TAG, "预加载 libc++_shared.so: ${e.message}")
+            }
+        }
 
         val result = nativeLoadNode(nodePath)
         if (result) {
