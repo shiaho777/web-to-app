@@ -30,6 +30,13 @@ class ShareUploadTest {
         assertThat(shareMime("photo.JPG", "")).isEqualTo("image/jpeg")
         assertThat(shareMime("photo.jpg", "application/octet-stream")).isEqualTo("image/jpeg")
         assertThat(shareMime("note.txt", "text/plain")).isEqualTo("text/plain")
+        assertThat(shareMime("page.html", "")).isEqualTo("text/html")
+        assertThat(shareMime("page.htm", "application/octet-stream")).isEqualTo("text/html")
+        assertThat(shareMime("letter.doc", "")).isEqualTo("application/msword")
+        assertThat(shareMime("letter.docx", "")).isEqualTo(
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        )
+        assertThat(shareMime("unknown.zzznotreal", "")).isEqualTo("application/octet-stream")
         assertThat(commonShareMime(listOf("image/jpeg", "image/png"))).isEqualTo("image/*")
         assertThat(commonShareMime(listOf("image/png", "application/pdf"))).isEqualTo("*/*")
         assertThat(sanitizeShareFileName("../../a b.png")).isEqualTo("a_b.png")

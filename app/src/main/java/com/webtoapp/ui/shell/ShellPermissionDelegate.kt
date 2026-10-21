@@ -20,6 +20,7 @@ import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.logging.AppLogger
+import com.webtoapp.core.webview.mimeTypeForFileExtension
 import com.webtoapp.util.DownloadHelper
 import java.io.File
 import java.text.SimpleDateFormat
@@ -435,78 +436,7 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
         return File.createTempFile("IMG_${timestamp}_", ".jpg", imageDir)
     }
 
-    private fun extensionToMimeType(ext: String): String {
-        return when (ext) {
-
-            ".json" -> "application/json"
-            ".xml" -> "application/xml"
-            ".csv" -> "text/csv"
-            ".txt" -> "text/plain"
-            ".pdf" -> "application/pdf"
-            ".doc" -> "application/msword"
-            ".docx" -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-            ".xls" -> "application/vnd.ms-excel"
-            ".xlsx" -> "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            ".ppt" -> "application/vnd.ms-powerpoint"
-            ".pptx" -> "application/vnd.openxmlformats-officedocument.presentationml.presentation"
-            ".rtf" -> "application/rtf"
-            ".odt" -> "application/vnd.oasis.opendocument.text"
-            ".ods" -> "application/vnd.oasis.opendocument.spreadsheet"
-
-            ".html", ".htm" -> "text/html"
-            ".css" -> "text/css"
-            ".js" -> "application/javascript"
-            ".ts" -> "application/typescript"
-            ".py" -> "text/x-python"
-            ".java" -> "text/x-java-source"
-            ".kt" -> "text/x-kotlin"
-            ".yaml", ".yml" -> "application/x-yaml"
-            ".toml" -> "application/toml"
-            ".ini", ".conf", ".cfg" -> "text/plain"
-            ".md" -> "text/markdown"
-            ".log" -> "text/plain"
-
-            ".jpg", ".jpeg" -> "image/jpeg"
-            ".png" -> "image/png"
-            ".gif" -> "image/gif"
-            ".webp" -> "image/webp"
-            ".svg" -> "image/svg+xml"
-            ".bmp" -> "image/bmp"
-            ".heic", ".heif" -> "image/heif"
-            ".ico" -> "image/x-icon"
-
-            ".mp3" -> "audio/mpeg"
-            ".wav" -> "audio/wav"
-            ".ogg" -> "audio/ogg"
-            ".flac" -> "audio/flac"
-            ".aac" -> "audio/aac"
-            ".m4a" -> "audio/mp4"
-
-            ".mp4" -> "video/mp4"
-            ".webm" -> "video/webm"
-            ".mkv" -> "video/x-matroska"
-            ".avi" -> "video/x-msvideo"
-            ".mov" -> "video/quicktime"
-            ".3gp" -> "video/3gpp"
-
-            ".zip" -> "application/zip"
-            ".tar" -> "application/x-tar"
-            ".gz", ".gzip" -> "application/gzip"
-            ".rar" -> "application/vnd.rar"
-            ".7z" -> "application/x-7z-compressed"
-
-            ".apk" -> "application/vnd.android.package-archive"
-            ".wasm" -> "application/wasm"
-            ".sql" -> "application/sql"
-            ".db", ".sqlite" -> "application/x-sqlite3"
-            else -> {
-
-                val extWithoutDot = ext.removePrefix(".")
-                android.webkit.MimeTypeMap.getSingleton().getMimeTypeFromExtension(extWithoutDot)
-                    ?: "application/octet-stream"
-            }
-        }
-    }
+    private fun extensionToMimeType(ext: String): String = mimeTypeForFileExtension(ext)
 
     @Deprecated("Use handleFileChooser() instead")
     var onFileChooserResult: ((Array<android.net.Uri>) -> Unit)? = null

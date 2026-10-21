@@ -9,6 +9,7 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Base64
 import android.webkit.JavascriptInterface
+import android.webkit.MimeTypeMap
 import androidx.core.content.FileProvider
 import com.webtoapp.core.logging.AppLogger
 import java.io.File
@@ -213,18 +214,79 @@ internal fun joinShareCaption(text: String?, url: String?): String = buildString
 internal fun shareMime(fileName: String?, declared: String?): String {
     val given = declared?.substringBefore(';')?.trim()?.lowercase().orEmpty()
     if (given.isNotEmpty() && given != "application/octet-stream") return given
-    return when (fileName?.substringAfterLast('.', "")?.lowercase()) {
-        "png" -> "image/png"
+    val ext = fileName
+        ?.takeIf { '.' in it }
+        ?.substringAfterLast('.')
+        ?.lowercase()
+        .orEmpty()
+    if (ext.isEmpty()) return if (given.isNotEmpty()) given else "application/octet-stream"
+    return mimeTypeForFileExtension(ext)
+}
+
+/**
+ * Same extension table the file chooser uses, so a shared document is labeled
+ * as that document instead of a generic file.
+ */
+internal fun mimeTypeForFileExtension(extension: String): String {
+    val ext = extension.removePrefix(".").lowercase()
+    return when (ext) {
+        "json" -> "application/json"
+        "xml" -> "application/xml"
+        "csv" -> "text/csv"
+        "txt" -> "text/plain"
+        "pdf" -> "application/pdf"
+        "doc" -> "application/msword"
+        "docx" -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        "xls" -> "application/vnd.ms-excel"
+        "xlsx" -> "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        "ppt" -> "application/vnd.ms-powerpoint"
+        "pptx" -> "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+        "rtf" -> "application/rtf"
+        "odt" -> "application/vnd.oasis.opendocument.text"
+        "ods" -> "application/vnd.oasis.opendocument.spreadsheet"
+        "html", "htm" -> "text/html"
+        "css" -> "text/css"
+        "js" -> "application/javascript"
+        "ts" -> "application/typescript"
+        "py" -> "text/x-python"
+        "java" -> "text/x-java-source"
+        "kt" -> "text/x-kotlin"
+        "yaml", "yml" -> "application/x-yaml"
+        "toml" -> "application/toml"
+        "ini", "conf", "cfg" -> "text/plain"
+        "md" -> "text/markdown"
+        "log" -> "text/plain"
         "jpg", "jpeg" -> "image/jpeg"
+        "png" -> "image/png"
         "gif" -> "image/gif"
         "webp" -> "image/webp"
-        "heic", "heif" -> "image/heic"
+        "svg" -> "image/svg+xml"
+        "bmp" -> "image/bmp"
+        "heic", "heif" -> "image/heif"
+        "ico" -> "image/x-icon"
+        "mp3" -> "audio/mpeg"
+        "wav" -> "audio/wav"
+        "ogg" -> "audio/ogg"
+        "flac" -> "audio/flac"
+        "aac" -> "audio/aac"
+        "m4a" -> "audio/mp4"
         "mp4" -> "video/mp4"
         "webm" -> "video/webm"
-        "mp3" -> "audio/mpeg"
-        "pdf" -> "application/pdf"
-        "txt" -> "text/plain"
-        else -> if (given.isNotEmpty()) given else "application/octet-stream"
+        "mkv" -> "video/x-matroska"
+        "avi" -> "video/x-msvideo"
+        "mov" -> "video/quicktime"
+        "3gp" -> "video/3gpp"
+        "zip" -> "application/zip"
+        "tar" -> "application/x-tar"
+        "gz", "gzip" -> "application/gzip"
+        "rar" -> "application/vnd.rar"
+        "7z" -> "application/x-7z-compressed"
+        "apk" -> "application/vnd.android.package-archive"
+        "wasm" -> "application/wasm"
+        "sql" -> "application/sql"
+        "db", "sqlite" -> "application/x-sqlite3"
+        else -> MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext)
+            ?: "application/octet-stream"
     }
 }
 
