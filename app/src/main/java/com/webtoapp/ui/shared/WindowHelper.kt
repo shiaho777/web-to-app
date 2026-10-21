@@ -404,7 +404,7 @@ object WindowHelper {
                             WindowManager.LayoutParams.SOFT_INPUT_STATE_UNSPECIFIED
                     )
                     installManualImePadding(activity, contentView)
-                    AppLogger.d(tag, "键盘模式: RESIZE (边到边 + 手动动画)")
+                    AppLogger.d(tag, "键盘模式: RESIZE (边到边，动画期间平移，结束时再改高度)")
                 }
             }
 
@@ -431,9 +431,11 @@ object WindowHelper {
         manualImeInstalled.add(contentView)
 
         var imeAnimating = false
-        var targetImeBottom = 0
+        val follow = ImeAnimationFollow()
 
-        fun applyImeBottomPadding(bottom: Int) {
+        fun applyFrame(frame: ImeFrame) {
+            contentView.translationY = frame.translationY
+            val bottom = frame.layoutBottom ?: return
             if (contentView.paddingBottom != bottom) {
                 contentView.setPadding(
                     contentView.paddingLeft,
@@ -453,6 +455,7 @@ object WindowHelper {
                 override fun onPrepare(animation: WindowInsetsAnimationCompat) {
                     if (animation.typeMask and WindowInsetsCompat.Type.ime() != 0) {
                         imeAnimating = true
+                        follow.onPrepare()
                     }
                 }
 
@@ -460,7 +463,13 @@ object WindowHelper {
                     insets: WindowInsetsCompat,
                     runningAnimations: MutableList<WindowInsetsAnimationCompat>
                 ): WindowInsetsCompat {
-                    applyImeBottomPadding(insets.getInsets(WindowInsetsCompat.Type.ime()).bottom)
+                    if (runningAnimations.any { it.typeMask and WindowInsetsCompat.Type.ime() != 0 }) {
+                        if (!imeAnimating) {
+                            imeAnimating = true
+                            follow.onPrepare()
+                        }
+                        applyFrame(follow.onFrame(insets.getInsets(WindowInsetsCompat.Type.ime()).bottom))
+                    }
                     return insets
                 }
 
@@ -471,8 +480,7 @@ object WindowHelper {
                     val rootInsets = ViewCompat.getRootWindowInsets(contentView)
                     val imeVisible = rootInsets?.isVisible(WindowInsetsCompat.Type.ime()) ?: false
                     val imeBottom = rootInsets?.getInsets(WindowInsetsCompat.Type.ime())?.bottom ?: 0
-                    targetImeBottom = if (imeVisible) imeBottom else 0
-                    applyImeBottomPadding(targetImeBottom)
+                    applyFrame(follow.onEnd(if (imeVisible) imeBottom else 0))
 
                     if (imeVisible) {
                         checkAndScrollWebViewToFocusedInput(activity)
@@ -482,10 +490,13 @@ object WindowHelper {
         )
 
         ViewCompat.setOnApplyWindowInsetsListener(contentView) { _, windowInsets ->
-            if (!imeAnimating) {
-                val imeBottom = windowInsets.getInsets(WindowInsetsCompat.Type.ime()).bottom
-                targetImeBottom = imeBottom
-                applyImeBottomPadding(imeBottom)
+            val imeBottom = windowInsets.getInsets(WindowInsetsCompat.Type.ime()).bottom
+            if (imeAnimating) {
+                // The dispatch during an animation carries the final inset. Keep it
+                // for direction, and let onProgress move the page without a layout.
+                follow.onTarget(imeBottom)
+            } else {
+                applyFrame(follow.jumpTo(imeBottom))
             }
             windowInsets
         }
@@ -497,6 +508,7 @@ object WindowHelper {
         manualImeInstalled.remove(contentView)
         ViewCompat.setWindowInsetsAnimationCallback(contentView, null)
         ViewCompat.setOnApplyWindowInsetsListener(contentView, null)
+        contentView.translationY = 0f
         if (contentView.paddingBottom != 0) {
             contentView.setPadding(
                 contentView.paddingLeft,
