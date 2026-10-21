@@ -5881,7 +5881,7 @@ object StringsD {
         AppLanguage.CHINESE -> "控制台"
         AppLanguage.ENGLISH -> "Console"
         AppLanguage.ARABIC -> "وحدة التحكم"
-        AppLanguage.PORTUGUESE -> "Consola"
+        AppLanguage.PORTUGUESE -> "Console"
         AppLanguage.SPANISH -> "Consola"
         AppLanguage.FRENCH -> "Console"
         AppLanguage.GERMAN -> "Konsole"
