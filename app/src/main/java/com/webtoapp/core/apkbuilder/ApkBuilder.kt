@@ -383,6 +383,11 @@ class ApkBuilder(private val context: Context) {
         if (!AdvancedAppTypes.isUsable(context, webApp.appType)) {
             return BuildResult.Error(Strings.advancedFeaturesOff)
         }
+        if (webApp.adsEnabled && !com.webtoapp.BuildConfig.FDROID &&
+            AdMobAppIds.manifestValue(webApp.adConfig?.appId.orEmpty(), webApp.adConfig?.testMode == true) == null
+        ) {
+            return BuildResult.Error(Strings.adMobAppIdInvalid)
+        }
         return withContext(Dispatchers.IO) {
         // Serialize builds of the same package across all entry points (export screen,
         // home share, agent tools): the build writes deterministic temp paths keyed by
@@ -1632,7 +1637,12 @@ class ApkBuilder(private val context: Context) {
                             stackBundles.forEach { bundle ->
                                 modifiedData = featureStackGrafter.graftManifest(
                                     modifiedData, bundle, config.packageName,
-                                    mapOf("admobAppId" to config.adAppId)
+                                    mapOf(
+                                        "admobAppId" to (
+                                            AdMobAppIds.manifestValue(config.adAppId, config.adTestMode)
+                                                ?: config.adAppId
+                                            )
+                                    )
                                 )
                             }
                             writeEntryDeflated(zipOut, entry.name, modifiedData)

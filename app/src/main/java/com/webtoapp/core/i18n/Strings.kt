@@ -3988,6 +3988,7 @@ object Strings {
     val adsMonetizationHint: String get() = StringsE.adsMonetizationHint
     val adMobAppId: String get() = StringsE.adMobAppId
     val adMobAppIdHint: String get() = StringsE.adMobAppIdHint
+    val adMobAppIdInvalid: String get() = StringsE.adMobAppIdInvalid
     val adTestMode: String get() = StringsE.adTestMode
     val adTestModeHint: String get() = StringsE.adTestModeHint
     val adBannerAd: String get() = StringsE.adBannerAd

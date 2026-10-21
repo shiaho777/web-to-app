@@ -16461,6 +16461,19 @@ object StringsE {
         AppLanguage.KOREAN -> "ca-app-pub-xxx~yyy 형식 — AdMob 앱 설정에서 확인하세요"
     }
 
+    val adMobAppIdInvalid: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "已开启 AdMob，但应用 ID 为空或格式不对。必须是 ca-app-pub- 加 16 位数字、波浪号、再加 10 位数字。广告位 ID（中间是斜杠）不能填在这里，否则安装后的应用一打开就会闪退"
+        AppLanguage.ENGLISH -> "AdMob is on, but the App ID is missing or malformed. It must look like ca-app-pub- followed by 16 digits, a tilde, and 10 digits. An ad unit ID (with a slash) does not belong here — the installed app crashes on launch without a valid App ID"
+        AppLanguage.ARABIC -> "AdMob مفعّل، لكن معرّف التطبيق فارغ أو بصيغة خاطئة. يجب أن يكون ca-app-pub- ثم 16 رقمًا ثم ~ ثم 10 أرقام. معرّف الوحدة الإعلانية (الذي يحتوي على /) لا يوضع هنا، وإلا يتعطل التطبيق عند الفتح"
+        AppLanguage.PORTUGUESE -> "O AdMob está ativado, mas o ID do app está vazio ou incorreto. Tem de ser ca-app-pub- seguido de 16 dígitos, um til e 10 dígitos. O ID do bloco de anúncios (com uma barra) não entra aqui — a app instalada fecha ao abrir sem um ID válido"
+        AppLanguage.SPANISH -> "AdMob está activado, pero el ID de la app falta o está mal. Debe ser ca-app-pub- seguido de 16 dígitos, una tilde y 10 dígitos. El ID del bloque (con una barra) no va aquí: la app instalada se cierra al abrirla sin un ID válido"
+        AppLanguage.FRENCH -> "AdMob est activé, mais l'ID d'application est vide ou incorrect. Il doit être ca-app-pub- suivi de 16 chiffres, un tilde et 10 chiffres. L'ID de bloc (avec une barre) ne va pas ici : l'application installée plante au lancement sans un ID valide"
+        AppLanguage.GERMAN -> "AdMob ist an, aber die App-ID fehlt oder ist falsch. Sie muss ca-app-pub- sein, dann 16 Ziffern, eine Tilde und 10 Ziffern. Eine Anzeigenblock-ID (mit Schrägstrich) gehört nicht hierher — die installierte App stürzt sonst beim Start ab"
+        AppLanguage.RUSSIAN -> "AdMob включён, но ID приложения пустой или неверного вида. Нужно ca-app-pub-, 16 цифр, тильда и ещё 10 цифр. ID рекламного блока (со слэшем) сюда нельзя — без верного ID приложение закрывается при запуске"
+        AppLanguage.JAPANESE -> "AdMob はオンですが、アプリ ID が空か形式が違います。ca-app-pub- の後に数字 16 桁、チルダ、数字 10 桁である必要があります。スラッシュ入りの広告ユニット ID はここには入れられません。正しいアプリ ID がないと、インストールしたアプリは起動時に落ちます"
+        AppLanguage.KOREAN -> "AdMob이 켜져 있지만 앱 ID가 비어 있거나 형식이 잘못되었습니다. ca-app-pub- 다음에 숫자 16자리, 물결표, 숫자 10자리여야 합니다. 슬래시가 있는 광고 단위 ID는 여기에 넣을 수 없습니다. 올바른 앱 ID가 없으면 설치한 앱이 실행 즉시 종료됩니다"
+    }
+
     val adTestMode: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "测试模式"
         AppLanguage.ENGLISH -> "Test mode"
