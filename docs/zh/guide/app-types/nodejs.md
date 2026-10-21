@@ -9,7 +9,7 @@ Express/Fastify/Koa 应用、API 和服务端演示。
 ## 运行时
 
 - **版本** —— Node.js 18.20.x。
-- **进程模型** —— 通过加载 `libnode.so` 的原生 `node_launcher` 包装器,在独立的 `:nodejs` 操作系统进程中运行,使 V8 生命周期与宿主隔离。
+- **进程模型** —— 通过加载 `libnode.so` 的原生 `node_launcher` 包装器,在独立的 `:nodejs` 操作系统进程中运行,使 V8 生命周期与宿主隔离。设备上的 `npm` 会在 `libnode.so` 旁边放上 `libc++_shared.so` 再加载。
 - **插件** —— 支持自定义原生 `.node` 扩展。
 - 在 [Linux 环境](/zh/guide/more-features/linux-environment)和[运行时管理](/zh/guide/more-features/runtime-management)界面管理。
 

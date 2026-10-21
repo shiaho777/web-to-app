@@ -14,7 +14,7 @@
 - **打印桥** —— 拦截 `window.print()` 和 PDF 输出到 Android 打印框架(`enablePrintBridge`)。
 - **媒体会话桥** —— 把网页媒体接入系统媒体通知和锁屏控制,支持蓝牙耳机和 Android Auto(`enableMediaSession`)。
 - **后台继续播放** —— 离开应用后，正在播放的声音继续，通知栏可以暂停。画面会停，回到应用后接着播(`backgroundMediaPlayback`，默认关闭；打开时会同时打开媒体会话)。
-- **网页分享** —— 网页把文字和文件交给系统分享面板，由用户选择目标应用（`enableShareBridge`，默认开启）。
+- **网页分享** —— 网页把文字和文件交给系统分享面板，由用户选择目标应用（`enableShareBridge`，默认开启）。说明文字可以和文件一起送出。文档使用和文件选择器相同的 MIME 类型。
 - **缩放 polyfill** —— `enableZoomPolyfill`。
 
 ## 媒体与内容
@@ -63,7 +63,7 @@
 - **PWA 离线** —— 离线缓存策略(`pwaOfflineEnabled`、`pwaOfflineStrategy`)。
 - **每次打开都是新会话** —— 在 **网络与离线** 卡片上,与 PWA 离线相邻(`clearBrowsingDataOnLaunch`)。默认关闭。生成的 APK 会在每次冷启动(包括第二次打开)清除 Cookie、站点存储和磁盘上的 WebView 资料。它不能和 PWA 离线同时开启。保持关闭则资料目录保留。
 - **浮动返回按钮** —— `showFloatingBackButton`。
-- **键盘调整模式** —— `keyboardAdjustMode`(resize……)。在 Android 10 及以下,RESIZE 模式走经典窗口缩放路径(窗口非 edge-to-edge),键盘可可靠地压缩内容。
+- **键盘调整模式** —— `keyboardAdjustMode`(resize……)。在 Android 11 及更高版本上,RESIZE 会跟着键盘动画移动,动画结束时只改一次高度。在 Android 10 及以下,RESIZE 走经典窗口缩放路径(窗口非 edge-to-edge)。
 - **全屏视频方向** —— 全屏视频如何转向(`fullscreenVideoOrientation`),如自动传感器横屏。
 - **隐藏 URL 预览** —— `hideUrlPreview`。
 

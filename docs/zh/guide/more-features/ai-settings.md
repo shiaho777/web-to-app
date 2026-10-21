@@ -20,6 +20,7 @@
 - 自定义端点可选 **API 格式** —— Chat Completions(`/chat/completions`)、Anthropic Messages(`/v1/messages`)、OpenAI Responses(`/responses`)或 Google Gemini —— 网关按声明的格式路由请求,而不是一律走 OpenAI 兼容路径。**聊天端点**可按密钥覆盖。
 - **连接测试** —— 验证密钥是否可用(连接成功 / 失败)。
 - 密钥在设备上安全存储。
+- 提供商对一次会话限流时,Agent 会换到该提供商下一把已保存的密钥。
 
 ## 已保存模型
 

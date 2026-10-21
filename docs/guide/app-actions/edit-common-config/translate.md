@@ -13,3 +13,4 @@ Translates the *content* of pages in the generated app into a target language.
 ## Notes
 
 - This translates generated-app content; it is separate from the **builder's** UI language (set from the [language button](/guide/main-screen/language) on My Apps).
+- A long page is sent in sized chunks. One request no longer has to carry the whole page.

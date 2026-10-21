@@ -14,7 +14,7 @@ Compatibility polyfills, bridges, and other specialized toggles. This card colle
 - **Print bridge** — intercept `window.print()` and PDF output to the Android print framework (`enablePrintBridge`).
 - **Media Session bridge** — bridge web media to the system media notification and lock-screen controls, including Bluetooth headsets and Android Auto (`enableMediaSession`).
 - **Keep playing in background** — audio that is already playing continues after you leave, and the notification can pause it. The picture stops until you come back (`backgroundMediaPlayback`, off by default; turning it on also turns on the media session).
-- **Share from the page** — the page hands text and files to the system share sheet, and the user picks the target app (`enableShareBridge`, on by default).
+- **Share from the page** — the page hands text and files to the system share sheet, and the user picks the target app (`enableShareBridge`, on by default). A caption can go with the files. Documents use the same MIME types as the file chooser.
 - **Zoom polyfill** — `enableZoomPolyfill`.
 
 ## Media & content
@@ -63,7 +63,7 @@ For platforms that return to an **https** callback on the wrapped site's own hos
 - **PWA offline** — offline cache strategy (`pwaOfflineEnabled`, `pwaOfflineStrategy`).
 - **Fresh session on launch** — on the **Network & Offline** card, next to PWA offline (`clearBrowsingDataOnLaunch`). Off by default. The generated APK then clears cookies, site storage, and the on-disk WebView profile on each cold start, including the second launch. It cannot be on together with PWA offline. Leaving it off keeps the profile.
 - **Floating back button** — `showFloatingBackButton`.
-- **Keyboard adjust mode** — `keyboardAdjustMode` (resize, …). On Android 10 and below, the RESIZE mode uses the classic window-resize path (the window is not edge-to-edge), so the keyboard resizes content reliably.
+- **Keyboard adjust mode** — `keyboardAdjustMode` (resize, …). On Android 11 and later, RESIZE follows the keyboard while it moves and applies one height when the animation ends. On Android 10 and below, RESIZE uses the classic window-resize path (the window is not edge-to-edge).
 - **Fullscreen video orientation** — how fullscreen video orients (`fullscreenVideoOrientation`), e.g. auto sensor landscape.
 - **Hide URL preview** — `hideUrlPreview`.
 

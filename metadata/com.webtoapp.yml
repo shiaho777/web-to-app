@@ -14,9 +14,9 @@ RepoType: git
 Repo: https://github.com/shiaho777/web-to-app.git
 
 Builds:
-  - versionName: "2.8.0"
-    versionCode: 78
-    commit: v2.8.0
+  - versionName: "2.8.1"
+    versionCode: 79
+    commit: v2.8.1
     subdir: app
     gradle:
       - standard
@@ -37,5 +37,5 @@ MaintainerNotes: |-
 AutoUpdateMode: Version
 UpdateCheckMode: Tags ^v[0-9.]+$
 UpdateCheckData: app/build.gradle.kts|versionCode = (\d+)|.|versionName = "([^"]+)"
-CurrentVersion: "2.8.0"
-CurrentVersionCode: 78
+CurrentVersion: "2.8.1"
+CurrentVersionCode: 79

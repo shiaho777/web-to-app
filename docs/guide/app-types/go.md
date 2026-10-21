@@ -8,7 +8,7 @@ Gin/Echo/Fiber services, static file serving, and compiled tools.
 
 ## Runtime
 
-- **Toolchain** — official Go 1.26 Linux arm64 (`.tar.gz` from `dl.google.com`, USTC mirror for CN).
+- **Toolchain** — official Go 1.26.10 Linux arm64 (`.tar.gz` from `dl.google.com`, USTC mirror for CN). 1.26.10 is the 1.26 fix for GO-2026-6809. An extracted tree whose `VERSION` is older is downloaded again.
 - **On-device** — `go build` / `go mod` / `go run`, `vendor/` offline builds, and static serving via the native `go_exec_loader` wrapper. On locked-down hosts (no fork+exec) the toolchain runs through a direct driver that replays single-shot compile/assemble/link steps with a content cache instead of spawning processes.
 - Managed in the [Linux Environment](/guide/more-features/linux-environment) and [Runtime Management](/guide/more-features/runtime-management) screens.
 

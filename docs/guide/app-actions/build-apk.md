@@ -5,7 +5,7 @@ Builds and signs an installable APK from the app. Tap ⋮ on an app card, then *
 ## The build dialog
 
 - **Browser engine** — System WebView or GeckoView (GeckoView downloads on first use).
-- **Resource encryption** — PBKDF2 + AES-256-GCM for packaged config/HTML/media/BGM, with an optional custom password. Enabling it activates runtime hardening (anti-debug, anti-Frida, DEX-tamper) and always forces a full rebuild.
+- **Resource encryption** — PBKDF2 + AES-256-GCM for packaged config/HTML/media/BGM, with an optional custom password. Enabling it activates runtime hardening (anti-debug, anti-Frida, DEX-tamper) and always forces a full rebuild. An encrypted HTML site stays ciphertext in the APK and is decrypted in memory for each request, so the plaintext site folder is not kept.
 - **Isolation** — per-app isolation of storage, WebRTC, Canvas, Audio, WebGL, fonts, headers, and IP. Generated fingerprints identify as a phone (Android Chrome, Edge, Firefox, Samsung Internet, or iPhone Safari), and the request User-Agent matches the client hints. A saved desktop fingerprint is replaced on the next launch. A custom User-Agent, desktop mode, and a desktop kernel flavor stay as you set them.
 - **Background run** — keep the app's service alive in the background.
 - **Notifications** — scheduled/persistent notifications, URL-polling foreground service, deep links.

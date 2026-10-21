@@ -9,7 +9,7 @@ WebToApp runs real server runtimes on-device and packages them into an installab
 | **Node.js** | 18.20.x | Runs in a dedicated `:nodejs` OS process via a native `node_launcher` wrapper loading `libnode.so`. Custom native `.node` extensions supported. |
 | **PHP** | 8.4 | From `pmmp/PHP-Binaries`, downloaded once on first use. Composer 2.10.x. Custom native extensions (`zend_extension`, `.so`). |
 | **Python** | 3.14 | Flask, Django, FastAPI (uvicorn), Tornado, built-in HTTP server. pip deps resolve into `.pypackages`. Versioned binary names. |
-| **Go** | 1.26 | Official Linux arm64 toolchain (USTC mirror for CN). On-device `go build` / `go mod` / `go run`, `vendor/` offline builds, static serving via `go_exec_loader`. |
+| **Go** | 1.26.10 | Official Linux arm64 toolchain (USTC mirror for CN). On-device `go build` / `go mod` / `go run`, `vendor/` offline builds, static serving via `go_exec_loader`. An older extracted tree is downloaded again. |
 | **WordPress** | 7.x | Over local PHP + SQLite (`sqlite-database-integration`). Theme and plugin import. |
 
 A **Linux Environment** screen manages toolchains and dependencies for Node, PHP, Python, and Go.

@@ -8,7 +8,7 @@ Gin/Echo/Fiber 服务、静态文件服务和编译工具。
 
 ## 运行时
 
-- **工具链** —— 官方 Go 1.26 Linux arm64(从 `dl.google.com` 下载 `.tar.gz`,国内用 USTC 镜像)。
+- **工具链** —— 官方 Go 1.26.10 Linux arm64(从 `dl.google.com` 下载 `.tar.gz`,国内用 USTC 镜像)。1.26.10 是 1.26 上 GO-2026-6809 的修复。已解压目录的 `VERSION` 更旧时会重新下载。
 - **设备端** —— `go build` / `go mod` / `go run`、`vendor/` 离线构建,以及通过原生 `go_exec_loader` 包装器提供静态服务。在禁止 fork+exec 的宿主上,工具链走直驱通道(单发编译/汇编/链接 + 内容缓存),不拉起进程。
 - 在 [Linux 环境](/zh/guide/more-features/linux-environment)和[运行时管理](/zh/guide/more-features/runtime-management)界面管理。
 

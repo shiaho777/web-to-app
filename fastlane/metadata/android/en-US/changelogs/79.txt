@@ -1,0 +1,15 @@
+Added
+- Background audio keeps playing after you leave.
+- A page can share text and files.
+
+Improved
+- The keyboard settles once after its animation.
+- Long pages translate in chunks.
+- A rate-limited agent key rotates to the next one.
+
+Fixed
+- Google sign-in arrives after the account picker.
+- Encrypted HTML stays in memory, not on disk.
+- An invalid AdMob app id is refused before export.
+- On-device npm can load libnode. Go is 1.26.10.
+- Brazilian Portuguese labels the console "Console".

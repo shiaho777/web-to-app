@@ -111,10 +111,10 @@ A quick scan of what's in the box. Each links to the detailed feature map below.
 | **Browser engines** | System WebView by default; optional GeckoView (Firefox) runtime |
 | **Network & anti-censorship** | DoH (7 providers), TLS fingerprint spoofing + MITM bridge, ECH, static/PAC/SOCKS5 proxies, CORS bypass |
 | **Privacy & hardening** | 50+ vector browser fingerprint disguise, resource encryption (AES-256-GCM), anti-debug, activation gating |
-| **Local runtimes** | Native Node.js 18.20, PHP 8.4 + Composer 2.10, Python 3.14, official Go 1.26, WordPress 7.x over SQLite |
+| **Local runtimes** | Native Node.js 18.20, PHP 8.4 + Composer 2.10, Python 3.14, official Go 1.26.10, WordPress 7.x over SQLite |
 | **Extensions** | Built-in modules, userscripts with `GM_*`, MV3 Chrome extensions, live Chrome Web Store search |
 | **APK/AAB output** | On-device V1/V2/V3 signing, Google Play AAB export with targetSdk rewrite, keystore management |
-| **Agent** | Full-app automation via up to 60 tools: generate, build, export, manage ports/engines/runtimes, clone apps, ad-block rules, config templates, and more; auto-retry on 429/5xx |
+| **Agent** | Full-app automation via up to 60 tools: generate, build, export, manage ports/engines/runtimes, clone apps, ad-block rules, config templates, and more; auto-retry on 429/5xx, and rotate to another saved key when a provider rate-limits the session |
 | **Host languages** | **10 UI languages** — 中文 · English · العربية · Português · Español · Français · Deutsch · Русский · 日本語 · 한국어 (Arabic RTL) |
 
 ---

@@ -111,10 +111,10 @@
 | **浏览器引擎** | 默认系统 WebView;可选 GeckoView(Firefox)运行时 |
 | **网络与反审查** | DoH(7 个服务商)、TLS 指纹伪装 + MITM 桥、ECH、静态/PAC/SOCKS5 代理、CORS 绕过 |
 | **隐私与加固** | 50+ 维浏览器指纹伪装、资源加密(AES-256-GCM)、反调试、激活码门控 |
-| **本地运行时** | 原生 Node.js 18.20、PHP 8.4 + Composer 2.10、Python 3.14、官方 Go 1.26、WordPress 7.x over SQLite |
+| **本地运行时** | 原生 Node.js 18.20、PHP 8.4 + Composer 2.10、Python 3.14、官方 Go 1.26.10、WordPress 7.x over SQLite |
 | **扩展能力** | 内置模块、`GM_*` 油猴脚本、MV3 Chrome 扩展、Chrome 网上应用店实时搜索 |
 | **APK/AAB 产物** | 设备端 V1/V2/V3 签名、Google Play AAB 导出(自动改写 targetSdk)、密钥库管理 |
-| **Agent** | 通过最多 60 个工具全面操控应用:生成、构建、导出、端口/引擎/运行时管理、应用克隆、广告拦截、配置模板等;429/5xx 自动重试 |
+| **Agent** | 通过最多 60 个工具全面操控应用:生成、构建、导出、端口/引擎/运行时管理、应用克隆、广告拦截、配置模板等;429/5xx 自动重试,提供商限流时换到下一把已保存的密钥 |
 | **宿主语言** | **10 种界面语言** —— 中文 · English · العربية · Português · Español · Français · Deutsch · Русский · 日本語 · 한국어(阿语 RTL) |
 
 ---
