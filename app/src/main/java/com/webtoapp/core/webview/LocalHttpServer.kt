@@ -63,6 +63,18 @@ class LocalHttpServer(
         fun buildLoopbackBaseUrl(port: Int): String = "http://$LOOPBACK_HOST:$port"
     }
 
+    /**
+     * Decrypted bytes for one request. The site root stays in the APK; nothing
+     * from [read] is written to disk.
+     */
+    class MemorySite(
+        private val readFile: (String) -> ByteArray?,
+        private val directories: Set<String>,
+    ) {
+        fun read(path: String): ByteArray? = readFile(path)
+        fun isDirectory(path: String): Boolean = path.isEmpty() || directories.contains(path)
+    }
+
     private var serverSocket: ServerSocket? = null
 
     private var executor = createExecutor()
@@ -70,6 +82,7 @@ class LocalHttpServer(
     private val acceptThreadName = "LocalHttpServer-Accept"
 
     private var rootDirectory: File? = null
+    private var memorySite: MemorySite? = null
     private var crossOriginIsolationEnabled: Boolean = false
 
     private fun createExecutor(): ThreadPoolExecutor {
@@ -96,16 +109,22 @@ class LocalHttpServer(
         enableCrossOriginIsolation: Boolean = false,
         owner: String = "",
         conflictPolicy: PortManager.ConflictPolicy = PortManager.ConflictPolicy.REASSIGN,
-        preferredPort: Int = -1
+        preferredPort: Int = -1,
+        memorySite: MemorySite? = null,
     ): String {
-        if (isRunning.get() && rootDirectory == rootDir && crossOriginIsolationEnabled == enableCrossOriginIsolation) {
+        if (isRunning.get() &&
+            rootDirectory == rootDir &&
+            this.memorySite === memorySite &&
+            crossOriginIsolationEnabled == enableCrossOriginIsolation
+        ) {
 
             return buildLoopbackBaseUrl(actualPort)
         }
 
         stop()
 
-        rootDirectory = rootDir
+        rootDirectory = if (memorySite == null) rootDir else null
+        this.memorySite = memorySite
         crossOriginIsolationEnabled = enableCrossOriginIsolation
 
         try {
@@ -159,7 +178,11 @@ class LocalHttpServer(
                 stopResourcesOnly()
             }
 
-            AppLogger.i(TAG, "服务器启动在端口 $actualPort, 根目录: ${rootDir.absolutePath}")
+            AppLogger.i(
+                TAG,
+                if (memorySite != null) "服务器启动在端口 $actualPort, 内存解密站点"
+                else "服务器启动在端口 $actualPort, 根目录: ${rootDir.absolutePath}"
+            )
 
             Thread({
                 while (isRunning.get()) {
@@ -219,6 +242,7 @@ class LocalHttpServer(
         }
         serverSocket = null
         actualPort = 0
+        memorySite = null
         try {
             if (!executor.isShutdown) {
                 executor.shutdownNow()
@@ -262,6 +286,11 @@ class LocalHttpServer(
 
             if (path == "/" || path.isEmpty()) {
                 path = "/index.html"
+            }
+
+            if (memorySite != null) {
+                serveMemory(output, path)
+                return
             }
 
             val file = File(rootDirectory, path.removePrefix("/"))
@@ -330,7 +359,7 @@ class LocalHttpServer(
             append("Access-Control-Allow-Methods: GET, HEAD, OPTIONS\r\n")
             append("Access-Control-Allow-Headers: *\r\n")
             append("Vary: Origin\r\n")
-            append("Cache-Control: no-cache\r\n")
+            append(if (memorySite != null) "Cache-Control: no-store\r\n" else "Cache-Control: no-cache\r\n")
             append("X-Content-Type-Options: nosniff\r\n")
             if (crossOriginIsolationEnabled) {
                 append("Cross-Origin-Opener-Policy: same-origin\r\n")
@@ -359,6 +388,64 @@ class LocalHttpServer(
         output.flush()
 
         AppLogger.d(TAG, "发送文件: ${file.name} ($fileLength bytes, $mimeType)")
+    }
+
+    private fun serveMemory(output: OutputStream, path: String) {
+        val site = memorySite ?: return
+        val relative = safeSiteRelativePath(path)
+        if (relative == null) {
+            sendError(output, 403, "Forbidden")
+            return
+        }
+        val direct = if (relative.isEmpty()) "index.html" else relative
+        site.read(direct)?.let { bytes ->
+            sendBytes(output, direct.substringAfterLast('/'), bytes)
+            return
+        }
+        if (site.isDirectory(relative)) {
+            val index = if (relative.isEmpty()) "index.html" else "$relative/index.html"
+            site.read(index)?.let { bytes ->
+                sendBytes(output, "index.html", bytes)
+                return
+            }
+            sendError(output, 403, "Forbidden")
+            return
+        }
+        val leaf = direct.substringAfterLast('/')
+        if (!leaf.contains('.')) {
+            site.read("index.html")?.let { bytes ->
+                sendBytes(output, "index.html", bytes)
+                return
+            }
+        }
+        sendError(output, 404, "Not Found")
+    }
+
+    private fun sendBytes(output: OutputStream, fileName: String, bytes: ByteArray) {
+        val mimeType = getMimeType(fileName)
+        val headers = buildString {
+            append("HTTP/1.1 200 OK\r\n")
+            append("Content-Type: $mimeType\r\n")
+            append("Content-Length: ${bytes.size}\r\n")
+            append("Access-Control-Allow-Origin: ${buildLoopbackBaseUrl(actualPort)}\r\n")
+            append("Access-Control-Allow-Methods: GET, HEAD, OPTIONS\r\n")
+            append("Access-Control-Allow-Headers: *\r\n")
+            append("Vary: Origin\r\n")
+            append("Cache-Control: no-store\r\n")
+            append("X-Content-Type-Options: nosniff\r\n")
+            if (crossOriginIsolationEnabled) {
+                append("Cross-Origin-Opener-Policy: same-origin\r\n")
+                append("Cross-Origin-Embedder-Policy: credentialless\r\n")
+                append("Cross-Origin-Resource-Policy: same-origin\r\n")
+                append("Origin-Agent-Cluster: ?1\r\n")
+                append("Service-Worker-Allowed: /\r\n")
+            }
+            append("Connection: close\r\n")
+            append("\r\n")
+        }
+        output.write(headers.toByteArray())
+        output.write(bytes)
+        output.flush()
     }
 
     private fun sendError(output: OutputStream, code: Int, message: String) {
@@ -408,4 +495,13 @@ class LocalHttpServer(
             else -> "application/octet-stream"
         }
     }
+}
+
+/** Request path relative to the site root. Null when it tries to escape. */
+internal fun safeSiteRelativePath(path: String): String? {
+    val trimmed = path.removePrefix("/")
+    if (trimmed.isEmpty()) return ""
+    val parts = trimmed.split('/')
+    if (parts.any { it.isEmpty() || it == "." || it == ".." }) return null
+    return parts.joinToString("/")
 }

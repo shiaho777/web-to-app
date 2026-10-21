@@ -223,6 +223,7 @@ fun ShellLocalFileWebView(
     targetUrl: String,
     enableJavaScript: Boolean,
     enableLocalStorage: Boolean,
+    disableDiskCache: Boolean = false,
 
     swipeRefreshEnabled: Boolean,
     isRefreshing: Boolean,
@@ -233,7 +234,8 @@ fun ShellLocalFileWebView(
 ) {
     val localConfig = webViewConfig.copy(
         javaScriptEnabled = enableJavaScript,
-        domStorageEnabled = enableLocalStorage
+        domStorageEnabled = enableLocalStorage,
+        cacheEnabled = if (disableDiskCache) false else webViewConfig.cacheEnabled,
     )
     ShellBrowserAndroidView(
         config = config,

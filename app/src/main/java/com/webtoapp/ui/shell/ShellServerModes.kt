@@ -202,6 +202,7 @@ fun HtmlFrontendShellMode(
     var errorMsg by remember { mutableStateOf<String?>(null) }
     var errorThrowable by remember { mutableStateOf<Throwable?>(null) }
     var targetUrl by remember { mutableStateOf<String?>(null) }
+    var encryptedSite by remember { mutableStateOf(false) }
     val portOwner = remember(config.packageName, config.siteId) {
         if (config.siteId.isNotBlank()) "${config.packageName}_${config.siteId}" else config.packageName
     }
@@ -249,7 +250,57 @@ fun HtmlFrontendShellMode(
                 // (AppContentEmbedder.MultiWebContentEmbedder); plain HTML/FRONTEND shells embed at
                 // the top-level assets/<assetBase>.
                 val embeddedAssetRoot = if (config.siteId.isNotBlank()) "multiweb_sites/${config.siteId}/$assetBase" else assetBase
-                val hasBundledAssets = try { context.assets.list(embeddedAssetRoot)?.isNotEmpty() == true } catch (_: Exception) { false }
+                val catalog = catalogAssetTree(embeddedAssetRoot) { path ->
+                    try {
+                        context.assets.list(path)
+                    } catch (_: Exception) {
+                        null
+                    }
+                }
+                if (catalog.encrypted) {
+                    // A previous build may have left the decrypted tree here.
+                    siteDir.deleteRecursively()
+                    encryptedSite = true
+                    val decryptor = com.webtoapp.core.crypto.AssetDecryptor(context)
+                    val memorySite = com.webtoapp.core.webview.LocalHttpServer.MemorySite(
+                        readFile = { logical ->
+                            val assetPath = catalog.files[logical] ?: return@MemorySite null
+                            context.assets.open(assetPath).use { input ->
+                                val bytes = input.readBytes()
+                                if (assetPath.endsWith(com.webtoapp.core.crypto.CryptoConstants.ENCRYPTED_EXTENSION)) {
+                                    decryptor.decrypt(bytes)
+                                } else {
+                                    bytes
+                                }
+                            }
+                        },
+                        directories = catalog.directories,
+                    )
+                    phase = "starting"
+                    val resolvedEntry = catalog.resolveEntry(effectiveEntryFile)
+                    val shouldEnableIsolation = config.webViewConfig.enableCrossOriginIsolation ||
+                        catalog.needsCrossOriginIsolation()
+                    if (config.htmlUsesFileScheme) {
+                        AppLogger.i("HtmlShell", "Encrypted site ignores file:// and is decrypted per request")
+                    }
+                    val baseUrl = httpServer.start(
+                        rootDir = siteDir,
+                        enableCrossOriginIsolation = shouldEnableIsolation,
+                        owner = portOwner,
+                        conflictPolicy = portConflictPolicy,
+                        preferredPort = preferredHttpPort,
+                        memorySite = memorySite,
+                    )
+                    targetUrl = buildLocalHttpTargetUrl(baseUrl, resolvedEntry)
+                    AppLogger.i(
+                        "HtmlShell",
+                        "HTML Shell ready (encrypted, in memory): url=$targetUrl, entry=$resolvedEntry, port=${httpServer.actualPort}"
+                    )
+                    phase = "ready"
+                    return@withContext
+                }
+
+                val hasBundledAssets = catalog.files.isNotEmpty() || catalog.directories.isNotEmpty()
                 if (hasBundledAssets && shouldReextractAssets(marker, extractionToken)) {
                     AppLogger.i("HtmlShell", "Extracting HTML assets to ${siteDir.absolutePath}")
                     siteDir.deleteRecursively()
@@ -315,6 +366,7 @@ fun HtmlFrontendShellMode(
                     targetUrl = url,
                     enableJavaScript = config.htmlConfig.enableJavaScript,
                     enableLocalStorage = config.htmlConfig.enableLocalStorage,
+                    disableDiskCache = encryptedSite,
                     swipeRefreshEnabled = swipeRefreshEnabled,
                     isRefreshing = isRefreshing,
                     onRefresh = onRefresh,
