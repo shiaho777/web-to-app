@@ -428,6 +428,12 @@ Advanced features such as device disguise are intended for technical demonstrati
 
 [daoxe.com](https://daoxe.com) — AI API relay for personal use.
 
+## Community Support
+
+Trading fees from the associated pump.fun token help support continued development:
+
+`H2mNeSJV75VuQpGA9C11FwWoT9DU7sMCYUNVaMyQpump`
+
 ---
 
 <div align="center">

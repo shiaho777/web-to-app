@@ -428,6 +428,12 @@ GitHub/Play 的签名 release 通过 `local.properties` 和 `app/build.gradle.kt
 
 [daoxe.com](https://daoxe.com) — 自用中转站。
 
+## 社区支持
+
+关联的 pump.fun 代币交易手续费会用来支持后续开发：
+
+`H2mNeSJV75VuQpGA9C11FwWoT9DU7sMCYUNVaMyQpump`
+
 ---
 
 <div align="center">
