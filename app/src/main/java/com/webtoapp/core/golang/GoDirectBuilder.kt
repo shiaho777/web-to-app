@@ -622,7 +622,7 @@ object GoDirectBuilder {
             context, listOf("version"), projectDir, env, onOutput = {},
         )
         if (r.exitCode != 0) return null
-        // "go version go1.26.4 linux/arm64"
+        // "go version go1.26.10 linux/arm64"
         return Regex("""go\d+\.\d+(\.\d+)?""").find(r.stdout)?.value
     }
 

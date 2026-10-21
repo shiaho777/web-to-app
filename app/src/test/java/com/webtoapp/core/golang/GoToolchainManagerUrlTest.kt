@@ -9,10 +9,10 @@ import org.junit.Test
 class GoToolchainManagerUrlTest {
 
     private val expectedOfficialPath =
-        "/go/go1.26.4.linux-arm64.tar.gz"
+        "/go/go1.26.10.linux-arm64.tar.gz"
 
     private val expectedUstcPath =
-        "/golang/go1.26.4.linux-arm64.tar.gz"
+        "/golang/go1.26.10.linux-arm64.tar.gz"
     private val originalLocale: Locale = Locale.getDefault()
 
     @After
@@ -78,5 +78,14 @@ class GoToolchainManagerUrlTest {
         val urls = GoToolchainManager.selectGoArchiveUrls(preferChinaMirror = true)
         val official = urls.first { it.contains("dl.google.com") }
         assertThat(official).endsWith(expectedOfficialPath)
+    }
+
+    @Test
+    fun `cached toolchain matches only the pinned VERSION line`() {
+        val pinned = "go${GoToolchainManager.GO_VERSION}\ntime 2026-10-20T01:27:56Z\n"
+        assertThat(GoToolchainManager.goReleaseMatches(pinned)).isTrue()
+        assertThat(GoToolchainManager.goReleaseMatches("go1.26.4\n")).isFalse()
+        assertThat(GoToolchainManager.goReleaseMatches(null)).isFalse()
+        assertThat(GoToolchainManager.goReleaseMatches("\n")).isFalse()
     }
 }

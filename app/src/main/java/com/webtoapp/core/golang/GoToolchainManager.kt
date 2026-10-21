@@ -26,7 +26,7 @@ object GoToolchainManager {
 
     private const val TAG = "GoToolchainManager"
 
-    const val GO_VERSION = "1.26.4"
+    const val GO_VERSION = "1.26.10"
 
     private const val USTC_GO_ARCHIVE_URL =
         "https://mirrors.ustc.edu.cn/golang/go${GO_VERSION}.linux-arm64.tar.gz"
@@ -38,15 +38,16 @@ object GoToolchainManager {
 
     private val OFFSHORE_GO_ARCHIVE_URLS = listOf(OFFICIAL_GO_ARCHIVE_URL)
 
-    private const val GO_ARCHIVE_SIZE_BYTES = 63_740_285L
+    private const val GO_ARCHIVE_SIZE_BYTES = 63_827_526L
 
     /**
-     * SHA-256 of go1.26.4.linux-arm64.tar.gz (dl.google.com `.sha256` sidecar;
-     * USTC mirrors the same bytes). Verify against the sidecar when bumping
-     * [GO_VERSION] — mismatches fail the download loudly.
+     * SHA-256 of go1.26.10.linux-arm64.tar.gz (dl.google.com `.sha256` sidecar;
+     * USTC mirrors the same bytes). 1.26.10 is the 1.26 fix for GO-2026-6809
+     * (CVE-2026-111943). Verify against the sidecar when bumping [GO_VERSION]
+     * — mismatches fail the download loudly.
      */
     private const val GO_ARCHIVE_SHA256 =
-        "ef758ae7c6cf9267c9c0ef080b8965f453d89ab2d25d9eb22de4405925238768"
+        "3f4227ce7b206a513e794f1393adb473a07b46e94d18bd15d1c684bbb7319797"
 
     private const val MAX_RETRY_PER_URL = 2
     private const val RETRY_DELAY_MS = 2_000L
@@ -181,7 +182,24 @@ object GoToolchainManager {
         if (!goBin.exists() || !goBin.canExecute()) return false
 
         if (goBin.length() < 5L * 1024 * 1024) return false
-        return true
+        val versionText = runCatching {
+            File(getGoRoot(context), "VERSION").takeIf { it.isFile }?.readText()
+        }.getOrNull()
+        return goReleaseMatches(versionText)
+    }
+
+    /**
+     * Official tarballs ship `GOROOT/VERSION` with a first line `go1.26.10`.
+     * A cached tree whose first line is an older release is not ready, so
+     * [installGoToolchain] downloads the pinned archive instead of reusing it.
+     */
+    internal fun goReleaseMatches(versionFileText: String?): Boolean {
+        val line = versionFileText
+            ?.lineSequence()
+            ?.map { it.trim() }
+            ?.firstOrNull { it.isNotEmpty() }
+            ?: return false
+        return line.removePrefix("go") == GO_VERSION
     }
 
     fun isGoExecLoaderReady(context: Context): Boolean =
@@ -233,6 +251,15 @@ object GoToolchainManager {
                 val depsDir = getToolchainRoot(context)
                 depsDir.mkdirs()
                 val archiveFile = File(depsDir, "go-${GO_VERSION}.linux-arm64.tar.gz")
+                depsDir.listFiles()?.forEach { child ->
+                    if (child.isFile &&
+                        child.name.startsWith("go-") &&
+                        child.name.endsWith(".linux-arm64.tar.gz") &&
+                        child.name != archiveFile.name
+                    ) {
+                        child.delete()
+                    }
+                }
 
                 val urlList = selectGoArchiveUrls(resolvePreferChinaMirror(context))
                 val ok = downloadWithFallback(urlList, archiveFile, "Go $GO_VERSION ($abi)", context, GO_ARCHIVE_SHA256)
