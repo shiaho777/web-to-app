@@ -8,17 +8,37 @@ object ShellWebViewNavigation {
 
     private const val EXIT_CONFIRM_WINDOW_MS = 2500L
 
+    /**
+     * A second back callback this soon after a real history step is the same
+     * physical press dispatched twice, not a new request to leave. Long enough
+     * for a same-gesture duplicate, short enough that a deliberate press on the
+     * page just landed on still exits.
+     */
+    internal const val HISTORY_STEP_GUARD_MS = 400L
+
     @Volatile
     private var lastExitPromptAtMs = 0L
 
+    @Volatile
+    private var lastHistoryStepAtMs = 0L
+
     /**
-     * Double-back-to-exit: the first FINISH only shows a prompt; a second back
-     * press inside the window really leaves. This is the standard app exit
-     * pattern and also absorbs stray double-dispatched back events at the last
-     * history layer.
+     * Double-back-to-exit when [confirm] is true: the first FINISH only shows a
+     * prompt; a second back press inside the window really leaves.
+     *
+     * When [confirm] is false ([com.webtoapp.data.model.WebViewConfig.BACK_GO_BACK_EXIT]),
+     * FINISH leaves immediately. A callback that arrives inside
+     * [HISTORY_STEP_GUARD_MS] of a history step is ignored, so one press on a
+     * sub-page cannot both go back and exit.
      */
-    private fun confirmExitThenFinish(activity: AppCompatActivity) {
+    private fun confirmExitThenFinish(activity: AppCompatActivity, confirm: Boolean) {
         val now = android.os.SystemClock.uptimeMillis()
+        if (!confirm) {
+            if (!shouldFinishImmediately(now, lastHistoryStepAtMs)) return
+            lastExitPromptAtMs = 0L
+            activity.finish()
+            return
+        }
         if (now - lastExitPromptAtMs <= EXIT_CONFIRM_WINDOW_MS) {
             lastExitPromptAtMs = 0L
             activity.finish()
@@ -32,6 +52,24 @@ object ShellWebViewNavigation {
         }
     }
 
+    private fun noteHistoryStep() {
+        lastHistoryStepAtMs = android.os.SystemClock.uptimeMillis()
+    }
+
+    /**
+     * True when an immediate-exit mode should leave. A non-positive
+     * [lastHistoryStepAtMs] means this session has not stepped back yet, so the
+     * press is already on the first page.
+     */
+    internal fun shouldFinishImmediately(
+        nowMs: Long,
+        lastHistoryStepAtMs: Long,
+        guardMs: Long = HISTORY_STEP_GUARD_MS,
+    ): Boolean {
+        if (lastHistoryStepAtMs <= 0L) return true
+        return nowMs - lastHistoryStepAtMs > guardMs
+    }
+
     fun goBackOrFinish(activity: AppCompatActivity, webView: WebView?) {
         goBackOrFinish(activity, webView, useJsHistoryBack = false)
     }
@@ -39,7 +77,8 @@ object ShellWebViewNavigation {
     fun goBackOrFinish(
         activity: AppCompatActivity,
         webView: WebView?,
-        useJsHistoryBack: Boolean
+        useJsHistoryBack: Boolean,
+        confirmExit: Boolean = true,
     ) {
         val wv = webView ?: run {
             activity.finish()
@@ -47,10 +86,10 @@ object ShellWebViewNavigation {
         }
 
         if (useJsHistoryBack) {
-            goBackViaJsHistoryBack(activity, wv)
+            goBackViaJsHistoryBack(activity, wv, confirmExit)
             return
         }
-        goBackNative(activity, wv)
+        goBackNative(activity, wv, confirmExit)
     }
 
     /**
@@ -63,21 +102,27 @@ object ShellWebViewNavigation {
     fun goBackOrFinish(
         activity: AppCompatActivity,
         surface: BrowserSurface?,
-        useJsHistoryBack: Boolean = false
+        useJsHistoryBack: Boolean = false,
+        confirmExit: Boolean = true,
     ) {
         val wv = surface?.webView
         if (wv != null) {
-            goBackOrFinish(activity, wv, useJsHistoryBack)
+            goBackOrFinish(activity, wv, useJsHistoryBack, confirmExit)
             return
         }
         if (surface != null && surface.canGoBack()) {
+            noteHistoryStep()
             surface.goBack()
             return
         }
-        confirmExitThenFinish(activity)
+        confirmExitThenFinish(activity, confirmExit)
     }
 
-    private fun goBackViaJsHistoryBack(activity: AppCompatActivity, webView: WebView) {
+    private fun goBackViaJsHistoryBack(
+        activity: AppCompatActivity,
+        webView: WebView,
+        confirmExit: Boolean,
+    ) {
         // Decide with the native back-forward list and pick the transport
         // afterwards. history.back() and WebView.goBack() walk the SAME joint
         // session history, so the native list is authoritative for whether a
@@ -85,18 +130,34 @@ object ShellWebViewNavigation {
         // forward entries and cannot tell. GO_BACK goes through history.back()
         // so the page's own popstate/pageshow handlers run and bfcache can
         // restore the previous DOM instead of doing a fresh load.
-        when (resolveBackActionFor(webView)) {
-            BackAction.FINISH -> confirmExitThenFinish(activity)
-            BackAction.GO_BACK -> webView.evaluateJavascript("history.back();", null)
-            BackAction.SKIP_PREVIOUS -> webView.goBackOrForward(-2)
-        }
+        dispatchBackAction(activity, webView, resolveBackActionFor(webView), useJsHistory = true, confirmExit = confirmExit)
     }
 
-    private fun goBackNative(activity: AppCompatActivity, wv: WebView) {
-        when (resolveBackActionFor(wv)) {
-            BackAction.FINISH -> confirmExitThenFinish(activity)
-            BackAction.GO_BACK -> wv.goBack()
-            BackAction.SKIP_PREVIOUS -> wv.goBackOrForward(-2)
+    private fun goBackNative(activity: AppCompatActivity, wv: WebView, confirmExit: Boolean) {
+        dispatchBackAction(activity, wv, resolveBackActionFor(wv), useJsHistory = false, confirmExit = confirmExit)
+    }
+
+    private fun dispatchBackAction(
+        activity: AppCompatActivity,
+        webView: WebView,
+        action: BackAction,
+        useJsHistory: Boolean,
+        confirmExit: Boolean,
+    ) {
+        when (action) {
+            BackAction.FINISH -> confirmExitThenFinish(activity, confirmExit)
+            BackAction.GO_BACK -> {
+                noteHistoryStep()
+                if (useJsHistory) {
+                    webView.evaluateJavascript("history.back();", null)
+                } else {
+                    webView.goBack()
+                }
+            }
+            BackAction.SKIP_PREVIOUS -> {
+                noteHistoryStep()
+                webView.goBackOrForward(-2)
+            }
         }
     }
 

@@ -1139,12 +1139,18 @@ fun BrowserAdvancedConfigCard(
                                     vertical = WtaSpacing.ContentGap
                                 )
                             )
-                            Text(
-                                text = Strings.backButtonBehaviorHint,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(horizontal = WtaSpacing.RowHorizontal)
-                            )
+                            AnimatedVisibility(
+                                visible = LocalShowDescriptions.current,
+                                enter = CardExpandTransition,
+                                exit = CardCollapseTransition
+                            ) {
+                                Text(
+                                    text = Strings.backButtonBehaviorHint,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(horizontal = WtaSpacing.RowHorizontal)
+                                )
+                            }
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -1156,14 +1162,20 @@ fun BrowserAdvancedConfigCard(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 WtaChip(
-                                    selected = config.backButtonBehavior == "GO_BACK",
-                                    onClick = { onConfigChange(config.copy(backButtonBehavior = "GO_BACK")) },
+                                    selected = config.backButtonBehavior == com.webtoapp.data.model.WebViewConfig.BACK_GO_BACK,
+                                    onClick = { onConfigChange(config.copy(backButtonBehavior = com.webtoapp.data.model.WebViewConfig.BACK_GO_BACK)) },
                                     label = Strings.backButtonGoBack,
                                     showSelectedCheck = false
                                 )
                                 WtaChip(
-                                    selected = config.backButtonBehavior == "EXIT",
-                                    onClick = { onConfigChange(config.copy(backButtonBehavior = "EXIT")) },
+                                    selected = config.backButtonBehavior == com.webtoapp.data.model.WebViewConfig.BACK_GO_BACK_EXIT,
+                                    onClick = { onConfigChange(config.copy(backButtonBehavior = com.webtoapp.data.model.WebViewConfig.BACK_GO_BACK_EXIT)) },
+                                    label = Strings.backButtonExitAtRoot,
+                                    showSelectedCheck = false
+                                )
+                                WtaChip(
+                                    selected = config.backButtonBehavior == com.webtoapp.data.model.WebViewConfig.BACK_EXIT,
+                                    onClick = { onConfigChange(config.copy(backButtonBehavior = com.webtoapp.data.model.WebViewConfig.BACK_EXIT)) },
                                     label = Strings.backButtonExitApp,
                                     showSelectedCheck = false
                                 )

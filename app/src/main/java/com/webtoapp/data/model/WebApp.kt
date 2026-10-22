@@ -596,9 +596,8 @@ data class WebViewConfig(
     val staticAssetPackMaxTotalSizeMb: Int = 50,
 
     val showFloatingBackButton: Boolean = false,
-    // System back button behavior: "GO_BACK" (default, walk web history then exit)
-    // or "EXIT" (leave the app immediately). See issue #151.
-    val backButtonBehavior: String = "GO_BACK",
+    // System back button behavior. See [BACK_GO_BACK], [BACK_GO_BACK_EXIT], [BACK_EXIT].
+    val backButtonBehavior: String = BACK_GO_BACK,
     val floatingWindowConfig: FloatingWindowConfig = FloatingWindowConfig(),
     val proxyMode: String = "NONE",
     val proxyHost: String = "",
@@ -647,6 +646,20 @@ data class WebViewConfig(
     /** Whether received content is announced to the page as a DOM event. */
     val broadcastsShareEvent: Boolean get() = enableShareReceive &&
         shareDeliveryMode != ShareDeliveryMode.FILE_CHOOSER_PREFILL
+
+    companion object {
+        /** Walk history. On the first page, Back asks for a second press before leaving. */
+        const val BACK_GO_BACK = "GO_BACK"
+
+        /**
+         * Walk history the same way as [BACK_GO_BACK]. On the first page, one Back
+         * press leaves immediately. Issue #1329.
+         */
+        const val BACK_GO_BACK_EXIT = "GO_BACK_EXIT"
+
+        /** Leave immediately. Back does not walk history. Issue #151. */
+        const val BACK_EXIT = "EXIT"
+    }
 }
 
 data class HostMappingEntry(

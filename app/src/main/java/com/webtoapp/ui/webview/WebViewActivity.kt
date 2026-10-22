@@ -1150,13 +1150,14 @@ open class WebViewActivity : AppCompatActivity() {
                     else -> {
 
                         val wv = webView
-                        // "Exit app" back behavior (#151): leave immediately instead of walking
-                        // web history (preview parity with the generated shell).
-                        val backBehaviorConfig = previewApp ?: resolvedSavedApp
-                        if (backBehaviorConfig?.webViewConfig?.backButtonBehavior == "EXIT") {
+                        // "Exit app" (#151) leaves immediately. "Exit at first page"
+                        // (#1329) still walks history, then leaves on one press.
+                        val backBehavior = (previewApp ?: resolvedSavedApp)?.webViewConfig?.backButtonBehavior
+                        if (backBehavior == com.webtoapp.data.model.WebViewConfig.BACK_EXIT) {
                             finish()
                             return
                         }
+                        val confirmExit = backBehavior != com.webtoapp.data.model.WebViewConfig.BACK_GO_BACK_EXIT
                         if (wv != null) {
                             wv.evaluateJavascript("""
                                 (function() {
@@ -1173,14 +1174,23 @@ open class WebViewActivity : AppCompatActivity() {
                                     return@evaluateJavascript
                                 }
 
-                                ShellWebViewNavigation.goBackOrFinish(this@WebViewActivity, wv, useJsHistoryBack = enableBackStatePreservation)
+                                ShellWebViewNavigation.goBackOrFinish(
+                                    this@WebViewActivity,
+                                    wv,
+                                    useJsHistoryBack = enableBackStatePreservation,
+                                    confirmExit = confirmExit,
+                                )
                             }
                         } else {
                             // GeckoView engine: no WebView handle — walk the engine's own
                             // history through the surface. The Escape-key JS probe is skipped
                             // (it needs an eval result, which Gecko's javascript: URI path
                             // cannot return).
-                            ShellWebViewNavigation.goBackOrFinish(this@WebViewActivity, browserSurface)
+                            ShellWebViewNavigation.goBackOrFinish(
+                                this@WebViewActivity,
+                                browserSurface,
+                                confirmExit = confirmExit,
+                            )
                         }
                     }
                 }

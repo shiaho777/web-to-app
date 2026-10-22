@@ -4129,6 +4129,7 @@ object Strings {
     val backButtonBehaviorLabel: String get() = StringsE.backButtonBehaviorLabel
     val backButtonBehaviorHint: String get() = StringsE.backButtonBehaviorHint
     val backButtonGoBack: String get() = StringsE.backButtonGoBack
+    val backButtonExitAtRoot: String get() = StringsE.backButtonExitAtRoot
     val backButtonExitApp: String get() = StringsE.backButtonExitApp
     val pwaStrategyNetworkFirst: String get() = StringsE.pwaStrategyNetworkFirst
     val pwaStrategyCacheFirst: String get() = StringsE.pwaStrategyCacheFirst

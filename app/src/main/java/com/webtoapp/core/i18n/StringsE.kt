@@ -3478,16 +3478,16 @@ object StringsE {
         AppLanguage.KOREAN -> "뒤로 가기 버튼 동작"
     }
     val backButtonBehaviorHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "设置系统返回键的行为。"
-        AppLanguage.ENGLISH -> "Choose what the system Back button does."
-        AppLanguage.ARABIC -> "اختر ما يفعله زر الرجوع في النظام."
-        AppLanguage.PORTUGUESE -> "Escolha o que o botão Voltar do sistema faz."
-        AppLanguage.SPANISH -> "Elige lo que hace el botón Atrás del sistema."
-        AppLanguage.FRENCH -> "Choisissez ce que fait le bouton Retour du système."
-        AppLanguage.GERMAN -> "Wählen Sie, was die System-Zurück-Taste tut."
-        AppLanguage.RUSSIAN -> "Выберите, что делает системная кнопка назад."
-        AppLanguage.JAPANESE -> "システムの戻るボタンの動作を選択します。"
-        AppLanguage.KOREAN -> "시스템 뒤로 가기 버튼의 동작을 선택합니다."
+        AppLanguage.CHINESE -> "返回上一页会沿历史返回，到首页后再按一次才退出。首页一次退出同样沿历史返回，没有上一页时按一次就离开。直接退出应用会立刻离开，不返回上一页。"
+        AppLanguage.ENGLISH -> "Go back in history walks pages, then asks for a second press on the first page. Exit at first page walks pages and leaves on one press when nothing is left. Exit app leaves immediately and does not go back."
+        AppLanguage.ARABIC -> "الرجوع في السجل يتنقل بين الصفحات، ثم يطلب ضغطة ثانية في الصفحة الأولى. الخروج من الصفحة الأولى يتنقل كذلك ويغادر بضغطة واحدة عند عدم وجود صفحة سابقة. الخروج من التطبيق يغادر فورًا دون رجوع."
+        AppLanguage.PORTUGUESE -> "Voltar no histórico percorre as páginas e pede um segundo toque na primeira. Sair na primeira página percorre o histórico e sai com um toque quando não há para onde voltar. Sair do app sai na hora, sem voltar."
+        AppLanguage.SPANISH -> "Retroceder en el historial recorre las páginas y pide una segunda pulsación en la primera. Salir en la primera página recorre el historial y sale con una pulsación cuando no queda nada atrás. Salir de la app sale al instante, sin retroceder."
+        AppLanguage.FRENCH -> "Reculer dans l'historique parcourt les pages, puis demande un second appui sur la première. Quitter à la première page parcourt l'historique et quitte d'un seul appui lorsqu'il ne reste rien. Quitter l'application part tout de suite, sans revenir."
+        AppLanguage.GERMAN -> "Im Verlauf zurück geht durch die Seiten und verlangt auf der ersten Seite einen zweiten Druck. Auf der ersten Seite beenden geht ebenfalls zurück und verlässt die App mit einem Druck, sobald nichts mehr zurückliegt. App beenden verlässt sofort, ohne zurückzugehen."
+        AppLanguage.RUSSIAN -> "Назад по истории листает страницы и на первой просит нажать ещё раз. Выход с первой страницы листает историю и закрывает приложение одним нажатием, когда возвращаться некуда. Выйти из приложения закрывает сразу, без возврата."
+        AppLanguage.JAPANESE -> "履歴を戻るはページを戻り、最初のページではもう一度押すと終了します。最初のページで終了は同じく履歴を戻り、戻るページがなければ一度で終了します。アプリを終了は戻らずすぐに閉じます。"
+        AppLanguage.KOREAN -> "기록에서 뒤로는 페이지를 이동하고, 첫 페이지에서는 한 번 더 눌러야 종료됩니다. 첫 페이지에서 종료는 똑같이 기록을 이동하고, 더 이상 돌아갈 페이지가 없으면 한 번에 종료됩니다. 앱 종료는 돌아가지 않고 바로 닫습니다."
     }
     val backButtonGoBack: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "返回上一页"
@@ -3500,6 +3500,18 @@ object StringsE {
         AppLanguage.RUSSIAN -> "Назад по истории"
         AppLanguage.JAPANESE -> "履歴を戻る"
         AppLanguage.KOREAN -> "기록에서 뒤로"
+    }
+    val backButtonExitAtRoot: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "首页一次退出"
+        AppLanguage.ENGLISH -> "Exit at first page"
+        AppLanguage.ARABIC -> "الخروج من الصفحة الأولى"
+        AppLanguage.PORTUGUESE -> "Sair na primeira página"
+        AppLanguage.SPANISH -> "Salir en la primera página"
+        AppLanguage.FRENCH -> "Quitter à la première page"
+        AppLanguage.GERMAN -> "Auf der ersten Seite beenden"
+        AppLanguage.RUSSIAN -> "Выход с первой страницы"
+        AppLanguage.JAPANESE -> "最初のページで終了"
+        AppLanguage.KOREAN -> "첫 페이지에서 종료"
     }
     val backButtonExitApp: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "直接退出应用"

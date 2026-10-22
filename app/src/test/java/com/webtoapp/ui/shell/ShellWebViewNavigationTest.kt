@@ -102,6 +102,42 @@ class ShellWebViewNavigationTest {
     }
 
     @Test
+    fun `immediate exit leaves when no history step happened in this session`() {
+        assertThat(
+            ShellWebViewNavigation.shouldFinishImmediately(
+                nowMs = 10_000,
+                lastHistoryStepAtMs = 0L,
+            )
+        ).isTrue()
+    }
+
+    @Test
+    fun `immediate exit swallows a finish that is the second half of the same press`() {
+        assertThat(
+            ShellWebViewNavigation.shouldFinishImmediately(
+                nowMs = 10_000,
+                lastHistoryStepAtMs = 10_000 - 50,
+            )
+        ).isFalse()
+    }
+
+    @Test
+    fun `immediate exit leaves again once the same-gesture window has passed`() {
+        assertThat(
+            ShellWebViewNavigation.shouldFinishImmediately(
+                nowMs = 10_000,
+                lastHistoryStepAtMs = 10_000 - ShellWebViewNavigation.HISTORY_STEP_GUARD_MS,
+            )
+        ).isFalse()
+        assertThat(
+            ShellWebViewNavigation.shouldFinishImmediately(
+                nowMs = 10_000,
+                lastHistoryStepAtMs = 10_000 - ShellWebViewNavigation.HISTORY_STEP_GUARD_MS - 1,
+            )
+        ).isTrue()
+    }
+
+    @Test
     fun `js back transport does not string-compare the eval result`() {
         // Regression: the JS path used to return 'back'/'none' and compare the raw
         // evaluateJavascript result to "back" — but evaluateJavascript JSON-encodes

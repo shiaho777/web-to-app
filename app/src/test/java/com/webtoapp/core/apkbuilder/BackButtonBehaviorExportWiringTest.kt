@@ -4,6 +4,9 @@ import com.google.common.truth.Truth.assertThat
 import com.webtoapp.core.shell.ShellConfig
 import com.webtoapp.data.model.WebApp
 import com.webtoapp.data.model.WebViewConfig
+import com.webtoapp.data.model.WebViewConfig.Companion.BACK_EXIT
+import com.webtoapp.data.model.WebViewConfig.Companion.BACK_GO_BACK
+import com.webtoapp.data.model.WebViewConfig.Companion.BACK_GO_BACK_EXIT
 import com.webtoapp.util.GsonProvider
 import org.junit.Test
 
@@ -25,19 +28,32 @@ class BackButtonBehaviorExportWiringTest {
         val app = WebApp(
             name = "Back",
             url = "https://example.com",
-            webViewConfig = WebViewConfig(backButtonBehavior = "EXIT")
+            webViewConfig = WebViewConfig(backButtonBehavior = BACK_EXIT)
         )
 
         val config = app.toApkConfig("com.example.back")
-        assertThat(config.webView.backButtonBehavior).isEqualTo("EXIT")
-        assertThat(roundTrip(app).webViewConfig.backButtonBehavior).isEqualTo("EXIT")
+        assertThat(config.webView.backButtonBehavior).isEqualTo(BACK_EXIT)
+        assertThat(roundTrip(app).webViewConfig.backButtonBehavior).isEqualTo(BACK_EXIT)
+    }
+
+    @Test
+    fun `exit at first page flows from model through ApkConfig into shell config`() {
+        val app = WebApp(
+            name = "Root",
+            url = "https://example.com",
+            webViewConfig = WebViewConfig(backButtonBehavior = BACK_GO_BACK_EXIT)
+        )
+
+        val config = app.toApkConfig("com.example.root")
+        assertThat(config.webView.backButtonBehavior).isEqualTo("GO_BACK_EXIT")
+        assertThat(roundTrip(app).webViewConfig.backButtonBehavior).isEqualTo(BACK_GO_BACK_EXIT)
     }
 
     @Test
     fun `back behavior defaults to go-back`() {
         val app = WebApp(name = "Default", url = "https://example.com")
 
-        assertThat(app.toApkConfig("com.example.default").webView.backButtonBehavior).isEqualTo("GO_BACK")
-        assertThat(roundTrip(app).webViewConfig.backButtonBehavior).isEqualTo("GO_BACK")
+        assertThat(app.toApkConfig("com.example.default").webView.backButtonBehavior).isEqualTo(BACK_GO_BACK)
+        assertThat(roundTrip(app).webViewConfig.backButtonBehavior).isEqualTo(BACK_GO_BACK)
     }
 }
