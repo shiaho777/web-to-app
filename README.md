@@ -434,6 +434,8 @@ Trading fees from the associated pump.fun token help support continued developme
 
 `H2mNeSJV75VuQpGA9C11FwWoT9DU7sMCYUNVaMyQpump`
 
+https://pump.fun/coin/H2mNeSJV75VuQpGA9C11FwWoT9DU7sMCYUNVaMyQpump
+
 ---
 
 <div align="center">

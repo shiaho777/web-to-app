@@ -434,6 +434,8 @@ GitHub/Play 的签名 release 通过 `local.properties` 和 `app/build.gradle.kt
 
 `H2mNeSJV75VuQpGA9C11FwWoT9DU7sMCYUNVaMyQpump`
 
+https://pump.fun/coin/H2mNeSJV75VuQpGA9C11FwWoT9DU7sMCYUNVaMyQpump
+
 ---
 
 <div align="center">
