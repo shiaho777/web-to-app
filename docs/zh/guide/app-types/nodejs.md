@@ -8,7 +8,7 @@ Express/Fastify/Koa 应用、API 和服务端演示。
 
 ## 运行时
 
-- **版本** —— Node.js 18.20.x。
+- **版本** —— Node.js 18.20.x，Android 构建带完整 ICU。`\p{ID_Start}` 这类 Unicode 属性转义（当前 `path-to-regexp` / Express 5 会用到）可以编译。精简 ICU 的构建会在启动时直接拒绝。
 - **进程模型** —— 通过加载 `libnode.so` 的原生 `node_launcher` 包装器,在独立的 `:nodejs` 操作系统进程中运行,使 V8 生命周期与宿主隔离。设备上的 `npm` 会在 `libnode.so` 旁边放上 `libc++_shared.so` 再加载。
 - **插件** —— 支持自定义原生 `.node` 扩展。
 - 在 [Linux 环境](/zh/guide/more-features/linux-environment)和[运行时管理](/zh/guide/more-features/runtime-management)界面管理。

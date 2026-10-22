@@ -115,10 +115,31 @@ class NodeDependencyManagerTest {
             parentFile?.mkdirs()
             writeBytes(byteArrayOf(1))
         }
+        NodeDependencyManager.writeRuntimeStamp(context)
 
         try {
             assertThat(downloaded.exists()).isTrue()
             assertThat(NodeDependencyManager.isNodeReady(context)).isTrue()
+        } finally {
+            nativeLibDir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `a cached libnode from an older runtime zip is not ready`() {
+        val nativeLibDir = File(context.cacheDir, "test-native-lib-stale").apply {
+            deleteRecursively()
+            mkdirs()
+        }
+        context.applicationInfo.nativeLibraryDir = nativeLibDir.absolutePath
+        File(NodeDependencyManager.getNodeDir(context), NodeDependencyManager.NODE_BINARY_NAME).apply {
+            parentFile?.mkdirs()
+            writeBytes(byteArrayOf(1))
+        }
+
+        try {
+            assertThat(NodeDependencyManager.isNodeReady(context)).isFalse()
+            assertThat(NodeDependencyManager.getNodeLibraryPath(context)).isNull()
         } finally {
             nativeLibDir.deleteRecursively()
         }
@@ -145,7 +166,7 @@ class NodeDependencyManagerTest {
             NodeDependencyManager.missingExportAbis(context, listOf("arm64-v8a", "x86_64", "x86"))
         ).containsExactly("arm64-v8a", "x86_64")
 
-        // A cached libnode.so satisfies that ABI.
+        // A cached libnode.so from the current runtime zip satisfies that ABI.
         File(
             NodeDependencyManager.getNodeDir(context, "x86_64"),
             NodeDependencyManager.NODE_BINARY_NAME
@@ -153,6 +174,7 @@ class NodeDependencyManagerTest {
             parentFile?.mkdirs()
             writeBytes(byteArrayOf(1))
         }
+        NodeDependencyManager.writeRuntimeStamp(context)
 
         assertThat(NodeDependencyManager.missingExportAbis(context, listOf("x86_64"))).isEmpty()
         assertThat(

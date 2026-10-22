@@ -8,7 +8,7 @@ Express/Fastify/Koa apps, APIs, and server-side demos.
 
 ## Runtime
 
-- **Version** — Node.js 18.20.x.
+- **Version** — Node.js 18.20.x, Android build with full ICU. Unicode property escapes such as `\p{ID_Start}` (used by current `path-to-regexp` / Express 5) compile. A small-ICU build rejects them at startup.
 - **Process model** — runs in a dedicated `:nodejs` OS process via a native `node_launcher` wrapper loading `libnode.so`, so the V8 lifecycle is isolated from the host. On-device `npm` loads that library with `libc++_shared.so` staged beside it.
 - **Addons** — custom native `.node` extensions supported.
 - Managed in the [Linux Environment](/guide/more-features/linux-environment) and [Runtime Management](/guide/more-features/runtime-management) screens.

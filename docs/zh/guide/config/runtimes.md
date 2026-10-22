@@ -6,7 +6,7 @@ WebToApp 在设备端运行真实的服务运行时,并打包成可安装的 APK
 
 | 运行时 | 版本 | 说明 |
 | --- | --- | --- |
-| **Node.js** | 18.20.x | 通过加载 `libnode.so` 的原生 `node_launcher` 包装器,在独立的 `:nodejs` 操作系统进程中运行。支持自定义原生 `.node` 扩展。 |
+| **Node.js** | 18.20.x（完整 ICU） | 通过加载 `libnode.so` 的原生 `node_launcher` 包装器,在独立的 `:nodejs` 操作系统进程中运行。支持自定义原生 `.node` 扩展。完整 ICU 才能编译 `\p{ID_Start}` 这类 Unicode 属性转义。 |
 | **PHP** | 8.4 | 来自 `pmmp/PHP-Binaries`,首次使用下载一次。Composer 2.10.x。自定义原生扩展(`zend_extension`、`.so`)。 |
 | **Python** | 3.14 | Flask、Django、FastAPI(uvicorn)、Tornado、内置 HTTP 服务器。pip 依赖解析进 `.pypackages`。二进制名带版本号。 |
 | **Go** | 1.26.10 | 官方 Linux arm64 工具链(国内用 USTC 镜像)。设备端 `go build` / `go mod` / `go run`、`vendor/` 离线构建、通过 `go_exec_loader` 提供静态服务。已解压的更旧目录会重新下载。 |

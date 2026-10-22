@@ -6,7 +6,7 @@ WebToApp runs real server runtimes on-device and packages them into an installab
 
 | Runtime | Version | Notes |
 | --- | --- | --- |
-| **Node.js** | 18.20.x | Runs in a dedicated `:nodejs` OS process via a native `node_launcher` wrapper loading `libnode.so`. Custom native `.node` extensions supported. |
+| **Node.js** | 18.20.x (full ICU) | Runs in a dedicated `:nodejs` OS process via a native `node_launcher` wrapper loading `libnode.so`. Custom native `.node` extensions supported. Full ICU is required for Unicode property escapes such as `\p{ID_Start}`. |
 | **PHP** | 8.4 | From `pmmp/PHP-Binaries`, downloaded once on first use. Composer 2.10.x. Custom native extensions (`zend_extension`, `.so`). |
 | **Python** | 3.14 | Flask, Django, FastAPI (uvicorn), Tornado, built-in HTTP server. pip deps resolve into `.pypackages`. Versioned binary names. |
 | **Go** | 1.26.10 | Official Linux arm64 toolchain (USTC mirror for CN). On-device `go build` / `go mod` / `go run`, `vendor/` offline builds, static serving via `go_exec_loader`. An older extracted tree is downloaded again. |
