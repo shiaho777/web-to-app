@@ -375,29 +375,41 @@ open class WebViewActivity : AppCompatActivity() {
     private val fileChooserActivityLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
+        val photoUri = cameraPhotoUri
         val callback = filePathCallback
-        if (callback == null) return@registerForActivityResult
+        try {
+            if (callback == null) return@registerForActivityResult
 
-        if (result.resultCode == android.app.Activity.RESULT_OK) {
-            val resultUris = mutableListOf<android.net.Uri>()
-            val data = result.data
-            if (data == null || (data.data == null && data.clipData == null)) {
-                cameraPhotoUri?.let { resultUris.add(it) }
-            } else {
-                data.data?.let { resultUris.add(it) }
-                data.clipData?.let { clipData ->
-                    for (i in 0 until clipData.itemCount) {
-                        clipData.getItemAt(i).uri?.let { resultUris.add(it) }
+            if (result.resultCode == android.app.Activity.RESULT_OK) {
+                val resultUris = mutableListOf<android.net.Uri>()
+                val data = result.data
+                if (data == null || (data.data == null && data.clipData == null)) {
+                    photoUri?.let { resultUris.add(it) }
+                } else {
+                    data.data?.let { resultUris.add(it) }
+                    data.clipData?.let { clipData ->
+                        for (i in 0 until clipData.itemCount) {
+                            clipData.getItemAt(i).uri?.let { resultUris.add(it) }
+                        }
                     }
                 }
+                callback.onReceiveValue(resultUris.toTypedArray())
+            } else {
+                callback.onReceiveValue(null)
             }
-            callback.onReceiveValue(resultUris.toTypedArray())
-        } else {
-            callback.onReceiveValue(null)
+        } catch (e: Exception) {
+            AppLogger.e("WebViewActivity", "File chooser result failed", e)
+            try {
+                callback?.onReceiveValue(null)
+            } catch (deliverError: Exception) {
+                AppLogger.w("WebViewActivity", "file chooser callback failed: ${deliverError.message}")
+            }
+        } finally {
+            com.webtoapp.core.webview.CameraCaptureIntents.revokeOutput(this, photoUri)
+            filePathCallback = null
+            cameraPhotoUri = null
+            com.webtoapp.core.webview.FileChooserLifetime.markClosed()
         }
-        filePathCallback = null
-        cameraPhotoUri = null
-        com.webtoapp.core.webview.FileChooserLifetime.markClosed()
     }
 
     private var pendingFileChooserParams: android.webkit.WebChromeClient.FileChooserParams? = null
@@ -424,7 +436,13 @@ open class WebViewActivity : AppCompatActivity() {
 
         if (needsCamera && !hasCam) {
             pendingFileChooserParams = params
-            cameraForChooserPermLauncher.launch(android.Manifest.permission.CAMERA)
+            try {
+                cameraForChooserPermLauncher.launch(android.Manifest.permission.CAMERA)
+            } catch (e: Exception) {
+                AppLogger.e("WebViewActivity", "Camera permission request failed", e)
+                pendingFileChooserParams = null
+                launchFileChooserIntent(params)
+            }
         } else {
             launchFileChooserIntent(params)
         }
@@ -517,34 +535,40 @@ open class WebViewActivity : AppCompatActivity() {
                         val ts = java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.US).format(java.util.Date())
                         val dir = java.io.File(cacheDir, "camera_photos").apply { mkdirs() }
                         val photoFile = java.io.File.createTempFile("IMG_${ts}_", ".jpg", dir)
-                        cameraPhotoUri = androidx.core.content.FileProvider.getUriForFile(
+                        val output = androidx.core.content.FileProvider.getUriForFile(
                             this, "${packageName}.fileprovider", photoFile
                         )
-                        captureIntent.putExtra(android.provider.MediaStore.EXTRA_OUTPUT, cameraPhotoUri)
-                        captureIntent.addFlags(android.content.Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+                        cameraPhotoUri = output
+                        com.webtoapp.core.webview.CameraCaptureIntents.attachOutput(this, captureIntent, output)
                     } catch (e: Exception) {
                         AppLogger.e("WebViewActivity", "Camera capture file creation failed", e)
+                        cameraPhotoUri = null
                     }
                 }
                 if (captureIntent.resolveActivity(packageManager) != null) {
-                    fileChooserActivityLauncher.launch(captureIntent)
-                    AppLogger.d("WebViewActivity", "Direct camera capture launched: action=$captureAction")
-                    return
+                    try {
+                        fileChooserActivityLauncher.launch(captureIntent)
+                        AppLogger.d("WebViewActivity", "Direct camera capture launched: action=$captureAction")
+                        return
+                    } catch (e: Exception) {
+                        AppLogger.e("WebViewActivity", "Direct camera capture failed", e)
+                    }
                 }
             }
 
             val extraIntents = mutableListOf<android.content.Intent>()
             if (hasCam) {
                 try {
+                    com.webtoapp.core.webview.CameraCaptureIntents.revokeOutput(this, cameraPhotoUri)
                     val ts = java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.US).format(java.util.Date())
                     val dir = java.io.File(cacheDir, "camera_photos").apply { mkdirs() }
                     val photoFile = java.io.File.createTempFile("IMG_${ts}_", ".jpg", dir)
-                    cameraPhotoUri = androidx.core.content.FileProvider.getUriForFile(
+                    val output = androidx.core.content.FileProvider.getUriForFile(
                         this, "${packageName}.fileprovider", photoFile
                     )
+                    cameraPhotoUri = output
                     val camIntent = android.content.Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE).apply {
-                        putExtra(android.provider.MediaStore.EXTRA_OUTPUT, cameraPhotoUri)
-                        addFlags(android.content.Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+                        com.webtoapp.core.webview.CameraCaptureIntents.attachOutput(this@WebViewActivity, this, output)
                     }
                     if (camIntent.resolveActivity(packageManager) != null) extraIntents.add(camIntent)
                     val vidIntent = android.content.Intent(android.provider.MediaStore.ACTION_VIDEO_CAPTURE)
@@ -594,14 +618,11 @@ open class WebViewActivity : AppCompatActivity() {
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
-        val allGranted = permissions.values.all { it }
-        pendingPermissionRequest?.let { request ->
-            if (allGranted) {
-                request.grant(request.resources)
-            } else {
-                request.deny()
-            }
-            pendingPermissionRequest = null
+        com.webtoapp.core.webview.FileChooserLifetime.endPermissionDialog()
+        val request = pendingPermissionRequest
+        pendingPermissionRequest = null
+        if (request != null) {
+            com.webtoapp.core.webview.WebPermissionRequests.settle(request, permissions.values.all { it })
         }
     }
 
@@ -615,9 +636,10 @@ open class WebViewActivity : AppCompatActivity() {
     private val enginePermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
-        val allGranted = permissions.values.all { it }
-        pendingEnginePermissionCallback?.invoke(allGranted)
+        com.webtoapp.core.webview.FileChooserLifetime.endPermissionDialog()
+        val callback = pendingEnginePermissionCallback
         pendingEnginePermissionCallback = null
+        callback?.invoke(permissions.values.all { it })
     }
 
     fun handleAndroidPermissionsRequest(permissions: Array<String>, onResult: (Boolean) -> Unit) {
@@ -630,11 +652,20 @@ open class WebViewActivity : AppCompatActivity() {
             onResult(true)
             return
         }
+        val previous = pendingEnginePermissionCallback
+        if (previous != null) {
+            pendingEnginePermissionCallback = { granted ->
+                previous(granted)
+                onResult(granted)
+            }
+            return
+        }
         pendingEnginePermissionCallback = onResult
-        try {
+        val launched = com.webtoapp.core.webview.FileChooserLifetime.runPermissionDialog {
             enginePermissionLauncher.launch(notGranted.toTypedArray())
-        } catch (e: Exception) {
-            AppLogger.e("WebViewActivity", "Engine permission request failed", e)
+        }
+        if (!launched) {
+            AppLogger.e("WebViewActivity", "Engine permission request failed")
             pendingEnginePermissionCallback = null
             onResult(false)
         }
@@ -798,7 +829,7 @@ open class WebViewActivity : AppCompatActivity() {
 
         if (uniquePermissions.isEmpty()) {
 
-            request.grant(resources)
+            com.webtoapp.core.webview.WebPermissionRequests.settle(request, true)
             return
         }
 
@@ -810,11 +841,17 @@ open class WebViewActivity : AppCompatActivity() {
 
         if (notGranted.isEmpty()) {
 
-            request.grant(resources)
+            com.webtoapp.core.webview.WebPermissionRequests.settle(request, true)
         } else {
 
             pendingPermissionRequest = request
-            permissionLauncher.launch(notGranted.toTypedArray())
+            val launched = com.webtoapp.core.webview.FileChooserLifetime.runPermissionDialog {
+                permissionLauncher.launch(notGranted.toTypedArray())
+            }
+            if (!launched) {
+                pendingPermissionRequest = null
+                com.webtoapp.core.webview.WebPermissionRequests.settle(request, false)
+            }
         }
     }
 
@@ -3268,7 +3305,10 @@ fun WebViewScreen(
     DisposableEffect(lifecycleOwner) {
         val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
             if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
-                if (com.webtoapp.core.webview.FileChooserLifetime.isOpen()) return@LifecycleEventObserver
+                val skipProbe = com.webtoapp.core.webview.FileChooserLifetime.consumeResumeProbeSkip()
+                if (com.webtoapp.core.webview.FileChooserLifetime.isOpen() || skipProbe) {
+                    return@LifecycleEventObserver
+                }
                 if (memoryTeardownPending) {
                     memoryTeardownPending = false
                     webViewRecreationKey++
@@ -3307,7 +3347,7 @@ fun WebViewScreen(
             override fun onTrimMemory(level: Int) {
                 if (!com.webtoapp.core.webview.WebViewMemoryTrimmer.onTrimMemory(level, context)) return
                 if (com.webtoapp.core.webview.FileChooserLifetime.isOpen()) {
-                    AppLogger.w("WebViewActivity", "File chooser open — keeping the WebView through trim")
+                    AppLogger.w("WebViewActivity", "WebView callback in flight — keeping the WebView through trim")
                     return
                 }
                 val wv = webViewRef ?: return

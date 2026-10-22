@@ -1,9 +1,12 @@
 package com.webtoapp.core.engine
 
+import android.Manifest
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
+import android.content.pm.PackageManager
 import android.security.KeyChain
+import androidx.core.content.ContextCompat
 import com.webtoapp.core.logging.AppLogger
 import android.view.View
 import com.webtoapp.data.model.UserAgentMode
@@ -2153,7 +2156,42 @@ class GeckoViewEngine(
                 audio: Array<GeckoSession.PermissionDelegate.MediaSource>?,
                 callback: GeckoSession.PermissionDelegate.MediaCallback
             ) {
-                callback.grant(video?.firstOrNull(), audio?.firstOrNull())
+                // Granting the content devices before the OS permission exists makes
+                // Gecko open the camera and abort the process. Ask first when the
+                // earlier onAndroidPermissionsRequest did not already obtain it.
+                val needed = ArrayList<String>(2)
+                if (!video.isNullOrEmpty()) needed.add(Manifest.permission.CAMERA)
+                if (!audio.isNullOrEmpty()) needed.add(Manifest.permission.RECORD_AUDIO)
+                val missing = needed.filter {
+                    ContextCompat.checkSelfPermission(context, it) != PackageManager.PERMISSION_GRANTED
+                }
+                fun finish(granted: Boolean) {
+                    try {
+                        if (granted) callback.grant(video?.firstOrNull(), audio?.firstOrNull())
+                        else callback.reject()
+                    } catch (e: Exception) {
+                        AppLogger.e(TAG, "media permission callback failed", e)
+                        if (granted) {
+                            try {
+                                callback.reject()
+                            } catch (rejectError: Exception) {
+                                AppLogger.w(TAG, "media reject failed: ${rejectError.message}")
+                            }
+                        }
+                    }
+                }
+                if (missing.isEmpty()) {
+                    finish(true)
+                    return
+                }
+                val host = this@GeckoViewEngine.callback
+                if (host == null) {
+                    finish(false)
+                    return
+                }
+                host.onAndroidPermissionsRequest(missing.toTypedArray()) { granted ->
+                    finish(granted)
+                }
             }
 
             override fun onAndroidPermissionsRequest(

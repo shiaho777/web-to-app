@@ -9,6 +9,8 @@ class FileChooserLifetimeTest {
     @After
     fun reset() {
         FileChooserLifetime.markClosed()
+        repeat(4) { FileChooserLifetime.endPermissionDialog() }
+        repeat(4) { FileChooserLifetime.consumeResumeProbeSkip() }
     }
 
     @Test
@@ -18,5 +20,27 @@ class FileChooserLifetimeTest {
         assertThat(FileChooserLifetime.isOpen()).isTrue()
         FileChooserLifetime.markClosed()
         assertThat(FileChooserLifetime.isOpen()).isFalse()
+    }
+
+    @Test
+    fun `permission dialog holds the webview and skips one resume probe`() {
+        assertThat(
+            FileChooserLifetime.runPermissionDialog { }
+        ).isTrue()
+        assertThat(FileChooserLifetime.isOpen()).isTrue()
+
+        FileChooserLifetime.endPermissionDialog()
+        assertThat(FileChooserLifetime.isOpen()).isFalse()
+        assertThat(FileChooserLifetime.consumeResumeProbeSkip()).isTrue()
+        assertThat(FileChooserLifetime.consumeResumeProbeSkip()).isFalse()
+    }
+
+    @Test
+    fun `failed permission dialog releases the hold and does not skip the probe`() {
+        assertThat(
+            FileChooserLifetime.runPermissionDialog { throw IllegalStateException("not in manifest") }
+        ).isFalse()
+        assertThat(FileChooserLifetime.isOpen()).isFalse()
+        assertThat(FileChooserLifetime.consumeResumeProbeSkip()).isFalse()
     }
 }
