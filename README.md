@@ -432,9 +432,7 @@ Advanced features such as device disguise are intended for technical demonstrati
 
 Trading fees from the associated pump.fun token help support continued development:
 
-`H2mNeSJV75VuQpGA9C11FwWoT9DU7sMCYUNVaMyQpump`
-
-https://pump.fun/coin/H2mNeSJV75VuQpGA9C11FwWoT9DU7sMCYUNVaMyQpump
+[https://pump.fun/coin/H2mNeSJV75VuQpGA9C11FwWoT9DU7sMCYUNVaMyQpump](https://pump.fun/coin/H2mNeSJV75VuQpGA9C11FwWoT9DU7sMCYUNVaMyQpump)
 
 ---
 
