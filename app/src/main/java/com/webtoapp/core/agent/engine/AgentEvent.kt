@@ -37,7 +37,8 @@ sealed class AgentEvent {
         val toolCallId: String,
         val name: String,
         val argumentsJson: String,
-        val result: ToolResult
+        val result: ToolResult,
+        val thoughtSignature: String? = null
     ) : AgentEvent()
 
     data class FileChanged(val change: FileChange) : AgentEvent()

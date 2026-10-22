@@ -251,7 +251,7 @@ class AgentService : Service() {
                 flush()
             }
             is AgentEvent.ToolFinished -> {
-                acc.finishTool(ev.toolCallId, ev.name, ev.argumentsJson, ev.result)
+                acc.finishTool(ev.toolCallId, ev.name, ev.argumentsJson, ev.result, ev.thoughtSignature)
                 flush(force = true)
             }
             is AgentEvent.FileChanged -> {
@@ -558,7 +558,13 @@ internal class TurnAccumulator(private val sessionId: String) {
         tools[id] = prev.copy(activity = activity)
     }
 
-    fun finishTool(id: String, name: String, argumentsJson: String, result: ToolResult) {
+    fun finishTool(
+        id: String,
+        name: String,
+        argumentsJson: String,
+        result: ToolResult,
+        thoughtSignature: String? = null
+    ) {
         val prev = tools[id]
         tools[id] = RecordedToolCall(
             toolCallId = id,
@@ -566,7 +572,8 @@ internal class TurnAccumulator(private val sessionId: String) {
             argumentsJson = argumentsJson,
             resultPreview = result.text.take(2000),
             ok = !result.isError,
-            activity = prev?.activity
+            activity = prev?.activity,
+            thoughtSignature = thoughtSignature ?: prev?.thoughtSignature
         )
         toolArgs.remove(id)
     }

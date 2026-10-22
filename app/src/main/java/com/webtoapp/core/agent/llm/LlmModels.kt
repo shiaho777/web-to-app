@@ -29,7 +29,12 @@ data class LlmMessage(
     enum class Role { SYSTEM, USER, ASSISTANT, TOOL }
 }
 
-data class LlmToolCall(val id: String, val name: String, val argumentsJson: String)
+data class LlmToolCall(
+    val id: String,
+    val name: String,
+    val argumentsJson: String,
+    val thoughtSignature: String? = null
+)
 
 data class ToolDeclaration(val name: String, val description: String, val parametersSchema: JsonElement)
 
@@ -39,7 +44,12 @@ sealed class LlmEvent {
     data class ThinkingDelta(val delta: String) : LlmEvent()
     data class ToolCallBegin(val id: String, val name: String) : LlmEvent()
     data class ToolCallArgsDelta(val id: String, val argsDelta: String) : LlmEvent()
-    data class ToolCallEnd(val id: String, val name: String, val argumentsJson: String) : LlmEvent()
+    data class ToolCallEnd(
+        val id: String,
+        val name: String,
+        val argumentsJson: String,
+        val thoughtSignature: String? = null
+    ) : LlmEvent()
     data class Done(val finishReason: FinishReason) : LlmEvent()
     data class Error(
         val message: String,

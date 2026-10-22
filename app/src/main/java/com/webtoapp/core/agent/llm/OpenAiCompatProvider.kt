@@ -85,11 +85,12 @@ internal class OpenAiCompatProvider(@Suppress("UNUSED_PARAMETER") context: Conte
                     val source = response.body?.source() ?: run { trySend(LlmEvent.Error("Empty response body")); close(); return }
                     val toolArgsAccum = LinkedHashMap<String, StringBuilder>()
                     val toolNames = LinkedHashMap<String, String>()
+                    val toolSignatures = HashMap<String, String>()
                     val toolIndexToId = HashMap<Int, String>()
                     var finishReason = FinishReason.STOP
                     var done = false
                     sse.consume(source) { _, payload ->
-                        if (payload == "[DONE]") { done = true; emitFinish(toolNames, toolArgsAccum, finishReason); return@consume false }
+                        if (payload == "[DONE]") { done = true; emitFinish(toolNames, toolArgsAccum, toolSignatures, finishReason); return@consume false }
                         try {
                             val json = JsonParser.parseString(payload).asJsonObject
                             json.getAsJsonObject("error")?.let { err ->
@@ -123,6 +124,7 @@ internal class OpenAiCompatProvider(@Suppress("UNUSED_PARAMETER") context: Conte
                                         if (toolNames[id] == null) { toolNames[id] = name; trySend(LlmEvent.ToolCallBegin(id, name)) }
                                     }
                                     if (args.isNotEmpty()) { toolArgsAccum.getOrPut(id) { StringBuilder() }.append(args); trySend(LlmEvent.ToolCallArgsDelta(id, args)) }
+                                    ThoughtSignatures.fromOpenAiToolCall(tc)?.let { toolSignatures[id] = it }
                                 }
                             }
                             runCatching {
@@ -135,7 +137,7 @@ internal class OpenAiCompatProvider(@Suppress("UNUSED_PARAMETER") context: Conte
                         }
                         true
                     }
-                    if (!done) emitFinish(toolNames, toolArgsAccum, finishReason)
+                    if (!done) emitFinish(toolNames, toolArgsAccum, toolSignatures, finishReason)
                 } catch (e: Exception) {
                     // A SocketTimeoutException (OkHttp read timeout) or a premature connection
                     // close lands here. Previously this was silently swallowed (only finally {
@@ -154,8 +156,15 @@ internal class OpenAiCompatProvider(@Suppress("UNUSED_PARAMETER") context: Conte
         return "temperature" in lower && ("only 1 is allowed" in lower || "must be" in lower || "invalid" in lower)
     }
 
-    private fun kotlinx.coroutines.channels.ProducerScope<LlmEvent>.emitFinish(names: Map<String, String>, args: Map<String, StringBuilder>, fr: FinishReason) {
-        names.forEach { (id, name) -> trySend(LlmEvent.ToolCallEnd(id, name, args[id]?.toString().orEmpty())) }
+    private fun kotlinx.coroutines.channels.ProducerScope<LlmEvent>.emitFinish(
+        names: Map<String, String>,
+        args: Map<String, StringBuilder>,
+        signatures: Map<String, String>,
+        fr: FinishReason
+    ) {
+        names.forEach { (id, name) ->
+            trySend(LlmEvent.ToolCallEnd(id, name, args[id]?.toString().orEmpty(), signatures[id]))
+        }
         trySend(LlmEvent.Done(if (names.isNotEmpty() && fr == FinishReason.STOP) FinishReason.TOOL_CALLS else fr))
     }
 
@@ -172,7 +181,22 @@ internal class OpenAiCompatProvider(@Suppress("UNUSED_PARAMETER") context: Conte
     }
     private fun buildMsg(msg: LlmMessage) = JsonObject().apply {
         addProperty("role", when(msg.role){LlmMessage.Role.SYSTEM->"system";LlmMessage.Role.USER->"user";LlmMessage.Role.ASSISTANT->"assistant";LlmMessage.Role.TOOL->"tool"})
-        if (msg.toolCalls.isNotEmpty()) { add("tool_calls", JsonArray().apply { msg.toolCalls.forEach { tc -> add(JsonObject().apply { addProperty("id",tc.id);addProperty("type","function");add("function",JsonObject().apply{addProperty("name",tc.name);addProperty("arguments",tc.argumentsJson)}) }) } }); if(msg.content.isNotEmpty()) addProperty("content",msg.content) }
+        if (msg.toolCalls.isNotEmpty()) {
+            add("tool_calls", JsonArray().apply {
+                msg.toolCalls.forEach { tc ->
+                    add(JsonObject().apply {
+                        addProperty("id", tc.id)
+                        addProperty("type", "function")
+                        add("function", JsonObject().apply {
+                            addProperty("name", tc.name)
+                            addProperty("arguments", tc.argumentsJson)
+                        })
+                        ThoughtSignatures.attachOpenAi(this, tc.thoughtSignature)
+                    })
+                }
+            })
+            if (msg.content.isNotEmpty()) addProperty("content", msg.content)
+        }
         else if (msg.images.isNotEmpty() && msg.role != LlmMessage.Role.TOOL) {
             add("content", JsonArray().apply {
                 if (msg.content.isNotEmpty()) add(JsonObject().apply { addProperty("type", "text"); addProperty("text", msg.content) })

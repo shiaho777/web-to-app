@@ -126,7 +126,13 @@ data class RecordedToolCall(
     val resultPreview: String,
     val ok: Boolean,
 
-    val activity: String? = null
+    val activity: String? = null,
+
+    /**
+     * Gemini 3 function-call signature. Required on the replayed model turn;
+     * absent for providers that do not send one. Older session JSON leaves it null.
+     */
+    val thoughtSignature: String? = null
 ) {
     companion object {
 

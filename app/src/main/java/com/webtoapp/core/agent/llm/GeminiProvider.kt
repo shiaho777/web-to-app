@@ -33,6 +33,7 @@ internal class GeminiProvider(@Suppress("UNUSED_PARAMETER") context: Context) : 
                 try {
                     val source = response.body?.source() ?: run { trySend(LlmEvent.Error("Empty response body")); close(); return }
                     var hasTools = false
+                    var lastToolId: String? = null
                     sse.consume(source) { _, payload ->
                         try {
                             val json = JsonParser.parseString(payload).asJsonObject
@@ -40,9 +41,23 @@ internal class GeminiProvider(@Suppress("UNUSED_PARAMETER") context: Context) : 
                             cand.getAsJsonObject("content")?.getAsJsonArray("parts")?.forEach { pEl ->
                                 val p = pEl.asJsonObject
                                 p.get("text")?.takeUnless{it.isJsonNull}?.asString?.takeIf{it.isNotEmpty()}?.let{trySend(LlmEvent.TextDelta(it))}
-                                p.getAsJsonObject("functionCall")?.let { fc ->
-                                    hasTools = true; val nm=fc.get("name")?.asString.orEmpty(); val args=fc.get("args")?.let{gson.toJson(it)}.orEmpty(); val id="gem_${UUID.randomUUID()}"
-                                    trySend(LlmEvent.ToolCallBegin(id,nm)); if(args.isNotEmpty()) trySend(LlmEvent.ToolCallArgsDelta(id,args)); trySend(LlmEvent.ToolCallEnd(id,nm,args))
+                                val fc = p.getAsJsonObject("functionCall")
+                                if (fc != null) {
+                                    hasTools = true
+                                    val nm = fc.get("name")?.asString.orEmpty()
+                                    val args = fc.get("args")?.let { gson.toJson(it) }.orEmpty()
+                                    val id = "gem_${UUID.randomUUID()}"
+                                    lastToolId = id
+                                    val sig = ThoughtSignatures.fromGeminiPart(p, fc)
+                                    trySend(LlmEvent.ToolCallBegin(id, nm))
+                                    if (args.isNotEmpty()) trySend(LlmEvent.ToolCallArgsDelta(id, args))
+                                    trySend(LlmEvent.ToolCallEnd(id, nm, args, sig))
+                                } else {
+                                    val sig = ThoughtSignatures.fromGeminiPart(p, JsonObject())
+                                    val id = lastToolId
+                                    if (sig != null && id != null) {
+                                        trySend(LlmEvent.ToolCallEnd(id, "", "", sig))
+                                    }
                                 }
                             }
                         } catch(_:Exception){}; true
@@ -66,7 +81,7 @@ internal class GeminiProvider(@Suppress("UNUSED_PARAMETER") context: Context) : 
     }
     private fun buildParts(m: LlmMessage): JsonArray { val parts=JsonArray()
         when(m.role){LlmMessage.Role.USER->{if(m.content.isNotEmpty())parts.add(JsonObject().apply{addProperty("text",m.content)})}
-        LlmMessage.Role.ASSISTANT->{if(m.content.isNotEmpty())parts.add(JsonObject().apply{addProperty("text",m.content)});m.toolCalls.forEach{tc->parts.add(JsonObject().apply{add("functionCall",JsonObject().apply{addProperty("name",tc.name);add("args",runCatching{JsonParser.parseString(tc.argumentsJson)}.getOrElse{JsonObject()})})})}}
+        LlmMessage.Role.ASSISTANT->{if(m.content.isNotEmpty())parts.add(JsonObject().apply{addProperty("text",m.content)});m.toolCalls.forEach{tc->parts.add(ThoughtSignatures.geminiPart(tc.name, tc.argumentsJson, tc.thoughtSignature))}}
         LlmMessage.Role.TOOL->{parts.add(JsonObject().apply{add("functionResponse",JsonObject().apply{addProperty("name",m.name?:"tool");add("response",JsonObject().apply{addProperty("result",m.content)})})})}
         else->{}}
         m.images.forEach { img -> parts.add(JsonObject().apply { add("inlineData", JsonObject().apply { addProperty("mimeType", img.mimeType); addProperty("data", base64(img.bytes)) }) }) }

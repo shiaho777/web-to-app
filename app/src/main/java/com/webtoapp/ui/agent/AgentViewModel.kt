@@ -1519,7 +1519,7 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
                         content = stripInlineMarkers(m.content),
                         toolCalls = m.toolCalls.map {
                             com.webtoapp.core.agent.llm.LlmToolCall(
-                                it.toolCallId, it.name, it.argumentsJson
+                                it.toolCallId, it.name, it.argumentsJson, it.thoughtSignature
                             )
                         },
 
@@ -1894,7 +1894,8 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
                     argumentsJson = ev.argumentsJson,
                     resultPreview = ev.result.text.take(2000),
                     ok = !ev.result.isError,
-                    activity = prev?.activity
+                    activity = prev?.activity,
+                    thoughtSignature = ev.thoughtSignature ?: prev?.thoughtSignature
                 )
                 streamToolArgs.remove(ev.toolCallId)
                 lastToolUiPushAt = 0L

@@ -81,6 +81,7 @@ class AgentEngine(
 
                 val turnThinking = StringBuilder()
                 val pending = LinkedHashMap<String, Pair<String, StringBuilder>>()
+                val thoughtSignatures = HashMap<String, String>()
                 // Index in accText where this attempt's output begins; a recoverable-error
                 // retry rewrites from here instead of appending a duplicate attempt.
                 // RETRY-PATH ONLY: inside the event handlers accText is append-only —
@@ -217,10 +218,15 @@ class AgentEngine(
                                 send(AgentEvent.ToolCallArgsDelta(ev.id, ev.argsDelta))
                             }
                             is LlmEvent.ToolCallEnd -> {
-                                val entry = pending.getOrPut(ev.id) { ev.name to StringBuilder() }
-                                if (ev.argumentsJson.length >= entry.second.length) {
-                                    entry.second.clear()
-                                    entry.second.append(ev.argumentsJson)
+                                if (ev.name.isNotEmpty()) {
+                                    val entry = pending.getOrPut(ev.id) { ev.name to StringBuilder() }
+                                    if (ev.argumentsJson.length >= entry.second.length) {
+                                        entry.second.clear()
+                                        entry.second.append(ev.argumentsJson)
+                                    }
+                                }
+                                ev.thoughtSignature?.takeIf { it.isNotBlank() }?.let {
+                                    thoughtSignatures[ev.id] = it
                                 }
                             }
                             is LlmEvent.Done -> finishReason = ev.finishReason
@@ -262,6 +268,7 @@ class AgentEngine(
                                 turnText.setLength(0)
                                 turnThinking.setLength(0)
                                 pending.clear()
+                                thoughtSignatures.clear()
                                 finishReason = FinishReason.STOP
                                 continue
                             }
@@ -274,6 +281,7 @@ class AgentEngine(
                                 turnText.setLength(0)
                                 turnThinking.setLength(0)
                                 pending.clear()
+                                thoughtSignatures.clear()
                                 finishReason = FinishReason.STOP
                                 delay(decision.waitMs)
                                 continue
@@ -309,7 +317,12 @@ class AgentEngine(
                 val rawArgsById = HashMap<String, String>()
                 val assistantToolCalls = pending.entries.map { (id, pair) ->
                     rawArgsById[id] = pair.second.toString()
-                    LlmToolCall(id, pair.first, sanitizeArgumentsJson(pair.second.toString()))
+                    LlmToolCall(
+                        id,
+                        pair.first,
+                        sanitizeArgumentsJson(pair.second.toString()),
+                        thoughtSignatures[id]
+                    )
                 }
                 messages += LlmMessage(
                     role = LlmMessage.Role.ASSISTANT,
@@ -408,7 +421,9 @@ class AgentEngine(
         result: ToolResult,
         out: SendChannel<AgentEvent>
     ) {
-        out.send(AgentEvent.ToolFinished(call.id, call.name, call.argumentsJson, result))
+        out.send(AgentEvent.ToolFinished(
+            call.id, call.name, call.argumentsJson, result, call.thoughtSignature
+        ))
         result.fileChange?.let { out.send(AgentEvent.FileChanged(it)) }
         result.appChange?.let { out.send(AgentEvent.AppChanged(it)) }
         result.builtApk?.let { out.send(AgentEvent.ApkBuilt(it)) }
