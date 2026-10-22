@@ -210,6 +210,11 @@ static const char PERF_JS_DOCUMENT_START[] =
  * The header menu and cart are outside that row, which is why only the
  * shop sidebar broke, and only in the exported APK (this script is baked
  * in at export; preview does not run it). #1150
+ *
+ * Do not stamp loading=lazy onto images the page did not mark. System
+ * WebView then defers the request and often never retries it when the
+ * scroll root is not window, so below-the-fold images stay blank. Only
+ * promote data-src placeholders the page already opted into.
  */
 static const char PERF_JS_DOCUMENT_END[] =
 "(function(){'use strict';"
@@ -225,8 +230,8 @@ static const char PERF_JS_DOCUMENT_END[] =
       "}"
     "}"
   "},{rootMargin:'200px 0px'});"
-  "var imgs=document.querySelectorAll('img:not([loading])');"
-  "for(var i=0;i<imgs.length;i++){imgs[i].loading='lazy';_io.observe(imgs[i]);}"
+  "var imgs=document.querySelectorAll('img[data-src]');"
+  "for(var i=0;i<imgs.length;i++){_io.observe(imgs[i]);}"
 "}"
 
 "try{"

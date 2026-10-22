@@ -282,7 +282,7 @@ object NativePerfEngine {
                         }
                     }
                 },{rootMargin:'200px 0px'});
-                document.querySelectorAll('img:not([loading])').forEach(function(img){img.loading='lazy';io.observe(img);});
+                document.querySelectorAll('img[data-src]').forEach(function(img){io.observe(img);});
             }
         })();""".trimIndent()
     }
