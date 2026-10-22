@@ -38,6 +38,7 @@ class ShellActivity : AppCompatActivity() {
 
     private var webView: WebView? = null
     private var browserSurface: BrowserSurface? = null
+    private var nativeBridge: com.webtoapp.core.webview.NativeBridge? = null
     private val backgroundMedia = BackgroundMediaRuntime(
         webView = { webView },
         surface = { browserSurface },
@@ -859,6 +860,7 @@ class ShellActivity : AppCompatActivity() {
                                 appOriginUrl = config.targetUrl,
                                 directoryGrantKey = config.packageName
                             )
+                            this@ShellActivity.nativeBridge = nativeBridge
                             wv.addJavascriptInterface(nativeBridge, com.webtoapp.core.webview.NativeBridge.JS_INTERFACE_NAME)
                             nativeBridge.installDirectoryHelper(wv)
                         } else if (config.webViewConfig.enablePrivateNetworkBridge || config.webViewConfig.enableCorsBypass) {
@@ -1285,6 +1287,7 @@ class ShellActivity : AppCompatActivity() {
         browserSurface?.onResume() ?: webView?.onResume()
 
         browserSurface?.resumeTimers() ?: webView?.resumeTimers()
+        nativeBridge?.onWebViewResume()
         dispatchVisibilityEvent(visible = true)
         com.webtoapp.core.shell.ShellLogger.logLifecycle("ShellActivity", "onResume - WebView resumed, timers resumed")
     }
@@ -1306,6 +1309,7 @@ class ShellActivity : AppCompatActivity() {
             com.webtoapp.core.shell.ShellLogger.logLifecycle("ShellActivity", "onPause - notification polyfill active, keeping JS timers alive")
         } else {
             browserSurface?.onPause() ?: webView?.onPause()
+            nativeBridge?.onWebViewPause()
         }
 
         android.webkit.CookieManager.getInstance().flush()

@@ -68,4 +68,36 @@ class GoogleSignInDeliveryTest {
             )
         ).isEqualTo(GoogleSignInDelivery.DROP)
     }
+
+    @Test
+    fun `a paused webview holds a local result instead of delivering into the paused page`() {
+        assertThat(
+            bridge.googleSignInDispatchAction(
+                currentPageUrl = "http://127.0.0.1:18123/index.html",
+                callerOrigin = "http://127.0.0.1:18123",
+                giveUpWaiting = true,
+                webViewPaused = true,
+            )
+        ).isEqualTo(GoogleSignInDelivery.WAIT)
+        assertThat(
+            bridge.googleSignInDispatchAction(
+                currentPageUrl = "http://127.0.0.1:18123/index.html",
+                callerOrigin = "http://127.0.0.1:18123",
+                giveUpWaiting = true,
+                webViewPaused = false,
+            )
+        ).isEqualTo(GoogleSignInDelivery.DELIVER)
+    }
+
+    @Test
+    fun `a paused webview still drops a foreign page`() {
+        assertThat(
+            bridge.googleSignInDispatchAction(
+                currentPageUrl = "https://other.test/home",
+                callerOrigin = "https://app.test",
+                giveUpWaiting = true,
+                webViewPaused = true,
+            )
+        ).isEqualTo(GoogleSignInDelivery.DROP)
+    }
 }

@@ -1765,11 +1765,36 @@ await WtaDirectory.write('exports/image.png', pngBytes);
     }
 
     /**
-     * The account picker pauses the WebView, and [android.webkit.WebView.getUrl]
-     * is often blank until resume. Dropping the result in that window is what
-     * the page sees as silence after the picker. Wait briefly for the URL, and
-     * if it never comes back, still deliver when the caller was a local page.
+     * True while the host has paused the WebView for the account picker.
+     * [android.webkit.WebView.getUrl] is often blank until resume, and
+     * [android.webkit.WebView.evaluateJavascript] during the pause is dropped.
+     * Hold the result and deliver it from [onWebViewResume]. A local page whose
+     * URL never comes back is still delivered once the WebView is running.
      */
+    @Volatile
+    private var webViewPaused = false
+
+    private var heldSignIn: HeldGoogleSignIn? = null
+
+    private data class HeldGoogleSignIn(
+        val js: String,
+        val payload: org.json.JSONObject,
+        val callerOrigin: String?,
+    )
+
+    /** Call only when this bridge's WebView was actually paused. */
+    fun onWebViewPause() {
+        webViewPaused = true
+    }
+
+    /** Call after [android.webkit.WebView.onResume], from the main thread. */
+    fun onWebViewResume() {
+        webViewPaused = false
+        val held = heldSignIn ?: return
+        heldSignIn = null
+        deliverGoogleSignInResult(held.js, held.payload, held.callerOrigin, attemptsLeft = 20)
+    }
+
     private fun deliverGoogleSignInResult(
         js: String,
         payload: org.json.JSONObject,
@@ -1781,11 +1806,26 @@ await WtaDirectory.write('exports/image.png', pngBytes);
             logDroppedGoogleSignIn(payload)
             return
         }
-        when (googleSignInDeliveryDecision(webView.url, callerOrigin, giveUpWaiting = attemptsLeft <= 0)) {
-            GoogleSignInDelivery.DELIVER -> webView.evaluateJavascript(js, null)
-            GoogleSignInDelivery.WAIT -> webView.postDelayed({
-                deliverGoogleSignInResult(js, payload, callerOrigin, attemptsLeft - 1)
-            }, 50)
+        when (googleSignInDispatchAction(
+            webView.url,
+            callerOrigin,
+            giveUpWaiting = attemptsLeft <= 0,
+            webViewPaused = webViewPaused,
+        )) {
+            GoogleSignInDelivery.DELIVER -> webView.post {
+                if (webViewPaused) {
+                    heldSignIn = HeldGoogleSignIn(js, payload, callerOrigin)
+                    return@post
+                }
+                webView.evaluateJavascript(js, null)
+            }
+            GoogleSignInDelivery.WAIT -> if (webViewPaused) {
+                heldSignIn = HeldGoogleSignIn(js, payload, callerOrigin)
+            } else {
+                webView.postDelayed({
+                    deliverGoogleSignInResult(js, payload, callerOrigin, attemptsLeft - 1)
+                }, 50)
+            }
             GoogleSignInDelivery.DROP -> logDroppedGoogleSignIn(payload)
         }
     }
@@ -1793,6 +1833,20 @@ await WtaDirectory.write('exports/image.png', pngBytes);
     private fun logDroppedGoogleSignIn(payload: org.json.JSONObject) {
         if (payload.optBoolean("ok", false)) {
             AppLogger.w("NativeBridge", "Google sign-in result dropped: page origin changed during the flow")
+        }
+    }
+
+    internal fun googleSignInDispatchAction(
+        currentPageUrl: String?,
+        callerOrigin: String?,
+        giveUpWaiting: Boolean,
+        webViewPaused: Boolean,
+    ): GoogleSignInDelivery {
+        val decision = googleSignInDeliveryDecision(currentPageUrl, callerOrigin, giveUpWaiting)
+        return if (webViewPaused && decision != GoogleSignInDelivery.DROP) {
+            GoogleSignInDelivery.WAIT
+        } else {
+            decision
         }
     }
 

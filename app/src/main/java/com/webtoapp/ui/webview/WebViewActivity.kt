@@ -208,6 +208,7 @@ open class WebViewActivity : AppCompatActivity() {
     }
 
     private var webView: WebView? = null
+    internal var nativeBridge: com.webtoapp.core.webview.NativeBridge? = null
     internal var browserSurface: BrowserSurface? = null
     private var customView: View? = null
     private var customViewCallback: WebChromeClient.CustomViewCallback? = null
@@ -1375,6 +1376,7 @@ open class WebViewActivity : AppCompatActivity() {
         webView?.onResume()
         webView?.resumeTimers()
         browserSurface?.onResume()
+        nativeBridge?.onWebViewResume()
         if (trackedAppId > 0) usageTracker?.trackResume(trackedAppId)
     }
 
@@ -1384,6 +1386,7 @@ open class WebViewActivity : AppCompatActivity() {
         val keepMedia = backgroundMedia.onHostPause(!isFinishing && !isChangingConfigurations)
         if (!keepMedia) {
             webView?.onPause()
+            nativeBridge?.onWebViewPause()
         }
         android.webkit.CookieManager.getInstance().flush()
         super.onPause()
@@ -4088,6 +4091,7 @@ fun WebViewScreen(
                                                 nb,
                                                 com.webtoapp.core.webview.NativeBridge.JS_INTERFACE_NAME
                                             )
+                                            (context as? WebViewActivity)?.nativeBridge = nb
                                             nb.installDirectoryHelper(this)
                                         } else if (effectiveWebApp.webViewConfig.enablePrivateNetworkBridge || effectiveWebApp.webViewConfig.enableCorsBypass) {
                                             val privateNetworkBridge = com.webtoapp.core.webview.PrivateNetworkNativeBridgeAdapter(
