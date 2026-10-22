@@ -100,6 +100,15 @@ Default target: [shiaho777/web-to-app](https://github.com/shiaho777/web-to-app).
 
 **Language (required):** GitHub **Issues and PRs must be written in English** — titles, bodies, labels text you author, and delivery comments on the Issue/PR. Local chat with the user may be Chinese or any language; do not copy that language into Issue/PR text.
 
+**Links the user can open (required):** When you point at an Issue or PR — in chat, in a commit message, or in an Issue/PR body — give the full URL and nothing else glued to it:
+
+- `https://github.com/shiaho777/web-to-app/issues/N`
+- `https://github.com/shiaho777/web-to-app/pull/N`
+
+Do not write `1367（已关闭）`, `1367 (closed)`, `#1367 closed`, or `author:1367`. A number plus a status word is not a link. Pasted into the GitHub Issues search box it becomes a qualifier such as `author:1367 (已关闭)`. `author:` must be a username, so GitHub rejects the filter (`Invalid value … for author`) and the issues list fails to load. Put status in its own sentence: the link, then "Closed." or "Merged."
+
+Do not tell the user to find a finished delivery with `is:issue state:open`. That filter hides closed Issues and merged PRs. To look one up, use the URL above, or a search of the number alone (`1376`) with no `author:` and no `state:open`.
+
 When the user asks to deliver a change, run the Issue → branch → PR → CI → merge loop end-to-end. Opening the PR is not the end of the task. Stay with it until the merge is done:
 
 1. Watch the required `check` job in "Android CI Build" until it finishes. `package-apks` skips on PRs; do not wait on it.
