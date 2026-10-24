@@ -62,6 +62,15 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
         return mode to (config?.webViewConfig?.customDownloadDirUri ?: "")
     }
 
+    private fun resolveAlbumName(): String {
+        val config = try {
+            com.webtoapp.WebToAppApplication.shellMode.getConfig()
+        } catch (e: Exception) {
+            null
+        }
+        return config?.webViewConfig?.mediaAlbumName ?: ""
+    }
+
     private var cameraPhotoUri: Uri? = null
 
     private var pendingFilePathCallback: android.webkit.ValueCallback<Array<Uri>>? = null
@@ -78,6 +87,11 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
 
     fun onRestoreInstanceState(state: Bundle?) {
         val uri = state?.getString(KEY_PENDING_CAMERA_PHOTO)?.let(Uri::parse) ?: return
+        if (com.webtoapp.core.webview.FileChooserLifetime.isOpen()) {
+            com.webtoapp.core.webview.FileChooserLifetime.holdCamera(uri)
+            cameraPhotoUri = uri
+            return
+        }
         com.webtoapp.core.webview.CameraCaptureIntents.revokeOutput(activity, uri)
         runCatching { activity.contentResolver.delete(uri, null, null) }
     }
@@ -86,7 +100,9 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
         val photoUri = cameraPhotoUri
+            ?: com.webtoapp.core.webview.FileChooserLifetime.cameraUri()
         val callback = pendingFilePathCallback
+            ?: com.webtoapp.core.webview.FileChooserLifetime.callback()
         try {
             if (callback == null) {
                 AppLogger.w("ShellPermission", "fileChooserActivityLauncher: no pending callback")
@@ -148,6 +164,7 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
 
         pendingFilePathCallback?.onReceiveValue(null)
         pendingFilePathCallback = filePathCallback
+        com.webtoapp.core.webview.FileChooserLifetime.holdCallback(filePathCallback)
 
         if (filePathCallback == null) return false
 
@@ -356,6 +373,7 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
                             photoFile
                         )
                         cameraPhotoUri = output
+                        com.webtoapp.core.webview.FileChooserLifetime.holdCamera(output)
                         com.webtoapp.core.webview.CameraCaptureIntents.attachOutput(
                             activity, captureIntent, output
                         )
@@ -387,6 +405,7 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
                         photoFile
                     )
                     cameraPhotoUri = output
+                    com.webtoapp.core.webview.FileChooserLifetime.holdCamera(output)
 
                     val cameraIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE).apply {
                         com.webtoapp.core.webview.CameraCaptureIntents.attachOutput(
@@ -492,7 +511,8 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
                     contentLength = download.contentLength,
                     scope = activity.lifecycleScope,
                     downloadLocationMode = mode,
-                    customDownloadDirUri = customDir
+                    customDownloadDirUri = customDir,
+                    albumName = resolveAlbumName()
                 )
             }
         } else {
@@ -509,7 +529,8 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
                     contentLength = download.contentLength,
                     scope = activity.lifecycleScope,
                     downloadLocationMode = mode,
-                    customDownloadDirUri = customDir
+                    customDownloadDirUri = customDir,
+                    albumName = resolveAlbumName()
                 )
             }
         }
@@ -914,7 +935,8 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
                 scope = activity.lifecycleScope,
                 onBlobDownload = onBlobDownload,
                 downloadLocationMode = downloadLocationMode,
-                customDownloadDirUri = customDownloadDirUri
+                customDownloadDirUri = customDownloadDirUri,
+                albumName = resolveAlbumName()
             )
             return
         }
@@ -935,7 +957,8 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
                 scope = activity.lifecycleScope,
                 onBlobDownload = onBlobDownload,
                 downloadLocationMode = downloadLocationMode,
-                customDownloadDirUri = customDownloadDirUri
+                customDownloadDirUri = customDownloadDirUri,
+                albumName = resolveAlbumName()
             )
         } else {
 

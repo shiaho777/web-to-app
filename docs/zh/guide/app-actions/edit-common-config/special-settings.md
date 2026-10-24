@@ -10,7 +10,7 @@
 - **通知 polyfill** —— Web Notification 支持(`enableNotificationPolyfill`)。
 - **方向 polyfill** —— `enableOrientationPolyfill`。
 - **兼容 polyfill** —— 一组兼容 shim(`enableCompatPolyfills`)。
-- **原生桥** —— 暴露带能力门控的原生桥(`enableNativeBridge`、`nativeBridgeCapabilities`)。**文件夹**能力默认关闭。打开后，页面可选择一个目录，并在系统 WebView 上通过 `WtaDirectory` 列出、读取和写入。授权留在那台设备上，导出的应用需要再选一次。
+- **原生桥** —— 暴露带能力门控的 [`window.NativeBridge`](/zh/extensions/native-bridge)（`enableNativeBridge`、`nativeBridgeCapabilities`）。**文件夹**能力默认关闭。打开后，页面可选择一个目录，并在系统 WebView 上通过 `WtaDirectory` 列出、读取和写入。授权留在那台设备上，导出的应用需要再选一次。
 - **打印桥** —— 拦截 `window.print()` 和 PDF 输出到 Android 打印框架(`enablePrintBridge`)。
 - **媒体会话桥** —— 把网页媒体接入系统媒体通知和锁屏控制,支持蓝牙耳机和 Android Auto(`enableMediaSession`)。
 - **后台继续播放** —— 离开应用后，正在播放的声音继续，通知栏可以暂停。画面会停，回到应用后接着播(`backgroundMediaPlayback`，默认关闭；打开时会同时打开媒体会话)。

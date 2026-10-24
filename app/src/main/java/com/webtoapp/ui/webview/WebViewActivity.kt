@@ -377,7 +377,9 @@ open class WebViewActivity : AppCompatActivity() {
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
         val photoUri = cameraPhotoUri
+            ?: com.webtoapp.core.webview.FileChooserLifetime.cameraUri()
         val callback = filePathCallback
+            ?: com.webtoapp.core.webview.FileChooserLifetime.callback()
         try {
             if (callback == null) return@registerForActivityResult
 
@@ -427,6 +429,10 @@ open class WebViewActivity : AppCompatActivity() {
     ): Boolean {
         filePathCallback?.onReceiveValue(null)
         filePathCallback = callback
+        com.webtoapp.core.webview.FileChooserLifetime.holdCallback(callback)
+        (webView ?: browserSurface?.webView)?.let {
+            com.webtoapp.core.webview.FileChooserLifetime.parkWebView(it)
+        }
         if (callback == null) return false
         com.webtoapp.core.webview.FileChooserLifetime.markOpen()
 
@@ -540,6 +546,7 @@ open class WebViewActivity : AppCompatActivity() {
                             this, "${packageName}.fileprovider", photoFile
                         )
                         cameraPhotoUri = output
+                        com.webtoapp.core.webview.FileChooserLifetime.holdCamera(output)
                         com.webtoapp.core.webview.CameraCaptureIntents.attachOutput(this, captureIntent, output)
                     } catch (e: Exception) {
                         AppLogger.e("WebViewActivity", "Camera capture file creation failed", e)
@@ -568,6 +575,7 @@ open class WebViewActivity : AppCompatActivity() {
                         this, "${packageName}.fileprovider", photoFile
                     )
                     cameraPhotoUri = output
+                    com.webtoapp.core.webview.FileChooserLifetime.holdCamera(output)
                     val camIntent = android.content.Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE).apply {
                         com.webtoapp.core.webview.CameraCaptureIntents.attachOutput(this@WebViewActivity, this, output)
                     }
@@ -1082,7 +1090,8 @@ open class WebViewActivity : AppCompatActivity() {
                         this@WebViewActivity,
                         lifecycleScope,
                         effectiveDownloadConfig?.downloadLocationMode ?: com.webtoapp.data.model.DownloadLocationMode.SYSTEM_DOWNLOAD,
-                        effectiveDownloadConfig?.customDownloadDirUri ?: ""
+                        effectiveDownloadConfig?.customDownloadDirUri ?: "",
+                        effectiveDownloadConfig?.mediaAlbumName ?: ""
                     )
                     wv.addJavascriptInterface(downloadBridge, com.webtoapp.core.webview.DownloadBridge.JS_INTERFACE_NAME)
 
@@ -1158,6 +1167,26 @@ open class WebViewActivity : AppCompatActivity() {
                             return
                         }
                         val confirmExit = backBehavior != com.webtoapp.data.model.WebViewConfig.BACK_GO_BACK_EXIT
+                        if (backBehavior == com.webtoapp.data.model.WebViewConfig.BACK_JS) {
+                            com.webtoapp.core.webview.PageKeyEvents.dispatchBack(wv, browserSurface) { prevented ->
+                                if (prevented) return@dispatchBack
+                                if (wv != null) {
+                                    ShellWebViewNavigation.goBackOrFinish(
+                                        this@WebViewActivity,
+                                        wv,
+                                        useJsHistoryBack = enableBackStatePreservation,
+                                        confirmExit = confirmExit,
+                                    )
+                                } else {
+                                    ShellWebViewNavigation.goBackOrFinish(
+                                        this@WebViewActivity,
+                                        browserSurface,
+                                        confirmExit = confirmExit,
+                                    )
+                                }
+                            }
+                            return
+                        }
                         if (wv != null) {
                             wv.evaluateJavascript("""
                                 (function() {
@@ -1245,6 +1274,17 @@ open class WebViewActivity : AppCompatActivity() {
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        val volumeConfig = (launchPreviewApp ?: resolvedSavedApp)?.webViewConfig
+        if (com.webtoapp.core.webview.PageKeyEvents.handleVolume(
+                event,
+                forward = volumeConfig?.forwardVolumeKeys == true,
+                consume = volumeConfig?.consumeVolumeKeys == true,
+                webView = webView,
+                surface = browserSurface
+            )
+        ) {
+            return true
+        }
         // Same Enter/modifier diagnostics as the shell path (#1032).
         val isEnter = event.keyCode == KeyEvent.KEYCODE_ENTER ||
             event.keyCode == KeyEvent.KEYCODE_NUMPAD_ENTER
@@ -3121,6 +3161,7 @@ fun WebViewScreen(
                     downloadLocationMode = effectiveApp?.webViewConfig?.downloadLocationMode
                         ?: com.webtoapp.data.model.DownloadLocationMode.SYSTEM_DOWNLOAD,
                     customDownloadDirUri = effectiveApp?.webViewConfig?.customDownloadDirUri ?: "",
+                    albumName = effectiveApp?.webViewConfig?.mediaAlbumName ?: "",
                     onBlobDownload = { blobUrl, filename ->
                         val safeBlobUrl = org.json.JSONObject.quote(blobUrl)
                         val safeFilename = org.json.JSONObject.quote(filename)
@@ -3986,7 +4027,24 @@ fun WebViewScreen(
                 Column(modifier = Modifier.fillMaxSize()) {
 
                     AndroidView(
-                        factory = { ctx ->
+                        factory = factory@{ ctx ->
+                            val parked = com.webtoapp.core.webview.FileChooserLifetime.takeDetachedWebView()
+                            if (parked != null) {
+                                return@factory WebSwipeRefreshLayout(ctx).apply {
+                                    layoutParams = ViewGroup.LayoutParams(
+                                        ViewGroup.LayoutParams.MATCH_PARENT,
+                                        ViewGroup.LayoutParams.MATCH_PARENT
+                                    )
+                                    isEnabled = swipeRefreshEnabled
+                                    val surface = com.webtoapp.core.engine.BrowserSurface.fromWebView(parked)
+                                    tag = surface
+                                    browserSurfaceRef = surface
+                                    (context as? WebViewActivity)?.browserSurface = surface
+                                    webViewRef = parked
+                                    onWebViewCreated(parked, webApp)
+                                    addView(parked)
+                                }
+                            }
                             WebSwipeRefreshLayout(ctx).apply {
                                 layoutParams = ViewGroup.LayoutParams(
                                     ViewGroup.LayoutParams.MATCH_PARENT,
@@ -4251,11 +4309,19 @@ fun WebViewScreen(
                         // otherwise the renderer outlives its view (#1033).
                         onRelease = { swipeLayout ->
                             val surface = swipeLayout.tag as? BrowserSurface
-                            surface?.webView?.let { webViewManager.discardWebView(it) }
-                            surface?.destroy()
-                            if (browserSurfaceRef === surface) browserSurfaceRef = null
-                            (context as? WebViewActivity)?.releaseSurfaceRefs(surface)
-                            swipeLayout.removeAllViews()
+                            val retained = surface?.webView
+                            if (retained != null &&
+                                com.webtoapp.core.webview.FileChooserLifetime.shouldRetain(retained)
+                            ) {
+                                (retained.parent as? android.view.ViewGroup)?.removeView(retained)
+                                swipeLayout.removeAllViews()
+                            } else {
+                                surface?.webView?.let { webViewManager.discardWebView(it) }
+                                surface?.destroy()
+                                if (browserSurfaceRef === surface) browserSurfaceRef = null
+                                (context as? WebViewActivity)?.releaseSurfaceRefs(surface)
+                                swipeLayout.removeAllViews()
+                            }
                         },
                         modifier = Modifier.weight(weight = 1f, fill = true)
                     )

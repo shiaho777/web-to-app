@@ -145,8 +145,11 @@ class FloatingWindowService : Service() {
                     com.webtoapp.data.model.DownloadLocationMode.SYSTEM_DOWNLOAD
                 }
                 val customDownloadDirUri = shellConfig?.webViewConfig?.customDownloadDirUri ?: ""
+                val mediaAlbumName = shellConfig?.webViewConfig?.mediaAlbumName ?: ""
                 val downloadBridgeFactory: (WebView) -> Unit = { webView ->
-                    val downloadBridge = DownloadBridge(this, serviceScope, downloadLocationMode, customDownloadDirUri)
+                    val downloadBridge = DownloadBridge(
+                        this, serviceScope, downloadLocationMode, customDownloadDirUri, mediaAlbumName
+                    )
                     webView.addJavascriptInterface(downloadBridge, DownloadBridge.JS_INTERFACE_NAME)
                 }
 
@@ -260,6 +263,7 @@ class FloatingWindowService : Service() {
             com.webtoapp.data.model.DownloadLocationMode.SYSTEM_DOWNLOAD
         }
         val customDownloadDirUri = shellConfig.webViewConfig.customDownloadDirUri
+        val mediaAlbumName = shellConfig.webViewConfig.mediaAlbumName
         val adBlocker = try {
             com.webtoapp.WebToAppApplication.adBlock
         } catch (e: Exception) {
@@ -418,7 +422,8 @@ class FloatingWindowService : Service() {
                         )
                     },
                     downloadLocationMode = downloadLocationMode,
-                    customDownloadDirUri = customDownloadDirUri
+                    customDownloadDirUri = customDownloadDirUri,
+                    albumName = mediaAlbumName
                 )
             }
 

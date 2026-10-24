@@ -1,5 +1,9 @@
 package com.webtoapp.core.webview
 
+import android.net.Uri
+import android.webkit.ValueCallback
+import android.webkit.WebView
+
 /**
  * True while a WebView is waiting on system UI that will call back into it.
  *
@@ -15,6 +19,11 @@ package com.webtoapp.core.webview
  * not already inside a picker (live camera / microphone). It also skips the
  * single resume probe that fires when that dialog returns, because the grant
  * itself keeps the renderer busy.
+ *
+ * The [ValueCallback] and the WebView that owns it cannot be rebuilt after the
+ * view is destroyed. While a picker is open they are held here, so an activity
+ * recreation in the same process can deliver the result to the original page
+ * instead of reloading the start URL with an empty file input (#1319).
  */
 object FileChooserLifetime {
 
@@ -25,13 +34,64 @@ object FileChooserLifetime {
 
     private var resumeProbeSkips = 0
 
+    private var parkedWebView: WebView? = null
+
+    private var parkedCallback: ValueCallback<Array<Uri>>? = null
+
+    private var parkedCameraUri: Uri? = null
+
+    private val reattached = HashSet<Int>()
+
     fun markOpen() {
         open = true
     }
 
     fun markClosed() {
         open = false
+        parkedCallback = null
+        parkedCameraUri = null
+        val wv = parkedWebView
+        if (wv == null || wv.parent != null) {
+            parkedWebView = null
+        }
     }
+
+    /** Remember the page that opened the picker. Destroying it drops the callback. */
+    fun parkWebView(webView: WebView) {
+        parkedWebView = webView
+        open = true
+    }
+
+    fun holdCallback(callback: ValueCallback<Array<Uri>>?) {
+        parkedCallback = callback
+        if (callback != null) open = true
+    }
+
+    fun holdCamera(uri: Uri?) {
+        parkedCameraUri = uri
+    }
+
+    fun callback(): ValueCallback<Array<Uri>>? = parkedCallback
+
+    fun cameraUri(): Uri? = parkedCameraUri
+
+    /**
+     * The parked WebView after its old window released it. Null while it is still
+     * attached, so a result delivered to the same activity does not steal the view.
+     */
+    fun takeDetachedWebView(): WebView? {
+        val wv = parkedWebView ?: return null
+        if (wv.parent != null) return null
+        parkedWebView = null
+        reattached.add(System.identityHashCode(wv))
+        return wv
+    }
+
+    fun consumeReattached(webView: WebView): Boolean =
+        reattached.remove(System.identityHashCode(webView))
+
+    /** True when [onRelease] must detach this WebView without destroying it. */
+    fun shouldRetain(webView: WebView): Boolean = open && parkedWebView === webView
 
     /**
      * Run [launch] while the WebView must stay alive, and skip the resume probe

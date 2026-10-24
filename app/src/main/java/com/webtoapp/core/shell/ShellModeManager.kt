@@ -1500,6 +1500,15 @@ data class WebViewShellConfig(
     @SerializedName("backButtonBehavior")
     val backButtonBehavior: String = "GO_BACK",
 
+    @SerializedName("forwardVolumeKeys")
+    val forwardVolumeKeys: Boolean = false,
+
+    @SerializedName("consumeVolumeKeys")
+    val consumeVolumeKeys: Boolean = false,
+
+    @SerializedName("mediaAlbumName")
+    val mediaAlbumName: String = "",
+
     @SerializedName("downloadEnabled")
     val downloadEnabled: Boolean = true,
 

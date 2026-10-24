@@ -528,6 +528,7 @@ object Strings {
     val portConflictAlert: String get() = StringsA.portConflictAlert
     val portConflictAlertHint: String get() = StringsA.portConflictAlertHint
     val portDefaultLabel: String get() = StringsA.portDefaultLabel
+    val portRangeHint: String get() = StringsA.portRangeHint
     val orientationModeLabel: String get() = StringsA.orientationModeLabel
     val orientationModeHint: String get() = StringsA.orientationModeHint
     val orientationLandscape: String get() = StringsA.orientationLandscape
@@ -4128,6 +4129,13 @@ object Strings {
     val staticAssetPackIncludeCdnTitle: String get() = StringsE.staticAssetPackIncludeCdnTitle
     val backButtonBehaviorLabel: String get() = StringsE.backButtonBehaviorLabel
     val backButtonBehaviorHint: String get() = StringsE.backButtonBehaviorHint
+    val backButtonRunJs: String get() = StringsE.backButtonRunJs
+    val forwardVolumeKeysLabel: String get() = StringsE.forwardVolumeKeysLabel
+    val forwardVolumeKeysHint: String get() = StringsE.forwardVolumeKeysHint
+    val consumeVolumeKeysLabel: String get() = StringsE.consumeVolumeKeysLabel
+    val consumeVolumeKeysHint: String get() = StringsE.consumeVolumeKeysHint
+    val mediaAlbumNameLabel: String get() = StringsE.mediaAlbumNameLabel
+    val mediaAlbumNameHint: String get() = StringsE.mediaAlbumNameHint
     val backButtonGoBack: String get() = StringsE.backButtonGoBack
     val backButtonExitAtRoot: String get() = StringsE.backButtonExitAtRoot
     val backButtonExitApp: String get() = StringsE.backButtonExitApp

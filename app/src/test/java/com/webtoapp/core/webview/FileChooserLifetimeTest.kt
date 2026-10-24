@@ -14,6 +14,12 @@ class FileChooserLifetimeTest {
     }
 
     @Test
+    fun `nothing is waiting to reattach before a chooser opens`() {
+        assertThat(FileChooserLifetime.takeDetachedWebView()).isNull()
+        assertThat(FileChooserLifetime.callback()).isNull()
+    }
+
+    @Test
     fun `chooser stays open until the result is delivered`() {
         assertThat(FileChooserLifetime.isOpen()).isFalse()
         FileChooserLifetime.markOpen()

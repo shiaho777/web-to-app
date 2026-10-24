@@ -1179,6 +1179,34 @@ fun BrowserAdvancedConfigCard(
                                     label = Strings.backButtonExitApp,
                                     showSelectedCheck = false
                                 )
+                                WtaChip(
+                                    selected = config.backButtonBehavior == com.webtoapp.data.model.WebViewConfig.BACK_JS,
+                                    onClick = { onConfigChange(config.copy(backButtonBehavior = com.webtoapp.data.model.WebViewConfig.BACK_JS)) },
+                                    label = Strings.backButtonRunJs,
+                                    showSelectedCheck = false
+                                )
+                            }
+                            WtaSectionDivider()
+                            WtaToggleRow(
+                                title = Strings.forwardVolumeKeysLabel,
+                                subtitle = Strings.forwardVolumeKeysHint.ifDescriptionsShown(),
+                                checked = config.forwardVolumeKeys,
+                                onCheckedChange = { onConfigChange(config.copy(forwardVolumeKeys = it)) }
+                            )
+                            AnimatedVisibility(
+                                visible = config.forwardVolumeKeys,
+                                enter = CardExpandTransition,
+                                exit = CardCollapseTransition
+                            ) {
+                                Column {
+                                    WtaSectionDivider()
+                                    WtaToggleRow(
+                                        title = Strings.consumeVolumeKeysLabel,
+                                        subtitle = Strings.consumeVolumeKeysHint.ifDescriptionsShown(),
+                                        checked = config.consumeVolumeKeys,
+                                        onCheckedChange = { onConfigChange(config.copy(consumeVolumeKeys = it)) }
+                                    )
+                                }
                             }
                             WtaSectionDivider()
                             WtaToggleRow(
@@ -4070,6 +4098,24 @@ fun SpecialSettingsCard(
                                 selected = config.downloadLocationMode,
                                 onSelect = { onConfigChange(config.copy(downloadLocationMode = it)) }
                             )
+                            if (config.downloadLocationMode == com.webtoapp.data.model.DownloadLocationMode.SYSTEM_DOWNLOAD) {
+                                PremiumTextField(
+                                    value = config.mediaAlbumName,
+                                    onValueChange = { raw ->
+                                        val cleaned = raw.replace(Regex("""[\\/:*?"<>|]"""), "").take(64)
+                                        onConfigChange(config.copy(mediaAlbumName = cleaned))
+                                    },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    singleLine = true,
+                                    label = { Text(Strings.mediaAlbumNameLabel) },
+                                    placeholder = { Text("WebToApp") },
+                                    supportingText = if (LocalShowDescriptions.current) {
+                                        { Text(Strings.mediaAlbumNameHint) }
+                                    } else {
+                                        null
+                                    }
+                                )
+                            }
                             if (config.downloadLocationMode == com.webtoapp.data.model.DownloadLocationMode.CUSTOM) {
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),

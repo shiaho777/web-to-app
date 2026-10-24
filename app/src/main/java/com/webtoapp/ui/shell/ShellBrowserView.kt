@@ -37,7 +37,33 @@ fun ShellBrowserAndroidView(
 ) {
     key(webViewRecreationKey) {
         AndroidView(
-            factory = { ctx ->
+            factory = factory@{ ctx ->
+                val parked = com.webtoapp.core.webview.FileChooserLifetime.takeDetachedWebView()
+                if (parked != null) {
+                    return@factory WebSwipeRefreshLayout(ctx).apply {
+                        layoutParams = ViewGroup.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            ViewGroup.LayoutParams.MATCH_PARENT
+                        )
+                        isEnabled = swipeRefreshEnabled
+                        val surface = BrowserSurface.fromWebView(parked)
+                        tag = surface
+                        setOnRefreshListener {
+                            onRefresh()
+                            surface.reload()
+                        }
+                        onSurfaceCreated?.invoke(surface)
+                        onWebViewCreated(parked)
+                        onWebViewRefUpdated(parked)
+                        addView(
+                            parked,
+                            ViewGroup.LayoutParams(
+                                ViewGroup.LayoutParams.MATCH_PARENT,
+                                ViewGroup.LayoutParams.MATCH_PARENT
+                            )
+                        )
+                    }
+                }
                 WebSwipeRefreshLayout(ctx).apply {
                     layoutParams = ViewGroup.LayoutParams(
                         ViewGroup.LayoutParams.MATCH_PARENT,
@@ -206,10 +232,18 @@ fun ShellBrowserAndroidView(
             // recreation paths already do; this catches every other drop (#1033).
             onRelease = { swipeLayout ->
                 val surface = swipeLayout.tag as? BrowserSurface
-                surface?.webView?.let { webViewManager.discardWebView(it) }
-                surface?.destroy()
-                (swipeLayout.context as? ShellActivity)?.releaseSurfaceRefs(surface)
-                swipeLayout.removeAllViews()
+                val retained = surface?.webView
+                if (retained != null &&
+                    com.webtoapp.core.webview.FileChooserLifetime.shouldRetain(retained)
+                ) {
+                    (retained.parent as? ViewGroup)?.removeView(retained)
+                    swipeLayout.removeAllViews()
+                } else {
+                    surface?.webView?.let { webViewManager.discardWebView(it) }
+                    surface?.destroy()
+                    (swipeLayout.context as? ShellActivity)?.releaseSurfaceRefs(surface)
+                    swipeLayout.removeAllViews()
+                }
             },
             modifier = modifier
         )

@@ -297,6 +297,17 @@ class ShellActivity : AppCompatActivity() {
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        val volumeConfig = shellConfig?.webViewConfig
+        if (com.webtoapp.core.webview.PageKeyEvents.handleVolume(
+                event,
+                forward = volumeConfig?.forwardVolumeKeys == true,
+                consume = volumeConfig?.consumeVolumeKeys == true,
+                webView = webView,
+                surface = browserSurface
+            )
+        ) {
+            return true
+        }
         // Enter diagnostics for hardware-keyboard modifier loss (#1032): if the
         // IME translated the key into an editor action it never reaches us — a
         // missing log line is itself the signal; a logged meta=0x0 means the
@@ -731,7 +742,8 @@ class ShellActivity : AppCompatActivity() {
                         wv.resumeTimers()
                         com.webtoapp.core.shell.ShellLogger.i("ShellActivity", "WebView 创建成功, timers resumed")
 
-                        val savedState = webViewStateBundle
+                        val chooserRetained = com.webtoapp.core.webview.FileChooserLifetime.consumeReattached(wv)
+                        val savedState = if (chooserRetained) null else webViewStateBundle
                         // Multi-web surfaces save with their site id; a bundle
                         // tagged for another site must wait for that site's
                         // own view instead of being grafted onto whichever
@@ -784,7 +796,8 @@ class ShellActivity : AppCompatActivity() {
                                 this@ShellActivity,
                                 lifecycleScope,
                                 downloadLocationMode,
-                                config.webViewConfig.customDownloadDirUri
+                                config.webViewConfig.customDownloadDirUri,
+                                config.webViewConfig.mediaAlbumName
                             )
                             wv.addJavascriptInterface(downloadBridge, com.webtoapp.core.webview.DownloadBridge.JS_INTERFACE_NAME)
                         }
@@ -896,6 +909,9 @@ class ShellActivity : AppCompatActivity() {
                     refreshStatusBarAppearance()
                 },
                 onFileChooser = { callback, params ->
+                    (webView ?: browserSurface?.webView)?.let {
+                        com.webtoapp.core.webview.FileChooserLifetime.parkWebView(it)
+                    }
                     permissionDelegate.handleFileChooser(callback, params)
                 },
                 onShowCustomView = { view, callback ->

@@ -192,6 +192,28 @@ object ShellActivityInit {
                             return
                         }
                         val confirmExit = backBehavior != WebViewConfig.BACK_GO_BACK_EXIT
+                        if (backBehavior == WebViewConfig.BACK_JS) {
+                            val surface = getBrowserSurface()
+                            com.webtoapp.core.webview.PageKeyEvents.dispatchBack(wv, surface) { prevented ->
+                                if (prevented) return@dispatchBack
+                                val useJsHistoryBack = getShellConfig()?.webViewConfig?.enableBackStatePreservation ?: false
+                                if (wv != null) {
+                                    ShellWebViewNavigation.goBackOrFinish(
+                                        activity,
+                                        wv,
+                                        useJsHistoryBack = useJsHistoryBack,
+                                        confirmExit = confirmExit,
+                                    )
+                                } else {
+                                    ShellWebViewNavigation.goBackOrFinish(
+                                        activity,
+                                        surface,
+                                        confirmExit = confirmExit,
+                                    )
+                                }
+                            }
+                            return
+                        }
                         if (wv != null) {
                             wv.evaluateJavascript("""
                                 (function() {

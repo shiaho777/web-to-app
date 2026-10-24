@@ -7,6 +7,7 @@ WebToApp 生成的应用依然可扩展。三种插件共用同一个管理界�
 | **[HCJ 插件](/zh/extensions/js-module)** | `plugin.json` + 单文件 `plugin.html` 的包——纯 HTML + CSS + JS，无 DSL | 自定义功能、面板、设置界面 |
 | **[油猴脚本](/zh/extensions/userscript)** | Tampermonkey/Greasemonkey 风格的 `.user.js` | 移植现成脚本；`GM_*` API |
 | **[Chrome MV3](/zh/extensions/chrome-mv3)** | Manifest V3 Chrome 扩展 | 移植浏览器扩展；`chrome.*` API |
+| **[NativeBridge](/zh/extensions/native-bridge)** | 系统 WebView 上的 `window.NativeBridge` | 剪贴板、震动、分享、文件、屏幕和按键 |
 
 HCJ（HTML+CSS+JS）是原生格式——可以理解为带真实 UI 能力的油猴脚本升级版。
 

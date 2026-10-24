@@ -1107,6 +1107,13 @@ class GeckoViewEngine(
                 session: GeckoSession,
                 prompt: GeckoSession.PromptDelegate.TextPrompt
             ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
+                if (com.webtoapp.core.webview.PageKeyEvents.claimGeckoPrompt(
+                        prompt.message,
+                        prompt.defaultValue
+                    )
+                ) {
+                    return GeckoResult.fromValue(prompt.dismiss())
+                }
                 val activity = viewContext.findActivity()
                 if (activity == null || activity.isFinishing || activity.isDestroyed) {
                     return GeckoResult.fromValue(prompt.dismiss())

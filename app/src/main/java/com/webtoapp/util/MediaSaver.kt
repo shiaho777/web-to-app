@@ -18,7 +18,6 @@ import java.net.URL
 
 object MediaSaver {
 
-    private const val APP_FOLDER = "WebToApp"
     private const val DEFAULT_BUFFER_SIZE = 8192
 
     enum class MediaType {
@@ -79,7 +78,8 @@ object MediaSaver {
         url: String,
         fileName: String,
         mimeType: String? = null,
-        progressCallback: ProgressCallback? = null
+        progressCallback: ProgressCallback? = null,
+        albumName: String = AlbumFolderName.DEFAULT
     ): SaveResult = withContext(Dispatchers.IO) {
         try {
             // Remote media only: a caller-supplied file:// / content:// URL would copy
@@ -103,7 +103,7 @@ object MediaSaver {
             progressCallback?.onStart(contentLength)
 
             connection.getInputStream().use { inputStream ->
-                saveToGalleryWithProgress(context, inputStream, fileName, actualMimeType, mediaType, contentLength, progressCallback)
+                saveToGalleryWithProgress(context, inputStream, fileName, actualMimeType, mediaType, contentLength, progressCallback, albumName)
             }
         } catch (e: Exception) {
             progressCallback?.onError(e.message ?: "Unknown error")
@@ -125,7 +125,8 @@ object MediaSaver {
         fileName: String,
         headers: Map<String, String> = emptyMap(),
         mimeType: String? = null,
-        progressCallback: ProgressCallback? = null
+        progressCallback: ProgressCallback? = null,
+        albumName: String = AlbumFolderName.DEFAULT
     ): SaveResult = withContext(Dispatchers.IO) {
         try {
             val connection = URL(url).openConnection() as java.net.HttpURLConnection
@@ -156,7 +157,7 @@ object MediaSaver {
             progressCallback?.onStart(contentLength)
 
             connection.inputStream.use { inputStream ->
-                saveToGalleryWithProgress(context, inputStream, fileName, actualMimeType, mediaType, contentLength, progressCallback)
+                saveToGalleryWithProgress(context, inputStream, fileName, actualMimeType, mediaType, contentLength, progressCallback, albumName)
             }
         } catch (e: Exception) {
             progressCallback?.onError(e.message ?: "Unknown error")
@@ -167,7 +168,8 @@ object MediaSaver {
     suspend fun saveFromFile(
         context: Context,
         file: File,
-        mimeType: String? = null
+        mimeType: String? = null,
+        albumName: String = AlbumFolderName.DEFAULT
     ): SaveResult = withContext(Dispatchers.IO) {
         try {
             if (!file.exists()) {
@@ -180,7 +182,7 @@ object MediaSaver {
                 ?: return@withContext SaveResult.Error("Unsupported media type")
 
             FileInputStream(file).use { inputStream ->
-                saveToGallery(context, inputStream, fileName, actualMimeType, mediaType)
+                saveToGallery(context, inputStream, fileName, actualMimeType, mediaType, albumName)
             }
         } catch (e: Exception) {
             SaveResult.Error("Save failed: ${e.message}")
@@ -191,14 +193,15 @@ object MediaSaver {
         context: Context,
         bytes: ByteArray,
         fileName: String,
-        mimeType: String
+        mimeType: String,
+        albumName: String = AlbumFolderName.DEFAULT
     ): SaveResult = withContext(Dispatchers.IO) {
         try {
             val mediaType = getMediaType(mimeType) ?: getMediaTypeByExtension(fileName)
                 ?: return@withContext SaveResult.Error("Unsupported media type")
 
             bytes.inputStream().use { inputStream ->
-                saveToGallery(context, inputStream, fileName, mimeType, mediaType)
+                saveToGallery(context, inputStream, fileName, mimeType, mediaType, albumName)
             }
         } catch (e: Exception) {
             SaveResult.Error("Save failed: ${e.message}")
@@ -210,9 +213,10 @@ object MediaSaver {
         inputStream: InputStream,
         fileName: String,
         mimeType: String,
-        mediaType: MediaType
+        mediaType: MediaType,
+        albumName: String = AlbumFolderName.DEFAULT
     ): SaveResult {
-        return saveToGalleryWithProgress(context, inputStream, fileName, mimeType, mediaType, -1, null)
+        return saveToGalleryWithProgress(context, inputStream, fileName, mimeType, mediaType, -1, null, albumName)
     }
 
     private fun saveToGalleryWithProgress(
@@ -222,13 +226,25 @@ object MediaSaver {
         mimeType: String,
         mediaType: MediaType,
         totalBytes: Long,
-        progressCallback: ProgressCallback?
+        progressCallback: ProgressCallback?,
+        albumName: String = AlbumFolderName.DEFAULT
     ): SaveResult {
+        val folder = AlbumFolderName.sanitize(albumName)
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            saveToGalleryQWithProgress(context, inputStream, fileName, mimeType, mediaType, totalBytes, progressCallback)
+            saveToGalleryQWithProgress(context, inputStream, fileName, mimeType, mediaType, totalBytes, progressCallback, folder)
         } else {
-            saveToGalleryLegacyWithProgress(context, inputStream, fileName, mimeType, mediaType, totalBytes, progressCallback)
+            saveToGalleryLegacyWithProgress(context, inputStream, fileName, mimeType, mediaType, totalBytes, progressCallback, folder)
         }
+    }
+
+    fun scanIntoGallery(context: Context, file: File, mimeType: String?) {
+        if (!file.exists() || !isMediaFile(mimeType, file.name)) return
+        android.media.MediaScannerConnection.scanFile(
+            context,
+            arrayOf(file.absolutePath),
+            arrayOf(mimeType),
+            null
+        )
     }
 
     private fun copyWithProgress(
@@ -270,20 +286,21 @@ object MediaSaver {
         mimeType: String,
         mediaType: MediaType,
         totalBytes: Long,
-        progressCallback: ProgressCallback?
+        progressCallback: ProgressCallback?,
+        albumFolder: String
     ): SaveResult {
         val (contentUri, relativePath) = when (mediaType) {
             MediaType.IMAGE -> {
                 MediaStore.Images.Media.EXTERNAL_CONTENT_URI to
-                    "${Environment.DIRECTORY_PICTURES}/$APP_FOLDER"
+                    "${Environment.DIRECTORY_PICTURES}/$albumFolder"
             }
             MediaType.VIDEO -> {
                 MediaStore.Video.Media.EXTERNAL_CONTENT_URI to
-                    "${Environment.DIRECTORY_MOVIES}/$APP_FOLDER"
+                    "${Environment.DIRECTORY_MOVIES}/$albumFolder"
             }
             MediaType.AUDIO -> {
                 MediaStore.Audio.Media.EXTERNAL_CONTENT_URI to
-                    "${Environment.DIRECTORY_MUSIC}/$APP_FOLDER"
+                    "${Environment.DIRECTORY_MUSIC}/$albumFolder"
             }
         }
 
@@ -327,7 +344,8 @@ object MediaSaver {
         mimeType: String,
         mediaType: MediaType,
         totalBytes: Long,
-        progressCallback: ProgressCallback?
+        progressCallback: ProgressCallback?,
+        albumFolder: String
     ): SaveResult {
         val baseDir = when (mediaType) {
             MediaType.IMAGE -> Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
@@ -335,7 +353,7 @@ object MediaSaver {
             MediaType.AUDIO -> Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC)
         }
 
-        val appDir = File(baseDir, APP_FOLDER)
+        val appDir = File(baseDir, albumFolder)
         if (!appDir.exists()) {
             appDir.mkdirs()
         }

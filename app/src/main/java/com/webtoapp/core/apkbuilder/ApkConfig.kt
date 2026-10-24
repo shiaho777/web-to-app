@@ -527,6 +527,9 @@ data class WebViewBlock(
     val openExternalLinks: Boolean = false,
     val showFloatingBackButton: Boolean = false,
     val backButtonBehavior: String = "GO_BACK",
+    val forwardVolumeKeys: Boolean = false,
+    val consumeVolumeKeys: Boolean = false,
+    val mediaAlbumName: String = "",
     val swipeRefreshEnabled: Boolean = true,
     val swipeRefreshZone: String = "TOP_EDGE",
     // Absent on configs exported before #1193. True keeps the platform stretch.

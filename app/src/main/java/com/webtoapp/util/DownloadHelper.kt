@@ -160,7 +160,8 @@ object DownloadHelper {
         scope: CoroutineScope? = null,
         onBlobDownload: ((blobUrl: String, filename: String) -> Unit)? = null,
         downloadLocationMode: com.webtoapp.data.model.DownloadLocationMode = com.webtoapp.data.model.DownloadLocationMode.SYSTEM_DOWNLOAD,
-        customDownloadDirUri: String = ""
+        customDownloadDirUri: String = "",
+        albumName: String = ""
     ) {
 
         if (url.startsWith("blob:")) {
@@ -202,15 +203,18 @@ object DownloadHelper {
             return
         }
 
-        if (saveToGallery && MediaSaver.isMediaFile(mimeType, fileName) && scope != null) {
-            saveMediaToGallery(context, safeUrl, fileName, mimeType, scope)
+        val customDir = downloadLocationMode == com.webtoapp.data.model.DownloadLocationMode.CUSTOM &&
+            customDownloadDirUri.isNotBlank()
+        if (!customDir && saveToGallery && MediaSaver.isMediaFile(mimeType, fileName) && scope != null) {
+            saveMediaToGallery(context, safeUrl, fileName, mimeType, scope, albumName)
             return
         }
 
         downloadWithManager(
             context, safeUrl, userAgent, contentDisposition, mimeType, showEnhancedNotification, scope = scope,
             downloadLocationMode = downloadLocationMode,
-            customDownloadDirUri = customDownloadDirUri
+            customDownloadDirUri = customDownloadDirUri,
+            albumName = albumName
         )
     }
 
@@ -219,7 +223,8 @@ object DownloadHelper {
         url: String,
         fileName: String,
         mimeType: String,
-        scope: CoroutineScope
+        scope: CoroutineScope,
+        albumName: String
     ) {
         val mediaType = MediaSaver.getMediaType(mimeType) ?: MediaSaver.getMediaTypeByExtension(fileName)
         val typeText = when (mediaType) {
@@ -239,7 +244,10 @@ object DownloadHelper {
         Toast.makeText(context, savingMsg, Toast.LENGTH_SHORT).show()
 
         scope.launch(Dispatchers.Main) {
-            val result = MediaSaver.saveFromUrl(context, url, fileName, mimeType)
+            val result = MediaSaver.saveFromUrl(
+                context, url, fileName, mimeType,
+                albumName = AlbumFolderName.sanitize(albumName)
+            )
 
             when (result) {
                 is MediaSaver.SaveResult.Success -> {
@@ -276,7 +284,8 @@ object DownloadHelper {
         retryOnFailure: Boolean = true,
         scope: CoroutineScope? = null,
         downloadLocationMode: com.webtoapp.data.model.DownloadLocationMode = com.webtoapp.data.model.DownloadLocationMode.SYSTEM_DOWNLOAD,
-        customDownloadDirUri: String = ""
+        customDownloadDirUri: String = "",
+        albumName: String = ""
     ) {
         val safeUrl = sanitizeDownloadUrl(url)
         if (safeUrl.isEmpty()) {
@@ -293,7 +302,7 @@ object DownloadHelper {
         }
 
         if (downloadLocationMode == com.webtoapp.data.model.DownloadLocationMode.CUSTOM && customDownloadDirUri.isNotBlank()) {
-            downloadInApp(context, safeUrl, userAgent, fileName, mimeType, scope, downloadLocationMode, customDownloadDirUri)
+            downloadInApp(context, safeUrl, userAgent, fileName, mimeType, scope, downloadLocationMode, customDownloadDirUri, albumName)
             return
         }
 
@@ -303,7 +312,7 @@ object DownloadHelper {
         // headers attached.
         if (DocumentDownloadPolicy.isLoopbackUrl(safeUrl) && runsAsGeneratedApp(context)) {
             AppLogger.d(TAG, "Loopback URL routed to in-app downloader: $safeUrl")
-            downloadInApp(context, safeUrl, userAgent, fileName, mimeType, scope, downloadLocationMode, customDownloadDirUri)
+            downloadInApp(context, safeUrl, userAgent, fileName, mimeType, scope, downloadLocationMode, customDownloadDirUri, albumName)
             return
         }
 
@@ -343,7 +352,7 @@ object DownloadHelper {
             }
 
             retryCountMap.remove(safeUrl)
-            downloadInApp(context, safeUrl, userAgent, fileName, mimeType, scope, downloadLocationMode, customDownloadDirUri)
+            downloadInApp(context, safeUrl, userAgent, fileName, mimeType, scope, downloadLocationMode, customDownloadDirUri, albumName)
             return
         }
 
@@ -514,7 +523,8 @@ object DownloadHelper {
         mimeType: String,
         scope: CoroutineScope?,
         downloadLocationMode: com.webtoapp.data.model.DownloadLocationMode = com.webtoapp.data.model.DownloadLocationMode.SYSTEM_DOWNLOAD,
-        customDownloadDirUri: String = ""
+        customDownloadDirUri: String = "",
+        albumName: String = ""
     ) {
         val notificationManager = DownloadNotificationManager.getInstance(context)
         val notificationId = notificationManager.showIndeterminateProgress(fileName)
@@ -548,11 +558,15 @@ object DownloadHelper {
                 }
                 val totalBytes = connection.contentLengthLong.takeIf { it > 0 } ?: -1L
 
-                val isMedia = MediaSaver.isMediaFile(actualMimeType, fileName)
+                val isMedia = MediaSaver.isMediaFile(actualMimeType, fileName) &&
+                    downloadLocationMode != com.webtoapp.data.model.DownloadLocationMode.CUSTOM
                 val savedFile: File? = if (isMedia) {
                     connection.inputStream.use { input ->
                         val bytes = input.readBytes()
-                        val result = MediaSaver.saveFromBytes(context, bytes, fileName, actualMimeType)
+                        val result = MediaSaver.saveFromBytes(
+                            context, bytes, fileName, actualMimeType,
+                            albumName = AlbumFolderName.sanitize(albumName)
+                        )
                         when (result) {
                             is MediaSaver.SaveResult.Success -> {
                                 withContext(Dispatchers.Main) {
@@ -584,6 +598,9 @@ object DownloadHelper {
                         java.io.FileOutputStream(targetFile).use { output ->
                             input.copyTo(output, bufferSize = 64 * 1024)
                         }
+                    }
+                    if (downloadLocationMode == com.webtoapp.data.model.DownloadLocationMode.CUSTOM) {
+                        MediaSaver.scanIntoGallery(context, targetFile, actualMimeType)
                     }
                     withContext(Dispatchers.Main) {
                         Toast.makeText(context, Strings.savedTo.replace("%s", targetFile.name), Toast.LENGTH_LONG).show()

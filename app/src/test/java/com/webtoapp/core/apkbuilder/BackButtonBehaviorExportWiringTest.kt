@@ -7,6 +7,7 @@ import com.webtoapp.data.model.WebViewConfig
 import com.webtoapp.data.model.WebViewConfig.Companion.BACK_EXIT
 import com.webtoapp.data.model.WebViewConfig.Companion.BACK_GO_BACK
 import com.webtoapp.data.model.WebViewConfig.Companion.BACK_GO_BACK_EXIT
+import com.webtoapp.data.model.WebViewConfig.Companion.BACK_JS
 import com.webtoapp.util.GsonProvider
 import org.junit.Test
 
@@ -47,6 +48,28 @@ class BackButtonBehaviorExportWiringTest {
         val config = app.toApkConfig("com.example.root")
         assertThat(config.webView.backButtonBehavior).isEqualTo("GO_BACK_EXIT")
         assertThat(roundTrip(app).webViewConfig.backButtonBehavior).isEqualTo(BACK_GO_BACK_EXIT)
+    }
+
+    @Test
+    fun `js back and volume switches survive export`() {
+        val app = WebApp(
+            name = "Keys",
+            url = "https://example.com",
+            webViewConfig = WebViewConfig(
+                backButtonBehavior = BACK_JS,
+                forwardVolumeKeys = true,
+                consumeVolumeKeys = true
+            )
+        )
+
+        val config = app.toApkConfig("com.example.keys")
+        assertThat(config.webView.backButtonBehavior).isEqualTo(BACK_JS)
+        assertThat(config.webView.forwardVolumeKeys).isTrue()
+        assertThat(config.webView.consumeVolumeKeys).isTrue()
+        val shell = roundTrip(app).webViewConfig
+        assertThat(shell.backButtonBehavior).isEqualTo(BACK_JS)
+        assertThat(shell.forwardVolumeKeys).isTrue()
+        assertThat(shell.consumeVolumeKeys).isTrue()
     }
 
     @Test

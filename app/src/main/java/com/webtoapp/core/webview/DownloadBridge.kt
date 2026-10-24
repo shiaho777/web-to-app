@@ -22,7 +22,8 @@ class DownloadBridge(
     private val context: Context,
     private val scope: CoroutineScope,
     private val downloadLocationMode: DownloadLocationMode = DownloadLocationMode.SYSTEM_DOWNLOAD,
-    private val customDownloadDirUri: String = ""
+    private val customDownloadDirUri: String = "",
+    private val mediaAlbumName: String = ""
 ) {
     private val notificationManager = DownloadNotificationManager.getInstance(context)
 
@@ -64,6 +65,7 @@ class DownloadBridge(
                     const url = originalCreateObjectURL(blob);
                     if (blob instanceof Blob) {
                         blobCachePut(url, blob);
+                        if (blob.name) blobNameMap.set(url, blob.name);
                     }
                     return url;
                 };
@@ -267,6 +269,12 @@ class DownloadBridge(
                                 return;
                             }
 
+                            if (download && (href.startsWith('http:') || href.startsWith('https:')) &&
+                                window.AndroidDownload && window.AndroidDownload.downloadNamed) {
+                                window.AndroidDownload.downloadNamed(href, download, navigator.userAgent || '');
+                                return;
+                            }
+
                             return originalClick();
                         };
                     }
@@ -300,6 +308,14 @@ class DownloadBridge(
                             handleDataUrlDownload(href, download);
                             return false;
                         }
+
+                        if (download && (href.startsWith('http:') || href.startsWith('https:')) &&
+                            window.AndroidDownload && window.AndroidDownload.downloadNamed) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            window.AndroidDownload.downloadNamed(href, download, navigator.userAgent || '');
+                            return false;
+                        }
                     }
                 }, true);
 
@@ -318,7 +334,8 @@ class DownloadBridge(
                                 }
                                 const blob = await window.__wtaResolveBlob(url);
                                 if (blob) {
-                                    handleBlobDownload(url, '');
+                                    const remembered = (window.__wtaBlobNameMap && window.__wtaBlobNameMap.get(url)) || blob.name || '';
+                                    handleBlobDownload(url, remembered);
                                 } else {
                                     try { originalWindowOpen.call(window, url, target, features); } catch (e) {}
                                 }
@@ -355,7 +372,10 @@ class DownloadBridge(
                             return;
                         }
 
-                        console.log('[DownloadBridge] Blob obtained, type:', blob.type, 'size:', blob.size);
+                        if (!filename) {
+                            filename = (window.__wtaBlobNameMap && window.__wtaBlobNameMap.get(blobUrl)) || blob.name || '';
+                        }
+                        console.log('[DownloadBridge] Blob obtained, type:', blob.type, 'size:', blob.size, 'name:', filename);
 
                         if (!shouldInterceptBlob(blob)) {
                             console.log('[DownloadBridge] Below intercept threshold, deferring to native download');
@@ -674,7 +694,8 @@ class DownloadBridge(
                     com.webtoapp.util.MediaSaver.isMediaFile(download.mimeType, download.filename)) {
 
                     val result = com.webtoapp.util.MediaSaver.saveFromFile(
-                        context, download.file, download.mimeType
+                        context, download.file, download.mimeType,
+                        albumName = com.webtoapp.util.AlbumFolderName.sanitize(mediaAlbumName)
                     )
 
                     withContext(Dispatchers.Main) {
@@ -767,7 +788,8 @@ class DownloadBridge(
                     com.webtoapp.util.MediaSaver.isMediaFile(mimeType, safeFilename)) {
 
                     val result = com.webtoapp.util.MediaSaver.saveFromBytes(
-                        context, decodedBytes, safeFilename, mimeType
+                        context, decodedBytes, safeFilename, mimeType,
+                        albumName = com.webtoapp.util.AlbumFolderName.sanitize(mediaAlbumName)
                     )
 
                     withContext(Dispatchers.Main) {
@@ -1118,6 +1140,24 @@ class DownloadBridge(
     }
 
     @JavascriptInterface
+    fun downloadNamed(url: String, filename: String, userAgent: String) {
+        val safe = sanitizeFilename(filename).ifBlank { return }
+        val quoted = safe.replace("\"", "")
+        com.webtoapp.util.DownloadHelper.handleDownload(
+            context = context,
+            url = url,
+            userAgent = userAgent,
+            contentDisposition = "attachment; filename=\"$quoted\"",
+            mimeType = "",
+            contentLength = -1L,
+            scope = scope,
+            downloadLocationMode = downloadLocationMode,
+            customDownloadDirUri = customDownloadDirUri,
+            albumName = mediaAlbumName
+        )
+    }
+
+    @JavascriptInterface
     fun isAvailable(): Boolean = true
 
     @JavascriptInterface
@@ -1162,6 +1202,7 @@ class DownloadBridge(
         val targetFile = resolveUniqueFile(dir, filename)
         return try {
             FileOutputStream(targetFile).use { fos -> fos.write(bytes) }
+            com.webtoapp.util.MediaSaver.scanIntoGallery(context, targetFile, getMimeType(filename))
             AppLogger.d("DownloadBridge", "文件已保存到自定义目录: ${targetFile.absolutePath}")
             targetFile
         } catch (e: Exception) {
@@ -1179,6 +1220,7 @@ class DownloadBridge(
                     input.copyTo(out, bufferSize = 64 * 1024)
                 }
             }
+            com.webtoapp.util.MediaSaver.scanIntoGallery(context, targetFile, getMimeType(filename))
             AppLogger.d("DownloadBridge", "流式保存到自定义目录: ${targetFile.absolutePath}")
             targetFile
         } catch (e: Exception) {

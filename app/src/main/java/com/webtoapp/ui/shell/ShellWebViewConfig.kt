@@ -217,6 +217,9 @@ fun buildWebViewConfig(config: ShellConfig): WebViewConfig {
         screenBrightness = config.webViewConfig.screenBrightness,
         showFloatingBackButton = config.webViewConfig.showFloatingBackButton,
         backButtonBehavior = config.webViewConfig.backButtonBehavior,
+        forwardVolumeKeys = config.webViewConfig.forwardVolumeKeys,
+        consumeVolumeKeys = config.webViewConfig.consumeVolumeKeys,
+        mediaAlbumName = config.webViewConfig.mediaAlbumName,
 
         keyboardAdjustMode = try {
             com.webtoapp.data.model.KeyboardAdjustMode.valueOf(config.webViewConfig.keyboardAdjustMode)

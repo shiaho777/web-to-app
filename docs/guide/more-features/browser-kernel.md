@@ -38,7 +38,7 @@ GeckoView is a complete second engine independent of the system WebView, not a W
 
 - **[Ad blocking](/guide/app-actions/edit-common-config/ad-blocking)** — neither network-rule filtering nor cosmetic hiding takes effect
 - **[Userscripts](/extensions/userscript) (GM_\* APIs) and [Chrome MV3 extensions](/extensions/chrome-mv3)** (incl. declarativeNetRequest / webRequest rules)
-- **The full [NativeBridge](/extensions/api-reference) JS API** — clipboard, notifications, vibration, printing, sharing, screen wake, orientation, Google sign-in, etc.; on GeckoView only the CORS-bypass / private-network `httpRequest` entry point is available
+- **The full [NativeBridge](/extensions/native-bridge) JS API** — clipboard, notifications, vibration, printing, sharing, screen wake, orientation, Google sign-in, etc.; on GeckoView only the CORS-bypass / private-network `httpRequest` entry point is available
 - **JS-injection features** — browser fingerprint disguise, [device disguise](/guide/app-actions/edit-common-config/device-disguise), kernel disguise & flavors, [page translation](/guide/app-actions/edit-common-config/translate), audio unlock, clipboard / notification / orientation polyfills, Cloudflare compatibility helpers, custom injected scripts, popup blocking, scroll-position memory, image repair, hide-link-preview
 - **PWA offline (service-worker injection), static asset packs, encrypted asset loading** — therefore **HTML / [front-end offline-package](/guide/app-types/frontend) apps with resource encryption enabled must use the system WebView kernel**
 - blob / data: download interception

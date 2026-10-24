@@ -7,6 +7,7 @@ WebToApp stays extensible after an app ships. Three kinds of plugins share one m
 | **[HCJ Plugin](/extensions/js-module)** | A `plugin.json` + single `plugin.html` package — plain HTML + CSS + JS, no DSL | Custom features, panels, settings UIs |
 | **[Userscript](/extensions/userscript)** | Tampermonkey/Greasemonkey-style `.user.js` | Porting existing userscripts; `GM_*` APIs |
 | **[Chrome MV3](/extensions/chrome-mv3)** | A Manifest V3 Chrome extension | Porting browser extensions; `chrome.*` APIs |
+| **[NativeBridge](/extensions/native-bridge)** | `window.NativeBridge` on the system WebView | Clipboard, vibration, share, files, screen, and key events |
 
 HCJ (HTML+CSS+JS) is the native format — think of it as a userscript upgraded with a real UI surface.
 

@@ -803,10 +803,19 @@ private fun CardsMode(
         val site = openSite
         val wv = site?.let { registry.webViews[it.id] }
         val surface = site?.let { registry.surfaces[it.id] }
-        when {
-            wv != null && wv.canGoBack() -> wv.goBack()
-            wv == null && surface != null && surface.canGoBack() -> surface.goBack()
-            else -> closeSite()
+        fun fallback() {
+            when {
+                wv != null && wv.canGoBack() -> wv.goBack()
+                wv == null && surface != null && surface.canGoBack() -> surface.goBack()
+                else -> closeSite()
+            }
+        }
+        if (webViewConfig.backButtonBehavior == com.webtoapp.data.model.WebViewConfig.BACK_JS) {
+            com.webtoapp.core.webview.PageKeyEvents.dispatchBack(wv, surface) { prevented ->
+                if (!prevented) fallback()
+            }
+        } else {
+            fallback()
         }
     }
 
@@ -1099,10 +1108,19 @@ private fun FeedMode(
     BackHandler(enabled = openUrl != null) {
         val wv = articleWebView
         val surface = articleSurface
-        when {
-            wv != null && wv.canGoBack() -> wv.goBack()
-            wv == null && surface != null && surface.canGoBack() -> surface.goBack()
-            else -> closeArticle()
+        fun fallback() {
+            when {
+                wv != null && wv.canGoBack() -> wv.goBack()
+                wv == null && surface != null && surface.canGoBack() -> surface.goBack()
+                else -> closeArticle()
+            }
+        }
+        if (webViewConfig.backButtonBehavior == com.webtoapp.data.model.WebViewConfig.BACK_JS) {
+            com.webtoapp.core.webview.PageKeyEvents.dispatchBack(wv, surface) { prevented ->
+                if (!prevented) fallback()
+            }
+        } else {
+            fallback()
         }
     }
 

@@ -596,8 +596,17 @@ data class WebViewConfig(
     val staticAssetPackMaxTotalSizeMb: Int = 50,
 
     val showFloatingBackButton: Boolean = false,
-    // System back button behavior. See [BACK_GO_BACK], [BACK_GO_BACK_EXIT], [BACK_EXIT].
+    // System back button behavior. See [BACK_GO_BACK], [BACK_GO_BACK_EXIT], [BACK_EXIT], [BACK_JS].
     val backButtonBehavior: String = BACK_GO_BACK,
+    /** Deliver volume keys to the page as `wta:volume`. Off leaves the system volume keys alone. */
+    val forwardVolumeKeys: Boolean = false,
+    /** While [forwardVolumeKeys] is on, swallow the key so the system volume does not change. */
+    val consumeVolumeKeys: Boolean = false,
+    /**
+     * Gallery subdirectory for system-download media (`Pictures/<name>`, and the
+     * matching movie/music folders). One path segment. Blank becomes WebToApp.
+     */
+    val mediaAlbumName: String = "",
     val floatingWindowConfig: FloatingWindowConfig = FloatingWindowConfig(),
     val proxyMode: String = "NONE",
     val proxyHost: String = "",
@@ -659,6 +668,13 @@ data class WebViewConfig(
 
         /** Leave immediately. Back does not walk history. Issue #151. */
         const val BACK_EXIT = "EXIT"
+
+        /**
+         * Dispatch a cancelable `wta:back` event. `preventDefault()` keeps the
+         * page in front. If the page does not handle it, Back walks history the
+         * same way as [BACK_GO_BACK].
+         */
+        const val BACK_JS = "JS"
     }
 }
 
