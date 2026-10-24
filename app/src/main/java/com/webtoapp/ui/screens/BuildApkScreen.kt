@@ -150,9 +150,20 @@ private fun BuildApkContent(
         uiReady = true
     }
     var apkBuilderState by remember { mutableStateOf<ApkBuilder?>(null) }
+    var builderInitError by remember(webApp.id) { mutableStateOf<Throwable?>(null) }
+    // A tap that arrived before the builder (keystore open) or the runtime
+    // prefetch finished. Honored once both are done, instead of dropped.
+    var buildArmed by remember(webApp.id) { mutableStateOf(false) }
     LaunchedEffect(uiReady) {
         if (!uiReady) return@LaunchedEffect
-        apkBuilderState = withContext(Dispatchers.IO) { ApkBuilder(context) }
+        val created = runCatching {
+            withContext(Dispatchers.IO) { ApkBuilder(context) }
+        }
+        created.onSuccess { apkBuilderState = it }
+        created.onFailure { error ->
+            AppLogger.e("BuildApkScreen", "ApkBuilder init failed", error)
+            builderInitError = error
+        }
     }
 
     var showExportAabConfirm by remember { mutableStateOf(false) }
@@ -341,11 +352,7 @@ private fun BuildApkContent(
         }
     }
 
-    fun launchBuild() {
-        if (isBuilding) return
-        val apkBuilder = apkBuilderState ?: return
-        val webAppWithConfig = currentBuildConfig()
-
+    fun showBuilding() {
         isBuilding = true
         buildFailureReport = null
         analysisReport = null
@@ -354,6 +361,10 @@ private fun BuildApkContent(
         cacheMessage = null
         progress = 0
         progressText = Strings.preparing
+    }
+
+    fun startBuild(apkBuilder: ApkBuilder) {
+        val webAppWithConfig = currentBuildConfig()
         scope.launch {
             progressText = when (webAppWithConfig.appType) {
                 AppType.PYTHON_APP -> Strings.preparingPythonEnv
@@ -428,6 +439,21 @@ private fun BuildApkContent(
         }
     }
 
+    fun launchBuild() {
+        when (buildStartAction(isBuilding, apkBuilderState != null, isEnsuringRuntime)) {
+            BuildStartAction.IgnoreAlreadyBuilding -> return
+            BuildStartAction.Remember -> {
+                showBuilding()
+                buildArmed = true
+            }
+            BuildStartAction.Start -> {
+                val apkBuilder = apkBuilderState ?: return
+                showBuilding()
+                startBuild(apkBuilder)
+            }
+        }
+    }
+
     LaunchedEffect(
         webApp,
         encryptionConfig,
@@ -457,12 +483,18 @@ private fun BuildApkContent(
                 AppType.WORDPRESS -> Strings.preparing
                 else -> Strings.preparing
             }
-            val ensureOk = ExportRuntimeEnsure.ensure(
-                context,
-                config.appType,
-                needsCronet,
-                neededAbis = webApp.apkExportConfig?.architecture?.abiFilters
-            )
+            val ensureOk = try {
+                ExportRuntimeEnsure.ensure(
+                    context,
+                    config.appType,
+                    needsCronet,
+                    neededAbis = webApp.apkExportConfig?.architecture?.abiFilters
+                )
+            } finally {
+                // Cancellation used to leave this true, which disabled the build
+                // button for the rest of the visit.
+                isEnsuringRuntime = false
+            }
             if (!ensureOk) {
                 ensureRuntimeText = when (config.appType) {
                     AppType.PYTHON_APP -> Strings.pythonRuntimeDownloadFailed
@@ -474,10 +506,39 @@ private fun BuildApkContent(
             } else {
                 ensureRuntimeText = null
             }
-            isEnsuringRuntime = false
         } else {
             ensureRuntimeText = null
             isEnsuringRuntime = false
+        }
+    }
+
+    LaunchedEffect(apkBuilderState, builderInitError, isEnsuringRuntime, buildArmed) {
+        if (!buildArmed) return@LaunchedEffect
+        when (
+            armedBuildStep(
+                builderReady = apkBuilderState != null,
+                runtimeEnsureInProgress = isEnsuringRuntime,
+                builderFailed = builderInitError != null
+            )
+        ) {
+            ArmedBuild.Wait -> Unit
+            ArmedBuild.Fail -> {
+                buildArmed = false
+                isBuilding = false
+                val error = builderInitError
+                buildFailureReport = buildActionFailureReport(
+                    title = Strings.apkBuildFailed,
+                    stage = "apk_builder_init",
+                    webApp = currentBuildConfig(),
+                    summary = error?.message ?: Strings.unknownError,
+                    throwable = error
+                )
+            }
+            ArmedBuild.Start -> {
+                val builder = apkBuilderState ?: return@LaunchedEffect
+                buildArmed = false
+                startBuild(builder)
+            }
         }
     }
 
@@ -553,7 +614,6 @@ private fun BuildApkContent(
                                     launchBuild()
                                 }
                             },
-                            enabled = !isEnsuringRuntime,
                             modifier = Modifier.weight(1f)
                         ) {
                             val icon = if (builtApk != null) Icons.Outlined.GetApp else Icons.Outlined.Build
