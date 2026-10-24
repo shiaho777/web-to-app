@@ -13,6 +13,18 @@ import com.webtoapp.data.model.WebViewConfig
 
 object ShellActivityInit {
 
+    /**
+     * Floating window and fullscreen mode both want the launch window.
+     * The floating window wins: the activity is only a trampoline into the
+     * overlay. Fullscreen mode still applies inside that overlay as hidden
+     * browser chrome, not as a second full-screen activity.
+     */
+    fun opensAsFloatingWindow(config: ShellConfig): Boolean =
+        config.webViewConfig.floatingWindowConfig.enabled
+
+    fun appliesFullscreenLaunch(config: ShellConfig): Boolean =
+        config.webViewConfig.hideToolbar && !opensAsFloatingWindow(config)
+
     fun initLogger(activity: AppCompatActivity) {
         try {
             val tempConfig = WebToAppApplication.shellMode.getConfig()

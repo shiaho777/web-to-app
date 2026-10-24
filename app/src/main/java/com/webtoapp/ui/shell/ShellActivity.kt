@@ -622,7 +622,27 @@ class ShellActivity : AppCompatActivity() {
         shareShowReceivedToast = config.webViewConfig.shareShowReceivedToast
         openWithEnabled = config.webViewConfig.openWithEnabled
 
-        immersiveFullscreenEnabled = config.webViewConfig.hideToolbar
+        // Decide the launch window before any immersive flags. Fullscreen mode
+        // sets FLAG_FULLSCREEN; doing that first keeps this activity on screen
+        // and the floating-window service never becomes the app the user sees.
+        if (ShellActivityInit.opensAsFloatingWindow(config)) {
+            immersiveFullscreenEnabled = false
+            val floatingWindowConfig = config.webViewConfig.floatingWindowConfig
+            com.webtoapp.core.shell.ShellLogger.i(
+                "ShellActivity",
+                "悬浮窗优先于全屏模式: size=${floatingWindowConfig.windowSizePercent}%, opacity=${floatingWindowConfig.opacity}%"
+            )
+            if (FloatingWindowService.canDrawOverlays(this)) {
+                launchFloatingWindowAndFinish(config)
+                return
+            }
+            pendingFloatingWindowLaunch = true
+            com.webtoapp.core.shell.ShellLogger.w("ShellActivity", "悬浮窗权限未授予，引导用户授权")
+            Toast.makeText(this, Strings.floatingWindowPermissionRequired, Toast.LENGTH_LONG).show()
+            FloatingWindowService.requestOverlayPermission(this)
+        }
+
+        immersiveFullscreenEnabled = ShellActivityInit.appliesFullscreenLaunch(config)
         try {
             applyImmersiveFullscreen(immersiveFullscreenEnabled)
             com.webtoapp.core.shell.ShellLogger.d("ShellActivity", "沉浸式全屏模式: $immersiveFullscreenEnabled")
@@ -638,22 +658,6 @@ class ShellActivity : AppCompatActivity() {
             lp.screenBrightness = shellBrightness / 100f
             window.attributes = lp
             com.webtoapp.core.shell.ShellLogger.d("ShellActivity", "屏幕亮度: ${shellBrightness}%")
-        }
-
-        val floatingWindowConfig = config.webViewConfig.floatingWindowConfig
-        if (floatingWindowConfig.enabled) {
-            com.webtoapp.core.shell.ShellLogger.i("ShellActivity", "悬浮窗配置: size=${floatingWindowConfig.windowSizePercent}%, opacity=${floatingWindowConfig.opacity}%")
-            if (FloatingWindowService.canDrawOverlays(this)) {
-
-                launchFloatingWindowAndFinish(config)
-                return
-            } else {
-
-                pendingFloatingWindowLaunch = true
-                com.webtoapp.core.shell.ShellLogger.w("ShellActivity", "悬浮窗权限未授予，引导用户授权")
-                Toast.makeText(this, Strings.floatingWindowPermissionRequired, Toast.LENGTH_LONG).show()
-                FloatingWindowService.requestOverlayPermission(this)
-            }
         }
 
         // Issue #1029: relaunching the task from Recents replays its original launch
