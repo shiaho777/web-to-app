@@ -2883,9 +2883,7 @@ class ApkBuilder(private val context: Context) {
 
         val reqFile = File(projectDir, "requirements.txt")
         val sitePackages = File(projectDir, ".pypackages")
-        val needsPrebundle = com.webtoapp.core.python.PythonDependencyManager.hasInstallableRequirements(reqFile) &&
-            !com.webtoapp.core.python.PythonDependencyManager.hasInstalledPackages(sitePackages)
-        if (needsPrebundle) {
+        if (reqFile.exists() && !com.webtoapp.core.python.PythonDependencyManager.hasInstalledPackages(sitePackages)) {
             val pythonBin = com.webtoapp.core.python.PythonDependencyManager.getPythonExecutablePath(context)
             val muslLinker = com.webtoapp.core.python.PythonDependencyManager.getMuslLinkerPath(context)
             val pythonBinaryReady = File(pythonBin).exists()
@@ -2916,8 +2914,6 @@ class ApkBuilder(private val context: Context) {
             }
         } else if (com.webtoapp.core.python.PythonDependencyManager.hasInstalledPackages(sitePackages)) {
             logger.log("Python .pypackages already exists (${sitePackages.listFiles()?.size ?: 0} packages), skipping pre-install")
-        } else if (reqFile.isFile) {
-            logger.log("requirements.txt has no installable dependencies; embedding it with the project files")
         }
 
         RuntimeAssetEmbedder.embedProjectFiles(zipOut, projectDir, RuntimeAssetEmbedder.pythonConfig(), logger)
