@@ -148,7 +148,7 @@ NativeBridge.log('debug line');
 
 These are DOM events, not `NativeBridge` methods. They exist in preview and in the exported APK.
 
-**Back.** Editor → back behavior → **Run JavaScript**. Each system Back press dispatches a cancelable `wta:back` on `document`. `preventDefault()` keeps the app on the page. If the page does not handle the event, Back still walks history.
+**Back.** Editor → back behavior → **Run JavaScript**. Each system Back press dispatches a cancelable `wta:back` on `document`. `preventDefault()` keeps the app on the page. If the page does not handle the event, Back still walks history. When that history is empty, one Back leaves the app.
 
 ```javascript
 document.addEventListener('wta:back', function (event) {

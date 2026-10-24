@@ -148,7 +148,7 @@ NativeBridge.log('调试一行');
 
 这是 DOM 事件，不是 `NativeBridge` 的方法。预览和导出的 APK 都会发。
 
-**返回键。** 编辑器里把返回键行为设为 **执行 JS**。每次系统返回都会在 `document` 上派发可取消的 `wta:back`。`preventDefault()` 就留在页面里。网页没处理时，仍然按历史返回。
+**返回键。** 编辑器里把返回键行为设为 **执行 JS**。每次系统返回都会在 `document` 上派发可取消的 `wta:back`。`preventDefault()` 就留在页面里。网页没处理时，仍然按历史返回。历史已经空了时，再按一次返回就离开应用。
 
 ```javascript
 document.addEventListener('wta:back', function (event) {

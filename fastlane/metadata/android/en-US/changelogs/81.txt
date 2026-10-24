@@ -1,0 +1,14 @@
+Added
+- System Back and volume keys can be handed to the page.
+
+Improved
+- The builder requires Android 7.0.
+- Node.js ships full ICU.
+
+Fixed
+- The first tap on Build starts the build.
+- A floating window wins when fullscreen is also on.
+- An empty Python requirements file does not start pip.
+- One Back leaves the app when history is empty.
+- Google sign-in arrives after the WebView resumes.
+- Opening the camera no longer closes the generated app.

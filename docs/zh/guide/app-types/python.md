@@ -34,6 +34,6 @@ Flask、Django、FastAPI、Tornado 应用,或内置 HTTP 服务器。
 
 ### 依赖与扩展
 
-- **requirements 文件**(`requirementsFile`)—— 默认 `requirements.txt`。
+- **requirements 文件**(`requirementsFile`)—— 默认 `requirements.txt`。文件为空,或只有注释和 pip 选项时,不会启动安装。
 - **含 pip 依赖**(`hasPipDeps`)—— 依赖是否解析进 `.pypackages`。
 - **自定义原生扩展**(`customPythonExtensions`)—— 添加 `.so` 扩展,各带加载顺序。

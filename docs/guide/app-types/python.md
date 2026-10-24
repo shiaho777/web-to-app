@@ -34,6 +34,6 @@ Backed by `PythonAppConfig`.
 
 ### Dependencies & extensions
 
-- **Requirements file** (`requirementsFile`) — defaults to `requirements.txt`.
+- **Requirements file** (`requirementsFile`) — defaults to `requirements.txt`. A file that is empty, or only comments and pip options, does not start an install.
 - **Has pip dependencies** (`hasPipDeps`) — whether deps resolve into `.pypackages`.
 - **Custom native extensions** (`customPythonExtensions`) — add `.so` extensions, each with load order.

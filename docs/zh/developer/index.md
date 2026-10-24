@@ -21,8 +21,8 @@
 
 ## 三个 Gradle 模块
 
-- **`:app`** —— 构建器。`applicationId = com.webtoapp`,`compileSdk = 36`,`minSdk = 23`,`targetSdk = 36`,`buildConfigField SHELL_RUNTIME_ONLY = false`。
-- **`:shell`** —— 嵌入生成 APK 的运行时模板。`compileSdk`/`minSdk`/版本与 `:app` 相同,但 `targetSdk = 35`(导出可经 `ApkExportConfig.targetSdk` 固定其他 target,经 `ApkExportConfig.minSdk` 提高 minSdk),且 `SHELL_RUNTIME_ONLY = true`。其源码从 `app/` 同步。
+- **`:app`** —— 构建器。`applicationId = com.webtoapp`,`compileSdk = 36`,`minSdk = 24`,`targetSdk = 36`,`buildConfigField SHELL_RUNTIME_ONLY = false`。Play 自动防护会拒绝低于 24 的宿主包。
+- **`:shell`** —— 嵌入生成 APK 的运行时模板。`compileSdk = 36`,`minSdk = 23`,`targetSdk = 35`(导出可经 `ApkExportConfig.targetSdk` 固定其他 target,经 `ApkExportConfig.minSdk` 提高 minSdk),且 `SHELL_RUNTIME_ONLY = true`。其源码从 `app/` 同步。生成的应用仍是 minSdk 23;只有构建器升到 24。
 - **`:clone-host`** —— 一个极简的 `com.android.library`(命名空间 `com.webtoapp.clone`),无依赖,编译为供 `AppCloner` 使用的 DEX 资源。
 
 ## 包结构(`app/src/main/java/com/webtoapp`)

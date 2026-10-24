@@ -18,6 +18,7 @@ Whether the in-app toolbar shows during fullscreen is governed by the [Browser T
 
 ## Notes
 
+- If the [floating window](/guide/app-actions/edit-common-config/floating-window) is also on, the app opens as that window. Fullscreen does not replace it.
 - When the status bar is visible, the splash countdown/skip chip sits below it so it is never covered.
 - The bottom content padding stays on the physical screen edge. Opening the keyboard keeps only the part of that band the keyboard does not cover. Once the keyboard is taller than the band, the page sits flush on the keyboard.
 - Transparent and follow-page modes sample the system WebView and paint the navigation bar and the fullscreen margin bands from the page. The first paint is sampled again, so the first screen is not left on the light fallback. Theme and custom modes keep the colors you set. GeckoView cannot return that sample, so it keeps the previous bar colors.

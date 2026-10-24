@@ -16,3 +16,4 @@ Runs the app in a resizable floating window over other apps.
 ## Notes
 
 - Floating window requires the system overlay permission at runtime.
+- When fullscreen mode is also on, the app still opens as a floating window. Fullscreen then hides the browser chrome inside that window.
