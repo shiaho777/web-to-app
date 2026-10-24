@@ -32,15 +32,14 @@ class ExtensionPopupManager(
 
             CookieManager.getInstance().setAcceptThirdPartyCookies(this, true)
 
-            addJavascriptInterface(
-                ContentExtensionBridge(
-                    runtimes = runtime?.let { mapOf(extensionId to it) } ?: emptyMap(),
-                    currentWebViewProvider = targetWebViewProvider,
-                    openPopupHandler = openPopupHandler,
-                    openOptionsPageHandler = openOptionsPageHandler
-                ),
-                ChromeExtensionRuntime.JS_BRIDGE_NAME
+            val contentBridge = ContentExtensionBridge(
+                runtimes = runtime?.let { mapOf(extensionId to it) } ?: emptyMap(),
+                currentWebViewProvider = targetWebViewProvider,
+                openPopupHandler = openPopupHandler,
+                openOptionsPageHandler = openOptionsPageHandler
             )
+            addJavascriptInterface(contentBridge, ChromeExtensionRuntime.JS_BRIDGE_NAME)
+            ChromeExtensionAuthChannel.install(this, contentBridge)
 
             webViewClient = object : WebViewClient() {
                 override fun shouldInterceptRequest(
@@ -116,6 +115,7 @@ class ExtensionPopupManager(
 
     fun destroy() {
         popupWebView?.let { wv ->
+            ChromeExtensionAuthChannel.remove(wv)
             wv.stopLoading()
             wv.loadUrl("about:blank")
             wv.destroy()

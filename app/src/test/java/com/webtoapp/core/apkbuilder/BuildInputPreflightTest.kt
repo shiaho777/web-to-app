@@ -169,6 +169,30 @@ class BuildInputPreflightTest {
     }
 
     @Test
+    fun `python requirements file with no packages does not require a prebundle`() {
+        val projectDir = temp.newFolder("python-project-empty-reqs")
+        File(projectDir, "requirements.txt").writeText("# no packages\n--index-url https://pypi.org/simple\n")
+        val pythonBinary = temp.newFile("libpython3-empty.so").apply {
+            writeBytes(ByteArray(1024 * 1024) { 1 })
+        }
+        val muslLinker = temp.newFile("libmusl-linker-empty.so").apply {
+            writeBytes(ByteArray(2048) { 1 })
+        }
+
+        val result = BuildInputPreflight.check(
+            BuildInputPreflightRequest(
+                appType = "PYTHON_APP",
+                pythonAppProjectDir = projectDir,
+                pythonBinaryPath = pythonBinary.absolutePath,
+                muslLinkerPath = muslLinker.absolutePath,
+                builderMuslLinkerPath = muslLinker.absolutePath
+            )
+        )
+
+        assertThat(result.issues.map { it.key }).doesNotContain("pythonPrebundleMuslLinker")
+    }
+
+    @Test
     fun `go app requires prebuilt binary and does not require source files`() {
         val projectDir = temp.newFolder("go-project")
         val abiDir = File(projectDir, "build/arm64-v8a").apply { mkdirs() }

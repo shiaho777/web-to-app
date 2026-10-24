@@ -528,6 +528,7 @@ object Strings {
     val portConflictAlert: String get() = StringsA.portConflictAlert
     val portConflictAlertHint: String get() = StringsA.portConflictAlertHint
     val portDefaultLabel: String get() = StringsA.portDefaultLabel
+    val portRangeHint: String get() = StringsA.portRangeHint
     val orientationModeLabel: String get() = StringsA.orientationModeLabel
     val orientationModeHint: String get() = StringsA.orientationModeHint
     val orientationLandscape: String get() = StringsA.orientationLandscape

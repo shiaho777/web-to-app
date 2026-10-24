@@ -7,6 +7,9 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.webkit.*
+import androidx.webkit.JavaScriptReplyProxy
+import androidx.webkit.WebMessageCompat
+import androidx.webkit.WebViewCompat
 import com.webtoapp.core.logging.AppLogger
 import org.json.JSONObject
 
@@ -34,6 +37,13 @@ class ChromeExtensionRuntime(
     }
 
     fun declaredHostPatterns(): List<String> = hostPatterns
+
+    fun extensionAuth(): ChromeHostPermissions.ExtensionAuth =
+        ChromeHostPermissions.ExtensionAuth(
+            id = extensionId,
+            hostPatterns = hostPatterns,
+            contentScripts = ChromeHostPermissions.contentScriptRules(manifestJson),
+        )
 
     @SuppressLint("SetJavaScriptEnabled")
     fun initialize(mainWebView: WebView) {
@@ -251,7 +261,7 @@ $polyfill
         @JavascriptInterface
         fun nativeFetch(url: String, method: String, headersJson: String, body: String): String {
             if (!hostAllows(url)) return hostDenied(url, "nativeFetch")
-            return performNativeFetch(url, method, headersJson, body, originUrl)
+            return performNativeFetch(url, method, headersJson, body, originUrl) { hostAllows(it) }
         }
 
         @JavascriptInterface
@@ -468,35 +478,103 @@ class ContentExtensionBridge(
     private val currentWebViewProvider: (() -> WebView?)? = null,
     private val openPopupHandler: (String, String) -> Unit = { _, _ -> },
     private val openOptionsPageHandler: (String, String) -> Unit = { _, _ -> }
-) {
+) : WebViewCompat.WebMessageListener {
     @JavascriptInterface
     fun postMessageToBackground(extId: String, msgJson: String) {
         AppLogger.d("ChromeExtRuntime", "Content→BG [$extId]: ${msgJson.take(200)}")
         runtimes[extId]?.deliverToBackground(msgJson)
     }
 
+    /**
+     * Page-visible entry points. Every frame can call these, and JavascriptInterface
+     * does not identify the caller, so they refuse. Content scripts use
+     * [ChromeExtensionAuthChannel] instead.
+     */
     @JavascriptInterface
     fun nativeFetch(url: String, method: String, headersJson: String, body: String): String {
-        // This bridge is registered on the MAIN WebView — every page and iframe reaches it,
-        // so the target must be allowed by at least one installed extension's manifest.
-        if (!ChromeHostPermissions.anyRuntimeAllows(runtimes, url)) {
-            return hostDenied(url, "nativeFetch")
-        }
-        return performNativeFetch(url, method, headersJson, body, null)
+        return hostDenied(url, "nativeFetch")
     }
 
     @JavascriptInterface
     fun getCookies(url: String): String {
-        if (!ChromeHostPermissions.anyRuntimeAllows(runtimes, url)) return ""
-        return android.webkit.CookieManager.getInstance().getCookie(url) ?: ""
+        AppLogger.w("ChromeExtRuntime", "getCookies blocked: page bridge does not accept caller-anonymous calls")
+        return ""
     }
 
     @JavascriptInterface
     fun setCookieValue(url: String, cookie: String) {
-        if (!ChromeHostPermissions.anyRuntimeAllows(runtimes, url)) return
-        android.webkit.CookieManager.getInstance().setCookie(url, cookie)
-        android.webkit.CookieManager.getInstance().flush()
+        AppLogger.w("ChromeExtRuntime", "setCookieValue blocked: page bridge does not accept caller-anonymous calls")
     }
+
+    override fun onPostMessage(
+        view: WebView,
+        message: WebMessageCompat,
+        sourceOrigin: Uri,
+        isMainFrame: Boolean,
+        replyProxy: JavaScriptReplyProxy,
+    ) {
+        val raw = message.data ?: return
+        val request = runCatching { JSONObject(raw) }.getOrNull() ?: return
+        val id = if (request.has("id")) request.get("id") else 0
+        val op = request.optString("op")
+        val caller = sourceOrigin.toString()
+        if (op == "nativeFetch") {
+            Thread {
+                val reply = runCatching { dispatchAuth(id, op, caller, request) }
+                    .getOrElse { authReply(id, false, "", "internal error") }
+                runCatching { replyProxy.postMessage(reply) }
+            }.start()
+            return
+        }
+        val reply = runCatching { dispatchAuth(id, op, caller, request) }
+            .getOrElse { authReply(id, false, "", "internal error") }
+        runCatching { replyProxy.postMessage(reply) }
+    }
+
+    private fun dispatchAuth(id: Any?, op: String, caller: String, request: JSONObject): String {
+        val url = request.optString("url")
+        if (!ChromeHostPermissions.anyAuthorized(grants(), caller, url)) {
+            AppLogger.w("ChromeExtRuntime", "$op blocked for caller $caller")
+            return authReply(id, false, "", "caller or target is not granted")
+        }
+        return when (op) {
+            "getCookies" -> authReply(
+                id,
+                true,
+                android.webkit.CookieManager.getInstance().getCookie(url) ?: "",
+            )
+            "setCookie" -> {
+                val cookie = request.optString("cookie")
+                if (cookie.isNotEmpty()) {
+                    android.webkit.CookieManager.getInstance().setCookie(url, cookie)
+                    android.webkit.CookieManager.getInstance().flush()
+                }
+                authReply(id, true, "")
+            }
+            "nativeFetch" -> {
+                val fetchJson = performNativeFetch(
+                    url,
+                    request.optString("method", "GET"),
+                    request.optJSONObject("headers")?.toString() ?: request.optString("headers", "{}"),
+                    request.optString("body"),
+                    caller,
+                ) { hop -> ChromeHostPermissions.anyAuthorized(grants(), caller, hop) }
+                authReply(id, true, fetchJson)
+            }
+            else -> authReply(id, false, "", "unknown op")
+        }
+    }
+
+    private fun grants(): List<ChromeHostPermissions.ExtensionAuth> =
+        runtimes.values.map { it.extensionAuth() }
+
+    private fun authReply(id: Any?, ok: Boolean, result: String, error: String = ""): String =
+        JSONObject()
+            .put("id", id ?: 0)
+            .put("ok", ok)
+            .put("result", result)
+            .put("error", error)
+            .toString()
 
     private fun hostDenied(url: String, api: String): String {
         AppLogger.w("ChromeExtRuntime", "$api blocked: $url matches no installed extension's host permission")
@@ -845,83 +923,115 @@ internal fun performNativeFetch(
     method: String,
     headersJson: String,
     body: String,
-    refererOrigin: String?
+    refererOrigin: String?,
+    allow: (String) -> Boolean,
 ): String {
-    return try {
-        val connection = java.net.URL(url).openConnection() as java.net.HttpURLConnection
-        connection.requestMethod = method.uppercase()
-        connection.connectTimeout = 30000
-        connection.readTimeout = 30000
-        connection.instanceFollowRedirects = true
-
-        val cookies = android.webkit.CookieManager.getInstance().getCookie(url)
-        if (!cookies.isNullOrEmpty()) {
-            connection.setRequestProperty("Cookie", cookies)
-        }
-
-        try {
-            val headers = org.json.JSONObject(headersJson)
-            val iter = headers.keys()
-            while (iter.hasNext()) {
-                val key = iter.next()
-                connection.setRequestProperty(key, headers.getString(key))
-            }
-        } catch (e: Exception) { AppLogger.w("ChromeExtRuntime", "Failed to parse custom request headers", e) }
-
-        if (refererOrigin != null) {
-            if (connection.getRequestProperty("Referer") == null) {
-                connection.setRequestProperty("Referer", refererOrigin)
-            }
-            if (connection.getRequestProperty("Origin") == null) {
-                connection.setRequestProperty("Origin", refererOrigin.trimEnd('/'))
-            }
-        }
-
-        if (body.isNotEmpty() && method.uppercase() in listOf("POST", "PUT", "PATCH")) {
-            connection.doOutput = true
-            connection.outputStream.use { it.write(body.toByteArray()) }
-        }
-
-        val status = connection.responseCode
-        val statusText = connection.responseMessage ?: ""
-
-        val respHeaders = org.json.JSONObject()
-        connection.headerFields?.forEach { (key, values) ->
-            if (key != null && values.isNotEmpty()) {
-                respHeaders.put(key.lowercase(), values.joinToString(", "))
-            }
-        }
-
-        val respBody = try {
-            (if (status >= 400) connection.errorStream else connection.inputStream)
-                ?.bufferedReader()?.readText() ?: ""
-        } catch (_: Exception) { "" }
-
-        connection.headerFields?.get("Set-Cookie")?.forEach { cookie ->
-            android.webkit.CookieManager.getInstance().setCookie(url, cookie)
-        }
-        android.webkit.CookieManager.getInstance().flush()
-
-        connection.disconnect()
-
-        org.json.JSONObject().apply {
-            put("ok", status in 200..299)
-            put("status", status)
-            put("statusText", statusText)
-            put("headers", respHeaders)
-            put("body", respBody)
-        }.toString()
-    } catch (e: Exception) {
-        AppLogger.e("NativeFetch", "Error fetching $url: ${e.message}")
-        org.json.JSONObject().apply {
-            put("ok", false)
-            put("status", 0)
-            put("statusText", "Network Error: ${e.message}")
-            put("headers", org.json.JSONObject())
-            put("body", "")
-        }.toString()
+    if (!ChromeHostPermissions.isHttpUrl(url) || !allow(url)) {
+        return fetchDenied("Blocked: URL matches no granted host permission")
     }
+    var currentUrl = url
+    var currentMethod = method.uppercase()
+    var currentBody = body
+    var hops = 0
+    while (hops <= MAX_FETCH_REDIRECTS) {
+        val connection = java.net.URL(currentUrl).openConnection() as java.net.HttpURLConnection
+        try {
+            connection.requestMethod = currentMethod
+            connection.connectTimeout = 30000
+            connection.readTimeout = 30000
+            connection.instanceFollowRedirects = false
+
+            val cookies = android.webkit.CookieManager.getInstance().getCookie(currentUrl)
+            if (!cookies.isNullOrEmpty()) {
+                connection.setRequestProperty("Cookie", cookies)
+            }
+
+            try {
+                val headers = org.json.JSONObject(headersJson)
+                val iter = headers.keys()
+                while (iter.hasNext()) {
+                    val key = iter.next()
+                    connection.setRequestProperty(key, headers.getString(key))
+                }
+            } catch (e: Exception) {
+                AppLogger.w("ChromeExtRuntime", "Failed to parse custom request headers", e)
+            }
+
+            if (refererOrigin != null) {
+                if (connection.getRequestProperty("Referer") == null) {
+                    connection.setRequestProperty("Referer", refererOrigin)
+                }
+                if (connection.getRequestProperty("Origin") == null) {
+                    connection.setRequestProperty("Origin", refererOrigin.trimEnd('/'))
+                }
+            }
+
+            if (currentBody.isNotEmpty() && currentMethod in listOf("POST", "PUT", "PATCH")) {
+                connection.doOutput = true
+                connection.outputStream.use { it.write(currentBody.toByteArray()) }
+            }
+
+            val status = connection.responseCode
+            storeResponseCookies(connection, currentUrl)
+            if (status == 301 || status == 302 || status == 303 || status == 307 || status == 308) {
+                val next = ChromeHostPermissions.resolveRedirect(currentUrl, connection.getHeaderField("Location"))
+                if (next == null || !ChromeHostPermissions.isHttpUrl(next) || !allow(next)) {
+                    return fetchDenied("Blocked: redirect target matches no granted host permission")
+                }
+                if (status == 301 || status == 302 || status == 303) {
+                    currentMethod = "GET"
+                    currentBody = ""
+                }
+                currentUrl = next
+                hops++
+                continue
+            }
+
+            val statusText = connection.responseMessage ?: ""
+            val respHeaders = org.json.JSONObject()
+            connection.headerFields?.forEach { (key, values) ->
+                if (key != null && values.isNotEmpty()) {
+                    respHeaders.put(key.lowercase(), values.joinToString(", "))
+                }
+            }
+            val respBody = try {
+                (if (status >= 400) connection.errorStream else connection.inputStream)
+                    ?.bufferedReader()?.readText() ?: ""
+            } catch (_: Exception) { "" }
+            return org.json.JSONObject().apply {
+                put("ok", status in 200..299)
+                put("status", status)
+                put("statusText", statusText)
+                put("headers", respHeaders)
+                put("body", respBody)
+            }.toString()
+        } catch (e: Exception) {
+            AppLogger.e("NativeFetch", "Error fetching $currentUrl: ${e.message}")
+            return fetchDenied("Network Error: ${e.message}")
+        } finally {
+            connection.disconnect()
+        }
+    }
+    return fetchDenied("Blocked: too many redirects")
 }
+
+private const val MAX_FETCH_REDIRECTS = 5
+
+private fun storeResponseCookies(connection: java.net.HttpURLConnection, url: String) {
+    connection.headerFields?.get("Set-Cookie")?.forEach { cookie ->
+        android.webkit.CookieManager.getInstance().setCookie(url, cookie)
+    }
+    android.webkit.CookieManager.getInstance().flush()
+}
+
+private fun fetchDenied(statusText: String): String =
+    org.json.JSONObject().apply {
+        put("ok", false)
+        put("status", 0)
+        put("statusText", statusText)
+        put("headers", org.json.JSONObject())
+        put("body", "")
+    }.toString()
 
 fun deriveOriginUrl(urlMatches: List<UrlMatchRule>): String {
     val firstMatch = urlMatches.firstOrNull { !it.exclude }?.pattern ?: return "about:blank"

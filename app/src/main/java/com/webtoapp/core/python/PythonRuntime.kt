@@ -143,7 +143,7 @@ class PythonRuntime(private val context: Context) {
             AppLogger.i(TAG, "Python version check passed: $versionCheck")
             ShellLogger.i(TAG, "Python 版本验证通过: $versionCheck")
 
-            if (installDeps && File(projDir, "requirements.txt").exists()) {
+            if (installDeps && PythonDependencyManager.hasInstallableRequirements(File(projDir, "requirements.txt"))) {
                 _serverState.value = ServerState.InstallingDeps
                 AppLogger.i(TAG, "Installing Python dependencies...")
                 ShellLogger.i(TAG, "安装 Python 依赖...")

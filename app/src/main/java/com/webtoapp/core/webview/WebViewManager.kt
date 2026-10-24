@@ -4409,6 +4409,7 @@ class WebViewManager(
                 removeJavascriptInterface(GeolocationBridge.JS_INTERFACE_NAME)
                 removeJavascriptInterface(com.webtoapp.core.extension.GreasemonkeyBridge.JS_INTERFACE_NAME)
                 removeJavascriptInterface(com.webtoapp.core.extension.ChromeExtensionRuntime.JS_BRIDGE_NAME)
+                com.webtoapp.core.extension.ChromeExtensionAuthChannel.remove(this)
                 removeJavascriptInterface(COSMETIC_BRIDGE_NAME)
 
                 (parent as? android.view.ViewGroup)?.removeView(this)
@@ -4884,6 +4885,7 @@ class WebViewManager(
                     openOptionsPageHandler = { extId, optionsPath -> showChromeExtensionPage(extId, optionsPath) }
                 )
                 webView.addJavascriptInterface(contentBridge, com.webtoapp.core.extension.ChromeExtensionRuntime.JS_BRIDGE_NAME)
+                com.webtoapp.core.extension.ChromeExtensionAuthChannel.install(webView, contentBridge)
                 AppLogger.d(
                     "WebViewManager",
                     "Registered WtaExtBridge for ${allChromeExtPlugins.map { it.chromeExtId }.distinct().size} extension(s)"

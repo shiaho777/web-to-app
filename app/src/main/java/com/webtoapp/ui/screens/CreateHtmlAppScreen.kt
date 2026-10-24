@@ -1016,6 +1016,15 @@ fun CreateHtmlAppScreen(
                             )
                             Spacer(modifier = Modifier.height(8.dp))
 
+                            var htmlPortInput by remember {
+                                mutableStateOf(if (serverPort > 0) serverPort.toString() else "")
+                            }
+                            androidx.compose.runtime.LaunchedEffect(serverPort == 0) {
+                                if (serverPort > 0 && htmlPortInput.toIntOrNull() != serverPort) {
+                                    htmlPortInput = serverPort.toString()
+                                }
+                            }
+
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -1034,10 +1043,17 @@ fun CreateHtmlAppScreen(
                                 }
                                 WtaSwitch(
                                     checked = serverPort == 0,
-                                    onCheckedChange = { auto -> serverPort = if (auto) 0 else 8080 }
+                                    onCheckedChange = { auto ->
+                                        if (auto) {
+                                            serverPort = 0
+                                        } else {
+                                            val restored = htmlPortInput.toIntOrNull()?.takeIf { it in 1024..65535 } ?: 8080
+                                            htmlPortInput = restored.toString()
+                                            serverPort = restored
+                                        }
+                                    }
                                 )
                             }
-
                             androidx.compose.animation.AnimatedVisibility(
                                 visible = serverPort > 0,
                                 enter = CardExpandTransition,
@@ -1061,11 +1077,12 @@ fun CreateHtmlAppScreen(
                                         modifier = Modifier.width(100.dp)
                                     ) {
                                         BasicTextField(
-                                            value = if (serverPort > 0) serverPort.toString() else "",
+                                            value = htmlPortInput,
                                             onValueChange = { text ->
-                                                val num = text.toIntOrNull()
-                                                serverPort = if (num != null && num in 1024..65535) num
-                                                else if (text.isEmpty()) 0 else serverPort
+                                                val digits = text.filter { it.isDigit() }.take(5)
+                                                htmlPortInput = digits
+                                                val num = digits.toIntOrNull()
+                                                if (num != null && num in 1024..65535) serverPort = num
                                             },
                                             singleLine = true,
                                             textStyle = MaterialTheme.typography.bodyMedium.copy(

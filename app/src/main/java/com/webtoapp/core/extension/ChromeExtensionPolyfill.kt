@@ -23,6 +23,51 @@ object ChromeExtensionPolyfill {
     window[POLYFILL_KEY] = true;
     var IS_BACKGROUND = ${isBackground};
     var MANIFEST = {};
+    if (!window.__WTA_EXT_AUTH__) {
+        window.__WTA_EXT_AUTH__ = { wait: {}, seq: 0 };
+        if (typeof WtaExtAuth !== 'undefined' && WtaExtAuth) {
+            WtaExtAuth.onmessage = function(event) {
+                try {
+                    var msg = JSON.parse(event.data);
+                    var waiter = window.__WTA_EXT_AUTH__.wait[msg.id];
+                    if (waiter) {
+                        delete window.__WTA_EXT_AUTH__.wait[msg.id];
+                        waiter(msg);
+                    }
+                } catch (e) {}
+            };
+        }
+    }
+    function wtaAuthCall(op, extra) {
+        return new Promise(function(resolve) {
+            var gate = window.__WTA_EXT_AUTH__;
+            if (!gate || typeof WtaExtAuth === 'undefined' || !WtaExtAuth || typeof WtaExtAuth.postMessage !== 'function') {
+                resolve(null);
+                return;
+            }
+            var id = ++gate.seq;
+            var timer = setTimeout(function() {
+                if (gate.wait[id]) {
+                    delete gate.wait[id];
+                    resolve(null);
+                }
+            }, 30000);
+            gate.wait[id] = function(msg) {
+                clearTimeout(timer);
+                resolve(msg);
+            };
+            try {
+                var payload = extra || {};
+                payload.id = id;
+                payload.op = op;
+                WtaExtAuth.postMessage(JSON.stringify(payload));
+            } catch (e) {
+                clearTimeout(timer);
+                delete gate.wait[id];
+                resolve(null);
+            }
+        });
+    }
     var _popupPathOverride = null;
     try { MANIFEST = JSON.parse('$safeManifest'); } catch(e) { MANIFEST = {}; }
 
@@ -808,39 +853,46 @@ object ChromeExtensionPolyfill {
                     url = 'https://' + domain.replace(/^\./, '') + '/';
                 }
 
-                var result = [];
-                try {
-                    if (typeof WtaExtBridge !== 'undefined' && typeof WtaExtBridge.getCookies === 'function') {
-                        var cookieStr = WtaExtBridge.getCookies(url);
-                        if (cookieStr) {
-                            cookieStr.split(';').forEach(function(pair) {
-                                pair = pair.trim();
-                                var eqIdx = pair.indexOf('=');
-                                if (eqIdx > 0) {
-                                    var name = pair.substring(0, eqIdx).trim();
-                                    var value = pair.substring(eqIdx + 1);
-                                    if (details && details.name && details.name !== name) return;
-                                    result.push({
-                                        name: name,
-                                        value: value,
-                                        domain: domain || (function(){ try { return new URL(url).hostname; } catch(e) { return ''; } })(),
-                                        path: '/',
-                                        secure: url.indexOf('https') === 0,
-                                        httpOnly: false,
-                                        sameSite: 'unspecified',
-                                        storeId: '0'
-                                    });
-                                }
+                function parseCookieStr(cookieStr) {
+                    var parsed = [];
+                    if (!cookieStr) return parsed;
+                    cookieStr.split(';').forEach(function(pair) {
+                        pair = pair.trim();
+                        var eqIdx = pair.indexOf('=');
+                        if (eqIdx > 0) {
+                            var name = pair.substring(0, eqIdx).trim();
+                            var value = pair.substring(eqIdx + 1);
+                            if (details && details.name && details.name !== name) return;
+                            parsed.push({
+                                name: name,
+                                value: value,
+                                domain: domain || (function(){ try { return new URL(url).hostname; } catch(e) { return ''; } })(),
+                                path: '/',
+                                secure: url.indexOf('https') === 0,
+                                httpOnly: false,
+                                sameSite: 'unspecified',
+                                storeId: '0'
                             });
                         }
-                    }
-                } catch(e) {
-                    console.error('[ChromePolyfill] cookies.getAll error:', e);
+                    });
+                    return parsed;
                 }
-
-                chrome.runtime.lastError = null;
-                if (typeof callback === 'function') callback(result);
-                return Promise.resolve(result);
+                function finish(cookieStr) {
+                    var result = [];
+                    try { result = parseCookieStr(cookieStr); }
+                    catch (e) { console.error('[ChromePolyfill] cookies.getAll error:', e); }
+                    chrome.runtime.lastError = null;
+                    if (typeof callback === 'function') callback(result);
+                    return result;
+                }
+                if (IS_BACKGROUND && typeof WtaExtBridge !== 'undefined' && typeof WtaExtBridge.getCookies === 'function') {
+                    var syncCookies = '';
+                    try { syncCookies = WtaExtBridge.getCookies(url) || ''; } catch (e) {}
+                    return Promise.resolve(finish(syncCookies));
+                }
+                return wtaAuthCall('getCookies', { url: url }).then(function(msg) {
+                    return finish(msg && msg.ok ? (msg.result || '') : '');
+                });
             },
 
             get: function(details, callback) {
@@ -852,36 +904,41 @@ object ChromeExtensionPolyfill {
             },
 
             set: function(details, callback) {
-                try {
-                    if (typeof WtaExtBridge !== 'undefined' && typeof WtaExtBridge.setCookieValue === 'function') {
-                        var url = details.url || 'https://' + (details.domain || '').replace(/^\./, '') + '/';
-                        var cookieStr = details.name + '=' + details.value;
-                        if (details.path) cookieStr += '; path=' + details.path;
-                        if (details.domain) cookieStr += '; domain=' + details.domain;
-                        if (details.secure) cookieStr += '; secure';
-                        if (details.httpOnly) cookieStr += '; httponly';
-                        if (details.expirationDate) {
-                            cookieStr += '; expires=' + new Date(details.expirationDate * 1000).toUTCString();
-                        }
-                        WtaExtBridge.setCookieValue(url, cookieStr);
-                    }
-                } catch(e) {
-                    console.error('[ChromePolyfill] cookies.set error:', e);
+                var url = details.url || 'https://' + (details.domain || '').replace(/^\./, '') + '/';
+                var cookieStr = details.name + '=' + details.value;
+                if (details.path) cookieStr += '; path=' + details.path;
+                if (details.domain) cookieStr += '; domain=' + details.domain;
+                if (details.secure) cookieStr += '; secure';
+                if (details.httpOnly) cookieStr += '; httponly';
+                if (details.expirationDate) {
+                    cookieStr += '; expires=' + new Date(details.expirationDate * 1000).toUTCString();
                 }
-                var cookie = { name: details.name, value: details.value, domain: details.domain || '' };
-                if (typeof callback === 'function') callback(cookie);
-                return Promise.resolve(cookie);
+                function finish() {
+                    var cookie = { name: details.name, value: details.value, domain: details.domain || '' };
+                    if (typeof callback === 'function') callback(cookie);
+                    return cookie;
+                }
+                if (IS_BACKGROUND && typeof WtaExtBridge !== 'undefined' && typeof WtaExtBridge.setCookieValue === 'function') {
+                    try { WtaExtBridge.setCookieValue(url, cookieStr); }
+                    catch (e) { console.error('[ChromePolyfill] cookies.set error:', e); }
+                    return Promise.resolve(finish());
+                }
+                return wtaAuthCall('setCookie', { url: url, cookie: cookieStr }).then(function() { return finish(); });
             },
 
             remove: function(details, callback) {
-                try {
-                    if (typeof WtaExtBridge !== 'undefined' && typeof WtaExtBridge.setCookieValue === 'function') {
-                        var url = details.url || 'https://' + (details.domain || '').replace(/^\./, '') + '/';
-                        WtaExtBridge.setCookieValue(url, details.name + '=; expires=Thu, 01 Jan 1970 00:00:00 GMT');
-                    }
-                } catch(e) { console.warn('[ChromePolyfill] cookies.remove error:', e); }
-                if (typeof callback === 'function') callback(details);
-                return Promise.resolve(details);
+                var url = details.url || 'https://' + (details.domain || '').replace(/^\./, '') + '/';
+                var cookieStr = details.name + '=; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+                function finish() {
+                    if (typeof callback === 'function') callback(details);
+                    return details;
+                }
+                if (IS_BACKGROUND && typeof WtaExtBridge !== 'undefined' && typeof WtaExtBridge.setCookieValue === 'function') {
+                    try { WtaExtBridge.setCookieValue(url, cookieStr); }
+                    catch (e) { console.warn('[ChromePolyfill] cookies.remove error:', e); }
+                    return Promise.resolve(finish());
+                }
+                return wtaAuthCall('setCookie', { url: url, cookie: cookieStr }).then(function() { return finish(); });
             },
 
             getAllCookieStores: function(callback) {

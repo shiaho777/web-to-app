@@ -73,10 +73,11 @@ android {
 
     defaultConfig {
         applicationId = "com.webtoapp"
-        minSdk = 23
+        // Play automatic protection rejects a bundle below 24. Both flavors share this floor.
+        minSdk = 24
 
         targetSdk = 36
-        versionCode = 79
+        versionCode = 80
         versionName = "2.8.1"
         buildConfigField("boolean", "SHELL_RUNTIME_ONLY", "false")
         buildConfigField("boolean", "FDROID", isFdroidBuild.toString())
@@ -105,14 +106,10 @@ android {
     productFlavors {
         create("standard") {
             // Sideloaded variant (GitHub releases, keeps `com.webtoapp` for the existing
-            // update path). Identical to gplay in every way except the applicationId —
-            // both inherit targetSdk 36 from defaultConfig and run the same code paths
-            // (runtime capability gates key off the installed targetSdk, not the channel).
+            // update path). Same minSdk, targetSdk, and code as gplay.
         }
         create("gplay") {
-            // Google Play variant. Only Play's applicationId requirement differs
-            // (`com.webtoapp` is registered on Google Play by another party); behavior,
-            // targetSdk and every build rule are shared with the standard flavor.
+            // Google Play variant. `com.webtoapp` is registered on Play by another party.
             applicationId = "shiaho.webtoapp"
         }
     }

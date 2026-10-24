@@ -62,4 +62,67 @@ class ChromeHostPermissionsTest {
         assertThat(ChromeHostPermissions.declaredPatterns("not json")).isEmpty()
         assertThat(ChromeHostPermissions.declaredPatterns("{}")).isEmpty()
     }
+
+    @Test
+    fun `explicit port does not match another port or an omitted-port pattern`() {
+        assertThat(ChromeHostPermissions.matches("http://127.0.0.1:18080/*", "http://127.0.0.1:18080/private")).isTrue()
+        assertThat(ChromeHostPermissions.matches("http://127.0.0.1:18080/*", "http://127.0.0.1:18081/attacker.html")).isFalse()
+        assertThat(ChromeHostPermissions.matches("http://127.0.0.1/*", "http://127.0.0.1:18080/private")).isFalse()
+        assertThat(ChromeHostPermissions.matches("https://example.com/*", "https://example.com:8443/")).isFalse()
+        assertThat(ChromeHostPermissions.matches("https://example.com:*/*", "https://example.com:8443/")).isTrue()
+    }
+
+    @Test
+    fun `caller must match the same extension that grants the target`() {
+        val cookies = ChromeHostPermissions.ExtensionAuth(
+            id = "cookies-ext",
+            hostPatterns = listOf("http://127.0.0.1:18080/*"),
+            contentScripts = listOf(
+                ChromeHostPermissions.ContentScriptRule(listOf("http://127.0.0.1:18080/*"))
+            ),
+        )
+        val other = ChromeHostPermissions.ExtensionAuth(
+            id = "other-ext",
+            hostPatterns = listOf("https://bank.example/*"),
+            contentScripts = listOf(
+                ChromeHostPermissions.ContentScriptRule(listOf("https://news.example/*"))
+            ),
+        )
+        val caller = "http://127.0.0.1:18080"
+        val target = "http://127.0.0.1:18080/private"
+        assertThat(ChromeHostPermissions.authorizes(cookies, caller, target)).isTrue()
+        assertThat(ChromeHostPermissions.authorizes(cookies, "http://127.0.0.1:18081", target)).isFalse()
+        assertThat(ChromeHostPermissions.anyAuthorized(listOf(cookies, other), "http://127.0.0.1:18081", target)).isFalse()
+        assertThat(ChromeHostPermissions.anyAuthorized(listOf(cookies, other), caller, "https://bank.example/account")).isFalse()
+    }
+
+    @Test
+    fun `exclude matches and a foreign extension origin do not grant`() {
+        val auth = ChromeHostPermissions.ExtensionAuth(
+            id = "ext-a",
+            hostPatterns = listOf("https://example.com/*"),
+            contentScripts = listOf(
+                ChromeHostPermissions.ContentScriptRule(
+                    matches = listOf("https://example.com/*"),
+                    excludeMatches = listOf("https://example.com/admin/*"),
+                )
+            ),
+        )
+        assertThat(ChromeHostPermissions.authorizes(auth, "https://example.com/app", "https://example.com/private")).isTrue()
+        assertThat(ChromeHostPermissions.authorizes(auth, "https://example.com/admin/home", "https://example.com/private")).isFalse()
+        assertThat(
+            ChromeHostPermissions.authorizes(auth, "chrome-extension://ext-b/popup.html", "https://example.com/private")
+        ).isFalse()
+        assertThat(
+            ChromeHostPermissions.authorizes(auth, "chrome-extension://ext-a/popup.html", "https://example.com/private")
+        ).isTrue()
+    }
+
+    @Test
+    fun `redirect location resolves against the current url and rejects a blank location`() {
+        assertThat(ChromeHostPermissions.resolveRedirect("https://example.com/a", "/b")).isEqualTo("https://example.com/b")
+        assertThat(ChromeHostPermissions.resolveRedirect("https://example.com/a", "https://other.example/c"))
+            .isEqualTo("https://other.example/c")
+        assertThat(ChromeHostPermissions.resolveRedirect("https://example.com/a", "  ")).isNull()
+    }
 }

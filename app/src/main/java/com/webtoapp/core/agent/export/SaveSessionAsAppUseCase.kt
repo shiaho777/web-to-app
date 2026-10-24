@@ -211,7 +211,9 @@ class SaveSessionAsAppUseCase(
                 entryFile = entry,
                 serverType = "builtin",
                 serverPort = port,
-                hasPipDeps = File(projectDir, "requirements.txt").exists()
+                hasPipDeps = com.webtoapp.core.python.PythonDependencyManager.hasInstallableRequirements(
+                    File(projectDir, "requirements.txt")
+                )
             ),
             themeType = DEFAULT_THEME
         )

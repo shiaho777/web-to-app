@@ -6696,6 +6696,19 @@ object StringsA {
         AppLanguage.KOREAN -> "기본 포트"
     }
 
+    val portRangeHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "请输入 1024 到 65535 之间的端口"
+        AppLanguage.ENGLISH -> "Enter a port from 1024 to 65535"
+        AppLanguage.ARABIC -> "أدخل منفذًا من 1024 إلى 65535"
+        AppLanguage.PORTUGUESE -> "Digite uma porta de 1024 a 65535"
+        AppLanguage.SPANISH -> "Introduce un puerto del 1024 al 65535"
+        AppLanguage.FRENCH -> "Saisissez un port de 1024 à 65535"
+        AppLanguage.GERMAN -> "Geben Sie einen Port von 1024 bis 65535 ein"
+        AppLanguage.RUSSIAN -> "Введите порт от 1024 до 65535"
+        AppLanguage.JAPANESE -> "1024 から 65535 のポートを入力"
+        AppLanguage.KOREAN -> "1024에서 65535 사이의 포트를 입력"
+    }
+
     val orientationModeLabel: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "屏幕方向"
         AppLanguage.ENGLISH -> "Screen Orientation"

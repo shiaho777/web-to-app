@@ -153,6 +153,25 @@ class PythonDependencyManagerTest {
     }
 
     @Test
+    fun `requirements with only comments or pip options are not an install`() {
+        assertThat(PythonDependencyManager.hasInstallableRequirements("")).isFalse()
+        assertThat(PythonDependencyManager.hasInstallableRequirements("# comment only\n\n")).isFalse()
+        assertThat(PythonDependencyManager.hasInstallableRequirements("--index-url https://pypi.org/simple\n")).isFalse()
+        assertThat(PythonDependencyManager.hasInstallableRequirements("-c constraints.txt\n")).isFalse()
+    }
+
+    @Test
+    fun `a package line an include or an editable counts as an install`() {
+        assertThat(PythonDependencyManager.hasInstallableRequirements("django==5.0\n")).isTrue()
+        assertThat(PythonDependencyManager.hasInstallableRequirements("# note\nrequests\n")).isTrue()
+        assertThat(PythonDependencyManager.hasInstallableRequirements("-r other.txt\n")).isTrue()
+        assertThat(PythonDependencyManager.hasInstallableRequirements("-e .\n")).isTrue()
+        assertThat(
+            PythonDependencyManager.hasInstallableRequirements("pkg @ https://example.com/pkg.tar.gz#egg=pkg\n")
+        ).isTrue()
+    }
+
+    @Test
     fun `findNoWheelPackage extracts the package from pip missing-distribution output`() {
         assertThat(PythonDependencyManager.findNoWheelPackage(
             "Collecting MarkupSafe==3.0.2 (from -r requirements.txt)\n" +

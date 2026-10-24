@@ -282,6 +282,38 @@ object PythonDependencyManager {
             .any { it.isFile }
     }
 
+    /**
+     * True when [requirementsFile] names at least one package to install.
+     * A file that is empty, comments, or only pip options (index URL, constraints)
+     * is still a project file, but it is not a dependency install.
+     */
+    fun hasInstallableRequirements(requirementsFile: File): Boolean {
+        if (!requirementsFile.isFile || !requirementsFile.canRead()) return false
+        return hasInstallableRequirements(requirementsFile.readText())
+    }
+
+    internal fun hasInstallableRequirements(requirementsText: String): Boolean {
+        return requirementsText.lineSequence()
+            .map { stripRequirementComment(it) }
+            .any { isInstallableRequirement(it) }
+    }
+
+    private fun stripRequirementComment(line: String): String {
+        val trimmed = line.trim()
+        if (trimmed.startsWith("#")) return ""
+        val comment = trimmed.indexOf(" #")
+        return if (comment >= 0) trimmed.substring(0, comment).trim() else trimmed
+    }
+
+    /** Package, URL, editable, or `-r` include. Global pip options are not packages. */
+    private fun isInstallableRequirement(line: String): Boolean {
+        if (line.isEmpty()) return false
+        val token = line.substringBefore('=').substringBefore(' ').trim()
+        return token == "-r" || token == "--requirement" ||
+            token == "-e" || token == "--editable" ||
+            !token.startsWith("-")
+    }
+
     suspend fun downloadPythonRuntime(context: Context): Boolean = withContext(Dispatchers.IO) {
         coroutineScope {
             // Bridge engine progress into _downloadState for the whole call —
@@ -363,8 +395,8 @@ object PythonDependencyManager {
         }
 
         val reqFile = File(projectDir, "requirements.txt")
-        if (!reqFile.exists()) {
-            AppLogger.i(TAG, "No requirements.txt, skipping dependency install")
+        if (!hasInstallableRequirements(reqFile)) {
+            AppLogger.i(TAG, "No installable Python requirements, skipping pip")
             return@withContext true
         }
 

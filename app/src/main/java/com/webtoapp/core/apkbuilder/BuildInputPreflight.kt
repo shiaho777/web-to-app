@@ -417,7 +417,7 @@ object BuildInputPreflight {
     private fun File?.requiresPythonDependencyPrebundle(): Boolean {
         if (this == null || !exists() || !isDirectory) return false
         val requirements = File(this, "requirements.txt")
-        if (!requirements.exists() || !requirements.isFile || !requirements.canRead()) return false
+        if (!com.webtoapp.core.python.PythonDependencyManager.hasInstallableRequirements(requirements)) return false
         return !com.webtoapp.core.python.PythonDependencyManager.hasInstalledPackages(File(this, ".pypackages"))
     }
 

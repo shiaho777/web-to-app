@@ -359,7 +359,11 @@ fun CreatePythonAppScreen(
                                 portConflictMode = portConflictMode,
                                 envVars = envVars,
                                 requirementsFile = if (localProjectDir?.let { File(it, "requirements.txt").exists() } == true) "requirements.txt" else "",
-                                hasPipDeps = localProjectDir?.let { File(it, "requirements.txt").exists() } ?: false,
+                                hasPipDeps = localProjectDir?.let {
+                                    com.webtoapp.core.python.PythonDependencyManager.hasInstallableRequirements(
+                                        File(it, "requirements.txt")
+                                    )
+                                } ?: false,
                                 customPythonExtensions = customPythonExtensions
                             ),
                             appIcon,
@@ -548,7 +552,7 @@ fun CreatePythonAppScreen(
                     )
                 }
 
-                if (localProjectDir != null && File(localProjectDir!!, "requirements.txt").exists()) {
+                if (localProjectDir != null && com.webtoapp.core.python.PythonDependencyManager.hasInstallableRequirements(File(localProjectDir!!, "requirements.txt"))) {
                     InstallProjectDepsCard(
                         kind = DepsKind.PYTHON,
                         projectDir = localProjectDir,

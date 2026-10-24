@@ -31,4 +31,13 @@ class ChromeExtensionPolyfillTest {
 
         assertThat(polyfill).contains("'id\\'with\\'quotes'")
     }
+
+    @Test
+    fun `content polyfill reads cookies through the origin-checked channel`() {
+        val content = ChromeExtensionPolyfill.generatePolyfill("ext", "{}", isBackground = false)
+        assertThat(content).contains("wtaAuthCall('getCookies'")
+        assertThat(content).contains("wtaAuthCall('setCookie'")
+        val background = ChromeExtensionPolyfill.generatePolyfill("ext", "{}", isBackground = true)
+        assertThat(background).contains("WtaExtBridge.getCookies(url)")
+    }
 }
