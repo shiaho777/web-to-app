@@ -2184,16 +2184,16 @@ object StringsD {
     }
 
     val webAppSeparateTasksDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "开启后，首页预览与桌面快捷方式会为每个 WebApp 单独占用最近任务，可同时打开多个；更占内存。默认关闭。"
-        AppLanguage.ENGLISH -> "When on, home preview and desktop shortcuts open each WebApp in its own recents task so multiple can run at once. Uses more memory. Off by default."
-        AppLanguage.ARABIC -> "عند التفعيل، يفتح كل WebApp مهمة منفصلة من الصفحة الرئيسية أو الاختصار. يستهلك ذاكرة أكثر. متوقف افتراضياً."
-        AppLanguage.PORTUGUESE -> "Quando ativo, prévia e atalhos abrem cada WebApp em uma tarefa própria. Usa mais memória. Desligado por padrão."
-        AppLanguage.SPANISH -> "Si está activo, la vista previa y los accesos abren cada WebApp en una tarea propia. Usa más memoria. Desactivado por defecto."
-        AppLanguage.FRENCH -> "Une fois activé, l'aperçu et les raccourcis ouvrent chaque WebApp dans une tâche distincte. Plus de mémoire. Désactivé par défaut."
-        AppLanguage.GERMAN -> "Wenn aktiv, öffnen Vorschau und Verknüpfungen jedes WebApp in einer eigenen Aufgabe. Mehr Speicher. Standard: aus."
-        AppLanguage.RUSSIAN -> "При включении превью и ярлыки открывают каждый WebApp в отдельной задаче. Больше памяти. По умолчанию выкл."
-        AppLanguage.JAPANESE -> "オンにすると、ホームのプレビューとショートカットが各WebAppを別タスクで開き、複数同時利用できます。メモリ使用量が増えます。初期値はオフ。"
-        AppLanguage.KOREAN -> "켜면 홈 미리보기와 바로가기가 각 WebApp을 별도 최근 작업으로 열어 동시에 사용할 수 있습니다. 메모리를 더 씁니다. 기본값은 끔."
+        AppLanguage.CHINESE -> "开启后，首页预览会为每个 WebApp 单独占用最近任务，可同时打开多个；更占内存。默认关闭。桌面快捷方式始终单独占用一个任务，返回时回到桌面。"
+        AppLanguage.ENGLISH -> "When on, home preview opens each WebApp in its own recents task so several can run at once. Uses more memory. Off by default. Desktop shortcuts always open in their own task, so Back returns to the launcher."
+        AppLanguage.ARABIC -> "عند التفعيل، تفتح معاينة الصفحة الرئيسية كل WebApp في مهمة منفصلة. يستهلك ذاكرة أكثر. متوقف افتراضياً. اختصارات الشاشة الرئيسية تفتح دائماً في مهمة مستقلة، والرجوع يعود إلى المشغّل."
+        AppLanguage.PORTUGUESE -> "Quando ativo, a prévia inicial abre cada WebApp em uma tarefa própria. Usa mais memória. Desligado por padrão. Atalhos da área de trabalho sempre abrem em uma tarefa própria, e Voltar retorna ao launcher."
+        AppLanguage.SPANISH -> "Si está activo, la vista previa abre cada WebApp en una tarea propia. Usa más memoria. Desactivado por defecto. Los accesos directos siempre abren en una tarea propia, y Atrás vuelve al lanzador."
+        AppLanguage.FRENCH -> "Une fois activé, l'aperçu d'accueil ouvre chaque WebApp dans une tâche distincte. Plus de mémoire. Désactivé par défaut. Les raccourcis ouvrent toujours dans une tâche propre, et Retour ramène au lanceur."
+        AppLanguage.GERMAN -> "Wenn aktiv, öffnet die Startvorschau jedes WebApp in einer eigenen Aufgabe. Mehr Speicher. Standard: aus. Desktop-Verknüpfungen öffnen immer in einer eigenen Aufgabe, Zurück kehrt zum Launcher zurück."
+        AppLanguage.RUSSIAN -> "При включении превью с главного экрана открывает каждый WebApp в отдельной задаче. Больше памяти. По умолчанию выкл. Ярлыки всегда открываются в отдельной задаче, «Назад» возвращает на рабочий стол."
+        AppLanguage.JAPANESE -> "オンにすると、ホームのプレビューが各WebAppを別タスクで開きます。メモリ使用量が増えます。初期値はオフ。デスクトップのショートカットは常に別タスクで開き、戻るとランチャーに戻ります。"
+        AppLanguage.KOREAN -> "켜면 홈 미리보기가 각 WebApp을 별도 최근 작업으로 엽니다. 메모리를 더 씁니다. 기본값은 끔. 바탕화면 바로가기는 항상 별도 작업으로 열리며, 뒤로 가면 런처로 돌아갑니다."
     }
 
     val localMcp: String get() = when (Strings.lang) {

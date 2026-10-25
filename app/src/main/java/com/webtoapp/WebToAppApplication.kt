@@ -88,6 +88,10 @@ class WebToAppApplication : Application(), ImageLoaderFactory {
             return
         }
 
+        // Before any activity. Shortcut cold starts never compose the main
+        // screen, which is the only other place that publishes Strings.lang.
+        com.webtoapp.core.i18n.HostLanguage.applyBlocking(this)
+
         if (GlobalContext.getOrNull() == null) {
             startKoin {
                 androidLogger(Level.ERROR)

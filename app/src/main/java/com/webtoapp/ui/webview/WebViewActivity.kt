@@ -126,6 +126,9 @@ open class WebViewActivity : AppCompatActivity() {
         private const val EXTRA_TEST_MODULE_IDS = "test_module_ids"
         private const val EXTRA_PREVIEW_APP_JSON = "preview_app_json"
 
+        /** Set only on desktop-shortcut launches. The separate-tasks switch must not close them. */
+        internal const val EXTRA_SHORTCUT_TASK = "shortcut_task"
+
         fun start(context: Context, appId: Long) {
             HostPreviewMotion.launch(
                 context,
@@ -204,6 +207,43 @@ open class WebViewActivity : AppCompatActivity() {
                     addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
                 }
             }
+        }
+
+        /**
+         * Desktop shortcuts always open a document task, ignoring the About
+         * "separate tasks" switch. That switch still controls in-app preview.
+         * A shortcut that shares [WebViewActivity]'s affinity lands on top of
+         * the builder, so Back reveals it (#1391).
+         */
+        fun buildShortcutLaunchIntent(context: Context, appId: Long): Intent {
+            return buildLaunchIntent(
+                context = context,
+                separateTasks = true,
+                documentUri = Uri.parse("webtoapp://webapp/$appId")
+            ) {
+                putExtra(EXTRA_APP_ID, appId)
+                putExtra(EXTRA_SHORTCUT_TASK, true)
+            }.apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+        }
+
+        /**
+         * An external launch (shortcut, autostart) carries [Intent.FLAG_ACTIVITY_NEW_TASK]
+         * and [EXTRA_APP_ID]. In-app preview does not set that flag. When the
+         * builder task already exists, the system still stacks the singleTask
+         * activity on it; the caller should re-launch the document task and
+         * leave.
+         */
+        internal fun shouldDetachExternalLaunch(
+            isDocumentActivity: Boolean,
+            isTaskRoot: Boolean,
+            intent: Intent,
+        ): Boolean {
+            if (isDocumentActivity || isTaskRoot) return false
+            if (intent.flags and Intent.FLAG_ACTIVITY_NEW_TASK == 0) return false
+            if (intent.hasExtra(EXTRA_PREVIEW_APP_JSON)) return false
+            return intent.getLongExtra(EXTRA_APP_ID, -1L) > 0L
         }
     }
 
@@ -939,6 +979,7 @@ open class WebViewActivity : AppCompatActivity() {
         }
 
         super.onCreate(savedInstanceState)
+        if (detachExternalLaunchIfStacked(intent)) return
         com.webtoapp.core.webview.DirectoryPickerRegistry.install(directoryPickerHost)
         HostPreviewMotion.install(this)
 
@@ -1345,6 +1386,38 @@ open class WebViewActivity : AppCompatActivity() {
         }
     }
 
+    private var externalDetachScheduled = false
+
+    /**
+     * Old pinned shortcuts still target the shared singleTask activity. Open a
+     * document task, then send the builder task to the back, so Back returns
+     * to the launcher.
+     *
+     * Posted until the decor is attached: [moveTaskToBack] during [onCreate]
+     * returns false, and moving the task to the back before [startActivity]
+     * makes Android 12+ treat the relaunch as a background start and drop it.
+     * Starting first keeps the privilege of the resumed activity; the move
+     * then places the builder behind the launcher, under the new document.
+     */
+    private fun detachExternalLaunchIfStacked(source: Intent): Boolean {
+        if (!shouldDetachExternalLaunch(this is WebViewDocumentActivity, isTaskRoot, source)) {
+            return false
+        }
+        if (externalDetachScheduled) return true
+        externalDetachScheduled = true
+        val appId = source.getLongExtra(EXTRA_APP_ID, -1L)
+        window.decorView.post {
+            if (isFinishing || appId <= 0L) {
+                finish()
+                return@post
+            }
+            startActivity(buildShortcutLaunchIntent(this, appId))
+            moveTaskToBack(true)
+            finish()
+        }
+        return true
+    }
+
     private fun applySeparateTaskDescription(label: String) {
         if (this !is WebViewDocumentActivity) return
         try {
@@ -1366,6 +1439,7 @@ open class WebViewActivity : AppCompatActivity() {
         val previousKey = getIntent()?.let { PreviewSessions.sessionKey(it) }
         super.onNewIntent(intent)
         setIntent(intent)
+        if (detachExternalLaunchIfStacked(intent)) return
         HostPreviewMotion.install(this)
         // Same preview document brought forward. Recreating here would wipe the
         // page the agent is in the middle of operating.

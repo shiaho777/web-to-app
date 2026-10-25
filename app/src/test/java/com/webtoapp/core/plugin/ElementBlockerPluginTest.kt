@@ -54,6 +54,18 @@ class ElementBlockerPluginTest {
     }
 
     @Test
+    fun `select button keeps a dark fill and a light outline`() {
+        // Dark theme sets --wta-accent to a near-white primary. A button that
+        // paints that accent with white text disappears (#1391).
+        val html = File(assetRoot(), "builtin-element-blocker/plugin.html").readText()
+        val rule = html.substringAfter(".wta-blocker-select-btn{").substringBefore("}")
+        assertThat(rule).contains("background:#111827")
+        assertThat(rule).contains("color:#fff")
+        assertThat(rule).contains("border:1px solid rgba(255,255,255,.85)")
+        assertThat(rule).doesNotContain("var(--wta-accent")
+    }
+
+    @Test
     fun `plugin script is idempotent across re-injection`() {
         // updatePluginPayloads re-runs every injection phase when the store
         // resolves late; without a guard the picker would double-register.

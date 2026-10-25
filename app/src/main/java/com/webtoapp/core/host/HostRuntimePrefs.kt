@@ -34,7 +34,8 @@ data class McpSettings(
  * Host-only runtime switches. Not shell-synced: generated APKs never read this.
  *
  * [KEY_SEPARATE_TASKS] is the About-screen "WebApp 独立任务" toggle. When on,
- * home preview and desktop shortcuts open each WebApp as its own recents task.
+ * home preview opens each WebApp as its own recents task. Desktop shortcuts
+ * always do, so Back returns to the launcher (#1391).
  *
  * [KEY_MCP_ENABLED] is the About-screen local MCP switch. The token and port
  * travel with it so an external agent can be pointed at 127.0.0.1.

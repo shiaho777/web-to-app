@@ -331,7 +331,12 @@ val syncShellRuntimeSources by tasks.registering(Sync::class) {
         // Strings.kt / StringsA-E.kt carry the full 10-language editor surface
         // (~4.3 MB source, mostly editor-only text). Shell gets reduced copies
         // emitted by generateShellStrings below (referenced members only).
-        "**/core/i18n/Strings*.kt"
+        "**/core/i18n/Strings*.kt",
+
+        // Host DataStore language. Generated APKs publish Strings.lang from the
+        // baked shell config. Syncing this would let a shortcut cold start
+        // overwrite that with the builder's saved language (#1391).
+        "**/core/i18n/HostLanguage.kt"
     )
 
     into(layout.buildDirectory.dir("generated/shellRuntimeSrc"))
