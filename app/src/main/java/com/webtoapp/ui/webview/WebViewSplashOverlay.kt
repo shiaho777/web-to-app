@@ -176,41 +176,48 @@ fun SplashOverlay(
         } else {
             countdown
         }
-
-        Surface(
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .statusBarsPadding()
-                .padding(16.dp),
-            shape = MaterialTheme.shapes.small,
-            color = Color.Black.copy(alpha = 0.6f)
+        val showNumber = splashConfig.showCountdown && displayTime > 0
+        val showSkip = onSkip != null
+        if (com.webtoapp.ui.shared.splashCornerChipVisible(
+                splashConfig.showCountdown,
+                displayTime,
+                showSkip,
+            )
         ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                verticalAlignment = Alignment.CenterVertically
+            Surface(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .statusBarsPadding()
+                    .padding(16.dp),
+                shape = MaterialTheme.shapes.small,
+                color = Color.Black.copy(alpha = 0.6f)
             ) {
-                val showNumber = splashConfig.showCountdown && displayTime > 0
-                if (showNumber) {
-                    Text(
-                        text = "${displayTime}s",
-                        color = Color.White,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-                if (onSkip != null) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     if (showNumber) {
-                        Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "|",
-                            color = Color.White.copy(alpha = 0.5f)
+                            text = "${displayTime}s",
+                            color = Color.White,
+                            style = MaterialTheme.typography.bodyMedium
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
                     }
-                    Text(
-                        text = Strings.skip,
-                        color = Color.White,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
+                    if (showSkip) {
+                        if (showNumber) {
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "|",
+                                color = Color.White.copy(alpha = 0.5f)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                        }
+                        Text(
+                            text = Strings.skip,
+                            color = Color.White,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
                 }
             }
         }
