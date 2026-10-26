@@ -7,6 +7,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -42,6 +43,7 @@ import androidx.compose.ui.zIndex
 import android.webkit.WebView
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.logging.AppLogger
+import com.webtoapp.core.webview.multiWebSiteMatchesQuery
 import com.webtoapp.core.shell.EmbeddedShellPlugin
 import com.webtoapp.core.shell.MultiWebShellConfig
 import com.webtoapp.core.shell.MultiWebSiteShellConfig
@@ -1343,6 +1345,34 @@ private fun DrawerMode(
         MULTI_WEB_DEFAULT_DRAWER_COLUMNS,
         MULTI_WEB_MAX_DRAWER_COLUMNS
     )
+    var savedIds by remember { mutableStateOf(resumeStore.savedSiteIds(resumeKey)) }
+    var searchOpen by rememberSaveable { mutableStateOf(false) }
+    var searchQuery by rememberSaveable { mutableStateOf("") }
+    val knownSiteIds = remember(sites) { sites.map { it.id }.toSet() }
+    LaunchedEffect(knownSiteIds) {
+        val pruned = savedIds.filter { it in knownSiteIds }.toSet()
+        if (pruned != savedIds) {
+            savedIds = pruned
+            resumeStore.persistSavedSiteIds(resumeKey, pruned)
+        }
+    }
+    fun toggleSaved(siteId: String) {
+        val next = savedIds.toMutableSet()
+        if (!next.add(siteId)) next.remove(siteId)
+        savedIds = next
+        resumeStore.persistSavedSiteIds(resumeKey, next)
+    }
+    fun siteVisible(site: MultiWebSiteShellConfig): Boolean {
+        val domain = extractDomain(site.url)
+        return multiWebSiteMatchesQuery(
+            name = site.name.ifBlank { domain },
+            url = site.url,
+            domain = domain,
+            query = searchQuery
+        )
+    }
+    val visibleSites = sites.filter(::siteVisible)
+    val savedSites = visibleSites.filter { it.id in savedIds }
 
     LaunchedEffect(drawerVisible) {
         if (drawerVisible) scope.launch { drawerState.open() } else scope.launch { drawerState.close() }
@@ -1362,48 +1392,92 @@ private fun DrawerMode(
                 windowInsets = DrawerDefaults.windowInsets.exclude(WindowInsets.ime)
             ) {
                 Column(
-                    modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.primaryContainer).padding(24.dp)
+                    modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.primaryContainer).padding(start = 24.dp, top = 24.dp, end = 12.dp, bottom = 16.dp)
                 ) {
-                    Text(
-                        Strings.multiWebSiteList,
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                    Text(
-                        Strings.multiWebSiteCount.replace("%d", sites.size.toString()),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                Strings.multiWebSiteList,
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                            Text(
+                                Strings.multiWebSiteCount.replace("%d", visibleSites.size.toString()),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                            )
+                        }
+                        IconButton(onClick = {
+                            searchOpen = !searchOpen
+                            if (!searchOpen) searchQuery = ""
+                        }) {
+                            Icon(
+                                if (searchOpen) Icons.Filled.Close else Icons.Outlined.Search,
+                                contentDescription = Strings.multiWebSearchSites,
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+                    }
+                    if (searchOpen) {
+                        OutlinedTextField(
+                            value = searchQuery,
+                            onValueChange = { searchQuery = it },
+                            modifier = Modifier.fillMaxWidth().padding(top = 8.dp, end = 12.dp),
+                            singleLine = true,
+                            placeholder = { Text(Strings.multiWebSearchSites) },
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                unfocusedTextColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                focusedBorderColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                unfocusedBorderColor = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.5f),
+                                cursorColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                focusedPlaceholderColor = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.6f),
+                                unfocusedPlaceholderColor = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.6f)
+                            )
+                        )
+                    }
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(vertical = 8.dp)) {
-                    if (drawerColumns <= 1) {
-                        items(sites) { site ->
-                            val isSelected = selectedSiteId == site.id
-                            DrawerSiteItem(site = site, isSelected = isSelected, onClick = { selectedSiteId = site.id; drawerVisible = false })
+                    if (searchQuery.isNotBlank() && visibleSites.isEmpty()) {
+                        item(key = "search-empty") {
+                            Text(
+                                Strings.multiWebSearchEmpty,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)
+                            )
                         }
                     } else {
-                        val rows = sites.chunked(drawerColumns)
-                        items(rows) { row ->
-                            Row(
-                                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                row.forEach { site ->
-                                    val isSelected = selectedSiteId == site.id
-                                    DrawerSiteTile(
-                                        site = site,
-                                        isSelected = isSelected,
-                                        onClick = { selectedSiteId = site.id; drawerVisible = false },
-                                        modifier = Modifier.weight(1f)
-                                    )
-                                }
-                                repeat(drawerColumns - row.size) {
-                                    Spacer(modifier = Modifier.weight(1f))
-                                }
+                        if (savedSites.isNotEmpty()) {
+                            item(key = "saved-label") {
+                                Text(
+                                    Strings.multiWebSavedSites,
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
+                                )
                             }
+                            drawerSiteBlocks(
+                                sites = savedSites,
+                                columns = drawerColumns,
+                                keyPrefix = "saved",
+                                selectedSiteId = selectedSiteId,
+                                savedIds = savedIds,
+                                onOpen = { selectedSiteId = it; drawerVisible = false },
+                                onToggleSaved = ::toggleSaved
+                            )
                         }
+                        drawerSiteBlocks(
+                            sites = visibleSites,
+                            columns = drawerColumns,
+                            keyPrefix = "all",
+                            selectedSiteId = selectedSiteId,
+                            savedIds = savedIds,
+                            onOpen = { selectedSiteId = it; drawerVisible = false },
+                            onToggleSaved = ::toggleSaved
+                        )
                     }
                 }
             }
@@ -1500,8 +1574,68 @@ private fun DrawerMode(
     }
 }
 
+private fun LazyListScope.drawerSiteBlocks(
+    sites: List<MultiWebSiteShellConfig>,
+    columns: Int,
+    keyPrefix: String,
+    selectedSiteId: String?,
+    savedIds: Set<String>,
+    onOpen: (String) -> Unit,
+    onToggleSaved: (String) -> Unit
+) {
+    if (columns <= 1) {
+        items(sites, key = { "$keyPrefix-${it.id}" }) { site ->
+            DrawerSiteItem(
+                site = site,
+                isSelected = selectedSiteId == site.id,
+                saved = site.id in savedIds,
+                onClick = { onOpen(site.id) },
+                onToggleSaved = { onToggleSaved(site.id) }
+            )
+        }
+    } else {
+        items(sites.chunked(columns), key = { row -> "$keyPrefix-" + row.joinToString("-") { it.id } }) { row ->
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                row.forEach { site ->
+                    DrawerSiteTile(
+                        site = site,
+                        isSelected = selectedSiteId == site.id,
+                        saved = site.id in savedIds,
+                        onClick = { onOpen(site.id) },
+                        onToggleSaved = { onToggleSaved(site.id) },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+                repeat(columns - row.size) {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+            }
+        }
+    }
+}
+
 @Composable
-private fun DrawerSiteItem(site: MultiWebSiteShellConfig, isSelected: Boolean, onClick: () -> Unit) {
+private fun DrawerSaveButton(saved: Boolean, onToggleSaved: () -> Unit) {
+    IconButton(onClick = onToggleSaved) {
+        Icon(
+            if (saved) Icons.Filled.Star else Icons.Outlined.StarBorder,
+            contentDescription = if (saved) Strings.multiWebUnsaveSite else Strings.multiWebSaveSite,
+            tint = if (saved) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+@Composable
+private fun DrawerSiteItem(
+    site: MultiWebSiteShellConfig,
+    isSelected: Boolean,
+    saved: Boolean,
+    onClick: () -> Unit,
+    onToggleSaved: () -> Unit
+) {
     val backgroundColor by animateColorAsState(
         targetValue = if (isSelected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent,
         animationSpec = spring(stiffness = Spring.StiffnessMedium),
@@ -1532,6 +1666,7 @@ private fun DrawerSiteItem(site: MultiWebSiteShellConfig, isSelected: Boolean, o
             )
         }
         if (isSelected) Icon(Icons.Default.Check, null, tint = MaterialTheme.colorScheme.onSecondaryContainer, modifier = Modifier.size(20.dp))
+        DrawerSaveButton(saved = saved, onToggleSaved = onToggleSaved)
     }
 }
 
@@ -1539,7 +1674,9 @@ private fun DrawerSiteItem(site: MultiWebSiteShellConfig, isSelected: Boolean, o
 private fun DrawerSiteTile(
     site: MultiWebSiteShellConfig,
     isSelected: Boolean,
+    saved: Boolean,
     onClick: () -> Unit,
+    onToggleSaved: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val backgroundColor by animateColorAsState(
@@ -1571,6 +1708,7 @@ private fun DrawerSiteTile(
             maxLines = 2,
             overflow = TextOverflow.Ellipsis
         )
+        DrawerSaveButton(saved = saved, onToggleSaved = onToggleSaved)
     }
 }
 

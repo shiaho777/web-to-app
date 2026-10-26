@@ -45,6 +45,32 @@ class MultiWebResumeStoreTest {
     }
 
     @Test
+    fun `saved site ids round trip and drop blanks`() {
+        val store = newStore()
+        store.persistSavedSiteIds("app", setOf("site_a", " ", "site_b"))
+        assertThat(store.savedSiteIds("app")).containsExactly("site_a", "site_b")
+        store.persistSavedSiteIds("app", emptySet())
+        assertThat(store.savedSiteIds("app")).isEmpty()
+    }
+
+    @Test
+    fun `saved ids stay isolated between apps`() {
+        val store = newStore()
+        store.persistSavedSiteIds("appOne", setOf("site_a"))
+        store.persistSavedSiteIds("appTwo", setOf("site_b"))
+        assertThat(store.savedSiteIds("appOne")).containsExactly("site_a")
+        assertThat(store.savedSiteIds("appTwo")).containsExactly("site_b")
+    }
+
+    @Test
+    fun `drawer search matches name host or url`() {
+        assertThat(multiWebSiteMatchesQuery("Pixiv", "https://www.pixiv.net/art", "pixiv.net", "")).isTrue()
+        assertThat(multiWebSiteMatchesQuery("Pixiv", "https://www.pixiv.net/art", "pixiv.net", "pix")).isTrue()
+        assertThat(multiWebSiteMatchesQuery("News", "https://example.com/feed", "example.com", "FEED")).isTrue()
+        assertThat(multiWebSiteMatchesQuery("News", "https://example.com/feed", "example.com", "missing")).isFalse()
+    }
+
+    @Test
     fun `latest write wins`() {
         val store = newStore()
         store.persistSelectedSiteId("app", "site_first")

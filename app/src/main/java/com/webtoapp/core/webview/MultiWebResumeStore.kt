@@ -37,8 +37,34 @@ class MultiWebResumeStore(context: Context) {
      */
     fun resumeSiteId(key: String): String? = prefs.getString(key + SUFFIX_SITE, null)
 
+    /** Site ids the user marked in the side drawer. Blank ids are dropped. */
+    fun savedSiteIds(key: String): Set<String> {
+        val raw = prefs.getStringSet(key + SUFFIX_SAVED, null) ?: return emptySet()
+        return raw.map { it.trim() }.filter { it.isNotEmpty() }.toSet()
+    }
+
+    fun persistSavedSiteIds(key: String, siteIds: Set<String>) {
+        val clean = siteIds.map { it.trim() }.filter { it.isNotEmpty() }.toSet()
+        val prefKey = key + SUFFIX_SAVED
+        if (clean.isEmpty()) {
+            prefs.edit().remove(prefKey).apply()
+        } else {
+            prefs.edit().putStringSet(prefKey, clean).apply()
+        }
+    }
+
     private companion object {
         const val PREFS_NAME = "multiweb_resume"
         const val SUFFIX_SITE = ".site"
+        const val SUFFIX_SAVED = ".saved"
     }
+}
+
+/** Drawer search matches the visible name, the host, or the full URL. */
+internal fun multiWebSiteMatchesQuery(name: String, url: String, domain: String, query: String): Boolean {
+    val q = query.trim()
+    if (q.isEmpty()) return true
+    return name.contains(q, ignoreCase = true) ||
+        domain.contains(q, ignoreCase = true) ||
+        url.contains(q, ignoreCase = true)
 }

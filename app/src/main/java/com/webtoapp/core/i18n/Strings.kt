@@ -158,6 +158,11 @@ object Strings {
     val multiWebSiteList: String get() = StringsA.multiWebSiteList
     val multiWebNoSites: String get() = StringsA.multiWebNoSites
     val multiWebSiteCount: String get() = StringsA.multiWebSiteCount
+    val multiWebSearchSites: String get() = StringsA.multiWebSearchSites
+    val multiWebSearchEmpty: String get() = StringsA.multiWebSearchEmpty
+    val multiWebSavedSites: String get() = StringsA.multiWebSavedSites
+    val multiWebSaveSite: String get() = StringsA.multiWebSaveSite
+    val multiWebUnsaveSite: String get() = StringsA.multiWebUnsaveSite
     val multiWebDeleteSite: String get() = StringsA.multiWebDeleteSite
     val multiWebDisableSite: String get() = StringsA.multiWebDisableSite
     val multiWebEnableSite: String get() = StringsA.multiWebEnableSite

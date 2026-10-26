@@ -1364,6 +1364,71 @@ object StringsA {
         AppLanguage.KOREAN -> "%d개 사이트"
     }
 
+    val multiWebSearchSites: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "搜索站点"
+        AppLanguage.ENGLISH -> "Search sites"
+        AppLanguage.ARABIC -> "البحث في المواقع"
+        AppLanguage.PORTUGUESE -> "Pesquisar sites"
+        AppLanguage.SPANISH -> "Buscar sitios"
+        AppLanguage.FRENCH -> "Rechercher des sites"
+        AppLanguage.GERMAN -> "Seiten suchen"
+        AppLanguage.RUSSIAN -> "Поиск сайтов"
+        AppLanguage.JAPANESE -> "サイトを検索"
+        AppLanguage.KOREAN -> "사이트 검색"
+    }
+
+    val multiWebSearchEmpty: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "没有匹配的站点"
+        AppLanguage.ENGLISH -> "No matching sites"
+        AppLanguage.ARABIC -> "لا توجد مواقع مطابقة"
+        AppLanguage.PORTUGUESE -> "Nenhum site correspondente"
+        AppLanguage.SPANISH -> "Ningún sitio coincide"
+        AppLanguage.FRENCH -> "Aucun site correspondant"
+        AppLanguage.GERMAN -> "Keine passenden Seiten"
+        AppLanguage.RUSSIAN -> "Нет подходящих сайтов"
+        AppLanguage.JAPANESE -> "一致するサイトがありません"
+        AppLanguage.KOREAN -> "일치하는 사이트 없음"
+    }
+
+    val multiWebSavedSites: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "已保存"
+        AppLanguage.ENGLISH -> "Saved"
+        AppLanguage.ARABIC -> "المحفوظة"
+        AppLanguage.PORTUGUESE -> "Salvos"
+        AppLanguage.SPANISH -> "Guardados"
+        AppLanguage.FRENCH -> "Enregistrés"
+        AppLanguage.GERMAN -> "Gespeichert"
+        AppLanguage.RUSSIAN -> "Сохранённые"
+        AppLanguage.JAPANESE -> "保存済み"
+        AppLanguage.KOREAN -> "저장됨"
+    }
+
+    val multiWebSaveSite: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "保存站点"
+        AppLanguage.ENGLISH -> "Save site"
+        AppLanguage.ARABIC -> "حفظ الموقع"
+        AppLanguage.PORTUGUESE -> "Salvar site"
+        AppLanguage.SPANISH -> "Guardar sitio"
+        AppLanguage.FRENCH -> "Enregistrer le site"
+        AppLanguage.GERMAN -> "Seite speichern"
+        AppLanguage.RUSSIAN -> "Сохранить сайт"
+        AppLanguage.JAPANESE -> "サイトを保存"
+        AppLanguage.KOREAN -> "사이트 저장"
+    }
+
+    val multiWebUnsaveSite: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "取消保存"
+        AppLanguage.ENGLISH -> "Remove saved site"
+        AppLanguage.ARABIC -> "إزالة الموقع المحفوظ"
+        AppLanguage.PORTUGUESE -> "Remover site salvo"
+        AppLanguage.SPANISH -> "Quitar sitio guardado"
+        AppLanguage.FRENCH -> "Retirer le site enregistré"
+        AppLanguage.GERMAN -> "Gespeicherte Seite entfernen"
+        AppLanguage.RUSSIAN -> "Убрать сохранённый сайт"
+        AppLanguage.JAPANESE -> "保存を解除"
+        AppLanguage.KOREAN -> "저장 해제"
+    }
+
     val multiWebDeleteSite: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "删除站点"
         AppLanguage.ENGLISH -> "Delete Site"
