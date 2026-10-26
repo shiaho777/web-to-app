@@ -35,14 +35,17 @@ import java.io.File
  *   <id>/panel.html      legacy optional — hosted by the plugin panel surface
  *   <id>/icon.*          optional package icon
  *   <id>/files/...       optional extra files (migrated multi-file modules)
- * files/plugin_state.json   list order + chrome-extension records
+ * files/plugin_state.json   list order, enabled ids, chrome-extension records
  * ```
  *
  * CHROME_EXTENSION records live in the state file only; their content stays in
  * the extension engine's own directory (`ExtensionFileManager`).
  *
- * Built-in HCJ packages ship read-only in `assets/plugins/`. There is no
- * enable/pin state — a plugin runs where the app's config attaches it.
+ * Built-in HCJ packages ship read-only in `assets/plugins/`. A plugin runs
+ * where an app attaches it. An app that turns plugins on without its own
+ * list uses the `enabled` ids in the state file. That list is empty when
+ * the key is absent. Installing a plugin adds its id; built-ins stay off
+ * until the user turns them on.
  */
 @Suppress("StaticFieldLeak")
 class PluginStore private constructor(private val context: Context) {
@@ -110,6 +113,13 @@ class PluginStore private constructor(private val context: Context) {
     private val _hiddenBuiltIns = MutableStateFlow<Set<String>>(emptySet())
     val hiddenBuiltIns: StateFlow<Set<String>> = _hiddenBuiltIns.asStateFlow()
 
+    /**
+     * Ids turned on in Manage Plugins, in list order. Absent `enabled` in
+     * the state file stays empty so an upgrade does not inject every built-in.
+     */
+    private val _enabledIds = MutableStateFlow<List<String>>(emptyList())
+    val enabledIds: StateFlow<List<String>> = _enabledIds.asStateFlow()
+
     init {
         loadBuiltIns()
         rebuildCache()
@@ -141,7 +151,8 @@ class PluginStore private constructor(private val context: Context) {
         val order: MutableList<String> = mutableListOf(),
         val chromeRecords: MutableList<Plugin> = mutableListOf(),
         val styles: MutableMap<String, StyleOverride> = mutableMapOf(),
-        val hidden: MutableList<String> = mutableListOf()
+        val hidden: MutableList<String> = mutableListOf(),
+        val enabled: MutableList<String> = mutableListOf()
     )
 
     private fun readOverlay(): StateOverlay {
@@ -151,6 +162,7 @@ class PluginStore private constructor(private val context: Context) {
             val overlay = StateOverlay()
             obj.getAsJsonArray("order")?.forEach { overlay.order.add(it.asString) }
             obj.getAsJsonArray("hidden")?.forEach { overlay.hidden.add(it.asString) }
+            obj.getAsJsonArray("enabled")?.forEach { overlay.enabled.add(it.asString) }
             obj.getAsJsonObject("styles")?.entrySet()?.forEach { (id, el) ->
                 runCatching {
                     val s = el.asJsonObject
@@ -176,34 +188,40 @@ class PluginStore private constructor(private val context: Context) {
     }
 
     private suspend fun writeOverlay() = withContext(Dispatchers.IO) {
-        saveMutex.withLock {
-            try {
-                val overlay = JsonParser.parseString("{}").asJsonObject
-                val order = com.google.gson.JsonArray()
-                (_plugins.value.map { it.id } + _builtInPlugins.value.map { it.id })
-                    .forEach { order.add(it) }
-                overlay.add("order", order)
-                val hidden = com.google.gson.JsonArray()
-                hiddenBuiltIns.value.forEach { hidden.add(it) }
-                overlay.add("hidden", hidden)
-                val styles = com.google.gson.JsonObject()
-                (_plugins.value + _builtInPlugins.value).forEach { p ->
-                    styleOverrides[p.id]?.let { o ->
-                        styles.add(p.id, com.google.gson.JsonObject().apply {
-                            addProperty("entry", o.entry)
-                            addProperty("panel", o.panel)
-                        })
-                    }
+        saveMutex.withLock { writeOverlayLocked() }
+    }
+
+    /** Caller holds [saveMutex]. A nested lock would deadlock; this Mutex is not reentrant. */
+    private fun writeOverlayLocked() {
+        try {
+            val overlay = JsonParser.parseString("{}").asJsonObject
+            val order = com.google.gson.JsonArray()
+            (_plugins.value.map { it.id } + _builtInPlugins.value.map { it.id })
+                .forEach { order.add(it) }
+            overlay.add("order", order)
+            val hidden = com.google.gson.JsonArray()
+            hiddenBuiltIns.value.forEach { hidden.add(it) }
+            overlay.add("hidden", hidden)
+            val enabled = com.google.gson.JsonArray()
+            _enabledIds.value.forEach { enabled.add(it) }
+            overlay.add("enabled", enabled)
+            val styles = com.google.gson.JsonObject()
+            (_plugins.value + _builtInPlugins.value).forEach { p ->
+                styleOverrides[p.id]?.let { o ->
+                    styles.add(p.id, com.google.gson.JsonObject().apply {
+                        addProperty("entry", o.entry)
+                        addProperty("panel", o.panel)
+                    })
                 }
-                overlay.add("styles", styles)
-                val chrome = com.google.gson.JsonArray()
-                _plugins.value.filter { it.kind == PluginKind.CHROME_EXTENSION }
-                    .forEach { chrome.add(gson.toJsonTree(it)) }
-                overlay.add("chromeRecords", chrome)
-                stateFile.writeText(gson.toJson(overlay))
-            } catch (e: Exception) {
-                AppLogger.e(TAG, "failed to write plugin state", e)
             }
+            overlay.add("styles", styles)
+            val chrome = com.google.gson.JsonArray()
+            _plugins.value.filter { it.kind == PluginKind.CHROME_EXTENSION }
+                .forEach { chrome.add(gson.toJsonTree(it)) }
+            overlay.add("chromeRecords", chrome)
+            stateFile.writeText(gson.toJson(overlay))
+        } catch (e: Exception) {
+            AppLogger.e(TAG, "failed to write plugin state", e)
         }
     }
 
@@ -217,47 +235,68 @@ class PluginStore private constructor(private val context: Context) {
     // ------------------------------------------------------------------
 
     private suspend fun loadPackages() = withContext(Dispatchers.IO) {
-        try {
-            val overlay = readOverlay()
-            val loaded = mutableListOf<Plugin>()
+        // The same lock covers installPackage, so a load cannot snapshot the
+        // directory mid-install and then overwrite the package that just landed.
+        saveMutex.withLock {
+            try {
+                recoverPluginPackageDirs(pluginsDir)
+                val overlay = readOverlay()
+                val loaded = mutableListOf<Plugin>()
 
-            pluginsDir.listFiles()?.filter { it.isDirectory }?.forEach { dir ->
-                val manifestFile = File(dir, MANIFEST_FILE)
-                if (!manifestFile.exists()) return@forEach
-                val manifest = PluginManifest.fromJson(manifestFile.readText()) ?: return@forEach
-                val kind = PluginKind.parse(
-                    try {
-                        JsonParser.parseString(manifestFile.readText())
-                            .asJsonObject.get("kind")?.asString
-                    } catch (e: Exception) {
-                        null
+                pluginsDir.listFiles()
+                    ?.filter { it.isDirectory && isPluginPackageDirName(it.name) }
+                    ?.forEach { dir ->
+                        val manifestFile = File(dir, MANIFEST_FILE)
+                        if (!manifestFile.exists()) return@forEach
+                        val manifest = PluginManifest.fromJson(manifestFile.readText()) ?: return@forEach
+                        val kind = PluginKind.parse(
+                            try {
+                                JsonParser.parseString(manifestFile.readText())
+                                    .asJsonObject.get("kind")?.asString
+                            } catch (e: Exception) {
+                                null
+                            }
+                        )
+                        loaded.add(
+                            Plugin.fromManifest(
+                                manifest = manifest,
+                                packageDir = dir.name,
+                                kind = kind,
+                                hasPanel = dirHasPanel(dir),
+                                hasCss = File(dir, CSS_FILE).exists(),
+                                builtIn = false
+                            )
+                        )
                     }
-                )
-                loaded.add(
-                    Plugin.fromManifest(
-                        manifest = manifest,
-                        packageDir = dir.name,
-                        kind = kind,
-                        hasPanel = dirHasPanel(dir),
-                        hasCss = File(dir, CSS_FILE).exists(),
-                        builtIn = false
-                    )
-                )
+
+                // An install that updated memory after this snapshot was taken
+                // cannot happen while the lock is held. Keep a package whose
+                // directory is still on disk anyway, so a listing that missed
+                // a just-published id does not drop it.
+                val diskIds = loaded.map { it.id }.toSet()
+                for (current in _plugins.value) {
+                    if (current.id in diskIds || current.kind == PluginKind.CHROME_EXTENSION) continue
+                    val dirName = current.packageDir.ifBlank { current.id }
+                    if (!isPluginPackageDirName(dirName)) continue
+                    val dir = File(pluginsDir, dirName)
+                    if (dir.isDirectory && File(dir, MANIFEST_FILE).isFile) loaded.add(current)
+                }
+
+                styleOverrides.putAll(overlay.styles)
+                loaded.addAll(overlay.chromeRecords)
+                _enabledIds.value = overlay.enabled.toList()
+
+                // Stored order first; anything new (fresh installs, migrated) after.
+                val byId = loaded.associateBy { it.id }
+                val ordered = overlay.order.mapNotNull { byId[it] } +
+                    loaded.filter { it.id !in overlay.order }
+                _plugins.value = ordered.map { it.withOverride() }
+                refreshBuiltIns()
+                AppLogger.d(TAG, "loaded ${ordered.size} plugins")
+            } catch (e: Exception) {
+                AppLogger.e(TAG, "failed to load plugins", e)
+                _plugins.value = emptyList()
             }
-
-            styleOverrides.putAll(overlay.styles)
-            loaded.addAll(overlay.chromeRecords)
-
-            // Stored order first; anything new (fresh installs, migrated) after.
-            val byId = loaded.associateBy { it.id }
-            val ordered = overlay.order.mapNotNull { byId[it] } +
-                loaded.filter { it.id !in overlay.order }
-            _plugins.value = ordered.map { it.withOverride() }
-            refreshBuiltIns()
-            AppLogger.d(TAG, "loaded ${ordered.size} plugins")
-        } catch (e: Exception) {
-            AppLogger.e(TAG, "failed to load plugins", e)
-            _plugins.value = emptyList()
         }
     }
 
@@ -276,6 +315,7 @@ class PluginStore private constructor(private val context: Context) {
         val overlay = readOverlay()
         styleOverrides.putAll(overlay.styles)
         _hiddenBuiltIns.value = overlay.hidden.toSet()
+        _enabledIds.value = overlay.enabled.toList()
         val loaded = mutableListOf<Plugin>()
         try {
             val dirs = context.assets.list(BUILTIN_ASSET_DIR) ?: emptyArray()
@@ -348,6 +388,24 @@ class PluginStore private constructor(private val context: Context) {
     fun getPluginsByIds(ids: List<String>): List<Plugin> {
         val all = allCache
         return ids.mapNotNull { id -> all.firstOrNull { it.id == id } }
+    }
+
+    fun isGloballyEnabled(id: String): Boolean = id in _enabledIds.value
+
+    /** Enabled ids that still exist, in the order stored in the state file. */
+    fun globalEnabledIds(): List<String> {
+        val known = allCache.map { it.id }.toSet()
+        return _enabledIds.value.map { it.trim() }.filter { it.isNotEmpty() && it in known }.distinct()
+    }
+
+    fun effectiveIds(pluginsEnabled: Boolean, attached: List<String>): List<String> =
+        resolveAttachedPluginIds(pluginsEnabled, attached, globalEnabledIds())
+
+    suspend fun setEnabled(id: String, enabled: Boolean) = withContext(Dispatchers.IO) {
+        saveMutex.withLock {
+            _enabledIds.value = updateGlobalEnabledIds(_enabledIds.value, id, enabled)
+            writeOverlayLocked()
+        }
     }
 
     // ------------------------------------------------------------------
@@ -492,52 +550,66 @@ class PluginStore private constructor(private val context: Context) {
      * Persist a new list order (long-press drag in the manager). Ids not in
      * [orderedIds] keep their relative position at the end.
      */
-    suspend fun reorder(orderedIds: List<String>, builtIn: Boolean) {
-        val flow = if (builtIn) _builtInPlugins else _plugins
-        val byId = flow.value.associateBy { it.id }
-        flow.value = orderedIds.mapNotNull { byId[it] } +
-            flow.value.filter { it.id !in orderedIds }
-        writeOverlay()
-        rebuildCache()
+    suspend fun reorder(orderedIds: List<String>, builtIn: Boolean) = withContext(Dispatchers.IO) {
+        saveMutex.withLock {
+            val flow = if (builtIn) _builtInPlugins else _plugins
+            val byId = flow.value.associateBy { it.id }
+            flow.value = orderedIds.mapNotNull { byId[it] } +
+                flow.value.filter { it.id !in orderedIds }
+            writeOverlayLocked()
+            rebuildCache()
+        }
     }
 
     /** Persist a per-plugin host-style override (entry + panel). */
-    suspend fun setPluginStyle(id: String, entry: PluginEntryStyle, panel: PluginPanelStyle) {
-        styleOverrides[id] = StyleOverride(entry.name, panel.name)
-        _plugins.value = _plugins.value.map { if (it.id == id) it.withOverride() else it }
-        _builtInPlugins.value = _builtInPlugins.value.map { if (it.id == id) it.withOverride() else it }
-        writeOverlay()
-        rebuildCache()
+    suspend fun setPluginStyle(id: String, entry: PluginEntryStyle, panel: PluginPanelStyle) = withContext(Dispatchers.IO) {
+        saveMutex.withLock {
+            styleOverrides[id] = StyleOverride(entry.name, panel.name)
+            _plugins.value = _plugins.value.map { if (it.id == id) it.withOverride() else it }
+            _builtInPlugins.value = _builtInPlugins.value.map { if (it.id == id) it.withOverride() else it }
+            writeOverlayLocked()
+            rebuildCache()
+        }
     }
 
     suspend fun removePlugin(id: String): Boolean = withContext(Dispatchers.IO) {
-        val plugin = _plugins.value.find { it.id == id } ?: return@withContext false
-        if (plugin.kind != PluginKind.CHROME_EXTENSION) {
-            File(pluginsDir, plugin.packageDir).deleteRecursively()
+        saveMutex.withLock {
+            val plugin = _plugins.value.find { it.id == id } ?: return@withLock false
+            if (plugin.kind != PluginKind.CHROME_EXTENSION) {
+                File(pluginsDir, plugin.packageDir).deleteRecursively()
+            }
+            _plugins.value = _plugins.value.filter { it.id != id }
+            _enabledIds.value = updateGlobalEnabledIds(_enabledIds.value, id, enabled = false)
+            PluginConfigStore(context).clear(id)
+            refreshBuiltIns()
+            writeOverlayLocked()
+            rebuildCache()
+            true
         }
-        _plugins.value = _plugins.value.filter { it.id != id }
-        PluginConfigStore(context).clear(id)
-        refreshBuiltIns()
-        writeOverlay()
-        rebuildCache()
-        true
     }
 
-    /** Hide a built-in plugin (row ⋮ → Delete); restore from the screen ⋮ menu. */
-    suspend fun hideBuiltIn(id: String) {
-        _hiddenBuiltIns.value = _hiddenBuiltIns.value + id
-        refreshBuiltIns()
-        writeOverlay()
-        rebuildCache()
+    /** Hide a built-in plugin (row ⋮ → Delete); restore from the screen ⋮ menu.
+     *  The id stays in the enabled set so un-hiding leaves it on. */
+    suspend fun hideBuiltIn(id: String) = withContext(Dispatchers.IO) {
+        saveMutex.withLock {
+            _hiddenBuiltIns.value = _hiddenBuiltIns.value + id
+            refreshBuiltIns()
+            writeOverlayLocked()
+            rebuildCache()
+        }
     }
 
     /** Bring back every hidden built-in. */
-    suspend fun restoreBuiltIns() {
-        if (_hiddenBuiltIns.value.isEmpty()) return
-        _hiddenBuiltIns.value = emptySet()
-        loadBuiltIns()
-        writeOverlay()
-        rebuildCache()
+    suspend fun restoreBuiltIns() = withContext(Dispatchers.IO) {
+        saveMutex.withLock {
+            if (_hiddenBuiltIns.value.isEmpty()) return@withLock
+            _hiddenBuiltIns.value = emptySet()
+            // Write first so loadBuiltIns, which re-reads the state file, does
+            // not put the old hidden set back.
+            writeOverlayLocked()
+            loadBuiltIns()
+            rebuildCache()
+        }
     }
 
     /**
@@ -550,67 +622,149 @@ class PluginStore private constructor(private val context: Context) {
         kind: PluginKind = PluginKind.HCJ,
         files: Map<String, String>
     ): Result<Plugin> = withContext(Dispatchers.IO) {
-        try {
-            val id = manifest.id.takeIf { it.isNotBlank() }
-                ?: "p" + java.util.UUID.randomUUID().toString().replace("-", "").take(12)
-            val dir = File(pluginsDir, id)
-            if (dir.exists()) dir.deleteRecursively()
-            dir.mkdirs()
-
-            val effectiveManifest = manifest.copy(id = id)
-            File(dir, MANIFEST_FILE).writeText(
-                gson.toJson(
-                    JsonParser.parseString(gson.toJson(effectiveManifest)).asJsonObject.apply {
-                        addProperty("kind", kind.name)
+        saveMutex.withLock {
+            try {
+                val id = manifest.id.takeIf { it.isNotBlank() }
+                    ?: "p" + java.util.UUID.randomUUID().toString().replace("-", "").take(12)
+                if (!isPluginPackageDirName(id)) {
+                    return@withLock Result.failure(
+                        IllegalArgumentException("plugin id cannot use a staging suffix: $id")
+                    )
+                }
+                val effectiveManifest = manifest.copy(id = id)
+                replacePluginPackageDir(pluginsDir, id) { dir ->
+                    File(dir, MANIFEST_FILE).writeText(
+                        gson.toJson(
+                            JsonParser.parseString(gson.toJson(effectiveManifest)).asJsonObject.apply {
+                                addProperty("kind", kind.name)
+                            }
+                        )
+                    )
+                    files.forEach { (rel, content) ->
+                        val safeRel = rel.removePrefix("/")
+                        if (safeRel.isBlank() || safeRel.contains("..")) return@forEach
+                        val f = File(dir, safeRel)
+                        f.parentFile?.mkdirs()
+                        f.writeText(content)
                     }
-                )
-            )
-            files.forEach { (rel, content) ->
-                val safeRel = rel.removePrefix("/")
-                if (safeRel.isBlank() || safeRel.contains("..")) return@forEach
-                val f = File(dir, safeRel)
-                f.parentFile?.mkdirs()
-                f.writeText(content)
-            }
+                }
 
-            val existing = _plugins.value.firstOrNull { it.id == id }
-            val plugin = Plugin.fromManifest(
-                manifest = effectiveManifest,
-                packageDir = id,
-                kind = kind,
-                hasPanel = (files[PLUGIN_FILE]?.let(::hasPanelMarkup) ?: false) ||
-                    File(dir, PANEL_FILE).exists(),
-                hasCss = File(dir, CSS_FILE).exists(),
-                builtIn = false
-            ).copy(
-                createdAt = existing?.createdAt ?: System.currentTimeMillis()
-            )
-            _plugins.value = _plugins.value.filter { it.id != plugin.id } + plugin
-            refreshBuiltIns()
-            writeOverlay()
-            rebuildCache()
-            Result.success(plugin)
-        } catch (e: Exception) {
-            AppLogger.e(TAG, "installPackage failed", e)
-            Result.failure(e)
+                val live = File(pluginsDir, id)
+                val existing = _plugins.value.firstOrNull { it.id == id }
+                val plugin = Plugin.fromManifest(
+                    manifest = effectiveManifest,
+                    packageDir = id,
+                    kind = kind,
+                    hasPanel = (files[PLUGIN_FILE]?.let(::hasPanelMarkup) ?: false) ||
+                        File(live, PANEL_FILE).exists(),
+                    hasCss = File(live, CSS_FILE).exists(),
+                    builtIn = false
+                ).copy(
+                    createdAt = existing?.createdAt ?: System.currentTimeMillis()
+                )
+                _plugins.value = _plugins.value.filter { it.id != plugin.id } + plugin
+                _enabledIds.value = updateGlobalEnabledIds(_enabledIds.value, plugin.id, enabled = true)
+                refreshBuiltIns()
+                writeOverlayLocked()
+                rebuildCache()
+                Result.success(plugin)
+            } catch (e: Exception) {
+                AppLogger.e(TAG, "installPackage failed", e)
+                Result.failure(e)
+            }
         }
     }
 
     /** Register/update a chrome-extension record (content lives in ext engine). */
-    suspend fun upsertChromeRecord(plugin: Plugin) {
-        _plugins.value =
-            _plugins.value.filter { it.id != plugin.id } + plugin.copy(kind = PluginKind.CHROME_EXTENSION)
-        writeOverlay()
-        rebuildCache()
-    }
-
-    suspend fun removeChromeRecordsFor(extId: String) {
-        val before = _plugins.value.size
-        _plugins.value = _plugins.value.filter { it.chromeExtId != extId }
-        if (_plugins.value.size != before) {
-            writeOverlay()
+    suspend fun upsertChromeRecord(plugin: Plugin) = withContext(Dispatchers.IO) {
+        saveMutex.withLock {
+            val isNew = _plugins.value.none { it.id == plugin.id }
+            _plugins.value =
+                _plugins.value.filter { it.id != plugin.id } + plugin.copy(kind = PluginKind.CHROME_EXTENSION)
+            if (isNew) {
+                _enabledIds.value = updateGlobalEnabledIds(_enabledIds.value, plugin.id, enabled = true)
+            }
+            writeOverlayLocked()
             rebuildCache()
         }
     }
 
+    suspend fun removeChromeRecordsFor(extId: String) = withContext(Dispatchers.IO) {
+        saveMutex.withLock {
+            val removed = _plugins.value.filter { it.chromeExtId == extId }.map { it.id }.toSet()
+            if (removed.isEmpty()) return@withLock
+            _plugins.value = _plugins.value.filter { it.id !in removed }
+            _enabledIds.value = _enabledIds.value.filterNot { it in removed }
+            writeOverlayLocked()
+            rebuildCache()
+        }
+    }
+
+}
+
+internal const val PLUGIN_PACKAGE_TMP_SUFFIX = ".tmp"
+internal const val PLUGIN_PACKAGE_BAK_SUFFIX = ".bak"
+
+internal fun isPluginPackageDirName(name: String): Boolean =
+    name.isNotBlank() &&
+        name != "." &&
+        name != ".." &&
+        !name.endsWith(PLUGIN_PACKAGE_TMP_SUFFIX) &&
+        !name.endsWith(PLUGIN_PACKAGE_BAK_SUFFIX)
+
+/**
+ * A crashed install leaves `<id>.tmp` or `<id>.bak`. Drop the staging dir.
+ * If only the backup remains, move it back. If the live dir also exists, the
+ * install finished and the backup is leftover.
+ */
+internal fun recoverPluginPackageDirs(pluginsDir: File) {
+    if (!pluginsDir.isDirectory) return
+    val dirs = pluginsDir.listFiles()?.filter { it.isDirectory }.orEmpty()
+    for (dir in dirs) {
+        val name = dir.name
+        if (name.endsWith(PLUGIN_PACKAGE_TMP_SUFFIX)) {
+            dir.deleteRecursively()
+            continue
+        }
+        if (!name.endsWith(PLUGIN_PACKAGE_BAK_SUFFIX)) continue
+        val id = name.removeSuffix(PLUGIN_PACKAGE_BAK_SUFFIX)
+        if (!isPluginPackageDirName(id)) continue
+        val live = File(pluginsDir, id)
+        if (live.exists()) {
+            dir.deleteRecursively()
+        } else if (!dir.renameTo(live)) {
+            AppLogger.w("PluginStore", "could not restore plugin package $id from backup")
+        }
+    }
+}
+
+/**
+ * Write [write] into `<id>.tmp`, then swap it over the live directory.
+ * The live tree is never deleted before the new tree is complete, and a
+ * failed publish puts the previous tree back.
+ */
+internal fun replacePluginPackageDir(pluginsDir: File, id: String, write: (File) -> Unit) {
+    check(isPluginPackageDirName(id)) { "plugin id cannot use a staging suffix: $id" }
+    pluginsDir.mkdirs()
+    val staging = File(pluginsDir, id + PLUGIN_PACKAGE_TMP_SUFFIX)
+    if (staging.exists()) staging.deleteRecursively()
+    staging.mkdirs()
+    val live = File(pluginsDir, id)
+    val bak = File(pluginsDir, id + PLUGIN_PACKAGE_BAK_SUFFIX)
+    try {
+        write(staging)
+        if (bak.exists()) bak.deleteRecursively()
+        if (live.exists() && !live.renameTo(bak)) {
+            throw java.io.IOException("could not move existing plugin package aside: $id")
+        }
+        if (!staging.renameTo(live)) {
+            if (!live.exists() && bak.exists()) bak.renameTo(live)
+            throw java.io.IOException("could not publish plugin package: $id")
+        }
+        if (bak.exists()) bak.deleteRecursively()
+    } catch (e: Exception) {
+        if (staging.exists()) staging.deleteRecursively()
+        if (!live.exists() && bak.exists()) bak.renameTo(live)
+        throw e
+    }
 }

@@ -42,6 +42,7 @@ import androidx.compose.ui.zIndex
 import android.webkit.WebView
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.logging.AppLogger
+import com.webtoapp.core.shell.EmbeddedShellPlugin
 import com.webtoapp.core.shell.MultiWebShellConfig
 import com.webtoapp.core.shell.MultiWebSiteShellConfig
 import com.webtoapp.core.shell.ShellConfig
@@ -105,6 +106,37 @@ fun MultiWebShellMode(
     }
 }
 
+internal data class MergedSitePlugins(
+    val pluginsEnabled: Boolean,
+    val pluginIds: List<String>,
+    val embeddedPlugins: List<EmbeddedShellPlugin>,
+)
+
+/**
+ * Parent plugins apply to every site. A site's own baked plugins merge
+ * underneath only when [sitesUseOwnConfig] is true, and the site wins an id
+ * collision. With the flag off, site plugins are discarded.
+ */
+internal fun mergeSitePlugins(
+    sitesUseOwnConfig: Boolean,
+    parentEnabled: Boolean,
+    parentIds: List<String>,
+    parentPlugins: List<EmbeddedShellPlugin>,
+    siteEnabled: Boolean,
+    siteIds: List<String>,
+    sitePlugins: List<EmbeddedShellPlugin>,
+): MergedSitePlugins {
+    val ownPlugins = if (sitesUseOwnConfig) sitePlugins else emptyList()
+    val mergedPlugins = ownPlugins +
+        parentPlugins.filter { parent -> ownPlugins.none { it.id == parent.id } }
+    val mergedIds = ((if (sitesUseOwnConfig) siteIds else emptyList()) + parentIds).distinct()
+    return MergedSitePlugins(
+        pluginsEnabled = parentEnabled || (sitesUseOwnConfig && siteEnabled),
+        pluginIds = mergedIds,
+        embeddedPlugins = mergedPlugins,
+    )
+}
+
 @Composable
 private fun SiteContent(
     site: MultiWebSiteShellConfig,
@@ -129,14 +161,16 @@ private fun SiteContent(
     // picks live on the parent config's embeddedPlugins/pluginIds, and without
     // inheriting them every site session starts empty — the floating handle
     // renders (gated on the parent) but the sheet reports "no enabled plugins".
-    // A site's own baked plugins merge underneath only under sitesUseOwnConfig;
-    // the site wins an id collision so a more specific selection is possible.
     val sitesUseOwn = config.multiWebConfig?.sitesUseOwnConfig == true
-    val sitePlugins = if (sitesUseOwn) siteCfg?.embeddedPlugins.orEmpty() else emptyList()
-    val mergedPlugins = sitePlugins +
-        config.embeddedPlugins.filter { parent -> sitePlugins.none { it.id == parent.id } }
-    val mergedPluginIds = ((if (sitesUseOwn) siteCfg?.pluginIds.orEmpty() else emptyList()) +
-        config.pluginIds).distinct()
+    val merged = mergeSitePlugins(
+        sitesUseOwnConfig = sitesUseOwn,
+        parentEnabled = config.pluginsEnabled,
+        parentIds = config.pluginIds,
+        parentPlugins = config.embeddedPlugins,
+        siteEnabled = siteCfg?.pluginsEnabled == true,
+        siteIds = siteCfg?.pluginIds.orEmpty(),
+        sitePlugins = siteCfg?.embeddedPlugins.orEmpty(),
+    )
     // Sites contribute content (URL, HTML project, media, module assets), not
     // settings: by default the parent's WebView config governs every site, so
     // app-level fields baked into siteShellConfig can't fight the parent.
@@ -149,9 +183,9 @@ private fun SiteContent(
     val effectiveConfig = siteCfg?.copy(
         engineType = siteCfg.engineType.takeIf { it.isNotBlank() && it != "SYSTEM_WEBVIEW" }
             ?: config.engineType,
-        pluginsEnabled = config.pluginsEnabled || (sitesUseOwn && siteCfg.pluginsEnabled),
-        pluginIds = mergedPluginIds,
-        embeddedPlugins = mergedPlugins,
+        pluginsEnabled = merged.pluginsEnabled,
+        pluginIds = merged.pluginIds,
+        embeddedPlugins = merged.embeddedPlugins,
         pluginEntryStyle = config.pluginEntryStyle,
         pluginPanelStyle = config.pluginPanelStyle,
         webViewConfig = (baseWvConfig ?: config.webViewConfig).copy(
@@ -163,9 +197,9 @@ private fun SiteContent(
         targetUrl = site.url,
         packageName = config.packageName,
         engineType = config.engineType,
-        pluginsEnabled = config.pluginsEnabled,
-        pluginIds = config.pluginIds,
-        embeddedPlugins = config.embeddedPlugins,
+        pluginsEnabled = merged.pluginsEnabled,
+        pluginIds = merged.pluginIds,
+        embeddedPlugins = merged.embeddedPlugins,
         pluginEntryStyle = config.pluginEntryStyle,
         pluginPanelStyle = config.pluginPanelStyle,
         // A site without baked config (custom URL site, deleted source) still

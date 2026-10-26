@@ -8,7 +8,7 @@ Built-in plugins, custom HCJ packages, userscripts, and MV3 Chrome extensions �
 
 ## Features
 
-- **List & toggle** — enable or disable installed plugins, pin favorites to the toolbar.
+- **List & toggle** — each row has a switch. On means the plugin is enabled. An app that turns plugins on and does not pick its own list runs this enabled set. A picked list on an app still runs only that list. Plugins you add start on. Built-in plugins stay off until you turn them on.
 - **Editor** — create or edit a plugin: manifest, JavaScript, CSS, and a `panel.html` UI. See [HCJ Plugins](/extensions/js-module).
 - **Market** — browse the community plugin market. See [Publish to the Market](/extensions/publish).
 - **Browser extensions** — search the Chrome Web Store live and install MV3 extensions. See [Chrome MV3](/extensions/chrome-mv3).

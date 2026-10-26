@@ -2,12 +2,12 @@
 
 Attaches plugins (HCJ packages, userscripts, MV3 Chrome extensions) to the app.
 
-**Where:** the **Plugins** card in the [Edit Common Config](/guide/app-actions/edit-common-config/) editor.
+**Where:** the **Plugins** card in the [Edit Common Config](/guide/app-actions/edit-common-config/) editor, and the same card in the multi-site editor.
 
 ## Options
 
 - **Enable** — turn plugins on for this app.
-- **Selected plugins** — choose which installed plugins run in this app.
+- **Selected plugins** — choose which installed plugins run in this app. With nothing picked, the plugins turned on in Manage Plugins run here. A picked list runs only those.
 - **Host style** — where plugin entries live (toolbar / floating handle / menu) and how panels open (bottom sheet / floating window / fullscreen).
 
 ## Notes

@@ -31,6 +31,7 @@ import com.webtoapp.ui.animation.CardExpandTransition
 import com.webtoapp.ui.design.*
 import com.webtoapp.ui.plugin.kindLabel
 import com.webtoapp.ui.plugin.pluginIcon
+import com.webtoapp.ui.theme.ifDescriptionsShown
 
 /**
  * Per-app plugin attachment card (create/edit app flows). Apps get the global
@@ -120,11 +121,13 @@ fun PluginPickerCard(
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Spacer(Modifier.height(14.dp))
 
-                    Text(
-                        Strings.pluginAttachHint,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Strings.pluginAttachHint.ifDescriptionsShown()?.let { hint ->
+                        Text(
+                            hint,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
 
                     val selected = selectedPluginIds.mapNotNull { id -> all.firstOrNull { it.id == id } }
                     selected.forEach { plugin ->

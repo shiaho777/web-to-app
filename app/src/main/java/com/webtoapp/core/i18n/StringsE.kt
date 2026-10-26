@@ -16440,29 +16440,42 @@ object StringsE {
     }
 
     val pluginAttachEmpty: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "未挂载插件"
-        AppLanguage.ENGLISH -> "No plugins attached"
-        AppLanguage.ARABIC -> "لا توجد إضافات مرفقة"
-        AppLanguage.PORTUGUESE -> "Nenhum plugin anexado"
-        AppLanguage.SPANISH -> "Sin plugins adjuntos"
-        AppLanguage.FRENCH -> "Aucun plugin attaché"
-        AppLanguage.GERMAN -> "Keine Plugins angehängt"
-        AppLanguage.RUSSIAN -> "Плагины не прикреплены"
-        AppLanguage.JAPANESE -> "プラグイン未アタッチ"
-        AppLanguage.KOREAN -> "연결된 플러그인 없음"
+        AppLanguage.CHINESE -> "未单独选择，使用已启用的插件"
+        AppLanguage.ENGLISH -> "None picked; uses enabled plugins"
+        AppLanguage.ARABIC -> "لم يُحدَّد شيء؛ تُستخدم الإضافات المفعّلة"
+        AppLanguage.PORTUGUESE -> "Nenhum escolhido; usa os plugins ativos"
+        AppLanguage.SPANISH -> "Ninguno elegido; se usan los plugins activos"
+        AppLanguage.FRENCH -> "Aucun choisi ; les plugins activés sont utilisés"
+        AppLanguage.GERMAN -> "Keine Auswahl; aktivierte Plugins werden verwendet"
+        AppLanguage.RUSSIAN -> "Ничего не выбрано; используются включённые плагины"
+        AppLanguage.JAPANESE -> "個別未選択。有効なプラグインを使います"
+        AppLanguage.KOREAN -> "따로 선택하지 않음. 켠 플러그인을 사용합니다"
     }
 
     val pluginAttachHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "挂载的插件只在此应用内运行"
-        AppLanguage.ENGLISH -> "Attached plugins run inside this app"
-        AppLanguage.ARABIC -> "تعمل الإضافات المرفقة داخل هذا التطبيق"
-        AppLanguage.PORTUGUESE -> "Plugins anexados rodam dentro deste app"
-        AppLanguage.SPANISH -> "Los plugins adjuntos se ejecutan en esta app"
-        AppLanguage.FRENCH -> "Les plugins attachés s'exécutent dans cette app"
-        AppLanguage.GERMAN -> "Angehängte Plugins laufen in dieser App"
-        AppLanguage.RUSSIAN -> "Прикреплённые плагины работают в этом приложении"
-        AppLanguage.JAPANESE -> "アタッチしたプラグインはこのアプリ内で動作"
-        AppLanguage.KOREAN -> "연결된 플러그인은 이 앱 내에서 실행됩니다"
+        AppLanguage.CHINESE -> "不单独选择时，用「管理插件」里已启用的插件。单独选择后只运行这些。"
+        AppLanguage.ENGLISH -> "With nothing picked, plugins enabled in Manage Plugins run here. A picked list runs only those."
+        AppLanguage.ARABIC -> "عند عدم الاختيار، تعمل الإضافات المفعّلة في «إدارة الإضافات». وعند الاختيار تعمل هذه فقط."
+        AppLanguage.PORTUGUESE -> "Sem uma escolha própria, entram os plugins ativos em Gerir plugins. Uma lista escolhida executa só esses."
+        AppLanguage.SPANISH -> "Si no eliges ninguno, se usan los plugins activos en Gestionar plugins. Una lista elegida ejecuta solo esos."
+        AppLanguage.FRENCH -> "Sans sélection, les plugins activés dans Gérer les plugins s'exécutent ici. Une liste choisie n'exécute que ceux-là."
+        AppLanguage.GERMAN -> "Ohne eigene Auswahl laufen die in Plugins verwalten aktivierten Plugins. Eine eigene Liste führt nur diese aus."
+        AppLanguage.RUSSIAN -> "Если ничего не выбрано, работают плагины, включённые в «Управление плагинами». Свой список запускает только их."
+        AppLanguage.JAPANESE -> "個別に選ばないときは「プラグイン管理」で有効なプラグインを使います。選ぶとその一覧だけが動きます。"
+        AppLanguage.KOREAN -> "따로 고르지 않으면 '플러그인 관리'에서 켠 플러그인이 실행됩니다. 고르면 그 목록만 실행됩니다."
+    }
+
+    val pluginGlobalEnable: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "启用插件"
+        AppLanguage.ENGLISH -> "Enable plugin"
+        AppLanguage.ARABIC -> "تفعيل الإضافة"
+        AppLanguage.PORTUGUESE -> "Ativar plugin"
+        AppLanguage.SPANISH -> "Activar plugin"
+        AppLanguage.FRENCH -> "Activer le plugin"
+        AppLanguage.GERMAN -> "Plugin aktivieren"
+        AppLanguage.RUSSIAN -> "Включить плагин"
+        AppLanguage.JAPANESE -> "プラグインを有効にする"
+        AppLanguage.KOREAN -> "플러그인 켜기"
     }
 
     val pluginAdd: String get() = when (Strings.lang) {

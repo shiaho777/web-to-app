@@ -319,14 +319,23 @@ class PluginMigrator(private val context: Context) {
     }
 
     private fun writeStateFile(overlay: Overlay) {
-        val root = com.google.gson.JsonObject()
+        val stateFile = File(context.filesDir, PluginStore.STATE_FILE)
+        // Keep keys this migrator does not own (`enabled`, `hidden`, `styles`).
+        // Rewriting a fresh object used to drop them when a half-migrated
+        // install still had the legacy directory.
+        val root = if (stateFile.exists()) {
+            runCatching { JsonParser.parseString(stateFile.readText()).asJsonObject }.getOrNull()
+                ?: com.google.gson.JsonObject()
+        } else {
+            com.google.gson.JsonObject()
+        }
         val order = com.google.gson.JsonArray()
         overlay.order.forEach { order.add(it) }
         root.add("order", order)
         val chrome = com.google.gson.JsonArray()
         overlay.chromeRecords.forEach { chrome.add(gson.toJsonTree(it)) }
         root.add("chromeRecords", chrome)
-        File(context.filesDir, PluginStore.STATE_FILE).writeText(gson.toJson(root))
+        stateFile.writeText(gson.toJson(root))
     }
 
     private fun renameOld() {

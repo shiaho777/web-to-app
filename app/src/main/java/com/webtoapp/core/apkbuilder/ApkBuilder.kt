@@ -3752,17 +3752,29 @@ builtins.__import__ = _w2a_import
 
             val configJson = template.createConfigJson(config)
             val encryptedData = encryptor.encryptJson(configJson, "app_config.json")
-            writeEntryDeflated(zipOut, ApkTemplate.CONFIG_PATH + ".enc", encryptedData)
+            writeConfigBytes(zipOut, ApkTemplate.CONFIG_PATH + ".enc", encryptedData)
 
             val stubJson = template.createEncryptedStubJson(config)
             val stubData = stubJson.toByteArray(Charsets.UTF_8)
-            writeEntryDeflated(zipOut, ApkTemplate.CONFIG_PATH, stubData)
+            writeConfigBytes(zipOut, ApkTemplate.CONFIG_PATH, stubData)
             AppLogger.d("ApkBuilder", "Config file encrypted (minimal stub, no sensitive data)")
         } else {
 
             val configJson = template.createConfigJson(config)
             val data = configJson.toByteArray(Charsets.UTF_8)
-            writeEntryDeflated(zipOut, ApkTemplate.CONFIG_PATH, data)
+            writeConfigBytes(zipOut, ApkTemplate.CONFIG_PATH, data)
+        }
+    }
+
+    /**
+     * AssetManager will not open a deflated entry whose uncompressed size
+     * exceeds 1 MiB, and plugin bodies live in this JSON.
+     */
+    private fun writeConfigBytes(zipOut: ZipOutputStream, name: String, data: ByteArray) {
+        if (ZipUtils.configBytesShouldBeStored(data.size)) {
+            ZipUtils.writeEntryStoredSimple(zipOut, name, data)
+        } else {
+            writeEntryDeflated(zipOut, name, data)
         }
     }
 
@@ -5290,90 +5302,109 @@ private fun buildOAuthReturnSchemes(
     return schemes.distinct()
 }
 
-fun WebApp.toApkConfigWithModules(packageName: String, context: android.content.Context): ApkConfig {
-    val baseConfig = toApkConfig(packageName, context)
-    val extensionFileManager = com.webtoapp.core.extension.ExtensionFileManager(context)
-
-    val embeddedPlugins = if (pluginIds.isNotEmpty()) {
+/**
+ * Resolve each id on its own. A missing plugin or a throw from one package
+ * is omitted and logged. It must not blank the plugins that did resolve.
+ */
+internal fun <T> embedPlugins(
+    ids: List<String>,
+    resolve: (String) -> T?,
+): List<T> {
+    val out = ArrayList<T>(ids.size)
+    for (id in ids) {
         try {
-            val pluginStore = com.webtoapp.core.plugin.PluginStore.getInstance(context)
-
-            kotlinx.coroutines.runBlocking {
-                kotlinx.coroutines.withTimeoutOrNull(5000L) {
-                    pluginStore.awaitLoaded()
-                }
-            }
-
-            val resolvedPlugins = pluginStore.getPluginsByIds(pluginIds)
-
-            if (resolvedPlugins.size < pluginIds.size) {
-                val foundIds = resolvedPlugins.map { it.id }.toSet()
-                val missingIds = pluginIds.filter { it !in foundIds }
-                AppLogger.w(
-                    "ApkBuilder",
-                    "Plugin resolution: requested ${pluginIds.size}, found ${resolvedPlugins.size}. " +
-                        "Missing IDs (will NOT be embedded in APK): $missingIds"
-                )
-            }
-
-            resolvedPlugins.map { plugin ->
-                val code = pluginStore.loadPackageCode(plugin)
-                val resolvedRequireContents = linkedMapOf<String, String>()
-                plugin.requireUrls.forEach { url ->
-                    extensionFileManager.getCachedRequire(url)?.let { resolvedRequireContents[url] = it }
-                }
-
-                val resolvedResources = linkedMapOf<String, String>()
-                plugin.resources.forEach { (name, url) ->
-                    resolvedResources[name] = extensionFileManager.getCachedResource(name, url) ?: url
-                }
-
-                EmbeddedPlugin(
-                    id = plugin.id,
-                    name = plugin.name,
-                    kind = plugin.kind.name,
-                    description = plugin.description,
-                    icon = plugin.icon,
-                    versionName = plugin.versionName,
-                    authorName = plugin.authorName,
-                    matches = plugin.matches.map { rule ->
-                        EmbeddedMatchPattern(
-                            pattern = rule.pattern,
-                            regex = rule.isRegex,
-                            exclude = rule.exclude
-                        )
-                    },
-                    runAt = plugin.runAt.name,
-                    permissions = plugin.permissions.map { it.name },
-                    toolbar = plugin.showInToolbar,
-                    hasPanel = hasPanelMarkup(code.panelHtml),
-                    entryStyle = plugin.entryStyle.name,
-                    panelStyle = plugin.panelStyle.name,
-                    mainJs = code.mainJs,
-                    css = code.css,
-                    panelHtml = code.panelHtml,
-                    gmGrants = plugin.gmGrants,
-                    requireUrls = plugin.requireUrls,
-                    requireContents = resolvedRequireContents,
-                    resources = resolvedResources,
-                    chromeExtId = plugin.chromeExtId,
-                    manifestJson = plugin.manifestJson,
-                    backgroundScript = plugin.backgroundScript,
-                    popupPath = plugin.popupPath,
-                    optionsPagePath = plugin.optionsPagePath,
-                    legacyCompat = plugin.legacyCompat
-                )
+            val item = resolve(id)
+            if (item == null) {
+                AppLogger.w("ApkBuilder", "Plugin $id is not installed; omitted from the APK")
+            } else {
+                out.add(item)
             }
         } catch (e: Exception) {
-            AppLogger.e("ApkBuilder", "Failed to resolve plugin data", e)
-            emptyList()
+            AppLogger.e("ApkBuilder", "Failed to embed plugin $id", e)
         }
-    } else {
-        emptyList()
+    }
+    return out
+}
+
+private fun embedOnePlugin(
+    plugin: com.webtoapp.core.plugin.Plugin,
+    pluginStore: com.webtoapp.core.plugin.PluginStore,
+    extensionFileManager: com.webtoapp.core.extension.ExtensionFileManager,
+): EmbeddedPlugin {
+    val code = pluginStore.loadPackageCode(plugin)
+    val resolvedRequireContents = linkedMapOf<String, String>()
+    plugin.requireUrls.forEach { url ->
+        extensionFileManager.getCachedRequire(url)?.let { resolvedRequireContents[url] = it }
+    }
+    val resolvedResources = linkedMapOf<String, String>()
+    plugin.resources.forEach { (name, url) ->
+        resolvedResources[name] = extensionFileManager.getCachedResource(name, url) ?: url
+    }
+    return EmbeddedPlugin(
+        id = plugin.id,
+        name = plugin.name,
+        kind = plugin.kind.name,
+        description = plugin.description,
+        icon = plugin.icon,
+        versionName = plugin.versionName,
+        authorName = plugin.authorName,
+        matches = plugin.matches.map { rule ->
+            EmbeddedMatchPattern(
+                pattern = rule.pattern,
+                regex = rule.isRegex,
+                exclude = rule.exclude
+            )
+        },
+        runAt = plugin.runAt.name,
+        permissions = plugin.permissions.map { it.name },
+        toolbar = plugin.showInToolbar,
+        hasPanel = hasPanelMarkup(code.panelHtml),
+        entryStyle = plugin.entryStyle.name,
+        panelStyle = plugin.panelStyle.name,
+        mainJs = code.mainJs,
+        css = code.css,
+        panelHtml = code.panelHtml,
+        gmGrants = plugin.gmGrants,
+        requireUrls = plugin.requireUrls,
+        requireContents = resolvedRequireContents,
+        resources = resolvedResources,
+        chromeExtId = plugin.chromeExtId,
+        manifestJson = plugin.manifestJson,
+        backgroundScript = plugin.backgroundScript,
+        popupPath = plugin.popupPath,
+        optionsPagePath = plugin.optionsPagePath,
+        legacyCompat = plugin.legacyCompat
+    )
+}
+
+fun WebApp.toApkConfigWithModules(packageName: String, context: android.content.Context): ApkConfig {
+    val baseConfig = toApkConfig(packageName, context)
+    // The switch off means nothing runs. Leave the stored id list as the user
+    // saved it and do not wait on the plugin store.
+    if (!pluginsEnabled) return baseConfig
+
+    val resolved = try {
+        val pluginStore = com.webtoapp.core.plugin.PluginStore.getInstance(context)
+        // Wait for the full load. A short timeout used to snapshot a
+        // half-loaded cache and ship pluginsEnabled with an empty list.
+        kotlinx.coroutines.runBlocking { pluginStore.awaitLoaded() }
+        val ids = pluginStore.effectiveIds(pluginsEnabled, pluginIds)
+        val extensionFileManager = com.webtoapp.core.extension.ExtensionFileManager(context)
+        val embedded = embedPlugins(ids) { id ->
+            val plugin = pluginStore.getPlugin(id) ?: return@embedPlugins null
+            embedOnePlugin(plugin, pluginStore, extensionFileManager)
+        }
+        ids to embedded
+    } catch (e: Exception) {
+        AppLogger.e("ApkBuilder", "Failed to resolve plugin data", e)
+        return baseConfig
     }
 
     return baseConfig.copy(
-        plugin = baseConfig.plugin.copy(embeddedPlugins = embeddedPlugins)
+        plugin = baseConfig.plugin.copy(
+            pluginIds = resolved.first,
+            embeddedPlugins = resolved.second
+        )
     )
 }
 

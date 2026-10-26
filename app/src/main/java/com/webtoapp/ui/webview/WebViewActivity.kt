@@ -3936,26 +3936,35 @@ fun WebViewScreen(
                 val mwApp = webApp
                 val multiWebConfig = mwApp?.multiWebConfig
                 if (mwApp != null && multiWebConfig != null && multiWebConfig.sites.isNotEmpty()) {
-                    // App-level plugins: resolve the multi-web app's attached
-                    // set into embedded records so site configs consume the same
-                    // payload shape as a generated APK.
-                    val mwEmbeddedPlugins by androidx.compose.runtime.produceState<List<com.webtoapp.core.shell.EmbeddedShellPlugin>?>(
+                    // App-level plugins: same rule as export. An explicit id list
+                    // wins. With the switch on and no list, the enabled set from
+                    // Manage Plugins is used. The switch off injects nothing.
+                    val pluginStore = remember {
+                        com.webtoapp.core.plugin.PluginStore.getInstance(context)
+                    }
+                    val globalEnabledIds by pluginStore.enabledIds.collectAsStateWithLifecycle()
+                    val mwPlugins by androidx.compose.runtime.produceState<
+                        Pair<List<String>, List<com.webtoapp.core.shell.EmbeddedShellPlugin>>?
+                    >(
                         initialValue = null,
-                        mwApp.pluginIds
+                        mwApp.pluginsEnabled,
+                        mwApp.pluginIds,
+                        globalEnabledIds
                     ) {
-                        value = if (mwApp.pluginIds.isEmpty() || !mwApp.pluginsEnabled) {
-                            emptyList()
+                        value = if (!mwApp.pluginsEnabled) {
+                            emptyList<String>() to emptyList()
                         } else {
                             kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                                val store = com.webtoapp.core.plugin.PluginStore.getInstance(context)
-                                store.awaitLoaded()
-                                store.resolveForInjection(mwApp.pluginIds)
+                                pluginStore.awaitLoaded()
+                                val ids = pluginStore.effectiveIds(true, mwApp.pluginIds)
+                                val embedded = pluginStore.resolveForInjection(ids)
                                     .map { com.webtoapp.core.shell.EmbeddedShellPlugin.fromResolved(it) }
+                                ids to embedded
                             }
                         }
                     }
-                    val readyEmbeddedPlugins = mwEmbeddedPlugins
-                    if (readyEmbeddedPlugins != null) {
+                    val readyPlugins = mwPlugins
+                    if (readyPlugins != null) {
                     val shellConfig = com.webtoapp.core.shell.ShellConfig(
                         appName = mwApp.name,
                         appType = "MULTI_WEB",
@@ -4017,8 +4026,8 @@ fun WebViewScreen(
                             }
                         ),
                         pluginsEnabled = mwApp.pluginsEnabled,
-                        pluginIds = mwApp.pluginIds,
-                        embeddedPlugins = readyEmbeddedPlugins,
+                        pluginIds = readyPlugins.first,
+                        embeddedPlugins = readyPlugins.second,
                         pluginEntryStyle = previewPluginEntryStyle.name,
                         pluginPanelStyle = previewPluginPanelStyle.name,
                         browserDisguiseConfig = mwApp.browserDisguiseConfig,
@@ -4150,13 +4159,14 @@ fun WebViewScreen(
                                     WebScrollTracker.scrollUpBlocked(wv, wv.scrollY)
                                 }
 
-                                val pluginIds = if (isTestMode && !testModuleIds.isNullOrEmpty()) {
-                                    testModuleIds
+                                val explicitTestIds = isTestMode && !testModuleIds.isNullOrEmpty()
+                                val pluginIds = if (explicitTestIds) {
+                                    testModuleIds!!
                                 } else {
                                     webApp?.pluginIds ?: emptyList()
                                 }
 
-                                val pluginsEnabled = if (isTestMode && !testModuleIds.isNullOrEmpty()) {
+                                val pluginsEnabled = if (explicitTestIds) {
                                     true
                                 } else {
                                     webApp?.pluginsEnabled == true
@@ -4182,12 +4192,20 @@ fun WebViewScreen(
                                 // Plugin code resolution does package IO; resolve off the main
                                 // thread and push payloads into the session once ready. The
                                 // session is already attached so late payloads still inject.
+                                // Empty attached ids still resolve: the switch on uses the
+                                // enabled set from Manage Plugins. Test ids stay explicit.
                                 val previewWebView = surface.webView
-                                if (pluginsEnabled && pluginIds.isNotEmpty() && previewWebView != null) {
+                                if (pluginsEnabled && previewWebView != null) {
                                     kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
-                                        com.webtoapp.core.plugin.PluginStore.getInstance(ctx).awaitLoaded()
-                                        val payloads = com.webtoapp.core.plugin.PluginStore.getInstance(ctx)
-                                            .resolveForInjection(pluginIds)
+                                        val store = com.webtoapp.core.plugin.PluginStore.getInstance(ctx)
+                                        val ids = if (explicitTestIds) {
+                                            pluginIds
+                                        } else {
+                                            store.awaitLoaded()
+                                            store.effectiveIds(true, pluginIds)
+                                        }
+                                        if (ids.isEmpty()) return@launch
+                                        val payloads = store.resolveForInjection(ids)
                                         kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
                                             webViewManager.updatePluginPayloads(previewWebView, payloads)
                                         }

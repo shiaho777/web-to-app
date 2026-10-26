@@ -511,8 +511,11 @@ fun AppNavigation() {
             composable(Routes.CREATE_MULTI_WEB_APP) {
                 CreateMultiWebAppScreen(
                     onBack = { navController.popBackStackSafely() },
-                    onCreated = { name, multiWebConfig, iconUri, injectScripts, themeType ->
-                        viewModel.saveMultiWebApp(name, multiWebConfig, iconUri, injectScripts, themeType)
+                    onCreated = { name, multiWebConfig, iconUri, injectScripts, themeType, pluginsEnabled, pluginIds ->
+                        viewModel.saveMultiWebApp(
+                            name, multiWebConfig, iconUri, injectScripts, themeType,
+                            pluginsEnabled, pluginIds.toList()
+                        )
                         navController.popBackStackSafely()
                     }
                 )
@@ -526,8 +529,11 @@ fun AppNavigation() {
                 CreateMultiWebAppScreen(
                     existingAppId = appId,
                     onBack = { navController.popBackStackSafely() },
-                    onCreated = { name, multiWebConfig, iconUri, injectScripts, themeType ->
-                        viewModel.updateMultiWebApp(appId, name, multiWebConfig, iconUri, injectScripts, themeType)
+                    onCreated = { name, multiWebConfig, iconUri, injectScripts, themeType, pluginsEnabled, pluginIds ->
+                        viewModel.updateMultiWebApp(
+                            appId, name, multiWebConfig, iconUri, injectScripts, themeType,
+                            pluginsEnabled, pluginIds.toList()
+                        )
                         navController.popBackStackSafely()
                     }
                 )

@@ -49,6 +49,7 @@ import com.webtoapp.data.model.MultiWebConfig
 import com.webtoapp.data.model.MultiWebSite
 import com.webtoapp.data.model.HtmlFileType
 import com.webtoapp.ui.components.EnhancedElevatedCard
+import com.webtoapp.ui.components.PluginPickerCard
 import com.webtoapp.ui.components.PremiumTextField
 import com.webtoapp.ui.components.RuntimeIconPickerCard
 import com.webtoapp.ui.design.WtaAlertDialog
@@ -69,7 +70,9 @@ fun CreateMultiWebAppScreen(
         multiWebConfig: MultiWebConfig,
         iconUri: Uri?,
         injectScripts: List<com.webtoapp.data.model.UserScript>,
-        themeType: String
+        themeType: String,
+        pluginsEnabled: Boolean,
+        pluginIds: Set<String>,
     ) -> Unit
 ) {
     val isEdit = existingAppId > 0L
@@ -77,6 +80,10 @@ fun CreateMultiWebAppScreen(
     var appName by remember { mutableStateOf("") }
     var appIcon by remember { mutableStateOf<Uri?>(null) }
     var injectScripts by remember { mutableStateOf<List<com.webtoapp.data.model.UserScript>>(emptyList()) }
+    var pluginsEnabled by remember { mutableStateOf(false) }
+    var pluginIds by remember { mutableStateOf<Set<String>>(emptySet()) }
+    // Edit must not save the default empty attachment before the row is read.
+    var draftReady by remember { mutableStateOf(existingAppId <= 0L) }
 
     var sites by remember { mutableStateOf<List<MultiWebSite>>(emptyList()) }
 
@@ -113,6 +120,7 @@ fun CreateMultiWebAppScreen(
 
     LaunchedEffect(existingAppId) {
         if (existingAppId > 0L) {
+            draftReady = false
             val existingApp = org.koin.java.KoinJavaComponent
                 .get<com.webtoapp.data.repository.WebAppRepository>(
                     com.webtoapp.data.repository.WebAppRepository::class.java
@@ -141,7 +149,10 @@ fun CreateMultiWebAppScreen(
                     startSiteId = config.startSiteId
                 }
                 injectScripts = app.webViewConfig.injectScripts
+                pluginsEnabled = app.pluginsEnabled
+                pluginIds = app.pluginIds.toSet()
             }
+            draftReady = true
         }
     }
 
@@ -149,7 +160,7 @@ fun CreateMultiWebAppScreen(
         ActivityResultContracts.GetContent()
     ) { uri -> uri?.let { appIcon = it } }
 
-    val canCreate = sites.isNotEmpty()
+    val canCreate = sites.isNotEmpty() && draftReady
     val accentColor = MaterialTheme.colorScheme.onSurface
 
     WtaCreateFlowScaffold(
@@ -175,7 +186,9 @@ fun CreateMultiWebAppScreen(
                         ),
                         appIcon,
                         injectScripts,
-                        "AURORA"
+                        "AURORA",
+                        pluginsEnabled,
+                        pluginIds,
                     )
                 },
                 enabled = canCreate
@@ -484,6 +497,13 @@ fun CreateMultiWebAppScreen(
                     }
                 }
             }
+
+            PluginPickerCard(
+                enabled = pluginsEnabled,
+                selectedPluginIds = pluginIds,
+                onEnabledChange = { pluginsEnabled = it },
+                onPluginIdsChange = { pluginIds = it },
+            )
 
             WtaCreateFlowSection(title = Strings.multiWebCustomCodeSection) {
                 EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {

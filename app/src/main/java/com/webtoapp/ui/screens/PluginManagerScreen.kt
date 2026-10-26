@@ -27,6 +27,8 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -63,6 +65,7 @@ fun PluginManagerScreen(
 
     val installed by store.plugins.collectAsStateWithLifecycle()
     val builtIns by store.builtInPlugins.collectAsStateWithLifecycle()
+    val enabledIds by store.enabledIds.collectAsStateWithLifecycle()
     val hiddenBuiltIns by store.hiddenBuiltIns.collectAsStateWithLifecycle()
     val isLoading by store.isLoading.collectAsStateWithLifecycle()
 
@@ -244,6 +247,10 @@ fun PluginManagerScreen(
                                             onPersist = { persistOrder(builtIn = false) },
                                             onCancel = { installedWorking = shownInstalled }
                                         ),
+                                    enabled = plugin.id in enabledIds,
+                                    onEnabledChange = { on ->
+                                        scope.launch { store.setEnabled(plugin.id, on) }
+                                    },
                                     onEdit = if (plugin.isScriptPlugin) {
                                         { onNavigateToEditor(plugin.id) }
                                     } else null,
@@ -281,6 +288,10 @@ fun PluginManagerScreen(
                                             onPersist = { persistOrder(builtIn = true) },
                                             onCancel = { builtinWorking = shownBuiltIns }
                                         ),
+                                    enabled = plugin.id in enabledIds,
+                                    onEnabledChange = { on ->
+                                        scope.launch { store.setEnabled(plugin.id, on) }
+                                    },
                                     onEdit = { onNavigateToEditor(plugin.id) },
                                     onStyle = { styleTarget = plugin },
                                     onExport = {
@@ -519,6 +530,8 @@ private fun PluginRow(
     plugin: Plugin,
     isDragging: Boolean,
     modifier: Modifier = Modifier,
+    enabled: Boolean,
+    onEnabledChange: (Boolean) -> Unit,
     onEdit: (() -> Unit)?,
     onStyle: (() -> Unit)?,
     onExport: (() -> Unit)?,
@@ -577,6 +590,14 @@ private fun PluginRow(
                     )
                 }
             }
+            Spacer(modifier = Modifier.width(8.dp))
+            WtaSwitch(
+                checked = enabled,
+                onCheckedChange = onEnabledChange,
+                modifier = Modifier.semantics {
+                    contentDescription = Strings.pluginGlobalEnable
+                }
+            )
             if (onEdit != null || onStyle != null || onExport != null || onDelete != null) {
                 Box {
                     var rowMenu by remember { mutableStateOf(false) }

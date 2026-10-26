@@ -32,7 +32,7 @@ class ListModulesTool : Tool {
             return ToolResult.ok("No plugins found${if (query.isEmpty()) "" else " matching \"$query\""}.")
         }
         val lines = filtered.joinToString("\n") {
-            "- id=${it.id}  kind=${it.kind}  name=\"${it.name}\""
+            "- id=${it.id}  kind=${it.kind}  enabled=${store.isGloballyEnabled(it.id)}  name=\"${it.name}\""
         }
         return ToolResult.ok("${filtered.size} plugin(s):\n$lines")
     }

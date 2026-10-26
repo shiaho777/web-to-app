@@ -1133,7 +1133,9 @@ class MainViewModel(
         multiWebConfig: MultiWebConfig,
         iconUri: Uri?,
         injectScripts: List<com.webtoapp.data.model.UserScript> = emptyList(),
-        themeType: String = "AURORA"
+        themeType: String = "AURORA",
+        pluginsEnabled: Boolean = false,
+        pluginIds: List<String> = emptyList(),
     ) = createApp("Multi-Site", iconUri) { savedIconPath, currentThemeType, categoryId ->
         val context = getApplication<Application>()
         val localSites = multiWebConfig.sites.filter { it.type == "LOCAL" && it.localFileUri.isNotBlank() }
@@ -1179,6 +1181,8 @@ class MainViewModel(
             appType = AppType.MULTI_WEB,
             multiWebConfig = multiWebConfig.copy(sites = updatedSites, projectId = projectId),
             webViewConfig = com.webtoapp.data.model.WebViewConfig(injectScripts = injectScripts),
+            pluginsEnabled = pluginsEnabled,
+            pluginIds = pluginIds,
             themeType = currentThemeType,
             categoryId = categoryId
         )
@@ -1190,7 +1194,9 @@ class MainViewModel(
         multiWebConfig: MultiWebConfig,
         iconUri: Uri?,
         injectScripts: List<com.webtoapp.data.model.UserScript> = emptyList(),
-        themeType: String = "AURORA"
+        themeType: String = "AURORA",
+        pluginsEnabled: Boolean = false,
+        pluginIds: List<String> = emptyList(),
     ) = updateApp(appId, "Multi-Site", iconUri) { existingApp, savedIconPath ->
         val context = getApplication<Application>()
         val localSites = multiWebConfig.sites.filter { it.type == "LOCAL" && it.localFileUri.isNotBlank() }
@@ -1234,6 +1240,8 @@ class MainViewModel(
             iconPath = savedIconPath,
             multiWebConfig = multiWebConfig.copy(sites = updatedSites, projectId = projectId),
             webViewConfig = existingApp.webViewConfig.copy(injectScripts = injectScripts),
+            pluginsEnabled = pluginsEnabled,
+            pluginIds = pluginIds,
             updatedAt = System.currentTimeMillis()
         )
     }

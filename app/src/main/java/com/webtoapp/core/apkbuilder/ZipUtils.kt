@@ -9,6 +9,16 @@ import java.util.zip.ZipOutputStream
 
 object ZipUtils {
 
+    /**
+     * AssetManager refuses to open a deflated entry whose uncompressed size
+     * exceeds 1 MiB. Plugin bodies are inlined into `app_config.json`, so a
+     * config at or above this size has to be stored.
+     */
+    const val ASSET_UNCOMPRESSED_STORE_THRESHOLD = 1024 * 1024
+
+    fun configBytesShouldBeStored(uncompressedSize: Int): Boolean =
+        uncompressedSize >= ASSET_UNCOMPRESSED_STORE_THRESHOLD
+
     fun writeEntryDeflated(zipOut: ZipOutputStream, name: String, data: ByteArray) {
         val entry = ZipEntry(name)
         entry.method = ZipEntry.DEFLATED
