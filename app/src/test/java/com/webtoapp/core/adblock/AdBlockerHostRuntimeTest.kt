@@ -185,6 +185,31 @@ class AdBlockerHostRuntimeTest {
     }
 
     @Test
+    fun ruleInstallHoldDelaysTheFirstLoadUntilRelease() {
+        adBlocker.holdRuleInstall()
+        var loads = 0
+        adBlocker.runWhenRulesInstalled { loads++ }
+        assertThat(loads).isEqualTo(0)
+
+        adBlocker.releaseRuleInstall()
+        assertThat(loads).isEqualTo(1)
+
+        adBlocker.runWhenRulesInstalled { loads++ }
+        assertThat(loads).isEqualTo(2)
+    }
+
+    @Test
+    fun installCompiledRulesEnablesBlocking() = runBlocking {
+        adBlocker.installCompiledRules {
+            listOf("[Adblock Plus 2.0]", "||bundled.example.test^")
+        }
+        assertThat(adBlocker.isEnabled()).isTrue()
+        assertThat(
+            adBlocker.shouldBlock("https://bundled.example.test/ad.js", resourceType = "script")
+        ).isTrue()
+    }
+
+    @Test
     fun pathologicalAbpPatternDoesNotCrashParserAndSafeRuleStillApplies() {
         val pathological = "||evil" + "*".repeat(5) + ".test^"
         adBlocker.setEnabled(true)

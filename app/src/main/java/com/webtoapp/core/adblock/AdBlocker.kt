@@ -765,6 +765,15 @@ class AdBlocker {
 
     private val engineMutex = Mutex()
     private val refreshRunning = AtomicBoolean(false)
+
+    /**
+     * Cold start holds the first page load until [releaseRuleInstall].
+     * Parsing a downloaded list takes long enough to trip an ANR if it runs
+     * on the main thread, and the page must not start against a half-built
+     * engine either.
+     */
+    private val ruleInstallWaiters = ArrayList<() -> Unit>()
+    private var ruleInstallHeld = false
     private val refreshScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     /** Parameters of the last [prepareRuntimeFilters] call, so a background refresh can
@@ -856,6 +865,40 @@ class AdBlocker {
         bumpCosmeticVersion()
     }
     fun isEnabled(): Boolean = enabled
+
+    /** Call on the main thread, before the first page load is composed. */
+    fun holdRuleInstall() {
+        synchronized(ruleInstallWaiters) { ruleInstallHeld = true }
+    }
+
+    fun runWhenRulesInstalled(block: () -> Unit) {
+        val runNow = synchronized(ruleInstallWaiters) {
+            if (!ruleInstallHeld) {
+                true
+            } else {
+                ruleInstallWaiters.add(block)
+                false
+            }
+        }
+        if (runNow) block()
+    }
+
+    /** Call on the main thread after the engine has been installed. */
+    fun releaseRuleInstall() {
+        val waiters = synchronized(ruleInstallWaiters) {
+            ruleInstallHeld = false
+            val copy = ruleInstallWaiters.toList()
+            ruleInstallWaiters.clear()
+            copy
+        }
+        waiters.forEach { waiter ->
+            try {
+                waiter()
+            } catch (t: Throwable) {
+                com.webtoapp.core.logging.AppLogger.w("AdBlocker", "Deferred page load failed", t)
+            }
+        }
+    }
 
     fun getBlockedCount(): Long = blockedCount
     fun resetBlockedCount() { blockedCount = 0L }
@@ -1345,24 +1388,43 @@ class AdBlocker {
         enabled: Boolean,
         customRules: List<String> = emptyList(),
         subscriptionUrls: List<String> = emptyList()
-    ) = engineMutex.withLock {
-        if (!enabled) {
+    ) = withContext(Dispatchers.IO) {
+        engineMutex.withLock {
+            if (!enabled) {
+                setEnabled(false)
+                return@withLock
+            }
+            // Drop matches before the lists are cleared so a WebView thread
+            // cannot walk a half-reset engine.
             setEnabled(false)
-            return@withLock
-        }
-        val selected = subscriptionUrls.map { it.trim() }.filter { it.isNotEmpty() }
-        lastPrepSelected = selected
-        lastPrepCustomRules = customRules
-        if (selected.isEmpty()) {
-            loadHostsRules(context)
-            customRules.forEach { parseAndAddRule(it) }
+            val selected = subscriptionUrls.map { it.trim() }.filter { it.isNotEmpty() }
+            lastPrepSelected = selected
+            lastPrepCustomRules = customRules
+            if (selected.isEmpty()) {
+                loadHostsRules(context)
+                customRules.forEach { parseAndAddRule(it) }
+                setEnabled(true)
+                kickSourceRefresh(context, refreshableKeys(selected))
+                return@withLock
+            }
+            reingestSelected(context, selected, customRules)
             setEnabled(true)
             kickSourceRefresh(context, refreshableKeys(selected))
-            return@withLock
         }
-        reingestSelected(context, selected, customRules)
-        setEnabled(true)
-        kickSourceRefresh(context, refreshableKeys(selected))
+    }
+
+    /**
+     * Parse a bundled rule file off the main thread. [readLines] runs on IO,
+     * including the asset read — a downloaded list is large enough that
+     * reading it on the main thread is itself an ANR.
+     */
+    suspend fun installCompiledRules(readLines: () -> List<String>) = withContext(Dispatchers.IO) {
+        val lines = readLines()
+        engineMutex.withLock {
+            setEnabled(false)
+            initialize(lines, useDefaultRules = false)
+            setEnabled(true)
+        }
     }
 
     /** http(s) sources eligible for background refresh: this app's subscriptions plus
@@ -1474,8 +1536,8 @@ class AdBlocker {
      * is tens of megabytes; parsing every rule into filter objects (and the old
      * unanchored-index copy) ran after the template repack had already reported
      * 70%, so the build looked frozen on "Repacking base template...". The shell
-     * parses the bundled text itself at launch, so export only has to keep the
-     * rule lines.
+     * parses the bundled text itself at launch, on a background thread, so
+     * export only has to keep the rule lines.
      */
     suspend fun compileRulesText(
         context: Context,

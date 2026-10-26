@@ -197,15 +197,19 @@ fun ShellBrowserAndroidView(
                         onWebViewCreated(wv)
                         onWebViewRefUpdated(wv)
                         WebViewManager.runWhenFreshSessionReady {
-                            if (wv.tag == "state_restored") {
-                                surface.reload()
-                            } else if (!initialUrl.isNullOrBlank()) {
-                                surface.loadUrl(initialUrl)
+                            webViewManager.runWhenAdBlockRulesReady {
+                                if (wv.tag == "state_restored") {
+                                    surface.reload()
+                                } else if (!initialUrl.isNullOrBlank()) {
+                                    surface.loadUrl(initialUrl)
+                                }
                             }
                         }
                     } else if (!initialUrl.isNullOrBlank()) {
                         WebViewManager.runWhenFreshSessionReady {
-                            surface.loadUrl(initialUrl)
+                            webViewManager.runWhenAdBlockRulesReady {
+                                surface.loadUrl(initialUrl)
+                            }
                         }
                     }
                     if (wv == null) {

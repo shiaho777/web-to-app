@@ -1273,6 +1273,9 @@ class WebViewManager(
         """
     }
 
+    /** First page load waits here while a downloaded rule list is parsed off the main thread. */
+    fun runWhenAdBlockRulesReady(block: () -> Unit) = adBlocker.runWhenRulesInstalled(block)
+
     private var appPluginPayloads: List<com.webtoapp.core.plugin.PluginSession.Resolved> = emptyList()
 
     private var pluginsEnabled: Boolean = true

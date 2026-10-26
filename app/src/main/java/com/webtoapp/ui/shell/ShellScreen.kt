@@ -77,6 +77,11 @@ fun ShellScreen(
     val activation = WebToAppApplication.activation
     val announcement = WebToAppApplication.announcement
     val adBlocker = WebToAppApplication.adBlock
+    // Arm before the browser view is composed. LaunchedEffect runs after that
+    // view, so a hold started inside the effect would miss the first load.
+    remember {
+        if (config.adBlockEnabled) adBlocker.holdRuleInstall()
+    }
 
     val appType = config.appType.trim().uppercase()
 
@@ -167,16 +172,22 @@ fun ShellScreen(
     LaunchedEffect(Unit) {
 
         if (config.adBlockEnabled) {
-            val compiledRules = try {
-                val rulesText = context.assets.open("wta_adblock_compiled.txt")
-                    .bufferedReader().use { it.readText() }
-                if (rulesText.isNotEmpty()) {
-                    rulesText.split("\n").filter { it.isNotBlank() }
-                } else emptyList()
-            } catch (_: Exception) { emptyList<String>() }
-            val allRules = config.adBlockRules + compiledRules
-            adBlocker.initialize(allRules, useDefaultRules = false)
-            adBlocker.setEnabled(true)
+            try {
+                adBlocker.installCompiledRules {
+                    val bundled = try {
+                        context.assets.open("wta_adblock_compiled.txt").bufferedReader().use { reader ->
+                            reader.lineSequence().map { it.trim() }.filter { it.isNotEmpty() }.toList()
+                        }
+                    } catch (_: Exception) {
+                        emptyList()
+                    }
+                    if (config.adBlockRules.isEmpty()) bundled else config.adBlockRules + bundled
+                }
+            } catch (e: Exception) {
+                AppLogger.e("ShellScreen", "Failed to install ad-block rules", e)
+            } finally {
+                adBlocker.releaseRuleInstall()
+            }
         }
 
         if (config.activationEnabled) {
