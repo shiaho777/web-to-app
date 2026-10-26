@@ -2,6 +2,7 @@ package com.webtoapp.ui.shared
 
 import android.app.Activity
 import android.content.pm.ActivityInfo
+import android.graphics.Rect
 import android.os.Build
 import android.view.View
 import android.view.ViewGroup
@@ -404,7 +405,7 @@ object WindowHelper {
                             WindowManager.LayoutParams.SOFT_INPUT_STATE_UNSPECIFIED
                     )
                     installManualImePadding(activity, contentView)
-                    AppLogger.d(tag, "键盘模式: RESIZE (边到边，动画期间平移，结束时再改高度)")
+                    AppLogger.d(tag, "键盘模式: RESIZE (边到边，动画期间只滚动被挡住的内容，结束时再改高度)")
                 }
             }
 
@@ -432,19 +433,81 @@ object WindowHelper {
 
         var imeAnimating = false
         val follow = ImeAnimationFollow()
+        val documentScroll = ImeDocumentScroll()
 
-        fun applyFrame(frame: ImeFrame) {
-            contentView.translationY = frame.translationY
-            val bottom = frame.layoutBottom ?: return
-            if (contentView.paddingBottom != bottom) {
-                contentView.setPadding(
-                    contentView.paddingLeft,
-                    contentView.paddingTop,
-                    contentView.paddingRight,
-                    bottom
-                )
+        fun applyFrame(frame: ImeFrame, shown: Int) {
+            // Never leave a pan in place. A non-zero translation moves fixed
+            // page elements and the status-bar band (#1398).
+            if (contentView.translationY != 0f) contentView.translationY = 0f
+            val bottom = frame.layoutBottom
+            if (bottom != null) {
+                if (contentView.paddingBottom != bottom) {
+                    contentView.setPadding(
+                        contentView.paddingLeft,
+                        contentView.paddingTop,
+                        contentView.paddingRight,
+                        bottom
+                    )
+                }
+                if (contentView.clipBounds != null) contentView.clipBounds = null
+                publishImeOcclusion(contentView, bottom)
+                return
             }
-            publishImeOcclusion(contentView, bottom)
+            if (frame.scrollDocument && shown > 0 && contentView.height > 0 && contentView.width > 0) {
+                val clipBottom = (contentView.height - shown).coerceAtLeast(0)
+                contentView.clipBounds = Rect(0, 0, contentView.width, clipBottom)
+            } else if (contentView.clipBounds != null) {
+                contentView.clipBounds = null
+            }
+        }
+
+        var latestImeBottom = 0
+
+        fun beginDocumentScroll() {
+            documentScroll.begin()
+        }
+
+        fun applyDocumentScroll(webView: android.webkit.WebView, imeBottom: Int) {
+            if (imeBottom <= 0 || webView.height <= 0) return
+            val web = IntArray(2)
+            val content = IntArray(2)
+            webView.getLocationInWindow(web)
+            contentView.getLocationInWindow(content)
+            val overlap = keyboardOverlapPx(
+                web[1], webView.height, content[1], contentView.height, imeBottom,
+            )
+            val delta = documentScroll.scrollDelta(webView.height, overlap)
+            if (delta > 0) webView.scrollBy(0, delta)
+        }
+
+        fun scrollCoveredField(imeBottom: Int) {
+            latestImeBottom = imeBottom
+            val webView = findWebViewInHierarchy(contentView) ?: return
+            if (webView.height <= 0 || imeBottom <= 0) return
+            val generation = documentScroll.requestSnapshot()
+            if (generation != null) {
+                val heightPx = webView.height
+                webView.evaluateJavascript(FOCUSED_FIELD_SNAPSHOT_JS) { raw ->
+                    val snap = parseFocusedFieldSnapshot(raw)
+                    if (snap == null) {
+                        documentScroll.snapshotMissed(generation)
+                        return@evaluateJavascript
+                    }
+                    documentScroll.capture(
+                        snap.topCss,
+                        snap.bottomCss,
+                        snap.viewportHeightCss,
+                        heightPx,
+                        generation,
+                    )
+                    // The rect arrives after this frame. Catch up immediately
+                    // instead of waiting for the next inset tick.
+                    webView.post {
+                        if (webView.isAttachedToWindow) applyDocumentScroll(webView, latestImeBottom)
+                    }
+                }
+            }
+            applyDocumentScroll(webView, imeBottom)
         }
 
         ViewCompat.setWindowInsetsAnimationCallback(
@@ -456,6 +519,7 @@ object WindowHelper {
                     if (animation.typeMask and WindowInsetsCompat.Type.ime() != 0) {
                         imeAnimating = true
                         follow.onPrepare()
+                        beginDocumentScroll()
                     }
                 }
 
@@ -467,8 +531,12 @@ object WindowHelper {
                         if (!imeAnimating) {
                             imeAnimating = true
                             follow.onPrepare()
+                            beginDocumentScroll()
                         }
-                        applyFrame(follow.onFrame(insets.getInsets(WindowInsetsCompat.Type.ime()).bottom))
+                        val shown = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom
+                        val frame = follow.onFrame(shown)
+                        applyFrame(frame, shown)
+                        if (frame.scrollDocument) scrollCoveredField(shown)
                     }
                     return insets
                 }
@@ -480,7 +548,10 @@ object WindowHelper {
                     val rootInsets = ViewCompat.getRootWindowInsets(contentView)
                     val imeVisible = rootInsets?.isVisible(WindowInsetsCompat.Type.ime()) ?: false
                     val imeBottom = rootInsets?.getInsets(WindowInsetsCompat.Type.ime())?.bottom ?: 0
-                    applyFrame(follow.onEnd(if (imeVisible) imeBottom else 0))
+                    val finalBottom = if (imeVisible) imeBottom else 0
+                    if (finalBottom > follow.laidOutBottom) scrollCoveredField(finalBottom)
+                    documentScroll.end()
+                    applyFrame(follow.onEnd(finalBottom), finalBottom)
 
                     if (imeVisible) {
                         checkAndScrollWebViewToFocusedInput(activity)
@@ -496,7 +567,7 @@ object WindowHelper {
                 // for direction, and let onProgress move the page without a layout.
                 follow.onTarget(imeBottom)
             } else {
-                applyFrame(follow.jumpTo(imeBottom))
+                applyFrame(follow.jumpTo(imeBottom), imeBottom)
             }
             windowInsets
         }
@@ -509,6 +580,7 @@ object WindowHelper {
         ViewCompat.setWindowInsetsAnimationCallback(contentView, null)
         ViewCompat.setOnApplyWindowInsetsListener(contentView, null)
         contentView.translationY = 0f
+        contentView.clipBounds = null
         if (contentView.paddingBottom != 0) {
             contentView.setPadding(
                 contentView.paddingLeft,
@@ -533,10 +605,10 @@ object WindowHelper {
                         var rect = el.getBoundingClientRect();
                         var viewportHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
                         var viewportTop = window.visualViewport ? window.visualViewport.offsetTop : 0;
-                        if (rect.top >= viewportTop && rect.bottom <= (viewportTop + viewportHeight)) {
+                        if (rect.top >= viewportTop - 1 && rect.bottom <= (viewportTop + viewportHeight + 2)) {
                             return 'already_visible';
                         }
-                        el.scrollIntoView({ block: 'center' });
+                        el.scrollIntoView({ block: 'nearest' });
                         return 'scrolled';
                     })();
                 """.trimIndent(), null)

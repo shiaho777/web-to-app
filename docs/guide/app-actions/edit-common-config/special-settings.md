@@ -63,7 +63,7 @@ For platforms that return to an **https** callback on the wrapped site's own hos
 - **PWA offline** — offline cache strategy (`pwaOfflineEnabled`, `pwaOfflineStrategy`).
 - **Fresh session on launch** — on the **Network & Offline** card, next to PWA offline (`clearBrowsingDataOnLaunch`). Off by default. The generated APK then clears cookies, site storage, and the on-disk WebView profile on each cold start, including the second launch. It cannot be on together with PWA offline. Leaving it off keeps the profile.
 - **Floating back button** — `showFloatingBackButton`.
-- **Keyboard adjust mode** — `keyboardAdjustMode` (resize, …). On Android 11 and later, RESIZE follows the keyboard while it moves and applies one height when the animation ends. On Android 10 and below, RESIZE uses the classic window-resize path (the window is not edge-to-edge).
+- **Keyboard adjust mode** — `keyboardAdjustMode` (resize, …). On Android 11 and later, RESIZE keeps the top of the page still while the keyboard moves, scrolls the document only enough to keep the focused field visible, and applies one height when the animation ends. On Android 10 and below, RESIZE uses the classic window-resize path (the window is not edge-to-edge).
 - **Fullscreen video orientation** — how fullscreen video orients (`fullscreenVideoOrientation`), e.g. auto sensor landscape.
 - **Hide URL preview** — `hideUrlPreview`.
 

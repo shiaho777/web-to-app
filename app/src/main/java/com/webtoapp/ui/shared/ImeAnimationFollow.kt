@@ -1,11 +1,16 @@
 package com.webtoapp.ui.shared
 
 /**
- * Follows the keyboard without resizing the page on every animation frame.
+ * Decides when a keyboard animation may change the page height.
  *
- * Opening pans the already-laid-out page with [ImeFrame.translationY]. Closing
- * expands the page once, then lets the keyboard uncover it. The final height
- * is applied when the animation ends.
+ * The content view must not be translated. Translating it (#1343) slides the
+ * whole WebView, including `position: fixed` elements, up behind the status
+ * bar and then snaps it back when the height is applied (#1398).
+ *
+ * Opening leaves the laid-out height alone and reports [ImeFrame.scrollDocument]
+ * so only the document scrolls, and only by the amount the focused field is
+ * covered. Closing expands once, then lets the keyboard uncover the page.
+ * The final height is applied when the animation ends.
  */
 internal class ImeAnimationFollow {
     var laidOutBottom: Int = 0
@@ -29,7 +34,7 @@ internal class ImeAnimationFollow {
 
     fun onFrame(shown: Int): ImeFrame {
         val visible = shown.coerceAtLeast(0)
-        if (expandedForClose) return ImeFrame(translationY = 0f, layoutBottom = null)
+        if (expandedForClose) return hold()
         val closing = targetBottom < laidOutBottom ||
             (targetBottom == laidOutBottom && visible < laidOutBottom)
         if (closing && visible < laidOutBottom) {
@@ -37,13 +42,15 @@ internal class ImeAnimationFollow {
             laidOutBottom = 0
             return ImeFrame(translationY = 0f, layoutBottom = 0)
         }
-        if (closing) return ImeFrame(translationY = 0f, layoutBottom = null)
-        return ImeFrame(translationY = (laidOutBottom - visible).toFloat(), layoutBottom = null)
+        if (closing) return hold()
+        return ImeFrame(translationY = 0f, layoutBottom = null, scrollDocument = true)
     }
 
     fun onEnd(finalBottom: Int): ImeFrame = settle(finalBottom)
 
     fun jumpTo(bottom: Int): ImeFrame = settle(bottom)
+
+    private fun hold(): ImeFrame = ImeFrame(translationY = 0f, layoutBottom = null)
 
     private fun settle(bottom: Int): ImeFrame {
         animating = false
@@ -57,5 +64,6 @@ internal class ImeAnimationFollow {
 
 internal data class ImeFrame(
     val translationY: Float,
-    val layoutBottom: Int?
+    val layoutBottom: Int?,
+    val scrollDocument: Boolean = false,
 )

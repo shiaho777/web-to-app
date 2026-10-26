@@ -63,7 +63,7 @@
 - **PWA 离线** —— 离线缓存策略(`pwaOfflineEnabled`、`pwaOfflineStrategy`)。
 - **每次打开都是新会话** —— 在 **网络与离线** 卡片上,与 PWA 离线相邻(`clearBrowsingDataOnLaunch`)。默认关闭。生成的 APK 会在每次冷启动(包括第二次打开)清除 Cookie、站点存储和磁盘上的 WebView 资料。它不能和 PWA 离线同时开启。保持关闭则资料目录保留。
 - **浮动返回按钮** —— `showFloatingBackButton`。
-- **键盘调整模式** —— `keyboardAdjustMode`(resize……)。在 Android 11 及更高版本上,RESIZE 会跟着键盘动画移动,动画结束时只改一次高度。在 Android 10 及以下,RESIZE 走经典窗口缩放路径(窗口非 edge-to-edge)。
+- **键盘调整模式** —— `keyboardAdjustMode`(resize……)。在 Android 11 及更高版本上,RESIZE 在键盘移动时保持页面顶部不动,只把文档滚动到刚好露出焦点输入框,动画结束时才改一次高度。在 Android 10 及以下,RESIZE 走经典窗口缩放路径(窗口非 edge-to-edge)。
 - **全屏视频方向** —— 全屏视频如何转向(`fullscreenVideoOrientation`),如自动传感器横屏。
 - **隐藏 URL 预览** —— `hideUrlPreview`。
 
