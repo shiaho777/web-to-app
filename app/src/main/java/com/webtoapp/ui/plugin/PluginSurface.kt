@@ -162,6 +162,20 @@ private val noPluginsInstalled: String
         AppLanguage.KOREAN -> "활성화된 플러그인 없음"
     }
 
+private val pluginsUnsupportedByKernel: String
+    @Composable get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "这个内核不能运行插件，请改用系统 WebView"
+        AppLanguage.ENGLISH -> "This kernel can't run plugins. Use System WebView"
+        AppLanguage.ARABIC -> "هذا المحرك لا يشغّل الإضافات. استخدم WebView النظام"
+        AppLanguage.PORTUGUESE -> "Este núcleo não executa plugins. Use o WebView do sistema"
+        AppLanguage.SPANISH -> "Este núcleo no ejecuta plugins. Usa el WebView del sistema"
+        AppLanguage.FRENCH -> "Ce moteur n'exécute pas les plugins. Utilisez le WebView système"
+        AppLanguage.GERMAN -> "Dieser Kern führt keine Plugins aus. System-WebView verwenden"
+        AppLanguage.RUSSIAN -> "Это ядро не запускает плагины. Используйте системный WebView"
+        AppLanguage.JAPANESE -> "このカーネルではプラグインを実行できません。システムの WebView を使ってください"
+        AppLanguage.KOREAN -> "이 커널에서는 플러그인을 실행할 수 없습니다. 시스템 WebView를 사용하세요"
+    }
+
 internal fun kindLabel(kind: PluginKind): String = when (kind) {
     PluginKind.HCJ -> "HCJ"
     PluginKind.USERSCRIPT -> "JS"
@@ -332,7 +346,8 @@ fun PluginFloatingHandle(
 @Composable
 fun PluginSheet(
     onDismiss: () -> Unit,
-    onManage: (() -> Unit)? = null
+    onManage: (() -> Unit)? = null,
+    pluginsUnsupported: Boolean = false
 ) {
     val entries by PluginHostState.entries.collectAsStateWithLifecycle()
     val session = PluginHostState.session
@@ -350,7 +365,7 @@ fun PluginSheet(
             )
             if (entries.isEmpty()) {
                 Text(
-                    text = noPluginsInstalled,
+                    text = if (pluginsUnsupported) pluginsUnsupportedByKernel else noPluginsInstalled,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)
@@ -503,7 +518,8 @@ fun PluginSurfaceHost(
     entryStyle: PluginEntryStyle,
     toolbarVisible: Boolean = true,
     floatingHandleModifier: Modifier = Modifier,
-    onManage: (() -> Unit)? = null
+    onManage: (() -> Unit)? = null,
+    pluginsUnsupported: Boolean = false
 ) {
     val sheetOpen by PluginHostState.sheetOpen.collectAsStateWithLifecycle()
     val panelRequest by PluginHostState.panelRequest.collectAsStateWithLifecycle()
@@ -513,7 +529,8 @@ fun PluginSurfaceHost(
     if (sheetOpen) {
         PluginSheet(
             onDismiss = { PluginHostState.dismissPluginSheet() },
-            onManage = onManage
+            onManage = onManage,
+            pluginsUnsupported = pluginsUnsupported
         )
     }
 

@@ -37,7 +37,7 @@ GeckoView 是独立于系统 WebView 的完整第二引擎,而不是 WebView 的
 ### 暂不可用(需要这些功能请选择系统 WebView 内核)
 
 - **[广告拦截](/zh/guide/app-actions/edit-common-config/ad-blocking)** —— 网络规则过滤与元素隐藏均不生效
-- **[用户脚本](/zh/extensions/userscript)(GM_\* API)与 [Chrome MV3 扩展](/zh/extensions/chrome-mv3)**(含 declarativeNetRequest / webRequest 规则)
+- **[用户脚本](/zh/extensions/userscript)(GM_\* API)与 [Chrome MV3 扩展](/zh/extensions/chrome-mv3)**(含 declarativeNetRequest / webRequest 规则)。插件列表会说明这个内核不能运行插件，而不是显示没有已启用的插件
 - **[NativeBridge](/zh/extensions/native-bridge) 完整 JS API** —— 剪贴板、通知、震动、打印、分享、屏幕常亮、屏幕方向、Google 登录等;GeckoView 下仅 CORS 绕过 / 私有网络访问的 `httpRequest` 可用
 - **JS 注入类功能** —— 浏览器指纹伪装、[设备伪装](/zh/guide/app-actions/edit-common-config/device-disguise)、内核伪装与风味、[页面翻译](/zh/guide/app-actions/edit-common-config/translate)、音频解锁、剪贴板 / 通知 / 屏幕方向 polyfill、Cloudflare 兼容辅助、自定义注入脚本、弹窗拦截、滚动位置记忆、图片修复、隐藏链接预览
 - **PWA 离线(Service Worker 注入)、静态资产包、资源加密加载** —— 因此**开启资源加密的 HTML / [前端离线包](/zh/guide/app-types/frontend)类应用必须使用系统 WebView 内核**

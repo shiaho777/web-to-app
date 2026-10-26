@@ -4643,12 +4643,22 @@ fun WebViewScreen(
             // TOOLBAR/MENU entries live in the top app bar; FLOATING_HANDLE
             // renders the draggable launcher here.
             if (previewPluginsEnabled || webApp?.appType == com.webtoapp.data.model.AppType.MULTI_WEB) {
+                val pluginEngineName = webApp?.apkExportConfig?.engineType
+                val pluginWebConfig = webApp?.webViewConfig ?: com.webtoapp.data.model.WebViewConfig()
+                val pluginsUnsupported = remember(pluginEngineName, pluginWebConfig.dnsConfig.echEffective) {
+                    com.webtoapp.core.engine.EngineViewFactory.resolveEngineType(
+                        pluginEngineName,
+                        pluginWebConfig,
+                        context
+                    ) == com.webtoapp.core.engine.EngineType.GECKOVIEW
+                }
                 com.webtoapp.ui.plugin.PluginSurfaceHost(
                     entryStyle = previewPluginEntryStyle,
                     toolbarVisible = shouldShowTopBar,
                     floatingHandleModifier = Modifier
                         .align(Alignment.BottomEnd)
-                        .padding(bottom = 24.dp)
+                        .padding(bottom = 24.dp),
+                    pluginsUnsupported = pluginsUnsupported
                 )
             }
 

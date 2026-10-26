@@ -351,12 +351,21 @@ fun BoxScope.ShellScaffoldLayout(
             // Unified plugin surface: sheet, panel host and the floating handle
             // (entry style TOOLBAR mounts inside ShellTopAppBar instead).
             if (config.pluginsEnabled) {
+                val pluginContext = LocalContext.current
+                val pluginsUnsupported = remember(config.engineType, webViewConfig.dnsConfig.echEffective) {
+                    com.webtoapp.core.engine.EngineViewFactory.resolveEngineType(
+                        config.engineType,
+                        webViewConfig,
+                        pluginContext
+                    ) == com.webtoapp.core.engine.EngineType.GECKOVIEW
+                }
                 com.webtoapp.ui.plugin.PluginSurfaceHost(
                     entryStyle = com.webtoapp.core.plugin.PluginEntryStyle.parse(config.pluginEntryStyle),
                     toolbarVisible = showToolbar,
                     floatingHandleModifier = Modifier
                         .align(Alignment.BottomEnd)
-                        .padding(bottom = 24.dp)
+                        .padding(bottom = 24.dp),
+                    pluginsUnsupported = pluginsUnsupported
                 )
             }
         }
