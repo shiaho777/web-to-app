@@ -364,6 +364,13 @@ class ShellActivity : AppCompatActivity() {
     }
 
     fun handlePermissionRequest(request: PermissionRequest) = permissionDelegate.handlePermissionRequest(request)
+
+    fun onCapturePermissionCanceled(request: PermissionRequest) =
+        permissionDelegate.onCapturePermissionCanceled(request)
+
+    internal fun reloadForCapturePermission() {
+        reloadBrowser()
+    }
     fun handleAndroidPermissionsRequest(permissions: Array<String>, onResult: (Boolean) -> Unit) =
         permissionDelegate.requestAndroidPermissions(permissions, onResult)
     fun handleGeolocationPermission(origin: String?, callback: GeolocationPermissions.Callback?) {

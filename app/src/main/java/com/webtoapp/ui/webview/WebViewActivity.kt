@@ -260,7 +260,7 @@ open class WebViewActivity : AppCompatActivity() {
         surface = { browserSurface }
     )
 
-    private var pendingPermissionRequest: PermissionRequest? = null
+    private val capturePermission = com.webtoapp.core.webview.CapturePermissionBridge()
     private var pendingEnginePermissionCallback: ((Boolean) -> Unit)? = null
     private var pendingGeolocationOrigin: String? = null
     private var pendingGeolocationCallback: GeolocationPermissions.Callback? = null
@@ -668,11 +668,14 @@ open class WebViewActivity : AppCompatActivity() {
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
         com.webtoapp.core.webview.FileChooserLifetime.endPermissionDialog()
-        val request = pendingPermissionRequest
-        pendingPermissionRequest = null
-        if (request != null) {
-            com.webtoapp.core.webview.WebPermissionRequests.settle(request, permissions.values.all { it })
+        val allGranted = permissions.isNotEmpty() && permissions.values.all { it }
+        if (capturePermission.onRuntimeResult(allGranted)) {
+            window.decorView.post { reloadBrowser() }
         }
+    }
+
+    fun onCapturePermissionCanceled(request: PermissionRequest) {
+        capturePermission.onCanceled(request)
     }
 
     /**
@@ -893,12 +896,12 @@ open class WebViewActivity : AppCompatActivity() {
             com.webtoapp.core.webview.WebPermissionRequests.settle(request, true)
         } else {
 
-            pendingPermissionRequest = request
+            capturePermission.remember(request)
             val launched = com.webtoapp.core.webview.FileChooserLifetime.runPermissionDialog {
                 permissionLauncher.launch(notGranted.toTypedArray())
             }
             if (!launched) {
-                pendingPermissionRequest = null
+                capturePermission.clear()
                 com.webtoapp.core.webview.WebPermissionRequests.settle(request, false)
             }
         }
@@ -3206,6 +3209,10 @@ fun WebViewScreen(
                     (activity as? WebViewActivity)?.handlePermissionRequest(req)
                         ?: req.grant(req.resources)
                 }
+            }
+
+            override fun onPermissionRequestCanceled(request: PermissionRequest?) {
+                request?.let { (activity as? WebViewActivity)?.onCapturePermissionCanceled(it) }
             }
 
             override fun onShowFileChooser(

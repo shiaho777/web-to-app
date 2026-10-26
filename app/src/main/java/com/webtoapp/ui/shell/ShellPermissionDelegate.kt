@@ -31,7 +31,7 @@ private const val KEY_PENDING_CAMERA_PHOTO = "wta_pending_camera_photo"
 
 class ShellPermissionDelegate(private val activity: AppCompatActivity) {
 
-    private var pendingPermissionRequest: PermissionRequest? = null
+    private val capturePermission = com.webtoapp.core.webview.CapturePermissionBridge()
     private var pendingGeolocationOrigin: String? = null
     private var pendingGeolocationCallback: GeolocationPermissions.Callback? = null
     private val pendingLocationAccessCallbacks = mutableListOf<(Boolean) -> Unit>()
@@ -542,16 +542,26 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
     ) { permissions ->
         com.webtoapp.core.webview.FileChooserLifetime.endPermissionDialog()
         AppLogger.d("ShellActivity", "Permission result received: $permissions")
-        val allGranted = permissions.values.all { it }
+        val allGranted = permissions.isNotEmpty() && permissions.values.all { it }
         AppLogger.d("ShellActivity", "All permissions granted: $allGranted")
-        val request = pendingPermissionRequest
-        pendingPermissionRequest = null
-        if (request == null) {
-            AppLogger.w("ShellActivity", "pendingPermissionRequest is null!")
-            return@registerForActivityResult
+        if (capturePermission.onRuntimeResult(allGranted)) {
+            AppLogger.d("ShellActivity", "Capture request died during the dialog; reloading")
+            reloadAfterCaptureGrant()
         }
-        AppLogger.d("ShellActivity", "Settling WebView permission request granted=$allGranted")
-        com.webtoapp.core.webview.WebPermissionRequests.settle(request, allGranted)
+    }
+
+    fun onCapturePermissionCanceled(request: PermissionRequest) {
+        capturePermission.onCanceled(request)
+    }
+
+    private fun reloadAfterCaptureGrant() {
+        val reload = { (activity as? ShellActivity)?.reloadForCapturePermission() }
+        val decor = try {
+            activity.window.decorView
+        } catch (e: Exception) {
+            null
+        }
+        if (decor != null) decor.post { reload() } else reload()
     }
 
     private var pendingAndroidPermissionsCallback: ((Boolean) -> Unit)? = null
@@ -765,12 +775,12 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
         } else {
 
             AppLogger.d("ShellActivity", "Requesting Android permissions: ${notGranted.joinToString()}")
-            pendingPermissionRequest = request
+            capturePermission.remember(request)
             val launched = com.webtoapp.core.webview.FileChooserLifetime.runPermissionDialog {
                 permissionLauncher.launch(notGranted.toTypedArray())
             }
             if (!launched) {
-                pendingPermissionRequest = null
+                capturePermission.clear()
                 com.webtoapp.core.webview.WebPermissionRequests.settle(request, false)
             }
         }

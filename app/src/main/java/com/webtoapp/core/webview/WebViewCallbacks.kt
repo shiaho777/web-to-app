@@ -18,6 +18,12 @@ interface WebViewCallbacks {
     fun onHideCustomView()
     fun onGeolocationPermission(origin: String?, callback: GeolocationPermissions.Callback?)
     fun onPermissionRequest(request: PermissionRequest?)
+
+    /**
+     * WebView drops a capture request when the activity pauses for the system
+     * permission dialog. Hosts use this to reload after the user allows access.
+     */
+    fun onPermissionRequestCanceled(request: PermissionRequest?) {}
     fun onShowFileChooser(
         filePathCallback: ValueCallback<Array<Uri>>?,
         fileChooserParams: WebChromeClient.FileChooserParams?

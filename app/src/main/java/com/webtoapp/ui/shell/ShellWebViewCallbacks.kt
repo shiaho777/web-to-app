@@ -233,6 +233,10 @@ fun createShellWebViewCallbacks(
             } ?: AppLogger.w("ShellActivity", "Permission request is null")
         }
 
+        override fun onPermissionRequestCanceled(request: PermissionRequest?) {
+            request?.let { (context as? ShellActivity)?.onCapturePermissionCanceled(it) }
+        }
+
         override fun onShowFileChooser(
             filePathCallback: android.webkit.ValueCallback<Array<Uri>>?,
             fileChooserParams: WebChromeClient.FileChooserParams?

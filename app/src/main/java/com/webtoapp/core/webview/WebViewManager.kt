@@ -3990,6 +3990,11 @@ class WebViewManager(
                 }
             }
 
+            override fun onPermissionRequestCanceled(request: PermissionRequest?) {
+                AppLogger.d("WebViewManager", "onPermissionRequestCanceled")
+                callbacks.onPermissionRequestCanceled(request)
+            }
+
             override fun onConsoleMessage(consoleMessage: ConsoleMessage?): Boolean {
                 consoleMessage?.let {
                     val level = when (it.messageLevel()) {

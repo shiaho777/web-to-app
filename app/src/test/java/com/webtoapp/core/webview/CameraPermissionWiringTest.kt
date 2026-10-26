@@ -39,6 +39,10 @@ class CameraPermissionWiringTest {
             .that(shellScreen).contains("consumeResumeProbeSkip")
         assertWithMessage("preview resume")
             .that(preview).contains("consumeResumeProbeSkip")
+        assertWithMessage("shell reloads when the dialog cancels the capture request")
+            .that(shellDelegate).contains("onRuntimeResult")
+        assertWithMessage("preview reloads when the dialog cancels the capture request")
+            .that(preview).contains("onRuntimeResult")
     }
 
     @Test
