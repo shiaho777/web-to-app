@@ -28,6 +28,7 @@ import com.webtoapp.data.model.PermissionFeatureDefaults
 import com.webtoapp.data.model.AnnouncementTemplateType
 import com.webtoapp.data.model.HtmlLoadMode
 import com.webtoapp.data.model.WebApp
+import com.webtoapp.data.model.withNotificationPolyfill
 import com.webtoapp.data.model.withRuntimePermissionsSyncedFromFeatures
 import com.webtoapp.data.model.getActivationCodeStrings
 import com.webtoapp.ui.components.announcement.toUiTemplate
@@ -4374,7 +4375,15 @@ private fun WebApp.buildWebViewBlock(context: android.content.Context?): WebView
     }
 }
 
-private fun WebApp.buildWebViewBehaviorBlock(): WebViewBehaviorBlock = WebViewBehaviorBlock(
+private fun WebApp.exportsWebNotificationPolyfill(): Boolean =
+    webViewConfig.enableNotificationPolyfill ||
+        (apkExportConfig?.let {
+            it.notificationEnabled && it.notificationConfig?.type?.key == "web_api"
+        } == true)
+
+private fun WebApp.buildWebViewBehaviorBlock(): WebViewBehaviorBlock {
+    val webNotificationPolyfill = exportsWebNotificationPolyfill()
+    return WebViewBehaviorBlock(
     initialScale = webViewConfig.initialScale,
     pageZoomPercent = webViewConfig.pageZoomPercent,
     viewportMode = webViewConfig.viewportMode.name,
@@ -4399,10 +4408,7 @@ private fun WebApp.buildWebViewBehaviorBlock(): WebViewBehaviorBlock = WebViewBe
     enableBackStatePreservation = webViewConfig.enableBackStatePreservation,
     followSystemDarkMode = webViewConfig.followSystemDarkMode,
     enableClipboardPolyfill = webViewConfig.enableClipboardPolyfill,
-    enableNotificationPolyfill = webViewConfig.enableNotificationPolyfill ||
-        (apkExportConfig?.let {
-            it.notificationEnabled && it.notificationConfig?.type?.key == "web_api"
-        } == true),
+    enableNotificationPolyfill = webNotificationPolyfill,
     geolocationEnabled = webViewConfig.geolocationEnabled ||
         (apkExportConfig?.runtimePermissions?.location == true),
     geolocationAccuracy = webViewConfig.geolocationAccuracy.name,
@@ -4414,7 +4420,9 @@ private fun WebApp.buildWebViewBehaviorBlock(): WebViewBehaviorBlock = WebViewBe
     nativeBridgeVibration = webViewConfig.nativeBridgeCapabilities.vibration,
     nativeBridgeGeolocation = webViewConfig.nativeBridgeCapabilities.geolocation,
     nativeBridgeBrightness = webViewConfig.nativeBridgeCapabilities.brightness,
-    nativeBridgeNotification = webViewConfig.nativeBridgeCapabilities.notification,
+    nativeBridgeNotification = webViewConfig.nativeBridgeCapabilities
+        .withNotificationPolyfill(webNotificationPolyfill)
+        .notification,
     nativeBridgeNotificationScheduled = webViewConfig.nativeBridgeCapabilities.notificationScheduled,
     nativeBridgeNotificationPersistent = webViewConfig.nativeBridgeCapabilities.notificationPersistent,
     nativeBridgeDownload = webViewConfig.nativeBridgeCapabilities.download,
@@ -4466,6 +4474,7 @@ private fun WebApp.buildWebViewBehaviorBlock(): WebViewBehaviorBlock = WebViewBe
     autoRefreshIntervalSec = webViewConfig.autoRefreshIntervalSec,
     autoRefreshShowCountdown = webViewConfig.autoRefreshShowCountdown
 )
+}
 
 private fun WebApp.buildScreenAwakeBlock(): ScreenAwakeBlock = ScreenAwakeBlock(
     keepScreenOn = webViewConfig.keepScreenOn,

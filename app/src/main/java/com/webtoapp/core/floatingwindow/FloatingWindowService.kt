@@ -17,6 +17,7 @@ import com.webtoapp.core.shell.ShellServerLauncher
 import com.webtoapp.core.webview.DownloadBridge
 import com.webtoapp.core.webview.TranslateBridge
 import com.webtoapp.data.model.FloatingWindowConfig
+import com.webtoapp.data.model.withNotificationPolyfill
 import com.webtoapp.ui.shell.injectTranslateScript
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -303,7 +304,7 @@ class FloatingWindowService : Service() {
                             googleSignIn = shellConfig.webViewConfig.nativeBridgeGoogleSignIn,
                             googleSignInClientId = shellConfig.webViewConfig.nativeBridgeGoogleSignInClientId,
                             directory = shellConfig.webViewConfig.nativeBridgeDirectory,
-                        )
+                        ).withNotificationPolyfill(shellConfig.webViewConfig.enableNotificationPolyfill)
                         val nativeBridge = com.webtoapp.core.webview.NativeBridge(
                             context = this@FloatingWindowService,
                             scope = serviceScope,

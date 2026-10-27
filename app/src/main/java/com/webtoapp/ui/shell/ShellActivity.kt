@@ -27,6 +27,7 @@ import com.webtoapp.ui.theme.ShellTheme
 import com.webtoapp.core.webview.BackgroundMediaRuntime
 import com.webtoapp.core.webview.TranslateBridge
 import com.webtoapp.data.model.KeyboardAdjustMode
+import com.webtoapp.data.model.withNotificationPolyfill
 import com.webtoapp.core.floatingwindow.FloatingWindowService
 import com.webtoapp.ui.shared.WindowHelper
 
@@ -872,7 +873,7 @@ class ShellActivity : AppCompatActivity() {
                                 googleSignIn = config.webViewConfig.nativeBridgeGoogleSignIn,
                                 googleSignInClientId = config.webViewConfig.nativeBridgeGoogleSignInClientId,
                                 directory = config.webViewConfig.nativeBridgeDirectory,
-                            )
+                            ).withNotificationPolyfill(config.webViewConfig.enableNotificationPolyfill)
                             val nativeBridge = com.webtoapp.core.webview.NativeBridge(
                                 context = this@ShellActivity,
                                 scope = lifecycleScope,

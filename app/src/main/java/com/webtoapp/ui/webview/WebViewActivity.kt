@@ -77,6 +77,7 @@ import com.webtoapp.data.model.HtmlLoadMode
 import com.webtoapp.data.model.SplashOrientation
 import com.webtoapp.data.model.SplashType
 import com.webtoapp.data.model.WebApp
+import com.webtoapp.data.model.withNotificationPolyfill
 import com.webtoapp.data.model.hasAnyToolbarItem
 import com.webtoapp.data.model.resolveToolbarButtons
 import android.content.pm.ActivityInfo
@@ -4252,7 +4253,10 @@ fun WebViewScreen(
                                                 context = context,
                                                 scope = scope,
                                                 webViewProvider = { this },
-                                                capabilities = effectiveWebApp.webViewConfig.nativeBridgeCapabilities,
+                                                capabilities = effectiveWebApp.webViewConfig.nativeBridgeCapabilities
+                                                    .withNotificationPolyfill(
+                                                        effectiveWebApp.webViewConfig.enableNotificationPolyfill
+                                                    ),
                                                 corsBypass = effectiveWebApp.webViewConfig.enableCorsBypass,
                                                 downloadLocationMode = effectiveWebApp.webViewConfig.downloadLocationMode,
                                                 customDownloadDirUri = effectiveWebApp.webViewConfig.customDownloadDirUri,
