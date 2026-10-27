@@ -1,6 +1,8 @@
 package com.webtoapp.core.webview
 
 import com.webtoapp.core.dns.DnsManager
+import com.webtoapp.core.dns.isNetworkUnreachable
+import com.webtoapp.core.dns.selectDohConnectAddresses
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.data.model.DnsConfig
 import com.webtoapp.data.model.HostMappingEntry
@@ -300,23 +302,32 @@ object LocalHttpHostMappingBridge {
     }
 
     private fun connectTarget(host: String, mappedIp: String?, port: Int): Socket {
-        val socket = Socket()
-        try {
-            socket.tcpNoDelay = true
-            socket.soTimeout = CLIENT_READ_TIMEOUT_MS
-            val endpoint = when {
-                !mappedIp.isNullOrBlank() -> InetSocketAddress(mappedIp, port)
-                else -> InetSocketAddress(resolveInetAddress(host), port)
-            }
-            socket.connect(endpoint, CONNECT_TIMEOUT_MS)
-            return socket
-        } catch (e: Exception) {
-            safeClose(socket)
-            throw e
+        val endpoints = if (!mappedIp.isNullOrBlank()) {
+            listOf(InetSocketAddress(mappedIp, port))
+        } else {
+            resolveConnectAddresses(host).map { InetSocketAddress(it, port) }
         }
+        if (endpoints.isEmpty()) throw IOException("No address for $host")
+        var last: Exception? = null
+        for ((index, endpoint) in endpoints.withIndex()) {
+            val socket = Socket()
+            try {
+                socket.tcpNoDelay = true
+                socket.soTimeout = CLIENT_READ_TIMEOUT_MS
+                socket.connect(endpoint, CONNECT_TIMEOUT_MS)
+                return socket
+            } catch (e: Exception) {
+                safeClose(socket)
+                last = e
+                val more = index < endpoints.lastIndex
+                if (!more || !isNetworkUnreachable(e)) throw e
+                AppLogger.w(TAG, "Address $endpoint unreachable for $host, trying the next one")
+            }
+        }
+        throw last ?: IOException("No address for $host")
     }
 
-    private fun resolveInetAddress(host: String): InetAddress {
+    private fun resolveConnectAddresses(host: String): List<InetAddress> {
         val manager = dnsManager
         val config = currentConfig
         if (
@@ -325,11 +336,16 @@ object LocalHttpHostMappingBridge {
             config.dnsMode != "SYSTEM" &&
             config.dnsConfig.effectiveDohUrl.isNotBlank()
         ) {
-            val resolved = manager.resolveWithDoh(host)
-            resolved.firstOrNull()?.let { return it }
+            val selected = selectDohConnectAddresses(
+                manager.resolveWithDoh(host),
+                manager.reachableFamilies()
+            )
+            if (selected.isNotEmpty()) return selected
+            // An empty DoH answer is the configured resolver's result, including a block.
+            // System DNS would skip that resolver.
             throw IOException("No DoH DNS result for $host")
         }
-        return InetAddress.getByName(host)
+        return listOf(InetAddress.getByName(host))
     }
 
     private fun pumpRequestBodyIfPresent(

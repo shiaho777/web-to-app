@@ -69,6 +69,23 @@ class DnsManager(private val context: Context) {
 
     fun getCurrentConfig(): DnsConfig? = currentConfig
 
+    /**
+     * Families the active network has a routable address for. Unknown when the
+     * link cannot be read, so callers do not drop a family by mistake.
+     */
+    internal fun reachableFamilies(): ReachableFamilies {
+        return try {
+            val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
+                ?: return ReachableFamilies.UNKNOWN
+            val network = cm.activeNetwork ?: return ReachableFamilies.UNKNOWN
+            val props = cm.getLinkProperties(network) ?: return ReachableFamilies.UNKNOWN
+            familiesFromLinkAddresses(props.linkAddresses.map { it.address })
+        } catch (e: Exception) {
+            AppLogger.w(TAG, "Failed to read link addresses: ${e.message}")
+            ReachableFamilies.UNKNOWN
+        }
+    }
+
     fun resolveWithDoh(hostname: String): List<InetAddress> {
         val config = currentConfig ?: throw UnknownHostException("No DoH config set")
         val dohUrl = config.effectiveDohUrl
