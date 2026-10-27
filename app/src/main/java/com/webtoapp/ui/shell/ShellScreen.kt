@@ -731,10 +731,12 @@ fun ShellScreen(
     // web content (issue #683). Reserve space is already handled by the content padding; the
     // window-level bar color comes from WindowHelper.
     val classicSystemBars = com.webtoapp.ui.shared.WindowHelper.isClassicSystemBarsWindow(activity)
-    val showOverlay = !classicSystemBars && ((hideToolbar && config.webViewConfig.showStatusBarInFullscreen) ||
-            (!hideToolbar && (effectiveBgType != "COLOR" ||
-                effectiveColorMode == com.webtoapp.data.model.StatusBarColorMode.CUSTOM.name ||
-                effectiveColorMode == com.webtoapp.data.model.StatusBarColorMode.PAGE_TOP.name)))
+    // THEME used to be painted only with window.statusBarColor. Target SDK 35 ignores
+    // that call, so the bar stayed the light window color and no longer followed dark mode.
+    val paintsStatusBand = effectiveBgType != "COLOR" ||
+        effectiveColorMode != com.webtoapp.data.model.StatusBarColorMode.TRANSPARENT.name
+    val showOverlay = !classicSystemBars && paintsStatusBand &&
+        ((hideToolbar && config.webViewConfig.showStatusBarInFullscreen) || !hideToolbar)
     if (showOverlay) {
         com.webtoapp.ui.components.StatusBarOverlay(
             show = true,

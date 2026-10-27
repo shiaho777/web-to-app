@@ -8,6 +8,7 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
@@ -25,6 +26,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import androidx.core.content.pm.ShortcutManagerCompat
@@ -153,13 +155,19 @@ class MainActivity : ComponentActivity() {
 
                 val themeColors = MaterialTheme.colorScheme
                 LaunchedEffect(isDarkTheme, themeColors.background) {
-                    val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
-
-                    window.statusBarColor = android.graphics.Color.TRANSPARENT
-                    windowInsetsController.isAppearanceLightStatusBars = !isDarkTheme
-
-                    window.navigationBarColor = android.graphics.Color.TRANSPARENT
-                    windowInsetsController.isAppearanceLightNavigationBars = !isDarkTheme
+                    val bg = themeColors.background.toArgb()
+                    val lightSurface = com.webtoapp.ui.shared.WindowHelper.isColorLight(bg)
+                    val style = if (lightSurface) {
+                        SystemBarStyle.light(bg, bg)
+                    } else {
+                        SystemBarStyle.dark(bg)
+                    }
+                    enableEdgeToEdge(statusBarStyle = style, navigationBarStyle = style)
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                        window.isStatusBarContrastEnforced = false
+                        window.isNavigationBarContrastEnforced = false
+                    }
+                    window.decorView.setBackgroundColor(bg)
                 }
 
                 val context = LocalContext.current

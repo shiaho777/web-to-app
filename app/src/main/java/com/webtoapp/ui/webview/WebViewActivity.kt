@@ -4668,8 +4668,16 @@ fun WebViewScreen(
     // On the classic pre-API-30 resize path nothing draws behind the status bar and the bar
     // itself is chrome-owned, so a Compose overlay would only paint a floating band over the
     // web content (issue #683); the window-level bar color comes from WindowHelper instead.
+    val previewStatusMode = if (com.webtoapp.ui.theme.LocalIsDarkTheme.current) {
+        webApp?.webViewConfig?.statusBarColorModeDark
+    } else {
+        webApp?.webViewConfig?.statusBarColorMode
+    }
+    val previewPaintsBand = previewStatusMode != null &&
+        previewStatusMode != com.webtoapp.data.model.StatusBarColorMode.TRANSPARENT
     if (!com.webtoapp.ui.shared.WindowHelper.isClassicSystemBarsWindow(activity) &&
-        hideToolbar && webApp?.webViewConfig?.showStatusBarInFullscreen == true
+        previewPaintsBand &&
+        (hideToolbar && webApp?.webViewConfig?.showStatusBarInFullscreen == true || !hideToolbar)
     ) {
         val overlayIsDark = com.webtoapp.ui.theme.LocalIsDarkTheme.current
         com.webtoapp.ui.components.StatusBarOverlay(

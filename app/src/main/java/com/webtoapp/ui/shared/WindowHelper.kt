@@ -60,6 +60,11 @@ object WindowHelper {
     ) {
         val controller = WindowInsetsControllerCompat(activity.window, activity.window.decorView)
         val alpha = backgroundAlpha.coerceIn(0f, 1f)
+        // Android 15 ignores window status-bar color and may lay a light scrim on top.
+        // That scrim stays white when the page or theme goes dark, so the icons vanish.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            activity.window.isStatusBarContrastEnforced = false
+        }
         // The classic resize window (below API 30, RESIZE mode) does not draw behind the
         // status bar, so a transparent bar would just show the window background.
         val colorMode = if (colorMode == "TRANSPARENT" && isClassicKeyboardResizeWindow(activity.window)) {

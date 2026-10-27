@@ -71,6 +71,7 @@ class PageEdgeChromeTest {
         val preview = readSource("com/webtoapp/ui/webview/WebViewActivity.kt")
         val shellActivity = readSource("com/webtoapp/ui/shell/ShellActivity.kt")
         assertThat(shellLayout).contains("pageEdgeBands(")
+        assertThat(readSource("com/webtoapp/ui/shell/ShellScreen.kt")).contains("paintsStatusBand")
         assertThat(preview).contains("pageEdgeBands(")
         assertThat(shellActivity).contains("applyPageEdgeNavigation(")
         assertThat(preview).contains("applyPageEdgeNavigation(")
