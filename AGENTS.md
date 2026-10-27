@@ -2,6 +2,14 @@
 
 Instructions for coding agents working in this repository.
 
+## Facing a problem
+
+Do not start by looking for a way around the problem. Start by looking for the best direct solution.
+
+Treat it as a frontal problem when technical work can meet it head-on. If a real technique, or a real breakthrough, can produce the correct behavior, try that and verify it. A failure written on the door is not a reason to stop before the mechanism has been checked.
+
+Then judge, from the evidence, whether the problem is worth solving and worth the effort. Do not invent a fantasy fix, and do not spend that effort on something that is not actually broken or not ours to fix. Trying hard and declining the work are both decisions. Make the one the evidence supports.
+
 ## Code style
 
 - Do what you believe is right. Make the change complete and correct, not the smallest possible diff. If a fix calls for refactoring, renaming, or touching multiple files, do it.
