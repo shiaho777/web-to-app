@@ -104,45 +104,60 @@ object CloudflareCompat {
         }
     }
 
+    /**
+     * Hosts whose documents must stay untouched. Turnstile decides inside its
+     * own iframe; a script that rewrites `Function.prototype.toString` or
+     * invents `chrome.runtime` there makes the check spin on "Verifying...".
+     */
+    fun isChallengeFrameHost(host: String?): Boolean {
+        val h = host?.trim()?.lowercase() ?: return false
+        return CHALLENGE_FRAME_SUFFIXES.any { suffix -> h == suffix || h.endsWith(".$suffix") }
+    }
+
+    /** Proxy bypass rules so a local DNS or TLS bridge is not the TLS fingerprint. */
+    fun challengeProxyBypassRules(): List<String> =
+        CHALLENGE_FRAME_SUFFIXES.flatMap { listOf(it, "*.$it") }
+
+    /**
+     * Runs [script] everywhere except challenge iframes. The kernel-flavor and
+     * device-disguise scripts stay out of this wrapper: those frames must see
+     * the same identity as the parent (#1121).
+     */
+    fun exemptChallengeFrames(script: String): String = """
+(function(){
+try{
+var h=(location.hostname||'').toLowerCase();
+if(h==='challenges.cloudflare.com'||h.endsWith('.challenges.cloudflare.com')||h==='cf-turnstile.com'||h.endsWith('.cf-turnstile.com')||h==='turnstile.cloudflare.com'||h.endsWith('.turnstile.cloudflare.com')||h==='hcaptcha.com'||h.endsWith('.hcaptcha.com')||h==='recaptcha.net'||h.endsWith('.recaptcha.net')||h==='arkoselabs.com'||h.endsWith('.arkoselabs.com')||h==='funcaptcha.com'||h.endsWith('.funcaptcha.com'))return;
+}catch(e){}
+$script
+})();
+""".trimIndent()
+
+    private val CHALLENGE_FRAME_SUFFIXES = listOf(
+        "challenges.cloudflare.com",
+        "cf-turnstile.com",
+        "turnstile.cloudflare.com",
+        "hcaptcha.com",
+        "recaptcha.net",
+        "arkoselabs.com",
+        "funcaptcha.com"
+    )
+
     private val CLOUDFLARE_COMPAT_JS = """(function(){
 'use strict';
+try{
+var __cfh=(location.hostname||'').toLowerCase();
+if(__cfh==='challenges.cloudflare.com'||__cfh.endsWith('.challenges.cloudflare.com')||__cfh==='cf-turnstile.com'||__cfh.endsWith('.cf-turnstile.com')||__cfh==='turnstile.cloudflare.com'||__cfh.endsWith('.turnstile.cloudflare.com'))return;
+}catch(e){}
 if(window.__wta_cf_compat__)return;
 window.__wta_cf_compat__=1;
 
-var _ht=new WeakSet();
-var _ots=Function.prototype.toString;
-function _mn(fn){_ht.add(fn);return fn;}
-try{
-Function.prototype.toString=_mn(function(){
-    if(_ht.has(this))return'function '+this.name+'() { [native code] }';
-    return _ots.call(this);
-});
-}catch(e){}
+function _mn(fn){return fn;}
 
 try{
 Object.defineProperty(navigator,'webdriver',{
     get:_mn(function(){return false}),
     enumerable:true,configurable:true
-});
-}catch(e){}
-
-try{
-if(!window.chrome)window.chrome={};
-if(!window.chrome.runtime)window.chrome.runtime={
-    connect:_mn(function(){return{onDisconnect:{addListener:function(){}},onMessage:{addListener:function(){}},postMessage:function(){},disconnect:function(){}}}),
-    sendMessage:_mn(function(){}),
-    id:undefined
-};
-if(!window.chrome.csi)window.chrome.csi=_mn(function(){
-    return{onloadT:Date.now(),startE:Date.now()-300,pageT:performance.now(),tran:15};
-});
-if(!window.chrome.loadTimes)window.chrome.loadTimes=_mn(function(){
-    var n=performance.now()/1000;
-    return{requestTime:n-0.3,startLoadTime:n-0.25,commitLoadTime:n-0.1,
-        finishDocumentLoadTime:n-0.05,finishLoadTime:n,firstPaintTime:n-0.08,
-        firstPaintAfterLoadTime:0,navigationType:'Other',
-        wasFetchedViaSpdy:true,wasNpnNegotiated:true,npnNegotiatedProtocol:'h2',
-        wasAlternateProtocolAvailable:false,connectionInfo:'h2'};
 });
 }catch(e){}
 

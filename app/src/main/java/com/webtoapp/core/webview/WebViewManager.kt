@@ -1762,23 +1762,35 @@ class WebViewManager(
 
                 val identity = resolvedBrowserIdentity
                 if (identity.userAgent != null) {
-
-                    userAgentString = stripWebViewMarker(identity.userAgent)
+                    val stripped = stripWebViewMarker(identity.userAgent)
+                    userAgentString = stripped
+                    com.webtoapp.core.kernel.KernelFlavorMetadata.apply(
+                        webView,
+                        com.webtoapp.core.kernel.UserAgentProfileDeriver.derive(stripped) ?: identity.profile
+                    )
                     AppLogger.d(
                         "WebViewManager",
                         "Browser identity applied (${identity.profile?.flavor?.name ?: "derived-from-UA"}): " +
                             "${userAgentString.take(80)}..."
                     )
                 } else {
-
-                    userAgentString = stripWebViewMarker(userAgentString)
+                    val stripped = stripWebViewMarker(userAgentString)
+                    userAgentString = stripped
+                    // The engine's own Sec-CH-UA still says "Android WebView" after the `; wv`
+                    // token is removed. Hints have to describe the string we actually send.
+                    com.webtoapp.core.kernel.UserAgentProfileDeriver.derive(stripped)?.let { profile ->
+                        com.webtoapp.core.kernel.KernelFlavorMetadata.apply(webView, profile)
+                        // Modern WebView publishes these hints into every frame, including
+                        // the Turnstile iframe. Older WebViews need the flavor script there.
+                        if (!androidx.webkit.WebViewFeature.isFeatureSupported(
+                                androidx.webkit.WebViewFeature.USER_AGENT_METADATA
+                            ) && cachedKernelFlavorJs.isNullOrEmpty()
+                        ) {
+                            cachedKernelFlavorJs = profile.buildFlavorJs().takeIf { it.isNotEmpty() }
+                        }
+                    }
                     AppLogger.d("WebViewManager", "User-Agent (system default, wv stripped): ${userAgentString.take(80)}...")
                 }
-
-                // Client hints are part of the same identity, never a separate decision: the
-                // engine would otherwise advertise its real brands in `Sec-CH-UA` while the UA
-                // above claims a different browser.
-                com.webtoapp.core.kernel.KernelFlavorMetadata.apply(webView, identity.profile)
 
                 if (!isDesktopModeRequested && identity.userAgent == null) {
                     val hasActiveChromeExt = getActivePluginsForCurrentApp().any { plugin ->
@@ -4507,7 +4519,7 @@ class WebViewManager(
         val rules = setOf("*")
         if (WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
             try {
-                privateNetworkScriptHandlers[webView] = WebViewCompat.addDocumentStartJavaScript(
+                privateNetworkScriptHandlers[webView] = addDocumentStartExceptChallenges(
                     webView,
                     privateNetworkScriptWithScope(config),
                     rules
@@ -4534,6 +4546,22 @@ class WebViewManager(
             webViewCssWidth(webView)
         )
     }
+
+    /**
+     * Other document-start scripts must not run inside a Turnstile / hCaptcha
+     * frame. Kernel flavor and device disguise are the exception: those frames
+     * have to see the same identity as the parent (#1121).
+     */
+    @Suppress("UNUSED_PARAMETER")
+    private fun addDocumentStartExceptChallenges(
+        webView: WebView,
+        script: String,
+        allowedOriginRules: Set<String>
+    ) = WebViewCompat.addDocumentStartJavaScript(
+        webView,
+        CloudflareCompat.exemptChallengeFrames(script),
+        setOf("*")
+    )
 
     /**
      * Chrome (and other kernel) flavor JS must run before the page's own scripts,
@@ -4585,7 +4613,7 @@ class WebViewManager(
             return
         }
         try {
-            pageZoomScriptHandlers[webView] = WebViewCompat.addDocumentStartJavaScript(
+            pageZoomScriptHandlers[webView] = addDocumentStartExceptChallenges(
                 webView,
                 script,
                 setOf("*")
@@ -4603,7 +4631,7 @@ class WebViewManager(
             return
         }
         try {
-            cloudflareCompatScriptHandlers[webView] = WebViewCompat.addDocumentStartJavaScript(
+            cloudflareCompatScriptHandlers[webView] = addDocumentStartExceptChallenges(
                 webView,
                 CloudflareCompat.generateCompatJs(),
                 setOf("*")
@@ -4618,7 +4646,7 @@ class WebViewManager(
         if (shareBridgeScriptHandlers.containsKey(webView)) return
         if (!WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) return
         try {
-            shareBridgeScriptHandlers[webView] = WebViewCompat.addDocumentStartJavaScript(
+            shareBridgeScriptHandlers[webView] = addDocumentStartExceptChallenges(
                 webView,
                 ShareBridgeScript.INSTALL,
                 setOf("*")
@@ -4633,7 +4661,7 @@ class WebViewManager(
         if (backgroundMediaScriptHandlers.containsKey(webView)) return
         if (!WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) return
         try {
-            backgroundMediaScriptHandlers[webView] = WebViewCompat.addDocumentStartJavaScript(
+            backgroundMediaScriptHandlers[webView] = addDocumentStartExceptChallenges(
                 webView,
                 BackgroundMediaScript.INSTALL,
                 setOf("*")
@@ -4650,7 +4678,7 @@ class WebViewManager(
             return
         }
         try {
-            backStateGuardScriptHandlers[webView] = WebViewCompat.addDocumentStartJavaScript(
+            backStateGuardScriptHandlers[webView] = addDocumentStartExceptChallenges(
                 webView,
                 BACK_STATE_GUARD_JS,
                 setOf("*")
@@ -4671,7 +4699,7 @@ class WebViewManager(
 
             val cfg = currentConfig
             val script = if (cfg != null) downloadBridgeScriptWithScope(cfg) else DownloadBridge.getInjectionScript()
-            downloadBridgeScriptHandlers[webView] = WebViewCompat.addDocumentStartJavaScript(
+            downloadBridgeScriptHandlers[webView] = addDocumentStartExceptChallenges(
                 webView,
                 script,
                 setOf("*")
@@ -4697,7 +4725,7 @@ class WebViewManager(
             return
         }
         try {
-            shareInboxScriptHandlers[webView] = WebViewCompat.addDocumentStartJavaScript(
+            shareInboxScriptHandlers[webView] = addDocumentStartExceptChallenges(
                 webView,
                 com.webtoapp.core.share.SHARE_INBOX_BOOTSTRAP_JS,
                 setOf("*")
@@ -4715,7 +4743,7 @@ class WebViewManager(
             return
         }
         try {
-            geolocationShimHandlers[webView] = WebViewCompat.addDocumentStartJavaScript(
+            geolocationShimHandlers[webView] = addDocumentStartExceptChallenges(
                 webView,
                 GeolocationBridge.getShimScript(),
                 setOf("*")
@@ -4734,7 +4762,7 @@ class WebViewManager(
             return
         }
         try {
-            blobCacheHookHandlers[webView] = WebViewCompat.addDocumentStartJavaScript(
+            blobCacheHookHandlers[webView] = addDocumentStartExceptChallenges(
                 webView,
                 DownloadBridge.getBlobCacheHookScript(),
                 setOf("*")
@@ -4778,7 +4806,7 @@ class WebViewManager(
         }
         try {
             webView.addJavascriptInterface(CosmeticFilterJsInterface(), COSMETIC_BRIDGE_NAME)
-            cosmeticFilterScriptHandlers[webView] = WebViewCompat.addDocumentStartJavaScript(
+            cosmeticFilterScriptHandlers[webView] = addDocumentStartExceptChallenges(
                 webView,
                 COSMETIC_DOCUMENT_START_JS,
                 setOf("*")
@@ -5056,7 +5084,7 @@ class WebViewManager(
             return
         }
         try {
-            printBridgeScriptHandlers[webView] = WebViewCompat.addDocumentStartJavaScript(
+            printBridgeScriptHandlers[webView] = addDocumentStartExceptChallenges(
                 webView,
                 PrintBridge.getInjectionScript(),
                 setOf("*")
@@ -5858,13 +5886,26 @@ class WebViewManager(
     ) {
         val identity = resolvedBrowserIdentity
         if (identity.userAgent != null) {
-            webView.settings.userAgentString = stripWebViewMarker(identity.userAgent)
-            com.webtoapp.core.kernel.KernelFlavorMetadata.apply(webView, identity.profile)
+            val stripped = stripWebViewMarker(identity.userAgent)
+            webView.settings.userAgentString = stripped
+            com.webtoapp.core.kernel.KernelFlavorMetadata.apply(
+                webView,
+                com.webtoapp.core.kernel.UserAgentProfileDeriver.derive(stripped) ?: identity.profile
+            )
             AppLogger.d(
                 "WebViewManager",
                 "Browser identity re-applied (${identity.profile?.flavor?.name ?: "derived-from-UA"}): " +
                     "${webView.settings.userAgentString.take(80)}..."
             )
+        } else {
+            val current = webView.settings.userAgentString
+            if (current.isNotBlank()) {
+                val stripped = stripWebViewMarker(current)
+                webView.settings.userAgentString = stripped
+                com.webtoapp.core.kernel.UserAgentProfileDeriver.derive(stripped)?.let { profile ->
+                    com.webtoapp.core.kernel.KernelFlavorMetadata.apply(webView, profile)
+                }
+            }
         }
 
         if (!isDesktopModeRequested && identity.userAgent == null) {

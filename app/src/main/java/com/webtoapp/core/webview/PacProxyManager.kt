@@ -51,11 +51,14 @@ class PacProxyManager(private val context: Context) {
         username: String = "",
         password: String = ""
     ) {
+        val bypass = (bypassRules + com.webtoapp.core.webview.CloudflareCompat.challengeProxyBypassRules())
+            .filter { it.isNotBlank() }
+            .distinct()
         if (!isProxyOverrideSupported()) {
             // Pre-67 WebView: ProxyController is a no-op. Arm the in-app fetch
             // fallback (same settings) instead of silently doing nothing.
             AppLogger.w(TAG, "PROXY_OVERRIDE not supported, arming legacy fetch fallback")
-            applyLegacyFallback(proxyMode, staticProxyHost, staticProxyPort, staticProxyType, pacUrl, bypassRules, username, password)
+            applyLegacyFallback(proxyMode, staticProxyHost, staticProxyPort, staticProxyType, pacUrl, bypass, username, password)
             return
         }
         LegacyProxyFetchBridge.clear()
@@ -71,8 +74,8 @@ class PacProxyManager(private val context: Context) {
 
         when (proxyMode.uppercase()) {
             "NONE" -> clearProxy()
-            "STATIC" -> applyStaticProxy(staticProxyHost, staticProxyPort, staticProxyType, bypassRules, username, password)
-            "PAC" -> applyPacProxy(pacUrl, bypassRules)
+            "STATIC" -> applyStaticProxy(staticProxyHost, staticProxyPort, staticProxyType, bypass, username, password)
+            "PAC" -> applyPacProxy(pacUrl, bypass)
             else -> {
                 AppLogger.w(TAG, "Unknown proxy mode: $proxyMode, clearing proxy")
                 clearProxy()
