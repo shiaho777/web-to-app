@@ -121,9 +121,18 @@ class VideoElementFitTest {
         assertThat(script).contains("fullscreenElement")
         assertThat(script).contains("data-wta-fit")
         assertThat(script).contains("min-width:0")
+        assertThat(script).contains("video{min-width:0;min-height:0;}")
+        assertThat(script).contains("insertBefore(style,root.firstChild)")
         assertThat(script).doesNotContain("width:100% !important")
+        assertThat(script).doesNotContain("max-width:100%")
         assertThat(script).contains("if(!widthOverflow&&!heightOverflow)return")
         assertThat(script).contains("hasW=0")
         assertThat(script).contains("clientWidth")
+        assertThat(script).contains("specifiedLength")
+        assertThat(script).contains("cssRules")
+        assertThat(script).contains("adoptedStyleSheets")
+        assertThat(script).contains("(px|rem|em|vw|vh)")
+        assertThat(script).contains("laidW-specW>=8")
+        assertThat(script).contains("laidW-sw>=8")
     }
 }

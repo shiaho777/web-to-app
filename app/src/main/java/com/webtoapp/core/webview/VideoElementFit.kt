@@ -39,6 +39,13 @@ internal data class VideoFitInput(
  * When the page caps both axes, keep that box and let the page's `object-fit`
  * crop it. A height-only cap keeps the media aspect ratio. The viewport
  * width clamps either result so the video cannot be wider than the screen.
+ *
+ * getComputedStyle often reports that intrinsic box, so a real `140px` cap
+ * and a cyclic `max-width: 100%` look the same. The script therefore also
+ * reads specified `px` / `rem` / `em` / `vw` / `vh` lengths from the page's
+ * rules and from ancestors. A chat bubble that grew with the video, while
+ * still fitting on screen, is pinned back to that length. A length the page
+ * did not set is not a cap.
  */
 internal fun fittedVideoBox(input: VideoFitInput): VideoFitBox? {
     if (input.fullscreen) return null
@@ -102,6 +109,8 @@ internal fun fittedVideoBox(input: VideoFitInput): VideoFitBox? {
 /**
  * Document-start script for System WebView. Gecko already honors the CSS box,
  * so it does not receive this. The script implements [fittedVideoBox].
+ * The helper sheet only sets `min-width` and `min-height`, and it is inserted
+ * first so it cannot override a page `max-width`.
  */
 internal object VideoElementFit {
     const val SCRIPT: String = """(function(){
@@ -116,12 +125,73 @@ n=Math.round(n);
 if(laid&&n>=laid-1)return 0;
 return n;
 }
-function inlinePx(el,prop){
-if(!el||!el.style)return 0;
-var v=el.style[prop];
-if(!v||v.indexOf('%')>=0)return 0;
-var n=parseFloat(v);
-return n>=8?Math.round(n):0;
+function lengthPx(el,raw){
+if(!raw)return 0;
+raw=String(raw).trim().toLowerCase();
+if(!raw||raw==='none'||raw==='auto'||raw==='initial'||raw==='inherit'||raw==='unset')return 0;
+if(raw==='fit-content'||raw==='max-content'||raw==='min-content')return 0;
+var m=raw.match(/^(-?\d+(?:\.\d+)?)(px|rem|em|vw|vh)$/);
+if(!m)return 0;
+var n=parseFloat(m[1]);
+if(!(n>0))return 0;
+var unit=m[2];
+if(unit==='rem')n*=parseFloat(getComputedStyle(document.documentElement).fontSize)||16;
+else if(unit==='em')n*=parseFloat(getComputedStyle(el).fontSize)||16;
+else if(unit==='vw')n*=(document.documentElement.clientWidth||window.innerWidth||0)/100;
+else if(unit==='vh')n*=(window.innerHeight||document.documentElement.clientHeight||0)/100;
+n=Math.round(n);
+return n>=8?n:0;
+}
+function scanRules(el,prop,rules,sink){
+if(!rules)return;
+for(var j=0;j<rules.length;j++){
+var rule=rules[j];
+if(!rule)continue;
+var t=rule.type||0;
+if(t===3&&rule.styleSheet){
+try{scanRules(el,prop,rule.styleSheet.cssRules,sink);}catch(e){}
+continue;
+}
+if((t===4||t===12)&&rule.cssRules){
+var ok=1;
+try{
+if(t===4&&rule.conditionText&&window.matchMedia&&!matchMedia(rule.conditionText).matches)ok=0;
+if(t===12&&window.CSS&&CSS.supports&&rule.conditionText&&!CSS.supports(rule.conditionText))ok=0;
+}catch(e){ok=0;}
+if(ok)scanRules(el,prop,rule.cssRules,sink);
+continue;
+}
+if(!rule.selectorText||!rule.style||!el.matches)continue;
+try{if(!el.matches(rule.selectorText))continue;}catch(e){continue;}
+var v=rule.style.getPropertyValue(prop);
+if(!v)continue;
+sink(lengthPx(el,v),rule.style.getPropertyPriority(prop)==='important');
+}
+}
+function sheetList(){
+var list=[],ss=document.styleSheets,i;
+if(ss)for(i=0;i<ss.length;i++)list.push(ss[i]);
+var adopted=document.adoptedStyleSheets;
+if(adopted)for(i=0;i<adopted.length;i++)list.push(adopted[i]);
+return list;
+}
+function specifiedLength(el,prop){
+if(!el)return 0;
+var normal=0,important=0,hasImp=0;
+function sink(n,imp){if(imp){hasImp=1;important=n;}else normal=n;}
+var sheets=sheetList();
+for(var i=0;i<sheets.length;i++){
+try{scanRules(el,prop,sheets[i].cssRules,sink);}catch(e){}
+}
+if(el.style&&el.style.getPropertyValue){
+var iv=el.style.getPropertyValue(prop);
+if(iv){
+var n=lengthPx(el,iv);
+if(el.style.getPropertyPriority(prop)==='important'){hasImp=1;important=n;}
+else normal=n;
+}
+}
+return hasImp?important:normal;
 }
 function blocked(video){
 try{if(video.webkitDisplayingFullscreen)return true;}catch(e){}
@@ -131,8 +201,16 @@ return !!(fs&&(fs===video||(fs.contains&&fs.contains(video))));
 function ancestorBox(video,laidW,laidH,vw){
 var w=0,h=0,node=video.parentElement,guard=0;
 while(node&&node!==document.body&&node!==document.documentElement&&guard++<8){
-if(!w)w=inlinePx(node,'width');
-if(!h)h=inlinePx(node,'height');
+if(!w){
+var sw=specifiedLength(node,'width');
+if(!(sw>=8))sw=specifiedLength(node,'max-width');
+if(sw>=8&&laidW-sw>=8)w=sw;
+}
+if(!h){
+var sh=specifiedLength(node,'height');
+if(!(sh>=8))sh=specifiedLength(node,'max-height');
+if(sh>=8&&laidH-sh>=8)h=sh;
+}
 if(!w){
 var cw=node.clientWidth||0;
 if(cw>=8&&laidW-cw>=8)w=Math.round(cw);
@@ -187,16 +265,21 @@ var cs=getComputedStyle(video);
 var cssW=px(cs.width,laidW),cssH=px(cs.height,laidH);
 var maxW=px(cs.maxWidth,laidW),maxH=px(cs.maxHeight,laidH);
 var anc=ancestorBox(video,laidW,laidH,vw);
-var selfW=inlinePx(video,'width'),selfH=inlinePx(video,'height');
+var specW=specifiedLength(video,'width');
+var specH=specifiedLength(video,'height');
+var specMaxW=specifiedLength(video,'max-width');
+var specMaxH=specifiedLength(video,'max-height');
 var capW=vw,hasW=0,hasH=0,capH=0;
 if(maxW>=8){capW=Math.min(capW,maxW);hasW=1;}
 if(cssW>=8){capW=Math.min(capW,cssW);hasW=1;}
-if(selfW>=8){capW=Math.min(capW,selfW);hasW=1;}
+if(specMaxW>=8&&laidW-specMaxW>=8){capW=Math.min(capW,specMaxW);hasW=1;}
+if(specW>=8&&laidW-specW>=8){capW=Math.min(capW,specW);hasW=1;}
 if(anc.w>=8){capW=Math.min(capW,anc.w);hasW=1;}
 if(!(capW>1))return;
 if(maxH>=8){capH=maxH;hasH=1;}
 if(cssH>=8){capH=hasH?Math.min(capH,cssH):cssH;hasH=1;}
-if(selfH>=8){capH=hasH?Math.min(capH,selfH):selfH;hasH=1;}
+if(specMaxH>=8&&laidH-specMaxH>=8){capH=hasH?Math.min(capH,specMaxH):specMaxH;hasH=1;}
+if(specH>=8&&laidH-specH>=8){capH=hasH?Math.min(capH,specH):specH;hasH=1;}
 if(anc.h>=8){capH=hasH?Math.min(capH,anc.h):anc.h;hasH=1;}
 var widthOverflow=laidW>capW+1;
 var heightOverflow=!!(hasH&&laidH>capH+1);
@@ -245,8 +328,9 @@ if(!root)return;
 if(!document.getElementById('__wta_video_fit')){
 var style=document.createElement('style');
 style.id='__wta_video_fit';
-style.textContent='video{max-width:100%;min-width:0;min-height:0;}';
-root.appendChild(style);
+style.textContent='video{min-width:0;min-height:0;}';
+if(root.firstChild)root.insertBefore(style,root.firstChild);
+else root.appendChild(style);
 }
 scan(document);
 if(window.__wtaVideoMo)return;
