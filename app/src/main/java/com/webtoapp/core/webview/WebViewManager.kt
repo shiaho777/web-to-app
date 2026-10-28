@@ -64,6 +64,7 @@ class WebViewManager(
     private val cosmeticFilterScriptHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
     private val pageZoomScriptHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
     private val videoFitScriptHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
+    private val wasmStreamScriptHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
     private val kernelFlavorScriptHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
 
     companion object {
@@ -181,11 +182,26 @@ class WebViewManager(
 
         private val WEBVIEW_WV_MARKER_REGEX = Regex(";\\s*wv\\s*\\)")
 
+        /**
+         * Android WebView appends `Version/4.0` beside `Chrome/`. That token is the
+         * old Android browser marker, not a Safari version. Emscripten still treats
+         * any UA containing `Safari/` and `Version/` as Safari, so a Godot web
+         * export throws "requires Safari 15.2" while `index.js` evaluates and the
+         * canvas stays blank.
+         */
+        private val WEBVIEW_VERSION_TOKEN_REGEX = Regex("\\sVersion/4\\.0(?=\\s)")
+
         @JvmStatic
         fun stripWebViewMarker(userAgent: String): String {
             if (userAgent.isEmpty()) return userAgent
-            if (!userAgent.contains("wv")) return userAgent
-            return WEBVIEW_WV_MARKER_REGEX.replace(userAgent, ")")
+            var ua = userAgent
+            if (ua.contains("wv")) {
+                ua = WEBVIEW_WV_MARKER_REGEX.replace(ua, ")")
+            }
+            if (ua.contains("Chrome/") && ua.contains("Version/4.0")) {
+                ua = WEBVIEW_VERSION_TOKEN_REGEX.replace(ua, "")
+            }
+            return ua
         }
 
         /**
@@ -1945,6 +1961,7 @@ class WebViewManager(
 
             installPageZoomDocumentStart(this, config)
             installVideoFitDocumentStart(this, config)
+            installWasmStreamDocumentStart(this, config)
             installKernelFlavorDocumentStart(this)
 
             if (config.enablePrivateNetworkBridge || config.enableCorsBypass) {
@@ -2689,6 +2706,7 @@ class WebViewManager(
                     // Fallback when document-start is unavailable. The script
                     // no-ops once it is already installed on this document.
                     startBatch.append("try{").append(VideoElementFit.SCRIPT).append("}catch(e){};\n")
+                    startBatch.append("try{").append(WasmStreamCompat.SCRIPT).append("}catch(e){};\n")
                 }
 
                 val pageZoomJs = view?.let { pageZoomScriptFor(it, config) }
@@ -4503,6 +4521,10 @@ class WebViewManager(
             runCatching { handler.remove() }
         }
         videoFitScriptHandlers.clear()
+        wasmStreamScriptHandlers.values.toList().forEach { handler ->
+            runCatching { handler.remove() }
+        }
+        wasmStreamScriptHandlers.clear()
         kernelFlavorScriptHandlers.values.toList().forEach { handler ->
             runCatching { handler.remove() }
         }
@@ -4669,6 +4691,29 @@ class WebViewManager(
             AppLogger.d("WebViewManager", "Video fit installed at document start")
         } catch (e: Exception) {
             AppLogger.w("WebViewManager", "Document-start video fit install failed", e)
+        }
+    }
+
+    /**
+     * Godot (and other wasm loaders) clone the wasm response and read only one
+     * side. Install before page scripts so the clone cannot stall the download.
+     */
+    private fun installWasmStreamDocumentStart(webView: WebView, config: WebViewConfig) {
+        if (!config.javaScriptEnabled) return
+        if (wasmStreamScriptHandlers.containsKey(webView)) return
+        if (!WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
+            AppLogger.d("WebViewManager", "Document-start unsupported; wasm stream compat will use onPageStarted")
+            return
+        }
+        try {
+            wasmStreamScriptHandlers[webView] = addDocumentStartExceptChallenges(
+                webView,
+                WasmStreamCompat.SCRIPT,
+                setOf("*")
+            )
+            AppLogger.d("WebViewManager", "Wasm stream compat installed at document start")
+        } catch (e: Exception) {
+            AppLogger.w("WebViewManager", "Document-start wasm stream compat install failed", e)
         }
     }
 

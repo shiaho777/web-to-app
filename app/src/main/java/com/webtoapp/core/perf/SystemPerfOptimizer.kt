@@ -160,12 +160,10 @@ object SystemPerfOptimizer {
                 }
             }
 
-            webView.setLayerType(View.LAYER_TYPE_HARDWARE, null)
-
-            if (isThrottling) {
-                webView.setLayerType(View.LAYER_TYPE_NONE, null)
-                AppLogger.w(TAG, "WebView GPU layer disabled (thermal throttling)")
-            }
+            // WebView already composites on the GPU. An extra HARDWARE layer
+            // keeps a WebGL canvas (Godot, Unity, any wasm game) from presenting
+            // frames, so the splash sits there after the download finishes.
+            webView.setLayerType(View.LAYER_TYPE_NONE, null)
 
         } catch (e: Exception) {
             AppLogger.w(TAG, "WebView runtime optimization failed", e)
