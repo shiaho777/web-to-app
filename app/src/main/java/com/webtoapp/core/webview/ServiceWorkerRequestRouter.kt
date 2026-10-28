@@ -52,11 +52,15 @@ internal object ServiceWorkerRequestRouter {
                     }
                 )
                 installed = true
-            } catch (e: Exception) {
+            } catch (t: Throwable) {
+                // Robolectric has no service-worker controller, and a failed class
+                // init throws ExceptionInInitializerError. The page WebViewClient
+                // still serves the bridge. Don't retry a broken controller.
+                installed = true
                 AppLogger.w(
                     "ServiceWorkerRequestRouter",
                     "Service worker intercept install failed",
-                    e
+                    t
                 )
             }
         }
