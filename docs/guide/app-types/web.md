@@ -36,3 +36,4 @@ The Web type's core config is the WebView behavior (backed by `WebViewConfig`).
 - The Web editor exposes the **full** set of capability cards (fullscreen, splash, ad blocking, DNS, disguise, and more) in a single screen — Web apps have one combined editor rather than separate core/common config.
 - For multiple sites in one app, use [Multi-Web](/guide/app-types/multi-web).
 - To archive a site for offline use, use [Offline Pack](/guide/app-types/offline-pack).
+- System WebView keeps a `<video>` inside the size the page already set (a bubble's width and height, or `max-width`). A player that already fits that box is left as it is. Gecko follows the page's CSS on its own.

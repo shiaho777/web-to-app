@@ -63,6 +63,7 @@ class WebViewManager(
     private val shareInboxScriptHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
     private val cosmeticFilterScriptHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
     private val pageZoomScriptHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
+    private val videoFitScriptHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
     private val kernelFlavorScriptHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
 
     companion object {
@@ -1943,6 +1944,7 @@ class WebViewManager(
             webChromeClient = createWebChromeClient(config, callbacks)
 
             installPageZoomDocumentStart(this, config)
+            installVideoFitDocumentStart(this, config)
             installKernelFlavorDocumentStart(this)
 
             if (config.enablePrivateNetworkBridge || config.enableCorsBypass) {
@@ -2668,6 +2670,12 @@ class WebViewManager(
 
                 if (config.enableScrollMemory) {
                     startBatch.append("try{").append(SCROLL_SAVE_JS).append("}catch(e){};\n")
+                }
+
+                if (config.javaScriptEnabled) {
+                    // Fallback when document-start is unavailable. The script
+                    // no-ops once it is already installed on this document.
+                    startBatch.append("try{").append(VideoElementFit.SCRIPT).append("}catch(e){};\n")
                 }
 
                 val pageZoomJs = view?.let { pageZoomScriptFor(it, config) }
@@ -4478,6 +4486,10 @@ class WebViewManager(
             runCatching { handler.remove() }
         }
         pageZoomScriptHandlers.clear()
+        videoFitScriptHandlers.values.toList().forEach { handler ->
+            runCatching { handler.remove() }
+        }
+        videoFitScriptHandlers.clear()
         kernelFlavorScriptHandlers.values.toList().forEach { handler ->
             runCatching { handler.remove() }
         }
@@ -4621,6 +4633,29 @@ class WebViewManager(
             AppLogger.d("WebViewManager", "Page zoom installed at document start: ${config.pageZoomPercent}%")
         } catch (e: Exception) {
             AppLogger.w("WebViewManager", "Document-start page zoom install failed", e)
+        }
+    }
+
+    /**
+     * Keep a `<video>` inside the CSS box the page asked for. System WebView
+     * otherwise lays it out at the media's intrinsic pixel size.
+     */
+    private fun installVideoFitDocumentStart(webView: WebView, config: WebViewConfig) {
+        if (!config.javaScriptEnabled) return
+        if (videoFitScriptHandlers.containsKey(webView)) return
+        if (!WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
+            AppLogger.d("WebViewManager", "Document-start unsupported; video fit will use onPageStarted")
+            return
+        }
+        try {
+            videoFitScriptHandlers[webView] = addDocumentStartExceptChallenges(
+                webView,
+                VideoElementFit.SCRIPT,
+                setOf("*")
+            )
+            AppLogger.d("WebViewManager", "Video fit installed at document start")
+        } catch (e: Exception) {
+            AppLogger.w("WebViewManager", "Document-start video fit install failed", e)
         }
     }
 
