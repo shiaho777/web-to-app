@@ -877,53 +877,8 @@ await WtaDirectory.write('exports/image.png', pngBytes);
     @JavascriptInterface
     fun showWebNotification(title: String, body: String = "", tag: String = ""): Boolean {
         if (!capabilities.notification) return false
-        return try {
-            if (getNotificationPermissionState() != "granted") return false
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-                ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
-            ) return false
-
-            val channelId = "webapp_notifications"
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-                val channel = NotificationChannel(
-                    channelId,
-                    Strings.webAppNotificationChannelName,
-                    NotificationManager.IMPORTANCE_DEFAULT
-                )
-                manager.createNotificationChannel(channel)
-            }
-
-            val launchIntent = context.packageManager.getLaunchIntentForPackage(context.packageName)
-                ?.apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP) }
-            val pendingIntent = PendingIntent.getActivity(
-                context,
-                (tag.ifBlank { title }).hashCode(),
-                launchIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-
-            val notification = NotificationCompat.Builder(context, channelId)
-                .setSmallIcon(context.applicationInfo.icon)
-                .setContentTitle(title.ifBlank { context.applicationInfo.loadLabel(context.packageManager).toString() })
-                .setContentText(body)
-                .setStyle(NotificationCompat.BigTextStyle().bigText(body))
-                .setAutoCancel(true)
-                .setContentIntent(pendingIntent)
-                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-                .build()
-
-            try {
-                NotificationManagerCompat.from(context).notify((tag.ifBlank { "$title|$body" }).hashCode(), notification)
-            } catch (e: SecurityException) {
-                AppLogger.e("NativeBridge", "Notification permission unavailable", e)
-                return false
-            }
-            true
-        } catch (e: Exception) {
-            AppLogger.e("NativeBridge", "Failed to show web notification", e)
-            false
-        }
+        if (getNotificationPermissionState() != "granted") return false
+        return WebNotificationBridge.post(context, title, body, tag)
     }
 
     @JavascriptInterface

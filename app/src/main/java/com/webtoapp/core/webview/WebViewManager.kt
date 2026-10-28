@@ -1997,6 +1997,11 @@ class WebViewManager(
                 installPrintBridgeDocumentStart(this)
             }
 
+            if (config.enableNotificationPolyfill) {
+                WebNotificationBridge.install(context)
+                installNotificationPolyfillDocumentStart(this)
+            }
+
             // Cosmetic filtering at document start so the hide stylesheet and the
             // mutation observer are in place before the page can paint (#998).
             if (adBlocker.isEnabled() && config.javaScriptEnabled) {
@@ -2300,6 +2305,13 @@ class WebViewManager(
                 request?.let {
                     val url = it.url?.toString() ?: ""
                     diagRequestCount++
+
+                    // Service-worker notification bridge. Some WebView versions fetch the
+                    // worker script through this client; the process-wide service-worker
+                    // client covers the rest. Both serve the same response.
+                    if (config.enableNotificationPolyfill) {
+                        WebNotificationBridge.intercept(context, url)?.let { bridged -> return bridged }
+                    }
 
                     // Feed the TLS-MITM bridge's host allowlist: every request the WebView
                     // issues passes through here before its network stack CONNECTs through
@@ -2663,6 +2675,7 @@ class WebViewManager(
                 view?.let { AudioUnlockInjector.inject(it) }
 
                 if (config.enableNotificationPolyfill) {
+                    WebNotificationBridge.install(context)
                     view?.let { injectNotificationPolyfill(it) }
                 }
 
@@ -6493,11 +6506,8 @@ class WebViewManager(
                 'use strict';
 
                 if (window.__webtoapp_notification_polyfill__) return;
+                if (typeof NativeBridge === 'undefined') return;
                 window.__webtoapp_notification_polyfill__ = true;
-
-                if (typeof NativeBridge === 'undefined') {
-                    return;
-                }
 
                 function getPermission() {
                     try {
@@ -6592,20 +6602,22 @@ class WebViewManager(
                     window.PushSubscription = WebToAppPushSubscription;
                 }
 
+                function showFromPage(title, options) {
+                    return new Promise(function(resolve, reject) {
+                        try {
+                            showNativeNotification(title, options);
+                            resolve();
+                        } catch (e) {
+                            reject(e);
+                        }
+                    });
+                }
+
                 if (navigator.serviceWorker && navigator.serviceWorker.ready) {
                     navigator.serviceWorker.ready.then(function(reg) {
-                        if (!reg.showNotification) {
-                            reg.showNotification = function(title, options) {
-                                return new Promise(function(resolve, reject) {
-                                    try {
-                                        showNativeNotification(title, options);
-                                        resolve();
-                                    } catch (e) {
-                                        reject(e);
-                                    }
-                                });
-                            };
-                        }
+                        reg.showNotification = function(title, options) {
+                            return showFromPage(title, options);
+                        };
                         if (!reg.pushManager) {
                             try {
                                 reg.pushManager = new window.PushManager();
@@ -6615,6 +6627,51 @@ class WebViewManager(
                             reg.getNotifications = function() { return Promise.resolve([]); };
                         }
                     }).catch(function(){});
+                }
+
+                // WebView never delivers ServiceWorkerRegistration.showNotification.
+                // Sites that post to the worker (秋秋机's SHOW_LOCAL_NOTIFICATION) only
+                // reach the shade if the worker script itself calls back into the bridge.
+                if (navigator.serviceWorker && navigator.serviceWorker.register &&
+                        !navigator.serviceWorker.__wtaRegisterPatched) {
+                    var originalRegister = navigator.serviceWorker.register.bind(navigator.serviceWorker);
+                    navigator.serviceWorker.__wtaRegisterPatched = true;
+                    navigator.serviceWorker.register = function(scriptURL, options) {
+                        try {
+                            if (options && options.type === 'module') {
+                                return originalRegister(scriptURL, options);
+                            }
+                            var abs = new URL(scriptURL, window.location.href);
+                            if (abs.protocol !== 'http:' && abs.protocol !== 'https:') {
+                                return originalRegister(scriptURL, options);
+                            }
+                            if (abs.origin !== window.location.origin || abs.pathname === '${WebNotificationBridge.BRIDGE_PATH}') {
+                                return originalRegister(scriptURL, options);
+                            }
+                            var scopeUrl = (options && options.scope)
+                                ? new URL(options.scope, window.location.href)
+                                : new URL('./', abs);
+                            var proxy = new URL('${WebNotificationBridge.BRIDGE_PATH}', window.location.origin);
+                            proxy.searchParams.set('src', abs.href);
+                            proxy.searchParams.set('wta', '${WebNotificationBridge.WRAPPER_VERSION}');
+                            var opts = {};
+                            if (options) {
+                                for (var key in options) {
+                                    if (Object.prototype.hasOwnProperty.call(options, key)) opts[key] = options[key];
+                                }
+                            }
+                            opts.scope = scopeUrl.href;
+                            return originalRegister(proxy.href, opts);
+                        } catch (e) {
+                            return originalRegister(scriptURL, options);
+                        }
+                    };
+                    navigator.serviceWorker.addEventListener('message', function(event) {
+                        var data = event.data;
+                        if (!data || data.__wtaShowNotification !== 1) return;
+                        if (window.top !== window) return;
+                        showFromPage(data.title, { body: data.body, tag: data.tag }).catch(function(){});
+                    });
                 }
 
             })();
@@ -7007,6 +7064,15 @@ class WebViewManager(
                 }
             })();
         """.trimIndent()
+    }
+
+    private fun installNotificationPolyfillDocumentStart(webView: WebView) {
+        if (!WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) return
+        try {
+            addDocumentStartExceptChallenges(webView, getNotificationPolyfillScript(), setOf("*"))
+        } catch (e: Exception) {
+            AppLogger.w("WebViewManager", "Notification polyfill document-start failed", e)
+        }
     }
 
     private fun injectNotificationPolyfill(webView: WebView) {

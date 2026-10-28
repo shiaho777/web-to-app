@@ -228,26 +228,14 @@ self.addEventListener('fetch', event => {
     private fun installServiceWorkerController() {
         if (serviceWorkerControllerInstalled) return
         serviceWorkerControllerInstalled = true
-        try {
-            androidx.webkit.ServiceWorkerControllerCompat.getInstance().setServiceWorkerClient(
-                object : androidx.webkit.ServiceWorkerClientCompat() {
-                    override fun shouldInterceptRequest(
-                        request: android.webkit.WebResourceRequest
-                    ): android.webkit.WebResourceResponse? {
-                        if (request.url?.path == SW_SCRIPT_PATH) {
-                            val script = currentSwScript ?: return null
-                            return android.webkit.WebResourceResponse(
-                                "application/javascript",
-                                "UTF-8",
-                                java.io.ByteArrayInputStream(script.toByteArray(Charsets.UTF_8))
-                            )
-                        }
-                        return null
-                    }
-                }
+        ServiceWorkerRequestRouter.addHandler { request ->
+            if (request.url?.path != SW_SCRIPT_PATH) return@addHandler null
+            val script = currentSwScript ?: return@addHandler null
+            android.webkit.WebResourceResponse(
+                "application/javascript",
+                "UTF-8",
+                java.io.ByteArrayInputStream(script.toByteArray(Charsets.UTF_8))
             )
-        } catch (e: Exception) {
-            AppLogger.w(TAG, "Failed to install ServiceWorkerController", e)
         }
     }
 
