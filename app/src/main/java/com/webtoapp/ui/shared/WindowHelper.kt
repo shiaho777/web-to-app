@@ -409,8 +409,8 @@ object WindowHelper {
                         WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING or
                             WindowManager.LayoutParams.SOFT_INPUT_STATE_UNSPECIFIED
                     )
-                    installManualImePadding(activity, contentView)
-                    AppLogger.d(tag, "键盘模式: RESIZE (边到边，动画期间只滚动被挡住的内容，结束时再改高度)")
+                    installManualImePadding(contentView)
+                    AppLogger.d(tag, "键盘模式: RESIZE (边到边，只滚动被挡住的内容并裁到键盘上沿，结束时不改高度)")
                 }
             }
 
@@ -429,7 +429,7 @@ object WindowHelper {
         }
     }
 
-    private fun installManualImePadding(activity: Activity, contentView: View) {
+    private fun installManualImePadding(contentView: View) {
         if (contentView in manualImeInstalled) {
             ViewCompat.requestApplyInsets(contentView)
             return
@@ -440,28 +440,26 @@ object WindowHelper {
         val follow = ImeAnimationFollow()
         val documentScroll = ImeDocumentScroll()
 
-        fun applyFrame(frame: ImeFrame, shown: Int) {
-            // Never leave a pan in place. A non-zero translation moves fixed
-            // page elements and the status-bar band (#1398).
+        fun applyFrame(frame: ImeFrame) {
+            // Never leave a pan or a bottom padding in place. Padding shrinks
+            // the WebView at the moment the field meets the keyboard, and
+            // Chromium then applies the window IME inset again, so the field
+            // flashes. Translation does the same to fixed elements (#1398).
             if (contentView.translationY != 0f) contentView.translationY = 0f
-            val bottom = frame.layoutBottom
-            if (bottom != null) {
-                if (contentView.paddingBottom != bottom) {
-                    contentView.setPadding(
-                        contentView.paddingLeft,
-                        contentView.paddingTop,
-                        contentView.paddingRight,
-                        bottom
-                    )
-                }
-                if (contentView.clipBounds != null) contentView.clipBounds = null
-                publishImeOcclusion(contentView, bottom)
-                return
+            if (contentView.paddingBottom != 0) {
+                contentView.setPadding(
+                    contentView.paddingLeft,
+                    contentView.paddingTop,
+                    contentView.paddingRight,
+                    0
+                )
+                publishImeOcclusion(contentView, 0)
             }
-            if (frame.scrollDocument && shown > 0 && contentView.height > 0 && contentView.width > 0) {
-                val clipBottom = (contentView.height - shown).coerceAtLeast(0)
+            val clip = frame.clipBottom
+            if (clip != null && clip > 0 && contentView.height > 0 && contentView.width > 0) {
+                val clipBottom = (contentView.height - clip).coerceAtLeast(0)
                 contentView.clipBounds = Rect(0, 0, contentView.width, clipBottom)
-            } else if (contentView.clipBounds != null) {
+            } else if (clip == 0 && contentView.clipBounds != null) {
                 contentView.clipBounds = null
             }
         }
@@ -540,7 +538,7 @@ object WindowHelper {
                         }
                         val shown = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom
                         val frame = follow.onFrame(shown)
-                        applyFrame(frame, shown)
+                        applyFrame(frame)
                         if (frame.scrollDocument) scrollCoveredField(shown)
                     }
                     return insets
@@ -554,13 +552,13 @@ object WindowHelper {
                     val imeVisible = rootInsets?.isVisible(WindowInsetsCompat.Type.ime()) ?: false
                     val imeBottom = rootInsets?.getInsets(WindowInsetsCompat.Type.ime())?.bottom ?: 0
                     val finalBottom = if (imeVisible) imeBottom else 0
-                    if (finalBottom > follow.laidOutBottom) scrollCoveredField(finalBottom)
+                    // Last step of the same scroll, still in the unresized
+                    // coordinate space. Do not scrollIntoView afterwards:
+                    // the field is already on the keyboard, and a second
+                    // scroll is the flash.
+                    if (finalBottom > follow.settledBottom) scrollCoveredField(finalBottom)
                     documentScroll.end()
-                    applyFrame(follow.onEnd(finalBottom), finalBottom)
-
-                    if (imeVisible) {
-                        checkAndScrollWebViewToFocusedInput(activity)
-                    }
+                    applyFrame(follow.onEnd(finalBottom))
                 }
             }
         )
@@ -572,7 +570,7 @@ object WindowHelper {
                 // for direction, and let onProgress move the page without a layout.
                 follow.onTarget(imeBottom)
             } else {
-                applyFrame(follow.jumpTo(imeBottom), imeBottom)
+                applyFrame(follow.jumpTo(imeBottom))
             }
             windowInsets
         }
@@ -595,49 +593,6 @@ object WindowHelper {
             )
         }
         publishImeOcclusion(contentView, 0)
-    }
-
-    private fun checkAndScrollWebViewToFocusedInput(activity: Activity) {
-        val webView = findWebViewInHierarchy(activity.window.decorView) ?: return
-        webView.post {
-            try {
-                webView.evaluateJavascript("""
-                    (function() {
-                        var el = document.activeElement;
-                        if (!el || (el.tagName !== 'INPUT' && el.tagName !== 'TEXTAREA' && !el.isContentEditable)) {
-                            return 'no_input';
-                        }
-                        var rect = el.getBoundingClientRect();
-                        var viewportHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-                        var viewportTop = window.visualViewport ? window.visualViewport.offsetTop : 0;
-                        if (rect.top >= viewportTop - 1 && rect.bottom <= (viewportTop + viewportHeight + 2)) {
-                            return 'already_visible';
-                        }
-                        el.scrollIntoView({ block: 'nearest' });
-                        return 'scrolled';
-                    })();
-                """.trimIndent(), null)
-            } catch (e: Exception) {
-                AppLogger.w("WindowHelper", "checkAndScrollWebViewToFocusedInput failed", e)
-            }
-        }
-    }
-
-    private fun scrollWebViewToFocusedInput(activity: Activity) {
-        try {
-
-            val webView = findWebViewInHierarchy(activity.window.decorView)
-            webView?.evaluateJavascript("""
-                (function() {
-                    var el = document.activeElement;
-                    if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable)) {
-                        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }
-                })();
-            """.trimIndent(), null)
-        } catch (e: Exception) {
-            AppLogger.w("WindowHelper", "scrollWebViewToFocusedInput failed", e)
-        }
     }
 
     private fun findWebViewInHierarchy(view: View): android.webkit.WebView? {
