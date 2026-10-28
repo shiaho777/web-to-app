@@ -38,7 +38,7 @@ A broad set of browser behavior toggles. This card collects the advanced `WebVie
 ## Kernel & status bar
 
 - **Kernel disguise** — present a different browser kernel flavor (`enableKernelDisguise`, `kernelFlavor`, `kernelDisguiseLevel`).
-- **Cloudflare compatibility** — compatibility mode for Cloudflare challenges (`enableCloudflareCompat`, `cloudflareCompatMode`).
+- **Cloudflare compatibility** — compatibility mode for Cloudflare challenges (`enableCloudflareCompat`, `cloudflareCompatMode`). On the default WebView path the User-Agent and `Sec-CH-UA` describe the same Chrome identity. Challenge frames skip the other document-start scripts. Captcha hosts use the WebView's own connection instead of the local DNS proxy or the TLS bridge.
 - **Failover** — mirror URLs with triggers and timeout (`failoverEnabled`, `failoverUrls`, `failoverTimeoutSeconds`).
 
 The status bar color/appearance configuration (color mode `THEME`/`PAGE_TOP`/`TRANSPARENT`/`CUSTOM`, custom color, dark icons, background color/image, light and dark separately) lives in the expandable section of the [Fullscreen Mode](/guide/app-actions/edit-common-config/fullscreen) card.

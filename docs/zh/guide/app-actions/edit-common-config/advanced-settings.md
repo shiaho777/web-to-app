@@ -38,7 +38,7 @@
 ## 内核与状态栏
 
 - **内核伪装** —— 呈现不同的浏览器内核风味(`enableKernelDisguise`、`kernelFlavor`、`kernelDisguiseLevel`)。
-- **Cloudflare 兼容** —— Cloudflare 挑战的兼容模式(`enableCloudflareCompat`、`cloudflareCompatMode`)。
+- **Cloudflare 兼容** —— Cloudflare 挑战的兼容模式(`enableCloudflareCompat`、`cloudflareCompatMode`)。默认 WebView 路径上,User-Agent 和 `Sec-CH-UA` 描述同一个 Chrome 身份。验证码框架跳过其他 document-start 脚本。验证码站点走 WebView 自己的连接,不经过本地 DNS 代理或 TLS 桥。
 - **故障转移** —— 镜像 URL,带触发条件和超时(`failoverEnabled`、`failoverUrls`、`failoverTimeoutSeconds`)。
 
 状态栏颜色/外观配置(颜色模式 `THEME`/`PAGE_TOP`/`TRANSPARENT`/`CUSTOM`、自定义颜色、深色图标、背景颜色/图片,明暗分别配置)位于[全屏模式](/zh/guide/app-actions/edit-common-config/fullscreen)卡片内的可展开区。

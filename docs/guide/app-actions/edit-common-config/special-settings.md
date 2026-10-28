@@ -7,7 +7,7 @@ Compatibility polyfills, bridges, and other specialized toggles. This card colle
 ## Polyfills & bridges
 
 - **Clipboard polyfill** — `enableClipboardPolyfill`.
-- **Notification polyfill** — Web Notification support (`enableNotificationPolyfill`).
+- **Notification polyfill** — Web Notification support (`enableNotificationPolyfill`). With web notifications on at export, or this switch on, `new Notification()` and a same-origin service worker's `showNotification` both reach the system shade.
 - **Orientation polyfill** — `enableOrientationPolyfill`.
 - **Compat polyfills** — a bundle of compatibility shims (`enableCompatPolyfills`).
 - **Native bridge** — expose [`window.NativeBridge`](/extensions/native-bridge) with capability gates (`enableNativeBridge`, `nativeBridgeCapabilities`). The **Folder** capability stays off until enabled. The page then picks one directory and can list, read, and write it through `WtaDirectory` on the system WebView. The grant is kept on that device, so an exported app asks again.

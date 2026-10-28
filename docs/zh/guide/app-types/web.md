@@ -36,4 +36,5 @@
 - 网页编辑器在单一界面中暴露 **完整** 的能力卡片(全屏、启动画面、去广告、DNS、伪装等)—— 网页应用有一个合并的编辑器,而非拆分的核心/通用配置。
 - 多个站点合并到一个应用,用[多站点](/zh/guide/app-types/multi-web)。
 - 把网站归档为离线使用,用[离线包](/zh/guide/app-types/offline-pack)。
-- 系统 WebView 会把 `<video>` 留在页面已经给出的尺寸里(气泡的宽高,或 `max-width`)。已经符合这个盒子的播放器保持原样。Gecko 本身会遵守页面的 CSS。
+- 系统 WebView 会把 `<video>` 留在页面写明的长度里,单位可以是 px、rem、em、vw 或 vh,写在视频上或它的上层元素上都可以。已经符合这个盒子的播放器,以及按百分比铺满的播放器,保持原样。Gecko 本身会遵守页面的 CSS。
+- Godot 网页导出会在系统 WebView 里启动。只有 User-Agent 里同时有 Chrome 时才去掉 `Version/4.0`,这样引擎不会被当成 Safari 4。真正的 Safari 版本号会保留。

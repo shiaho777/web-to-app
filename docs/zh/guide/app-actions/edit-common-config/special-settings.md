@@ -7,7 +7,7 @@
 ## Polyfill 与桥接
 
 - **剪贴板 polyfill** —— `enableClipboardPolyfill`。
-- **通知 polyfill** —— Web Notification 支持(`enableNotificationPolyfill`)。
+- **通知 polyfill** —— Web Notification 支持(`enableNotificationPolyfill`)。导出时打开网页通知,或打开这个开关后,`new Notification()` 和同源 service worker 的 `showNotification` 都会进系统通知栏。
 - **方向 polyfill** —— `enableOrientationPolyfill`。
 - **兼容 polyfill** —— 一组兼容 shim(`enableCompatPolyfills`)。
 - **原生桥** —— 暴露带能力门控的 [`window.NativeBridge`](/zh/extensions/native-bridge)（`enableNativeBridge`、`nativeBridgeCapabilities`）。**文件夹**能力默认关闭。打开后，页面可选择一个目录，并在系统 WebView 上通过 `WtaDirectory` 列出、读取和写入。授权留在那台设备上，导出的应用需要再选一次。

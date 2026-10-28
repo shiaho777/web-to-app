@@ -1,0 +1,15 @@
+Added
+- Time-limited codes can show days left.
+- The side drawer can search and save sites.
+
+Improved
+- Service-worker notifications reach the shade.
+- The status bar uses the interface color.
+- A large ad-block list no longer freezes the app.
+
+Fixed
+- Chat videos stay in the page box. Godot web exports start.
+- The keyboard no longer flashes a field.
+- Turnstile matches Chrome.
+- An empty splash corner stays empty. A camera grant reloads once.
+- Shortcuts keep their language and task.

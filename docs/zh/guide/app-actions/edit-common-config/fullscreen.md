@@ -21,7 +21,7 @@
 - 如果同时开启了[悬浮小窗](/zh/guide/app-actions/edit-common-config/floating-window),应用以小窗打开。全屏不会把它换成全屏页面。
 - 当状态栏可见时,启动倒计时/跳过胶囊会落在其下方,绝不被遮挡。
 - 底部内容内边距留在物理屏幕边缘。键盘打开时,只保留键盘没有盖住的那一段。键盘比这段更高时,页面贴着键盘。
-- 透明和跟随页面模式会采样系统 WebView,并用页面颜色绘制导航栏和全屏边距。首屏绘制后会再采一次,所以第一屏不会停在浅色回退上。主题色和自定义模式保持你设置的颜色。GeckoView 拿不到这个采样,所以沿用之前的栏颜色。
+- 透明和跟随页面模式会采样系统 WebView,并用页面颜色绘制导航栏和全屏边距。首屏绘制后会再采一次,所以第一屏不会停在浅色回退上。主题模式用界面颜色绘制状态栏,深色模式也一样。自定义模式保持你设置的颜色。GeckoView 拿不到这个采样,所以沿用之前的栏颜色。
 - 顶部和底部标签页只应用一次全屏内容内边距。卡片、抽屉和信息流本来就是这样。
 - 全屏**视频**方向(全屏视频播放的横屏/传感器方向,`fullscreenVideoOrientation`)在[特殊设置](/zh/guide/app-actions/edit-common-config/special-settings)中配置。同一卡片还有"视频全屏时隐藏状态栏"(`hideStatusBarInVideoFullscreen`,默认开启):网页视频进入 HTML5 全屏时,即使"全屏显示状态栏"开启也会强制隐藏状态栏。
 - Android 10 及以下的键盘避让走经典窗口缩放路径;键盘调整模式见[特殊设置](/zh/guide/app-actions/edit-common-config/special-settings)。
