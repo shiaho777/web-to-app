@@ -1727,6 +1727,11 @@ fun WebViewScreen(
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var showActivationDialog by remember { mutableStateOf(false) }
     var showAnnouncementDialog by remember { mutableStateOf(false) }
+    var remainingDaysNotice by remember {
+        mutableStateOf<com.webtoapp.core.activation.RemainingDaysNotice?>(null)
+    }
+    var remainingDaysIncludeSplash by remember { mutableStateOf(false) }
+    var remainingDaysFromLaunch by remember { mutableStateOf(true) }
 
     // URL delivered by the remote activation server (dynamic URL mode). Takes precedence over
     // the configured app URL for plain WEB apps, mirroring ShellScreen.dynamicUrl.
@@ -1790,6 +1795,35 @@ fun WebViewScreen(
     var longPressTouchY by remember { mutableFloatStateOf(0f) }
     val scope = rememberCoroutineScope()
     val longPressHandler = remember { LongPressHandler(context, scope) }
+
+    suspend fun openPreviewAnnouncement(fromLaunch: Boolean) {
+        val app = webApp ?: return
+        if (!isActivated || !app.announcementEnabled) return
+        showAnnouncementDialog = if (fromLaunch) {
+            if (app.announcement?.triggerOnLaunch == true) {
+                announcement.shouldShowAnnouncementForTrigger(appId, app.announcement, isLaunch = true)
+            } else {
+                false
+            }
+        } else {
+            announcement.shouldShowAnnouncement(appId, app.announcement)
+        }
+    }
+
+    fun openPreviewSplash() {
+        val app = webApp ?: return
+        if (!isActivated || !app.splashEnabled) return
+        val splash = app.splashConfig ?: return
+        val mediaPath = splash.mediaPath
+        if (mediaPath != null && File(mediaPath).exists()) {
+            showSplash = true
+            splashCountdown = splash.duration
+            if (splash.orientation == SplashOrientation.LANDSCAPE) {
+                originalOrientation = activity.requestedOrientation
+                activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+            }
+        }
+    }
 
     var showConsole by remember { mutableStateOf(false) }
     var showFindBar by remember { mutableStateOf(false) }
@@ -2120,26 +2154,22 @@ fun WebViewScreen(
                     isActivationChecked = true
                 }
 
-                if (app.announcementEnabled && isActivated && app.announcement?.triggerOnLaunch == true) {
-                    val shouldShow = announcement.shouldShowAnnouncementForTrigger(
-                        appId,
-                        app.announcement,
-                        isLaunch = true
-                    )
-                    showAnnouncementDialog = shouldShow
+                val launchNotice = if (
+                    isActivated &&
+                    app.activationEnabled &&
+                    app.activationRemoteConfig?.enabled != true
+                ) {
+                    activation.remainingDaysNoticeForLaunch(appId, app.activationCodeList)
+                } else {
+                    null
                 }
-
-                if (app.splashEnabled && app.splashConfig != null && isActivated) {
-                    val mediaPath = app.splashConfig.mediaPath
-                    if (mediaPath != null && File(mediaPath).exists()) {
-                        showSplash = true
-                        splashCountdown = app.splashConfig.duration
-
-                        if (app.splashConfig.orientation == SplashOrientation.LANDSCAPE) {
-                            originalOrientation = activity.requestedOrientation
-                            activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-                        }
-                    }
+                if (launchNotice != null) {
+                    remainingDaysNotice = launchNotice
+                    remainingDaysIncludeSplash = true
+                    remainingDaysFromLaunch = true
+                } else {
+                    openPreviewAnnouncement(fromLaunch = true)
+                    openPreviewSplash()
                 }
 
                 if (app.bgmEnabled && app.bgmConfig != null && isActivated) {
@@ -4757,15 +4787,41 @@ fun WebViewScreen(
             activation.isActivated(appId).collect { activated ->
                 if (activated) {
                     isActivated = true
+                    val remoteOn = webApp?.activationRemoteConfig?.enabled == true
+                    val notice = if (!remoteOn) {
+                        activation.remainingDaysNoticeForLaunch(
+                            appId,
+                            webApp?.activationCodeList.orEmpty()
+                        )
+                    } else {
+                        null
+                    }
                     showActivationDialog = false
-
-                    if (webApp?.announcementEnabled == true) {
-                        val shouldShow = announcement.shouldShowAnnouncement(appId, webApp?.announcement)
-                        showAnnouncementDialog = shouldShow
+                    if (notice != null) {
+                        remainingDaysNotice = notice
+                        remainingDaysIncludeSplash = false
+                        remainingDaysFromLaunch = false
+                    } else {
+                        openPreviewAnnouncement(fromLaunch = false)
                     }
                 }
             }
         }
+    }
+
+    remainingDaysNotice?.let { notice ->
+        com.webtoapp.ui.components.RemainingDaysNoticeDialog(
+            notice = notice,
+            onDismiss = {
+                val includeSplash = remainingDaysIncludeSplash
+                val fromLaunch = remainingDaysFromLaunch
+                remainingDaysNotice = null
+                scope.launch {
+                    openPreviewAnnouncement(fromLaunch)
+                    if (includeSplash) openPreviewSplash()
+                }
+            }
+        )
     }
 
     if (showAnnouncementDialog && webApp?.announcement != null) {

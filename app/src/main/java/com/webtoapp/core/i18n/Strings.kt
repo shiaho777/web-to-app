@@ -790,6 +790,10 @@ object Strings {
     val validityDays: String get() = StringsA.validityDays
     val activationCodeExpiryDays: String get() = StringsA.activationCodeExpiryDays
     val activationCodeValidUntil: String get() = StringsA.activationCodeValidUntil
+    val showRemainingDaysOnLaunch: String get() = StringsA.showRemainingDaysOnLaunch
+    val showRemainingDaysOnLaunchHint: String get() = StringsA.showRemainingDaysOnLaunchHint
+    val remainingDaysOnLaunchTitle: String get() = StringsA.remainingDaysOnLaunchTitle
+    fun remainingDaysOnLaunchMessage(days: Long, hours: Long): String = StringsA.remainingDaysOnLaunchMessage(days, hours)
     val usageCount: String get() = StringsA.usageCount
     val noteOptional: String get() = StringsA.noteOptional
     val vipUserOnly: String get() = StringsA.vipUserOnly

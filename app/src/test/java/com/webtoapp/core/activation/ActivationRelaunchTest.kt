@@ -223,6 +223,31 @@ class ActivationRelaunchTest {
     }
 
     @Test
+    fun `remaining days notice follows the redeemed card`() = runTest {
+        val loud = ActivationCode(
+            code = "LOUD-2222",
+            type = ActivationCodeType.TIME_LIMITED,
+            timeLimitMs = java.util.concurrent.TimeUnit.DAYS.toMillis(3),
+            showRemainingDays = true
+        )
+        manager.verifyActivationCodeWithObjects(APP_ID, "LOUD-2222", listOf(loud))
+
+        val notice = manager.remainingDaysNoticeForLaunch(APP_ID, listOf(loud))
+        assertThat(notice).isNotNull()
+        assertThat(notice!!.days).isAtLeast(2L)
+
+        assertThat(
+            manager.remainingDaysNoticeForLaunch(
+                APP_ID,
+                listOf(loud.copy(showRemainingDays = false))
+            )
+        ).isNull()
+
+        manager.saveActivationStatus(APP_ID, true)
+        assertThat(manager.remainingDaysNoticeForLaunch(APP_ID, listOf(loud))).isNull()
+    }
+
+    @Test
     fun `remote grant clears remembered local card`() = runTest {
         manager.verifyActivationCodeWithObjects(APP_ID, "CARD-AAAA", listOf(permanent("CARD-AAAA")))
         manager.saveActivationStatus(APP_ID, true) // remote grant overwrites

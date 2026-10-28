@@ -273,6 +273,7 @@ val syncShellRuntimeSources by tasks.registering(Sync::class) {
         "**/ui/components/announcement/AnnouncementTemplates.kt",
         "**/ui/components/PremiumComponents.kt",
         "**/ui/components/EnhancedActivationDialog.kt",
+        "**/ui/components/RemainingDaysNoticeDialog.kt",
         "**/ui/components/WebSwipeRefreshLayout.kt",
         "**/ui/components/VirtualNavigationBar.kt",
         "**/ui/components/StatusBarBackground.kt",

@@ -393,6 +393,23 @@ class ActivationManager(private val context: Context) {
         )
     }
 
+    /**
+     * Remaining-days notice for the local card that created the current grant.
+     * Remote grants forget the local card, so they return null.
+     */
+    suspend fun remainingDaysNoticeForLaunch(
+        appId: Long,
+        codes: List<ActivationCode>,
+        nowMs: Long = System.currentTimeMillis(),
+    ): RemainingDaysNotice? {
+        val used = getUsedCode(appId) ?: return null
+        val normalizedUsed = normalizeCode(used)
+        val code = codes.firstOrNull { candidate ->
+            constantTimeEquals(normalizedUsed, normalizeCode(candidate.code))
+        } ?: return null
+        return remainingDaysNotice(getActivationStatus(appId), code, nowMs)
+    }
+
     suspend fun saveActivationStatus(appId: Long, code: ActivationCode, deviceId: String) {
         val currentTime = System.currentTimeMillis()
         val relativeExpiry = when (code.type) {
@@ -500,7 +517,8 @@ class ActivationManager(private val context: Context) {
         usageLimit: Int? = null,
         note: String? = null,
         length: Int = DEFAULT_CODE_LENGTH,
-        expiresAt: Long? = null
+        expiresAt: Long? = null,
+        showRemainingDays: Boolean = false
     ): ActivationCode {
         val code = generateActivationCode(length)
         return ActivationCode(
@@ -509,7 +527,8 @@ class ActivationManager(private val context: Context) {
             timeLimitMs = timeLimitMs,
             usageLimit = usageLimit,
             note = note,
-            expiresAt = expiresAt
+            expiresAt = expiresAt,
+            showRemainingDays = showRemainingDays && type.offersRemainingDays()
         )
     }
 
@@ -523,7 +542,8 @@ class ActivationManager(private val context: Context) {
         timeLimitMs: Long? = null,
         usageLimit: Int? = null,
         length: Int = DEFAULT_CODE_LENGTH,
-        expiresAt: Long? = null
+        expiresAt: Long? = null,
+        showRemainingDays: Boolean = false
     ): List<ActivationCode> {
         return (1..count).map { index ->
             generateActivationCode(
@@ -532,7 +552,8 @@ class ActivationManager(private val context: Context) {
                 usageLimit = usageLimit,
                 note = "${Strings.batchGeneratedNote} #$index",
                 length = length,
-                expiresAt = expiresAt
+                expiresAt = expiresAt,
+                showRemainingDays = showRemainingDays
             )
         }
     }

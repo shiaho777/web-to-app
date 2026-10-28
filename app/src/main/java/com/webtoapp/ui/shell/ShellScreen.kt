@@ -22,6 +22,7 @@ import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.core.shell.ShellConfig
 import com.webtoapp.core.webview.LongPressHandler
 import com.webtoapp.data.model.Announcement
+import com.webtoapp.ui.components.RemainingDaysNoticeDialog
 import com.webtoapp.util.TvUtils
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -94,6 +95,11 @@ fun ShellScreen(
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var showActivationDialog by remember { mutableStateOf(false) }
     var showAnnouncementDialog by remember { mutableStateOf(false) }
+    var remainingDaysNotice by remember {
+        mutableStateOf<com.webtoapp.core.activation.RemainingDaysNotice?>(null)
+    }
+    var remainingDaysIncludeSplash by remember { mutableStateOf(false) }
+    var remainingDaysFromLaunch by remember { mutableStateOf(true) }
 
     // Console / terminal panel state
     var showConsole by remember { mutableStateOf(false) }
@@ -169,6 +175,31 @@ fun ShellScreen(
     var longPressTouchY by remember { mutableFloatStateOf(0f) }
     val longPressHandler = remember { LongPressHandler(context, scope) }
 
+    fun shellActivationCodes(): List<com.webtoapp.core.activation.ActivationCode> =
+        config.activationCodes.map { raw ->
+            com.webtoapp.core.activation.ActivationCode.fromJson(raw)
+                ?: com.webtoapp.core.activation.ActivationCode.fromLegacyString(raw)
+        }
+
+    suspend fun openShellAnnouncement(fromLaunch: Boolean) {
+        if (!isActivated || !config.announcementEnabled) return
+        if (config.announcementTitle.isEmpty() && config.announcementContent.isEmpty()) return
+        val ann = buildShellAnnouncement(config)
+        showAnnouncementDialog = if (fromLaunch) {
+            announcement.shouldShowAnnouncementForTrigger(-1L, ann, isLaunch = true)
+        } else {
+            announcement.shouldShowAnnouncement(-1L, ann)
+        }
+    }
+
+    fun openShellSplash() {
+        if (!isActivated) return
+        showSplash = config.splashEnabled && splashMediaExists
+        if (showSplash) {
+            splashCountdown = config.splashDuration
+        }
+    }
+
     LaunchedEffect(Unit) {
 
         if (config.adBlockEnabled) {
@@ -212,13 +243,7 @@ fun ShellScreen(
                     reverifyEveryLaunch = config.activationRequireEveryTime
                 )
             } else if (config.activationRequireEveryTime) {
-                activation.resolveRelaunchActivation(
-                    -1L,
-                    config.activationCodes.map { raw ->
-                        com.webtoapp.core.activation.ActivationCode.fromJson(raw)
-                            ?: com.webtoapp.core.activation.ActivationCode.fromLegacyString(raw)
-                    }
-                )
+                activation.resolveRelaunchActivation(-1L, shellActivationCodes())
             } else {
                 activation.resolveStartupActivation(-1L)
             }
@@ -229,19 +254,20 @@ fun ShellScreen(
             }
             if (!activated) {
                 showActivationDialog = true
+            } else if (!config.activationRemoteEnabled) {
+                val notice = activation.remainingDaysNoticeForLaunch(-1L, shellActivationCodes())
+                if (notice != null) {
+                    remainingDaysNotice = notice
+                    remainingDaysIncludeSplash = true
+                    remainingDaysFromLaunch = true
+                }
             }
         }
 
-        if (config.announcementEnabled && isActivated &&
-            (config.announcementTitle.isNotEmpty() || config.announcementContent.isNotEmpty())
-        ) {
+        if (remainingDaysNotice == null) {
             // Trigger-aware gate: honors triggerOnLaunch=false, version-pinned showOnce, and the
             // no-network / interval modes driven by the effects below.
-            showAnnouncementDialog = announcement.shouldShowAnnouncementForTrigger(
-                -1L,
-                buildShellAnnouncement(config),
-                isLaunch = true
-            )
+            openShellAnnouncement(fromLaunch = true)
         }
 
         val validOrientationModes = setOf("PORTRAIT", "LANDSCAPE", "REVERSE_PORTRAIT", "REVERSE_LANDSCAPE", "SENSOR_PORTRAIT", "SENSOR_LANDSCAPE", "AUTO")
@@ -291,11 +317,8 @@ fun ShellScreen(
             }
         }
 
-        if (isActivated) {
-            showSplash = config.splashEnabled && splashMediaExists
-            if (showSplash) {
-                splashCountdown = config.splashDuration
-            }
+        if (remainingDaysNotice == null) {
+            openShellSplash()
         }
 
         AppLogger.d("ShellActivity", "LaunchedEffect: showSplash=$showSplash, splashCountdown=$splashCountdown")
@@ -667,12 +690,34 @@ fun ShellScreen(
                     dynamicUrl = url
                 }
 
-                if (config.announcementEnabled &&
-                    (config.announcementTitle.isNotEmpty() || config.announcementContent.isNotEmpty())
-                ) {
-                    scope.launch {
-                        showAnnouncementDialog = announcement.shouldShowAnnouncement(-1L, buildShellAnnouncement(config))
+                scope.launch {
+                    val notice = if (!config.activationRemoteEnabled) {
+                        activation.remainingDaysNoticeForLaunch(-1L, shellActivationCodes())
+                    } else {
+                        null
                     }
+                    if (notice != null) {
+                        remainingDaysNotice = notice
+                        remainingDaysIncludeSplash = false
+                        remainingDaysFromLaunch = false
+                    } else {
+                        openShellAnnouncement(fromLaunch = false)
+                    }
+                }
+            }
+        )
+    }
+
+    remainingDaysNotice?.let { notice ->
+        RemainingDaysNoticeDialog(
+            notice = notice,
+            onDismiss = {
+                val includeSplash = remainingDaysIncludeSplash
+                val fromLaunch = remainingDaysFromLaunch
+                remainingDaysNotice = null
+                scope.launch {
+                    openShellAnnouncement(fromLaunch)
+                    if (includeSplash) openShellSplash()
                 }
             }
         )

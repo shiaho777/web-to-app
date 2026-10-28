@@ -10096,6 +10096,54 @@ object StringsA {
         AppLanguage.JAPANESE -> "期限 %s"
         AppLanguage.KOREAN -> "만료 %s"
     }
+    val showRemainingDaysOnLaunch: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "每次启动显示剩余天数"
+        AppLanguage.ENGLISH -> "Show remaining days on each launch"
+        AppLanguage.ARABIC -> "عرض الأيام المتبقية عند كل تشغيل"
+        AppLanguage.PORTUGUESE -> "Mostrar dias restantes a cada inicialização"
+        AppLanguage.SPANISH -> "Mostrar días restantes en cada inicio"
+        AppLanguage.FRENCH -> "Afficher les jours restants à chaque lancement"
+        AppLanguage.GERMAN -> "Verbleibende Tage bei jedem Start anzeigen"
+        AppLanguage.RUSSIAN -> "Показывать оставшиеся дни при каждом запуске"
+        AppLanguage.JAPANESE -> "起動のたびに残り日数を表示"
+        AppLanguage.KOREAN -> "실행할 때마다 남은 일수 표시"
+    }
+    val showRemainingDaysOnLaunchHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "用这张卡激活后，应用每次启动都会提示还剩多少天。"
+        AppLanguage.ENGLISH -> "After this code is activated, each launch shows how many days are left."
+        AppLanguage.ARABIC -> "بعد التفعيل بهذه البطاقة، يعرض كل تشغيل الأيام المتبقية."
+        AppLanguage.PORTUGUESE -> "Depois de ativar com este código, cada inicialização mostra quantos dias restam."
+        AppLanguage.SPANISH -> "Tras activar con este código, cada inicio muestra cuántos días quedan."
+        AppLanguage.FRENCH -> "Une fois ce code activé, chaque lancement indique les jours restants."
+        AppLanguage.GERMAN -> "Nach der Aktivierung mit diesem Code zeigt jeder Start die verbleibenden Tage."
+        AppLanguage.RUSSIAN -> "После активации этим кодом каждый запуск показывает, сколько дней осталось."
+        AppLanguage.JAPANESE -> "このコードで認証すると、起動のたびに残り日数を表示します。"
+        AppLanguage.KOREAN -> "이 코드로 인증하면 실행할 때마다 남은 일수를 보여 줍니다."
+    }
+    val remainingDaysOnLaunchTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "剩余天数"
+        AppLanguage.ENGLISH -> "Days remaining"
+        AppLanguage.ARABIC -> "الأيام المتبقية"
+        AppLanguage.PORTUGUESE -> "Dias restantes"
+        AppLanguage.SPANISH -> "Días restantes"
+        AppLanguage.FRENCH -> "Jours restants"
+        AppLanguage.GERMAN -> "Verbleibende Tage"
+        AppLanguage.RUSSIAN -> "Осталось дней"
+        AppLanguage.JAPANESE -> "残り日数"
+        AppLanguage.KOREAN -> "남은 일수"
+    }
+    fun remainingDaysOnLaunchMessage(days: Long, hours: Long): String = when (Strings.lang) {
+        AppLanguage.CHINESE -> "还剩 $days 天 $hours 小时"
+        AppLanguage.ENGLISH -> "$days days $hours hours left"
+        AppLanguage.ARABIC -> "متبقٍ $days يوم و $hours ساعة"
+        AppLanguage.PORTUGUESE -> "Restam $days dias e $hours horas"
+        AppLanguage.SPANISH -> "Quedan $days días y $hours horas"
+        AppLanguage.FRENCH -> "Il reste $days jours et $hours heures"
+        AppLanguage.GERMAN -> "Noch $days Tage und $hours Stunden"
+        AppLanguage.RUSSIAN -> "Осталось $days дн. $hours ч."
+        AppLanguage.JAPANESE -> "残り $days 日 $hours 時間"
+        AppLanguage.KOREAN -> "${days}일 ${hours}시간 남음"
+    }
 
     val usageCount: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "使用次数"

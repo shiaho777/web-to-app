@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.webtoapp.core.activation.ActivationCode
 import com.webtoapp.core.activation.ActivationCodeType
+import com.webtoapp.core.activation.offersRemainingDays
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.ui.theme.LocalShowDescriptions
 import com.webtoapp.ui.theme.ifDescriptionsShown
@@ -1043,6 +1044,10 @@ private fun EnhancedActivationCodeItem(
                 code.note?.takeIf { it.isNotBlank() }?.let { note ->
                     add(Icons.AutoMirrored.Outlined.Notes to note)
                 }
+
+                if (code.showRemainingDays && code.type.offersRemainingDays()) {
+                    add(Icons.Outlined.Today to Strings.showRemainingDaysOnLaunch)
+                }
             }
 
             if (infoChips.isNotEmpty()) {
@@ -1075,6 +1080,34 @@ private fun EnhancedActivationCodeItem(
 }
 
 @Composable
+private fun ShowRemainingDaysOnLaunchButton(
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        WtaChip(
+            selected = selected,
+            onClick = onClick,
+            modifier = Modifier.fillMaxWidth(),
+            leadingIcon = Icons.Outlined.Today,
+        ) {
+            Text(
+                text = Strings.showRemainingDaysOnLaunch,
+                style = MaterialTheme.typography.labelLarge,
+                maxLines = 2
+            )
+        }
+        if (LocalShowDescriptions.current) {
+            Text(
+                text = Strings.showRemainingDaysOnLaunchHint,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
 private fun AddActivationCodeDialog(
     onDismiss: () -> Unit,
     onConfirm: (ActivationCode) -> Unit
@@ -1086,6 +1119,7 @@ private fun AddActivationCodeDialog(
     var note by remember { mutableStateOf("") }
     var customCode by remember { mutableStateOf("") }
     var useCustomCode by remember { mutableStateOf(false) }
+    var showRemainingDays by remember { mutableStateOf(false) }
     var codeLength by remember { mutableStateOf(com.webtoapp.core.activation.ActivationManager.DEFAULT_CODE_LENGTH.toFloat()) }
     var codeLengthError by remember { mutableStateOf<String?>(null) }
 
@@ -1207,27 +1241,32 @@ private fun AddActivationCodeDialog(
                 }
 
                 AnimatedVisibility(
-                    visible = codeType == ActivationCodeType.TIME_LIMITED ||
-                        codeType == ActivationCodeType.COMBINED
+                    visible = codeType.offersRemainingDays()
                 ) {
-                    PremiumTextField(
-                        value = timeLimitDays,
-                        onValueChange = {
-                            if (it.all { char -> char.isDigit() }) {
-                                timeLimitDays = it
-                            }
-                        },
-                        label = { Text(Strings.validityDays) },
-                        placeholder = { Text("7") },
-                        leadingIcon = {
-                            Icon(Icons.Outlined.Timer, null, modifier = Modifier.size(18.dp))
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
-                            keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        PremiumTextField(
+                            value = timeLimitDays,
+                            onValueChange = {
+                                if (it.all { char -> char.isDigit() }) {
+                                    timeLimitDays = it
+                                }
+                            },
+                            label = { Text(Strings.validityDays) },
+                            placeholder = { Text("7") },
+                            leadingIcon = {
+                                Icon(Icons.Outlined.Timer, null, modifier = Modifier.size(18.dp))
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                                keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
+                            )
                         )
-                    )
+                        ShowRemainingDaysOnLaunchButton(
+                            selected = showRemainingDays,
+                            onClick = { showRemainingDays = !showRemainingDays }
+                        )
+                    }
                 }
 
                 AnimatedVisibility(
@@ -1297,6 +1336,7 @@ private fun AddActivationCodeDialog(
                         }
                         else -> null
                     }
+                    val showDaysOnLaunch = showRemainingDays && codeType.offersRemainingDays()
 
                     val usageLimitInt = when (codeType) {
                         ActivationCodeType.USAGE_LIMITED, ActivationCodeType.COMBINED -> {
@@ -1323,7 +1363,8 @@ private fun AddActivationCodeDialog(
                             timeLimitMs = timeLimitMs,
                             usageLimit = usageLimitInt,
                             note = note.takeIf { it.isNotBlank() },
-                            expiresAt = expiresAt
+                            expiresAt = expiresAt,
+                            showRemainingDays = showDaysOnLaunch
                         )
                     } else {
                         val activationManager = com.webtoapp.WebToAppApplication.getInstance()
@@ -1334,7 +1375,8 @@ private fun AddActivationCodeDialog(
                             usageLimit = usageLimitInt,
                             note = note.takeIf { it.isNotBlank() },
                             length = codeLength.toInt(),
-                            expiresAt = expiresAt
+                            expiresAt = expiresAt,
+                            showRemainingDays = showDaysOnLaunch
                         )
                     }
 
@@ -1364,6 +1406,7 @@ private fun BatchGenerateDialog(
     var timeLimitDays by remember { mutableStateOf("7") }
     var usageLimit by remember { mutableStateOf("100") }
     var expiryDays by remember { mutableStateOf("") }
+    var showRemainingDays by remember { mutableStateOf(false) }
     var codeLength by remember { mutableStateOf(com.webtoapp.core.activation.ActivationManager.DEFAULT_CODE_LENGTH.toFloat()) }
 
     com.webtoapp.ui.design.WtaAlertDialog(
@@ -1448,19 +1491,25 @@ private fun BatchGenerateDialog(
                 }
 
                 AnimatedVisibility(
-                    visible = codeType == ActivationCodeType.TIME_LIMITED || codeType == ActivationCodeType.COMBINED
+                    visible = codeType.offersRemainingDays()
                 ) {
-                    PremiumTextField(
-                        value = timeLimitDays,
-                        onValueChange = { if (it.all { c -> c.isDigit() }) timeLimitDays = it },
-                        label = { Text(Strings.validityDays) },
-                        leadingIcon = { Icon(Icons.Outlined.Timer, null, modifier = Modifier.size(18.dp)) },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
-                            keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        PremiumTextField(
+                            value = timeLimitDays,
+                            onValueChange = { if (it.all { c -> c.isDigit() }) timeLimitDays = it },
+                            label = { Text(Strings.validityDays) },
+                            leadingIcon = { Icon(Icons.Outlined.Timer, null, modifier = Modifier.size(18.dp)) },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                                keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
+                            )
                         )
-                    )
+                        ShowRemainingDaysOnLaunchButton(
+                            selected = showRemainingDays,
+                            onClick = { showRemainingDays = !showRemainingDays }
+                        )
+                    }
                 }
 
                 AnimatedVisibility(
@@ -1518,7 +1567,8 @@ private fun BatchGenerateDialog(
                         timeLimitMs = timeLimitMs,
                         usageLimit = usageLimitInt,
                         length = codeLength.toInt(),
-                        expiresAt = expiresAt
+                        expiresAt = expiresAt,
+                        showRemainingDays = showRemainingDays && codeType.offersRemainingDays()
                     )
                     onConfirm(codes)
                 }

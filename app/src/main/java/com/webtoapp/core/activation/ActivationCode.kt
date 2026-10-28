@@ -37,7 +37,15 @@ data class ActivationCode(
      * cannot reset. Null means no absolute limit; older codes simply omit it.
      */
     @SerializedName("expiresAt")
-    val expiresAt: Long? = null
+    val expiresAt: Long? = null,
+
+    /**
+     * When true, a successful local launch of this card shows how many days
+     * are left. Only meaningful for [ActivationCodeType.TIME_LIMITED] and
+     * [ActivationCodeType.COMBINED]. Older codes omit it, so they stay quiet.
+     */
+    @SerializedName("showRemainingDays")
+    val showRemainingDays: Boolean = false
 ) {
 
     fun isExpiredAt(timeMillis: Long = System.currentTimeMillis()): Boolean =
