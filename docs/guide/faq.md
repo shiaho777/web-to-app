@@ -10,7 +10,7 @@ Yes. WebToApp is open source under [The Unlicense](https://github.com/shiaho777/
 
 ### What Android version do I need?
 
-Android 6.0 (API 23) or newer.
+Android 7.0 (API 24) or newer.
 
 ### Do I need a PC to build apps?
 

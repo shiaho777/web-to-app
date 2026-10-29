@@ -4,7 +4,7 @@ This walkthrough takes you from a fresh install to your first signed APK. At eac
 
 ## 1. Install and launch
 
-Install the WebToApp builder on a device running **Android 6.0 (API 23) or newer**.
+Install the WebToApp builder on a device running **Android 7.0 (API 24) or newer**.
 
 <div class="wta-install">
 

@@ -10,7 +10,7 @@
 
 ### 需要什么 Android 版本?
 
-Android 6.0(API 23)或更高。
+Android 7.0(API 24)或更高。
 
 ### 构建应用需要电脑吗?
 

@@ -24,7 +24,7 @@
     <img src="https://img.shields.io/badge/License-Unlicense-blue?style=for-the-badge" alt="License: Unlicense">
   </a>
   <a href="https://github.com/shiaho777/web-to-app/releases">
-    <img src="https://img.shields.io/badge/Android-6.0%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white" alt="Android 6.0+">
+    <img src="https://img.shields.io/badge/Android-7.0%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white" alt="Android 7.0+">
   </a>
   <a href="https://github.com/shiaho777/web-to-app/actions/workflows/android-ci.yml">
     <img src="https://github.com/shiaho777/web-to-app/actions/workflows/android-ci.yml/badge.svg" alt="Android CI">
@@ -139,7 +139,7 @@ Node.js, PHP, Python, Go, WordPress, image, and video stay in the app. Turn them
 
 From a fresh install to your first signed APK in about a minute:
 
-1. **Install the builder** — get the APK from [GitHub Releases](https://github.com/shiaho777/web-to-app/releases) onto a device running Android 6.0 (API 23) or newer.
+1. **Install the builder** — get the APK from [GitHub Releases](https://github.com/shiaho777/web-to-app/releases) onto a device running Android 7.0 (API 24) or newer.
 2. **Create an app** — on **My Apps**, tap **Create**. The default grid is Web, Multi-Site, HTML, Offline Pack, Frontend, and Gallery. PHP, WordPress, Node.js, Python, Go, and Media appear after **About → Advanced features** is on.
 3. **Fill in the basics** — app name, target URL (or your project files), and an optional icon, then **Save**. Every other editor card is optional configuration.
 4. **Preview** — tap the app's card to run it in the same runtime code the export will use.
