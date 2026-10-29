@@ -29,5 +29,6 @@ Page zoom is no longer a toolbar action — it is a build-time setting under [Ad
 
 ## Notes
 
-- For hiding the system status/navigation bars, see [Fullscreen Mode](/guide/app-actions/edit-common-config/fullscreen).
+- For hiding the system status/navigation bars, see [Fullscreen Mode](/guide/app-actions/edit-common-config/fullscreen). Fullscreen does not hide this toolbar.
+- The bar is one row. The title and the address share it. Multi-web drawer mode puts its site menu on this row instead of adding another bar.
 - A floating back button can be enabled under [Special Settings](/guide/app-actions/edit-common-config/special-settings) — handy when the toolbar (and its back button) is hidden.

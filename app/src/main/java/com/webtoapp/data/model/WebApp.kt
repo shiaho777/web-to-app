@@ -366,6 +366,8 @@ data class WebViewConfig(
     // status bar even if showStatusBarInFullscreen is on; restore it on exit fullscreen.
     val hideStatusBarInVideoFullscreen: Boolean = true,
     val showNavigationBarInFullscreen: Boolean = false,
+    // Retained so saved configs and export JSON still round-trip. Fullscreen no
+    // longer hides the browser toolbar; [isBrowserToolbarVisible] ignores this flag.
     val showToolbarInFullscreen: Boolean = false,
     val fullscreenContentPaddingDp: Int = 0,
     // Per-side overrides (#916). Nullable on purpose: stored JSON predating these

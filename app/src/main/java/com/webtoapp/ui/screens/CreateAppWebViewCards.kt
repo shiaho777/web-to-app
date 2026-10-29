@@ -2297,12 +2297,10 @@ fun FullscreenModeCard(
     enabled: Boolean,
     showStatusBar: Boolean = false,
     showNavigationBar: Boolean = false,
-    hideBrowserToolbarInFullscreen: Boolean = true,
     webViewConfig: WebViewConfig = WebViewConfig(),
     onEnabledChange: (Boolean) -> Unit,
     onShowStatusBarChange: (Boolean) -> Unit = {},
     onShowNavigationBarChange: (Boolean) -> Unit = {},
-    onHideBrowserToolbarInFullscreenChange: (Boolean) -> Unit = {},
     onWebViewConfigChange: (WebViewConfig) -> Unit = {}
 ) {
     var statusBarConfigExpanded by remember { mutableStateOf(false) }

@@ -44,6 +44,34 @@ fun hasAnyToolbarItem(
  * switch and its own flag. The console/find flags have NO defaults on purpose — same
  * anti-drift rule as [hasAnyToolbarItem].
  */
+/**
+ * The browser toolbar follows its own switch. Fullscreen (`hideToolbar`) only
+ * hides the system bars, so turning both on keeps the toolbar.
+ */
+fun isBrowserToolbarVisible(toolbarEnabled: Boolean, hasAnyItem: Boolean): Boolean =
+    toolbarEnabled && hasAnyItem
+
+/**
+ * Drawer mode draws its own site bar only when the browser toolbar is absent.
+ * While that toolbar is up, the site menu joins it instead of stacking a second row.
+ */
+fun drawerSiteBarVisible(browserToolbarVisible: Boolean): Boolean = !browserToolbarVisible
+
+/** Drop the scheme and the query so the address fits on the same line as the title. */
+fun String.shortenForBrowserChrome(): String {
+    val withoutScheme = when {
+        startsWith("https://") -> substring(8)
+        startsWith("http://") -> substring(7)
+        else -> this
+    }
+    return withoutScheme.substringBefore('?').substringBefore('#')
+}
+
+/**
+ * Resolves which toolbar buttons are visible. Every button requires BOTH the master
+ * switch and its own flag. The console/find flags have NO defaults on purpose — same
+ * anti-drift rule as [hasAnyToolbarItem].
+ */
 fun resolveToolbarButtons(
     toolbarEnabled: Boolean,
     toolbarShowTitle: Boolean,

@@ -252,9 +252,6 @@ fun CreateAppScreen(
                     enabled = editState.webViewConfig.hideToolbar,
                     showStatusBar = editState.webViewConfig.showStatusBarInFullscreen,
                     showNavigationBar = editState.webViewConfig.showNavigationBarInFullscreen,
-                    hideBrowserToolbarInFullscreen =
-                        !editState.webViewConfig.browserToolbarEnabled ||
-                            !editState.webViewConfig.showToolbarInFullscreen,
                     webViewConfig = editState.webViewConfig,
                     onEnabledChange = {
                         viewModel.updateEditState {
@@ -273,15 +270,6 @@ fun CreateAppScreen(
                     onShowNavigationBarChange = {
                         viewModel.updateEditState {
                             copy(webViewConfig = webViewConfig.copy(showNavigationBarInFullscreen = it))
-                        }
-                    },
-                    onHideBrowserToolbarInFullscreenChange = {
-                        viewModel.updateEditState {
-                            copy(
-                                webViewConfig = webViewConfig.copy(
-                                    showToolbarInFullscreen = !it
-                                )
-                            )
                         }
                     },
                     onWebViewConfigChange = { newConfig ->

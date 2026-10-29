@@ -60,6 +60,9 @@ import com.webtoapp.core.bgm.BgmPlayer
 import com.webtoapp.core.bgm.BgmTransport
 import com.webtoapp.core.bgm.bgmControlEnabled
 import com.webtoapp.ui.shell.BgmFloatingPlayer
+import com.webtoapp.ui.shell.BrowserChromeBar
+import com.webtoapp.ui.shell.BrowserChromeHost
+import com.webtoapp.ui.shell.LocalBrowserChromeHost
 import com.webtoapp.core.webview.HtmlRuntimeLoadInspector
 import com.webtoapp.core.port.PortConflictException
 import com.webtoapp.core.port.PortManager
@@ -79,6 +82,7 @@ import com.webtoapp.data.model.SplashType
 import com.webtoapp.data.model.WebApp
 import com.webtoapp.data.model.withNotificationPolyfill
 import com.webtoapp.data.model.hasAnyToolbarItem
+import com.webtoapp.data.model.isBrowserToolbarVisible
 import com.webtoapp.data.model.resolveToolbarButtons
 import android.content.pm.ActivityInfo
 import com.webtoapp.ui.animation.HostPreviewMotion
@@ -3678,8 +3682,6 @@ fun WebViewScreen(
 
     val toolbarEnabled = !isTestMode && webApp?.webViewConfig?.browserToolbarEnabled == true
 
-    val showToolbarInPreview = !hideToolbar || webApp?.webViewConfig?.showToolbarInFullscreen == true
-
     val toolbarCfg = webApp?.webViewConfig
     // Find-in-page runs on both kernels now (WebView findAllAsync; GeckoView SessionFinder
     // through BrowserSurface.findInPage), so no engine gate remains here or in the shell.
@@ -3694,7 +3696,8 @@ fun WebViewScreen(
             toolbarShowFind = it.toolbarShowFind
         )
     } == true
-    val shouldShowTopBar = showToolbarInPreview && toolbarEnabled && hasAnyToolbarItem
+    val shouldShowTopBar = isBrowserToolbarVisible(toolbarEnabled, hasAnyToolbarItem)
+    val chromeHost = remember { BrowserChromeHost() }
 
     // Every button requires both the master switch and its own flag
     // (mirrors the shell/export layout).
@@ -3724,118 +3727,54 @@ fun WebViewScreen(
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
+    CompositionLocalProvider(LocalBrowserChromeHost provides if (shouldShowTopBar) chromeHost else null) {
     Scaffold(
 
         // #1075: exclude the IME-covered region — WindowHelper's manual IME
         // padding already lifts the layout, and the nav-bar inset must not
         // double-stack above the keyboard (same contract as ShellScaffoldLayout).
-        contentWindowInsets = if (hideToolbar && !showToolbarInPreview) WindowInsets(0) else if (hideToolbar && showToolbarInPreview) WindowInsets(0) else ScaffoldDefaults.contentWindowInsets.exclude(WindowInsets.ime),
-        modifier = if (hideToolbar && !showToolbarInPreview) Modifier.fillMaxSize() else if (hideToolbar) Modifier.fillMaxSize() else Modifier,
+        // Fullscreen owns the system bars, so they are not added under the toolbar.
+        contentWindowInsets = if (hideToolbar) WindowInsets(0) else ScaffoldDefaults.contentWindowInsets.exclude(WindowInsets.ime),
+        modifier = if (hideToolbar) Modifier.fillMaxSize() else Modifier,
         topBar = {
             if (shouldShowTopBar) {
-                TopAppBar(
-                    title = {
-                        Column {
-                            if (isTestMode || browserToolbarVisibility?.showTitle == true) {
-                                Text(
-                                    text = if (isTestMode) Strings.moduleTestMode else pageTitle.ifEmpty { webApp?.name ?: "WebApp" },
-                                    style = MaterialTheme.typography.titleMedium,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            }
-                            if (isTestMode && !testModuleIds.isNullOrEmpty()) {
-                                Text(
-                                    text = Strings.testingModules.format(testModuleIds.size),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.primary,
-                                    maxLines = 1
-                                )
-                            } else if (currentUrl.isNotEmpty() && (isTestMode || browserToolbarVisibility?.showUrl == true)) {
-                                Text(
-                                    text = currentUrl,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
+                val testSubtitle = if (isTestMode && !testModuleIds.isNullOrEmpty()) {
+                    Strings.testingModules.format(testModuleIds.size)
+                } else {
+                    ""
+                }
+                BrowserChromeBar(
+                    title = if (isTestMode) Strings.moduleTestMode else pageTitle.ifEmpty { webApp?.name ?: "WebApp" },
+                    showTitle = isTestMode || browserToolbarVisibility?.showTitle == true,
+                    url = if (testSubtitle.isNotEmpty()) testSubtitle else currentUrl,
+                    showUrl = testSubtitle.isNotEmpty() || (isTestMode || browserToolbarVisibility?.showUrl == true),
+                    showBack = isTestMode || browserToolbarVisibility?.showBack == true,
+                    showForward = isTestMode || browserToolbarVisibility?.showForward == true,
+                    showRefresh = isTestMode || browserToolbarVisibility?.showRefresh == true,
+                    canGoBack = canGoBack,
+                    canGoForward = canGoForward,
+                    onBack = {
+                        (context as? AppCompatActivity)?.let { activity ->
+                            // Surface-first: on the GeckoView kernel webViewRef is
+                            // null and the engine's own history drives back.
+                            if (browserSurfaceRef != null) {
+                                ShellWebViewNavigation.goBackOrFinish(activity, browserSurfaceRef)
+                            } else {
+                                ShellWebViewNavigation.goBackOrFinish(activity, webViewRef)
                             }
                         }
                     },
-                    actions = {
-                        if (isTestMode || browserToolbarVisibility?.showBack == true) {
-                            com.webtoapp.ui.design.WtaIconButton(
-                                onClick = {
-                                    (context as? AppCompatActivity)?.let { activity ->
-                                        // Surface-first: on the GeckoView kernel webViewRef is
-                                        // null and the engine's own history drives back.
-                                        if (browserSurfaceRef != null) {
-                                            ShellWebViewNavigation.goBackOrFinish(activity, browserSurfaceRef)
-                                        } else {
-                                            ShellWebViewNavigation.goBackOrFinish(activity, webViewRef)
-                                        }
-                                    }
-                                },
-                                icon = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Back",
-                                enabled = canGoBack
-                            )
-                        }
-                        if (isTestMode || browserToolbarVisibility?.showForward == true) {
-                            com.webtoapp.ui.design.WtaIconButton(
-                                onClick = { browserSurfaceRef?.goForward() ?: webViewRef?.goForward() },
-                                icon = Icons.AutoMirrored.Filled.ArrowForward,
-                                contentDescription = "Forward",
-                                enabled = canGoForward
-                            )
-                        }
-                        if (isTestMode || browserToolbarVisibility?.showRefresh == true) {
-                            com.webtoapp.ui.design.WtaIconButton(
-                                onClick = { reloadBrowser() },
-                                icon = Icons.Default.Refresh,
-                                contentDescription = "Refresh"
-                            )
-                        }
-
-                        if (isTestMode || browserToolbarVisibility?.showConsoleButton == true) {
-                            val errorCount = consoleMessages.count { it.level == ConsoleLevel.ERROR }
-                            BadgedBox(
-                                badge = {
-                                    if (errorCount > 0) {
-                                        Badge { Text("$errorCount") }
-                                    }
-                                }
-                            ) {
-                                com.webtoapp.ui.design.WtaIconButton(
-                                    onClick = { showConsole = !showConsole },
-                                    icon = if (showConsole) Icons.Filled.Terminal else Icons.Outlined.Terminal,
-                                    contentDescription = Strings.console
-                                )
-                            }
-                        }
-                        // Find-in-page button: opens the native bottom find bar (both
-                        // kernels — WebView findAllAsync and GeckoView SessionFinder).
-                        if (isTestMode || browserToolbarVisibility?.showFind == true) {
-                            com.webtoapp.ui.design.WtaIconButton(
-                                onClick = { showFindBar = !showFindBar },
-                                icon = if (showFindBar) Icons.Filled.Search else Icons.Outlined.Search,
-                                contentDescription = Strings.nativeBridgeCapsFindInPage
-                            )
-                        }
-                        // Plugin slot — per-plugin toolbar icons plus the sheet
-                        // entry for menu/handle-style plugins.
-                        if (previewPluginsEnabled) {
-                            com.webtoapp.ui.plugin.PluginToolbarEntries(
-                                onOpenSheet = { com.webtoapp.core.plugin.PluginHostState.openPluginSheet() }
-                            )
-                        }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.surface,
-                        titleContentColor = MaterialTheme.colorScheme.onSurface,
-                        navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
-                        actionIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    onForward = { browserSurfaceRef?.goForward() ?: webViewRef?.goForward() },
+                    onRefresh = { reloadBrowser() },
+                    showConsoleButton = isTestMode || browserToolbarVisibility?.showConsoleButton == true,
+                    consoleExpanded = showConsole,
+                    onToggleConsole = { showConsole = !showConsole },
+                    consoleErrorCount = consoleMessages.count { it.level == ConsoleLevel.ERROR },
+                    showFindButton = isTestMode || browserToolbarVisibility?.showFind == true,
+                    findExpanded = showFindBar,
+                    onToggleFind = { showFindBar = !showFindBar },
+                    showPluginButton = previewPluginsEnabled,
+                    leadingAction = chromeHost.leadingAction
                 )
             }
         }
@@ -3891,7 +3830,7 @@ fun WebViewScreen(
         val bands = Modifier.pageEdgeBands(topBand, bottomBand, bottomBandPx)
 
         val contentModifier = when {
-            hideToolbar && showToolbarInPreview -> {
+            hideToolbar && shouldShowTopBar -> {
 
                 Modifier.fillMaxSize().padding(padding)
             }
@@ -4586,7 +4525,7 @@ fun WebViewScreen(
             }
 
             if (webApp?.webViewConfig?.showFloatingBackButton == true &&
-                ((hideToolbar && !showToolbarInPreview) || !toolbarEnabled) &&
+                !shouldShowTopBar &&
                 canGoBack
             ) {
                 var fabAlpha by remember { mutableFloatStateOf(0.9f) }
@@ -4697,6 +4636,7 @@ fun WebViewScreen(
             }
 
         }
+    }
     }
 
     // On the classic pre-API-30 resize path nothing draws behind the status bar and the bar

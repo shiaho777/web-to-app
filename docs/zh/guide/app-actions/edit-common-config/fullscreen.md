@@ -14,7 +14,7 @@
 
 ## 与浏览器工具栏的关系
 
-全屏时是否显示应用内工具栏,由[浏览器工具栏](/zh/guide/app-actions/edit-common-config/browser-toolbar)主开关和 `showToolbarInFullscreen` 共同决定(运行时为 `hideToolbar = !browserToolbarEnabled || !showToolbarInFullscreen`)。注意工具栏默认关闭,因此新导出的应用无论是否全屏都没有工具栏。
+全屏和[浏览器工具栏](/zh/guide/app-actions/edit-common-config/browser-toolbar)互不取消。全屏隐藏的是系统状态栏和导航栏。工具栏自己的开关开着，全屏时它也留在屏幕上。工具栏默认关闭，所以新导出的应用无论是否全屏都没有工具栏。工具栏是一行：标题和地址排在同一行。多网页的抽屉模式把站点菜单并进这一行，不再另占一条栏。
 
 ## 说明
 

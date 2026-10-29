@@ -31,3 +31,4 @@
 
 - 隐藏系统状态栏/导航栏见[全屏模式](/zh/guide/app-actions/edit-common-config/fullscreen)。
 - 浮动返回按钮可在[特殊设置](/zh/guide/app-actions/edit-common-config/special-settings)中启用——工具栏(及其返回按钮)隐藏时特别有用。
+- 全屏不会关掉这条工具栏。栏是一行，标题和地址并排。多网页抽屉模式的站点菜单也放在这一行，不再另占一条栏。

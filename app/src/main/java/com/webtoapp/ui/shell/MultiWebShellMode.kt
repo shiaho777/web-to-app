@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import android.webkit.WebView
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.data.model.drawerSiteBarVisible
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.core.webview.multiWebSiteMatchesQuery
 import com.webtoapp.core.shell.EmbeddedShellPlugin
@@ -1382,6 +1383,20 @@ private fun DrawerMode(
         else if (drawerVisible && drawerState.currentValue == DrawerValue.Closed) drawerVisible = false
     }
 
+    // The browser toolbar, when visible, hosts the drawer button. A second
+    // TopAppBar here used to stack under it and re-apply the status-bar inset.
+    val chromeHost = LocalBrowserChromeHost.current
+    val showOwnSiteBar = drawerSiteBarVisible(chromeHost != null)
+    val toggleDrawer = rememberUpdatedState { drawerVisible = !drawerVisible }
+    DisposableEffect(chromeHost) {
+        val host = chromeHost ?: return@DisposableEffect onDispose {}
+        host.leadingAction = BrowserChromeAction(
+            contentDescription = Strings.more,
+            onClick = { toggleDrawer.value.invoke() }
+        )
+        onDispose { host.leadingAction = null }
+    }
+
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
@@ -1516,11 +1531,18 @@ private fun DrawerMode(
             containerColor = Color.Transparent,
             contentWindowInsets = WindowInsets(0),
             topBar = {
-                TopAppBar(
-                    title = { Text(currentSite?.name?.ifBlank { currentSite?.url?.let { extractDomain(it) } ?: "" } ?: "", maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                    navigationIcon = { IconButton(onClick = { drawerVisible = !drawerVisible }) { Icon(Icons.Default.Menu, contentDescription = Strings.more) } },
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
-                )
+                if (showOwnSiteBar) {
+                    BrowserChromeBar(
+                        title = currentSite?.name?.ifBlank { currentSite?.url?.let { extractDomain(it) } ?: "" } ?: "",
+                        showTitle = true,
+                        url = "",
+                        showUrl = false,
+                        leadingAction = BrowserChromeAction(
+                            contentDescription = Strings.more,
+                            onClick = { drawerVisible = !drawerVisible }
+                        )
+                    )
+                }
             }
         ) { padding ->
             Box(modifier = Modifier.fillMaxSize().padding(padding)) {

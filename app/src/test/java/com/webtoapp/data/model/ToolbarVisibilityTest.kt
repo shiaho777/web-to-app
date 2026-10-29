@@ -81,4 +81,24 @@ class ToolbarVisibilityTest {
 
         assertThat(hasContent).isFalse()
     }
+
+    @Test
+    fun `fullscreen does not hide an enabled toolbar`() {
+        assertThat(isBrowserToolbarVisible(toolbarEnabled = true, hasAnyItem = true)).isTrue()
+        assertThat(isBrowserToolbarVisible(toolbarEnabled = false, hasAnyItem = true)).isFalse()
+        assertThat(isBrowserToolbarVisible(toolbarEnabled = true, hasAnyItem = false)).isFalse()
+    }
+
+    @Test
+    fun `drawer site bar is omitted while the browser toolbar is visible`() {
+        assertThat(drawerSiteBarVisible(browserToolbarVisible = true)).isFalse()
+        assertThat(drawerSiteBarVisible(browserToolbarVisible = false)).isTrue()
+    }
+
+    @Test
+    fun `chrome address drops the scheme and the query`() {
+        assertThat("https://example.com/path?q=1#top".shortenForBrowserChrome())
+            .isEqualTo("example.com/path")
+        assertThat("http://example.com/".shortenForBrowserChrome()).isEqualTo("example.com/")
+    }
 }

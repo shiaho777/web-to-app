@@ -14,7 +14,7 @@ Runs the app immersive, hiding the system bars and (optionally) working together
 
 ## Interaction with the browser toolbar
 
-Whether the in-app toolbar shows during fullscreen is governed by the [Browser Toolbar](/guide/app-actions/edit-common-config/browser-toolbar) master switch and the `showToolbarInFullscreen` flag (`hideToolbar = !browserToolbarEnabled || !showToolbarInFullscreen` at runtime). Note the toolbar is off by default, so a freshly exported app has no toolbar in or out of fullscreen.
+Fullscreen and the [browser toolbar](/guide/app-actions/edit-common-config/browser-toolbar) are independent. Fullscreen hides the system status and navigation bars. The toolbar stays visible whenever its own switch is on, including in fullscreen. It is off by default, so a freshly exported app has no toolbar in or out of fullscreen. The bar is a single row: the title and the address share that line. In multi-web drawer mode the site menu joins this bar instead of adding a second one.
 
 ## Notes
 
