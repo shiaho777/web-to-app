@@ -4,7 +4,7 @@
 
 ## 1. 安装并启动
 
-在运行 **Android 6.0(API 23)或更高版本** 的设备上安装 WebToApp 构建器。
+在运行 **Android 7.0(API 24)或更高版本** 的设备上安装 WebToApp 构建器。
 
 <div class="wta-install">
 
