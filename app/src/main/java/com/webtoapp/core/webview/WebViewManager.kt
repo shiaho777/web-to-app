@@ -6675,8 +6675,9 @@ class WebViewManager(
                 }
 
                 // WebView never delivers ServiceWorkerRegistration.showNotification.
-                // Sites that post to the worker (秋秋机's SHOW_LOCAL_NOTIFICATION) only
-                // reach the shade if the worker script itself calls back into the bridge.
+                // A page that posts to the worker and asks it to show a local
+                // notification only reaches the shade if the worker script itself
+                // calls back into the bridge.
                 if (navigator.serviceWorker && navigator.serviceWorker.register &&
                         !navigator.serviceWorker.__wtaRegisterPatched) {
                     var originalRegister = navigator.serviceWorker.register.bind(navigator.serviceWorker);

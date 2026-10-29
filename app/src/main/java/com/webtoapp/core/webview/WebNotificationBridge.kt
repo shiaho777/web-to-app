@@ -18,7 +18,7 @@ import java.nio.charset.StandardCharsets
 /**
  * System WebView has no Notifications implementation: `window.Notification` is
  * missing and `ServiceWorkerRegistration.showNotification` is missing inside the
- * worker. Sites such as 秋秋机 post a message to their service worker, and the
+ * worker. Some sites post a message to their service worker, and the
  * worker calls `showNotification`. Replacing `new Notification()` on the page
  * never sees that call.
  *
