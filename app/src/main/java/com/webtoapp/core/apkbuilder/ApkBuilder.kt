@@ -4080,7 +4080,11 @@ builtins.__import__ = _w2a_import
 }
 
 fun WebApp.toApkConfig(packageName: String, context: android.content.Context? = null): ApkConfig {
-    val htmlUsesFileScheme = computeHtmlUsesFileScheme(context)
+    // Encrypted HTML is served from the loopback server, one decrypted request
+    // at a time. Marking that package file:// drops INTERNET, and the socket
+    // then fails with EPERM.
+    val htmlUsesFileScheme = computeHtmlUsesFileScheme(context) &&
+        apkExportConfig?.encryptionConfig?.enabled != true
     val effectiveTargetUrl = computeEffectiveTargetUrl(packageName)
     val bakedDarkMode = context?.let { ThemeManager.getInstance(it).currentDarkMode.name } ?: "SYSTEM"
     return ApkConfig(

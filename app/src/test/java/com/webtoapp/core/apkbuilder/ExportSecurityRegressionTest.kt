@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import com.webtoapp.data.model.Announcement
+import com.webtoapp.data.model.ApkEncryptionConfig
 import com.webtoapp.data.model.ApkExportConfig
 import com.webtoapp.data.model.AppType
 import com.webtoapp.data.model.AutoStartConfig
@@ -601,6 +602,39 @@ class ExportSecurityRegressionTest {
         assertThat(permissions).doesNotContain("android.permission.INTERNET")
         assertThat(permissions).doesNotContain("android.permission.ACCESS_NETWORK_STATE")
         assertThat(permissions).doesNotContain("android.permission.ACCESS_LOCAL_NETWORK")
+    }
+
+    @Test
+    fun `encrypted file scheme html keeps the loopback server permission`() {
+        val context = ApplicationProvider.getApplicationContext<android.content.Context>()
+        val builder = ApkBuilder(context)
+        val method = ApkBuilder::class.java.getDeclaredMethod(
+            "buildRequiredPermissions",
+            ApkConfig::class.java
+        ).apply { isAccessible = true }
+        val projectDir = temp.newFolder("encrypted-file-html")
+        File(projectDir, "index.html").writeText("<html><body>Offline</body></html>")
+
+        val config = WebApp(
+            name = "Offline",
+            url = "",
+            appType = AppType.HTML,
+            htmlConfig = HtmlConfig(
+                projectDir = projectDir.absolutePath,
+                entryFile = "index.html",
+                loadMode = HtmlLoadMode.FILE
+            ),
+            apkExportConfig = ApkExportConfig(
+                encryptionConfig = ApkEncryptionConfig(enabled = true)
+            )
+        ).toApkConfig("com.example.encryptedfile", context)
+
+        @Suppress("UNCHECKED_CAST")
+        val permissions = method.invoke(builder, config) as List<String>
+
+        assertThat(config.htmlUsesFileScheme).isFalse()
+        assertThat(permissions).contains("android.permission.INTERNET")
+        assertThat(permissions).contains("android.permission.ACCESS_NETWORK_STATE")
     }
 
     @Test
