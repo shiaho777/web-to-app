@@ -9,7 +9,7 @@ Plays background music in the generated app, with synced lyrics.
 - **Enable** — turn background music on (`bgmEnabled`).
 - **Playlists** — add music tracks; supports synced **LRC lyrics** with lyric animations.
 - **Play mode** — loop, sequential, or shuffle (`BgmPlayMode`). Shuffle starts on a random track, plays every track once per cycle with no repeats, and reshuffles on wrap. Previous restarts the current track after a few seconds of playback, and otherwise goes to the previous track.
-- **Floating player** (`showFloatingPlayer`) — a small bar you can drag. It snaps to the left or right edge and has pause, previous, and next.
+- **Floating player** (`showFloatingPlayer`) — a ball above the page. Tap it to open previous, play/pause, next, and close. Drag snaps it to the left or right edge, and the controls fold away after a few seconds. Close stops the music and leaves the ball, so playback can start again.
 - **Notification player** (`showNotificationPlayer`) — system media controls in the notification shade and on the lock screen: pause, skip, and scrub. Either player can be on by itself. An older config that never saved the switches keeps both on.
 - **Lyric styling** — custom font, color, stroke, and shadow for lyrics.
 - **Online search** — search for music online.

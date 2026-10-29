@@ -3018,16 +3018,16 @@ object StringsB {
     }
 
     val bgmFloatingPlayerHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "小条可以拖动，松手后吸到屏幕左右边缘，上面有暂停、上一首和下一首。"
-        AppLanguage.ENGLISH -> "A small bar you can drag. It snaps to the left or right edge and has pause, previous, and next."
-        AppLanguage.ARABIC -> "شريط صغير يمكن سحبه. يلتصق بالحافة اليسرى أو اليمنى وفيه إيقاف مؤقت والسابق والتالي."
-        AppLanguage.PORTUGUESE -> "Uma barra pequena que você arrasta. Ela gruda na borda esquerda ou direita e tem pausa, anterior e próxima."
-        AppLanguage.SPANISH -> "Una barra pequeña que puedes arrastrar. Se pega al borde izquierdo o derecho y tiene pausa, anterior y siguiente."
-        AppLanguage.FRENCH -> "Une petite barre à faire glisser. Elle se colle au bord gauche ou droit, avec pause, précédent et suivant."
-        AppLanguage.GERMAN -> "Eine kleine Leiste zum Ziehen. Sie rastet links oder rechts ein und hat Pause, Zurück und Weiter."
-        AppLanguage.RUSSIAN -> "Небольшую полоску можно перетаскивать. Она прилипает к левому или правому краю: пауза, предыдущий и следующий трек."
-        AppLanguage.JAPANESE -> "小さなバーはドラッグでき、離すと左右の端に吸着します。一時停止、前へ、次へが付いています。"
-        AppLanguage.KOREAN -> "작은 막대를 끌어 놓을 수 있습니다. 손에서 떼면 왼쪽이나 오른쪽 가장자리에 붙고, 일시정지·이전·다음이 있습니다."
+        AppLanguage.CHINESE -> "平时是一颗浮在网页上的小球，点开才出现切歌和关闭。拖动会吸到左右边缘，几秒不用会自己收回去。关闭只停音乐，小球还在。"
+        AppLanguage.ENGLISH -> "A ball above the page. Tap it for previous, next, and close. Drag snaps it to either edge, and it folds away after a few seconds. Close stops the music and leaves the ball."
+        AppLanguage.ARABIC -> "كرة فوق الصفحة. انقرها للسابق والتالي والإغلاق. اسحبها فتلتصق بأحد الجانبين، ثم تنطوي بعد ثوانٍ. الإغلاق يوقف الموسيقى ويبقي الكرة."
+        AppLanguage.PORTUGUESE -> "Uma bola sobre a página. Toque para anterior, próxima e fechar. Arrastar gruda na borda e ela se recolhe sozinha. Fechar para a música e deixa a bola."
+        AppLanguage.SPANISH -> "Una bola sobre la página. Tócala para anterior, siguiente y cerrar. Al arrastrarla se pega al borde y se pliega sola. Cerrar detiene la música y deja la bola."
+        AppLanguage.FRENCH -> "Une bille au-dessus de la page. Touchez-la pour précédent, suivant et fermer. Le glisser la colle au bord, puis elle se replie. Fermer arrête la musique et garde la bille."
+        AppLanguage.GERMAN -> "Eine Kugel über der Seite. Tippen öffnet Zurück, Weiter und Schließen. Ziehen lässt sie einrasten, danach faltet sie sich ein. Schließen stoppt die Musik, die Kugel bleibt."
+        AppLanguage.RUSSIAN -> "Шарик поверх страницы. Нажатие открывает предыдущий, следующий и закрытие. Перетаскивание прижимает его к краю, затем он складывается. Закрытие останавливает музыку и оставляет шарик."
+        AppLanguage.JAPANESE -> "普段はページ上の小球です。タップすると曲送りと閉じるが出ます。ドラッグで端に吸着し、数秒で戻ります。閉じるは音楽を止めるだけで、球は残ります。"
+        AppLanguage.KOREAN -> "평소에는 페이지 위의 작은 공입니다. 누르면 곡 이동과 닫기가 나옵니다. 끌면 가장자리에 붙고, 몇 초 뒤 접힙니다. 닫기는 음악만 멈추고 공은 남습니다."
     }
 
     val bgmNotificationPlayer: String get() = when (Strings.lang) {

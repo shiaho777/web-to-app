@@ -299,13 +299,17 @@ fun BoxScope.ShellScaffoldLayout(
 
             ShellLyricsOverlay(config = config, bgmState = bgmState)
 
-            if (config.bgmEnabled && bgmControlEnabled(config.bgmShowFloatingPlayer) && bgmState.player != null) {
+            if (config.bgmEnabled &&
+                bgmControlEnabled(config.bgmShowFloatingPlayer) &&
+                config.bgmPlaylist.isNotEmpty()
+            ) {
                 BgmFloatingPlayer(
                     title = bgmState.title,
                     playing = bgmState.isPlaying,
                     onToggle = { bgmState.toggle() },
                     onPrevious = { bgmState.previous() },
-                    onNext = { bgmState.next() }
+                    onNext = { bgmState.next() },
+                    onClose = { bgmState.pause() }
                 )
             }
 

@@ -44,6 +44,10 @@ class BgmPlayerState internal constructor(
         if (isPlaying) transport.pause() else transport.play()
     }
 
+    fun pause() {
+        if (isPlaying) transport.pause()
+    }
+
     fun next() = transport.next()
 
     fun previous() = transport.previous()

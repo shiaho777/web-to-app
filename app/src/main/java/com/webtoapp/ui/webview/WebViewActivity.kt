@@ -4675,7 +4675,8 @@ fun WebViewScreen(
             playing = bgmPlaying,
             onToggle = { if (bgmPlayer.isPlaying()) bgmPlayer.pause() else bgmPlayer.play() },
             onPrevious = { bgmPlayer.playPrevious() },
-            onNext = { bgmPlayer.playNext() }
+            onNext = { bgmPlayer.playNext() },
+            onClose = { if (bgmPlayer.isPlaying()) bgmPlayer.pause() }
         )
     }
 

@@ -13,6 +13,22 @@ class BgmPlayerUiTest {
     }
 
     @Test
+    fun `anchored edge stays put when the chip grows`() {
+        assertThat(
+            bgmAnchoredX(anchorRight = true, chipWidth = 48f, parentWidth = 400f, margin = 12f)
+        ).isEqualTo(340f)
+        assertThat(
+            bgmAnchoredX(anchorRight = true, chipWidth = 220f, parentWidth = 400f, margin = 12f)
+        ).isEqualTo(168f)
+        assertThat(
+            bgmAnchoredX(anchorRight = false, chipWidth = 220f, parentWidth = 400f, margin = 12f)
+        ).isEqualTo(12f)
+        assertThat(
+            bgmAnchoredX(anchorRight = true, chipWidth = 380f, parentWidth = 400f, margin = 12f)
+        ).isEqualTo(12f)
+    }
+
+    @Test
     fun `chip docks to the nearer edge`() {
         assertThat(bgmDockX(currentX = 10f, chipWidth = 100f, parentWidth = 400f, margin = 12f)).isEqualTo(12f)
         assertThat(bgmDockX(currentX = 250f, chipWidth = 100f, parentWidth = 400f, margin = 12f)).isEqualTo(288f)
