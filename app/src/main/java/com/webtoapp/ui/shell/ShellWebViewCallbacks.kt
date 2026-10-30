@@ -13,6 +13,7 @@ import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.shell.ShellConfig
 import com.webtoapp.core.webview.LongPressHandler
+import com.webtoapp.core.webview.LongPressHapticGate
 import com.webtoapp.core.webview.VideoPosterCompat
 import com.webtoapp.core.webview.WebScrollTracker
 import com.webtoapp.core.webview.WebViewCallbacks
@@ -263,14 +264,15 @@ fun createShellWebViewCallbacks(
             val hitType = hitResult.type
             val isLink = hitType == WebView.HitTestResult.SRC_ANCHOR_TYPE ||
                          hitType == WebView.HitTestResult.ANCHOR_TYPE
+            val hapticOnActionOnly = config.webViewConfig.longPressHapticOnActionOnly
 
             if (!config.webViewConfig.longPressMenuEnabled) {
-                return isLink
+                return LongPressHapticGate.finish(webView, hapticOnActionOnly, isLink)
             }
 
             if (hitType == WebView.HitTestResult.EDIT_TEXT_TYPE ||
                 hitType == WebView.HitTestResult.UNKNOWN_TYPE) {
-                return false
+                return LongPressHapticGate.finish(webView, hapticOnActionOnly, false)
             }
 
             longPressHandler.getLongPressDetails(webView, x, y) { result ->
@@ -279,6 +281,7 @@ fun createShellWebViewCallbacks(
                     is LongPressHandler.LongPressResult.Video,
                     is LongPressHandler.LongPressResult.Link,
                     is LongPressHandler.LongPressResult.ImageLink -> {
+                        LongPressHapticGate.onMenuShown(webView, hapticOnActionOnly)
                         notifyLongPressMenu(result, x, y)
                     }
                     is LongPressHandler.LongPressResult.Text,
@@ -288,13 +291,14 @@ fun createShellWebViewCallbacks(
                 }
             }
 
-            return when (hitType) {
+            val handled = when (hitType) {
                 WebView.HitTestResult.IMAGE_TYPE,
                 WebView.HitTestResult.SRC_IMAGE_ANCHOR_TYPE,
                 WebView.HitTestResult.SRC_ANCHOR_TYPE,
                 WebView.HitTestResult.ANCHOR_TYPE -> true
                 else -> false
             }
+            return LongPressHapticGate.finish(webView, hapticOnActionOnly, handled)
         }
 
         override fun onRenderProcessGone(didCrash: Boolean) {

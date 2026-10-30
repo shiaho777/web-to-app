@@ -1193,6 +1193,9 @@ data class WebViewShellConfig(
     @SerializedName("longPressMenuStyle")
     val longPressMenuStyle: String = "DISABLED",
 
+    @SerializedName("longPressHapticOnActionOnly")
+    val longPressHapticOnActionOnly: Boolean = false,
+
 
 
     @SerializedName("popupBlockerEnabled")

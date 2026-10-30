@@ -398,6 +398,11 @@ data class WebViewConfig(
     val followSystemDarkMode: Boolean = false,
     val longPressMenuEnabled: Boolean = false,
     val longPressMenuStyle: LongPressMenuStyle = LongPressMenuStyle.DISABLED,
+    // Off keeps today's buzz. On drops the vibration View.performLongClick adds
+    // the moment our listener returns true, and plays it only if a menu actually
+    // opens. A long-press handed back to the page still uses the engine's own
+    // haptic, which fires only when the page or a text selection consumes it.
+    val longPressHapticOnActionOnly: Boolean = false,
 
     val popupBlockerEnabled: Boolean = false,
     val popupBlockerToggleEnabled: Boolean = false,

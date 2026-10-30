@@ -4338,6 +4338,7 @@ private fun com.webtoapp.data.model.WebViewConfig.toWebViewBlock(context: androi
         injectScripts = resolvedInjectScripts,
         longPressMenuEnabled = longPressMenuEnabled,
         longPressMenuStyle = longPressMenuStyle.name,
+        longPressHapticOnActionOnly = longPressHapticOnActionOnly,
 
         popupBlockerEnabled = popupBlockerEnabled,
         popupBlockerToggleEnabled = popupBlockerToggleEnabled,

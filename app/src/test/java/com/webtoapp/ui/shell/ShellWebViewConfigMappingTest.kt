@@ -70,6 +70,21 @@ class ShellWebViewConfigMappingTest {
     }
 
     @Test
+    fun `long-press haptic policy survives shell config to runtime WebViewConfig`() {
+        val enabled = runtimeConfigOf(
+            WebApp(
+                name = "t",
+                url = "https://t.example.com",
+                webViewConfig = WebViewConfig(longPressHapticOnActionOnly = true)
+            )
+        )
+        assertThat(enabled.longPressHapticOnActionOnly).isTrue()
+
+        val disabled = runtimeConfigOf(WebApp(name = "t", url = "https://t.example.com"))
+        assertThat(disabled.longPressHapticOnActionOnly).isFalse()
+    }
+
+    @Test
     fun `directory capability survives shell config to runtime WebViewConfig`() {
         val enabled = runtimeConfigOf(
             WebApp(

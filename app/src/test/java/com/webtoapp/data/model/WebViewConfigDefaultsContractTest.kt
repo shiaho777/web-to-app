@@ -32,6 +32,8 @@ class WebViewConfigDefaultsContractTest {
         "failoverEnabled",               // meaningless without a user-supplied URL list
         "followSystemDarkMode",
         "longPressMenuEnabled",
+        // Empty long-presses keep the platform buzz until the user opts in (#1405).
+        "longPressHapticOnActionOnly",
         "landscapeMode",
         "clearBrowsingDataOnLaunch",
         "autoRefreshEnabled",

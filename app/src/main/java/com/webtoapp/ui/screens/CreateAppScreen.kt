@@ -348,11 +348,19 @@ fun CreateAppScreen(
             item {
                 LongPressMenuCard(
                     style = editState.webViewConfig.longPressMenuStyle,
+                    hapticOnActionOnly = editState.webViewConfig.longPressHapticOnActionOnly,
                     onStyleChange = {
                         viewModel.updateEditState {
                             copy(webViewConfig = webViewConfig.copy(
                                 longPressMenuEnabled = it != LongPressMenuStyle.DISABLED,
                                 longPressMenuStyle = it
+                            ))
+                        }
+                    },
+                    onHapticOnActionOnlyChange = { enabled ->
+                        viewModel.updateEditState {
+                            copy(webViewConfig = webViewConfig.copy(
+                                longPressHapticOnActionOnly = enabled
                             ))
                         }
                     }

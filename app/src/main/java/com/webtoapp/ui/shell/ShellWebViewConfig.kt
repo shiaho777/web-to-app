@@ -79,6 +79,7 @@ fun buildWebViewConfig(config: ShellConfig): WebViewConfig {
 
         longPressMenuEnabled = config.webViewConfig.longPressMenuEnabled,
         longPressMenuStyle = try { com.webtoapp.data.model.LongPressMenuStyle.valueOf(config.webViewConfig.longPressMenuStyle) } catch (e: Exception) { com.webtoapp.data.model.LongPressMenuStyle.FULL },
+        longPressHapticOnActionOnly = config.webViewConfig.longPressHapticOnActionOnly,
 
         popupBlockerEnabled = config.webViewConfig.popupBlockerEnabled,
         popupBlockerToggleEnabled = config.webViewConfig.popupBlockerToggleEnabled,

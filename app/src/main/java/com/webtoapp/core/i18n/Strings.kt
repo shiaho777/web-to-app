@@ -3034,6 +3034,8 @@ object Strings {
     val longPressMenuOpenInBrowser: String get() = StringsD.longPressMenuOpenInBrowser
     val longPressMenuImagePreview: String get() = StringsD.longPressMenuImagePreview
     val longPressMenuSettings: String get() = StringsD.longPressMenuSettings
+    val longPressHapticOnActionOnly: String get() = StringsD.longPressHapticOnActionOnly
+    val longPressHapticOnActionOnlyDesc: String get() = StringsD.longPressHapticOnActionOnlyDesc
     val longPressMenuStyleSimple: String get() = StringsD.longPressMenuStyleSimple
     val longPressMenuStyleSimpleDesc: String get() = StringsD.longPressMenuStyleSimpleDesc
     val longPressMenuStyleFull: String get() = StringsD.longPressMenuStyleFull

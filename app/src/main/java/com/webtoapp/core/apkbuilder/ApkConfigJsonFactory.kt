@@ -222,6 +222,7 @@ internal object ApkConfigJsonFactory {
         "statusBarBackgroundAlphaDark" to statusBar.backgroundAlphaDark,
         "longPressMenuEnabled" to webView.longPressMenuEnabled,
         "longPressMenuStyle" to webView.longPressMenuStyle,
+        "longPressHapticOnActionOnly" to webView.longPressHapticOnActionOnly,
 
         "popupBlockerEnabled" to webView.popupBlockerEnabled,
         "popupBlockerToggleEnabled" to webView.popupBlockerToggleEnabled,
