@@ -40,12 +40,19 @@ data class ActivationCode(
     val expiresAt: Long? = null,
 
     /**
-     * When true, a successful local launch of this card shows how many days
-     * are left. Only meaningful for [ActivationCodeType.TIME_LIMITED] and
-     * [ActivationCodeType.COMBINED]. Older codes omit it, so they stay quiet.
+     * Written by the 2.8.3 editor. False was the default for every card the
+     * author never touched, so the launch gate does not read it.
+     * [hideRemainingDaysOnLaunch] is the opt-out.
      */
     @SerializedName("showRemainingDays")
-    val showRemainingDays: Boolean = false
+    val showRemainingDays: Boolean = false,
+
+    /**
+     * The author turned off the remaining-days start gate on this time-limited
+     * or combined card. Older cards omit it and still show the gate.
+     */
+    @SerializedName("hideRemainingDaysOnLaunch")
+    val hideRemainingDaysOnLaunch: Boolean = false
 ) {
 
     fun isExpiredAt(timeMillis: Long = System.currentTimeMillis()): Boolean =

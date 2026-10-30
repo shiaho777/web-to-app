@@ -10109,16 +10109,16 @@ object StringsA {
         AppLanguage.KOREAN -> "실행할 때마다 남은 일수 표시"
     }
     val showRemainingDaysOnLaunchHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "用这张卡激活后，应用每次启动都会提示还剩多少天。"
-        AppLanguage.ENGLISH -> "After this code is activated, each launch shows how many days are left."
-        AppLanguage.ARABIC -> "بعد التفعيل بهذه البطاقة، يعرض كل تشغيل الأيام المتبقية."
-        AppLanguage.PORTUGUESE -> "Depois de ativar com este código, cada inicialização mostra quantos dias restam."
-        AppLanguage.SPANISH -> "Tras activar con este código, cada inicio muestra cuántos días quedan."
-        AppLanguage.FRENCH -> "Une fois ce code activé, chaque lancement indique les jours restants."
-        AppLanguage.GERMAN -> "Nach der Aktivierung mit diesem Code zeigt jeder Start die verbleibenden Tage."
-        AppLanguage.RUSSIAN -> "После активации этим кодом каждый запуск показывает, сколько дней осталось."
-        AppLanguage.JAPANESE -> "このコードで認証すると、起動のたびに残り日数を表示します。"
-        AppLanguage.KOREAN -> "이 코드로 인증하면 실행할 때마다 남은 일수를 보여 줍니다."
+        AppLanguage.CHINESE -> "用这张卡激活后，每次启动都先显示剩余天数，点开始后才进入应用。"
+        AppLanguage.ENGLISH -> "After this code is activated, each launch shows the days left and a Start button before the app opens."
+        AppLanguage.ARABIC -> "بعد التفعيل بهذه البطاقة، يعرض كل تشغيل الأيام المتبقية وزر بدء قبل فتح التطبيق."
+        AppLanguage.PORTUGUESE -> "Depois de ativar com este código, cada inicialização mostra os dias restantes e um botão Iniciar antes de abrir a aplicação."
+        AppLanguage.SPANISH -> "Tras activar con este código, cada inicio muestra los días restantes y un botón Iniciar antes de abrir la aplicación."
+        AppLanguage.FRENCH -> "Une fois ce code activé, chaque lancement affiche les jours restants et un bouton Démarrer avant d'ouvrir l'application."
+        AppLanguage.GERMAN -> "Nach der Aktivierung mit diesem Code zeigt jeder Start die verbleibenden Tage und eine Starten-Schaltfläche, bevor die App öffnet."
+        AppLanguage.RUSSIAN -> "После активации этим кодом каждый запуск показывает оставшиеся дни и кнопку «Начать», и только потом открывает приложение."
+        AppLanguage.JAPANESE -> "このコードで認証すると、起動のたびに残り日数と「開始」ボタンを表示し、押してからアプリを開きます。"
+        AppLanguage.KOREAN -> "이 코드로 인증하면 실행할 때마다 남은 일수와 시작 버튼을 보여 주고, 누른 뒤에 앱이 열립니다."
     }
     val remainingDaysOnLaunchTitle: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "剩余天数"

@@ -7,7 +7,7 @@ Gate the generated app behind activation codes, so it runs only after a valid co
 ## Options
 
 - **Enable** — turn activation gating on (`activationEnabled`).
-- **Activation codes** — the list of valid codes (`activationCodeList`). On a time-limited or combined code, **Show remaining days on each launch** is off unless you turn it on. When it is on, every successful launch tells the user how many days and hours are left, then continues into the announcement or splash. Permanent and usage-only codes do not offer it. Remote activation does not show this notice.
+- **Activation codes** — the list of valid codes (`activationCodeList`). On a time-limited or combined code, **Show remaining days on each launch** is on unless you turn it off. Each successful launch opens the activation window with the days and hours left and a Start button, then continues into the announcement or splash. Cards saved before this choice, including ones that only carry the older off-by-default flag, still show the window. Permanent and usage-only codes do not offer it. Remote activation does not show this window.
 - **Require every time** — re-verify the activation on every launch instead of trusting it once (`activationRequireEveryTime`). The remembered card is re-validated silently: local codes must still be listed in the config (removing a card revokes it), remote codes are re-checked against your server. The user is only asked to re-enter a code when the remembered one fails (expired, exhausted, revoked, or rejected).
 - **Dialog config** — customize the activation dialog (title, subtitle, input label, button text).
 - **Remote activation** — verify against your own HTTPS endpoint signed with EC P-256, with an offline policy (`activationRemoteConfig`).

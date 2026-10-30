@@ -41,8 +41,15 @@ class RemainingDaysNoticeTest {
     }
 
     @Test
-    fun `flag off stays quiet`() {
-        assertThat(remainingDaysNotice(status(), code(show = false), now)).isNull()
+    fun `legacy off flag still shows and an explicit hide stays quiet`() {
+        assertThat(remainingDaysNotice(status(), code(show = false), now)).isNotNull()
+        assertThat(
+            remainingDaysNotice(
+                status(),
+                code().copy(hideRemainingDaysOnLaunch = true),
+                now
+            )
+        ).isNull()
     }
 
     @Test
@@ -83,15 +90,22 @@ class RemainingDaysNoticeTest {
     }
 
     @Test
-    fun `missing json field stays off and an explicit flag round-trips`() {
+    fun `missing field and the old default still show, and hide round-trips`() {
         val legacy = ActivationCode.fromJson(
             """{"code":"OLD-1","type":"TIME_LIMITED","timeLimitMs":86400000}"""
         )
-        assertThat(legacy!!.showRemainingDays).isFalse()
+        assertThat(legacy!!.hideRemainingDaysOnLaunch).isFalse()
+        assertThat(remainingDaysNotice(status(), legacy, now)).isNotNull()
 
-        val saved = code().toJson()
-        val restored = ActivationCode.fromJson(saved)
-        assertThat(restored!!.showRemainingDays).isTrue()
+        val stampedOff = ActivationCode.fromJson(
+            """{"code":"OLD-2","type":"TIME_LIMITED","timeLimitMs":86400000,"showRemainingDays":false}"""
+        )
+        assertThat(remainingDaysNotice(status(), stampedOff, now)).isNotNull()
+
+        val hidden = code().copy(hideRemainingDaysOnLaunch = true)
+        val restored = ActivationCode.fromJson(hidden.toJson())
+        assertThat(restored!!.hideRemainingDaysOnLaunch).isTrue()
+        assertThat(remainingDaysNotice(status(), restored, now)).isNull()
     }
 
     companion object {

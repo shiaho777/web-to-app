@@ -1045,7 +1045,7 @@ private fun EnhancedActivationCodeItem(
                     add(Icons.AutoMirrored.Outlined.Notes to note)
                 }
 
-                if (code.showRemainingDays && code.type.offersRemainingDays()) {
+                if (code.type.offersRemainingDays() && !code.hideRemainingDaysOnLaunch) {
                     add(Icons.Outlined.Today to Strings.showRemainingDaysOnLaunch)
                 }
             }
@@ -1119,7 +1119,7 @@ private fun AddActivationCodeDialog(
     var note by remember { mutableStateOf("") }
     var customCode by remember { mutableStateOf("") }
     var useCustomCode by remember { mutableStateOf(false) }
-    var showRemainingDays by remember { mutableStateOf(false) }
+    var showRemainingDays by remember { mutableStateOf(true) }
     var codeLength by remember { mutableStateOf(com.webtoapp.core.activation.ActivationManager.DEFAULT_CODE_LENGTH.toFloat()) }
     var codeLengthError by remember { mutableStateOf<String?>(null) }
 
@@ -1336,7 +1336,9 @@ private fun AddActivationCodeDialog(
                         }
                         else -> null
                     }
-                    val showDaysOnLaunch = showRemainingDays && codeType.offersRemainingDays()
+                    val qualified = codeType.offersRemainingDays()
+                    val showDaysOnLaunch = showRemainingDays && qualified
+                    val hideDaysOnLaunch = qualified && !showRemainingDays
 
                     val usageLimitInt = when (codeType) {
                         ActivationCodeType.USAGE_LIMITED, ActivationCodeType.COMBINED -> {
@@ -1364,7 +1366,8 @@ private fun AddActivationCodeDialog(
                             usageLimit = usageLimitInt,
                             note = note.takeIf { it.isNotBlank() },
                             expiresAt = expiresAt,
-                            showRemainingDays = showDaysOnLaunch
+                            showRemainingDays = showDaysOnLaunch,
+                            hideRemainingDaysOnLaunch = hideDaysOnLaunch
                         )
                     } else {
                         val activationManager = com.webtoapp.WebToAppApplication.getInstance()
@@ -1406,7 +1409,7 @@ private fun BatchGenerateDialog(
     var timeLimitDays by remember { mutableStateOf("7") }
     var usageLimit by remember { mutableStateOf("100") }
     var expiryDays by remember { mutableStateOf("") }
-    var showRemainingDays by remember { mutableStateOf(false) }
+    var showRemainingDays by remember { mutableStateOf(true) }
     var codeLength by remember { mutableStateOf(com.webtoapp.core.activation.ActivationManager.DEFAULT_CODE_LENGTH.toFloat()) }
 
     com.webtoapp.ui.design.WtaAlertDialog(
