@@ -298,20 +298,20 @@ object ChromeExtensionParser {
         return raw
     }
 
-    private fun extractPopupPath(manifest: JSONObject): String {
+    internal fun extractPopupPath(manifest: JSONObject): String {
         return manifest.optJSONObject("action")?.optString("default_popup", "")?.takeIf { it.isNotBlank() }
             ?: manifest.optJSONObject("browser_action")?.optString("default_popup", "")?.takeIf { it.isNotBlank() }
             ?: manifest.optJSONObject("page_action")?.optString("default_popup", "")?.takeIf { it.isNotBlank() }
             ?: ""
     }
 
-    private fun extractOptionsPagePath(manifest: JSONObject): String {
+    internal fun extractOptionsPagePath(manifest: JSONObject): String {
         return manifest.optString("options_page", "").takeIf { it.isNotBlank() }
             ?: manifest.optJSONObject("options_ui")?.optString("page", "")?.takeIf { it.isNotBlank() }
             ?: ""
     }
 
-    private fun extractBackgroundScript(manifest: JSONObject): String {
+    internal fun extractBackgroundScript(manifest: JSONObject): String {
         return try {
             val bg = manifest.optJSONObject("background")
             bg?.optString("service_worker", "")?.takeIf { it.isNotBlank() }

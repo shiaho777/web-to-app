@@ -48,6 +48,10 @@ fun PluginPickerCard(
     val context = androidx.compose.ui.platform.LocalContext.current
     val store = remember { PluginStore.getInstance(context) }
     val installed by store.plugins.collectAsStateWithLifecycle()
+    val selectedPlugins = selectedPluginIds
+        .map { store.canonicalPluginId(it) }
+        .distinct()
+        .mapNotNull { store.getPlugin(it) }
     val builtIns by store.builtInPlugins.collectAsStateWithLifecycle()
     val all = installed + builtIns
 
@@ -94,13 +98,13 @@ fun PluginPickerCard(
                         if (enabled) {
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = if (selectedPluginIds.isEmpty()) {
+                                text = if (selectedPlugins.isEmpty()) {
                                     Strings.pluginAttachEmpty
                                 } else {
-                                    Strings.pluginSelectedCount(selectedPluginIds.size)
+                                    Strings.pluginSelectedCount(selectedPlugins.size)
                                 },
                                 style = MaterialTheme.typography.bodySmall,
-                                color = if (selectedPluginIds.isEmpty())
+                                color = if (selectedPlugins.isEmpty())
                                     MaterialTheme.colorScheme.onSurfaceVariant
                                 else
                                     MaterialTheme.colorScheme.primary,
@@ -129,13 +133,18 @@ fun PluginPickerCard(
                         )
                     }
 
-                    val selected = selectedPluginIds.mapNotNull { id -> all.firstOrNull { it.id == id } }
-                    selected.forEach { plugin ->
+                    selectedPlugins.forEach { plugin ->
                         PluginAttachRow(
                             plugin = plugin,
                             trailing = {
                                 IconButton(
-                                    onClick = { onPluginIdsChange(selectedPluginIds - plugin.id) },
+                                    onClick = {
+                                        onPluginIdsChange(
+                                            selectedPluginIds.filterNot {
+                                                store.canonicalPluginId(it) == plugin.id
+                                            }.toSet()
+                                        )
+                                    },
                                     modifier = Modifier.size(28.dp)
                                 ) {
                                     Icon(
@@ -166,10 +175,15 @@ fun PluginPickerCard(
     if (showSelector) {
         PluginSelectorDialog(
             all = all,
-            selectedIds = selectedPluginIds,
+            selectedIds = selectedPlugins.map { it.id }.toSet(),
             onToggle = { id ->
+                val selected = selectedPluginIds.any { store.canonicalPluginId(it) == id }
                 onPluginIdsChange(
-                    if (id in selectedPluginIds) selectedPluginIds - id else selectedPluginIds + id
+                    if (selected) {
+                        selectedPluginIds.filterNot { store.canonicalPluginId(it) == id }.toSet()
+                    } else {
+                        selectedPluginIds + id
+                    }
                 )
             },
             onDismiss = { showSelector = false }

@@ -191,17 +191,35 @@ fun PluginManagerScreen(
                 val shownInstalled = installed.filter(::matches)
                 val shownBuiltIns = builtIns.filter(::matches)
 
-                // Working copies while a drag is in flight; store order wins
-                // whenever no drag is active.
+                // Working copies while a drag is in flight. The store list is
+                // what we draw once the drag (and its reorder write) is done.
+                // Membership changes — a delete — apply immediately either way,
+                // so a row cannot linger until the screen is reopened.
                 var installedWorking by remember { mutableStateOf(shownInstalled) }
                 var builtinWorking by remember { mutableStateOf(shownBuiltIns) }
+                var installedOrderHold by remember { mutableStateOf<List<String>?>(null) }
+                var builtinOrderHold by remember { mutableStateOf<List<String>?>(null) }
                 val dragState = remember { PluginDragState() }
-                LaunchedEffect(shownInstalled) {
-                    if (dragState.itemKey == null) installedWorking = shownInstalled
-                }
-                LaunchedEffect(shownBuiltIns) {
-                    if (dragState.itemKey == null) builtinWorking = shownBuiltIns
-                }
+                val installedDragging = dragState.itemKey?.startsWith("i:") == true
+                val builtinDragging = dragState.itemKey?.startsWith("b:") == true
+                installedOrderHold = releasePluginOrderHold(
+                    installedOrderHold, shownInstalled.map { it.id }, installedDragging
+                )
+                builtinOrderHold = releasePluginOrderHold(
+                    builtinOrderHold, shownBuiltIns.map { it.id }, builtinDragging
+                )
+                val syncedInstalled = syncPluginWorkingCopy(
+                    installedWorking,
+                    shownInstalled,
+                    holdWorkingOrder = installedDragging || installedOrderHold != null
+                )
+                val syncedBuiltIns = syncPluginWorkingCopy(
+                    builtinWorking,
+                    shownBuiltIns,
+                    holdWorkingOrder = builtinDragging || builtinOrderHold != null
+                )
+                if (installedWorking != syncedInstalled) installedWorking = syncedInstalled
+                if (builtinWorking != syncedBuiltIns) builtinWorking = syncedBuiltIns
                 val spacingPx = with(LocalDensity.current) { 10.dp.toPx() }
                 val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
                 val latestInstalled = rememberUpdatedState(installedWorking)
@@ -209,7 +227,14 @@ fun PluginManagerScreen(
 
                 fun persistOrder(builtIn: Boolean) {
                     val ids = (if (builtIn) latestBuiltIns else latestInstalled).value.map { it.id }
-                    scope.launch { store.reorder(ids, builtIn) }
+                    if (builtIn) builtinOrderHold = ids else installedOrderHold = ids
+                    scope.launch {
+                        try {
+                            store.reorder(ids, builtIn)
+                        } catch (_: Exception) {
+                            if (builtIn) builtinOrderHold = null else installedOrderHold = null
+                        }
+                    }
                 }
 
                 if (!isLoading && shownInstalled.isEmpty() && shownBuiltIns.isEmpty()) {
@@ -245,7 +270,7 @@ fun PluginManagerScreen(
                                             currentList = { latestInstalled.value },
                                             onReorder = { installedWorking = it },
                                             onPersist = { persistOrder(builtIn = false) },
-                                            onCancel = { installedWorking = shownInstalled }
+                                            onCancel = { installedOrderHold = null }
                                         ),
                                     enabled = plugin.id in enabledIds,
                                     onEnabledChange = { on ->
@@ -286,7 +311,7 @@ fun PluginManagerScreen(
                                             currentList = { latestBuiltIns.value },
                                             onReorder = { builtinWorking = it },
                                             onPersist = { persistOrder(builtIn = true) },
-                                            onCancel = { builtinWorking = shownBuiltIns }
+                                            onCancel = { builtinOrderHold = null }
                                         ),
                                     enabled = plugin.id in enabledIds,
                                     onEnabledChange = { on ->

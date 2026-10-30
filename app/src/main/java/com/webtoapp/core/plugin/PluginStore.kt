@@ -4,10 +4,14 @@ import android.content.Context
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonParser
+import com.webtoapp.core.extension.ChromeExtensionContentScriptRegistry
+import com.webtoapp.core.extension.ChromeExtensionParser
+import com.webtoapp.core.extension.ExtensionFileManager
 import com.webtoapp.core.i18n.AppLanguage
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.util.GsonProvider
+import org.json.JSONObject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -120,6 +124,13 @@ class PluginStore private constructor(private val context: Context) {
     private val _enabledIds = MutableStateFlow<List<String>>(emptyList())
     val enabledIds: StateFlow<List<String>> = _enabledIds.asStateFlow()
 
+    /**
+     * Old per-content-script row ids mapped onto the one kept plugin id.
+     * Replaced as a whole under [saveMutex]; readers take the current map.
+     */
+    @Volatile
+    private var chromeIdAliases: Map<String, String> = emptyMap()
+
     init {
         loadBuiltIns()
         rebuildCache()
@@ -152,7 +163,8 @@ class PluginStore private constructor(private val context: Context) {
         val chromeRecords: MutableList<Plugin> = mutableListOf(),
         val styles: MutableMap<String, StyleOverride> = mutableMapOf(),
         val hidden: MutableList<String> = mutableListOf(),
-        val enabled: MutableList<String> = mutableListOf()
+        val enabled: MutableList<String> = mutableListOf(),
+        val chromeIdAliases: MutableMap<String, String> = mutableMapOf()
     )
 
     private fun readOverlay(): StateOverlay {
@@ -178,6 +190,12 @@ class PluginStore private constructor(private val context: Context) {
                         overlay.chromeRecords.add(it.copy(kind = PluginKind.CHROME_EXTENSION))
                     }
                 } catch (_: Exception) {
+                }
+            }
+            obj.getAsJsonObject("chromeIdAliases")?.entrySet()?.forEach { (from, to) ->
+                val target = to.takeIf { it.isJsonPrimitive }?.asString.orEmpty()
+                if (from.isNotBlank() && target.isNotBlank() && from != target) {
+                    overlay.chromeIdAliases[from] = target
                 }
             }
             overlay
@@ -219,6 +237,11 @@ class PluginStore private constructor(private val context: Context) {
             _plugins.value.filter { it.kind == PluginKind.CHROME_EXTENSION }
                 .forEach { chrome.add(gson.toJsonTree(it)) }
             overlay.add("chromeRecords", chrome)
+            val aliases = com.google.gson.JsonObject()
+            chromeIdAliases.forEach { (from, to) ->
+                if (from.isNotBlank() && to.isNotBlank() && from != to) aliases.addProperty(from, to)
+            }
+            overlay.add("chromeIdAliases", aliases)
             stateFile.writeText(gson.toJson(overlay))
         } catch (e: Exception) {
             AppLogger.e(TAG, "failed to write plugin state", e)
@@ -284,15 +307,23 @@ class PluginStore private constructor(private val context: Context) {
 
                 styleOverrides.putAll(overlay.styles)
                 loaded.addAll(overlay.chromeRecords)
-                _enabledIds.value = overlay.enabled.toList()
 
                 // Stored order first; anything new (fresh installs, migrated) after.
                 val byId = loaded.associateBy { it.id }
                 val ordered = overlay.order.mapNotNull { byId[it] } +
                     loaded.filter { it.id !in overlay.order }
-                _plugins.value = ordered.map { it.withOverride() }
+                val collapsed = collapseChromePlugins(
+                    ordered.map { it.withOverride() },
+                    overlay.enabled.toList(),
+                    overlay.chromeIdAliases
+                )
+                val hydrated = collapsed.plugins.map { hydrateChromeMetadata(it) }
+                _plugins.value = hydrated
+                _enabledIds.value = collapsed.enabledIds
+                chromeIdAliases = collapsed.aliases
                 refreshBuiltIns()
-                AppLogger.d(TAG, "loaded ${ordered.size} plugins")
+                if (collapsed.changed || hydrated != collapsed.plugins) writeOverlayLocked()
+                AppLogger.d(TAG, "loaded ${hydrated.size} plugins")
             } catch (e: Exception) {
                 AppLogger.e(TAG, "failed to load plugins", e)
                 _plugins.value = emptyList()
@@ -383,11 +414,34 @@ class PluginStore private constructor(private val context: Context) {
 
     fun getAllPlugins(): List<Plugin> = allCache
 
-    fun getPlugin(id: String): Plugin? = allCache.firstOrNull { it.id == id }
+    /**
+     * Content-script row ids that were folded into one extension still resolve
+     * to that extension. An unknown id is returned unchanged.
+     */
+    fun canonicalPluginId(id: String): String {
+        var current = id
+        val seen = HashSet<String>()
+        while (seen.add(current)) {
+            current = chromeIdAliases[current] ?: return current
+        }
+        return id
+    }
+
+    fun getPlugin(id: String): Plugin? {
+        val canonical = canonicalPluginId(id)
+        return allCache.firstOrNull { it.id == canonical }
+    }
 
     fun getPluginsByIds(ids: List<String>): List<Plugin> {
         val all = allCache
-        return ids.mapNotNull { id -> all.firstOrNull { it.id == id } }
+        val seen = HashSet<String>()
+        val out = ArrayList<Plugin>(ids.size)
+        for (raw in ids) {
+            val id = canonicalPluginId(raw)
+            if (!seen.add(id)) continue
+            all.firstOrNull { it.id == id }?.let { out.add(it) }
+        }
+        return out
     }
 
     fun isGloballyEnabled(id: String): Boolean = id in _enabledIds.value
@@ -400,6 +454,8 @@ class PluginStore private constructor(private val context: Context) {
 
     fun effectiveIds(pluginsEnabled: Boolean, attached: List<String>): List<String> =
         resolveAttachedPluginIds(pluginsEnabled, attached, globalEnabledIds())
+            .map { canonicalPluginId(it) }
+            .distinct()
 
     suspend fun setEnabled(id: String, enabled: Boolean) = withContext(Dispatchers.IO) {
         saveMutex.withLock {
@@ -574,16 +630,27 @@ class PluginStore private constructor(private val context: Context) {
 
     suspend fun removePlugin(id: String): Boolean = withContext(Dispatchers.IO) {
         saveMutex.withLock {
-            val plugin = _plugins.value.find { it.id == id } ?: return@withLock false
-            if (plugin.kind != PluginKind.CHROME_EXTENSION) {
+            val plugin = getPlugin(id)?.takeIf { !it.builtIn } ?: return@withLock false
+            if (plugin.kind == PluginKind.CHROME_EXTENSION) {
+                val extId = plugin.chromeExtId
+                val removed = if (extId.isNotBlank()) {
+                    _plugins.value.filter { it.chromeExtId == extId }.map { it.id }.toSet()
+                } else {
+                    setOf(plugin.id)
+                }
+                // Also drop alias keys that pointed at this extension, plus any
+                // id the caller still has from before the rows were folded.
+                val aliasKeys = chromeIdAliases.filterValues { it in removed || it == plugin.id }.keys
+                removeChromeIdsLocked(removed + aliasKeys + canonicalPluginId(id), extId)
+            } else {
                 File(pluginsDir, plugin.packageDir).deleteRecursively()
+                _plugins.value = _plugins.value.filter { it.id != plugin.id }
+                _enabledIds.value = updateGlobalEnabledIds(_enabledIds.value, plugin.id, enabled = false)
+                PluginConfigStore(context).clear(plugin.id)
+                refreshBuiltIns()
+                writeOverlayLocked()
+                rebuildCache()
             }
-            _plugins.value = _plugins.value.filter { it.id != id }
-            _enabledIds.value = updateGlobalEnabledIds(_enabledIds.value, id, enabled = false)
-            PluginConfigStore(context).clear(id)
-            refreshBuiltIns()
-            writeOverlayLocked()
-            rebuildCache()
             true
         }
     }
@@ -675,31 +742,121 @@ class PluginStore private constructor(private val context: Context) {
         }
     }
 
-    /** Register/update a chrome-extension record (content lives in ext engine). */
+    /** Register/update one chrome-extension row. Sibling content-script rows for the same id are replaced. */
     suspend fun upsertChromeRecord(plugin: Plugin) = withContext(Dispatchers.IO) {
-        saveMutex.withLock {
-            val isNew = _plugins.value.none { it.id == plugin.id }
-            _plugins.value =
-                _plugins.value.filter { it.id != plugin.id } + plugin.copy(kind = PluginKind.CHROME_EXTENSION)
-            if (isNew) {
-                _enabledIds.value = updateGlobalEnabledIds(_enabledIds.value, plugin.id, enabled = true)
+        saveMutex.withLock { upsertChromeRecordLocked(plugin) }
+    }
+
+    /** Caller holds [saveMutex]. */
+    private fun upsertChromeRecordLocked(plugin: Plugin) {
+        val stored = plugin.copy(
+            kind = PluginKind.CHROME_EXTENSION,
+            name = stripChromeContentScriptSuffix(plugin.name)
+        )
+        val extId = stored.chromeExtId
+        val siblings = if (extId.isNotBlank()) {
+            _plugins.value.filter {
+                it.kind == PluginKind.CHROME_EXTENSION && it.chromeExtId == extId && it.id != stored.id
             }
-            writeOverlayLocked()
-            rebuildCache()
+        } else {
+            emptyList()
         }
+        val siblingIds = siblings.map { it.id }.toSet()
+        val existed = _plugins.value.any { it.id == stored.id } || siblings.isNotEmpty()
+        val wasEnabled = stored.id in _enabledIds.value || siblingIds.any { it in _enabledIds.value }
+        _plugins.value = _plugins.value.filter { it.id != stored.id && it.id !in siblingIds } + stored
+        _enabledIds.value = if (!existed || wasEnabled) {
+            updateGlobalEnabledIds(
+                _enabledIds.value.filterNot { it in siblingIds },
+                stored.id,
+                enabled = true
+            )
+        } else {
+            _enabledIds.value.filterNot { it in siblingIds || it == stored.id }
+        }
+        chromeIdAliases = retargetChromeAliases(chromeIdAliases, siblingIds.associateWith { stored.id })
+        siblingIds.forEach { PluginConfigStore(context).clear(it) }
+        writeOverlayLocked()
+        rebuildCache()
     }
 
     suspend fun removeChromeRecordsFor(extId: String) = withContext(Dispatchers.IO) {
         saveMutex.withLock {
+            if (extId.isBlank()) return@withLock
             val removed = _plugins.value.filter { it.chromeExtId == extId }.map { it.id }.toSet()
             if (removed.isEmpty()) return@withLock
-            _plugins.value = _plugins.value.filter { it.id !in removed }
-            _enabledIds.value = _enabledIds.value.filterNot { it in removed }
-            writeOverlayLocked()
-            rebuildCache()
+            val aliasKeys = chromeIdAliases.filterValues { it in removed }.keys
+            removeChromeIdsLocked(removed + aliasKeys, extId)
         }
     }
 
+    /**
+     * Drop every row for one extension, forget ids that used to point at it,
+     * and delete the unpacked directory so the extension stops running.
+     * Caller holds [saveMutex].
+     */
+    private fun removeChromeIdsLocked(removed: Set<String>, extId: String) {
+        val ids = removed.filter { it.isNotBlank() }.toSet()
+        _plugins.value = _plugins.value.filter { it.id !in ids }
+        _enabledIds.value = _enabledIds.value.filterNot { it in ids }
+        chromeIdAliases = chromeIdAliases.filterKeys { it !in ids }.filterValues { it !in ids }
+        ids.forEach { PluginConfigStore(context).clear(it) }
+        if (extId.isNotBlank()) {
+            ExtensionFileManager(context).cleanupExtensionDir(extId)
+            ChromeExtensionContentScriptRegistry.initialize(context)
+            ChromeExtensionContentScriptRegistry.unregisterContentScripts(extId)
+        }
+        _builtInPlugins.value = filterBuiltIns(_builtInPlugins.value)
+        writeOverlayLocked()
+        rebuildCache()
+    }
+
+    /**
+     * Installs made before the one-row change stored popup, background, and
+     * the manifest on nobody. Read them back from the unpacked extension.
+     */
+    private fun hydrateChromeMetadata(plugin: Plugin): Plugin {
+        if (plugin.kind != PluginKind.CHROME_EXTENSION || plugin.chromeExtId.isBlank()) return plugin
+        if (plugin.manifestJson.isNotBlank()) return plugin
+        val root = File(context.filesDir, "extensions/${plugin.chromeExtId}")
+        if (!root.isDirectory) return plugin
+        val manifestFile = root.walkTopDown()
+            .maxDepth(4)
+            .filter { it.isFile && it.name == "manifest.json" }
+            .minByOrNull { it.relativeTo(root).path.count { ch -> ch == File.separatorChar } }
+            ?: return plugin
+        val text = runCatching { manifestFile.readText() }.getOrNull()?.takeIf { it.isNotBlank() }
+            ?: return plugin
+        val manifest = runCatching { JSONObject(text) }.getOrNull() ?: return plugin
+        return plugin.copy(
+            manifestJson = text,
+            backgroundScript = plugin.backgroundScript.ifBlank {
+                ChromeExtensionParser.extractBackgroundScript(manifest)
+            },
+            popupPath = plugin.popupPath.ifBlank { ChromeExtensionParser.extractPopupPath(manifest) },
+            optionsPagePath = plugin.optionsPagePath.ifBlank {
+                ChromeExtensionParser.extractOptionsPagePath(manifest)
+            }
+        )
+    }
+
+}
+
+private fun retargetChromeAliases(
+    current: Map<String, String>,
+    removedToKept: Map<String, String>
+): Map<String, String> {
+    if (removedToKept.isEmpty()) return current
+    val out = LinkedHashMap<String, String>()
+    for ((from, to) in current) {
+        if (from.isBlank() || from in removedToKept) continue
+        val target = removedToKept[to] ?: to
+        if (from != target && target.isNotBlank()) out[from] = target
+    }
+    for ((from, to) in removedToKept) {
+        if (from.isNotBlank() && from != to) out[from] = to
+    }
+    return out
 }
 
 internal const val PLUGIN_PACKAGE_TMP_SUFFIX = ".tmp"

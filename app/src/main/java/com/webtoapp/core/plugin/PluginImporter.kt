@@ -97,28 +97,24 @@ class PluginImporter(private val context: Context) {
     }
 
     /**
-     * Registers the content-script records of a parsed Chrome extension.
-     * The unpacked extension directory itself is managed by
-     * `ExtensionFileManager`; here we only mirror its modules into the
-     * unified plugin list.
+     * Registers one plugin row per Chrome extension. Parser modules stay
+     * one-per-content-script; rows that share a [chromeExtId] are the same
+     * install and must not each show up in Manage Plugins.
+     * The unpacked directory itself is managed by `ExtensionFileManager`.
      */
     suspend fun installChromeRecords(
         modules: List<com.webtoapp.core.extension.ExtensionModule>
     ): ImportResult {
-        val gson = com.google.gson.Gson()
-        var installed = 0
         var last: Plugin? = null
-        for (module in modules) {
-            val obj = runCatching { gson.toJsonTree(module).asJsonObject }.getOrNull()
-                ?: continue
-            val plugin = PluginMigrator.chromePluginFrom(obj) ?: continue
+        for ((_, group) in modules.groupBy { it.chromeExtId.trim() }) {
+            val plugin = chromePluginFromModules(group) ?: continue
             store.upsertChromeRecord(plugin)
-            installed++
             last = plugin
         }
-        return when {
-            installed > 0 -> ImportResult.Success(last!!)
-            else -> ImportResult.Error("no installable content scripts")
+        return if (last != null) {
+            ImportResult.Success(last)
+        } else {
+            ImportResult.Error("no installable content scripts")
         }
     }
 

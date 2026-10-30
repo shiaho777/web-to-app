@@ -315,6 +315,7 @@ val syncShellRuntimeSources by tasks.registering(Sync::class) {
         "**/core/plugin/PluginStore.kt",
         "**/core/plugin/PluginImporter.kt",
         "**/core/plugin/PluginMigrator.kt",
+        "**/core/plugin/ChromePluginRows.kt",
 
         // Host editor tooling. Generated APKs do not install toolchains or run
         // esbuild. Server runtimes exec through HostProcessLauncher, which stays
