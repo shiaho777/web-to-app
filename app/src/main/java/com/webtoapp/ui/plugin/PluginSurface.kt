@@ -164,16 +164,16 @@ private val noPluginsInstalled: String
 
 private val pluginsUnsupportedByKernel: String
     @Composable get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "这个内核不能运行插件，请改用系统 WebView"
-        AppLanguage.ENGLISH -> "This kernel can't run plugins. Use System WebView"
-        AppLanguage.ARABIC -> "هذا المحرك لا يشغّل الإضافات. استخدم WebView النظام"
-        AppLanguage.PORTUGUESE -> "Este núcleo não executa plugins. Use o WebView do sistema"
-        AppLanguage.SPANISH -> "Este núcleo no ejecuta plugins. Usa el WebView del sistema"
-        AppLanguage.FRENCH -> "Ce moteur n'exécute pas les plugins. Utilisez le WebView système"
-        AppLanguage.GERMAN -> "Dieser Kern führt keine Plugins aus. System-WebView verwenden"
-        AppLanguage.RUSSIAN -> "Это ядро не запускает плагины. Используйте системный WebView"
-        AppLanguage.JAPANESE -> "このカーネルではプラグインを実行できません。システムの WebView を使ってください"
-        AppLanguage.KOREAN -> "이 커널에서는 플러그인을 실행할 수 없습니다. 시스템 WebView를 사용하세요"
+        AppLanguage.CHINESE -> "这个内核只运行页面插件。Chrome 扩展请改用系统 WebView"
+        AppLanguage.ENGLISH -> "This kernel runs page plugins only. Chrome extensions need System WebView"
+        AppLanguage.ARABIC -> "هذا المحرك يشغّل إضافات الصفحة فقط. إضافات Chrome تحتاج WebView النظام"
+        AppLanguage.PORTUGUESE -> "Este núcleo só executa plugins de página. Extensões Chrome precisam do WebView do sistema"
+        AppLanguage.SPANISH -> "Este núcleo solo ejecuta plugins de página. Las extensiones de Chrome necesitan el WebView del sistema"
+        AppLanguage.FRENCH -> "Ce moteur n'exécute que les plugins de page. Les extensions Chrome exigent le WebView système"
+        AppLanguage.GERMAN -> "Dieser Kern führt nur Seiten-Plugins aus. Chrome-Erweiterungen brauchen die System-WebView"
+        AppLanguage.RUSSIAN -> "Это ядро запускает только плагины страницы. Расширениям Chrome нужен системный WebView"
+        AppLanguage.JAPANESE -> "このカーネルで動くのはページ用プラグインだけです。Chrome 拡張にはシステムの WebView が必要です"
+        AppLanguage.KOREAN -> "이 커널은 페이지 플러그인만 실행합니다. Chrome 확장 프로그램은 시스템 WebView가 필요합니다"
     }
 
 internal fun kindLabel(kind: PluginKind): String = when (kind) {

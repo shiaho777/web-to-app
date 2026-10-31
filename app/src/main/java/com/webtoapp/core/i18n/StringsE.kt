@@ -6031,6 +6031,18 @@ object StringsE {
         AppLanguage.JAPANESE -> "LRC を編集"
         AppLanguage.KOREAN -> "LRC 편집"
     }
+    val geckoPagePluginNote: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "页面插件（样式、开关、面板）会运行。Chrome 扩展和依赖 GM 接口的用户脚本仍需要系统 WebView"
+        AppLanguage.ENGLISH -> "Page plugins (styles, toggles, and panels) run. Chrome extensions and userscripts that need GM APIs still need System WebView"
+        AppLanguage.ARABIC -> "إضافات الصفحة (الأنماط والمفاتيح واللوحات) تعمل. إضافات Chrome وسكربتات GM ما زالت تحتاج WebView النظام"
+        AppLanguage.PORTUGUESE -> "Plugins de página (estilos, interruptores e painéis) funcionam. Extensões Chrome e userscripts que precisam das APIs GM ainda exigem o WebView do sistema"
+        AppLanguage.SPANISH -> "Los plugins de página (estilos, interruptores y paneles) sí se ejecutan. Las extensiones de Chrome y los userscripts que necesitan las API GM siguen requiriendo el WebView del sistema"
+        AppLanguage.FRENCH -> "Les plugins de page (styles, interrupteurs et panneaux) s'exécutent. Les extensions Chrome et les userscripts qui ont besoin des API GM exigent encore le WebView système"
+        AppLanguage.GERMAN -> "Seiten-Plugins (Stile, Schalter, Panels) laufen. Chrome-Erweiterungen und Userscripts mit GM-APIs brauchen weiter die System-WebView"
+        AppLanguage.RUSSIAN -> "Плагины страницы (стили, переключатели и панели) работают. Расширениям Chrome и скриптам с GM API по-прежнему нужен системный WebView"
+        AppLanguage.JAPANESE -> "ページ用プラグイン（スタイル、切り替え、パネル）は動きます。Chrome 拡張と GM API が必要なユーザースクリプトには、引き続きシステムの WebView が必要です"
+        AppLanguage.KOREAN -> "페이지 플러그인(스타일, 스위치, 패널)은 실행됩니다. Chrome 확장 프로그램과 GM API가 필요한 사용자 스크립트는 여전히 시스템 WebView가 필요합니다"
+    }
     val engineGeckoviewDesc: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "engine geckoview"
         AppLanguage.ENGLISH -> "Engine geckoview"

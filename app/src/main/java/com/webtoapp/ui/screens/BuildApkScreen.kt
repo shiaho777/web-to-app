@@ -1504,6 +1504,13 @@ fun EngineSelectionCard(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    if (selectedEngine == "GECKOVIEW" && LocalShowDescriptions.current) {
+                        Text(
+                            Strings.geckoPagePluginNote,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
         }

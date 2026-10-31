@@ -4351,6 +4351,7 @@ object Strings {
     val downloadCdnDesc: String get() = StringsE.downloadCdnDesc
     val downloadCdnResources: String get() = StringsE.downloadCdnResources
     val editLrc: String get() = StringsE.editLrc
+    val geckoPagePluginNote: String get() = StringsE.geckoPagePluginNote
     val engineGeckoviewDesc: String get() = StringsE.engineGeckoviewDesc
     val engineSystemWebviewDesc: String get() = StringsE.engineSystemWebviewDesc
     val envInstallFailed: String get() = StringsE.envInstallFailed

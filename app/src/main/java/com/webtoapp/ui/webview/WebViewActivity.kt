@@ -4178,7 +4178,8 @@ fun WebViewScreen(
                                 // Empty attached ids still resolve: the switch on uses the
                                 // enabled set from Manage Plugins. Test ids stay explicit.
                                 val previewWebView = surface.webView
-                                if (pluginsEnabled && previewWebView != null) {
+                                val previewGecko = surface.engine as? com.webtoapp.core.engine.GeckoViewEngine
+                                if (pluginsEnabled && (previewWebView != null || previewGecko != null)) {
                                     kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
                                         val store = com.webtoapp.core.plugin.PluginStore.getInstance(ctx)
                                         val ids = if (explicitTestIds) {
@@ -4190,7 +4191,11 @@ fun WebViewScreen(
                                         if (ids.isEmpty()) return@launch
                                         val payloads = store.resolveForInjection(ids)
                                         kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
-                                            webViewManager.updatePluginPayloads(previewWebView, payloads)
+                                            if (previewWebView != null) {
+                                                webViewManager.updatePluginPayloads(previewWebView, payloads)
+                                            } else {
+                                                previewGecko?.setPluginPayloads(payloads, enabled = true)
+                                            }
                                         }
                                     }
                                 }

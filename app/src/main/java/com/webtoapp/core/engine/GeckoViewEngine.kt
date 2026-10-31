@@ -756,6 +756,11 @@ class GeckoViewEngine(
      */
     private var nativeBridgeReady = false
     private var pendingLoadUrl: String? = null
+    private var pluginsEnabled = false
+    private var pluginPayloads: List<com.webtoapp.core.plugin.PluginSession.Resolved> = emptyList()
+    private var pluginSession: com.webtoapp.core.plugin.PluginSession? = null
+    private var pluginInjectedUrl: String? = null
+    private val pluginConfig by lazy { com.webtoapp.core.plugin.PluginConfigStore(context) }
 
     /**
      * Media session delegate to re-attach on every session (re)creation —
@@ -1113,6 +1118,15 @@ class GeckoViewEngine(
                     )
                 ) {
                     return GeckoResult.fromValue(prompt.dismiss())
+                }
+                if (com.webtoapp.core.plugin.GeckoPluginHost.handlePrompt(
+                        prompt.message,
+                        prompt.defaultValue,
+                        pluginConfig,
+                        pluginSession
+                    )
+                ) {
+                    return GeckoResult.fromValue(prompt.confirm(""))
                 }
                 val activity = viewContext.findActivity()
                 if (activity == null || activity.isFinishing || activity.isDestroyed) {
@@ -2103,6 +2117,7 @@ class GeckoViewEngine(
                 if (!url.startsWith("javascript:")) {
                     pageZoomInjectedUrl = null
                     backgroundMediaInjectedUrl = null
+                    pluginInjectedUrl = null
                 }
                 callback.onPageStarted(url)
             }
@@ -2112,6 +2127,7 @@ class GeckoViewEngine(
                 if (success) {
                     injectBackgroundMediaScript(currentUrl)
                     injectPageZoomIfNeeded(currentUrl)
+                    injectPagePluginsIfNeeded(currentUrl)
                 }
             }
 
@@ -2402,7 +2418,68 @@ class GeckoViewEngine(
         }
     }
 
+    /**
+     * Page plugins for this Gecko session. Chrome extensions are dropped.
+     * An empty list with [allowEmpty] leaves a session that has not been
+     * created yet alone, so a host can resolve plugin code after the view exists.
+     */
+    fun setPluginPayloads(
+        payloads: List<com.webtoapp.core.plugin.PluginSession.Resolved>,
+        enabled: Boolean,
+        allowEmpty: Boolean = false
+    ) {
+        pluginsEnabled = enabled
+        val runnable = if (enabled) {
+            com.webtoapp.core.plugin.GeckoPluginHost.runnable(payloads)
+        } else {
+            emptyList()
+        }
+        if (!enabled || (runnable.isEmpty() && !allowEmpty)) {
+            pluginPayloads = emptyList()
+            pluginInjectedUrl = null
+            pluginSession?.destroy()
+            pluginSession = null
+            return
+        }
+        if (runnable.isEmpty()) return
+        pluginPayloads = runnable
+        val active = pluginSession ?: com.webtoapp.core.plugin.PluginSession(
+            configStore = pluginConfig,
+            appLang = { com.webtoapp.core.i18n.Strings.lang.code },
+            pageEvaluator = { js -> evaluateJavascript(js, null) }
+        ).also {
+            it.attach()
+            pluginSession = it
+        }
+        active.setPlugins(runnable)
+        val url = currentUrl
+        if (!url.isNullOrBlank() && !url.startsWith("javascript:") && !url.startsWith("about:")) {
+            pluginInjectedUrl = null
+            injectPagePluginsIfNeeded(url)
+        }
+    }
+
+    private fun injectPagePluginsIfNeeded(url: String?) {
+        if (!pluginsEnabled || pluginPayloads.isEmpty()) return
+        if (url.isNullOrBlank() || url.startsWith("javascript:") || url.startsWith("about:")) return
+        if (pluginInjectedUrl == url) return
+        val script = com.webtoapp.core.plugin.GeckoPluginHost.pageScript(
+            plugins = pluginPayloads,
+            url = url,
+            appLang = com.webtoapp.core.i18n.Strings.lang.code,
+            configSeedJson = com.webtoapp.core.plugin.GeckoPluginHost.configSeed(pluginConfig, pluginPayloads)
+        )
+        if (script.isBlank()) return
+        pluginInjectedUrl = url
+        pluginSession?.onUrlChanged(url)
+        evaluateJavascript(script, null)
+    }
+
     override fun destroy() {
+        pluginSession?.destroy()
+        pluginSession = null
+        pluginPayloads = emptyList()
+        pluginInjectedUrl = null
         session?.let { s ->
             unbindNativeBridge(s)
             try {

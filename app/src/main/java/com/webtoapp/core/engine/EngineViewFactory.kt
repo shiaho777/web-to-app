@@ -80,6 +80,11 @@ object EngineViewFactory {
             val engine = EngineManager.getInstance(context).createEngine(EngineType.GECKOVIEW, adBlocker)
             val geckoEngine = engine as GeckoViewEngine
             geckoEngine.appOriginUrl = appOriginUrl
+            geckoEngine.setPluginPayloads(
+                payloads = pluginPayloads,
+                enabled = pluginsEnabled,
+                allowEmpty = pluginPayloads.isEmpty()
+            )
             val view = geckoEngine.createView(
                 context = context,
                 config = config,
