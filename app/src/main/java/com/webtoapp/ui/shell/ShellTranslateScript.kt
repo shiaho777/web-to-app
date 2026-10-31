@@ -1,7 +1,6 @@
 package com.webtoapp.ui.shell
 
-internal fun injectTranslateScript(webView: android.webkit.WebView, targetLanguage: String, showButton: Boolean) {
-    val translateScript = """
+internal fun translatePageScript(targetLanguage: String, showButton: Boolean): String = """
         (function() {
             if (window._translateInjected) return;
             window._translateInjected = true;
@@ -23,7 +22,9 @@ internal fun injectTranslateScript(webView: android.webkit.WebView, targetLangua
                         cb.reject(error);
                     } else {
                         try {
-                            cb.resolve(JSON.parse(resultsJson));
+                            var parsed = (typeof resultsJson === 'string') ? JSON.parse(resultsJson) : resultsJson;
+                            if (!Array.isArray(parsed)) throw new Error('bad translation payload');
+                            cb.resolve(parsed);
                         } catch(e) {
                             cb.reject(e.message);
                         }
@@ -411,7 +412,8 @@ internal fun injectTranslateScript(webView: android.webkit.WebView, targetLangua
                 });
             }, 1500);
         })();
-    """.trimIndent()
+""".trimIndent()
 
-    webView.evaluateJavascript(translateScript, null)
+internal fun injectTranslateScript(webView: android.webkit.WebView, targetLanguage: String, showButton: Boolean) {
+    webView.evaluateJavascript(translatePageScript(targetLanguage, showButton), null)
 }
