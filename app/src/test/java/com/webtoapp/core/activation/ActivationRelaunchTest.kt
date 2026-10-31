@@ -241,12 +241,6 @@ class ActivationRelaunchTest {
                 APP_ID,
                 listOf(loud.copy(showRemainingDays = false))
             )
-        ).isNotNull()
-        assertThat(
-            manager.remainingDaysNoticeForLaunch(
-                APP_ID,
-                listOf(loud.copy(hideRemainingDaysOnLaunch = true))
-            )
         ).isNull()
 
         manager.saveActivationStatus(APP_ID, true)

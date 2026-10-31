@@ -19,18 +19,16 @@ private const val DAY_MS = 24L * HOUR_MS
 
 /**
  * Notice for a successful local launch, or null when this grant should stay
- * quiet. Time-limited and combined cards show it unless the author turned the
- * gate off. Permanent and usage-only cards never qualify, and neither does an
- * expired or used-up grant. A missing flag, and the 2.8.3 default of
- * [ActivationCode.showRemainingDays] false, still show the gate.
+ * quiet. The choice lives on the redeemed code. Permanent and usage-only
+ * cards never qualify, and neither does an expired or used-up grant.
  */
 fun remainingDaysNotice(
     status: ActivationStatus,
     code: ActivationCode?,
     nowMs: Long = System.currentTimeMillis(),
 ): RemainingDaysNotice? {
-    if (code == null || !code.type.offersRemainingDays()) return null
-    if (code.hideRemainingDaysOnLaunch) return null
+    if (code == null || !code.showRemainingDays) return null
+    if (!code.type.offersRemainingDays()) return null
     if (!status.isActivated) return null
     val usageLimit = status.usageLimit
     if (usageLimit != null && status.usageCount >= usageLimit) return null

@@ -528,8 +528,7 @@ class ActivationManager(private val context: Context) {
             usageLimit = usageLimit,
             note = note,
             expiresAt = expiresAt,
-            showRemainingDays = showRemainingDays && type.offersRemainingDays(),
-            hideRemainingDaysOnLaunch = type.offersRemainingDays() && !showRemainingDays
+            showRemainingDays = showRemainingDays && type.offersRemainingDays()
         )
     }
 
