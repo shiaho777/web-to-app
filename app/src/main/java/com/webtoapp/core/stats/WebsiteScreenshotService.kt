@@ -8,11 +8,13 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.webkit.WebSettings
 import com.webtoapp.core.logging.AppLogger
+import com.webtoapp.data.model.WebApp
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.io.File
 import java.io.FileOutputStream
+import kotlin.coroutines.resume
 
 class WebsiteScreenshotService(private val context: Context) {
 
@@ -24,6 +26,7 @@ class WebsiteScreenshotService(private val context: Context) {
         private const val THUMBNAIL_QUALITY = 80
         private const val LOAD_TIMEOUT_MS = 20_000L
         private const val RENDER_DELAY_MS = 2000L
+        private const val STYLE_SCRIPT_TIMEOUT_MS = 5_000L
 
         private var slowDrawEnabled = false
 
@@ -45,8 +48,8 @@ class WebsiteScreenshotService(private val context: Context) {
     // serialize so list auto-capture and manual taps queue instead of piling up.
     private val captureMutex = Mutex()
 
-    suspend fun captureScreenshot(appId: Long, url: String): String? = captureMutex.withLock {
-        captureScreenshotLocked(appId, url)
+    suspend fun captureScreenshot(appId: Long, url: String, app: WebApp? = null): String? = captureMutex.withLock {
+        captureScreenshotLocked(appId, url, app)
     }
 
     fun getScreenshotPath(appId: Long): String {
@@ -57,7 +60,7 @@ class WebsiteScreenshotService(private val context: Context) {
         return File(getScreenshotPath(appId)).exists()
     }
 
-    private suspend fun captureScreenshotLocked(appId: Long, url: String): String? {
+    private suspend fun captureScreenshotLocked(appId: Long, url: String, app: WebApp?): String? {
         val scheme = android.net.Uri.parse(url).scheme?.lowercase(java.util.Locale.ROOT)
         if (scheme != "http" && scheme != "https" && scheme != "file") {
             val invalidUrlMessage = "service skipped invalid url: appId=$appId, url=$url"
@@ -66,7 +69,20 @@ class WebsiteScreenshotService(private val context: Context) {
             return null
         }
 
-        return withContext(Dispatchers.Main) {
+        // Rule parsing and plugin reads overlap the page load. A miss still
+        // captures the raw page; the card must not fail closed.
+        return coroutineScope {
+        val styles = app?.let {
+            async(Dispatchers.IO) {
+                runCatching { PreparedThumbnailStyles.prepare(context, it) }
+                    .onFailure { error ->
+                        AppLogger.w(TAG, "Thumbnail styles skipped: ${error.message}")
+                    }
+                    .getOrNull()
+            }
+        }
+
+        withContext(Dispatchers.Main) {
 
             try {
                 val startMessage = "service start: appId=$appId, url=$url"
@@ -149,6 +165,14 @@ class WebsiteScreenshotService(private val context: Context) {
                 AppLogger.i("ScreenshotFlow", waitMessage)
                 Log.i("ScreenshotFlow", waitMessage)
 
+                val pageUrl = webView.url?.takeIf { it.isNotBlank() } ?: url
+                val styleScript = withContext(Dispatchers.IO) {
+                    styles?.await()?.scriptFor(pageUrl).orEmpty()
+                }
+                if (styleScript.isNotEmpty()) {
+                    evaluatePageScript(webView, styleScript)
+                }
+
                 delay(RENDER_DELAY_MS)
 
                 val path = doCapture(webView, appId)
@@ -164,6 +188,23 @@ class WebsiteScreenshotService(private val context: Context) {
                 Log.e("ScreenshotFlow", exceptionMessage, e)
                 null
             }
+        }
+        }
+    }
+
+    private suspend fun evaluatePageScript(webView: WebView, script: String) {
+        try {
+            withTimeoutOrNull(STYLE_SCRIPT_TIMEOUT_MS) {
+                suspendCancellableCoroutine { cont ->
+                    webView.evaluateJavascript(script) {
+                        if (cont.isActive) cont.resume(Unit)
+                    }
+                }
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            AppLogger.w(TAG, "Thumbnail style script failed: ${e.message}")
         }
     }
 

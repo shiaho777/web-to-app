@@ -51,7 +51,7 @@ internal suspend fun captureAppThumbnail(
     if (liveType != null && com.webtoapp.core.stats.LivePreviewServerLauncher.supports(liveType)) {
         var capturedPath: String? = null
         val started = com.webtoapp.core.stats.LivePreviewServerLauncher.withLiveServer(context, app) { liveUrl ->
-            capturedPath = screenshotService.captureScreenshot(app.id, liveUrl)
+            capturedPath = screenshotService.captureScreenshot(app.id, liveUrl, app)
         }
         if (started && capturedPath != null) {
             return capturedPath
@@ -61,7 +61,7 @@ internal suspend fun captureAppThumbnail(
 
     val fallbackUrl = spec.captureUrl
     if (fallbackUrl != null) {
-        return screenshotService.captureScreenshot(app.id, fallbackUrl)
+        return screenshotService.captureScreenshot(app.id, fallbackUrl, app)
     }
     return null
 }

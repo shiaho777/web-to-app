@@ -1387,7 +1387,8 @@ class AdBlocker {
         context: Context,
         enabled: Boolean,
         customRules: List<String> = emptyList(),
-        subscriptionUrls: List<String> = emptyList()
+        subscriptionUrls: List<String> = emptyList(),
+        refreshSources: Boolean = true
     ) = withContext(Dispatchers.IO) {
         engineMutex.withLock {
             if (!enabled) {
@@ -1404,12 +1405,12 @@ class AdBlocker {
                 loadHostsRules(context)
                 customRules.forEach { parseAndAddRule(it) }
                 setEnabled(true)
-                kickSourceRefresh(context, refreshableKeys(selected))
+                if (refreshSources) kickSourceRefresh(context, refreshableKeys(selected))
                 return@withLock
             }
             reingestSelected(context, selected, customRules)
             setEnabled(true)
-            kickSourceRefresh(context, refreshableKeys(selected))
+            if (refreshSources) kickSourceRefresh(context, refreshableKeys(selected))
         }
     }
 
