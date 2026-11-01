@@ -142,6 +142,37 @@ class WebViewManagerUserAgentAndPolyfillTest {
     }
 
     @Test
+    fun `private network bridge forwards responseType to the native request`() {
+        val script = WebViewManager.PrivateNetworkApiBridgeScriptHolder.SCRIPT
+
+        // Keeping responseType on the wrapper alone leaves the native request on the
+        // default text type, so every binary loader receives a String — which is how a
+        // 62 MB GLB ended up in JSON.parse. The setter has to reach the native XHR.
+        assertThat(script).contains("this._xhr.responseType = value")
+        assertThat(script).contains("get: function() { return this._responseType || ''; }")
+    }
+
+    @Test
+    fun `private network bridge reads responseText only for textual response types`() {
+        val script = WebViewManager.PrivateNetworkApiBridgeScriptHolder.SCRIPT
+
+        // responseText throws for any non-text responseType. The wrapper must decide
+        // from the type instead of reading the getter and catching the throw.
+        assertThat(script).contains("(type === '' || type === 'text')")
+        assertThat(script).doesNotContain("this.responseText = this._xhr.responseText")
+    }
+
+    @Test
+    fun `private network bridge keeps the XHR readyState constants`() {
+        val script = WebViewManager.PrivateNetworkApiBridgeScriptHolder.SCRIPT
+
+        // Replacing window.XMLHttpRequest takes the constructor's constants with it.
+        assertThat(script).contains("BridgedXHR.UNSENT = 0")
+        assertThat(script).contains("BridgedXHR.HEADERS_RECEIVED = 2")
+        assertThat(script).contains("BridgedXHR.DONE = 4")
+    }
+
+    @Test
     fun `chrome scripting polyfill bridges executeScript and css operations`() {
         val script = ChromeExtensionPolyfill.generatePolyfill("ext-test", """{"manifest_version":3}""")
 

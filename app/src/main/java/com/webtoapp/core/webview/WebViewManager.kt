@@ -6884,13 +6884,36 @@ class WebViewManager(
                         });
                     }
 
+                    // responseText is readable only while the native type is '' or
+                    // 'text'; every other type makes that getter throw. Read the type
+                    // first instead of probing it with try/catch: a binary load then
+                    // never touches the throwing getter at all, rather than raising
+                    // and swallowing an InvalidStateError on all four
+                    // readystatechange transitions.
+                    // Replacing window.XMLHttpRequest drops the readyState constants that
+                    // live on the constructor. A page comparing
+                    // `xhr.readyState === XMLHttpRequest.DONE` would compare against
+                    // undefined and never treat the response as complete.
+                    BridgedXHR.UNSENT = 0;
+                    BridgedXHR.OPENED = 1;
+                    BridgedXHR.HEADERS_RECEIVED = 2;
+                    BridgedXHR.LOADING = 3;
+                    BridgedXHR.DONE = 4;
+
                     BridgedXHR.prototype._syncFromNative = function() {
-                        this.readyState = this._xhr.readyState;
-                        this.response = this._xhr.response;
-                        this.responseText = this._xhr.responseText || '';
-                        this.responseURL = this._xhr.responseURL || this._url;
-                        this.status = this._xhr.status || 0;
-                        this.statusText = this._xhr.statusText || '';
+                        var source = this._xhr;
+                        var type = source.responseType || '';
+                        this.readyState = source.readyState;
+                        this.response = source.response;
+                        // No text form exists for binary/json/document, so keep the
+                        // property a stable empty string. A page that probes it gets a
+                        // value instead of an exception; the data is in `response`.
+                        this.responseText = (type === '' || type === 'text')
+                            ? (source.responseText || '')
+                            : '';
+                        this.responseURL = source.responseURL || this._url;
+                        this.status = source.status || 0;
+                        this.statusText = source.statusText || '';
                     };
 
                     BridgedXHR.prototype._dispatch = function(type, sourceEvent) {
@@ -6999,6 +7022,22 @@ class WebViewManager(
                     BridgedXHR.prototype.overrideMimeType = function(mimeType) {
                         if (this._native) return this._xhr.overrideMimeType(mimeType);
                     };
+
+                    // responseType has to be forwarded to the native XHR. Without this
+                    // the wrapper only stores the value on itself, the underlying
+                    // request stays on the default text type, and every binary loader
+                    // (GLTFLoader, fetch->arraybuffer) silently receives a String —
+                    // which is exactly how a 62 MB GLB ends up in JSON.parse.
+                    Object.defineProperty(BridgedXHR.prototype, 'responseType', {
+                        configurable: true,
+                        get: function() { return this._responseType || ''; },
+                        set: function(value) {
+                            this._responseType = value;
+                            if (this._xhr) {
+                                try { this._xhr.responseType = value; } catch (e) { }
+                            }
+                        }
+                    });
 
                     window.XMLHttpRequest = BridgedXHR;
                 }
