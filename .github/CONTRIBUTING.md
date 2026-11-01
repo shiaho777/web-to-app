@@ -64,10 +64,10 @@ python3 .github/scripts/ci/validate_modules.py
   approach you have in mind. This is much cheaper than rewriting after review.
 - **Avoid adding new dependencies.** The lists in `app/build.gradle.kts` and
   `shell/build.gradle.kts` are intentionally restrained — the project signs and
-  packages APKs in-process, and the shell template pins `targetSdk = 28` on
-  purpose because generated apps rely on fork+exec native runtimes. New
-  dependencies need a strong justification, and host-only dependencies must
-  never leak into the shell template.
+  packages APKs in-process, and the shell template serves generated apps that
+  fork+exec native runtimes — those types are pinned to `targetSdk = 28`, below
+  the W^X boundary. New dependencies need a strong justification, and host-only
+  dependencies must never leak into the shell template.
 
 ### Local setup
 
@@ -308,9 +308,9 @@ python3 .github/scripts/ci/validate_modules.py
   类似讨论
 - 较大的改动请先开 issue 说明要解决的问题和方案
 - **谨慎引入新依赖**。`app/build.gradle.kts` 与 `shell/build.gradle.kts` 的依
-  赖列表刻意保持精简——本项目全程在设备内签名打包 APK，shell 模板也特意把
-  `targetSdk` 锁在 28，因为生成应用依赖 `fork`、`exec` 原生运行时。新依赖需
-  要充分理由，且宿主专用依赖绝不能漏进 shell 模板。
+  赖列表刻意保持精简——本项目全程在设备内签名打包 APK，shell 模板服务于需要
+  `fork`、`exec` 原生运行时的生成应用(这些类型被钉在 `targetSdk` 28，低于 W^X
+  边界)。新依赖需要充分理由，且宿主专用依赖绝不能漏进 shell 模板。
 
 **本地环境**
 
