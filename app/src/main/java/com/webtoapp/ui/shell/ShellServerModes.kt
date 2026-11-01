@@ -263,15 +263,28 @@ fun HtmlFrontendShellMode(
                     encryptedSite = true
                     val decryptor = com.webtoapp.core.crypto.AssetDecryptor(context)
                     val memorySite = com.webtoapp.core.webview.LocalHttpServer.MemorySite(
-                        readFile = { logical ->
-                            val assetPath = catalog.files[logical] ?: return@MemorySite null
-                            context.assets.open(assetPath).use { input ->
-                                val bytes = input.readBytes()
-                                if (assetPath.endsWith(com.webtoapp.core.crypto.CryptoConstants.ENCRYPTED_EXTENSION)) {
-                                    decryptor.decrypt(bytes)
-                                } else {
-                                    bytes
+                        openFile = openFile@{ logical ->
+                            val assetPath = catalog.files[logical] ?: return@openFile null
+                            if (assetPath.endsWith(com.webtoapp.core.crypto.CryptoConstants.ENCRYPTED_EXTENSION)) {
+                                val asset = decryptor.openEncryptedAsset(assetPath) ?: return@openFile null
+                                com.webtoapp.core.webview.LocalHttpServer.MemorySite.MemoryEntry(
+                                    asset.length,
+                                ) { asset.stream }
+                            } else {
+                                val stream = try {
+                                    context.assets.open(assetPath)
+                                } catch (e: Exception) {
+                                    AppLogger.w("HtmlShell", "读取资源失败: $assetPath (${e.message})")
+                                    return@openFile null
                                 }
+                                val length = try {
+                                    stream.available().toLong()
+                                } catch (e: Exception) {
+                                    -1L
+                                }
+                                com.webtoapp.core.webview.LocalHttpServer.MemorySite.MemoryEntry(
+                                    length,
+                                ) { stream }
                             }
                         },
                         directories = catalog.directories,

@@ -74,6 +74,26 @@ class SecureAssetLoader(private val context: Context) {
         return loadAsset(assetPath).inputStream()
     }
 
+    /**
+     * Opens an asset as a decrypted stream instead of a ByteArray.
+     *
+     * Callers that hand the bytes to something which reads incrementally
+     * (`WebResourceResponse`, `MediaPlayer`, file copies) must use this: a
+     * whole-buffer load of a 62 MB model allocates roughly four times its size
+     * and OOM-kills the shell. Small, frequently re-read assets should stay on
+     * [loadAsset], which caches them.
+     */
+    fun openAssetStream(assetPath: String): InputStream? {
+        val encryptedPath = assetPath + CryptoConstants.ENCRYPTED_EXTENSION
+        decryptor.openEncryptedAsset(encryptedPath)?.let { return it.stream }
+        return try {
+            context.assets.open(assetPath)
+        } catch (e: Exception) {
+            AppLogger.d(TAG, "资源不存在: $assetPath (${e.message})")
+            null
+        }
+    }
+
     fun assetExists(assetPath: String): Boolean {
         return decryptor.assetExists(assetPath)
     }

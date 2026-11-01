@@ -632,10 +632,19 @@ fun ShellGalleryVideoPlayer(
                     }
                 } else {
 
-                    val videoBytes = assetDecryptor.loadAsset(item.assetPath)
+                    // Decrypt straight into the temp file: buffering a whole
+                    // video in the heap is what OOM-killed the shell.
+                    val encryptedPath =
+                        item.assetPath + com.webtoapp.core.crypto.CryptoConstants.ENCRYPTED_EXTENSION
+                    val decrypted = assetDecryptor.openEncryptedAsset(encryptedPath)
+                        ?: throw java.io.IOException("加密视频不可读: $encryptedPath")
                     val ext = item.assetPath.substringAfterLast('.', "mp4")
                     val tempFile = java.io.File(context.cacheDir, "gallery_video_${System.currentTimeMillis()}.$ext")
-                    tempFile.writeBytes(videoBytes)
+                    decrypted.stream.use { input ->
+                        tempFile.outputStream().use { output ->
+                            input.copyTo(output, 64 * 1024)
+                        }
+                    }
                     tempVideoFile = tempFile
                     withContext(Dispatchers.Main) {
                         mediaPlayer.setDataSource(tempFile.absolutePath)

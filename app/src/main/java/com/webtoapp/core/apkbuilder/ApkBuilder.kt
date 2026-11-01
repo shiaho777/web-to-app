@@ -1963,8 +1963,14 @@ class ApkBuilder(private val context: Context) {
                             fileHook = if (encryptionConfig.enabled && assetEncryptor != null) {
                                 { zo, assetPath, file ->
                                     val assetName = assetPath.removePrefix("assets/")
-                                    val encryptedData = assetEncryptor.encrypt(file.readBytes(), assetName)
-                                    ZipUtils.writeEntryDeflated(zo, "${assetPath}.enc", encryptedData)
+                                    val entry = java.util.zip.ZipEntry("${assetPath}.enc")
+                                    entry.method = java.util.zip.ZipEntry.DEFLATED
+                                    zo.putNextEntry(entry)
+                                    val written = file.inputStream().buffered().use { input ->
+                                        assetEncryptor.encryptStreaming(input, assetName, zo)
+                                    }
+                                    zo.closeEntry()
+                                    logger.log("File encrypted: ${assetPath}.enc ($written bytes)")
                                     true
                                 }
                             } else null
@@ -2138,9 +2144,10 @@ class ApkBuilder(private val context: Context) {
 
                 if (isVideo && fileSize > largeFileThreshold) {
                     AppLogger.d("ApkBuilder", "Splash large video encryption mode: ${fileSize / 1024 / 1024} MB")
-                    val encryptedData = encryptLargeFile(mediaFile, assetPath, encryptor)
-                    writeEntryDeflated(zipOut, "assets/${assetPath}.enc", encryptedData)
-                    AppLogger.d("ApkBuilder", "Splash media encrypted and embedded: assets/${assetPath}.enc (${encryptedData.size} bytes)")
+                    val written = writeEncryptedFileEntry(
+                        zipOut, "assets/${assetPath}.enc", mediaFile, assetPath, encryptor
+                    )
+                    AppLogger.d("ApkBuilder", "Splash media encrypted and embedded: assets/${assetPath}.enc ($written bytes)")
                 } else {
                     val mediaBytes = mediaFile.readBytes()
                     val encryptedData = encryptor.encrypt(mediaBytes, assetPath)
@@ -2415,9 +2422,10 @@ class ApkBuilder(private val context: Context) {
                 if (fileSize > largeFileThreshold) {
                     AppLogger.d("ApkBuilder", "Large file encryption mode: ${fileSize / 1024 / 1024} MB")
 
-                    val encryptedData = encryptLargeFile(mediaFile, assetName, encryptor)
-                    writeEntryDeflated(zipOut, "assets/${assetName}.enc", encryptedData)
-                    AppLogger.d("ApkBuilder", "Media content encrypted and embedded: assets/${assetName}.enc (${encryptedData.size} bytes)")
+                    val written = writeEncryptedFileEntry(
+                        zipOut, "assets/${assetName}.enc", mediaFile, assetName, encryptor
+                    )
+                    AppLogger.d("ApkBuilder", "Media content encrypted and embedded: assets/${assetName}.enc ($written bytes)")
                 } else {
                     val mediaBytes = mediaFile.readBytes()
                     val encryptedData = encryptor.encrypt(mediaBytes, assetName)
@@ -2471,8 +2479,9 @@ class ApkBuilder(private val context: Context) {
 
                 if (encryptionConfig.enabled && encryptor != null) {
                     if (isVideo && fileSize > largeFileThreshold) {
-                        val encryptedData = encryptLargeFile(mediaFile, assetName, encryptor)
-                        writeEntryDeflated(zipOut, "assets/${assetName}.enc", encryptedData)
+                        writeEncryptedFileEntry(
+                            zipOut, "assets/${assetName}.enc", mediaFile, assetName, encryptor
+                        )
                     } else {
                         val data = mediaFile.readBytes()
                         val encrypted = encryptor.encrypt(data, assetName)
@@ -3138,15 +3147,32 @@ builtins.__import__ = _w2a_import
         RuntimeAssetEmbedder.embedProjectFiles(zipOut, projectDir, RuntimeAssetEmbedder.frontendConfig(), logger)
     }
 
-    private fun encryptLargeFile(file: File, assetName: String, encryptor: AssetEncryptor): ByteArray {
-        val fileSize = file.length()
-        val maxEncryptSize = 100L * 1024 * 1024
-        if (fileSize > maxEncryptSize) {
-            AppLogger.w("ApkBuilder", "WARNING: Encrypting very large file ($assetName, ${fileSize / 1024 / 1024}MB). " +
-                "May cause high memory usage. Consider disabling encryption for large media files.")
+    /**
+     * Encrypts [file] straight into a deflated zip entry, header and GCM tag
+     * included. The previous whole-buffer helper allocated roughly four times
+     * the file size (bytes, header copy, IV-stripped copy, ciphertext), so a
+     * 200 MB video export could OOM the builder. This streams through a 64 KB
+     * window instead.
+     */
+    private fun writeEncryptedFileEntry(
+        zipOut: ZipOutputStream,
+        entryName: String,
+        file: File,
+        assetName: String,
+        encryptor: AssetEncryptor,
+    ): Long {
+        val entry = java.util.zip.ZipEntry(entryName)
+        entry.method = java.util.zip.ZipEntry.DEFLATED
+        zipOut.putNextEntry(entry)
+        val written = try {
+            file.inputStream().buffered().use { input ->
+                encryptor.encryptStreaming(input, assetName, zipOut)
+            }
+        } finally {
+            // Never let a close failure mask the real encryption error.
+            runCatching { zipOut.closeEntry() }
         }
-        val mediaBytes = file.readBytes()
-        return encryptor.encrypt(mediaBytes, assetName)
+        return written
     }
 
     private fun isTextFile(fileName: String): Boolean {
@@ -3391,22 +3417,22 @@ builtins.__import__ = _w2a_import
         otherFiles.forEach { otherFile ->
             try {
                 val sourceFile = File(otherFile.path)
-                if (sourceFile.exists() && sourceFile.canRead()) {
-                    val fileBytes = sourceFile.readBytes()
-                    if (fileBytes.isNotEmpty()) {
-                        val assetPath = "assets/html/${otherFile.name}"
-                        val assetName = "html/${otherFile.name}"
+                if (sourceFile.exists() && sourceFile.canRead() && sourceFile.length() > 0L) {
+                    val assetPath = "assets/html/${otherFile.name}"
+                    val assetName = "html/${otherFile.name}"
 
-                        if (encryptionConfig.enabled && encryptor != null) {
-                            val encryptedData = encryptor.encrypt(fileBytes, assetName)
-                            writeEntryDeflated(zipOut, "${assetPath}.enc", encryptedData)
-                            AppLogger.d("ApkBuilder", "Other file encrypted and embedded: ${assetPath}.enc (${encryptedData.size} bytes)")
-                        } else {
-                            writeEntryDeflated(zipOut, assetPath, fileBytes)
-                            AppLogger.d("ApkBuilder", "Other file embedded: $assetPath (${fileBytes.size} bytes)")
-                        }
-                        successCount++
+                    if (encryptionConfig.enabled && encryptor != null) {
+                        // "Other files" are images, fonts and models — they can be
+                        // arbitrarily large, so never buffer them whole.
+                        val written = writeEncryptedFileEntry(
+                            zipOut, "${assetPath}.enc", sourceFile, assetName, encryptor
+                        )
+                        AppLogger.d("ApkBuilder", "Other file encrypted and embedded: ${assetPath}.enc ($written bytes)")
+                    } else {
+                        ZipUtils.writeEntryDeflatedStreaming(zipOut, assetPath, sourceFile)
+                        AppLogger.d("ApkBuilder", "Other file embedded: $assetPath (${sourceFile.length()} bytes)")
                     }
+                    successCount++
                 }
             } catch (e: Exception) {
                 AppLogger.e("ApkBuilder", "Failed to embed other file: ${otherFile.path}", e)
