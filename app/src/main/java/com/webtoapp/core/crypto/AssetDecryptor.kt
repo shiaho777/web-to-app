@@ -7,11 +7,27 @@ import com.google.gson.annotations.SerializedName
 import java.io.InputStream
 import javax.crypto.SecretKey
 
+/**
+ * A decrypted asset served straight off the APK: [length] is the plaintext size
+ * (`-1` when the header did not yield one) and [stream] decrypts as it is read.
+ */
+class DecryptedAsset internal constructor(
+    val length: Long,
+    val stream: InputStream,
+) : java.io.Closeable {
+    override fun close() {
+        try { stream.close() } catch (_: Exception) {}
+    }
+}
+
 class AssetDecryptor(private val context: Context) {
 
     companion object {
         private const val TAG = "AssetDecryptor"
         private const val ENCRYPTION_META_FILE = "encryption_meta.json"
+
+        /** Longest asset path the encrypted header may carry. */
+        private const val MAX_EMBEDDED_PATH_LENGTH = 1024
 
         private val sharedPasswordLock = Any()
         @Volatile
@@ -155,6 +171,79 @@ class AssetDecryptor(private val context: Context) {
         }
     }
 
+    /**
+     * Opens an encrypted asset as a decrypted stream instead of a ByteArray.
+     *
+     * The header (path length, AAD, IV) is parsed eagerly so [DecryptedAsset.length]
+     * — the plaintext size the HTTP layer needs for `Content-Length` — is known
+     * without decrypting anything. The body is then decrypted on demand, which
+     * keeps a 60 MB model at a 64 KB heap footprint instead of ~4x its size.
+     *
+     * Returns null when the asset is missing or its header is malformed; a body
+     * that fails GCM authentication surfaces later, on the last read.
+     */
+    fun openEncryptedAsset(assetPath: String): DecryptedAsset? {
+        val source = try {
+            context.assets.open(assetPath)
+        } catch (e: Exception) {
+            AppLogger.d(TAG, "加密资源不存在: $assetPath (${e.message})")
+            return null
+        }
+
+        var handedOff = false
+        try {
+            val header = ByteArray(4)
+            readFully(source, header)
+
+            val pathLength = ((header[0].toInt() and 0xFF) shl 24) or
+                    ((header[1].toInt() and 0xFF) shl 16) or
+                    ((header[2].toInt() and 0xFF) shl 8) or
+                    (header[3].toInt() and 0xFF)
+
+            if (pathLength < 0 || pathLength > MAX_EMBEDDED_PATH_LENGTH) {
+                AppLogger.e(TAG, "加密资源路径长度非法: $assetPath ($pathLength)")
+                return null
+            }
+
+            val associatedData = ByteArray(pathLength)
+            readFully(source, associatedData)
+
+            val iv = ByteArray(CryptoConstants.AES_GCM_IV_SIZE)
+            readFully(source, iv)
+
+            // available() on an AssetInputStream is the remaining *decoded* byte
+            // count, so the plaintext length is exact without touching the body.
+            val remaining = try {
+                source.available().toLong()
+            } catch (e: Exception) {
+                -1L
+            }
+            val tagBytes = (CryptoConstants.AES_GCM_TAG_SIZE / 8).toLong()
+            val plainLength = if (remaining >= tagBytes) remaining - tagBytes else -1L
+
+            val cipher = AesCryptoEngine.newDecryptCipher(getKey(), iv, associatedData)
+            val stream = AesCryptoEngine.GcmDecryptingInputStream(source, cipher)
+            handedOff = true
+            return DecryptedAsset(plainLength, stream)
+        } catch (e: Exception) {
+            AppLogger.e(TAG, "打开加密资源失败: $assetPath", e)
+            return null
+        } finally {
+            if (!handedOff) {
+                try { source.close() } catch (_: Exception) {}
+            }
+        }
+    }
+
+    private fun readFully(input: InputStream, target: ByteArray) {
+        var offset = 0
+        while (offset < target.size) {
+            val read = input.read(target, offset, target.size - offset)
+            if (read < 0) throw java.io.EOFException("加密资源头部不完整")
+            offset += read
+        }
+    }
+
     fun decryptToString(encryptedData: ByteArray): String {
         return String(decrypt(encryptedData), Charsets.UTF_8)
     }
@@ -254,7 +343,7 @@ class AssetDecryptor(private val context: Context) {
                 ((data[2].toInt() and 0xFF) shl 8) or
                 (data[3].toInt() and 0xFF)
 
-        if (pathLength < 0 || pathLength > 1024) {
+        if (pathLength < 0 || pathLength > MAX_EMBEDDED_PATH_LENGTH) {
             throw CryptoException(Strings.cryptoInvalidPathLength.format(pathLength))
         }
 

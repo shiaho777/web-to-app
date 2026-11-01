@@ -6,6 +6,8 @@ import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.DataInputStream
 import java.io.DataOutputStream
+import java.io.InputStream
+import java.io.OutputStream
 import java.security.SecureRandom
 import java.util.concurrent.ConcurrentHashMap
 import javax.crypto.Cipher
@@ -150,6 +152,184 @@ object AesCryptoEngine {
             throw CryptoException(Strings.cryptoDecryptFailed.format(e.message), e)
         }
     }
+
+    /**
+     * Builds a GCM decryption cipher for streaming use. The IV is passed
+     * separately because streaming callers read it off the asset header.
+     */
+    fun newDecryptCipher(
+        secretKey: SecretKey,
+        iv: ByteArray,
+        associatedData: ByteArray?
+    ): Cipher {
+        val cipher = Cipher.getInstance(ALGORITHM)
+        cipher.init(
+            Cipher.DECRYPT_MODE,
+            secretKey,
+            GCMParameterSpec(CryptoConstants.AES_GCM_TAG_SIZE, iv)
+        )
+        associatedData?.let { cipher.updateAAD(it) }
+        return cipher
+    }
+
+    /** Builds a GCM encryption cipher for streaming use. */
+    fun newEncryptCipher(
+        secretKey: SecretKey,
+        iv: ByteArray,
+        associatedData: ByteArray?
+    ): Cipher {
+        val cipher = Cipher.getInstance(ALGORITHM)
+        cipher.init(
+            Cipher.ENCRYPT_MODE,
+            secretKey,
+            GCMParameterSpec(CryptoConstants.AES_GCM_TAG_SIZE, iv)
+        )
+        associatedData?.let { cipher.updateAAD(it) }
+        return cipher
+    }
+
+    /** Fresh random IV for a streaming encrypt. */
+    fun newRandomIv(): ByteArray =
+        ByteArray(CryptoConstants.AES_GCM_IV_SIZE).also { secureRandom.nextBytes(it) }
+
+    /**
+     * Encrypts [plain] chunk by chunk into [sink]. The GCM tag is appended by
+     * the final [Cipher.doFinal], so [sink] receives ciphertext + tag.
+     */
+    fun encryptStreaming(
+        plain: InputStream,
+        cipher: Cipher,
+        sink: OutputStream,
+        bufferSize: Int = DEFAULT_STREAM_BUFFER_SIZE
+    ): Long {
+        val buffer = ByteArray(bufferSize)
+        var total = 0L
+
+        while (true) {
+            val read = plain.read(buffer)
+            if (read < 0) break
+            if (read == 0) continue
+            val chunk = cipher.update(buffer, 0, read)
+            if (chunk != null && chunk.isNotEmpty()) {
+                sink.write(chunk)
+                total += chunk.size
+            }
+        }
+
+        val tail = cipher.doFinal()
+        if (tail.isNotEmpty()) {
+            sink.write(tail)
+            total += tail.size
+        }
+        sink.flush()
+        return total
+    }
+
+    /**
+     * Decrypts [encrypted] chunk by chunk into [sink] instead of materialising
+     * the plaintext in the heap. A 60 MB asset costs a [bufferSize]-sized array
+     * plus whatever the cipher hands back per chunk.
+     *
+     * GCM authenticates only at [Cipher.doFinal], which runs after the last
+     * chunk has already been written. A tampered asset therefore leaves partial
+     * plaintext in [sink]; callers must discard their output when this throws.
+     */
+    fun decryptStreaming(
+        encrypted: InputStream,
+        secretKey: SecretKey,
+        iv: ByteArray,
+        associatedData: ByteArray?,
+        sink: OutputStream,
+        bufferSize: Int = DEFAULT_STREAM_BUFFER_SIZE
+    ): Long {
+        val cipher = newDecryptCipher(secretKey, iv, associatedData)
+        val buffer = ByteArray(bufferSize)
+        var total = 0L
+
+        while (true) {
+            val read = encrypted.read(buffer)
+            if (read < 0) break
+            if (read == 0) continue
+            val chunk = cipher.update(buffer, 0, read)
+            if (chunk != null && chunk.isNotEmpty()) {
+                sink.write(chunk)
+                total += chunk.size
+            }
+        }
+
+        val tail = cipher.doFinal()
+        if (tail.isNotEmpty()) {
+            sink.write(tail)
+            total += tail.size
+        }
+        sink.flush()
+        return total
+    }
+
+    /**
+     * Wraps an already-initialised GCM decrypt cipher as a stream. The tag sits
+     * at the very end of the ciphertext, so the final [Cipher.doFinal] runs on
+     * the last read and is where a corrupted asset surfaces as an exception.
+     */
+    internal class GcmDecryptingInputStream(
+        private val source: InputStream,
+        private val cipher: Cipher,
+        private val bufferSize: Int = DEFAULT_STREAM_BUFFER_SIZE
+    ) : InputStream() {
+
+        private val cipherTextBuffer = ByteArray(bufferSize)
+        private var plainBuffer: ByteArray? = null
+        private var plainOffset = 0
+        private var sourceExhausted = false
+
+        override fun read(): Int {
+            val single = ByteArray(1)
+            return if (read(single, 0, 1) == -1) -1 else single[0].toInt() and 0xFF
+        }
+
+        override fun read(b: ByteArray, off: Int, len: Int): Int {
+            if (len == 0) return 0
+            while (true) {
+                val buffered = plainBuffer
+                if (buffered != null) {
+                    if (plainOffset < buffered.size) {
+                        val count = minOf(len, buffered.size - plainOffset)
+                        System.arraycopy(buffered, plainOffset, b, off, count)
+                        plainOffset += count
+                        return count
+                    }
+                    plainBuffer = null
+                    plainOffset = 0
+                }
+                if (sourceExhausted) return -1
+
+                val read = source.read(cipherTextBuffer)
+                if (read < 0) {
+                    sourceExhausted = true
+                    val tail = cipher.doFinal()
+                    if (tail.isEmpty()) return -1
+                    plainBuffer = tail
+                    continue
+                }
+                if (read == 0) continue
+
+                val plain = cipher.update(cipherTextBuffer, 0, read)
+                if (plain == null || plain.isEmpty()) continue
+                plainBuffer = plain
+            }
+        }
+
+        override fun available(): Int {
+            val buffered = plainBuffer
+            return if (buffered == null) 0 else buffered.size - plainOffset
+        }
+
+        override fun close() {
+            source.close()
+        }
+    }
+
+    private const val DEFAULT_STREAM_BUFFER_SIZE = 64 * 1024
 
     fun deriveKey(password: String, salt: ByteArray): SecretKey {
         return deriveKey(password, salt, CryptoConstants.PBKDF2_ITERATIONS)

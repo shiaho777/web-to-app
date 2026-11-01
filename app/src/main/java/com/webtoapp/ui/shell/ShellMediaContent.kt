@@ -168,9 +168,16 @@ fun ShellSplashOverlay(
 
                                             AppLogger.d("ShellSplash", "检测到加密启动画面视频")
                                             val decryptor = com.webtoapp.core.crypto.AssetDecryptor(ctx)
-                                            val decryptedData = decryptor.loadAsset(assetPath)
+                                            // Stream into the temp file; buffering a splash
+                                            // video whole is the same OOM that hit media/video.
+                                            val decrypted = decryptor.openEncryptedAsset(encryptedPath)
+                                                ?: throw java.io.IOException("加密启动视频不可读: $encryptedPath")
                                             val tempFile = java.io.File(ctx.cacheDir, "splash_video_${System.currentTimeMillis()}.mp4")
-                                            tempFile.writeBytes(decryptedData)
+                                            decrypted.stream.use { input ->
+                                                tempFile.outputStream().use { output ->
+                                                    input.copyTo(output, 64 * 1024)
+                                                }
+                                            }
                                             tempVideoFile = tempFile
 
                                             mediaPlayer = android.media.MediaPlayer().apply {
@@ -394,9 +401,16 @@ fun MediaContentDisplay(
                     if (hasEncrypted) {
                         AppLogger.d("MediaContent", "检测到加密媒体视频")
                         val decryptor = com.webtoapp.core.crypto.AssetDecryptor(context)
-                        val decryptedData = decryptor.loadAsset(assetPath)
+                        // Decrypt straight into the temp file: a whole-buffer
+                        // decrypt of a long video is what OOM-killed the shell.
+                        val decrypted = decryptor.openEncryptedAsset(encryptedPath)
+                            ?: throw java.io.IOException("加密视频不可读: $encryptedPath")
                         val tempFile = java.io.File(context.cacheDir, "media_video_${System.currentTimeMillis()}.mp4")
-                        tempFile.writeBytes(decryptedData)
+                        decrypted.stream.use { input ->
+                            tempFile.outputStream().use { output ->
+                                input.copyTo(output, 64 * 1024)
+                            }
+                        }
                         tempVideoFile = tempFile
 
                         mediaPlayer = android.media.MediaPlayer().apply {

@@ -269,12 +269,27 @@ private fun writeAssetFile(
 
     if (isEncrypted) {
         try {
-            val encryptedBytes = context.assets.open(assetPath).use { it.readBytes() }
-            val decrypted = decryptor.decrypt(encryptedBytes)
-            destFile.outputStream().use { it.write(decrypted) }
+            val asset = decryptor.openEncryptedAsset(assetPath)
+                ?: throw java.io.IOException("无法打开加密资源: $assetPath")
+            var written = 0L
+            asset.stream.use { input ->
+                destFile.outputStream().use { output ->
+                    val buffer = ByteArray(COPY_BUFFER_SIZE)
+                    while (true) {
+                        val read = input.read(buffer)
+                        if (read < 0) break
+                        if (read == 0) continue
+                        output.write(buffer, 0, read)
+                        written += read
+                    }
+                }
+            }
+            if (asset.length >= 0 && written != asset.length) {
+                throw java.io.IOException("解密长度不符: 期望 ${asset.length}, 实际 $written")
+            }
             AppLogger.d(
                 "extractAssets",
-                "  解密文件: $assetPath -> ${destFile.name} (${decrypted.size} bytes)"
+                "  解密文件: $assetPath -> ${destFile.name} ($written bytes)"
             )
             return
         } catch (e: Exception) {
@@ -284,6 +299,7 @@ private fun writeAssetFile(
                 e
             )
 
+            destFile.delete()
         }
     }
 
@@ -294,3 +310,6 @@ private fun writeAssetFile(
         }
     }
 }
+
+/** Copy window for asset extraction; keeps large assets off the heap. */
+private const val COPY_BUFFER_SIZE = 64 * 1024

@@ -3842,16 +3842,19 @@ class WebViewManager(
                 return null
             }
 
-            val data = secureLoader.loadAsset(assetPath)
             val mimeType = getMimeType(assetPath)
             val encoding = if (isTextMimeType(mimeType)) "UTF-8" else null
 
-            AppLogger.d("WebViewManager", "Load resource: $assetPath (${data.size} bytes, $mimeType)")
+            // Stream rather than buffer: a packaged static asset can be a
+            // multi-megabyte model or video, and WebView reads it incrementally.
+            val stream = secureLoader.openAssetStream(assetPath) ?: return null
+
+            AppLogger.d("WebViewManager", "Load resource (stream): $assetPath ($mimeType)")
 
             WebResourceResponse(
                 mimeType,
                 encoding,
-                ByteArrayInputStream(data)
+                stream
             )
         } catch (e: Exception) {
             AppLogger.e("WebViewManager", "Failed to load resource: $assetPath", e)

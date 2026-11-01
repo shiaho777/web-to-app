@@ -299,12 +299,20 @@ class BgmPlayer(private val context: Context) {
 
             try {
 
-                val decryptedData = assetDecryptor.loadAsset(assetPath)
+                // Stream into the temp file; buffering a long track whole is the
+                // same OOM that hit media and gallery video.
                 val tempFile = File(context.cacheDir, "bgm_${assetPath.hashCode()}.mp3")
-                tempFile.writeBytes(decryptedData)
+                val decrypted = assetDecryptor.openEncryptedAsset(
+                    assetPath + com.webtoapp.core.crypto.CryptoConstants.ENCRYPTED_EXTENSION
+                ) ?: throw java.io.IOException("BGM 资源不可读: $assetPath")
+                decrypted.stream.use { input ->
+                    tempFile.outputStream().use { output ->
+                        input.copyTo(output, 64 * 1024)
+                    }
+                }
                 tempFileCache[assetPath] = tempFile
 
-                AppLogger.d(TAG, "BGM已解密到临时文件: ${tempFile.absolutePath} (${decryptedData.size} bytes)")
+                AppLogger.d(TAG, "BGM已解密到临时文件: ${tempFile.absolutePath} (${tempFile.length()} bytes)")
                 player.setDataSource(tempFile.absolutePath)
             } catch (e: Exception) {
                 AppLogger.e(TAG, "解密BGM失败: $assetPath", e)

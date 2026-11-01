@@ -24,6 +24,9 @@ class LocalHttpServer(
         private const val TAG = "LocalHttpServer"
         private const val LOOPBACK_HOST = "127.0.0.1"
 
+        /** Copy window for streamed responses; keeps large assets off the heap. */
+        private const val STREAM_BUFFER_SIZE = 64 * 1024
+
         @Volatile
         private var instance: LocalHttpServer? = null
 
@@ -64,14 +67,25 @@ class LocalHttpServer(
     }
 
     /**
-     * Decrypted bytes for one request. The site root stays in the APK; nothing
-     * from [read] is written to disk.
+     * A site that lives inside the APK and is decrypted per request. Nothing
+     * from [open] is written to disk, and nothing is buffered whole — a 60 MB
+     * model streams out through a 64 KB window.
      */
     class MemorySite(
-        private val readFile: (String) -> ByteArray?,
+        private val openFile: (String) -> MemoryEntry?,
         private val directories: Set<String>,
     ) {
-        fun read(path: String): ByteArray? = readFile(path)
+        /**
+         * One served file. [length] is the plaintext size in bytes, or `-1`
+         * when the source cannot report it (the response then closes the
+         * connection to delimit the body instead of sending Content-Length).
+         */
+        class MemoryEntry(
+            val length: Long,
+            val openStream: () -> InputStream,
+        )
+
+        fun open(path: String): MemoryEntry? = openFile(path)
         fun isDirectory(path: String): Boolean = path.isEmpty() || directories.contains(path)
     }
 
@@ -398,14 +412,14 @@ class LocalHttpServer(
             return
         }
         val direct = if (relative.isEmpty()) "index.html" else relative
-        site.read(direct)?.let { bytes ->
-            sendBytes(output, direct.substringAfterLast('/'), bytes)
+        site.open(direct)?.let { entry ->
+            sendEntry(output, direct.substringAfterLast('/'), entry)
             return
         }
         if (site.isDirectory(relative)) {
             val index = if (relative.isEmpty()) "index.html" else "$relative/index.html"
-            site.read(index)?.let { bytes ->
-                sendBytes(output, "index.html", bytes)
+            site.open(index)?.let { entry ->
+                sendEntry(output, "index.html", entry)
                 return
             }
             sendError(output, 403, "Forbidden")
@@ -413,20 +427,21 @@ class LocalHttpServer(
         }
         val leaf = direct.substringAfterLast('/')
         if (!leaf.contains('.')) {
-            site.read("index.html")?.let { bytes ->
-                sendBytes(output, "index.html", bytes)
+            site.open("index.html")?.let { entry ->
+                sendEntry(output, "index.html", entry)
                 return
             }
         }
         sendError(output, 404, "Not Found")
     }
 
-    private fun sendBytes(output: OutputStream, fileName: String, bytes: ByteArray) {
+    private fun sendEntry(output: OutputStream, fileName: String, entry: MemorySite.MemoryEntry) {
         val mimeType = getMimeType(fileName)
         val headers = buildString {
             append("HTTP/1.1 200 OK\r\n")
             append("Content-Type: $mimeType\r\n")
-            append("Content-Length: ${bytes.size}\r\n")
+            if (entry.length >= 0) append("Content-Length: ${entry.length}\r\n")
+            append("Accept-Ranges: none\r\n")
             append("Access-Control-Allow-Origin: ${buildLoopbackBaseUrl(actualPort)}\r\n")
             append("Access-Control-Allow-Methods: GET, HEAD, OPTIONS\r\n")
             append("Access-Control-Allow-Headers: *\r\n")
@@ -444,8 +459,24 @@ class LocalHttpServer(
             append("\r\n")
         }
         output.write(headers.toByteArray())
-        output.write(bytes)
         output.flush()
+
+        var written = 0L
+        entry.openStream().use { input ->
+            val buffer = ByteArray(STREAM_BUFFER_SIZE)
+            while (true) {
+                val read = input.read(buffer)
+                if (read < 0) break
+                if (read == 0) continue
+                output.write(buffer, 0, read)
+                written += read
+            }
+        }
+        output.flush()
+
+        if (entry.length >= 0 && written != entry.length) {
+            AppLogger.w(TAG, "解密流长度不符: $fileName (声明 ${entry.length}, 实际 $written)")
+        }
     }
 
     private fun sendError(output: OutputStream, code: Int, message: String) {
