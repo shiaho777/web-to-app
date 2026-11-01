@@ -37,7 +37,8 @@
 - 修改 `shell/proguard-rules.pro` 或 shell 打包逻辑后，务必在本地跑一次完整
   `:shell:assembleRelease` + 模板同步验证——CI 的 check 任务只编译 shell 的 debug 变体，
   不覆盖 R8 与模板管线。
-- 生成的 APK 固定 `targetSdk = 28`（fork+exec 运行时的前提），不要随意提升。
+- 生成的 APK 默认继承模板的 `targetSdk` 35；服务端运行时类型（Node.js/PHP/Python/Go/WordPress）
+  在导出时回钉到 28 —— 那是 fork+exec 的前提。分级判定只在 `GeneratedSdkLevels` 一处，不要绕开它。
 - shell 清单中的组件声明（service/receiver）必须与 shell 同步代码保持一致，
   `ShellManifestComponentParityTest` 负责门禁；宿主清单新增 shell 同步包的组件时，
   shell 清单要同步补充。
