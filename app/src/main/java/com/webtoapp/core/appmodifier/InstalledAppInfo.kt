@@ -34,6 +34,8 @@ data class InstalledAppInfo(
 data class AppModifyConfig(
     val originalApp: InstalledAppInfo,
     val newAppName: String,
+    /** User-selected clone package. Blank/null falls back to a generated unique name. */
+    val newPackageName: String? = null,
     val newIconPath: String? = null,
 
     val splashEnabled: Boolean = false,

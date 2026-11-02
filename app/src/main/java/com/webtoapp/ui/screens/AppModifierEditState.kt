@@ -12,6 +12,7 @@ import com.webtoapp.data.model.SplashConfig
 @Stable
 data class AppModifierEditState(
     val newAppName: String = "",
+    val newPackageName: String = "",
     val newIconUri: Uri? = null,
     val newIconPath: String? = null,
 
@@ -33,6 +34,7 @@ data class AppModifierEditState(
         return AppModifyConfig(
             originalApp = originalApp,
             newAppName = newAppName,
+            newPackageName = newPackageName.trim().takeIf { it.isNotBlank() },
             newIconPath = newIconPath ?: newIconUri?.toString(),
             splashEnabled = splashEnabled && !splashConfig.mediaPath.isNullOrBlank(),
             splashConfig = splashConfig,

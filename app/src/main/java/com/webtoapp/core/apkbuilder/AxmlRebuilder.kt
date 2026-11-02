@@ -1570,6 +1570,145 @@ class AxmlRebuilder {
         }
     }
 
+    /**
+     * Replace the launcher label in a binary manifest.
+     *
+     * The App Modifier clone path used to replace the label only inside
+     * `resources.arsc`. That misses a literal `android:label`, an
+     * activity-specific label, and a localized or split string, so the clone
+     * kept the original name (#1459). Set the label on `<application>` (adding
+     * the attribute when absent) and on every launcher activity/alias.
+     *
+     * Returns the input unchanged when the manifest cannot be parsed or the
+     * label cannot be written; the ARSC replacement remains the fallback and a
+     * clone is not aborted for an unusual manifest.
+     */
+    fun setAppLabel(axmlData: ByteArray, label: String): ByteArray {
+        if (label.isBlank()) return axmlData
+        val parsed = parseAxml(axmlData)
+        if (parsed == null) {
+            AppLogger.w(TAG, "setAppLabel: manifest parse failed")
+            return axmlData
+        }
+        return try {
+            val labelAttrIndex = ensureAttrIndex(parsed, ATTR_LABEL, "label")
+            if (labelAttrIndex < 0) return axmlData
+            val labelValueIndex = getOrAddString(parsed.stringPool, label)
+
+            val applicationIndex = findApplicationStartIndex(parsed)
+            if (applicationIndex >= 0) {
+                setOrAddStringAttribute(parsed, applicationIndex, labelAttrIndex, labelValueIndex)
+            } else {
+                AppLogger.w(TAG, "setAppLabel: <application> not found")
+            }
+            setLauncherActivityLabels(parsed, labelAttrIndex, labelValueIndex)
+
+            rebuildAxml(parsed)
+        } catch (e: Exception) {
+            AppLogger.e(TAG, "setAppLabel failed", e)
+            axmlData
+        }
+    }
+
+    /**
+     * Set an existing `android:label`-style string attribute, or append one to
+     * the start element when the page did not declare it.
+     */
+    private fun setOrAddStringAttribute(
+        parsed: ParsedAxml,
+        chunkIndex: Int,
+        attrNameIndex: Int,
+        valueIndex: Int
+    ): Boolean {
+        val chunk = parsed.chunks.getOrNull(chunkIndex) ?: return false
+        if (chunk.type != CHUNK_START_ELEMENT || chunk.data.size < 36) return false
+        val buffer = ByteBuffer.wrap(chunk.data).order(ByteOrder.LITTLE_ENDIAN)
+        val attrStart = buffer.getShort(24).toInt() and 0xFFFF
+        val attrSize = buffer.getShort(26).toInt() and 0xFFFF
+        val attrCount = buffer.getShort(28).toInt() and 0xFFFF
+        if (attrSize < 20) return false
+
+        for (i in 0 until attrCount) {
+            val offset = 16 + attrStart + i * attrSize
+            if (offset + 20 > chunk.data.size) break
+            if (buffer.getInt(offset + 4) != attrNameIndex) continue
+            writeStringAttribute(buffer, offset, valueIndex)
+            return true
+        }
+
+        val newData = chunk.data.copyOf(chunk.data.size + attrSize)
+        val newBuffer = ByteBuffer.wrap(newData).order(ByteOrder.LITTLE_ENDIAN)
+        val newOffset = 16 + attrStart + attrCount * attrSize
+        newBuffer.putInt(newOffset, parsed.stringPool.strings.indexOf(ANDROID_NS))
+        newBuffer.putInt(newOffset + 4, attrNameIndex)
+        writeStringAttribute(newBuffer, newOffset, valueIndex)
+        newBuffer.putInt(4, newData.size)
+        newBuffer.putShort(28, (attrCount + 1).toShort())
+        parsed.chunks[chunkIndex] = chunk.copy(size = newData.size, data = newData)
+        return true
+    }
+
+    private fun writeStringAttribute(buffer: ByteBuffer, offset: Int, valueIndex: Int) {
+        buffer.putInt(offset + 8, valueIndex)
+        buffer.put(offset + 15, TYPE_STRING.toByte())
+        buffer.putInt(offset + 16, valueIndex)
+    }
+
+    /** Label every MAIN/LAUNCHER activity or activity-alias that carries its own label. */
+    private fun setLauncherActivityLabels(
+        parsed: ParsedAxml,
+        labelAttrIndex: Int,
+        valueIndex: Int
+    ) {
+        val nameAttrIndex = parsed.resourceMap?.indexOf(ATTR_NAME) ?: return
+        val componentStack = ArrayDeque<Int>()
+        for (i in parsed.chunks.indices) {
+            val chunk = parsed.chunks[i]
+            val element = readElementName(parsed, chunk) ?: continue
+            if (chunk.type == CHUNK_START_ELEMENT) {
+                when (element) {
+                    "activity", "activity-alias" -> componentStack.addLast(i)
+                    "intent-filter" -> {
+                        if (componentStack.isNotEmpty() &&
+                            hasMainLauncherFilter(parsed, i, nameAttrIndex)
+                        ) {
+                            setOrAddStringAttribute(
+                                parsed,
+                                componentStack.last(),
+                                labelAttrIndex,
+                                valueIndex
+                            )
+                        }
+                    }
+                }
+            } else if (chunk.type == CHUNK_END_ELEMENT &&
+                (element == "activity" || element == "activity-alias")
+            ) {
+                if (componentStack.isNotEmpty()) componentStack.removeLast()
+            }
+        }
+    }
+
+    private fun hasMainLauncherFilter(
+        parsed: ParsedAxml,
+        filterIndex: Int,
+        nameAttrIndex: Int
+    ): Boolean {
+        val end = findMatchingEndElementIndex(parsed, filterIndex)
+        if (end < 0) return false
+        var hasMain = false
+        var hasLauncher = false
+        for (i in (filterIndex + 1) until end) {
+            val chunk = parsed.chunks[i]
+            if (chunk.type != CHUNK_START_ELEMENT) continue
+            val element = readElementName(parsed, chunk) ?: continue
+            val name = readStringAttribute(parsed, chunk, nameAttrIndex) ?: continue
+            if (element == "action" && name == "android.intent.action.MAIN") hasMain = true
+            if (element == "category" && name == "android.intent.category.LAUNCHER") hasLauncher = true
+        }
+        return hasMain && hasLauncher
+    }
+
     fun expandAndModifyFull(
         axmlData: ByteArray,
         originalPackage: String,
