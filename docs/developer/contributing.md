@@ -17,6 +17,7 @@ Thank you for contributing to WebToApp. The canonical contributor guide lives in
 
 - **Do what is right, not the smallest diff.** If a fix calls for refactoring, renaming, or touching multiple files, do it. Match the patterns and conventions already in the surrounding code.
 - **Do not add copyright or license headers** unless asked.
+- **No comments in code.** Do not add line, block, KDoc, Javadoc, XML, or other explanatory comments to source files. Clear names and small functions carry the intent; put the reasoning in the commit message, PR description, or docs. This applies to every source language. Machine-readable directives a tool requires (a userscript metadata block, a shebang, a compiler pragma) are not explanatory comments and stay. Existing comments are legacy debt: remove them when you touch the file; do not add new ones.
 - **Do not commit secrets**, `local.properties`, keystores, or IDE/cache junk.
 - **Prefer a pull request** over direct pushes to `main`.
 - **GitHub Issues and PRs must be written in English** — titles, bodies, and delivery comments. Local chat may be any language.
