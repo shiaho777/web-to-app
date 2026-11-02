@@ -151,9 +151,7 @@ shell composable. Three gates enforce this; run them, don't argue with them:
 WebToApp leans on the Kotlin and Jetpack Compose patterns already in the
 codebase. A few rules worth calling out:
 
-- **Comments explain *why*, not *what*.** Non-obvious decisions, cross-file
-  contracts, and issue references (`#781`) get a short comment; clear names
-  and small functions carry the rest. Don't narrate readable code.
+- **No comments in code.** Do not add line, block, KDoc, Javadoc, XML, or other explanatory comments to source files. Clear names and small functions carry the intent; put the reasoning in the commit message, PR description, or docs. This applies to every source language. Machine-readable directives a tool requires (a userscript metadata block, a shebang, a compiler pragma) are not explanatory comments and stay. Existing comments are legacy debt: remove them when you touch the file; do not add new ones.
 - **Build new UI on the Wta design system.** Everything renders through
   `com.webtoapp.ui.design`. The older `Premium*` / `Enhanced*` / `Settings*`
   components are retained as permanent alias layers over the Wta internals —
@@ -384,9 +382,7 @@ cd web-to-app
 
 **代码风格**
 
-- **注释解释 *为什么*，不复述 *干了什么*。** 反直觉的决策、跨文件约定、
-  issue 引用（`#781`）值得一句短注释；命名清晰的小函数不需要解说。不要给
-  易读的代码写旁白。
+- **代码里不写注释。** 不要给源码添加行注释、块注释、KDoc、Javadoc、XML 注释或其他解释性注释。用清晰的命名和小函数表达意图；原因写在 commit message、PR 描述或文档里。这条规则适用于所有源码语言。工具必需的机器可读指令（油猴脚本元数据块、shebang、编译器 pragma）不算解释性注释，保留。已有注释属于历史债务：修改到该文件时顺手删除，不要新增。
 - **新 UI 一律构建在 Wta 设计系统之上**——所有界面通过 `com.webtoapp.ui.design`
   渲染。旧的 `Premium*` / `Enhanced*` / `Settings*` 组件作为 Wta 内部实现的
   永久别名层保留——不要再新增，也无需强行替换。构建期有一个审计脚本

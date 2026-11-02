@@ -15,6 +15,7 @@ Then judge, from the evidence, whether the problem is worth solving and worth th
 - Do what you believe is right. Make the change complete and correct, not the smallest possible diff. If a fix calls for refactoring, renaming, or touching multiple files, do it.
 - Fix root causes, not symptoms. Do not paper over a defect with catch-and-swallow, degraded fallbacks, or UI workarounds that leave the underlying behavior broken. Trace the failure to where it originates and repair it there — even when that is harder.
 - Match the patterns and conventions already in the surrounding code.
+- **No comments in code.** Do not add line, block, KDoc, Javadoc, XML, or other explanatory comments to source files. Clear names and small functions carry the intent; put the reasoning in the commit message, PR description, or documentation. This applies to every source language. Machine-readable directives that a tool requires (a userscript metadata block, a shebang, a compiler pragma) are not explanatory comments and stay. Existing comments are legacy debt: remove them when you touch the file; do not add new ones.
 - Do not add copyright or license headers unless asked.
 
 ## Project layout
@@ -278,7 +279,7 @@ Checklist when touching a feature that an Agent tool wraps:
 2. **`parametersSchema` ↔ `execute()` alignment.** The JSON schema advertised to the LLM must match what `execute()` actually reads from `args`. Adding a parameter to the service call without exposing it in the schema means the LLM can never pass it.
 3. **`description` accuracy.** The LLM decides *when* and *how* to call a tool solely from `description` + `parametersSchema`. If the feature's behavior changed, update the description text — a misleading description causes silent misuse.
 4. **`isReadOnly()` correctness.** `true` → runs without user confirmation; `false` → triggers `PermissionPrompter` dialog. If a tool gains write side-effects, flip it to `false`.
-5. **Registration.** New tools must be added to `ToolRegistryFactory.baseTools()` (grouped by domain comment). Forgotten registration = tool invisible to the LLM.
+5. **Registration.** New tools must be added to `ToolRegistryFactory.baseTools()` (grouped by domain). Forgotten registration = tool invisible to the LLM.
 6. **Removed features.** If a feature is deleted, remove or disable its tool. A tool that calls a dead class crashes at runtime inside the agent loop.
 7. **Host-only.** Agent tools live under `core/agent/` and are never shell-synced. Do not add them to `syncShellRuntimeSources`.
 
