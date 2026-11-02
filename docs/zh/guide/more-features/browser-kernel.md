@@ -25,6 +25,7 @@ GeckoView 是独立于系统 WebView 的完整第二引擎,而不是 WebView 的
 - UA 模式与自定义 User-Agent、桌面模式
 - JavaScript 开关、自动播放策略、视口模式(适应屏幕 / 桌面)、启动时清除浏览数据、下载开关
 - HTTP 下载、全屏视频、文件上传(含拍照)、渲染崩溃自动恢复
+- blob / data: 下载和 HTTP 下载一样保存 —— GeckoView 直接把文件内容交给应用，落到配置的保存位置，文件名和类型都会保留。拦截脚本和大小阈值仍只属于系统 WebView
 - 摄像头 / 麦克风与地理位置授权策略(全部拒绝 / 按主机记住)
 - mTLS 客户端证书、HTTP Basic / 代理认证对话框
 - JS 对话框(alert / confirm / prompt)
@@ -41,7 +42,6 @@ GeckoView 是独立于系统 WebView 的完整第二引擎,而不是 WebView 的
 - **[NativeBridge](/zh/extensions/native-bridge) 完整 JS API** —— 剪贴板、通知、震动、打印、分享、屏幕常亮、屏幕方向、Google 登录等;GeckoView 下仅 CORS 绕过 / 私有网络访问的 `httpRequest` 可用
 - **JS 注入类功能** —— 浏览器指纹伪装、[设备伪装](/zh/guide/app-actions/edit-common-config/device-disguise)、内核伪装与风味、[页面翻译](/zh/guide/app-actions/edit-common-config/translate)、音频解锁、剪贴板 / 通知 / 屏幕方向 polyfill、Cloudflare 兼容辅助、自定义注入脚本、弹窗拦截、滚动位置记忆、图片修复、隐藏链接预览
 - **PWA 离线(Service Worker 注入)、静态资产包、资源加密加载** —— 因此**开启资源加密的 HTML / [前端离线包](/zh/guide/app-types/frontend)类应用必须使用系统 WebView 内核**
-- blob / data: 下载拦截
 - [长按菜单](/zh/guide/app-actions/edit-common-config/long-press-menu)(保存图片 / 视频、复制链接等)
 - 状态栏自动取色(跟随页面顶部颜色;纯色 / 主题模式不受影响)
 - 跟随系统深色模式

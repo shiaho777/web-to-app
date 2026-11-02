@@ -25,6 +25,7 @@ GeckoView is a complete second engine independent of the system WebView, not a W
 - UA modes and custom User-Agent, desktop mode
 - JavaScript toggle, autoplay policy, viewport mode (fit screen / desktop), clear browsing data on launch, download toggle
 - HTTP downloads, fullscreen video, file upload (incl. camera capture), automatic crash recovery
+- blob / data: downloads save like HTTP downloads — GeckoView hands the file body straight to the app, so they land in the configured destination with their filename and type. The interception script and its size threshold stay system-WebView features
 - Camera / microphone and geolocation permission policies (deny all / remember per host)
 - mTLS client certificates, HTTP Basic / proxy auth dialogs
 - JS dialogs (alert / confirm / prompt)
@@ -41,7 +42,6 @@ GeckoView is a complete second engine independent of the system WebView, not a W
 - **The full [NativeBridge](/extensions/native-bridge) JS API** — clipboard, notifications, vibration, printing, sharing, screen wake, orientation, Google sign-in, etc.; on GeckoView only the CORS-bypass / private-network `httpRequest` entry point is available
 - **JS-injection features** — browser fingerprint disguise, [device disguise](/guide/app-actions/edit-common-config/device-disguise), kernel disguise & flavors, [page translation](/guide/app-actions/edit-common-config/translate), audio unlock, clipboard / notification / orientation polyfills, Cloudflare compatibility helpers, custom injected scripts, popup blocking, scroll-position memory, image repair, hide-link-preview
 - **PWA offline (service-worker injection), static asset packs, encrypted asset loading** — therefore **HTML / [front-end offline-package](/guide/app-types/frontend) apps with resource encryption enabled must use the system WebView kernel**
-- blob / data: download interception
 - The [long-press menu](/guide/app-actions/edit-common-config/long-press-menu) (save image/video, copy link, etc.)
 - Status-bar auto color sampling (follow page-top color; solid-color / theme modes are unaffected)
 - Follow-system dark mode

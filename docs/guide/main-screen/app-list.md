@@ -19,6 +19,7 @@ Each card shows:
 | --- | --- |
 | **Tap the card** | Open the preview activity directly (WebView, gallery player, or media player). One back returns to the list. |
 | **Tap ⋮ on the card** | Open the [action menu](/guide/app-actions/edit-core-config) |
+| **⋮ → Open in browser** | Web and Multi-Web apps open their http(s) URL in the system browser chooser |
 | **Swipe the card left** | Quick [delete](/guide/app-actions/delete) (with confirmation) |
 
 [About → Separate WebApp tasks](/guide/more-features/about) is off by default. When it is on, each home preview gets its own recents entry. Opening the same preview again brings that card forward. Desktop shortcuts always have their own entry, and Back returns to the launcher.
