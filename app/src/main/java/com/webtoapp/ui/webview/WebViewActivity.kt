@@ -89,10 +89,12 @@ import android.content.pm.ActivityInfo
 import com.webtoapp.ui.animation.HostPreviewMotion
 import com.webtoapp.ui.theme.WebToAppTheme
 import com.webtoapp.util.DownloadHelper
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.coroutines.resume
 import com.webtoapp.ui.shared.PageEdgeChrome
@@ -122,6 +124,44 @@ private fun isOwnInjectionMarker(message: String): Boolean =
 
 /** Bounded console buffer: page console spam must not grow state without limit. */
 private const val CONSOLE_LOG_CAP = 500
+
+/** Longest side handed to the recents card. Larger bitmaps are scaled first. */
+private const val RECENTS_ICON_MAX_PX = 144
+
+/**
+ * Label and optional icon for a separate-task recents card. A null icon still
+ * sets the label.
+ *
+ * Takes ownership of [icon]: an oversized bitmap is replaced by a scaled copy
+ * and the source is recycled. The bitmap handed to the platform is not
+ * recycled, because the system keeps it until it persists the task icon.
+ */
+@Suppress("DEPRECATION")
+internal fun recentsTaskDescription(
+    label: String,
+    icon: Bitmap?
+): ActivityManager.TaskDescription {
+    val scaled = icon?.let(::scaleRecentsIcon)
+    // Builder.setIcon only accepts a drawable resource id, and a WebApp icon is
+    // a user file. The deprecated constructor is the public way to attach a
+    // bitmap; the platform still persists it as the task icon on API 33+.
+    return if (scaled != null) {
+        ActivityManager.TaskDescription(label, scaled)
+    } else {
+        ActivityManager.TaskDescription(label)
+    }
+}
+
+private fun scaleRecentsIcon(source: Bitmap): Bitmap {
+    val longest = maxOf(source.width, source.height)
+    if (longest <= RECENTS_ICON_MAX_PX || longest <= 0) return source
+    val scale = RECENTS_ICON_MAX_PX.toFloat() / longest
+    val width = (source.width * scale).toInt().coerceAtLeast(1)
+    val height = (source.height * scale).toInt().coerceAtLeast(1)
+    val scaled = Bitmap.createScaledBitmap(source, width, height, true)
+    if (scaled !== source) source.recycle()
+    return scaled
+}
 
 open class WebViewActivity : AppCompatActivity() {
 
@@ -1037,7 +1077,7 @@ open class WebViewActivity : AppCompatActivity() {
             val label = previewApp?.name?.takeIf { it.isNotBlank() }
                 ?: directUrl?.let { runCatching { Uri.parse(it).host }.getOrNull()?.takeIf { it.isNotBlank() } }
                 ?: if (appId > 0) "WebApp #$appId" else null
-            if (label != null) applySeparateTaskDescription(label)
+            if (label != null) applySeparateTaskDescription(label, previewApp?.iconPath)
         }
         sessionKey = resumeStore.sessionKey(
             appId = appId,
@@ -1115,7 +1155,7 @@ open class WebViewActivity : AppCompatActivity() {
                 },
                 onSavedAppLoaded = { app ->
                     resolvedSavedApp = app
-                    if (app.name.isNotBlank()) applySeparateTaskDescription(app.name)
+                    if (app.name.isNotBlank()) applySeparateTaskDescription(app.name, app.iconPath)
                     // App-id launches resolve these from the saved config; the onCreate pass
                     // only covers intent-carried preview apps.
                     if (previewApp == null) {
@@ -1427,20 +1467,59 @@ open class WebViewActivity : AppCompatActivity() {
         return true
     }
 
-    private fun applySeparateTaskDescription(label: String) {
+    /**
+     * Names the recents card for a separate task and, when the app has its own
+     * icon, attaches it. The label is set synchronously so a slow icon decode
+     * never delays the card; the icon follows on the main thread.
+     */
+    private fun applySeparateTaskDescription(label: String, iconPath: String? = null) {
         if (this !is WebViewDocumentActivity) return
-        try {
-            // Builder exists only from API 33. Gating on P (28) resolves a missing
-            // class on Android 12, and NoClassDefFoundError is not an Exception.
-            val description = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                ActivityManager.TaskDescription.Builder().setLabel(label).build()
-            } else {
-                @Suppress("DEPRECATION")
-                ActivityManager.TaskDescription(label)
+        setTaskDescriptionSafely(recentsTaskDescription(label, null))
+
+        val path = iconPath?.takeIf { it.isNotBlank() } ?: return
+        lifecycleScope.launch {
+            val icon = withContext(Dispatchers.IO) { decodeRecentsIcon(path) }
+            if (icon != null && !isFinishing && !isDestroyed) {
+                setTaskDescriptionSafely(recentsTaskDescription(label, icon))
             }
+        }
+    }
+
+    private fun setTaskDescriptionSafely(description: ActivityManager.TaskDescription) {
+        try {
             setTaskDescription(description)
         } catch (e: Throwable) {
             AppLogger.w("WebViewActivity", "setTaskDescription failed: ${e.message}")
+        }
+    }
+
+    /** Decodes a stored app icon with the same bounded decoder the export uses. */
+    private fun decodeRecentsIcon(iconPath: String): Bitmap? {
+        return try {
+            when {
+                iconPath.startsWith("/") ->
+                    com.webtoapp.util.BoundedBitmaps.decodeBoundedBitmapFile(
+                        iconPath,
+                        RECENTS_ICON_MAX_PX
+                    )
+                iconPath.startsWith("file://") -> {
+                    val file = File(Uri.parse(iconPath).path ?: return null)
+                    if (!file.exists()) null
+                    else com.webtoapp.util.BoundedBitmaps.decodeBoundedBitmapFile(
+                        file.absolutePath,
+                        RECENTS_ICON_MAX_PX
+                    )
+                }
+                else -> contentResolver.openInputStream(Uri.parse(iconPath))?.use { stream ->
+                    com.webtoapp.util.BoundedBitmaps.decodeBoundedBitmapStream(
+                        stream,
+                        RECENTS_ICON_MAX_PX
+                    )
+                }
+            }
+        } catch (e: Exception) {
+            AppLogger.w("WebViewActivity", "recents icon decode failed: ${e.message}")
+            null
         }
     }
 
