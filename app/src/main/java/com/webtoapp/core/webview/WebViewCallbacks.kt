@@ -37,6 +37,17 @@ interface WebViewCallbacks {
         contentLength: Long
     )
 
+    fun onExternalDownloadResponse(
+        url: String,
+        userAgent: String,
+        contentDisposition: String,
+        mimeType: String,
+        contentLength: Long,
+        body: java.io.InputStream
+    ) {
+        onDownloadStart(url, userAgent, contentDisposition, mimeType, contentLength)
+    }
+
     fun onLongPress(webView: WebView, x: Float, y: Float): Boolean = false
 
     fun onConsoleMessage(level: Int, message: String, sourceId: String, lineNumber: Int) {}

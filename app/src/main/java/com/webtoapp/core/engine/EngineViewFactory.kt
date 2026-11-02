@@ -208,6 +208,15 @@ fun WebViewCallbacks.toBrowserEngineCallback(): BrowserEngineCallback {
             contentLength: Long
         ) = source.onDownloadStart(url, userAgent, contentDisposition, mimeType, contentLength)
 
+        override fun onExternalDownloadResponse(
+            url: String,
+            userAgent: String,
+            contentDisposition: String,
+            mimeType: String,
+            contentLength: Long,
+            body: java.io.InputStream
+        ) = source.onExternalDownloadResponse(url, userAgent, contentDisposition, mimeType, contentLength, body)
+
         override fun onShowFileChooser(
             filePathCallback: android.webkit.ValueCallback<Array<android.net.Uri>>?,
             fileChooserParams: android.webkit.WebChromeClient.FileChooserParams?

@@ -3466,6 +3466,26 @@ fun WebViewScreen(
                 )
             }
 
+            override fun onExternalDownloadResponse(
+                url: String,
+                userAgent: String,
+                contentDisposition: String,
+                mimeType: String,
+                contentLength: Long,
+                body: java.io.InputStream
+            ) {
+                val effectiveConfig = (webApp ?: previewApp)?.webViewConfig
+                    ?: com.webtoapp.data.model.WebViewConfig()
+                val filename = DownloadHelper.parseFileName(url, contentDisposition, mimeType)
+                com.webtoapp.core.webview.DownloadBridge(
+                    context,
+                    scope,
+                    effectiveConfig.downloadLocationMode,
+                    effectiveConfig.customDownloadDirUri,
+                    effectiveConfig.mediaAlbumName
+                ).saveExternalDownload(body, filename, mimeType)
+            }
+
             override fun onLongPress(webView: WebView, x: Float, y: Float): Boolean {
 
                 val hitResult = webView.hitTestResult
