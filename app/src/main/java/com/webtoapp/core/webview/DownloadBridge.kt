@@ -676,70 +676,14 @@ class DownloadBridge(
 
                 AppLogger.d("DownloadBridge", "Chunked download complete, saving file: ${download.filename}")
 
-                if (downloadLocationMode == DownloadLocationMode.ASK) {
-                    saveViaSystemPicker(
-                        filename = download.filename,
-                        mimeType = download.mimeType,
-                        progressNotificationId = download.notificationId,
-                        onFinished = { cleanupChunkedDownload(downloadId, true) }
-                    ) { output ->
-                        java.io.FileInputStream(download.file).use { input ->
-                            input.copyTo(output, bufferSize = 64 * 1024)
-                        }
-                    }
-                    return@launch
+                persistDownloadedFile(
+                    file = download.file,
+                    filename = download.filename,
+                    mimeType = download.mimeType,
+                    notificationId = download.notificationId
+                ) {
+                    cleanupChunkedDownload(downloadId, true)
                 }
-
-                if (downloadLocationMode == DownloadLocationMode.SYSTEM_DOWNLOAD &&
-                    com.webtoapp.util.MediaSaver.isMediaFile(download.mimeType, download.filename)) {
-
-                    val result = com.webtoapp.util.MediaSaver.saveFromFile(
-                        context, download.file, download.mimeType,
-                        albumName = com.webtoapp.util.AlbumFolderName.sanitize(mediaAlbumName)
-                    )
-
-                    withContext(Dispatchers.Main) {
-                        when (result) {
-                            is com.webtoapp.util.MediaSaver.SaveResult.Success -> {
-                                val isImage = download.mimeType.startsWith("image/")
-                                val typeText = if (isImage) Strings.image else Strings.video
-                                Toast.makeText(context, Strings.savedToGallery.replace("%s", typeText), Toast.LENGTH_SHORT).show()
-                                notificationManager.showMediaSaveComplete(
-                                    fileName = download.filename,
-                                    uri = result.uri,
-                                    mimeType = download.mimeType,
-                                    isImage = isImage,
-                                    progressNotificationId = download.notificationId
-                                )
-                            }
-                            is com.webtoapp.util.MediaSaver.SaveResult.Error -> {
-                                Toast.makeText(context, Strings.saveFailedWithReason.replace("%s", result.message), Toast.LENGTH_SHORT).show()
-                                notificationManager.showSaveFailed(download.filename, result.message, download.notificationId)
-                            }
-                        }
-                    }
-                } else {
-
-                    val savedFile = saveToDownloadsInternalFromFile(download.file, download.filename)
-
-                    withContext(Dispatchers.Main) {
-                        if (savedFile != null) {
-                            Toast.makeText(context, Strings.savedTo.replace("%s", savedFile.name), Toast.LENGTH_LONG).show()
-                            notificationManager.showSaveComplete(
-                                fileName = savedFile.name,
-                                filePath = savedFile.absolutePath,
-                                mimeType = download.mimeType,
-                                progressNotificationId = download.notificationId
-                            )
-                        } else {
-                            Toast.makeText(context, Strings.saveFailed, Toast.LENGTH_SHORT).show()
-                            notificationManager.showSaveFailed(download.filename, Strings.cannotWriteFile, download.notificationId)
-                        }
-                    }
-                }
-
-                cleanupChunkedDownload(downloadId, true)
-
             } catch (e: Exception) {
                 AppLogger.e("DownloadBridge", "Failed to finish chunked download", e)
                 cleanupChunkedDownload(downloadId, false)
@@ -749,6 +693,104 @@ class DownloadBridge(
                 }
             }
         }
+    }
+
+    fun saveExternalDownload(input: java.io.InputStream, filename: String, mimeType: String) {
+        val safeFilename = sanitizeFilename(filename)
+        scope.launch(Dispatchers.IO) {
+            val notificationId = notificationManager.showIndeterminateProgress(safeFilename)
+            val tempFile = File(context.cacheDir, "download_${java.util.UUID.randomUUID()}_$safeFilename")
+            try {
+                input.use { source ->
+                    FileOutputStream(tempFile).use { output ->
+                        source.copyTo(output, bufferSize = 64 * 1024)
+                    }
+                }
+                AppLogger.d("DownloadBridge", "Engine download buffered, saving file: $safeFilename")
+                persistDownloadedFile(tempFile, safeFilename, mimeType, notificationId) {
+                    tempFile.delete()
+                }
+            } catch (e: Exception) {
+                AppLogger.e("DownloadBridge", "Engine download failed", e)
+                tempFile.delete()
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(context, Strings.saveFailedWithReason.replace("%s", e.message ?: ""), Toast.LENGTH_SHORT).show()
+                    notificationManager.showSaveFailed(safeFilename, e.message ?: Strings.unknownError, notificationId)
+                }
+            }
+        }
+    }
+
+    private suspend fun persistDownloadedFile(
+        file: File,
+        filename: String,
+        mimeType: String,
+        notificationId: Int,
+        onConsumed: () -> Unit
+    ) {
+        if (downloadLocationMode == DownloadLocationMode.ASK) {
+            saveViaSystemPicker(
+                filename = filename,
+                mimeType = mimeType,
+                progressNotificationId = notificationId,
+                onFinished = onConsumed
+            ) { output ->
+                java.io.FileInputStream(file).use { input ->
+                    input.copyTo(output, bufferSize = 64 * 1024)
+                }
+            }
+            return
+        }
+
+        if (downloadLocationMode == DownloadLocationMode.SYSTEM_DOWNLOAD &&
+            com.webtoapp.util.MediaSaver.isMediaFile(mimeType, filename)) {
+
+            val result = com.webtoapp.util.MediaSaver.saveFromFile(
+                context, file, mimeType,
+                albumName = com.webtoapp.util.AlbumFolderName.sanitize(mediaAlbumName)
+            )
+
+            withContext(Dispatchers.Main) {
+                when (result) {
+                    is com.webtoapp.util.MediaSaver.SaveResult.Success -> {
+                        val isImage = mimeType.startsWith("image/")
+                        val typeText = if (isImage) Strings.image else Strings.video
+                        Toast.makeText(context, Strings.savedToGallery.replace("%s", typeText), Toast.LENGTH_SHORT).show()
+                        notificationManager.showMediaSaveComplete(
+                            fileName = filename,
+                            uri = result.uri,
+                            mimeType = mimeType,
+                            isImage = isImage,
+                            progressNotificationId = notificationId
+                        )
+                    }
+                    is com.webtoapp.util.MediaSaver.SaveResult.Error -> {
+                        Toast.makeText(context, Strings.saveFailedWithReason.replace("%s", result.message), Toast.LENGTH_SHORT).show()
+                        notificationManager.showSaveFailed(filename, result.message, notificationId)
+                    }
+                }
+            }
+        } else {
+
+            val savedFile = saveToDownloadsInternalFromFile(file, filename)
+
+            withContext(Dispatchers.Main) {
+                if (savedFile != null) {
+                    Toast.makeText(context, Strings.savedTo.replace("%s", savedFile.name), Toast.LENGTH_LONG).show()
+                    notificationManager.showSaveComplete(
+                        fileName = savedFile.name,
+                        filePath = savedFile.absolutePath,
+                        mimeType = mimeType,
+                        progressNotificationId = notificationId
+                    )
+                } else {
+                    Toast.makeText(context, Strings.saveFailed, Toast.LENGTH_SHORT).show()
+                    notificationManager.showSaveFailed(filename, Strings.cannotWriteFile, notificationId)
+                }
+            }
+        }
+
+        onConsumed()
     }
 
     private fun cleanupChunkedDownload(downloadId: String, success: Boolean) {

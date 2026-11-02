@@ -399,6 +399,34 @@ class ShellActivity : AppCompatActivity() {
         contentLength: Long
     ) = permissionDelegate.handleDownloadWithPermission(url, userAgent, contentDisposition, mimeType, contentLength, webView)
 
+    fun handleExternalDownloadResponse(
+        url: String,
+        userAgent: String,
+        contentDisposition: String,
+        mimeType: String,
+        contentLength: Long,
+        body: java.io.InputStream
+    ) {
+        val config = shellConfig
+        if (config == null || !config.webViewConfig.downloadEnabled) {
+            try { body.close() } catch (e: Exception) { }
+            return
+        }
+        val mode = try {
+            com.webtoapp.data.model.DownloadLocationMode.valueOf(config.webViewConfig.downloadLocationMode)
+        } catch (e: Exception) {
+            com.webtoapp.data.model.DownloadLocationMode.SYSTEM_DOWNLOAD
+        }
+        val filename = com.webtoapp.util.DownloadHelper.parseFileName(url, contentDisposition, mimeType)
+        com.webtoapp.core.webview.DownloadBridge(
+            this,
+            lifecycleScope,
+            mode,
+            config.webViewConfig.customDownloadDirUri,
+            config.webViewConfig.mediaAlbumName
+        ).saveExternalDownload(body, filename, mimeType)
+    }
+
     private fun resetFreshBrowsingSession() {
         // Drop any restored navigation first. A saved bundle would reload the
         // previous document, including a dead EventSource, on top of the clear.

@@ -33,6 +33,17 @@ interface BrowserEngineCallback {
         contentLength: Long
     )
 
+    fun onExternalDownloadResponse(
+        url: String,
+        userAgent: String,
+        contentDisposition: String,
+        mimeType: String,
+        contentLength: Long,
+        body: java.io.InputStream
+    ) {
+        onDownloadStart(url, userAgent, contentDisposition, mimeType, contentLength)
+    }
+
     /**
      * File upload request (`<input type="file">`). Engines that surface uploads through a
      * different mechanism (System WebView uses its WebChromeClient directly) can ignore this;

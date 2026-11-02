@@ -258,6 +258,25 @@ fun createShellWebViewCallbacks(
             )
         }
 
+        override fun onExternalDownloadResponse(
+            url: String,
+            userAgent: String,
+            contentDisposition: String,
+            mimeType: String,
+            contentLength: Long,
+            body: java.io.InputStream
+        ) {
+
+            val shellActivity = context as? ShellActivity
+            if (shellActivity != null) {
+                shellActivity.handleExternalDownloadResponse(
+                    url, userAgent, contentDisposition, mimeType, contentLength, body
+                )
+            } else {
+                try { body.close() } catch (e: Exception) { }
+            }
+        }
+
         override fun onLongPress(webView: WebView, x: Float, y: Float): Boolean {
 
             val hitResult = webView.hitTestResult
