@@ -10,12 +10,15 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.webtoapp.core.logging.AppLogger
 import java.security.SecureRandom
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -52,18 +55,16 @@ class HostRuntimePrefs private constructor(private val context: Context) {
     private var cachedSeparateTasks: Boolean? = null
 
     @Volatile
+    private var pendingSeparateTasks: Boolean? = null
+
+    @Volatile
     private var cachedMcp: McpSettings? = null
 
     @Volatile
     private var cachedAdvancedFeatures: Boolean? = null
 
-    val separateTasksFlow: StateFlow<Boolean> = context.hostRuntimeDataStore.data.map { prefs ->
-        prefs[KEY_SEPARATE_TASKS] ?: false
-    }.stateIn(
-        scope = scope,
-        started = SharingStarted.Eagerly,
-        initialValue = false
-    )
+    private val _separateTasksFlow = MutableStateFlow(false)
+    val separateTasksFlow: StateFlow<Boolean> = _separateTasksFlow.asStateFlow()
 
     val mcpFlow: StateFlow<McpSettings> = context.hostRuntimeDataStore.data.map { prefs ->
         prefs.toMcpSettings()
@@ -83,7 +84,15 @@ class HostRuntimePrefs private constructor(private val context: Context) {
 
     init {
         scope.launch {
-            separateTasksFlow.collect { cachedSeparateTasks = it }
+            context.hostRuntimeDataStore.data.collect { prefs ->
+                val stored = prefs[KEY_SEPARATE_TASKS] ?: false
+                val pending = pendingSeparateTasks
+                if (pending == null || pending == stored) {
+                    pendingSeparateTasks = null
+                    _separateTasksFlow.value = stored
+                    cachedSeparateTasks = stored
+                }
+            }
         }
         scope.launch {
             mcpFlow.collect { cachedMcp = it }
@@ -115,11 +124,19 @@ class HostRuntimePrefs private constructor(private val context: Context) {
         }
     }
 
-    suspend fun setSeparateTasksEnabled(enabled: Boolean) {
-        context.hostRuntimeDataStore.edit { prefs ->
-            prefs[KEY_SEPARATE_TASKS] = enabled
-        }
+    fun setSeparateTasksEnabled(enabled: Boolean) {
+        pendingSeparateTasks = enabled
+        _separateTasksFlow.value = enabled
         cachedSeparateTasks = enabled
+        scope.launch {
+            try {
+                context.hostRuntimeDataStore.edit { prefs ->
+                    prefs[KEY_SEPARATE_TASKS] = enabled
+                }
+            } catch (e: Exception) {
+                AppLogger.e("HostRuntimePrefs", "Failed to save separate tasks", e)
+            }
+        }
     }
 
     fun isAdvancedFeaturesEnabledBlocking(): Boolean {
