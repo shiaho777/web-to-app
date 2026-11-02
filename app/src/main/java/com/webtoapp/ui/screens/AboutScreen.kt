@@ -220,14 +220,11 @@ private fun SeparateTasksCard() {
     val context = LocalContext.current
     val hostPrefs = remember { HostRuntimePrefs.getInstance(context) }
     val separateTasks by hostPrefs.separateTasksFlow.collectAsStateWithLifecycle()
-    val scope = androidx.compose.runtime.rememberCoroutineScope()
 
     fun apply(enabled: Boolean) {
-        scope.launch {
-            hostPrefs.setSeparateTasksEnabled(enabled)
-            if (!enabled) {
-                WebViewDocumentActivity.finishAllDocumentTasks()
-            }
+        hostPrefs.setSeparateTasksEnabled(enabled)
+        if (!enabled) {
+            WebViewDocumentActivity.finishAllDocumentTasks()
         }
     }
 
