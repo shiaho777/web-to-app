@@ -13608,6 +13608,19 @@ object StringsE {
         AppLanguage.KOREAN -> "클론 설치는 스플래시, 활성화, 공지를 지원하지 않습니다. 바로가기를 쓰거나 해당 기능을 끄세요"
     }
 
+    val appModifierPackageInUse: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "该包名已被安装，请换一个包名，或先卸载占用该包名的应用"
+        AppLanguage.ENGLISH -> "This package is already installed. Choose another package or uninstall that app first"
+        AppLanguage.ARABIC -> "هذه الحزمة مثبتة بالفعل. اختر حزمة أخرى أو أزل التطبيق الذي يستخدمها أولاً"
+        AppLanguage.PORTUGUESE -> "Este pacote já está instalado. Escolha outro pacote ou desinstale esse app primeiro"
+        AppLanguage.SPANISH -> "Este paquete ya está instalado. Elige otro paquete o desinstala primero"
+        AppLanguage.FRENCH -> "Ce package est déjà installé. Choisissez un autre package ou désinstallez d'abord cette app"
+        AppLanguage.GERMAN -> "Dieses Paket ist bereits installiert. Wählen Sie ein anderes Paket oder deinstallieren Sie die App zuerst"
+        AppLanguage.RUSSIAN -> "Этот пакет уже установлен. Выберите другой пакет или сначала удалите это приложение"
+        AppLanguage.JAPANESE -> "このパッケージは既にインストールされています。別のパッケージを選ぶか、先にそのアプリをアンインストールしてください"
+        AppLanguage.KOREAN -> "이 패키지는 이미 설치되어 있습니다. 다른 패키지를 선택하거나 해당 앱을 먼저 제거하세요"
+    }
+
     val appModifierShortcutHint: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "快捷方式会请求桌面固定权限，并尽量保留开屏、激活码与公告配置。"
         AppLanguage.ENGLISH -> "Shortcut mode asks to pin on the home screen and keeps splash, activation, and announcement settings when possible."

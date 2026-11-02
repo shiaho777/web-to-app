@@ -22,6 +22,7 @@ import com.webtoapp.core.apkbuilder.JarSigner
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import com.webtoapp.core.logging.AppLogger
+import com.webtoapp.core.i18n.Strings
 import com.webtoapp.ui.splash.SplashLauncherActivity
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -253,7 +254,8 @@ class AppCloner(private val context: Context) {
 
             AppLogger.d("AppCloner", "Source APK size: ${sourceApk.length()} bytes")
 
-            val newPackageName = generateClonePackageName(config.originalApp.packageName)
+            val newPackageName = resolveClonePackageName(config)
+                ?: return@withContext AppModifyResult.Error(resolveClonePackageError(config))
             AppLogger.d("AppCloner", "New package name: $newPackageName")
 
             val hasModifications = CloneConfigBuilder.hasAnyModification(config)
@@ -358,35 +360,37 @@ class AppCloner(private val context: Context) {
         }
     }
 
-    private fun generateClonePackageName(originalPackageName: String): String {
-
-        val maxLen = originalPackageName.length.coerceAtMost(128)
-
-        val timestamp = System.currentTimeMillis()
-        val random = (0..9999).random()
-        val uniqueId = ((timestamp xor random.toLong()) and 0x7FFFFFFF).toString(36)
-
-        val suffixLen = (maxLen - 2).coerceAtLeast(1)
-        val rawSuffix = if (uniqueId.length >= suffixLen) {
-            uniqueId.take(suffixLen)
-        } else {
-            uniqueId.padEnd(suffixLen, '0')
+    private fun resolveClonePackageName(config: AppModifyConfig): String? {
+        val requested = config.newPackageName?.trim().orEmpty()
+        val candidate = requested.ifBlank {
+            ClonePackageNames.generate(config.originalApp.packageName)
         }
-
-        val normalizedSuffix = normalizePackageSegment(rawSuffix)
-
-        return "c.$normalizedSuffix"
+        if (!ClonePackageNames.isValid(candidate)) return null
+        if (candidate == config.originalApp.packageName) return null
+        if (isPackageInstalled(candidate)) return null
+        return candidate
     }
 
-    private fun normalizePackageSegment(segment: String): String {
-        if (segment.isEmpty()) return "a"
-        val chars = segment.lowercase().toCharArray()
-        chars[0] = when {
-            chars[0] in 'a'..'z' -> chars[0]
-            chars[0] in '0'..'9' -> ('a' + (chars[0] - '0'))
-            else -> 'a'
+    private fun resolveClonePackageError(config: AppModifyConfig): String {
+        val requested = config.newPackageName?.trim().orEmpty()
+        if (requested.isNotBlank() && !ClonePackageNames.isValid(requested)) {
+            return Strings.packageNameInvalidFormat
         }
-        return String(chars)
+        return Strings.appModifierPackageInUse
+    }
+
+    private fun isPackageInstalled(packageName: String): Boolean {
+        return runCatching {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                context.packageManager.getPackageInfo(
+                    packageName,
+                    PackageManager.PackageInfoFlags.of(0)
+                )
+            } else {
+                @Suppress("DEPRECATION")
+                context.packageManager.getPackageInfo(packageName, 0)
+            }
+        }.isSuccess
     }
 
     private fun modifyApk(
@@ -441,7 +445,7 @@ class AppCloner(private val context: Context) {
                                 val originalData = zipIn.getInputStream(entry).readBytes()
                                 AppLogger.d("AppCloner", "AndroidManifest.xml original size: ${originalData.size} bytes")
 
-                                val modifiedData: ByteArray
+                                var modifiedData: ByteArray
                                 if (useManifestRewriter) {
                                     AppLogger.d("AppCloner", "Using CloneManifestRewriter for injection")
                                     val rewriteResult = manifestRewriter.rewrite(originalData, originalPackageName, newPackageName)
@@ -456,6 +460,10 @@ class AppCloner(private val context: Context) {
                                         originalPackageName,
                                         newPackageName
                                     )
+                                }
+
+                                if (newAppName.isNotBlank()) {
+                                    modifiedData = axmlRebuilder.setAppLabel(modifiedData, newAppName)
                                 }
 
                                 AppLogger.d("AppCloner", "AndroidManifest.xml size after modification: ${modifiedData.size} bytes")

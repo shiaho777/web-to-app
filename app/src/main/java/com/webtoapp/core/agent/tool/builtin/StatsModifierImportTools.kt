@@ -108,11 +108,13 @@ class CloneAppTool : Tool {
     override val name = "CloneApp"
     override val description = """
         Clone an installed app: create a modified copy with a new name/icon and install it.
-        The clone gets a new package name and is re-signed. Cannot use a custom icon with clone mode.
+        The clone gets a new package name by default; pass newPackageName to choose a valid,
+        non-installed package. Cannot use a custom icon with clone mode.
     """.trimIndent()
     override val parametersSchema: JsonElement = jsonSchema {
         string("packageName", "Package name of the app to clone.", required = true)
         string("newName", "New display name for the clone.")
+        string("newPackageName", "Optional package name for the clone. Defaults to a generated unique package.")
     }
     override fun isReadOnly() = false
     override fun activityDescription(args: JsonObject): String? =
@@ -120,9 +122,14 @@ class CloneAppTool : Tool {
     override suspend fun execute(args: JsonObject, ctx: ToolContext): ToolResult {
         val pkg = args.get("packageName")?.asString ?: return ToolResult.error("CloneApp: missing `packageName`.")
         val newName = args.get("newName")?.asString ?: ""
+        val newPackageName = args.get("newPackageName")?.asString?.trim()?.takeIf { it.isNotBlank() }
         val provider = AppListProvider(ctx.androidContext)
         val info = provider.getAppInfo(pkg) ?: return ToolResult.error("CloneApp: app $pkg not found.")
-        val config = AppModifyConfig(originalApp = info, newAppName = newName.ifBlank { info.appName })
+        val config = AppModifyConfig(
+            originalApp = info,
+            newAppName = newName.ifBlank { info.appName },
+            newPackageName = newPackageName
+        )
         val cloner = AppCloner(ctx.androidContext)
         return when (val result = cloner.cloneAndInstall(config)) {
             is AppModifyResult.CloneSuccess -> ToolResult.ok("Clone built and installer launched: ${result.apkPath}")

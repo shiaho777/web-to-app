@@ -18,6 +18,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.CheckCircle
@@ -63,6 +64,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -72,6 +74,7 @@ import com.webtoapp.core.appmodifier.AppFilterType
 import com.webtoapp.core.appmodifier.AppListProvider
 import com.webtoapp.core.appmodifier.AppModifyResult
 import com.webtoapp.core.appmodifier.CloneConfigBuilder
+import com.webtoapp.core.appmodifier.ClonePackageNames
 import com.webtoapp.core.appmodifier.InstalledAppInfo
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.data.model.SplashType
@@ -94,8 +97,10 @@ import com.webtoapp.ui.design.WtaStatusTone
 import com.webtoapp.ui.design.WtaTextField
 import com.webtoapp.ui.screens.create.WtaCreateFlowScaffold
 import com.webtoapp.ui.screens.create.WtaCreateFlowSection
+import com.webtoapp.ui.theme.LocalShowDescriptions
 import com.webtoapp.util.SplashStorage
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -575,11 +580,51 @@ private fun AppModifyContent(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    var editState by remember { mutableStateOf(AppModifierEditState(newAppName = app.appName)) }
+    val defaultClonePackage = remember(app.packageName) {
+        ClonePackageNames.generate(app.packageName)
+    }
+    var editState by remember {
+        mutableStateOf(
+            AppModifierEditState(
+                newAppName = app.appName,
+                newPackageName = defaultClonePackage
+            )
+        )
+    }
     var isProcessing by remember { mutableStateOf(false) }
     var progress by remember { mutableIntStateOf(0) }
     var progressText by remember { mutableStateOf("") }
     var outputMode by remember { mutableStateOf(ModifyOutputMode.SHORTCUT) }
+    var packageNameInstalled by remember { mutableStateOf(false) }
+
+    val trimmedPackageName = editState.newPackageName.trim()
+    val packageFormatInvalid = trimmedPackageName.isNotBlank() &&
+        !ClonePackageNames.isValid(trimmedPackageName)
+    val packageNameError = when {
+        outputMode != ModifyOutputMode.CLONE -> null
+        packageFormatInvalid -> Strings.packageNameInvalidFormat
+        packageNameInstalled -> Strings.appModifierPackageInUse
+        else -> null
+    }
+
+    LaunchedEffect(trimmedPackageName, packageFormatInvalid) {
+        packageNameInstalled = false
+        if (trimmedPackageName.isBlank() || packageFormatInvalid) return@LaunchedEffect
+        delay(250)
+        packageNameInstalled = withContext(Dispatchers.IO) {
+            runCatching {
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                    context.packageManager.getPackageInfo(
+                        trimmedPackageName,
+                        android.content.pm.PackageManager.PackageInfoFlags.of(0)
+                    )
+                } else {
+                    @Suppress("DEPRECATION")
+                    context.packageManager.getPackageInfo(trimmedPackageName, 0)
+                }
+            }.isSuccess
+        }
+    }
 
     fun update(transform: AppModifierEditState.() -> AppModifierEditState) {
         editState = editState.transform()
@@ -637,11 +682,14 @@ private fun AppModifyContent(
     }
 
     fun runClone() {
-        if (editState.newAppName.isBlank() || isProcessing) return
+        if (editState.newAppName.isBlank() || isProcessing || packageNameError != null) return
+        val chosenPackage = trimmedPackageName.ifBlank { defaultClonePackage }
         isProcessing = true
         scope.launch {
             try {
-                val result = appCloner.cloneAndInstall(editState.toConfig(app)) { p, t ->
+                val result = appCloner.cloneAndInstall(
+                    editState.copy(newPackageName = chosenPackage).toConfig(app)
+                ) { p, t ->
                     progress = p
                     progressText = t
                 }
@@ -702,7 +750,8 @@ private fun AppModifyContent(
                 progressText = progressText,
                 outputMode = outputMode,
                 canClone = canClone,
-                actionEnabled = nameReady && !isProcessing && (outputMode != ModifyOutputMode.CLONE || canClone),
+                actionEnabled = nameReady && !isProcessing &&
+                    (outputMode != ModifyOutputMode.CLONE || (canClone && packageNameError == null)),
                 onPrimary = {
                     when (outputMode) {
                         ModifyOutputMode.SHORTCUT -> runShortcut()
@@ -716,6 +765,8 @@ private fun AppModifyContent(
             IdentityPreviewCard(
                 original = app,
                 newName = editState.newAppName.ifBlank { app.appName },
+                newPackageName = trimmedPackageName.ifBlank { defaultClonePackage },
+                outputMode = outputMode,
                 hasCustomIcon = hasCustomIcon
             )
 
@@ -727,7 +778,10 @@ private fun AppModifyContent(
 
             BasicInfoCard(
                 editState = editState,
+                outputMode = outputMode,
+                packageNameError = packageNameError,
                 onNameChange = { update { copy(newAppName = it) } },
+                onPackageNameChange = { update { copy(newPackageName = it) } },
                 onPickFromGallery = { imagePickerLauncher.launch("image/*") },
                 onPickFromLibrary = { path ->
                     update { copy(newIconPath = path, newIconUri = null) }
@@ -831,6 +885,8 @@ private fun AppModifyContent(
 private fun IdentityPreviewCard(
     original: InstalledAppInfo,
     newName: String,
+    newPackageName: String,
+    outputMode: ModifyOutputMode,
     hasCustomIcon: Boolean
 ) {
     WtaCard(tone = WtaCardTone.Highlighted, contentPadding = PaddingValues(16.dp)) {
@@ -860,7 +916,11 @@ private fun IdentityPreviewCard(
                 IdentitySide(
                     label = Strings.appModifierNewIdentity,
                     name = newName,
-                    packageName = if (hasCustomIcon) Strings.appModifierCustomIcon else original.packageName,
+                    packageName = if (outputMode == ModifyOutputMode.CLONE) {
+                        newPackageName
+                    } else {
+                        original.packageName
+                    },
                     icon = {
                         if (hasCustomIcon) {
                             Box(
@@ -1043,7 +1103,10 @@ private fun ModeOption(
 @Composable
 private fun BasicInfoCard(
     editState: AppModifierEditState,
+    outputMode: ModifyOutputMode,
+    packageNameError: String?,
     onNameChange: (String) -> Unit,
+    onPackageNameChange: (String) -> Unit,
     onPickFromGallery: () -> Unit,
     onPickFromLibrary: (String) -> Unit,
     onResetIcon: () -> Unit
@@ -1072,6 +1135,24 @@ private fun BasicInfoCard(
                 value = editState.newAppName,
                 onValueChange = onNameChange
             )
+
+            if (outputMode == ModifyOutputMode.CLONE) {
+                WtaTextField(
+                    value = editState.newPackageName,
+                    onValueChange = onPackageNameChange,
+                    modifier = Modifier.fillMaxWidth(),
+                    label = Strings.customPackageName,
+                    placeholder = Strings.apkPackageNamePlaceholder,
+                    supportingText = packageNameError
+                        ?: Strings.packageNameHint.takeIf { LocalShowDescriptions.current },
+                    isError = packageNameError != null,
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Ascii,
+                        autoCorrectEnabled = false
+                    )
+                )
+            }
         }
     }
 }
