@@ -1421,7 +1421,7 @@ object StringsD {
     }
 
     val openInBrowser: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "Open in browser"
+        AppLanguage.CHINESE -> "在浏览器打开"
         AppLanguage.ENGLISH -> "Open in browser"
         AppLanguage.ARABIC -> "فتح في المتصفح"
         AppLanguage.PORTUGUESE -> "Abrir no navegador"

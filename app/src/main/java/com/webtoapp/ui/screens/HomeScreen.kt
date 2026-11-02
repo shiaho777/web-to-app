@@ -1,4 +1,6 @@
 package com.webtoapp.ui.screens
+import android.content.Intent
+import android.net.Uri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.webtoapp.ui.components.PremiumButton
 import com.webtoapp.ui.components.SettingsSwitch
@@ -961,6 +963,28 @@ fun HomeScreen(
                                 appToClearCache = app
                                 showClearCacheDialog = true
                             },
+                            onOpenInBrowser = {
+                                if (isExternalBrowserUrl(app.url)) {
+                                    try {
+                                        val viewIntent = Intent(
+                                            Intent.ACTION_VIEW,
+                                            Uri.parse(app.url.trim())
+                                        ).apply {
+                                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                        }
+                                        listContext.startActivity(
+                                            Intent.createChooser(viewIntent, Strings.chooseBrowser)
+                                                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                        )
+                                    } catch (e: Exception) {
+                                        scope.launch {
+                                            snackbarHostState.showSnackbar(
+                                                "${Strings.cannotOpenInBrowser}: ${e.message ?: Strings.failed}"
+                                            )
+                                        }
+                                    }
+                                }
+                            },
                             healthStatus = healthMap[app.id]?.status,
                             previewImageLoader = previewImageLoader,
                             screenshotPath = if (previewSpec.captureUrl != null) {
@@ -1313,6 +1337,12 @@ private fun SidebarMenuItem(
     }
 }
 
+private fun isExternalBrowserUrl(url: String): Boolean {
+    val trimmed = url.trim()
+    return trimmed.startsWith("http://", ignoreCase = true) ||
+        trimmed.startsWith("https://", ignoreCase = true)
+}
+
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun AppCard(
@@ -1328,6 +1358,7 @@ fun AppCard(
     onShareApk: () -> Unit = {},
     onMoveToCategory: () -> Unit = {},
     onClearCache: () -> Unit = {},
+    onOpenInBrowser: () -> Unit = {},
     healthStatus: com.webtoapp.core.stats.HealthStatus? = null,
     previewImageLoader: ImageLoader,
     screenshotPath: String? = null,
@@ -1338,6 +1369,9 @@ fun AppCard(
 ) {
     var expanded by remember { mutableStateOf(false) }
     val colors = MaterialTheme.colorScheme
+    val canOpenInBrowser = (app.appType == com.webtoapp.data.model.AppType.WEB ||
+        app.appType == com.webtoapp.data.model.AppType.MULTI_WEB) &&
+        isExternalBrowserUrl(app.url)
     val secondaryText = when (app.appType) {
         com.webtoapp.data.model.AppType.IMAGE -> app.url.ifBlank { Strings.appTypeImage }
         com.webtoapp.data.model.AppType.VIDEO -> app.url.ifBlank { Strings.appTypeVideo }
@@ -1617,6 +1651,16 @@ fun AppCard(
                             onClearCache()
                         }
                     )
+                    if (canOpenInBrowser) {
+                        com.webtoapp.ui.design.WtaDropdownMenuItem(
+                            text = Strings.openInBrowser,
+                            leadingIcon = Icons.Outlined.OpenInBrowser,
+                            onClick = {
+                                expanded = false
+                                onOpenInBrowser()
+                            }
+                        )
+                    }
                     HorizontalDivider()
                     com.webtoapp.ui.design.WtaDropdownMenuItem(
                         text = Strings.btnDelete,
