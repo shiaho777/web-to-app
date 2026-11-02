@@ -1,0 +1,16 @@
+Added
+- Open a Web or Multi-Web app in the browser.
+
+Improved
+- Background music is a floating ball.
+- Page plugins run on GeckoView.
+- Ad-block styles appear on home thumbnails.
+- Long-press vibration waits for a menu.
+
+Fixed
+- Blob downloads save on GeckoView.
+- Large encrypted assets no longer crash.
+- Encrypted HTML keeps network access.
+- Binary XHR, translation and DoH work.
+- Fullscreen keeps the toolbar.
+- Clones keep the chosen name and package.

@@ -23,7 +23,7 @@
 - **图片修复** —— 修复损坏的图片(`enableImageRepair`)。
 - **滚动记忆** —— 记住滚动位置(`enableScrollMemory`)。
 - **返回状态保留** —— `enableBackStatePreservation`。
-- **Blob 下载拦截** —— 带范围和大小阈值(`enableBlobDownloadInterception`、`blobInterceptThresholdMb`)。
+- **Blob 下载拦截** —— 带范围和大小阈值(`enableBlobDownloadInterception`、`blobInterceptThresholdMb`)。仅系统 WebView;GeckoView 应用不需要这个开关也能保存 blob 和 `data:` 下载。
 - **接收分享内容** —— 生成的 App 出现在 Android 系统分享面板中;收到的图片/文本经 `wta:share` DOM 事件送达页面,或预填页面的文件选择器(`receiveShareImages`、`receiveShareText`、`shareDeliveryMode`、`sharePromptBeforeUse`)。见[接收分享内容](/zh/guide/more-features/share-receive)。
 
 ## JavaScript 与窗口
