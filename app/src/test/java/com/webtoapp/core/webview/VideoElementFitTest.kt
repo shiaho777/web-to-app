@@ -18,6 +18,7 @@ class VideoElementFitTest {
         parentHeight: Int = 0,
         viewportWidth: Int = 400,
         fullscreen: Boolean = false,
+        liveStream: Boolean = false,
     ) = VideoFitInput(
         laidOutWidth = laidW,
         laidOutHeight = laidH,
@@ -31,6 +32,7 @@ class VideoElementFitTest {
         parentHeight = parentHeight,
         viewportWidth = viewportWidth,
         fullscreen = fullscreen,
+        liveStream = liveStream,
     )
 
     @Test
@@ -113,6 +115,40 @@ class VideoElementFitTest {
     }
 
     @Test
+    fun `a live camera stream is left to the page`() {
+        assertThat(
+            fittedVideoBox(
+                input(
+                    laidW = 840,
+                    laidH = 1493,
+                    intrinsicW = 1080,
+                    intrinsicH = 1920,
+                    parentWidth = 840,
+                    parentHeight = 330,
+                    viewportWidth = 840,
+                    liveStream = true,
+                )
+            )
+        ).isNull()
+    }
+
+    @Test
+    fun `a recorded video in the same box still gets a fit`() {
+        val box = fittedVideoBox(
+            input(
+                laidW = 840,
+                laidH = 1493,
+                intrinsicW = 1080,
+                intrinsicH = 1920,
+                parentWidth = 840,
+                parentHeight = 330,
+                viewportWidth = 840,
+            )
+        )
+        assertThat(box).isEqualTo(VideoFitBox(840, 330))
+    }
+
+    @Test
     fun `script shrinks only overflowing videos and restores fullscreen`() {
         val script = VideoElementFit.SCRIPT
         assertThat(script).contains("window.__wtaVideoFit")
@@ -134,5 +170,9 @@ class VideoElementFitTest {
         assertThat(script).contains("(px|rem|em|vw|vh)")
         assertThat(script).contains("laidW-specW>=8")
         assertThat(script).contains("laidW-sw>=8")
+        assertThat(script).contains("isLiveStream")
+        assertThat(script).contains("srcObject")
+        assertThat(script).contains("getVideoTracks")
+        assertThat(script).contains("if(isLiveStream(video)){clearFit(video);return;}")
     }
 }
