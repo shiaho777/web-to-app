@@ -46,29 +46,7 @@ class AiConfigManager(private val context: Context) {
     }
 
     val apiKeysFlow: Flow<List<ApiKeyConfig>> = context.aiConfigDataStore.data.map { prefs ->
-
-        val stored = prefs[KEY_API_KEYS]
-        if (stored != null) {
-            val json = decodeSensitiveJson(stored)
-            if (json != null) {
-                val result = parseApiKeyConfigs(json)
-                if (result != null) return@map result
-                AppLogger.e(TAG, "Failed to parse API keys from primary")
-            }
-        }
-
-        val backup = prefs[KEY_API_KEYS_BACKUP]
-        if (backup != null) {
-            val result = parseApiKeyConfigs(backup)
-            if (result != null && result.isNotEmpty()) {
-                AppLogger.w(TAG, "apiKeysFlow: recovered ${result.size} keys from backup")
-                return@map result
-            }
-            if (result == null) {
-                AppLogger.e(TAG, "Failed to parse API keys from backup")
-            }
-        }
-        emptyList()
+        resolveApiKeys(prefs[KEY_API_KEYS], prefs[KEY_API_KEYS_BACKUP], ::decodeSensitiveJson)
     }
 
     val savedModelsFlow: Flow<List<SavedModel>> = context.aiConfigDataStore.data.map { prefs ->
@@ -90,11 +68,6 @@ class AiConfigManager(private val context: Context) {
         return try {
             context.aiConfigDataStore.edit { prefs ->
                 val current = getApiKeys(prefs)
-                if (current == null) {
-
-                    AppLogger.e(TAG, "Cannot add API key: failed to decrypt existing keys, aborting to prevent data loss")
-                    throw IllegalStateException("Decrypt failure, aborting write")
-                }
                 val updated = current + config
                 val jsonStr = gson.toJson(updated)
                 prefs[KEY_API_KEYS] = encodeSensitiveJson(jsonStr)
@@ -112,10 +85,6 @@ class AiConfigManager(private val context: Context) {
         return try {
             context.aiConfigDataStore.edit { prefs ->
                 val current = getApiKeys(prefs)
-                if (current == null) {
-                    AppLogger.e(TAG, "Cannot update API key: failed to decrypt existing keys, aborting")
-                    throw IllegalStateException("Decrypt failure, aborting write")
-                }
                 val updated = current.map { if (it.id == config.id) config else it }
                 val jsonStr = gson.toJson(updated)
                 prefs[KEY_API_KEYS] = encodeSensitiveJson(jsonStr)
@@ -133,10 +102,6 @@ class AiConfigManager(private val context: Context) {
         return try {
             context.aiConfigDataStore.edit { prefs ->
                 val current = getApiKeys(prefs)
-                if (current == null) {
-                    AppLogger.e(TAG, "Cannot delete API key: failed to decrypt existing keys, aborting")
-                    throw IllegalStateException("Decrypt failure, aborting write")
-                }
                 val updated = current.filter { it.id != id }
                 val jsonStr = gson.toJson(updated)
                 prefs[KEY_API_KEYS] = encodeSensitiveJson(jsonStr)
@@ -228,7 +193,7 @@ class AiConfigManager(private val context: Context) {
     suspend fun getApiKeyById(id: String): ApiKeyConfig? {
 
         val prefs = context.aiConfigDataStore.data.first()
-        return (getApiKeys(prefs) ?: emptyList()).find { it.id == id }
+        return getApiKeys(prefs).find { it.id == id }
     }
 
     suspend fun getSavedModelById(id: String): SavedModel? {
@@ -236,18 +201,18 @@ class AiConfigManager(private val context: Context) {
         return getSavedModels(prefs).find { it.id == id }
     }
 
-    private fun getApiKeys(prefs: Preferences): List<ApiKeyConfig>? {
-        val stored = prefs[KEY_API_KEYS]
-        val json = stored?.let { decodeSensitiveJson(it) }
-        if (json != null) {
-            val result = parseApiKeyConfigs(json)
-            if (result != null) {
-                return result
-            }
+    internal fun resolveApiKeys(
+        stored: String?,
+        backup: String?,
+        decode: (String) -> String?
+    ): List<ApiKeyConfig> {
+        val decoded = stored?.let(decode)
+        if (decoded != null) {
+            val result = parseApiKeyConfigs(decoded)
+            if (result != null) return result
             AppLogger.e(TAG, "Failed to deserialize API keys from primary")
         }
 
-        val backup = prefs[KEY_API_KEYS_BACKUP]
         if (backup != null) {
             val result = parseApiKeyConfigs(backup)
             if (result != null && result.isNotEmpty()) {
@@ -259,12 +224,14 @@ class AiConfigManager(private val context: Context) {
             }
         }
 
-        if (stored != null && json == null) {
-            AppLogger.e(TAG, "Failed to decode API keys from both primary and backup")
-            return null
+        if (stored != null && decoded == null) {
+            AppLogger.w(TAG, "Stored API keys are unreadable on this install; starting empty so new keys can be saved")
         }
         return emptyList()
     }
+
+    private fun getApiKeys(prefs: Preferences): List<ApiKeyConfig> =
+        resolveApiKeys(prefs[KEY_API_KEYS], prefs[KEY_API_KEYS_BACKUP], ::decodeSensitiveJson)
 
     private fun getSavedModels(prefs: Preferences): List<SavedModel> {
         val json = prefs[KEY_SAVED_MODELS] ?: return emptyList()
