@@ -66,4 +66,45 @@ class BackupCommitAccountingTest {
             blocker.delete()
         }
     }
+
+    @Test
+    fun `an existing local AI config is not overwritten by the backup`() {
+        val app = RuntimeEnvironment.getApplication()
+        val target = File(app.filesDir, "datastore/ai_config.preferences_pb")
+        target.parentFile?.mkdirs()
+        target.writeText("local-keys")
+        val temp = File.createTempFile("wta_commit_", ".part", app.cacheDir)
+        temp.writeText("backup-keys")
+        val entry = DataBackupManager.PendingLocalEntry(
+            zipPath = "local/datastore/ai_config.preferences_pb",
+            targetFile = target,
+            tempFile = temp
+        )
+        try {
+            assertThat(manager.commitPendingLocalEntries(listOf(entry))).isFalse()
+            assertThat(target.readText()).isEqualTo("local-keys")
+        } finally {
+            target.delete()
+        }
+    }
+
+    @Test
+    fun `a missing local AI config still imports the backup file`() {
+        val app = RuntimeEnvironment.getApplication()
+        val target = File(app.filesDir, "datastore/ai_config.preferences_pb")
+        target.delete()
+        val temp = File.createTempFile("wta_commit_", ".part", app.cacheDir)
+        temp.writeText("backup-keys")
+        val entry = DataBackupManager.PendingLocalEntry(
+            zipPath = "local/datastore/ai_config.preferences_pb",
+            targetFile = target,
+            tempFile = temp
+        )
+        try {
+            assertThat(manager.commitPendingLocalEntries(listOf(entry))).isTrue()
+            assertThat(target.readText()).isEqualTo("backup-keys")
+        } finally {
+            target.delete()
+        }
+    }
 }

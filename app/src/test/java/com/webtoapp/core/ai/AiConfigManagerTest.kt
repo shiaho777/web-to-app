@@ -248,4 +248,31 @@ class AiConfigManagerTest {
 
         println("\n✅✅✅ ALL E2E STEPS PASSED ✅✅✅")
     }
+
+    @Test
+    fun `unreadable stored keys start empty so new keys can be saved`() {
+        val keys = createManager().resolveApiKeys("enc_v1:garbage", null) { null }
+
+        assertTrue(keys.isEmpty())
+    }
+
+    @Test
+    fun `a plaintext backup still wins over an unreadable primary`() {
+        val json = """[{"id":"k1","provider":"OPENAI","apiKey":"sk-test","createdAt":1}]"""
+
+        val keys = createManager().resolveApiKeys("enc_v1:garbage", json) { null }
+
+        assertEquals(1, keys.size)
+        assertEquals("sk-test", keys.first().apiKey)
+    }
+
+    @Test
+    fun `a readable primary parses without touching the backup`() {
+        val json = """[{"id":"k1","provider":"OPENAI","apiKey":"sk-test","createdAt":1}]"""
+
+        val keys = createManager().resolveApiKeys("enc_v1:cipher", null) { json }
+
+        assertEquals(1, keys.size)
+        assertEquals("k1", keys.first().id)
+    }
 }

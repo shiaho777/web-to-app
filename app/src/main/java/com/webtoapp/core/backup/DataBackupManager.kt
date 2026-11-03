@@ -127,6 +127,8 @@ class DataBackupManager(private val context: Context) {
             "aicoding_prefs"
         )
 
+        private const val AI_CONFIG_DATASTORE_ENTRY = "${DATASTORE_DIR}ai_config.preferences_pb"
+
         private val SAFE_SHARED_PREF_NAMES = listOf(
             "installed_store_items",
             "config_presets",
@@ -1181,6 +1183,11 @@ class DataBackupManager(private val context: Context) {
     internal fun commitPendingLocalEntries(pending: List<PendingLocalEntry>): Boolean {
         var committed = false
         pending.forEach { entry ->
+            if (entry.zipPath == AI_CONFIG_DATASTORE_ENTRY && entry.targetFile.exists()) {
+                AppLogger.i(TAG, "Keeping the local AI config; backup keys are device-bound")
+                entry.tempFile.delete()
+                return@forEach
+            }
             runCatching {
                 entry.targetFile.parentFile?.mkdirs()
                 entry.tempFile.copyTo(entry.targetFile, overwrite = true)
