@@ -3496,7 +3496,7 @@ fun WebViewScreen(
 
                 val menuEnabled = webApp?.webViewConfig?.longPressMenuEnabled ?: true
                 if (!menuEnabled) {
-                    return LongPressHapticGate.finish(webView, hapticOnActionOnly, isLink)
+                    return isLink
                 }
 
                 if (hitType == WebView.HitTestResult.EDIT_TEXT_TYPE ||
@@ -3510,7 +3510,6 @@ fun WebViewScreen(
                         is LongPressHandler.LongPressResult.Video,
                         is LongPressHandler.LongPressResult.Link,
                         is LongPressHandler.LongPressResult.ImageLink -> {
-                            LongPressHapticGate.onMenuShown(webView, hapticOnActionOnly)
                             longPressResult = result
                             longPressTouchX = x
                             longPressTouchY = y

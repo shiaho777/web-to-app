@@ -523,28 +523,12 @@ class LongPressHandler(
     }
 }
 
-/**
- * Long-press haptics for system WebView.
- *
- * [View.performLongClick] vibrates after a listener returns true, before we know
- * whether a menu will open. Returning true also keeps the gesture from the page,
- * so Chromium does not add a second buzz. Returning false leaves Chromium's own
- * haptic in place: it fires only when the page or a text selection consumes the
- * gesture. [finish] swallows the framework buzz for one turn when the per-app
- * option is on; [onMenuShown] plays it back only if a menu really opens.
- */
 object LongPressHapticGate {
     fun finish(view: View, onActionOnly: Boolean, handled: Boolean): Boolean {
-        if (onActionOnly && handled) suppressFrameworkBuzz(view)
-        return handled
-    }
-
-    fun onMenuShown(view: View, onActionOnly: Boolean) {
-        if (!onActionOnly) return
-        view.performHapticFeedback(
-            HapticFeedbackConstants.LONG_PRESS,
-            HapticFeedbackConstants.FLAG_IGNORE_VIEW_SETTING
-        )
+        if (!onActionOnly || !handled) return handled
+        view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+        suppressFrameworkBuzz(view)
+        return true
     }
 
     private fun suppressFrameworkBuzz(view: View) {

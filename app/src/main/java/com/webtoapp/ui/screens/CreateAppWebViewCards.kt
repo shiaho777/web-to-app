@@ -103,7 +103,8 @@ fun LongPressMenuCard(
                 title = Strings.longPressHapticOnActionOnly,
                 subtitle = Strings.longPressHapticOnActionOnlyDesc.ifDescriptionsShown(),
                 checked = hapticOnActionOnly,
-                onCheckedChange = onHapticOnActionOnlyChange
+                onCheckedChange = onHapticOnActionOnlyChange,
+                enabled = enabled
             )
 
             AnimatedVisibility(
