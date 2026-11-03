@@ -901,16 +901,16 @@ object StringsD {
     }
 
     val longPressHapticOnActionOnlyDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "没有弹出菜单、网页也没有处理这次长按时不震动。菜单弹出来，或者网页自己处理了，仍然震动。"
-        AppLanguage.ENGLISH -> "Stays quiet when a long-press opens no menu and the page does not handle it. A menu, or a long-press the page handles, still vibrates."
-        AppLanguage.ARABIC -> "لا يهتز إذا لم تظهر قائمة ولم تتعامل الصفحة مع الضغط. إذا ظهرت قائمة، أو تعاملت الصفحة معه، يبقى الاهتزاز."
-        AppLanguage.PORTUGUESE -> "Fica em silêncio quando não abre um menu e a página não trata o toque. Um menu, ou um toque que a página trata, continua a vibrar."
-        AppLanguage.SPANISH -> "En silencio si no abre un menú y la página no la gestiona. Un menú, o una pulsación que la página gestiona, sigue vibrando."
-        AppLanguage.FRENCH -> "Reste silencieux si aucun menu ne s'ouvre et que la page n'agit pas. Un menu, ou un appui que la page gère, vibre toujours."
-        AppLanguage.GERMAN -> "Bleibt still, wenn kein Menü aufgeht und die Seite nichts tut. Ein Menü oder ein Druck, den die Seite selbst verarbeitet, vibriert weiter."
-        AppLanguage.RUSSIAN -> "Тихо, если меню не открылось и страница ничего не сделала. Меню или нажатие, которое обработала страница, по-прежнему вибрирует."
-        AppLanguage.JAPANESE -> "メニューが出ず、ページも処理しない長押しは振動しません。メニューが出るとき、ページが自分で処理したときは振動します。"
-        AppLanguage.KOREAN -> "메뉴가 열리지 않고 페이지도 처리하지 않으면 진동하지 않습니다. 메뉴가 열리거나 페이지가 직접 처리하면 그대로 진동합니다."
+        AppLanguage.CHINESE -> "菜单弹出，或网页自己处理时，仍然震动。"
+        AppLanguage.ENGLISH -> "A menu, or a press the page handles, still vibrates."
+        AppLanguage.ARABIC -> "القائمة، أو الضغط الذي تتعامل معه الصفحة، يهتز."
+        AppLanguage.PORTUGUESE -> "Um menu, ou um toque que a página trata, vibra."
+        AppLanguage.SPANISH -> "Un menú, o una pulsación que la página gestiona, vibra."
+        AppLanguage.FRENCH -> "Un menu, ou un appui géré par la page, vibre."
+        AppLanguage.GERMAN -> "Ein Menü oder ein Druck, den die Seite verarbeitet, vibriert."
+        AppLanguage.RUSSIAN -> "Меню или нажатие, обработанное страницей, вибрирует."
+        AppLanguage.JAPANESE -> "メニューが出るとき、ページが処理するときは振動します。"
+        AppLanguage.KOREAN -> "메뉴가 열리거나 페이지가 처리하면 진동합니다."
     }
 
     val longPressMenuStyleSimple: String get() = when (Strings.lang) {

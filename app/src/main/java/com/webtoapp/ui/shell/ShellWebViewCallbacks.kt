@@ -284,9 +284,10 @@ fun createShellWebViewCallbacks(
             val isLink = hitType == WebView.HitTestResult.SRC_ANCHOR_TYPE ||
                          hitType == WebView.HitTestResult.ANCHOR_TYPE
             val hapticOnActionOnly = config.webViewConfig.longPressHapticOnActionOnly
+            val menuEnabled = config.webViewConfig.longPressMenuEnabled
 
-            if (!config.webViewConfig.longPressMenuEnabled) {
-                return LongPressHapticGate.finish(webView, hapticOnActionOnly, isLink)
+            if (!menuEnabled) {
+                return isLink
             }
 
             if (hitType == WebView.HitTestResult.EDIT_TEXT_TYPE ||
@@ -300,7 +301,6 @@ fun createShellWebViewCallbacks(
                     is LongPressHandler.LongPressResult.Video,
                     is LongPressHandler.LongPressResult.Link,
                     is LongPressHandler.LongPressResult.ImageLink -> {
-                        LongPressHapticGate.onMenuShown(webView, hapticOnActionOnly)
                         notifyLongPressMenu(result, x, y)
                     }
                     is LongPressHandler.LongPressResult.Text,
