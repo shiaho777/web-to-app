@@ -98,106 +98,109 @@ fun LongPressMenuCard(
                 }
             )
 
-            WtaSectionDivider()
-            WtaToggleRow(
-                title = Strings.longPressHapticOnActionOnly,
-                subtitle = Strings.longPressHapticOnActionOnlyDesc.ifDescriptionsShown(),
-                checked = hapticOnActionOnly,
-                onCheckedChange = onHapticOnActionOnlyChange,
-                enabled = enabled
-            )
-
             AnimatedVisibility(
                 visible = enabled,
                 enter = CardExpandTransition,
                 exit = CardCollapseTransition
             ) {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
+                Column {
                     WtaSectionDivider()
 
-                    FlowRow(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = WtaSpacing.RowHorizontal),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        styleOptions.forEach { option ->
-                            val isSelected = option.style == style
-                            WtaChip(
-                                selected = isSelected,
-                                onClick = { onStyleChange(option.style) },
-                                label = option.name,
-                                leadingIcon = option.icon,
-                                showSelectedCheck = false
-                            )
-                        }
-                    }
-
-                    Crossfade(
-                        targetState = selectedOption,
-                        animationSpec = tween(
-                            durationMillis = 300,
-                            easing = FastOutSlowInEasing
+                    Column(
+                        modifier = Modifier.padding(
+                            horizontal = WtaSpacing.RowHorizontal,
+                            vertical = WtaSpacing.ContentGap
                         ),
-                        label = "styleDetailCrossfade"
-                    ) { currentOption ->
-                        Surface(
-                            shape = RoundedCornerShape(12.dp),
-                            color = if (com.webtoapp.ui.theme.LocalIsDarkTheme.current)
-                                Color.White.copy(alpha = 0.06f)
-                            else
-                                currentOption.accentColor.copy(alpha = 0.04f),
-                            border = BorderStroke(
-                                1.dp,
-                                currentOption.accentColor.copy(alpha = 0.15f)
-                            )
+                        verticalArrangement = Arrangement.spacedBy(WtaSpacing.ContentGap)
+                    ) {
+                        FlowRow(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Column(
-                                modifier = Modifier.padding(14.dp),
-                                verticalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(32.dp)
-                                            .background(
-                                                color = currentOption.accentColor.copy(alpha = 0.12f),
-                                                shape = RoundedCornerShape(8.dp)
-                                            ),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Icon(
-                                            currentOption.icon,
-                                            contentDescription = null,
-                                            tint = currentOption.accentColor,
-                                            modifier = Modifier.size(18.dp)
-                                        )
-                                    }
-                                    Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
-                                        Text(
-                                            text = currentOption.name,
-                                            style = MaterialTheme.typography.titleSmall,
-                                            fontWeight = FontWeight.SemiBold,
-                                            color = currentOption.accentColor
-                                        )
-                                    }
-                                }
+                            styleOptions.forEach { option ->
+                                val isSelected = option.style == style
+                                WtaChip(
+                                    selected = isSelected,
+                                    onClick = { onStyleChange(option.style) },
+                                    label = option.name,
+                                    leadingIcon = option.icon,
+                                    showSelectedCheck = false
+                                )
+                            }
+                        }
 
-                                if (currentOption.style != LongPressMenuStyle.DISABLED) {
-                                    LongPressMenuStylePreview(
-                                        style = currentOption.style,
-                                        accentColor = currentOption.accentColor
-                                    )
+                        Crossfade(
+                            targetState = selectedOption,
+                            animationSpec = tween(
+                                durationMillis = 300,
+                                easing = FastOutSlowInEasing
+                            ),
+                            label = "styleDetailCrossfade"
+                        ) { currentOption ->
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = if (com.webtoapp.ui.theme.LocalIsDarkTheme.current)
+                                    Color.White.copy(alpha = 0.06f)
+                                else
+                                    currentOption.accentColor.copy(alpha = 0.04f),
+                                border = BorderStroke(
+                                    1.dp,
+                                    currentOption.accentColor.copy(alpha = 0.15f)
+                                )
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(14.dp),
+                                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(32.dp)
+                                                .background(
+                                                    color = currentOption.accentColor.copy(alpha = 0.12f),
+                                                    shape = RoundedCornerShape(8.dp)
+                                                ),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(
+                                                currentOption.icon,
+                                                contentDescription = null,
+                                                tint = currentOption.accentColor,
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                        }
+                                        Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
+                                            Text(
+                                                text = currentOption.name,
+                                                style = MaterialTheme.typography.titleSmall,
+                                                fontWeight = FontWeight.SemiBold,
+                                                color = currentOption.accentColor
+                                            )
+                                        }
+                                    }
+
+                                    if (currentOption.style != LongPressMenuStyle.DISABLED) {
+                                        LongPressMenuStylePreview(
+                                            style = currentOption.style,
+                                            accentColor = currentOption.accentColor
+                                        )
+                                    }
                                 }
                             }
                         }
                     }
+
+                    WtaSectionDivider()
+                    WtaToggleRow(
+                        title = Strings.longPressHapticOnActionOnly,
+                        subtitle = Strings.longPressHapticOnActionOnlyDesc.ifDescriptionsShown(),
+                        checked = hapticOnActionOnly,
+                        onCheckedChange = onHapticOnActionOnlyChange
+                    )
                 }
             }
     }
