@@ -6,6 +6,7 @@ import android.graphics.Rect
 import android.os.Build
 import android.view.View
 import android.view.ViewGroup
+import android.view.ViewTreeObserver
 import android.view.Window
 import android.view.WindowManager
 import android.webkit.WebChromeClient
@@ -387,15 +388,10 @@ object WindowHelper {
 
         when (mode) {
             KeyboardAdjustMode.RESIZE -> {
-
-                // Manual IME padding needs native IME-inset dispatch (API 30+). Below that,
-                // applyImmersiveFullscreen keeps the window fitting system windows so the
-                // system SOFT_INPUT_ADJUST_RESIZE path actually resizes for the keyboard and
-                // the WebView scrolls the focused input into view on its own (issue #613).
-                val useManualImePadding = !decorFitsSystemWindows &&
+                val useManualImeResize = !decorFitsSystemWindows &&
                     Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
 
-                if (!useManualImePadding) {
+                if (!useManualImeResize) {
                     @Suppress("DEPRECATION")
                     activity.window.setSoftInputMode(
                         WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE or
@@ -409,8 +405,8 @@ object WindowHelper {
                         WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING or
                             WindowManager.LayoutParams.SOFT_INPUT_STATE_UNSPECIFIED
                     )
-                    installManualImePadding(contentView)
-                    AppLogger.d(tag, "键盘模式: RESIZE (边到边，只滚动被挡住的内容并裁到键盘上沿，结束时不改高度)")
+                    installManualImeResize(contentView)
+                    AppLogger.d(tag, "键盘模式: RESIZE (边到边，键盘上沿裁剪，必要时再让出键盘高度)")
                 }
             }
 
@@ -429,7 +425,7 @@ object WindowHelper {
         }
     }
 
-    private fun installManualImePadding(contentView: View) {
+    private fun installManualImeResize(contentView: View) {
         if (contentView in manualImeInstalled) {
             ViewCompat.requestApplyInsets(contentView)
             return
@@ -437,29 +433,26 @@ object WindowHelper {
         manualImeInstalled.add(contentView)
 
         var imeAnimating = false
+        var restCssPerPx: Float? = null
         val follow = ImeAnimationFollow()
         val documentScroll = ImeDocumentScroll()
 
         fun applyFrame(frame: ImeFrame) {
-            // Never leave a pan or a bottom padding in place. Padding shrinks
-            // the WebView at the moment the field meets the keyboard, and
-            // Chromium then applies the window IME inset again, so the field
-            // flashes. Translation does the same to fixed elements (#1398).
             if (contentView.translationY != 0f) contentView.translationY = 0f
-            if (contentView.paddingBottom != 0) {
+            if (contentView.paddingBottom != frame.layoutBottom) {
                 contentView.setPadding(
                     contentView.paddingLeft,
                     contentView.paddingTop,
                     contentView.paddingRight,
-                    0
+                    frame.layoutBottom
                 )
-                publishImeOcclusion(contentView, 0)
             }
+            publishImeOcclusion(contentView, frame.layoutBottom)
             val clip = frame.clipBottom
-            if (clip != null && clip > 0 && contentView.height > 0 && contentView.width > 0) {
+            if (clip > 0 && contentView.height > 0 && contentView.width > 0) {
                 val clipBottom = (contentView.height - clip).coerceAtLeast(0)
                 contentView.clipBounds = Rect(0, 0, contentView.width, clipBottom)
-            } else if (clip == 0 && contentView.clipBounds != null) {
+            } else if (clip <= 0 && contentView.clipBounds != null) {
                 contentView.clipBounds = null
             }
         }
@@ -513,6 +506,49 @@ object WindowHelper {
             applyDocumentScroll(webView, imeBottom)
         }
 
+        fun revealFocusedField(webView: android.webkit.WebView) {
+            if (!webView.isAttachedToWindow) return
+            webView.evaluateJavascript(IME_REVEAL_FIELD_JS, null)
+        }
+
+        fun revealAfterResize(webView: android.webkit.WebView) {
+            val observer = webView.viewTreeObserver
+            if (!observer.isAlive) {
+                revealFocusedField(webView)
+                return
+            }
+            observer.addOnGlobalLayoutListener(object : ViewTreeObserver.OnGlobalLayoutListener {
+                override fun onGlobalLayout() {
+                    if (observer.isAlive) {
+                        observer.removeOnGlobalLayoutListener(this)
+                    } else {
+                        webView.viewTreeObserver.removeOnGlobalLayoutListener(this)
+                    }
+                    revealFocusedField(webView)
+                }
+            })
+        }
+
+        fun settleKeyboard(imeBottom: Int) {
+            val webView = findWebViewInHierarchy(contentView) ?: return
+            val heightPx = webView.height
+            if (heightPx <= 0) return
+            webView.evaluateJavascript(IME_PROBE_JS) { raw ->
+                val probe = parseImeProbe(raw) ?: return@evaluateJavascript
+                if (imeBottom <= 0) {
+                    if (follow.settledPadding == 0) restCssPerPx = probe.innerHeightCss / heightPx
+                    return@evaluateJavascript
+                }
+                if (follow.settledPadding == imeBottom) return@evaluateJavascript
+                if (!needsKeyboardResize(probe, heightPx, imeBottom, restCssPerPx)) {
+                    return@evaluateJavascript
+                }
+                val reveal = fieldBehindKeyboard(probe, heightPx, imeBottom)
+                applyFrame(follow.applyPadding(imeBottom))
+                if (reveal) revealAfterResize(webView)
+            }
+        }
+
         ViewCompat.setWindowInsetsAnimationCallback(
             contentView,
             object : WindowInsetsAnimationCompat.Callback(
@@ -552,13 +588,10 @@ object WindowHelper {
                     val imeVisible = rootInsets?.isVisible(WindowInsetsCompat.Type.ime()) ?: false
                     val imeBottom = rootInsets?.getInsets(WindowInsetsCompat.Type.ime())?.bottom ?: 0
                     val finalBottom = if (imeVisible) imeBottom else 0
-                    // Last step of the same scroll, still in the unresized
-                    // coordinate space. Do not scrollIntoView afterwards:
-                    // the field is already on the keyboard, and a second
-                    // scroll is the flash.
                     if (finalBottom > follow.settledBottom) scrollCoveredField(finalBottom)
                     documentScroll.end()
                     applyFrame(follow.onEnd(finalBottom))
+                    settleKeyboard(finalBottom)
                 }
             }
         )
@@ -566,11 +599,10 @@ object WindowHelper {
         ViewCompat.setOnApplyWindowInsetsListener(contentView) { _, windowInsets ->
             val imeBottom = windowInsets.getInsets(WindowInsetsCompat.Type.ime()).bottom
             if (imeAnimating) {
-                // The dispatch during an animation carries the final inset. Keep it
-                // for direction, and let onProgress move the page without a layout.
                 follow.onTarget(imeBottom)
-            } else {
+            } else if (imeBottom != follow.settledBottom) {
                 applyFrame(follow.jumpTo(imeBottom))
+                settleKeyboard(imeBottom)
             }
             windowInsets
         }
