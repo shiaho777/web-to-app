@@ -1430,7 +1430,7 @@ class WebViewManager(
 
         this.cachedBrowserDisguiseConfig = browserDisguiseConfig
         this.cachedBrowserDisguiseJs = if (browserDisguiseConfig?.enabled == true) {
-            com.webtoapp.core.appearance.BrowserDisguiseJsGenerator.generate(browserDisguiseConfig).also { js ->
+            com.webtoapp.core.appearance.BrowserDisguiseJsGenerator.generate(browserDisguiseConfig, context.resources).also { js ->
                 val coverage = com.webtoapp.core.appearance.BrowserDisguiseConfig.calculateCoverage(browserDisguiseConfig)
                 AppLogger.d("WebViewManager", "Browser Disguise JS cached: ${js.length} chars, coverage=${"%,.0f".format(coverage * 100)}%")
             }

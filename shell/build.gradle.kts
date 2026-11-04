@@ -338,7 +338,16 @@ val syncShellRuntimeSources by tasks.registering(Sync::class) {
         // Host DataStore language. Generated APKs publish Strings.lang from the
         // baked shell config. Syncing this would let a shortcut cold start
         // overwrite that with the builder's saved language (#1391).
-        "**/core/i18n/HostLanguage.kt"
+        "**/core/i18n/HostLanguage.kt",
+
+        "**/core/scraper/**",
+        "**/core/frontend/**",
+        "**/core/sample/**",
+        "**/core/php/PhpSampleManager.kt",
+        "**/core/nodejs/NodeSampleManager.kt",
+        "**/core/wordpress/WordPressSampleManager.kt",
+        "**/core/python/PythonSampleManager.kt",
+        "**/core/golang/GoSampleManager.kt"
     )
 
     into(layout.buildDirectory.dir("generated/shellRuntimeSrc"))
