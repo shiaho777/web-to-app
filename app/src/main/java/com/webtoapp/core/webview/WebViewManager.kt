@@ -1250,6 +1250,8 @@ class WebViewManager(
     // rejected (hotlink / Referer); the retry is the request the user otherwise
     // makes by tapping the error page. A repeat 403 still shows that page.
     private val mainFrameHttpRetry = MainFrameHttpRetry()
+    private val offlineNavigationRetry = OfflineNavigationRetry()
+    private val OFFLINE_NAVIGATION_RETRY_DELAY_MS = 400L
     private var mainFrameRefererUrl: String? = null
 
     // Cross-URL budget over all app-initiated auto-reloads (#654): per-path counters
@@ -2915,6 +2917,25 @@ class WebViewManager(
                             fileRetryCount = 0
                             fileRetryUrl = null
                         }
+                    }
+
+                    if (view != null &&
+                        !isLocalRuntimeUrl(failedUrl) &&
+                        !wasRecentlyInterceptedForDownload(failedUrl) &&
+                        offlineNavigationRetry.shouldSilentRetry(failedUrl, errorCode, rawDescription) &&
+                        reloadBreaker.noteAutoReload(failedUrl)
+                    ) {
+                        AppLogger.i(
+                            "WebViewManager",
+                            "Main-frame network error (code=$errorCode, desc=$rawDescription), retrying once before the error page: $failedUrl"
+                        )
+                        view.postDelayed({
+                            val currentUrl = view.url
+                            if (currentUrl == null || currentUrl == "about:blank" || currentUrl == failedUrl || currentMainFrameUrl == failedUrl) {
+                                view.loadUrl(failedUrl)
+                            }
+                        }, OFFLINE_NAVIGATION_RETRY_DELAY_MS)
+                        return
                     }
 
                     if (view != null && config.failoverEnabled && config.failoverTriggers.networkError) {

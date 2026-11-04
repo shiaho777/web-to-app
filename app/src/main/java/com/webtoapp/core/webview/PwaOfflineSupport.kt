@@ -32,10 +32,10 @@ object PwaOfflineSupport {
         "mp3", "mp4", "webm"
     )
 
-    /** Same-origin path the generated service worker script is served from. */
     private const val SW_SCRIPT_PATH = "/__wta_offline_sw__.js"
 
-    /** Service worker script body currently served at [SW_SCRIPT_PATH]. */
+    private const val SW_SCRIPT_MARKER = "__wta_offline_sw__"
+
     @Volatile
     private var currentSwScript: String? = null
 
@@ -56,22 +56,39 @@ object PwaOfflineSupport {
 
         return """
 const CACHE_NAME = 'wta-offline-v1';
+const CACHE_PREFIX = 'wta-offline-';
 const STRATEGY = '${strategyName}';
 const MAX_AGE_MS = ${maxAgeMs};
 const MAX_CACHE_BYTES = ${maxCacheBytes};
 const CACHEABLE_EXTENSIONS = [${extensionsArray}];
 const EXCLUDE_PATTERNS = [${excludeArray}];
 
-function isCacheable(url) {
+function isNavigation(request) {
+    return request.mode === 'navigate' || request.destination === 'document';
+}
+
+function hasExcludedPattern(url) {
+    return EXCLUDE_PATTERNS.some(function(pattern) {
+        return url.indexOf(pattern) !== -1;
+    });
+}
+
+function mayBeCacheable(request) {
+    const destination = request.destination;
+    if (destination === 'document' || destination === 'script' || destination === 'style' || destination === 'image' || destination === 'font') return true;
     try {
-        const u = new URL(url);
-        if (u.protocol !== 'https:' && u.protocol !== 'http:') return false;
-        for (const pattern of EXCLUDE_PATTERNS) {
-            if (url.includes(pattern)) return false;
-        }
-        const ext = u.pathname.split('.').pop().toLowerCase().split('?')[0];
-        if (CACHEABLE_EXTENSIONS.includes(ext)) return true;
-        return false;
+        const ext = new URL(request.url).pathname.split('.').pop().toLowerCase();
+        return CACHEABLE_EXTENSIONS.indexOf(ext) !== -1;
+    } catch (e) { return false; }
+}
+
+function shouldCache(request) {
+    if (hasExcludedPattern(request.url)) return false;
+    if (isNavigation(request)) return true;
+    if (!mayBeCacheable(request)) return false;
+    try {
+        const u = new URL(request.url);
+        return u.protocol === 'https:' || u.protocol === 'http:';
     } catch (e) { return false; }
 }
 
@@ -86,11 +103,10 @@ async function trimCache() {
             if (resp) {
                 const blob = await resp.clone().blob();
                 const ts = resp.headers.get('x-wta-cached-at');
-                entries.push({ req, size: blob.size, ts: ts ? parseInt(ts) : 0 });
+                entries.push({ req: req, size: blob.size, ts: ts ? parseInt(ts) : 0 });
                 totalSize += blob.size;
             }
         }
-        // Remove expired entries
         const now = Date.now();
         for (const e of entries) {
             if (e.ts > 0 && (now - e.ts) > MAX_AGE_MS) {
@@ -98,21 +114,24 @@ async function trimCache() {
                 totalSize -= e.size;
             }
         }
-        // If still over size limit, remove oldest first
         if (totalSize > MAX_CACHE_BYTES) {
-            entries.sort((a, b) => a.ts - b.ts);
+            entries.sort(function(a, b) { return a.ts - b.ts; });
             for (const e of entries) {
                 if (totalSize <= MAX_CACHE_BYTES) break;
                 await cache.delete(e.req);
                 totalSize -= e.size;
             }
         }
-    } catch (e) { /* ignore trim errors */ }
+    } catch (e) { }
 }
 
 async function addToCache(request, response) {
     try {
         const cache = await caches.open(CACHE_NAME);
+        if (response.type === 'opaque') {
+            await cache.put(request, response.clone());
+            return;
+        }
         const headers = new Headers(response.headers);
         headers.set('x-wta-cached-at', String(Date.now()));
         const cachedResponse = new Response(await response.clone().blob(), {
@@ -121,7 +140,21 @@ async function addToCache(request, response) {
             headers: headers
         });
         await cache.put(request, cachedResponse);
-    } catch (e) { /* ignore cache write errors */ }
+    } catch (e) { }
+}
+
+async function offlineFallback(request) {
+    const cached = await caches.match(request);
+    if (cached) return cached;
+    const ignoredSearch = await caches.match(request, { ignoreSearch: true });
+    if (ignoredSearch) return ignoredSearch;
+    if (isNavigation(request)) {
+        try {
+            const scopeRoot = await caches.match(new URL('./', request.url).href);
+            if (scopeRoot) return scopeRoot;
+        } catch (e) { }
+    }
+    return new Response('Offline', { status: 503, statusText: 'Offline' });
 }
 
 async function cacheFirst(request) {
@@ -129,66 +162,55 @@ async function cacheFirst(request) {
     if (cached) return cached;
     try {
         const response = await fetch(request);
-        if (response.ok && isCacheable(request.url)) {
-            addToCache(request, response);
-        }
+        if (response && response.ok && shouldCache(request)) await addToCache(request, response);
         return response;
     } catch (e) {
-        return new Response('Offline', { status: 503, statusText: 'Offline' });
+        return offlineFallback(request);
     }
 }
 
 async function networkFirst(request) {
     try {
         const response = await fetch(request);
-        if (response.ok && isCacheable(request.url)) {
-            addToCache(request, response);
-        }
+        if (response && response.ok && shouldCache(request)) await addToCache(request, response);
         return response;
     } catch (e) {
-        const cached = await caches.match(request);
-        if (cached) return cached;
-        return new Response('Offline', { status: 503, statusText: 'Offline' });
+        return offlineFallback(request);
     }
 }
 
 async function staleWhileRevalidate(request) {
     const cached = await caches.match(request);
-    const fetchPromise = fetch(request).then(response => {
-        if (response.ok && isCacheable(request.url)) {
-            addToCache(request, response);
-        }
+    const fetchPromise = fetch(request).then(function(response) {
+        if (response && response.ok && shouldCache(request)) addToCache(request, response);
         return response;
-    }).catch(() => null);
-
-    if (cached) {
-        fetchPromise; // fire and forget background update
-        return cached;
-    }
+    }).catch(function() { return null; });
+    if (cached) return cached;
     const response = await fetchPromise;
     if (response) return response;
-    return new Response('Offline', { status: 503, statusText: 'Offline' });
+    return offlineFallback(request);
 }
 
-self.addEventListener('install', event => {
+self.addEventListener('install', function(event) {
     self.skipWaiting();
 });
 
-self.addEventListener('activate', event => {
+self.addEventListener('activate', function(event) {
     event.waitUntil(
-        caches.keys().then(names =>
-            Promise.all(names.filter(n => n !== CACHE_NAME).map(n => caches.delete(n)))
-        ).then(() => self.clients.claim())
+        caches.keys().then(function(names) {
+            return Promise.all(names.filter(function(n) {
+                return n.indexOf(CACHE_PREFIX) === 0 && n !== CACHE_NAME;
+            }).map(function(n) { return caches.delete(n); }));
+        }).then(function() { return self.clients.claim(); })
     );
-    // Trim cache periodically
     trimCache();
 });
 
-self.addEventListener('fetch', event => {
+self.addEventListener('fetch', function(event) {
     const request = event.request;
     if (request.method !== 'GET') return;
-    if (!isCacheable(request.url) && !request.url.endsWith('/')) return;
-
+    if (hasExcludedPattern(request.url)) return;
+    if (!isNavigation(request) && !mayBeCacheable(request)) return;
     let handler;
     switch (STRATEGY) {
         case 'cache-first': handler = cacheFirst; break;
@@ -200,31 +222,35 @@ self.addEventListener('fetch', event => {
         """.trimIndent()
     }
 
-    /** Page-side script that registers the service worker from the same-origin path. */
-    private fun generateRegistrationScript(): String = """
+    internal fun generateRegistrationScript(): String = """
         (function() {
             if (window.__WTA_SW_INJECTED__) return;
             window.__WTA_SW_INJECTED__ = true;
             if (!('serviceWorker' in navigator)) return;
             navigator.serviceWorker.getRegistrations().then(function(regs) {
-                var existing = regs.find(function(r) {
+                var siteWorker = regs.some(function(r) {
+                    var worker = r.active || r.installing || r.waiting;
+                    var script = worker ? worker.scriptURL : '';
+                    return script !== '' && script.indexOf('$SW_SCRIPT_MARKER') === -1;
+                });
+                if (siteWorker) {
+                    console.log('[WTA] Site service worker detected, skipping injected offline worker');
+                    return;
+                }
+                var existing = regs.some(function(r) {
                     return r.active && r.active.scriptURL.indexOf('$SW_SCRIPT_PATH') !== -1;
                 });
                 if (existing) return;
-                navigator.serviceWorker.register('$SW_SCRIPT_PATH', { scope: '/' })
-                    .then(function() { console.log('[WTA] Service Worker registered'); })
+                var scope = new URL('./', location.href).pathname;
+                navigator.serviceWorker.register('$SW_SCRIPT_PATH', { scope: scope })
+                    .then(function() { console.log('[WTA] Offline service worker registered at ' + scope); })
                     .catch(function(err) {
-                        console.warn('[WTA] Service Worker registration failed:', err.message);
+                        console.warn('[WTA] Offline service worker registration failed:', err.message);
                     });
             });
         })();
     """.trimIndent()
 
-    /**
-     * Serves the generated service worker script at [SW_SCRIPT_PATH]. WebView refuses
-     * blob: service-worker script URLs, so the script must be served from a same-origin
-     * URL; the ServiceWorkerController intercepts that request and returns the script.
-     */
     private fun installServiceWorkerController() {
         if (serviceWorkerControllerInstalled) return
         serviceWorkerControllerInstalled = true
@@ -249,5 +275,4 @@ self.addEventListener('fetch', event => {
         }
         AppLogger.i(TAG, "PWA offline support injected (strategy: ${config.strategy})")
     }
-
 }
