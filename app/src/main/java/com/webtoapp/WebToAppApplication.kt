@@ -82,6 +82,8 @@ class WebToAppApplication : Application(), ImageLoaderFactory {
             return
         }
 
+        com.webtoapp.core.webview.ServiceWorkerRequestRouter.ensureInstalled()
+
         if (BuildConfig.SHELL_RUNTIME_ONLY) {
             initShellRuntime()
             AppLogger.system("Application", "onCreate completed (shell)")

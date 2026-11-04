@@ -36,6 +36,8 @@ class WebToAppApplication : Application() {
             return
         }
 
+        com.webtoapp.core.webview.ServiceWorkerRequestRouter.ensureInstalled()
+
         shellModeManagerLocal = ShellModeManager(this)
         val fileLoggingEnabled = try {
             shellModeManagerLocal?.getConfig()?.loggingEnabled ?: false
