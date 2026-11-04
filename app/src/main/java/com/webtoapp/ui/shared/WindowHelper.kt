@@ -539,7 +539,7 @@ object WindowHelper {
                     if (follow.settledPadding == 0) restCssPerPx = probe.innerHeightCss / heightPx
                     return@evaluateJavascript
                 }
-                if (follow.settledPadding >= imeBottom) return@evaluateJavascript
+                if (follow.settledPadding == imeBottom) return@evaluateJavascript
                 if (!needsKeyboardResize(probe, heightPx, imeBottom, restCssPerPx)) {
                     return@evaluateJavascript
                 }
