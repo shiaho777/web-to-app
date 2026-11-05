@@ -64,3 +64,7 @@ WebApp(编辑器模型)
 - **Go** 导出必须嵌入 `libgo_exec_loader.so`。
 
 缺少任何原生库都会在运行时导致 `loadNode` / `loadJniBridge` 失败。
+
+## Chrome 扩展资源
+
+应用启用 Chrome 扩展时，导出会把每个解包后的扩展写入 `assets/extensions/<EXT_ID>/`。开启资源加密时写入 `.enc`，shell 通过 `AssetDecryptor` 读取。扩展目录会参与增量构建指纹，因此重装或更新扩展会触发重建，而不是复用旧资源。

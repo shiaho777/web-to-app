@@ -59,3 +59,4 @@ Supported actions: `block`, `allow`, `redirect`, `modifyHeaders`, `upgradeScheme
 
 - **Import** a `.crx` (CRX2/CRX3 parsed directly) or `.zip`.
 - **Chrome Web Store** — the Browser Extensions tab searches the store live by keyword (or paste a store URL / extension ID) and installs on demand through the CRX pipeline. Live search requires a network that can reach Google.
+- **Exported APKs** — each enabled extension's files are embedded under `assets/extensions/<EXT_ID>/`, so popups, options pages, background contexts, and content scripts work after export. Resource encryption encrypts them with the rest of the app. Every install is named by its real Chrome extension id (the store id for store installs, or the id derived from the manifest `key`), so store and zip installs resolve the same files.
