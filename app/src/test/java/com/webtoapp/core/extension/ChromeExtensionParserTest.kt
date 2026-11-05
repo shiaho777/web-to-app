@@ -181,4 +181,64 @@ class ChromeExtensionParserTest {
             dir.deleteRecursively()
         }
     }
+
+    @Test
+    fun `manifest key derives the Chromium extension id`() {
+        val manifest = org.json.JSONObject(
+            """{"manifest_version":3,"name":"Keyed","version":"1.0","key":"$FIXTURE_KEY"}"""
+        )
+
+        assertThat(ChromeExtensionParser.computeExtensionId(manifest)).isEqualTo(FIXTURE_ID)
+    }
+
+    @Test
+    fun `store id validation only accepts Chromium extension ids`() {
+        assertThat(ChromeExtensionParser.isValidStoreId(FIXTURE_ID)).isEqualTo(FIXTURE_ID)
+        assertThat(ChromeExtensionParser.isValidStoreId("instfollow1")).isNull()
+        assertThat(ChromeExtensionParser.isValidStoreId("z".repeat(32))).isNull()
+        assertThat(ChromeExtensionParser.isValidStoreId(null)).isNull()
+    }
+
+    @Test
+    fun `match rules include content script and host permission patterns`() {
+        val manifest = org.json.JSONObject(
+            """
+            {
+              "manifest_version": 3,
+              "name": "Matches",
+              "version": "1.0",
+              "host_permissions": ["https://api.example.com/*"],
+              "content_scripts": [
+                {
+                  "matches": ["https://www.example.com/*", "<all_urls>"],
+                  "exclude_matches": ["https://www.example.com/private/*"],
+                  "js": ["content.js"]
+                }
+              ]
+            }
+            """.trimIndent()
+        )
+
+        val rules = ChromeExtensionParser.extractMatchRules(manifest)
+
+        assertThat(rules.map { it.pattern }).containsExactly(
+            "https://www.example.com/*",
+            "*",
+            "https://www.example.com/private/*",
+            "https://api.example.com/*"
+        )
+        assertThat(rules.filter { it.exclude }.map { it.pattern })
+            .containsExactly("https://www.example.com/private/*")
+    }
+
+    private companion object {
+        const val FIXTURE_KEY =
+            "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAu4wD92pRNqYR4URtq7XxAnR9bWB7" +
+                "YqY3uGP64eYFqVgX0yY5Ge+oJZ6y5c4wvepijnQZe37sYPWWXXtcSm0L/ry2Rn5LOLRbi2W" +
+                "YrXHgR8SzxrwQsHu88ruM7y0OhvgN7UpH+nDfeNDk1GQmyZ8zXGCw/NzL503FiI3k5ZiK+3A" +
+                "xrUjlrZnSmALbOm6GCTwSZm9UY5Wuc+WaubuhrrW82qi3oPnEFiMy4VMSsosInkskbs0A5hz" +
+                "5s+tIzcqZn2YZF47krHBopbgl1Y0EShXe/GsXRBsIy00I0H+8Hry4+d2eI+g1ootX0H0/NWo" +
+                "PWJglDn+z1Dwtsl//RdOS+6UxDwIDAQAB"
+        const val FIXTURE_ID = "gooibnpodkckifdenemmdmpfjhcbidib"
+    }
 }

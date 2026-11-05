@@ -47,6 +47,7 @@ class PluginMigrator(private val context: Context) {
                 versionName = m.obj("version")?.str("name") ?: "1.0.0",
                 authorName = m.obj("author")?.str("name") ?: "",
                 chromeExtId = m.str("chromeExtId"),
+                matches = chromeMatchRulesFrom(m),
                 manifestJson = m.str("manifestJson"),
                 backgroundScript = m.str("backgroundScript"),
                 popupPath = m.str("popupPath"),
@@ -57,6 +58,21 @@ class PluginMigrator(private val context: Context) {
                 updatedAt = m.long("updatedAt")
             )
             return plugin.takeIf { it.chromeExtId.isNotBlank() }
+        }
+
+        internal fun chromeMatchRulesFrom(m: JsonObject): List<PluginMatchRule> {
+            val rules = m.arr("urlMatches") ?: return emptyList()
+            return rules.mapNotNull { element ->
+                val rule = element.takeIf { it.isJsonObject }?.asJsonObject ?: return@mapNotNull null
+                val pattern = rule.str("pattern")
+                pattern.takeIf { it.isNotBlank() }?.let {
+                    PluginMatchRule(
+                        pattern = it,
+                        exclude = rule.bool("exclude", false),
+                        isRegex = rule.bool("isRegex", false)
+                    )
+                }
+            }.distinct()
         }
 
         private fun JsonObject.str(key: String): String =

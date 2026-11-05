@@ -37,6 +37,15 @@ internal fun chromePluginFromModules(modules: List<ExtensionModule>): Plugin? {
         versionName = group.firstNotNullOfOrNull { it.version.name.takeIf(String::isNotBlank) } ?: "1.0.0",
         authorName = group.firstNotNullOfOrNull { it.author?.name?.takeIf(String::isNotBlank) }.orEmpty(),
         chromeExtId = first.chromeExtId,
+        matches = group.flatMap { module ->
+            module.urlMatches.map { rule ->
+                PluginMatchRule(
+                    pattern = rule.pattern,
+                    exclude = rule.exclude,
+                    isRegex = rule.isRegex
+                )
+            }
+        }.distinct(),
         manifestJson = pick { it.manifestJson },
         backgroundScript = pick { it.backgroundScript },
         popupPath = pick { it.popupPath },
@@ -47,6 +56,17 @@ internal fun chromePluginFromModules(modules: List<ExtensionModule>): Plugin? {
         updatedAt = group.maxOf { it.updatedAt }
     )
 }
+
+internal fun chromeMatchRulesFromManifest(manifestJson: String): List<PluginMatchRule> =
+    com.webtoapp.core.extension.ChromeExtensionParser.extractMatchRules(manifestJson)
+        .map { rule ->
+            PluginMatchRule(
+                pattern = rule.pattern,
+                exclude = rule.exclude,
+                isRegex = rule.isRegex
+            )
+        }
+        .distinct()
 
 internal data class ChromePluginCollapse(
     val plugins: List<Plugin>,

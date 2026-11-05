@@ -4903,7 +4903,8 @@ class WebViewManager(
                             isRegex = it.isRegex,
                             exclude = it.exclude
                         )
-                    }
+                    },
+                    extensionId = extId
                 )
 
                 val runtime = com.webtoapp.core.extension.ChromeExtensionRuntime(
@@ -6420,7 +6421,13 @@ class WebViewManager(
     }
 
     private fun showChromeExtensionPage(extId: String, pagePath: String) {
-        if (pagePath.isBlank()) return
+        if (pagePath.isBlank()) {
+            AppLogger.w(
+                "WebViewManager",
+                "Chrome extension $extId has no popup or options page to open"
+            )
+            return
+        }
         val activity = context as? Activity ?: return
         val primaryPlugin = getActivePluginsForCurrentApp().firstOrNull {
             it.kind == com.webtoapp.core.plugin.PluginKind.CHROME_EXTENSION &&

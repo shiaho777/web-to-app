@@ -25,7 +25,12 @@ class ExtensionFileManager(private val context: Context) {
         private const val TEMP_DIR = "ext_temp"
         private const val MAX_EXTENSION_SIZE = 50 * 1024 * 1024L
         private const val MAX_REQUIRE_SIZE = 5 * 1024 * 1024L
+
+        private val rootCache = java.util.concurrent.ConcurrentHashMap<String, File>()
     }
+
+    private fun rootCacheKey(extensionId: String): String =
+        "${extensionsDir.absolutePath}:$extensionId"
 
     private val extensionsDir: File by lazy {
         File(context.filesDir, EXTENSIONS_DIR).apply { mkdirs() }
@@ -271,9 +276,8 @@ class ExtensionFileManager(private val context: Context) {
         file: File,
         storeId: String? = null
     ): ImportResult = withContext(Dispatchers.IO) {
+        val extractDir = File(extensionsDir, "tmp_" + UUID.randomUUID().toString().take(12))
         try {
-            val extensionId = UUID.randomUUID().toString().take(12)
-            val extractDir = File(extensionsDir, extensionId)
             extractDir.mkdirs()
 
             val isCrx = ChromeExtensionParser.isCrxFile(file)
@@ -294,30 +298,113 @@ class ExtensionFileManager(private val context: Context) {
                 if (jsPackageResult != null) {
                     return@withContext jsPackageResult
                 }
-                extractDir.deleteRecursively()
                 return@withContext ImportResult.Error(
                     "No manifest.json or standalone JS/CSS files found. " +
                         "Chrome extension import currently requires a package with content_scripts, popup/options UI, or background/declarativeNetRequest runtime assets."
                 )
             }
 
+            val (extensionId, extensionDir) = finalizeChromeExtensionDir(extractDir, storeId)
+
             val parseResult = ChromeExtensionParser.parseFromDirectory(
-                actualDir,
-                overrideExtensionId = extensionId,
-                storeId = storeId
+                extensionDir,
+                overrideExtensionId = extensionId
             )
 
             if (!parseResult.isValid) {
-                extractDir.deleteRecursively()
+                extensionDir.deleteRecursively()
                 return@withContext ImportResult.Error(
                     "Invalid extension: ${parseResult.warnings.joinToString()}"
                 )
             }
 
-            ImportResult.ChromeExtension(parseResult, actualDir, storeId = storeId.orEmpty())
+            ImportResult.ChromeExtension(parseResult, extensionDir, storeId = storeId.orEmpty())
         } catch (e: Exception) {
             AppLogger.e(TAG, "Failed to import Chrome extension from file", e)
             ImportResult.Error("Import failed: ${e.message}")
+        } finally {
+            if (extractDir.exists()) extractDir.deleteRecursively()
+        }
+    }
+
+    fun finalizeChromeExtensionDir(
+        unpackedDir: File,
+        storeId: String? = null
+    ): Pair<String, File> {
+        val manifestDir = findManifestDirectory(unpackedDir) ?: return unpackedDir.name to unpackedDir
+        val manifest = runCatching {
+            org.json.JSONObject(File(manifestDir, "manifest.json").readText())
+        }.getOrNull()
+        val extensionId = ChromeExtensionParser.isValidStoreId(storeId)
+            ?: manifest?.let { ChromeExtensionParser.computeExtensionId(it) }
+            ?: unpackedDir.name.removePrefix("tmp_").ifBlank {
+                UUID.randomUUID().toString().take(12)
+            }
+        val target = File(extensionsDir, extensionId)
+        if (target.absolutePath == manifestDir.absolutePath) {
+            rootCache[rootCacheKey(extensionId)] = target
+            return extensionId to target
+        }
+
+        val staging = File(extensionsDir, "$extensionId.new")
+        val backup = File(extensionsDir, "$extensionId.old")
+        staging.deleteRecursively()
+        backup.deleteRecursively()
+        copyTree(manifestDir, staging)
+        if (target.exists() && !target.renameTo(backup)) target.deleteRecursively()
+        if (!staging.renameTo(target)) {
+            try {
+                copyTree(staging, target)
+                staging.deleteRecursively()
+            } catch (e: Exception) {
+                target.deleteRecursively()
+                if (backup.exists()) backup.renameTo(target)
+                throw e
+            }
+        }
+        backup.deleteRecursively()
+        if (unpackedDir.absolutePath != target.absolutePath && unpackedDir.exists()) {
+            unpackedDir.deleteRecursively()
+        }
+        rootCache[rootCacheKey(extensionId)] = target
+        return extensionId to target
+    }
+
+    fun findChromeExtensionRoot(extensionId: String): File? {
+        val clean = extensionId.trim()
+        if (clean.isEmpty()) return null
+        rootCache[rootCacheKey(clean)]?.takeIf { it.isDirectory }?.let { return it }
+        findManifestDirectory(File(extensionsDir, clean))?.let {
+            rootCache[rootCacheKey(clean)] = it
+            return it
+        }
+        extensionsDir.listFiles()
+            ?.filter { it.isDirectory && it.name != clean && it.isUsableExtensionDirName() }
+            ?.forEach { dir ->
+                val manifestDir = findManifestDirectory(dir) ?: return@forEach
+                val manifest = runCatching {
+                    org.json.JSONObject(File(manifestDir, "manifest.json").readText())
+                }.getOrNull() ?: return@forEach
+                if (ChromeExtensionParser.computeExtensionId(manifest) == clean) {
+                    rootCache[rootCacheKey(clean)] = manifestDir
+                    return manifestDir
+                }
+            }
+        return null
+    }
+
+    private fun File.isUsableExtensionDirName(): Boolean =
+        !name.startsWith("tmp_") && !name.endsWith(".new") && !name.endsWith(".old")
+
+    private fun copyTree(source: File, target: File) {
+        source.walkTopDown().forEach { file ->
+            val destination = File(target, file.relativeTo(source).path)
+            if (file.isDirectory) {
+                destination.mkdirs()
+            } else {
+                destination.parentFile?.mkdirs()
+                file.copyTo(destination, overwrite = true)
+            }
         }
     }
 
@@ -467,10 +554,22 @@ class ExtensionFileManager(private val context: Context) {
 
     fun cleanupExtensionDir(dirName: String) {
         try {
+            rootCache.remove(rootCacheKey(dirName))
             val dir = File(extensionsDir, dirName)
             if (dir.exists()) {
                 dir.deleteRecursively()
                 AppLogger.d(TAG, "Cleaned up extension dir: $dirName")
+                return
+            }
+            val manifestDir = findChromeExtensionRoot(dirName) ?: return
+            var top = manifestDir
+            while (top.parentFile != null && top.parentFile != extensionsDir) {
+                top = top.parentFile ?: break
+            }
+            if (top != extensionsDir) {
+                top.deleteRecursively()
+                rootCache.remove(rootCacheKey(dirName))
+                AppLogger.d(TAG, "Cleaned up extension dir: ${top.name}")
             }
         } catch (e: Exception) {
             AppLogger.e(TAG, "Failed to cleanup extension dir: $dirName", e)

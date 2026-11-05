@@ -817,9 +817,17 @@ class PluginStore private constructor(private val context: Context) {
      */
     private fun hydrateChromeMetadata(plugin: Plugin): Plugin {
         if (plugin.kind != PluginKind.CHROME_EXTENSION || plugin.chromeExtId.isBlank()) return plugin
-        if (plugin.manifestJson.isNotBlank()) return plugin
-        val root = File(context.filesDir, "extensions/${plugin.chromeExtId}")
-        if (!root.isDirectory) return plugin
+        if (plugin.manifestJson.isNotBlank() &&
+            plugin.matches.isNotEmpty() &&
+            (plugin.popupPath.isNotBlank() ||
+                plugin.optionsPagePath.isNotBlank() ||
+                plugin.backgroundScript.isNotBlank())
+        ) {
+            return plugin
+        }
+        val root = com.webtoapp.core.extension.ExtensionFileManager(context)
+            .findChromeExtensionRoot(plugin.chromeExtId)
+            ?: return plugin
         val manifestFile = root.walkTopDown()
             .maxDepth(4)
             .filter { it.isFile && it.name == "manifest.json" }
@@ -829,14 +837,15 @@ class PluginStore private constructor(private val context: Context) {
             ?: return plugin
         val manifest = runCatching { JSONObject(text) }.getOrNull() ?: return plugin
         return plugin.copy(
-            manifestJson = text,
+            manifestJson = plugin.manifestJson.ifBlank { text },
             backgroundScript = plugin.backgroundScript.ifBlank {
                 ChromeExtensionParser.extractBackgroundScript(manifest)
             },
             popupPath = plugin.popupPath.ifBlank { ChromeExtensionParser.extractPopupPath(manifest) },
             optionsPagePath = plugin.optionsPagePath.ifBlank {
                 ChromeExtensionParser.extractOptionsPagePath(manifest)
-            }
+            },
+            matches = plugin.matches.ifEmpty { chromeMatchRulesFromManifest(text) }
         )
     }
 

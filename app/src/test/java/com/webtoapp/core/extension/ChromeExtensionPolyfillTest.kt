@@ -33,6 +33,20 @@ class ChromeExtensionPolyfillTest {
     }
 
     @Test
+    fun `polyfill survives an opaque origin without localStorage`() {
+        val polyfill = ChromeExtensionPolyfill.generatePolyfill(
+            extensionId = "abcdefghijklmnop",
+            manifestJson = """{"name":"test"}""",
+            isBackground = true
+        )
+
+        assertThat(polyfill).containsMatch(
+            Regex("""try\s*\{\s*isFirstInstall = !localStorage\.getItem\(installedKey\);""").toPattern()
+        )
+        assertThat(polyfill).contains("__WTA_DELIVER_TO_BACKGROUND__")
+    }
+
+    @Test
     fun `content polyfill reads cookies through the origin-checked channel`() {
         val content = ChromeExtensionPolyfill.generatePolyfill("ext", "{}", isBackground = false)
         assertThat(content).contains("wtaAuthCall('getCookies'")
