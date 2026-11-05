@@ -64,3 +64,7 @@ Rules:
 - **Go** export must embed `libgo_exec_loader.so`.
 
 Missing any native lib causes `loadNode` / `loadJniBridge` failure at runtime.
+
+## Chrome extension assets
+
+When the app has Chrome extensions enabled, export embeds each unpacked extension under `assets/extensions/<EXT_ID>/`. Resource encryption writes `.enc` entries and the shell reads them through `AssetDecryptor`. The extension tree participates in the incremental content fingerprint, so reinstalling or updating an extension rebuilds the APK instead of reusing stale assets.

@@ -1,0 +1,10 @@
+Improved
+- Exported APKs are smaller and no longer carry the disabled disguise script.
+- Chrome extension files are embedded in exported APKs, including encrypted builds.
+
+Fixed
+- Chrome extension popups open for zip and store installs.
+- Offline cold starts serve the cached page when the site has a service worker.
+- Resize Content gives the keyboard its height back on Android 11+.
+- AI keys can be saved after a backup restore.
+- Long-press vibration plays when the menu opens.

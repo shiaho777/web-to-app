@@ -59,3 +59,4 @@ MV3 的"service worker"运行在一个带 service-worker 环境 shim 的隐藏 W
 
 - **导入** `.crx`(直接解析 CRX2/CRX3)或 `.zip`。
 - **Chrome 网上应用店** —— 浏览器扩展标签页按关键词实时搜索商店(或粘贴商店 URL / 扩展 ID),并通过 CRX 管线按需安装。实时搜索需要能访问 Google 的网络。
+- **导出的 APK** —— 每个启用的扩展文件会打进 `assets/extensions/<EXT_ID>/`,导出后 popup、options 页、后台上下文和 content script 都能加载。资源加密会把这些文件和其他资源一起加密。每次安装都以真实的 Chrome 扩展 id 命名(商店安装用商店 id,其他来源从 manifest `key` 推导),因此商店和 zip 安装会解析到同一套文件。
