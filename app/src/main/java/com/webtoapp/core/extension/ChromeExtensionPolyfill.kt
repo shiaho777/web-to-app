@@ -1601,8 +1601,13 @@ object ChromeExtensionPolyfill {
 
     // ===== Fire onInstalled event (once per extension per page) =====
     var installedKey = STORAGE_PREFIX + '__installed__';
-    var isFirstInstall = !localStorage.getItem(installedKey);
-    localStorage.setItem(installedKey, '1');
+    var isFirstInstall = true;
+    try {
+        isFirstInstall = !localStorage.getItem(installedKey);
+        localStorage.setItem(installedKey, '1');
+    } catch (e) {
+        isFirstInstall = true;
+    }
 
     setTimeout(function() {
         onInstalledEvent._fire({

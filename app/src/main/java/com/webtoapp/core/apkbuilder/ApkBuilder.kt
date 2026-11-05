@@ -939,6 +939,12 @@ class ApkBuilder(private val context: Context) {
                 htmlFiles = htmlFiles,
                 galleryItems = galleryItems,
                 errorPageMediaPath = errorPageMediaPath,
+                extensionDirs = config.embeddedPlugins
+                    .filter { it.kind == "CHROME_EXTENSION" }
+                    .mapNotNull { plugin ->
+                        com.webtoapp.core.extension.ExtensionFileManager(context)
+                            .findChromeExtensionRoot(plugin.chromeExtId)
+                    },
                 nativeLibsFingerprint = runtimeAssetsFingerprint(
                     webApp.appType,
                     config.engineType,
@@ -1899,6 +1905,13 @@ class ApkBuilder(private val context: Context) {
 
                 addCustomCaCertsToAssets(zipOut, config.networkTrustConfig.customCaCertificates)
 
+                addChromeExtensionAssetsToApk(
+                    zipOut = zipOut,
+                    config = config,
+                    encryptor = assetEncryptor,
+                    encryptionConfig = encryptionConfig
+                )
+
                 val projectDir = when (config.appType) {
                     "WORDPRESS" -> wordPressProjectDir
                     "NODEJS_APP" -> nodejsProjectDir
@@ -2236,6 +2249,60 @@ class ApkBuilder(private val context: Context) {
         } catch (e: Exception) {
             AppLogger.e("ApkBuilder", "Failed to embed status bar background: ${e.message}", e)
         }
+    }
+
+    private fun addChromeExtensionAssetsToApk(
+        zipOut: ZipOutputStream,
+        config: ApkConfig,
+        encryptor: com.webtoapp.core.crypto.AssetEncryptor?,
+        encryptionConfig: com.webtoapp.core.crypto.EncryptionConfig
+    ) {
+        val extensions = config.embeddedPlugins.filter {
+            it.kind == "CHROME_EXTENSION" && it.chromeExtId.isNotBlank()
+        }
+        if (extensions.isEmpty()) return
+
+        val fileManager = com.webtoapp.core.extension.ExtensionFileManager(context)
+        val writtenEntries = HashSet<String>()
+        var fileCount = 0
+        var totalBytes = 0L
+        extensions.forEach { plugin ->
+            val root = fileManager.findChromeExtensionRoot(plugin.chromeExtId)
+            if (root == null) {
+                AppLogger.w(
+                    "ApkBuilder",
+                    "Chrome extension files not found for ${plugin.chromeExtId}; popup/background will be empty"
+                )
+                logger.log("Chrome extension files missing: ${plugin.chromeExtId}")
+                return@forEach
+            }
+            root.walkTopDown()
+                .filter { it.isFile }
+                .forEach { file ->
+                    val relative = file.relativeTo(root).path.replace(File.separatorChar, '/')
+                    if (relative.isBlank() || relative.split('/').any { it.startsWith(".") }) {
+                        return@forEach
+                    }
+                    val assetName = "extensions/${plugin.chromeExtId}/$relative"
+                    val entryEncryptor = if (encryptionConfig.enabled) encryptor else null
+                    val entryName = "assets/$assetName" + if (entryEncryptor != null) ".enc" else ""
+                    if (!writtenEntries.add(entryName)) return@forEach
+                    if (entryEncryptor != null) {
+                        val entry = java.util.zip.ZipEntry(entryName)
+                        entry.method = java.util.zip.ZipEntry.DEFLATED
+                        zipOut.putNextEntry(entry)
+                        file.inputStream().buffered().use { input ->
+                            entryEncryptor.encryptStreaming(input, assetName, zipOut)
+                        }
+                        zipOut.closeEntry()
+                    } else {
+                        ZipUtils.writeEntryDeflatedStreaming(zipOut, entryName, file)
+                    }
+                    fileCount++
+                    totalBytes += file.length()
+                }
+        }
+        logger.log("Chrome extension assets embedded: $fileCount files, ${totalBytes / 1024} KB")
     }
 
     /**

@@ -30,6 +30,7 @@ class ApkBuildCacheTest {
         // modes; without this entry CONTENT_OVERLAY duplicates it and the duplicates
         // accumulate across incremental rebuilds.
         assertThat(cache.isContentReplaceableEntry("assets/python_runtime/lib/os.py")).isTrue()
+        assertThat(cache.isContentReplaceableEntry("assets/extensions/ext/popup.html")).isTrue()
         assertThat(cache.isContentReplaceableEntry("AndroidManifest.xml")).isFalse()
         assertThat(cache.isContentReplaceableEntry("resources.arsc")).isFalse()
         assertThat(cache.isContentReplaceableEntry("lib/arm64-v8a/libnode.so")).isFalse()

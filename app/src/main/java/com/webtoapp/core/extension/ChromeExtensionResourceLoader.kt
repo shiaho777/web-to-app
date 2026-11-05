@@ -57,6 +57,11 @@ internal object ChromeExtensionResourceLoader {
         resourcePath: String
     ): File? {
         val normalizedPath = normalizeResourcePath(resourcePath) ?: return null
+        val root = ExtensionFileManager(context).findChromeExtensionRoot(extensionId)
+        if (root != null) {
+            val rootedFile = File(root, normalizedPath)
+            if (rootedFile.exists() && rootedFile.isFile) return rootedFile
+        }
         val extensionsDir = File(context.filesDir, EXTENSIONS_DIR)
         val directFile = File(extensionsDir, "$extensionId/$normalizedPath")
         if (directFile.exists() && directFile.isFile) return directFile
@@ -90,16 +95,9 @@ internal object ChromeExtensionResourceLoader {
         return path.takeIf { it.isNotEmpty() && !it.contains("..") }
     }
 
-    private fun loadAssetText(context: Context, extensionId: String, resourcePath: String): String? {
-        return try {
-            context.assets.open("$EXTENSIONS_DIR/$extensionId/$resourcePath")
-                .bufferedReader()
-                .use { it.readText() }
-        } catch (_: java.io.FileNotFoundException) {
-            null
-        } catch (e: Exception) {
-            AppLogger.w(TAG, "Failed to read extension asset: $extensionId/$resourcePath", e)
-            null
-        }
-    }
+    private fun loadAssetText(context: Context, extensionId: String, resourcePath: String): String? =
+        ExtensionResourceInterceptor.readAssetText(
+            context,
+            "$EXTENSIONS_DIR/$extensionId/$resourcePath"
+        )
 }

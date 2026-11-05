@@ -324,6 +324,69 @@ object ChromeExtensionParser {
         }
     }
 
+    fun isValidStoreId(storeId: String?): String? {
+        val clean = storeId?.trim().orEmpty()
+        return clean.takeIf { it.length == 32 && it.all { c -> c in 'a'..'p' } }
+    }
+
+    fun computeExtensionId(manifest: JSONObject): String? {
+        val key = manifest.optString("key", "").takeIf { it.isNotBlank() } ?: return null
+        return try {
+            val der = android.util.Base64.decode(key, android.util.Base64.DEFAULT)
+            val digest = java.security.MessageDigest.getInstance("SHA-256").digest(der)
+            buildString(32) {
+                for (i in 0 until 16) {
+                    val value = digest[i].toInt() and 0xFF
+                    append('a' + (value shr 4))
+                    append('a' + (value and 0x0F))
+                }
+            }
+        } catch (e: Exception) {
+            AppLogger.w(TAG, "Could not derive an extension id from the manifest key", e)
+            null
+        }
+    }
+
+    fun extractMatchRules(manifest: JSONObject): List<UrlMatchRule> {
+        val rules = linkedSetOf<UrlMatchRule>()
+        fun add(raw: String?, exclude: Boolean) {
+            val pattern = raw?.trim().orEmpty()
+            if (pattern.isEmpty()) return
+            rules += UrlMatchRule(
+                pattern = convertChromeMatchPattern(pattern),
+                exclude = exclude
+            )
+        }
+        manifest.optJSONArray("content_scripts")?.let { scripts ->
+            for (i in 0 until scripts.length()) {
+                val script = scripts.optJSONObject(i) ?: continue
+                script.optJSONArray("matches")?.let { arr ->
+                    for (j in 0 until arr.length()) add(arr.optString(j), exclude = false)
+                }
+                script.optJSONArray("exclude_matches")?.let { arr ->
+                    for (j in 0 until arr.length()) add(arr.optString(j), exclude = true)
+                }
+            }
+        }
+        manifest.optJSONArray("host_permissions")?.let { arr ->
+            for (i in 0 until arr.length()) add(arr.optString(i), exclude = false)
+        }
+        manifest.optJSONArray("permissions")?.let { arr ->
+            for (i in 0 until arr.length()) {
+                val permission = arr.optString(i)
+                if (permission == "<all_urls>" || permission.contains("://")) {
+                    add(permission, exclude = false)
+                }
+            }
+        }
+        return rules.toList()
+    }
+
+    fun extractMatchRules(manifestJson: String): List<UrlMatchRule> =
+        runCatching { JSONObject(manifestJson) }.getOrNull()
+            ?.let { extractMatchRules(it) }
+            .orEmpty()
+
     private fun extractStaticRuleResources(manifest: JSONObject): List<StaticRuleResource> {
         val ruleResources = manifest.optJSONObject("declarative_net_request")
             ?.optJSONArray("rule_resources")

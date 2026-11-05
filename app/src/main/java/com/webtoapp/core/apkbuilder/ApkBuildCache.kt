@@ -107,6 +107,7 @@ class ApkBuildCache(private val context: Context) {
         htmlFiles: List<com.webtoapp.data.model.HtmlFile>,
         galleryItems: List<com.webtoapp.data.model.GalleryItem>,
         errorPageMediaPath: String?,
+        extensionDirs: List<File?> = emptyList(),
         nativeLibsFingerprint: String? = null,
         hostVersionCode: Int = 0,
         forceFullRebuild: Boolean,
@@ -140,6 +141,7 @@ class ApkBuildCache(private val context: Context) {
             htmlFiles = htmlFiles,
             galleryItems = galleryItems,
             errorPageMediaPath = errorPageMediaPath,
+            extensionDirs = extensionDirs,
             statusBarImage = config.statusBarBackgroundImage,
             statusBarImageDark = config.statusBarBackgroundImageDark,
             floatingIcon = config.floatingWindowMinimizedIconPath,
@@ -321,6 +323,7 @@ class ApkBuildCache(private val context: Context) {
         if (entryName.startsWith("assets/wta_custom_ca/")) return true
         if (entryName.startsWith("assets/multiweb_sites/")) return true
         if (entryName.startsWith("assets/multi_web/")) return true
+        if (entryName.startsWith("assets/extensions/")) return true
         return false
     }
 
@@ -436,6 +439,7 @@ class ApkBuildCache(private val context: Context) {
         htmlFiles: List<com.webtoapp.data.model.HtmlFile>,
         galleryItems: List<com.webtoapp.data.model.GalleryItem>,
         errorPageMediaPath: String?,
+        extensionDirs: List<File?> = emptyList(),
         statusBarImage: String?,
         statusBarImageDark: String?,
         floatingIcon: String?,
@@ -446,6 +450,9 @@ class ApkBuildCache(private val context: Context) {
         parts += "configJson=${ApkConfigJsonFactory.create(config)}"
         projectDirs.filterNotNull().forEach { dir ->
             parts += "dir=${dir.absolutePath}|${treeFingerprint(dir)}"
+        }
+        extensionDirs.filterNotNull().forEach { dir ->
+            parts += "extensions=${dir.absolutePath}|${treeFingerprint(dir)}"
         }
         parts += "media=${fileFingerprint(mediaContentPath)}"
         parts += "splash=${fileFingerprint(splashMediaPath)}"

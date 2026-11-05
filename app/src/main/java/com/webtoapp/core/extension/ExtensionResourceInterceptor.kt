@@ -2,8 +2,11 @@ package com.webtoapp.core.extension
 
 import android.content.Context
 import android.webkit.WebResourceResponse
+import com.webtoapp.core.crypto.AssetDecryptor
+import com.webtoapp.core.crypto.CryptoConstants
 import com.webtoapp.core.logging.AppLogger
 import java.io.ByteArrayInputStream
+import java.io.InputStream
 
 object ExtensionResourceInterceptor {
 
@@ -11,6 +14,13 @@ object ExtensionResourceInterceptor {
     private const val SCHEME = "chrome-extension"
     private const val LOCALHOST_EXT_PREFIX = "https://localhost/__ext__/"
     private const val ASSETS_BASE = "extensions"
+
+    private val decryptors = java.util.concurrent.ConcurrentHashMap<Context, AssetDecryptor>()
+
+    private fun decryptorFor(context: Context): AssetDecryptor {
+        val appContext = context.applicationContext
+        return decryptors.getOrPut(appContext) { AssetDecryptor(appContext) }
+    }
 
     private val MIME_TYPES = mapOf(
         "html" to "text/html",
@@ -108,9 +118,32 @@ object ExtensionResourceInterceptor {
         }
     }
 
+    internal fun readAssetText(context: Context, assetPath: String): String? {
+        val stream = openAssetStream(context, assetPath) ?: return null
+        return try {
+            stream.bufferedReader(Charsets.UTF_8).use { it.readText() }
+        } catch (e: Exception) {
+            AppLogger.w(TAG, "Error reading extension asset: $assetPath", e)
+            null
+        }
+    }
+
+    private fun openAssetStream(context: Context, assetPath: String): InputStream? {
+        return try {
+            val decryptor = decryptorFor(context)
+            if (decryptor.isEncrypted(assetPath)) {
+                decryptor.openEncryptedAsset(assetPath + CryptoConstants.ENCRYPTED_EXTENSION)?.stream
+            } else {
+                context.assets.open(assetPath)
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
     private fun loadAssetResource(context: Context, assetPath: String, originalUrl: String): WebResourceResponse? {
         return try {
-            val inputStream = context.assets.open(assetPath)
+            val inputStream = openAssetStream(context, assetPath) ?: return null
             val mimeType = getMimeType(assetPath)
             val encoding = if (mimeType in TEXT_MIME_TYPES) "UTF-8" else null
 
@@ -139,6 +172,14 @@ object ExtensionResourceInterceptor {
 
     private fun loadFileResource(context: Context, extId: String, resourcePath: String, originalUrl: String): WebResourceResponse? {
         val extensionsDir = java.io.File(context.filesDir, ASSETS_BASE)
+
+        val root = ExtensionFileManager(context).findChromeExtensionRoot(extId)
+        if (root != null) {
+            val rootedFile = java.io.File(root, resourcePath)
+            if (rootedFile.exists() && rootedFile.isFile) {
+                return createFileResponse(rootedFile, originalUrl)
+            }
+        }
 
         val directFile = java.io.File(extensionsDir, "$extId/$resourcePath")
         if (directFile.exists() && directFile.isFile) {

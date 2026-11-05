@@ -1033,16 +1033,23 @@ private fun fetchDenied(statusText: String): String =
         put("body", "")
     }.toString()
 
-fun deriveOriginUrl(urlMatches: List<UrlMatchRule>): String {
-    val firstMatch = urlMatches.firstOrNull { !it.exclude }?.pattern ?: return "about:blank"
-    val url = firstMatch
-        .replace("*://", "https://")
-        .replace("/*", "/")
-        .replace("*.", "www.")
-    return try {
-        val uri = Uri.parse(url)
-        "${uri.scheme}://${uri.host}/"
-    } catch (e: Exception) {
-        "about:blank"
+fun deriveOriginUrl(urlMatches: List<UrlMatchRule>, extensionId: String? = null): String {
+    val fallback = extensionId?.takeIf { it.isNotBlank() }
+        ?.let { "https://$it.chromiumapp.org/" }
+        ?: "about:blank"
+    for (rule in urlMatches) {
+        if (rule.exclude || rule.isRegex) continue
+        val url = rule.pattern
+            .replace("*://", "https://")
+            .replace("/*", "/")
+            .replace("*.", "www.")
+        try {
+            val uri = Uri.parse(url)
+            val host = uri.host
+            if (uri.scheme.isNullOrBlank() || host.isNullOrBlank() || host == "*") continue
+            return "${uri.scheme}://$host/"
+        } catch (_: Exception) {
+        }
     }
+    return fallback
 }

@@ -195,9 +195,12 @@ class SaveSessionAsModuleUseCase(
     }
 
     private suspend fun saveAsChromeExtension(artifactRoot: File): Result {
-        val (extensionId, extensionDir) = extensionFiles.allocateChromeExtensionDir()
+        val (_, stagingDir) = extensionFiles.allocateChromeExtensionDir()
+        var extensionDir = stagingDir
         try {
-            copyTreeIgnoringHidden(artifactRoot, extensionDir)
+            copyTreeIgnoringHidden(artifactRoot, stagingDir)
+            val (extensionId, finalizedDir) = extensionFiles.finalizeChromeExtensionDir(stagingDir)
+            extensionDir = finalizedDir
             val parse = ChromeExtensionParser.parseFromDirectory(
                 extensionDir = extensionDir,
                 overrideExtensionId = extensionId
