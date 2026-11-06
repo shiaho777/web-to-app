@@ -1235,7 +1235,6 @@ class AdBlocker {
                 pageHost == d || pageHost.endsWith(".$d")
             }
         }
-        if (applicableScriptlets.isEmpty()) return ""
 
         val sb = StringBuilder()
         sb.appendLine("(function(){")
