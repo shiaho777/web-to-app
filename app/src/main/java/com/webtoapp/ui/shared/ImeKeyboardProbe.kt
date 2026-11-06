@@ -148,3 +148,107 @@ internal const val IME_REVEAL_FIELD_JS = """
   }
 })()
 """
+
+internal const val IME_FIXED_FIELD_JS = """
+(function() {
+  try {
+    var el = document.activeElement;
+    while (el && el.shadowRoot && el.shadowRoot.activeElement) {
+      el = el.shadowRoot.activeElement;
+    }
+    if (!el || el.nodeType !== 1) return '0';
+    var n = el;
+    while (n && n.nodeType === 1) {
+      var position = window.getComputedStyle(n).position;
+      if (position === 'fixed' || position === 'sticky') return '1';
+      var parent = n.parentElement;
+      if (!parent && n.getRootNode) {
+        var root = n.getRootNode();
+        parent = root && root.host ? root.host : null;
+      }
+      n = parent;
+    }
+    return '0';
+  } catch (e) {
+    return '0';
+  }
+})()
+"""
+
+internal fun parseFixedFieldResult(callbackJson: String?): Boolean {
+    val raw = callbackJson?.trim() ?: return false
+    return raw == "1" || raw == "\"1\""
+}
+
+internal const val IME_REVEAL_CARET_JS = """
+(function() {
+  try {
+    var el = document.activeElement;
+    while (el && el.shadowRoot && el.shadowRoot.activeElement) {
+      el = el.shadowRoot.activeElement;
+    }
+    if (!el || el.nodeType !== 1 || !document.body) return '';
+    if (el.tagName === 'TEXTAREA') {
+      var start = el.selectionStart;
+      if (start === null || start === undefined) return '';
+      var cs = window.getComputedStyle(el);
+      var mirror = document.createElement('div');
+      mirror.style.position = 'absolute';
+      mirror.style.left = '0';
+      mirror.style.top = '0';
+      mirror.style.visibility = 'hidden';
+      mirror.style.pointerEvents = 'none';
+      mirror.style.display = 'block';
+      mirror.style.whiteSpace = el.wrap === 'off' ? 'pre' : 'pre-wrap';
+      mirror.style.overflowWrap = 'break-word';
+      mirror.style.width = el.clientWidth + 'px';
+      mirror.style.boxSizing = 'border-box';
+      mirror.style.fontFamily = cs.fontFamily;
+      mirror.style.fontSize = cs.fontSize;
+      mirror.style.fontWeight = cs.fontWeight;
+      mirror.style.fontStyle = cs.fontStyle;
+      mirror.style.letterSpacing = cs.letterSpacing;
+      mirror.style.lineHeight = cs.lineHeight;
+      mirror.style.padding = cs.padding;
+      mirror.style.border = '0';
+      mirror.textContent = el.value.substring(0, start);
+      var marker = document.createElement('span');
+      marker.textContent = '\u200b';
+      mirror.appendChild(marker);
+      document.body.appendChild(mirror);
+      var caretTop = marker.offsetTop;
+      var lineHeight = parseFloat(cs.lineHeight);
+      if (!lineHeight || isNaN(lineHeight)) {
+        lineHeight = (parseFloat(cs.fontSize) || 16) * 1.2;
+      }
+      document.body.removeChild(mirror);
+      var visibleTop = el.scrollTop;
+      var visibleBottom = visibleTop + el.clientHeight;
+      if (caretTop < visibleTop) {
+        el.scrollTop = Math.max(0, caretTop - lineHeight);
+      } else if (caretTop + lineHeight > visibleBottom) {
+        el.scrollTop = caretTop + lineHeight - el.clientHeight;
+      }
+      return 'scrolled';
+    }
+    if (el.isContentEditable) {
+      var sel = window.getSelection();
+      if (!sel || sel.rangeCount === 0) return '';
+      var range = sel.getRangeAt(0).cloneRange();
+      range.collapse(false);
+      var rect = range.getBoundingClientRect();
+      var vv = window.visualViewport;
+      var top = vv ? vv.offsetTop : 0;
+      var bottom = vv ? vv.offsetTop + vv.height : (window.innerHeight || 0);
+      if (rect.top >= top - 1 && rect.bottom <= bottom + 1) return 'visible';
+      var node = range.startContainer;
+      var target = node.nodeType === 1 ? node : node.parentElement;
+      if (target) target.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      return 'scrolled';
+    }
+    return '';
+  } catch (e) {
+    return '';
+  }
+})()
+"""

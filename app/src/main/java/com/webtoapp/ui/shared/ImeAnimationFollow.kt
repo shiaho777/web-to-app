@@ -49,6 +49,24 @@ internal class ImeAnimationFollow {
         )
     }
 
+    fun onFrameResize(shown: Int): ImeFrame {
+        val visible = shown.coerceAtLeast(0)
+        return ImeFrame(
+            layoutBottom = visible,
+            scrollDocument = false,
+            clipBottom = 0,
+        )
+    }
+
+    fun onEndResize(finalBottom: Int): ImeFrame {
+        animating = false
+        val settled = finalBottom.coerceAtLeast(0)
+        settledBottom = settled
+        settledPadding = settled
+        targetBottom = settled
+        return ImeFrame(layoutBottom = settled, scrollDocument = false, clipBottom = 0)
+    }
+
     fun onEnd(finalBottom: Int): ImeFrame = settle(finalBottom)
 
     fun jumpTo(bottom: Int): ImeFrame = settle(bottom)

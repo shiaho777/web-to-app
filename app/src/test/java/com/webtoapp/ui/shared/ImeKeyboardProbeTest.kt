@@ -77,4 +77,14 @@ class ImeKeyboardProbeTest {
         assertThat(parseImeProbe("800,760")).isNull()
         assertThat(parseImeProbe("\"0,0,0,-1,-1\"")).isNull()
     }
+
+    @Test
+    fun `fixed field parser accepts quoted and bare results`() {
+        assertThat(parseFixedFieldResult("1")).isTrue()
+        assertThat(parseFixedFieldResult("\"1\"")).isTrue()
+        assertThat(parseFixedFieldResult("0")).isFalse()
+        assertThat(parseFixedFieldResult("\"0\"")).isFalse()
+        assertThat(parseFixedFieldResult(null)).isFalse()
+        assertThat(parseFixedFieldResult("")).isFalse()
+    }
 }
