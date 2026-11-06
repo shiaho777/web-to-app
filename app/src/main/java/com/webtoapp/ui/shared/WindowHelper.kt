@@ -434,6 +434,10 @@ object WindowHelper {
 
         var imeAnimating = false
         var restCssPerPx: Float? = null
+        var fixedField = false
+        var fixedProbePending = false
+        var fixedProbeGeneration = 0
+        var latestShown = 0
         val follow = ImeAnimationFollow()
         val documentScroll = ImeDocumentScroll()
 
@@ -454,6 +458,21 @@ object WindowHelper {
                 contentView.clipBounds = Rect(0, 0, contentView.width, clipBottom)
             } else if (clip <= 0 && contentView.clipBounds != null) {
                 contentView.clipBounds = null
+            }
+        }
+
+        fun probeFixedField(webView: android.webkit.WebView) {
+            val generation = ++fixedProbeGeneration
+            webView.evaluateJavascript(IME_FIXED_FIELD_JS) { raw ->
+                if (generation != fixedProbeGeneration) return@evaluateJavascript
+                if (contentView !in manualImeInstalled || !contentView.isAttachedToWindow) {
+                    return@evaluateJavascript
+                }
+                fixedProbePending = false
+                fixedField = parseFixedFieldResult(raw)
+                if (fixedField && imeAnimating && latestShown > 0) {
+                    applyFrame(follow.onFrameResize(latestShown))
+                }
             }
         }
 
@@ -511,6 +530,11 @@ object WindowHelper {
             webView.evaluateJavascript(IME_REVEAL_FIELD_JS, null)
         }
 
+        fun revealFixedCaret(webView: android.webkit.WebView) {
+            if (!webView.isAttachedToWindow) return
+            webView.evaluateJavascript(IME_REVEAL_CARET_JS, null)
+        }
+
         fun revealAfterResize(webView: android.webkit.WebView) {
             val observer = webView.viewTreeObserver
             if (!observer.isAlive) {
@@ -559,6 +583,12 @@ object WindowHelper {
                         imeAnimating = true
                         follow.onPrepare()
                         beginDocumentScroll()
+                        latestShown = 0
+                        fixedField = follow.settledPadding > 0
+                        fixedProbePending = !fixedField
+                        if (!fixedField) {
+                            findWebViewInHierarchy(contentView)?.let { probeFixedField(it) }
+                        }
                     }
                 }
 
@@ -573,9 +603,16 @@ object WindowHelper {
                             beginDocumentScroll()
                         }
                         val shown = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom
-                        val frame = follow.onFrame(shown)
+                        latestShown = shown
+                        val frame = if (fixedField) {
+                            follow.onFrameResize(shown)
+                        } else {
+                            follow.onFrame(shown)
+                        }
                         applyFrame(frame)
-                        if (frame.scrollDocument) scrollCoveredField(shown)
+                        if (!fixedField && !fixedProbePending && frame.scrollDocument) {
+                            scrollCoveredField(shown)
+                        }
                     }
                     return insets
                 }
@@ -588,10 +625,18 @@ object WindowHelper {
                     val imeVisible = rootInsets?.isVisible(WindowInsetsCompat.Type.ime()) ?: false
                     val imeBottom = rootInsets?.getInsets(WindowInsetsCompat.Type.ime())?.bottom ?: 0
                     val finalBottom = if (imeVisible) imeBottom else 0
-                    if (finalBottom > follow.settledBottom) scrollCoveredField(finalBottom)
-                    documentScroll.end()
-                    applyFrame(follow.onEnd(finalBottom))
-                    settleKeyboard(finalBottom)
+                    if (fixedField) {
+                        documentScroll.end()
+                        applyFrame(follow.onEndResize(finalBottom))
+                        if (finalBottom > 0) {
+                            findWebViewInHierarchy(contentView)?.let { revealFixedCaret(it) }
+                        }
+                    } else {
+                        if (finalBottom > follow.settledBottom) scrollCoveredField(finalBottom)
+                        documentScroll.end()
+                        applyFrame(follow.onEnd(finalBottom))
+                        settleKeyboard(finalBottom)
+                    }
                 }
             }
         )
@@ -601,8 +646,15 @@ object WindowHelper {
             if (imeAnimating) {
                 follow.onTarget(imeBottom)
             } else if (imeBottom != follow.settledBottom) {
-                applyFrame(follow.jumpTo(imeBottom))
-                settleKeyboard(imeBottom)
+                if (fixedField) {
+                    applyFrame(follow.onEndResize(imeBottom))
+                    if (imeBottom > 0) {
+                        findWebViewInHierarchy(contentView)?.let { revealFixedCaret(it) }
+                    }
+                } else {
+                    applyFrame(follow.jumpTo(imeBottom))
+                    settleKeyboard(imeBottom)
+                }
             }
             windowInsets
         }

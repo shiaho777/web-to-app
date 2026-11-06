@@ -98,4 +98,34 @@ class ImeAnimationFollowTest {
         assertThat(follow.onFrame(300)).isEqualTo(ImeFrame(0, scrollDocument = false, clipBottom = 300))
         assertThat(follow.onEnd(0)).isEqualTo(ImeFrame(0, scrollDocument = false, clipBottom = 0))
     }
+
+    @Test
+    fun `a fixed field follows the keyboard every frame and keeps the padding`() {
+        val follow = ImeAnimationFollow()
+        follow.onPrepare()
+        follow.onTarget(300)
+
+        assertThat(follow.onFrameResize(0)).isEqualTo(ImeFrame(0, scrollDocument = false, clipBottom = 0))
+        assertThat(follow.onFrameResize(120)).isEqualTo(ImeFrame(120, scrollDocument = false, clipBottom = 0))
+        assertThat(follow.onFrameResize(300)).isEqualTo(ImeFrame(300, scrollDocument = false, clipBottom = 0))
+        assertThat(follow.onEndResize(300)).isEqualTo(ImeFrame(300, scrollDocument = false, clipBottom = 0))
+        assertThat(follow.settledPadding).isEqualTo(300)
+        assertThat(follow.settledBottom).isEqualTo(300)
+    }
+
+    @Test
+    fun `a fixed field gives the keyboard height back every closing frame`() {
+        val follow = ImeAnimationFollow()
+        follow.onPrepare()
+        follow.onTarget(300)
+        follow.onEndResize(300)
+
+        follow.onPrepare()
+        follow.onTarget(0)
+        assertThat(follow.onFrameResize(300)).isEqualTo(ImeFrame(300, scrollDocument = false, clipBottom = 0))
+        assertThat(follow.onFrameResize(140)).isEqualTo(ImeFrame(140, scrollDocument = false, clipBottom = 0))
+        assertThat(follow.onEndResize(0)).isEqualTo(ImeFrame(0, scrollDocument = false, clipBottom = 0))
+        assertThat(follow.settledPadding).isEqualTo(0)
+        assertThat(follow.settledBottom).isEqualTo(0)
+    }
 }
