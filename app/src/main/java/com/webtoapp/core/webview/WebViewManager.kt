@@ -5764,9 +5764,7 @@ class WebViewManager(
                 """.trimIndent())
             }
 
-            val canInjectShieldsJs = !conservativeMode
-
-            if (canInjectShieldsJs && adBlocker.isEnabled()) {
+            if (adBlocker.isEnabled()) {
                 val adPageHost = pageUrl?.let { extractHostFromUrl(it) } ?: ""
                 if (adPageHost.isNotEmpty()) {
                     val cosmeticCss = adBlocker.getCosmeticFilterCss(adPageHost)
