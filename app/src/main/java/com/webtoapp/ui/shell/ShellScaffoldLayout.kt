@@ -31,6 +31,7 @@ import com.webtoapp.ui.shared.PageEdgeChrome
 import com.webtoapp.ui.shared.effectiveBottomContentPadding
 import com.webtoapp.ui.shared.pageEdgeBands
 import com.webtoapp.ui.shared.parseBandColor
+import com.webtoapp.ui.shared.scaffoldInsetsShouldExcludeIme
 import com.webtoapp.core.webview.WebViewCallbacks
 import com.webtoapp.data.model.WebViewConfig
 import com.webtoapp.data.model.hasAnyToolbarItem
@@ -146,15 +147,11 @@ fun BoxScope.ShellScaffoldLayout(
     CompositionLocalProvider(LocalBrowserChromeHost provides if (showToolbar) chromeHost else null) {
     Scaffold(
 
-        // Fullscreen already owns the system bars, so the scaffold must not add
-        // them again under the toolbar. Otherwise the page sits below a second inset.
-        contentWindowInsets = if (hideToolbar) {
-            WindowInsets(0, 0, 0, 0)
-        } else {
-            // #1075: the window-level IME padding already lifts the layout above
-            // the keyboard, so the navigation-bar inset must not stack on top of
-            // it — the double inset rendered as a black band above the IME.
-            ScaffoldDefaults.contentWindowInsets.exclude(WindowInsets.ime)
+        contentWindowInsets = when {
+            hideToolbar -> WindowInsets(0, 0, 0, 0)
+            scaffoldInsetsShouldExcludeIme(webViewConfig.keyboardAdjustMode) ->
+                ScaffoldDefaults.contentWindowInsets.exclude(WindowInsets.ime)
+            else -> ScaffoldDefaults.contentWindowInsets
         },
         modifier = Modifier,
         topBar = {
