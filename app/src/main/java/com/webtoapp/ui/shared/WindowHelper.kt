@@ -11,6 +11,7 @@ import android.view.Window
 import android.view.WindowManager
 import android.webkit.WebChromeClient
 import android.widget.FrameLayout
+import androidx.core.graphics.Insets
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsAnimationCompat
@@ -20,6 +21,11 @@ import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.data.model.KeyboardAdjustMode
 import java.util.Collections
 import java.util.WeakHashMap
+
+internal fun stripImeInsets(insets: WindowInsetsCompat): WindowInsetsCompat =
+    WindowInsetsCompat.Builder(insets)
+        .setInsets(WindowInsetsCompat.Type.ime(), Insets.NONE)
+        .build()
 
 object WindowHelper {
 
@@ -419,6 +425,9 @@ object WindowHelper {
                 )
 
                 clearImePadding(contentView)
+                if (!decorFitsSystemWindows && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    installImeOverlayIsolation(contentView)
+                }
 
                 AppLogger.d(tag, "键盘模式: NOTHING (覆盖)")
             }
@@ -659,6 +668,13 @@ object WindowHelper {
             windowInsets
         }
 
+        ViewCompat.requestApplyInsets(contentView)
+    }
+
+    private fun installImeOverlayIsolation(contentView: View) {
+        ViewCompat.setOnApplyWindowInsetsListener(contentView) { _, windowInsets ->
+            stripImeInsets(windowInsets)
+        }
         ViewCompat.requestApplyInsets(contentView)
     }
 
