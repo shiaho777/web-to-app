@@ -101,6 +101,7 @@ import com.webtoapp.ui.shared.PageEdgeChrome
 import com.webtoapp.ui.shared.WindowHelper
 import com.webtoapp.ui.shared.effectiveBottomContentPadding
 import com.webtoapp.ui.shared.pageEdgeBands
+import com.webtoapp.ui.shared.needsPanelImePadding
 import com.webtoapp.ui.shared.parseBandColor
 import com.webtoapp.ui.shell.ConsoleLevel
 import com.webtoapp.ui.shell.ConsoleLogEntry
@@ -3823,6 +3824,12 @@ fun WebViewScreen(
     val previewPluginsEnabled = webApp?.pluginsEnabled == true ||
         (isTestMode && !testModuleIds.isNullOrEmpty())
 
+    val panelImePadding = if (needsPanelImePadding(webApp?.webViewConfig?.keyboardAdjustMode)) {
+        Modifier.imePadding()
+    } else {
+        Modifier
+    }
+
     LaunchedEffect(hideToolbar) {
 
         onFullscreenModeChanged(hideToolbar)
@@ -3837,7 +3844,7 @@ fun WebViewScreen(
         } else {
             ScaffoldDefaults.contentWindowInsets
         },
-        modifier = if (hideToolbar) Modifier.fillMaxSize() else Modifier,
+        modifier = (if (hideToolbar) Modifier.fillMaxSize() else Modifier).then(panelImePadding),
         topBar = {
             if (shouldShowTopBar) {
                 val testSubtitle = if (isTestMode && !testModuleIds.isNullOrEmpty()) {

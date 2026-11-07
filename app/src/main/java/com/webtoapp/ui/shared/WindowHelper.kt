@@ -19,6 +19,9 @@ import com.webtoapp.data.model.KeyboardAdjustMode
 import java.util.Collections
 import java.util.WeakHashMap
 
+internal fun needsPanelImePadding(mode: KeyboardAdjustMode?): Boolean =
+    mode != KeyboardAdjustMode.RESIZE
+
 object WindowHelper {
 
     private val imeOcclusionListeners =
