@@ -4,6 +4,9 @@ import android.app.Activity
 import android.graphics.Color
 import android.view.View
 import android.view.WindowManager
+import androidx.core.graphics.Insets
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import com.google.common.truth.Truth.assertThat
 import com.webtoapp.data.model.KeyboardAdjustMode
 import org.junit.Test
@@ -222,5 +225,59 @@ class WindowHelperKeyboardModeApi30Test {
         )
 
         assertThat(WindowHelper.isClassicSystemBarsWindow(activity)).isFalse()
+    }
+
+    @Test
+    fun `nothing mode keeps the keyboard inset away from the page`() {
+        val activity = Robolectric.setupActivity(Activity::class.java)
+        WindowHelper.applyImmersiveFullscreen(
+            activity,
+            enabled = false,
+            keyboardAdjustMode = KeyboardAdjustMode.NOTHING
+        )
+        val contentView = activity.findViewById<View>(android.R.id.content)
+        val ime = WindowInsetsCompat.Builder()
+            .setInsets(WindowInsetsCompat.Type.ime(), Insets.of(0, 0, 0, 320))
+            .build()
+
+        val result = ViewCompat.dispatchApplyWindowInsets(contentView, ime)
+
+        assertThat(result.getInsets(WindowInsetsCompat.Type.ime()).bottom).isEqualTo(0)
+    }
+
+    @Test
+    fun `switching to resize mode removes the overlay isolation`() {
+        val activity = Robolectric.setupActivity(Activity::class.java)
+        WindowHelper.applyImmersiveFullscreen(
+            activity,
+            enabled = false,
+            keyboardAdjustMode = KeyboardAdjustMode.NOTHING
+        )
+        WindowHelper.applyImmersiveFullscreen(
+            activity,
+            enabled = false,
+            keyboardAdjustMode = KeyboardAdjustMode.RESIZE
+        )
+        val contentView = activity.findViewById<View>(android.R.id.content)
+        val ime = WindowInsetsCompat.Builder()
+            .setInsets(WindowInsetsCompat.Type.ime(), Insets.of(0, 0, 0, 320))
+            .build()
+
+        val result = ViewCompat.dispatchApplyWindowInsets(contentView, ime)
+
+        assertThat(result.getInsets(WindowInsetsCompat.Type.ime()).bottom).isEqualTo(320)
+    }
+
+    @Test
+    fun `stripImeInsets preserves non-ime insets`() {
+        val source = WindowInsetsCompat.Builder()
+            .setInsets(WindowInsetsCompat.Type.ime(), Insets.of(0, 0, 0, 320))
+            .setInsets(WindowInsetsCompat.Type.navigationBars(), Insets.of(0, 0, 0, 48))
+            .build()
+
+        val stripped = stripImeInsets(source)
+
+        assertThat(stripped.getInsets(WindowInsetsCompat.Type.ime()).bottom).isEqualTo(0)
+        assertThat(stripped.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom).isEqualTo(48)
     }
 }
