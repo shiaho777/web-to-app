@@ -2,11 +2,9 @@ package com.webtoapp.ui.shared
 
 import android.app.Activity
 import android.content.pm.ActivityInfo
-import android.graphics.Rect
 import android.os.Build
 import android.view.View
 import android.view.ViewGroup
-import android.view.ViewTreeObserver
 import android.view.Window
 import android.view.WindowManager
 import android.webkit.WebChromeClient
@@ -21,13 +19,7 @@ import com.webtoapp.data.model.KeyboardAdjustMode
 import java.util.Collections
 import java.util.WeakHashMap
 
-internal fun scaffoldInsetsShouldExcludeIme(mode: KeyboardAdjustMode): Boolean =
-    mode == KeyboardAdjustMode.RESIZE
-
 object WindowHelper {
-
-    private val manualImeInstalled =
-        Collections.synchronizedSet(Collections.newSetFromMap(WeakHashMap<View, Boolean>()))
 
     private val imeOcclusionListeners =
         java.util.concurrent.CopyOnWriteArrayList<(View, Int) -> Unit>()
@@ -408,8 +400,8 @@ object WindowHelper {
                         WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING or
                             WindowManager.LayoutParams.SOFT_INPUT_STATE_UNSPECIFIED
                     )
-                    installManualImeResize(contentView)
-                    AppLogger.d(tag, "键盘模式: RESIZE (边到边，键盘上沿裁剪，必要时再让出键盘高度)")
+                    installNativeImeResize(contentView)
+                    AppLogger.d(tag, "键盘模式: RESIZE (原生 IME 高度)")
                 }
             }
 
@@ -428,194 +420,37 @@ object WindowHelper {
         }
     }
 
-    private fun installManualImeResize(contentView: View) {
-        if (contentView in manualImeInstalled) {
-            ViewCompat.requestApplyInsets(contentView)
-            return
-        }
-        manualImeInstalled.add(contentView)
-
+    private fun installNativeImeResize(contentView: View) {
         var imeAnimating = false
-        var restCssPerPx: Float? = null
-        var fixedField = false
-        var fixedProbePending = false
-        var fixedProbeGeneration = 0
-        var latestShown = 0
-        val follow = ImeAnimationFollow()
-        val documentScroll = ImeDocumentScroll()
+        var settledBottom = 0
 
-        fun applyFrame(frame: ImeFrame) {
-            if (contentView.translationY != 0f) contentView.translationY = 0f
-            if (contentView.paddingBottom != frame.layoutBottom) {
+        fun applyBottom(bottom: Int) {
+            if (contentView.paddingBottom == bottom) return
                 contentView.setPadding(
                     contentView.paddingLeft,
                     contentView.paddingTop,
                     contentView.paddingRight,
-                    frame.layoutBottom
+                    bottom
                 )
-            }
-            publishImeOcclusion(contentView, frame.layoutBottom)
-            val clip = frame.clipBottom
-            if (clip > 0 && contentView.height > 0 && contentView.width > 0) {
-                val clipBottom = (contentView.height - clip).coerceAtLeast(0)
-                contentView.clipBounds = Rect(0, 0, contentView.width, clipBottom)
-            } else if (clip <= 0 && contentView.clipBounds != null) {
-                contentView.clipBounds = null
-            }
-        }
-
-        fun probeFixedField(webView: android.webkit.WebView) {
-            val generation = ++fixedProbeGeneration
-            webView.evaluateJavascript(IME_FIXED_FIELD_JS) { raw ->
-                if (generation != fixedProbeGeneration) return@evaluateJavascript
-                if (contentView !in manualImeInstalled || !contentView.isAttachedToWindow) {
-                    return@evaluateJavascript
-                }
-                fixedProbePending = false
-                fixedField = parseFixedFieldResult(raw)
-                if (fixedField && imeAnimating && latestShown > 0) {
-                    applyFrame(follow.onFrameResize(latestShown))
-                }
-            }
-        }
-
-        var latestImeBottom = 0
-
-        fun beginDocumentScroll() {
-            documentScroll.begin()
-        }
-
-        fun applyDocumentScroll(webView: android.webkit.WebView, imeBottom: Int) {
-            if (imeBottom <= 0 || webView.height <= 0) return
-            val web = IntArray(2)
-            val content = IntArray(2)
-            webView.getLocationInWindow(web)
-            contentView.getLocationInWindow(content)
-            val overlap = keyboardOverlapPx(
-                web[1], webView.height, content[1], contentView.height, imeBottom,
-            )
-            val delta = documentScroll.scrollDelta(webView.height, overlap)
-            if (delta > 0) webView.scrollBy(0, delta)
-        }
-
-        fun scrollCoveredField(imeBottom: Int) {
-            latestImeBottom = imeBottom
-            val webView = findWebViewInHierarchy(contentView) ?: return
-            if (webView.height <= 0 || imeBottom <= 0) return
-            val generation = documentScroll.requestSnapshot()
-            if (generation != null) {
-                val heightPx = webView.height
-                webView.evaluateJavascript(FOCUSED_FIELD_SNAPSHOT_JS) { raw ->
-                    val snap = parseFocusedFieldSnapshot(raw)
-                    if (snap == null) {
-                        documentScroll.snapshotMissed(generation)
-                        return@evaluateJavascript
-                    }
-                    documentScroll.capture(
-                        snap.topCss,
-                        snap.bottomCss,
-                        snap.viewportHeightCss,
-                        heightPx,
-                        generation,
-                    )
-                    // The rect arrives after this frame. Catch up immediately
-                    // instead of waiting for the next inset tick.
-                    webView.post {
-                        if (webView.isAttachedToWindow) applyDocumentScroll(webView, latestImeBottom)
-                    }
-                }
-            }
-            applyDocumentScroll(webView, imeBottom)
-        }
-
-        fun revealFocusedField(webView: android.webkit.WebView) {
-            if (!webView.isAttachedToWindow) return
-            webView.evaluateJavascript(IME_REVEAL_FIELD_JS, null)
-        }
-
-        fun revealFixedCaret(webView: android.webkit.WebView) {
-            if (!webView.isAttachedToWindow) return
-            webView.evaluateJavascript(IME_REVEAL_CARET_JS, null)
-        }
-
-        fun revealAfterResize(webView: android.webkit.WebView) {
-            val observer = webView.viewTreeObserver
-            if (!observer.isAlive) {
-                revealFocusedField(webView)
-                return
-            }
-            observer.addOnGlobalLayoutListener(object : ViewTreeObserver.OnGlobalLayoutListener {
-                override fun onGlobalLayout() {
-                    if (observer.isAlive) {
-                        observer.removeOnGlobalLayoutListener(this)
-                    } else {
-                        webView.viewTreeObserver.removeOnGlobalLayoutListener(this)
-                    }
-                    revealFocusedField(webView)
-                }
-            })
-        }
-
-        fun settleKeyboard(imeBottom: Int) {
-            val webView = findWebViewInHierarchy(contentView) ?: return
-            val heightPx = webView.height
-            if (heightPx <= 0) return
-            webView.evaluateJavascript(IME_PROBE_JS) { raw ->
-                val probe = parseImeProbe(raw) ?: return@evaluateJavascript
-                if (imeBottom <= 0) {
-                    if (follow.settledPadding == 0) restCssPerPx = probe.innerHeightCss / heightPx
-                    return@evaluateJavascript
-                }
-                if (follow.settledPadding == imeBottom) return@evaluateJavascript
-                if (!needsKeyboardResize(probe, heightPx, imeBottom, restCssPerPx)) {
-                    return@evaluateJavascript
-                }
-                val reveal = fieldBehindKeyboard(probe, heightPx, imeBottom)
-                applyFrame(follow.applyPadding(imeBottom))
-                if (reveal) revealAfterResize(webView)
-            }
         }
 
         ViewCompat.setWindowInsetsAnimationCallback(
             contentView,
             object : WindowInsetsAnimationCompat.Callback(
-                WindowInsetsAnimationCompat.Callback.DISPATCH_MODE_STOP
+                WindowInsetsAnimationCompat.Callback.DISPATCH_MODE_CONTINUE_ON_SUBTREE
             ) {
                 override fun onPrepare(animation: WindowInsetsAnimationCompat) {
-                    if (animation.typeMask and WindowInsetsCompat.Type.ime() != 0) {
-                        imeAnimating = true
-                        follow.onPrepare()
-                        beginDocumentScroll()
-                        latestShown = 0
-                        fixedField = follow.settledPadding > 0
-                        fixedProbePending = !fixedField
-                        if (!fixedField) {
-                            findWebViewInHierarchy(contentView)?.let { probeFixedField(it) }
-                        }
-                    }
+                    if (animation.typeMask and WindowInsetsCompat.Type.ime() != 0) imeAnimating = true
                 }
 
                 override fun onProgress(
                     insets: WindowInsetsCompat,
                     runningAnimations: MutableList<WindowInsetsAnimationCompat>
                 ): WindowInsetsCompat {
-                    if (runningAnimations.any { it.typeMask and WindowInsetsCompat.Type.ime() != 0 }) {
-                        if (!imeAnimating) {
-                            imeAnimating = true
-                            follow.onPrepare()
-                            beginDocumentScroll()
-                        }
-                        val shown = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom
-                        latestShown = shown
-                        val frame = if (fixedField) {
-                            follow.onFrameResize(shown)
-                        } else {
-                            follow.onFrame(shown)
-                        }
-                        applyFrame(frame)
-                        if (!fixedField && !fixedProbePending && frame.scrollDocument) {
-                            scrollCoveredField(shown)
-                        }
+                    if (imeAnimating && runningAnimations.any {
+                            it.typeMask and WindowInsetsCompat.Type.ime() != 0
+                        }) {
+                        applyBottom(insets.getInsets(WindowInsetsCompat.Type.ime()).bottom)
                     }
                     return insets
                 }
@@ -623,50 +458,32 @@ object WindowHelper {
                 override fun onEnd(animation: WindowInsetsAnimationCompat) {
                     if (animation.typeMask and WindowInsetsCompat.Type.ime() == 0) return
                     imeAnimating = false
-
                     val rootInsets = ViewCompat.getRootWindowInsets(contentView)
-                    val imeVisible = rootInsets?.isVisible(WindowInsetsCompat.Type.ime()) ?: false
-                    val imeBottom = rootInsets?.getInsets(WindowInsetsCompat.Type.ime())?.bottom ?: 0
-                    val finalBottom = if (imeVisible) imeBottom else 0
-                    if (fixedField) {
-                        documentScroll.end()
-                        applyFrame(follow.onEndResize(finalBottom))
-                        if (finalBottom > 0) {
-                            findWebViewInHierarchy(contentView)?.let { revealFixedCaret(it) }
-                        }
+                    val bottom = if (rootInsets?.isVisible(WindowInsetsCompat.Type.ime()) == true) {
+                        rootInsets.getInsets(WindowInsetsCompat.Type.ime()).bottom
                     } else {
-                        if (finalBottom > follow.settledBottom) scrollCoveredField(finalBottom)
-                        documentScroll.end()
-                        applyFrame(follow.onEnd(finalBottom))
-                        settleKeyboard(finalBottom)
+                        0
                     }
+                    settledBottom = bottom
+                    applyBottom(bottom)
                 }
             }
         )
 
         ViewCompat.setOnApplyWindowInsetsListener(contentView) { _, windowInsets ->
-            val imeBottom = windowInsets.getInsets(WindowInsetsCompat.Type.ime()).bottom
-            if (imeAnimating) {
-                follow.onTarget(imeBottom)
-            } else if (imeBottom != follow.settledBottom) {
-                if (fixedField) {
-                    applyFrame(follow.onEndResize(imeBottom))
-                    if (imeBottom > 0) {
-                        findWebViewInHierarchy(contentView)?.let { revealFixedCaret(it) }
-                    }
-                } else {
-                    applyFrame(follow.jumpTo(imeBottom))
-                    settleKeyboard(imeBottom)
+            if (!imeAnimating) {
+                val bottom = windowInsets.getInsets(WindowInsetsCompat.Type.ime()).bottom
+                if (bottom != settledBottom) {
+                    settledBottom = bottom
+                    applyBottom(bottom)
                 }
             }
             windowInsets
         }
-
         ViewCompat.requestApplyInsets(contentView)
     }
 
     private fun clearImePadding(contentView: View) {
-        manualImeInstalled.remove(contentView)
         ViewCompat.setWindowInsetsAnimationCallback(contentView, null)
         ViewCompat.setOnApplyWindowInsetsListener(contentView, null)
         contentView.translationY = 0f

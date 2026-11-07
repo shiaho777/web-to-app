@@ -102,7 +102,6 @@ import com.webtoapp.ui.shared.WindowHelper
 import com.webtoapp.ui.shared.effectiveBottomContentPadding
 import com.webtoapp.ui.shared.pageEdgeBands
 import com.webtoapp.ui.shared.parseBandColor
-import com.webtoapp.ui.shared.scaffoldInsetsShouldExcludeIme
 import com.webtoapp.ui.shell.ConsoleLevel
 import com.webtoapp.ui.shell.ConsoleLogEntry
 import com.webtoapp.ui.shell.ConsolePanel
@@ -3833,11 +3832,10 @@ fun WebViewScreen(
     CompositionLocalProvider(LocalBrowserChromeHost provides if (shouldShowTopBar) chromeHost else null) {
     Scaffold(
 
-        contentWindowInsets = when {
-            hideToolbar -> WindowInsets(0)
-            scaffoldInsetsShouldExcludeIme(webApp?.webViewConfig?.keyboardAdjustMode ?: KeyboardAdjustMode.RESIZE) ->
-                ScaffoldDefaults.contentWindowInsets.exclude(WindowInsets.ime)
-            else -> ScaffoldDefaults.contentWindowInsets
+        contentWindowInsets = if (hideToolbar) {
+            WindowInsets(0)
+        } else {
+            ScaffoldDefaults.contentWindowInsets
         },
         modifier = if (hideToolbar) Modifier.fillMaxSize() else Modifier,
         topBar = {

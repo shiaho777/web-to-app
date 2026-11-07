@@ -31,7 +31,6 @@ import com.webtoapp.ui.shared.PageEdgeChrome
 import com.webtoapp.ui.shared.effectiveBottomContentPadding
 import com.webtoapp.ui.shared.pageEdgeBands
 import com.webtoapp.ui.shared.parseBandColor
-import com.webtoapp.ui.shared.scaffoldInsetsShouldExcludeIme
 import com.webtoapp.core.webview.WebViewCallbacks
 import com.webtoapp.data.model.WebViewConfig
 import com.webtoapp.data.model.hasAnyToolbarItem
@@ -147,11 +146,10 @@ fun BoxScope.ShellScaffoldLayout(
     CompositionLocalProvider(LocalBrowserChromeHost provides if (showToolbar) chromeHost else null) {
     Scaffold(
 
-        contentWindowInsets = when {
-            hideToolbar -> WindowInsets(0, 0, 0, 0)
-            scaffoldInsetsShouldExcludeIme(webViewConfig.keyboardAdjustMode) ->
-                ScaffoldDefaults.contentWindowInsets.exclude(WindowInsets.ime)
-            else -> ScaffoldDefaults.contentWindowInsets
+        contentWindowInsets = if (hideToolbar) {
+            WindowInsets(0, 0, 0, 0)
+        } else {
+            ScaffoldDefaults.contentWindowInsets
         },
         modifier = Modifier,
         topBar = {

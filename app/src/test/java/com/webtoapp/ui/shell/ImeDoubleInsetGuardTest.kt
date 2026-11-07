@@ -4,35 +4,25 @@ import com.google.common.truth.Truth.assertWithMessage
 import java.io.File
 import org.junit.Test
 
-/**
- * Pins the issue #1075 contract: on API 30+ the shell runs edge-to-edge with
- * SOFT_INPUT_ADJUST_NOTHING plus a window-level manual IME padding (see
- * WindowHelper.installManualImePadding). Any Compose-side bottom inset that
- * still applies the navigation-bar height while the IME is open stacks on top
- * of that window padding and shows a dead band — reported as a thick black bar
- * — between the page content and the keyboard. Every such site must therefore
- * take the nav-bar inset minus the IME-covered region via
- * `exclude(WindowInsets.ime)`, matching the existing idiom in AgentScreen.
- */
 class ImeDoubleInsetGuardTest {
 
     private val excludeIme = "exclude(WindowInsets.ime)"
 
     @Test
-    fun `shell scaffold content insets exclude the IME region`() {
+    fun `shell scaffold does not duplicate the window IME height`() {
         val src = readSanitized("com/webtoapp/ui/shell/ShellScaffoldLayout.kt")
         assertWithMessage(
-            "ScaffoldDefaults.contentWindowInsets must exclude the IME-covered " +
-                "bottom region; the window-level IME padding already lifts the content"
-        ).that(src).contains("ScaffoldDefaults.contentWindowInsets.$excludeIme")
+            "WindowHelper.installNativeImeResize owns the IME height; a second " +
+                "scaffold-side exclude would stack another inset on the content"
+        ).that(src).doesNotContain(excludeIme)
     }
 
     @Test
-    fun `preview scaffold content insets exclude the IME region`() {
+    fun `preview scaffold mirrors the shell IME contract`() {
         val src = readSanitized("com/webtoapp/ui/webview/WebViewActivity.kt")
         assertWithMessage(
             "WebViewActivity preview must mirror the shell contract"
-        ).that(src).contains("ScaffoldDefaults.contentWindowInsets.$excludeIme")
+        ).that(src).doesNotContain(excludeIme)
     }
 
     @Test
