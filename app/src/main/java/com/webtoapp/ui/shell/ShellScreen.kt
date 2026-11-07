@@ -593,15 +593,18 @@ fun ShellScreen(
             statusBarColorTracker?.detach()
             val tracker = com.webtoapp.core.webview.StatusBarPageColorTracker(
                 webView = webView,
-                shouldSample = ::usesPageEdgeColor,
+                shouldSample = { true },
                 onColors = { colors ->
-                    if (statusBarAutoColor != colors.top) {
-                        statusBarAutoColor = colors.top
-                        onStatusBarAutoColorChanged(colors.top)
-                    }
-                    if (pageBottomAutoColor != colors.bottom) {
-                        pageBottomAutoColor = colors.bottom
-                        onPageBottomColorChanged(colors.bottom)
+                    com.webtoapp.ui.shared.WindowHelper.setImeGapColor(colors.page)
+                    if (usesPageEdgeColor()) {
+                        if (statusBarAutoColor != colors.top) {
+                            statusBarAutoColor = colors.top
+                            onStatusBarAutoColorChanged(colors.top)
+                        }
+                        if (pageBottomAutoColor != colors.bottom) {
+                            pageBottomAutoColor = colors.bottom
+                            onPageBottomColorChanged(colors.bottom)
+                        }
                     }
                 }
             )

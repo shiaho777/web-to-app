@@ -52,7 +52,12 @@ class PageEdgeChromeTest {
         assertThat(StatusBarPageColorSampler.decodePageEdgeColors(null)).isEqualTo(PageEdgeColors(null, null))
         assertThat(StatusBarPageColorSampler.decodePageEdgeColors("null")).isEqualTo(PageEdgeColors(null, null))
         assertThat(StatusBarPageColorSampler.decodePageEdgeColors("\"#AABBCC\""))
-            .isEqualTo(PageEdgeColors("#AABBCC", "#AABBCC"))
+            .isEqualTo(PageEdgeColors("#AABBCC", "#AABBCC", "#AABBCC"))
+        assertThat(
+            StatusBarPageColorSampler.decodePageEdgeColors(
+                """{"top":"#112233","bottom":"#445566","page":"#778899"}"""
+            )
+        ).isEqualTo(PageEdgeColors("#112233", "#445566", "#778899"))
         assertThat(
             StatusBarPageColorSampler.decodePageEdgeColors(
                 "\"{\\\"top\\\":\\\"#112233\\\",\\\"bottom\\\":\\\"#445566\\\"}\""

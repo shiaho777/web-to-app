@@ -4131,15 +4131,18 @@ fun WebViewScreen(
                             statusBarColorTracker?.detach()
                             val tracker = com.webtoapp.core.webview.StatusBarPageColorTracker(
                                 webView = wv,
-                                shouldSample = { usesPageEdgeColor(webApp ?: previewApp) },
+                                shouldSample = { true },
                                 onColors = { colors ->
-                                    if (statusBarAutoColor != colors.top) {
-                                        statusBarAutoColor = colors.top
-                                        onStatusBarAutoColorChanged?.invoke(colors.top)
-                                    }
-                                    if (pageBottomAutoColor != colors.bottom) {
-                                        pageBottomAutoColor = colors.bottom
-                                        onPageBottomColorChanged?.invoke(colors.bottom)
+                                    WindowHelper.setImeGapColor(colors.page)
+                                    if (usesPageEdgeColor(webApp ?: previewApp)) {
+                                        if (statusBarAutoColor != colors.top) {
+                                            statusBarAutoColor = colors.top
+                                            onStatusBarAutoColorChanged?.invoke(colors.top)
+                                        }
+                                        if (pageBottomAutoColor != colors.bottom) {
+                                            pageBottomAutoColor = colors.bottom
+                                            onPageBottomColorChanged?.invoke(colors.bottom)
+                                        }
                                     }
                                 }
                             )
@@ -4430,15 +4433,18 @@ fun WebViewScreen(
                                     statusBarColorTracker?.detach()
                                     val tracker = com.webtoapp.core.webview.StatusBarPageColorTracker(
                                         webView = this,
-                                        shouldSample = { usesPageEdgeColor(webApp ?: previewApp) },
+                                        shouldSample = { true },
                                         onColors = { colors ->
-                                            if (statusBarAutoColor != colors.top) {
-                                                statusBarAutoColor = colors.top
-                                                onStatusBarAutoColorChanged?.invoke(colors.top)
-                                            }
-                                            if (pageBottomAutoColor != colors.bottom) {
-                                                pageBottomAutoColor = colors.bottom
-                                                onPageBottomColorChanged?.invoke(colors.bottom)
+                                            WindowHelper.setImeGapColor(colors.page)
+                                            if (usesPageEdgeColor(webApp ?: previewApp)) {
+                                                if (statusBarAutoColor != colors.top) {
+                                                    statusBarAutoColor = colors.top
+                                                    onStatusBarAutoColorChanged?.invoke(colors.top)
+                                                }
+                                                if (pageBottomAutoColor != colors.bottom) {
+                                                    pageBottomAutoColor = colors.bottom
+                                                    onPageBottomColorChanged?.invoke(colors.bottom)
+                                                }
                                             }
                                         }
                                     )
