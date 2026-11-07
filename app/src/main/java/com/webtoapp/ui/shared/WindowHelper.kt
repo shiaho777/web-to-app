@@ -24,6 +24,23 @@ internal fun needsPanelImePadding(mode: KeyboardAdjustMode?): Boolean =
 
 object WindowHelper {
 
+    private val imeResizeContentViews = Collections.synchronizedSet(
+        Collections.newSetFromMap(WeakHashMap<View, Boolean>())
+    )
+    private var imeGapColor: Int? = null
+
+    fun setImeGapColor(hex: String?) {
+        val color = hex?.let {
+            runCatching { android.graphics.Color.parseColor(it) }.getOrNull()
+        }
+        imeGapColor = color
+        for (view in imeResizeContentViews.toList()) {
+            view.post {
+                view.background = color?.let { android.graphics.drawable.ColorDrawable(it) }
+            }
+        }
+    }
+
     private val imeOcclusionListeners =
         java.util.concurrent.CopyOnWriteArrayList<(View, Int) -> Unit>()
     private val lastImeOcclusionPx =
@@ -426,6 +443,8 @@ object WindowHelper {
     private fun installNativeImeResize(contentView: View) {
         var imeAnimating = false
         var settledBottom = 0
+        imeResizeContentViews.add(contentView)
+        imeGapColor?.let { contentView.background = android.graphics.drawable.ColorDrawable(it) }
 
         fun applyBottom(bottom: Int) {
             if (contentView.paddingBottom == bottom) return
@@ -487,6 +506,8 @@ object WindowHelper {
     }
 
     private fun clearImePadding(contentView: View) {
+        imeResizeContentViews.remove(contentView)
+        contentView.background = null
         ViewCompat.setWindowInsetsAnimationCallback(contentView, null)
         ViewCompat.setOnApplyWindowInsetsListener(contentView, null)
         contentView.translationY = 0f

@@ -98,7 +98,11 @@ object StatusBarPageColorSampler {
                 var height = Math.max(1, window.innerHeight || 0);
                 return Math.max(1, Math.min(height - 1, height + delta));
             }
-            return JSON.stringify({ top: top, bottom: bottom });
+            var page = colorFromElement(document.body) ||
+                colorFromElement(document.documentElement) ||
+                top ||
+                bottom;
+            return JSON.stringify({ top: top, bottom: bottom, page: page });
         })();
     """.trimIndent()
 
@@ -115,12 +119,13 @@ object StatusBarPageColorSampler {
     fun decodePageEdgeColors(result: String?): PageEdgeColors {
         if (result.isNullOrBlank() || result == "null") return PageEdgeColors(null, null)
         val text = unwrapJsString(result) ?: return PageEdgeColors(null, null)
-        if (text.startsWith("#")) return PageEdgeColors(text, text)
+        if (text.startsWith("#")) return PageEdgeColors(text, text, text)
         val parsed = runCatching { JSONObject(text) }.getOrNull()
             ?: return PageEdgeColors(null, null)
         return PageEdgeColors(
             top = parsed.optString("top").takeIf { it.isNotBlank() && it != "null" },
-            bottom = parsed.optString("bottom").takeIf { it.isNotBlank() && it != "null" }
+            bottom = parsed.optString("bottom").takeIf { it.isNotBlank() && it != "null" },
+            page = parsed.optString("page").takeIf { it.isNotBlank() && it != "null" }
         )
     }
 
@@ -135,7 +140,7 @@ object StatusBarPageColorSampler {
     }
 }
 
-data class PageEdgeColors(val top: String?, val bottom: String?)
+data class PageEdgeColors(val top: String?, val bottom: String?, val page: String? = null)
 
 internal fun statusBarSampleDelays(firstDelayMs: Long, settle: Boolean): LongArray {
     val first = firstDelayMs.coerceAtLeast(0L)
