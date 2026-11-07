@@ -30,6 +30,7 @@ import com.webtoapp.core.shell.ShellConfig
 import com.webtoapp.ui.shared.PageEdgeChrome
 import com.webtoapp.ui.shared.effectiveBottomContentPadding
 import com.webtoapp.ui.shared.pageEdgeBands
+import com.webtoapp.ui.shared.needsPanelImePadding
 import com.webtoapp.ui.shared.parseBandColor
 import com.webtoapp.core.webview.WebViewCallbacks
 import com.webtoapp.data.model.WebViewConfig
@@ -143,6 +144,12 @@ fun BoxScope.ShellScaffoldLayout(
         toolbarShowFind = toolbarCfg.toolbarShowFind
     )
 
+    val panelImePadding = if (needsPanelImePadding(webViewConfig.keyboardAdjustMode)) {
+        Modifier.imePadding()
+    } else {
+        Modifier
+    }
+
     CompositionLocalProvider(LocalBrowserChromeHost provides if (showToolbar) chromeHost else null) {
     Scaffold(
 
@@ -151,7 +158,7 @@ fun BoxScope.ShellScaffoldLayout(
         } else {
             ScaffoldDefaults.contentWindowInsets
         },
-        modifier = Modifier,
+        modifier = panelImePadding,
         topBar = {
             if (showToolbar) {
                 ShellTopAppBar(

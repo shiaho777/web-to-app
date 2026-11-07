@@ -248,7 +248,7 @@ class WindowHelperKeyboardModeApi30Test {
     }
 
     @Test
-    fun `overlay mode leaves the content view height alone`() {
+    fun `overlay mode leaves the IME inset for compose panels`() {
         val activity = Robolectric.setupActivity(Activity::class.java)
         WindowHelper.applyImmersiveFullscreen(
             activity,
@@ -260,7 +260,15 @@ class WindowHelperKeyboardModeApi30Test {
             .setInsets(WindowInsetsCompat.Type.ime(), Insets.of(0, 0, 0, 320))
             .build()
 
-        ViewCompat.dispatchApplyWindowInsets(contentView, shown)
+        val result = ViewCompat.dispatchApplyWindowInsets(contentView, shown)
         assertThat(contentView.paddingBottom).isEqualTo(0)
+        assertThat(result.getInsets(WindowInsetsCompat.Type.ime()).bottom).isEqualTo(320)
+    }
+
+    @Test
+    fun `host input panels own the IME padding when the window does not resize`() {
+        assertThat(needsPanelImePadding(KeyboardAdjustMode.NOTHING)).isTrue()
+        assertThat(needsPanelImePadding(null)).isTrue()
+        assertThat(needsPanelImePadding(KeyboardAdjustMode.RESIZE)).isFalse()
     }
 }
