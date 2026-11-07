@@ -1,0 +1,5 @@
+Fixed
+- Overlay Content pages no longer shift or jitter when the keyboard opens.
+- Resize Content moves the focused field above the keyboard again.
+- Console and find-in-page fields rise above the keyboard.
+- Dismissing the keyboard no longer flashes white.
