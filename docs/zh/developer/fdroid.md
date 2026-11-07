@@ -53,9 +53,9 @@ RepoType: git
 Repo: https://github.com/shiaho777/web-to-app.git
 
 Builds:
-  - versionName: "2.8.5"
-    versionCode: 84
-    commit: v2.8.5
+  - versionName: "2.8.6"
+    versionCode: 85
+    commit: v2.8.6
     subdir: app
     gradle:
       - standard
