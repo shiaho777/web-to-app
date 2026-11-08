@@ -38,8 +38,8 @@ class PluginBridge(
         fun onShare(pluginId: String, title: String, text: String, url: String) {}
         /** `hcj.openExternal` — host opens the URL in an external handler. */
         fun onOpenExternal(pluginId: String, url: String) {}
-        /** `hcj.clearData` — host wipes browsing data for the page. */
-        fun onClearData(pluginId: String) {}
+        /** `hcj.clearData` — host wipes browsing data for the page. Returns whether it ran. */
+        fun onClearData(pluginId: String): Boolean = false
         /** `hcj.exitApp` — host finishes the activity. */
         fun onExitApp(pluginId: String) {}
     }
@@ -205,9 +205,9 @@ class PluginBridge(
     }
 
     @JavascriptInterface
-    fun clearData(pluginId: String, token: String) {
-        requirePermission(pluginId, token, PluginPermission.CLEAR_DATA) ?: return
-        host.onClearData(pluginId)
+    fun clearData(pluginId: String, token: String): Boolean {
+        requirePermission(pluginId, token, PluginPermission.CLEAR_DATA) ?: return false
+        return host.onClearData(pluginId)
     }
 
     @JavascriptInterface

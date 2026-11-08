@@ -116,7 +116,7 @@ There is no separate developer account, no API key, no submission portal.
 | `matches` | | Chrome-style match patterns; `/regex/` denotes a regex (Tampermonkey `@include` convention). Default `["*"]`. |
 | `excludeMatches` | | Same syntax; wins over `matches`. |
 | `runAt` | | `document_start` · `document_end` (default) · `document_idle`. |
-| `permissions` | | Capabilities used from `hcj.*`: `STORAGE` (config KV), `FETCH` (cross-origin), `NOTIFY`, `BADGE`, `CLIPBOARD`, `DOWNLOAD`. Page DOM access needs no permission. |
+| `permissions` | | Capabilities used from `hcj.*`: `STORAGE` (config KV), `FETCH` (cross-origin), `NOTIFY`, `BADGE`, `CLIPBOARD`, `DOWNLOAD`, `SHARE`, `OPEN_EXTERNAL`, `CLEAR_DATA`, `EXIT_APP`. Page DOM access needs no permission. |
 | `toolbar` | | Show an entry for this plugin in the plugin surface. Default `true`. |
 
 ## `registry.json` entry schema
@@ -143,6 +143,18 @@ hcj.config.all()
 hcj.fetch(url, opts)      // cross-origin fetch (requires FETCH) → Promise
 hcj.notify(title, body)   // Android notification (requires NOTIFY)
 hcj.badge(text, color)    // toolbar badge (requires BADGE)
+hcj.toast(msg)            // transient toast inside the page
+hcj.log(msg)              // host log
+
+hcj.share(title, text, url)  // system share sheet (requires SHARE)
+hcj.openExternal(url)        // hand a URL to another app (requires OPEN_EXTERNAL)
+hcj.exitApp()                // finish the host activity (requires EXIT_APP)
+
+hcj.clearData()           // needs CLEAR_DATA. Wipes cookies, WebStorage,
+                          // HTTP cache and history — for every site, not just
+                          // the current one. Returns true when the host ran the
+                          // wipe, false when the call was refused (missing
+                          // permission, foreign token) or the wipe failed.
 
 hcj.panel.open()          // open this plugin's panel
 hcj.panel.close()
@@ -232,7 +244,8 @@ modules/
 `author`、`homepage`、`icon`（Material 图标名）、`matches` / `excludeMatches`
 （Chrome 风格匹配规则，`/regex/` 表示正则）、`runAt`
 （`document_start` / `document_end` / `document_idle`）、`permissions`
-（`STORAGE`/`FETCH`/`NOTIFY`/`BADGE`/`CLIPBOARD`/`DOWNLOAD`）、`toolbar`。
+（`STORAGE`/`FETCH`/`NOTIFY`/`BADGE`/`CLIPBOARD`/`DOWNLOAD`/`SHARE`/
+`OPEN_EXTERNAL`/`CLEAR_DATA`/`EXIT_APP`）、`toolbar`。
 
 `registry.json` 条目字段不变：`id`、`path`、`name`、`description`、`icon`、
 `category`、`tags`、`version`、`minAppVersion`、`author`、`runAt`、
@@ -247,6 +260,11 @@ modules/
 - `hcj.fetch(url, opts)` — 跨域请求（需 `FETCH`），返回 Promise
 - `hcj.notify(title, body)` — 系统通知（需 `NOTIFY`）
 - `hcj.badge(text, color)` — 工具栏角标（需 `BADGE`）
+- `hcj.toast(msg)` — 页面内浮层提示；`hcj.log(msg)` — 宿主日志
+- `hcj.share(title, text, url)` — 系统分享（需 `SHARE`）
+- `hcj.openExternal(url)` — 交给外部应用打开（需 `OPEN_EXTERNAL`）
+- `hcj.exitApp()` — 结束宿主 Activity（需 `EXIT_APP`）
+- `hcj.clearData()` — 清 cookies、WebStorage、HTTP 缓存和历史，**作用于全部站点而非当前站点**（需 `CLEAR_DATA`）。返回 `true` 表示宿主确实执行了清理，`false` 表示调用被拒（缺权限、token 不属于该插件）或清理失败。
 - `hcj.panel.open/close/send/onMessage` — 面板控制与页面↔面板消息
 - `hcj.on('action', fn)` — 用户点击插件入口时触发（无面板界面的插件）
 - `hcj.addStyle(css)` — 向页面注入 `<style>`（幂等）

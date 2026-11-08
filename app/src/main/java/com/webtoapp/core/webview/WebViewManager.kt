@@ -386,18 +386,25 @@ class WebViewManager(
          *   [CookieManager.removeSessionCookies].
          */
         @Suppress("DEPRECATION")
-        fun clearBrowsingData(context: Context, webView: WebView?, holdNavigation: Boolean = false) {
+        fun clearBrowsingData(
+            context: Context,
+            webView: WebView?,
+            holdNavigation: Boolean = false
+        ): Boolean {
+            var cleared = true
             try {
                 webView?.stopLoading()
                 webView?.clearCache(true)
                 webView?.clearHistory()
                 webView?.clearFormData()
             } catch (e: Exception) {
+                cleared = false
                 AppLogger.w("WebViewManager", "Failed to clear WebView browsing data", e)
             }
             try {
                 WebStorage.getInstance().deleteAllData()
             } catch (e: Exception) {
+                cleared = false
                 AppLogger.w("WebViewManager", "Failed to clear WebStorage", e)
             }
             val ticket = if (holdNavigation) FreshSessionGate.open() else null
@@ -412,6 +419,7 @@ class WebViewManager(
                     if (ticket != null) FreshSessionGate.close(ticket)
                 }
             } catch (e: Exception) {
+                cleared = false
                 AppLogger.w("WebViewManager", "Failed to clear cookies", e)
                 if (ticket != null) FreshSessionGate.close(ticket)
             }
@@ -421,9 +429,11 @@ class WebViewManager(
                 db.clearUsernamePassword()
                 db.clearFormData()
             } catch (e: Exception) {
+                cleared = false
                 AppLogger.w("WebViewManager", "Failed to clear WebView database", e)
             }
             AppLogger.i("WebViewManager", "Fresh browsing session data cleared")
+            return cleared
         }
 
         private val COMMON_SECOND_LEVEL_TLDS = setOf(

@@ -306,7 +306,7 @@ class PluginSession(
     var openExternalHandler: ((url: String) -> Unit)? = null
 
     /** `hcj.clearData` — wired by the WebView owner to a browsing-data wipe. */
-    var clearDataHandler: (() -> Unit)? = null
+    var clearDataHandler: (() -> Boolean)? = null
 
     /** `hcj.exitApp` — wired by the WebView owner to finish the host activity. */
     var exitAppHandler: (() -> Unit)? = null
@@ -404,9 +404,8 @@ class PluginSession(
             openExternalHandler?.invoke(url)
         }
 
-        override fun onClearData(pluginId: String) {
-            clearDataHandler?.invoke()
-        }
+        override fun onClearData(pluginId: String): Boolean =
+            clearDataHandler?.invoke() ?: false
 
         override fun onExitApp(pluginId: String) {
             exitAppHandler?.invoke()
