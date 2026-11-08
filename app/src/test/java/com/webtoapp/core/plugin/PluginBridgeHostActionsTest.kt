@@ -22,6 +22,7 @@ class PluginBridgeHostActionsTest {
     private lateinit var context: Context
     private lateinit var bridge: PluginBridge
     private lateinit var events: MutableList<String>
+    private var clearDataResult: Boolean = true
     private var plugin: Plugin = Plugin(
         id = "p1",
         name = "P1",
@@ -60,8 +61,9 @@ class PluginBridgeHostActionsTest {
                 override fun onOpenExternal(pluginId: String, url: String) {
                     events.add("open:$url")
                 }
-                override fun onClearData(pluginId: String) {
+                override fun onClearData(pluginId: String): Boolean {
                     events.add("clear")
+                    return clearDataResult
                 }
                 override fun onExitApp(pluginId: String) {
                     events.add("exit")
@@ -76,7 +78,7 @@ class PluginBridgeHostActionsTest {
 
         bridge.share("p1", token, "t", "", "https://example.com")
         bridge.openExternal("p1", token, "https://example.com")
-        bridge.clearData("p1", token)
+        assertThat(bridge.clearData("p1", token)).isTrue()
         bridge.exitApp("p1", token)
 
         assertThat(events).containsExactly(
@@ -88,12 +90,20 @@ class PluginBridgeHostActionsTest {
     }
 
     @Test
+    fun `clearData tells the page when the host did not clear`() {
+        clearDataResult = false
+        val token = bridge.issueToken("p1")
+
+        assertThat(bridge.clearData("p1", token)).isFalse()
+    }
+
+    @Test
     fun `missing permission drops the action`() {
         val token = bridge.issueToken("p2")
 
         bridge.share("p2", token, "t", "", "u")
         bridge.openExternal("p2", token, "u")
-        bridge.clearData("p2", token)
+        assertThat(bridge.clearData("p2", token)).isFalse()
         bridge.exitApp("p2", token)
 
         assertThat(events).isEmpty()
@@ -105,7 +115,7 @@ class PluginBridgeHostActionsTest {
 
         bridge.share("p2", token, "t", "", "u") // token belongs to p1
         bridge.exitApp("p1", "bogus-token")
-        bridge.clearData("ghost", token)
+        assertThat(bridge.clearData("ghost", token)).isFalse()
 
         assertThat(events).isEmpty()
     }
