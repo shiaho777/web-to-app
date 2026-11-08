@@ -176,6 +176,8 @@ open class WebViewActivity : AppCompatActivity() {
         /** Set only on desktop-shortcut launches. The separate-tasks switch must not close them. */
         internal const val EXTRA_SHORTCUT_TASK = "shortcut_task"
 
+        internal const val EXTRA_SHARED_TASK_PREVIEW = "shared_task_preview"
+
         fun start(context: Context, appId: Long) {
             HostPreviewMotion.launch(
                 context,
@@ -248,6 +250,7 @@ open class WebViewActivity : AppCompatActivity() {
                     )
                 } else {
                     data = null
+                    putExtra(EXTRA_SHARED_TASK_PREVIEW, true)
                     if (context !is Activity) {
                         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     }
@@ -275,19 +278,13 @@ open class WebViewActivity : AppCompatActivity() {
             }
         }
 
-        /**
-         * An external launch (shortcut, autostart) carries [Intent.FLAG_ACTIVITY_NEW_TASK]
-         * and [EXTRA_APP_ID]. In-app preview does not set that flag. When the
-         * builder task already exists, the system still stacks the singleTask
-         * activity on it; the caller should re-launch the document task and
-         * leave.
-         */
         internal fun shouldDetachExternalLaunch(
             isDocumentActivity: Boolean,
             isTaskRoot: Boolean,
             intent: Intent,
         ): Boolean {
             if (isDocumentActivity || isTaskRoot) return false
+            if (intent.getBooleanExtra(EXTRA_SHARED_TASK_PREVIEW, false)) return false
             if (intent.flags and Intent.FLAG_ACTIVITY_NEW_TASK == 0) return false
             if (intent.hasExtra(EXTRA_PREVIEW_APP_JSON)) return false
             return intent.getLongExtra(EXTRA_APP_ID, -1L) > 0L
