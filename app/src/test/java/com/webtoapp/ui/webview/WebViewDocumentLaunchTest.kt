@@ -80,8 +80,46 @@ class WebViewDocumentLaunchTest {
     }
 
     @Test
+    fun `switch off launches the shared singleTask preview`() {
+        val context = ApplicationProvider.getApplicationContext<android.content.Context>()
+        val intent = WebViewActivity.buildLaunchIntent(
+            context,
+            separateTasks = false,
+            documentUri = Uri.parse("webtoapp://webapp/7")
+        ) {
+            putExtra("app_id", 7L)
+        }
+
+        assertThat(intent.component?.className).isEqualTo(WebViewActivity::class.java.name)
+        assertThat(intent.data).isNull()
+        assertThat(intent.flags and Intent.FLAG_ACTIVITY_NEW_DOCUMENT).isEqualTo(0)
+        assertThat(intent.flags and Intent.FLAG_ACTIVITY_CLEAR_TOP).isNotEqualTo(0)
+        assertThat(intent.getBooleanExtra(WebViewActivity.EXTRA_SHARED_TASK_PREVIEW, false)).isTrue()
+    }
+
+    @Test
+    fun `switch-off preview stacked on the builder never detaches`() {
+        val context = ApplicationProvider.getApplicationContext<android.content.Context>()
+        val intent = WebViewActivity.buildLaunchIntent(context, separateTasks = false) {
+            putExtra("app_id", 7L)
+        }
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+
+        assertThat(
+            WebViewActivity.shouldDetachExternalLaunch(
+                isDocumentActivity = false,
+                isTaskRoot = false,
+                intent = intent,
+            )
+        ).isFalse()
+    }
+
+    @Test
     fun `in-app preview and a task-root launch stay put`() {
-        val inApp = Intent().apply { putExtra("app_id", 7L) }
+        val context = ApplicationProvider.getApplicationContext<android.content.Context>()
+        val inApp = WebViewActivity.buildLaunchIntent(context, separateTasks = false) {
+            putExtra("app_id", 7L)
+        }.apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
         assertThat(
             WebViewActivity.shouldDetachExternalLaunch(
                 isDocumentActivity = false,
