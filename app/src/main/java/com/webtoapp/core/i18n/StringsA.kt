@@ -9039,16 +9039,16 @@ object StringsA {
     }
 
     val aboutAppDescription: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "安卓上功能最完善的WEB转APK工具型应用。"
-        AppLanguage.ENGLISH -> "The most full-featured Web-to-APK utility app on Android."
-        AppLanguage.ARABIC -> "تطبيق أدوات Web-to-APK الأكثر اكتمالاً على Android."
-        AppLanguage.PORTUGUESE -> "O app utilitário de Web-para-APK mais completo no Android."
-        AppLanguage.SPANISH -> "La app utilitaria de Web-a-APK más completa en Android."
-        AppLanguage.FRENCH -> "L'app utilitaire Web-vers-APK la plus complète sur Android."
-        AppLanguage.GERMAN -> "Die funktionsreichste Web-zu-APK-Utility-App auf Android."
-        AppLanguage.RUSSIAN -> "Самое многофункциональное приложение Web-to-APK на Android."
-        AppLanguage.JAPANESE -> "Androidで最も多機能なWeb-to-APKユーティリティアプリ。"
-        AppLanguage.KOREAN -> "Android에서 가장 기능이 풍부한 Web-to-APK 유틸리티 앱."
+        AppLanguage.CHINESE -> "把网页项目打包成安卓 APK，直接在手机上完成。"
+        AppLanguage.ENGLISH -> "Build Android APKs from web projects, directly on your phone."
+        AppLanguage.ARABIC -> "أنشئ ملفات APK لأندرويد من مشاريع الويب، مباشرة على هاتفك."
+        AppLanguage.PORTUGUESE -> "Crie APKs Android a partir de projetos web, direto no seu celular."
+        AppLanguage.SPANISH -> "Crea APKs de Android desde proyectos web, directamente en tu móvil."
+        AppLanguage.FRENCH -> "Créez des APK Android à partir de projets web, directement sur votre téléphone."
+        AppLanguage.GERMAN -> "Android-APKs aus Web-Projekten erstellen – direkt auf dem Smartphone."
+        AppLanguage.RUSSIAN -> "Собирайте APK для Android из веб-проектов прямо на телефоне."
+        AppLanguage.JAPANESE -> "WebプロジェクトからAndroid APKを、スマートフォンだけで作成。"
+        AppLanguage.KOREAN -> "웹 프로젝트를 안드로이드 APK로, 스마트폰에서 바로 빌드하세요."
     }
 
     val showDescriptions: String get() = when (Strings.lang) {

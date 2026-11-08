@@ -519,7 +519,7 @@ private fun AuthorHeroCard(
             )
 
             AnimatedVisibility(visible = LocalShowDescriptions.current) {
-                Column {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Spacer(Modifier.height(4.dp))
 
                     Text(
