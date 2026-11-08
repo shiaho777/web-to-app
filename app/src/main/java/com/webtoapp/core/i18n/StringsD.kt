@@ -1447,7 +1447,7 @@ object StringsD {
     }
 
     val loadFailed: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "Load failed"
+        AppLanguage.CHINESE -> "加载失败"
         AppLanguage.ENGLISH -> "Load failed"
         AppLanguage.ARABIC -> "فشل التحميل"
         AppLanguage.PORTUGUESE -> "Falha ao carregar"
@@ -3984,7 +3984,7 @@ object StringsD {
         AppLanguage.KOREAN -> "클립보드"
     }
     val tagShare: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "Share"
+        AppLanguage.CHINESE -> "分享"
         AppLanguage.ENGLISH -> "Share"
         AppLanguage.ARABIC -> "مشاركة"
         AppLanguage.PORTUGUESE -> "Compartilhar"
@@ -4236,7 +4236,7 @@ object StringsD {
         AppLanguage.KOREAN -> "스타일"
     }
     val tagDelete: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "Delete"
+        AppLanguage.CHINESE -> "删除"
         AppLanguage.ENGLISH -> "Delete"
         AppLanguage.ARABIC -> "حذف"
         AppLanguage.PORTUGUESE -> "Excluir"
@@ -4248,7 +4248,7 @@ object StringsD {
         AppLanguage.KOREAN -> "삭제"
     }
     val tagRemove: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "Remove"
+        AppLanguage.CHINESE -> "移除"
         AppLanguage.ENGLISH -> "Remove"
         AppLanguage.ARABIC -> "إزالة"
         AppLanguage.PORTUGUESE -> "Remover"
@@ -4272,7 +4272,7 @@ object StringsD {
         AppLanguage.KOREAN -> "생성"
     }
     val tagAdd: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "Add"
+        AppLanguage.CHINESE -> "添加"
         AppLanguage.ENGLISH -> "Add"
         AppLanguage.ARABIC -> "إضافة"
         AppLanguage.PORTUGUESE -> "Adicionar"
@@ -4716,7 +4716,7 @@ object StringsD {
         AppLanguage.KOREAN -> "백그라운드"
     }
     val tagClose: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "Close"
+        AppLanguage.CHINESE -> "关闭"
         AppLanguage.ENGLISH -> "Close"
         AppLanguage.ARABIC -> "إغلاق"
         AppLanguage.PORTUGUESE -> "Fechar"
@@ -4920,7 +4920,7 @@ object StringsD {
         AppLanguage.KOREAN -> "시간 초과"
     }
     val tagRetry: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "Retry"
+        AppLanguage.CHINESE -> "重试"
         AppLanguage.ENGLISH -> "Retry"
         AppLanguage.ARABIC -> "إعادة المحاولة"
         AppLanguage.PORTUGUESE -> "Repetir"
@@ -5868,7 +5868,7 @@ object StringsD {
         AppLanguage.KOREAN -> "타이머"
     }
     val tagRefresh: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "Refresh"
+        AppLanguage.CHINESE -> "刷新"
         AppLanguage.ENGLISH -> "Refresh"
         AppLanguage.ARABIC -> "تحديث"
         AppLanguage.PORTUGUESE -> "Atualizar"

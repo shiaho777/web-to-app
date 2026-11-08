@@ -585,7 +585,7 @@ object StringsA {
         AppLanguage.KOREAN -> "%d개월 전"
     }
     val statsDurationHoursMinutes: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "%dh %dm"
+        AppLanguage.CHINESE -> "%d小时%d分"
         AppLanguage.ENGLISH -> "%dh %dm"
         AppLanguage.ARABIC -> "%dس %dد"
         AppLanguage.PORTUGUESE -> "%dh %dm"
@@ -597,7 +597,7 @@ object StringsA {
         AppLanguage.KOREAN -> "%d시간 %d분"
     }
     val statsDurationMinutes: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "%dm"
+        AppLanguage.CHINESE -> "%d分钟"
         AppLanguage.ENGLISH -> "%dm"
         AppLanguage.ARABIC -> "%dد"
         AppLanguage.PORTUGUESE -> "%dm"
@@ -767,7 +767,7 @@ object StringsA {
     }
 
     val createHtmlApp: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "HTML App"
+        AppLanguage.CHINESE -> "HTML 应用"
         AppLanguage.ENGLISH -> "HTML App"
         AppLanguage.ARABIC -> "تطبيق HTML"
         AppLanguage.PORTUGUESE -> "App HTML"
@@ -8505,7 +8505,7 @@ object StringsA {
     }
 
     val runtimeNodeJs: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "Node.js Runtime"
+        AppLanguage.CHINESE -> "Node.js 运行时"
         AppLanguage.ENGLISH -> "Node.js Runtime"
         AppLanguage.ARABIC -> "بيئة تشغيل Node.js"
         AppLanguage.PORTUGUESE -> "Runtime Node.js"
@@ -8518,7 +8518,7 @@ object StringsA {
     }
 
     val runtimePhp: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "PHP Runtime"
+        AppLanguage.CHINESE -> "PHP 运行时"
         AppLanguage.ENGLISH -> "PHP Runtime"
         AppLanguage.ARABIC -> "بيئة تشغيل PHP"
         AppLanguage.PORTUGUESE -> "Runtime PHP"
@@ -8531,7 +8531,7 @@ object StringsA {
     }
 
     val runtimePython: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "Python Runtime"
+        AppLanguage.CHINESE -> "Python 运行时"
         AppLanguage.ENGLISH -> "Python Runtime"
         AppLanguage.ARABIC -> "بيئة تشغيل Python"
         AppLanguage.PORTUGUESE -> "Runtime Python"
@@ -9476,7 +9476,7 @@ object StringsA {
     }
 
     val share: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "Share"
+        AppLanguage.CHINESE -> "分享"
         AppLanguage.ENGLISH -> "Share"
         AppLanguage.ARABIC -> "مشاركة"
         AppLanguage.PORTUGUESE -> "Compartilhar"
@@ -9502,7 +9502,7 @@ object StringsA {
     }
 
     val remove: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "Remove"
+        AppLanguage.CHINESE -> "移除"
         AppLanguage.ENGLISH -> "Remove"
         AppLanguage.ARABIC -> "إزالة"
         AppLanguage.PORTUGUESE -> "Remover"
@@ -9528,7 +9528,7 @@ object StringsA {
     }
 
     val add: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "Add"
+        AppLanguage.CHINESE -> "添加"
         AppLanguage.ENGLISH -> "Add"
         AppLanguage.ARABIC -> "إضافة"
         AppLanguage.PORTUGUESE -> "Adicionar"
@@ -10783,7 +10783,7 @@ object StringsA {
     }
 
     val previousStep: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "Previous"
+        AppLanguage.CHINESE -> "上一步"
         AppLanguage.ENGLISH -> "Previous"
         AppLanguage.ARABIC -> "السابق"
         AppLanguage.PORTUGUESE -> "Anterior"
@@ -10796,7 +10796,7 @@ object StringsA {
     }
 
     val nextStep: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "Next"
+        AppLanguage.CHINESE -> "下一步"
         AppLanguage.ENGLISH -> "Next"
         AppLanguage.ARABIC -> "التالي"
         AppLanguage.PORTUGUESE -> "Próximo"
@@ -12372,7 +12372,7 @@ object StringsA {
     }
 
     val activationCodeExpired: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "Activation code expired"
+        AppLanguage.CHINESE -> "激活码已过期"
         AppLanguage.ENGLISH -> "Activation code expired"
         AppLanguage.ARABIC -> "انتهت صلاحية رمز التفعيل"
         AppLanguage.PORTUGUESE -> "Código de ativação expirado"
@@ -12996,7 +12996,7 @@ object StringsA {
     }
 
     val shareFailed: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "Share failed"
+        AppLanguage.CHINESE -> "分享失败"
         AppLanguage.ENGLISH -> "Share failed"
         AppLanguage.ARABIC -> "فشلت المشاركة"
         AppLanguage.PORTUGUESE -> "Falha ao compartilhar"
@@ -13204,7 +13204,7 @@ object StringsA {
     }
 
     val retry: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "Retry"
+        AppLanguage.CHINESE -> "重试"
         AppLanguage.ENGLISH -> "Retry"
         AppLanguage.ARABIC -> "إعادة المحاولة"
         AppLanguage.PORTUGUESE -> "Tentar novamente"
@@ -13230,7 +13230,7 @@ object StringsA {
     }
 
     val deleteAction: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "Delete"
+        AppLanguage.CHINESE -> "删除"
         AppLanguage.ENGLISH -> "Delete"
         AppLanguage.ARABIC -> "حذف"
         AppLanguage.PORTUGUESE -> "Excluir"
@@ -13542,7 +13542,7 @@ object StringsA {
     }
 
     val readFileFailed: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "Failed to read file"
+        AppLanguage.CHINESE -> "读取文件失败"
         AppLanguage.ENGLISH -> "Failed to read file"
         AppLanguage.ARABIC -> "فشل في قراءة الملف"
         AppLanguage.PORTUGUESE -> "Falha ao ler arquivo"
@@ -13711,7 +13711,7 @@ object StringsA {
     }
 
     val exportFailed: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "Export failed"
+        AppLanguage.CHINESE -> "导出失败"
         AppLanguage.ENGLISH -> "Export failed"
         AppLanguage.ARABIC -> "فشل التصدير"
         AppLanguage.PORTUGUESE -> "Falha na exportação"
@@ -13815,7 +13815,7 @@ object StringsA {
     }
 
     val exportSuccess: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "Export successful"
+        AppLanguage.CHINESE -> "导出成功"
         AppLanguage.ENGLISH -> "Export successful"
         AppLanguage.ARABIC -> "تم التصدير بنجاح"
         AppLanguage.PORTUGUESE -> "Exportação bem-sucedida"
@@ -13841,7 +13841,7 @@ object StringsA {
     }
 
     val delete: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "Delete"
+        AppLanguage.CHINESE -> "删除"
         AppLanguage.ENGLISH -> "Delete"
         AppLanguage.ARABIC -> "حذف"
         AppLanguage.PORTUGUESE -> "Excluir"
@@ -13880,7 +13880,7 @@ object StringsA {
     }
 
     val saveSuccess: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "Save successful"
+        AppLanguage.CHINESE -> "保存成功"
         AppLanguage.ENGLISH -> "Save successful"
         AppLanguage.ARABIC -> "تم الحفظ بنجاح"
         AppLanguage.PORTUGUESE -> "Salvo com sucesso"

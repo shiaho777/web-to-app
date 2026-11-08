@@ -7306,7 +7306,7 @@ object StringsC {
     }
 
     val sharePosterBtn: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "Share"
+        AppLanguage.CHINESE -> "分享"
         AppLanguage.ENGLISH -> "Share"
         AppLanguage.ARABIC -> "مشاركة"
         AppLanguage.PORTUGUESE -> "Compartilhar"
@@ -8554,7 +8554,7 @@ object StringsC {
     }
 
     val userAgentDefault: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "System Default"
+        AppLanguage.CHINESE -> "系统默认"
         AppLanguage.ENGLISH -> "System Default"
         AppLanguage.ARABIC -> "افتراضي النظام"
         AppLanguage.PORTUGUESE -> "Padrão do Sistema"
@@ -8567,7 +8567,7 @@ object StringsC {
     }
 
     val userAgentCustom: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "Custom"
+        AppLanguage.CHINESE -> "自定义"
         AppLanguage.ENGLISH -> "Custom"
         AppLanguage.ARABIC -> "مخصص"
         AppLanguage.PORTUGUESE -> "Personalizado"
