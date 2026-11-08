@@ -15,13 +15,15 @@ class AppUsageStatsTest {
     @Test
     fun `formattedTotalUsage shows minutes only for under 1 hour`() {
         val stats = AppUsageStats(appId = 1, totalUsageMs = 25 * 60 * 1000L)
-        assertThat(stats.formattedTotalUsage).isEqualTo("25m")
+        assertThat(stats.formattedTotalUsage)
+            .isEqualTo(String.format(Strings.statsDurationMinutes, 25))
     }
 
     @Test
     fun `formattedTotalUsage shows hours and minutes for over 1 hour`() {
         val stats = AppUsageStats(appId = 1, totalUsageMs = 90 * 60 * 1000L)
-        assertThat(stats.formattedTotalUsage).isEqualTo("1h 30m")
+        assertThat(stats.formattedTotalUsage)
+            .isEqualTo(String.format(Strings.statsDurationHoursMinutes, 1, 30))
     }
 
     @Test
@@ -33,7 +35,8 @@ class AppUsageStatsTest {
     @Test
     fun `formattedTotalUsage handles large values`() {
         val stats = AppUsageStats(appId = 1, totalUsageMs = 10 * 3600 * 1000L)
-        assertThat(stats.formattedTotalUsage).isEqualTo("10h 0m")
+        assertThat(stats.formattedTotalUsage)
+            .isEqualTo(String.format(Strings.statsDurationHoursMinutes, 10, 0))
     }
 
     @Test

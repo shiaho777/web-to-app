@@ -1645,7 +1645,7 @@ object StringsB {
     }
 
     val done: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "Done"
+        AppLanguage.CHINESE -> "完成"
         AppLanguage.ENGLISH -> "Done"
         AppLanguage.ARABIC -> "تم"
         AppLanguage.PORTUGUESE -> "Concluído"
@@ -1658,7 +1658,7 @@ object StringsB {
     }
 
     val edit: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "Edit"
+        AppLanguage.CHINESE -> "编辑"
         AppLanguage.ENGLISH -> "Edit"
         AppLanguage.ARABIC -> "تعديل"
         AppLanguage.PORTUGUESE -> "Editar"
@@ -1671,7 +1671,7 @@ object StringsB {
     }
 
     val loading: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "Loading"
+        AppLanguage.CHINESE -> "加载中"
         AppLanguage.ENGLISH -> "Loading"
         AppLanguage.ARABIC -> "جاري التحميل..."
         AppLanguage.PORTUGUESE -> "Carregando"
@@ -5513,7 +5513,7 @@ object StringsB {
     }
 
     val removeModule: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "Remove"
+        AppLanguage.CHINESE -> "移除"
         AppLanguage.ENGLISH -> "Remove"
         AppLanguage.ARABIC -> "إزالة"
         AppLanguage.PORTUGUESE -> "Remover"
