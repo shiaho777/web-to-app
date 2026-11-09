@@ -66,7 +66,6 @@ android {
                 storePassword = localProperties.getProperty("signing.storePassword")
                 keyAlias = localProperties.getProperty("signing.keyAlias")
                 keyPassword = localProperties.getProperty("signing.keyPassword")
-                enableV1Signing = true
             }
         }
     }
