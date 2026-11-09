@@ -333,10 +333,29 @@ After every host UI change — editor cards, dialogs, About, home, not only conf
 - **Do not gate** titles, the control's current value, errors, confirmation buttons, or status that is the only feedback the user has. `ifDescriptionsShown` exists so important status stays visible.
 - **Shell / generated-APK UI does not read this preference.** It is a host display setting. Do not thread it into shell-synced screens.
 
+### 13. Bump the release version
+
+A release bump is never a one-line edit. `versionCode` / `versionName` are duplicated across several files, but successive releases updated only `app/build.gradle.kts`: the shell template stayed at `71 / 2.6.9` while the host reached `86 / 2.8.7`, and both CONTRIBUTING language sections stayed on 2.6.9 too. Nothing breaks at runtime — `ApkBuilder` rewrites `versionCode` / `versionName` from `ApkConfig` when it patches the exported manifest — which is exactly why the drift survives unnoticed. Treat it as release metadata that must agree.
+
+Update **all** of these in the same commit:
+
+| File | What changes |
+| --- | --- |
+| `app/build.gradle.kts` | `versionCode`, `versionName` — the source of truth |
+| `shell/build.gradle.kts` | `versionCode`, `versionName` — template metadata |
+| `metadata/com.webtoapp.yml` | `Builds[0].versionName`, `versionCode`, `commit`, `CurrentVersion`, `CurrentVersionCode` |
+| `.github/CONTRIBUTING.md` | the "This guide targets WebToApp X.Y.Z (`versionCode N`)" line in **both** the English and Chinese sections |
+| `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt` | new release-notes file |
+
+`ReleaseVersionParityTest` (`app/src/test/java/com/webtoapp/ReleaseVersionParityTest.kt`) checks every entry in the table against `app/build.gradle.kts`. CI's `check` job runs `:app:testStandardDebugUnitTest`, so a partial bump fails before merge; locally run `./gradlew :app:testStandardDebugUnitTest --tests 'com.webtoapp.ReleaseVersionParityTest' --no-configuration-cache`. Those files and the changelog directory are declared as unit-test inputs at the bottom of `app/build.gradle.kts` — without that, an incremental local build reports the test `UP-TO-DATE` after a version-only edit and gives a false green. Never weaken the test, remove those inputs, or add an allowlist entry to get a release commit through.
+
+After the bump, rebuild the shell template: `./gradlew :shell:assembleRelease :app:syncShellTemplateApk --no-configuration-cache`. `app/src/main/assets/template/webview_shell.apk` is an untracked local build artifact (do not commit it), but a stale local copy still reports the old version until rebuilt. That rebuild changes the template bytes, so `ApkBuildCache.shellTemplateId` changes and incremental entries invalidate once — expected, not a regression.
+
 ---
 
 ## Easy-to-miss points
 
+- **Release version parity.** Bumping only `app/build.gradle.kts` leaves the shell template and CONTRIBUTING pinned to an older `versionCode` / `versionName`; exported APKs still get the right version from `ApkConfig`, so nothing looks broken. Follow recipe 13 — `ReleaseVersionParityTest` fails the build on drift.
 - **Keyboard avoidance below API 30 requires the classic window path.** Android 10 and lower have no native IME-inset dispatch: an edge-to-edge window (`decorFitsSystemWindows = false`) is never resized for the keyboard and reports zero IME insets, so no `softInputMode` value helps there. `WindowHelper.applyImmersiveFullscreen` therefore keeps the decor fitting system windows on the RESIZE keyboard path below API 30 (system `SOFT_INPUT_ADJUST_RESIZE` works) and degrades TRANSPARENT/IMAGE status-bar styles to solid colors on that path. Do not re-enable edge-to-edge unconditionally for those devices (#613; #634 flipped only the softInputMode bits and fixed nothing — its Robolectric test passed because it never asserted the layout flags).
 - **Shared sources are authored in `app/`.** Editing only a file under `shell/src` is usually wrong; it will be overwritten on sync or diverge from host.
 - **Config field names drift.** Editor model, `ApkConfig`, JSON factory, and shell config must stay aligned; Gson silently drops unknown/missing fields. Run `checkConfigFieldDrift`.
