@@ -1,6 +1,7 @@
 package com.webtoapp.core.startup
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 class RuntimeWarmupStartup(
@@ -21,6 +22,9 @@ class RuntimeWarmupStartup(
         // round up front. Costs a few KB total (one ranged request per channel).
         appScope.launch {
             runCatching { com.webtoapp.core.network.CnMirrorProbe.probe() }
+        }
+        appScope.launch(Dispatchers.IO) {
+            runCatching { com.webtoapp.core.host.AppVersionInfo.warm(appContext) }
         }
     }
 
