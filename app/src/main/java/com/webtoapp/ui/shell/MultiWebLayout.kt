@@ -14,6 +14,11 @@ internal const val MULTI_WEB_START_SITE = "SITE"
 internal const val MULTI_WEB_MIN_CARD_ASPECT = 0.9f
 internal const val MULTI_WEB_MAX_CARD_ASPECT = 3.2f
 
+internal const val MULTI_WEB_DRAWER_ENTRY_FLOATING = "FLOATING"
+internal const val MULTI_WEB_DRAWER_ENTRY_BAR = "BAR"
+internal const val MULTI_WEB_FAB_ANCHOR_TOP_END = "TOP_END"
+internal const val MULTI_WEB_FAB_ANCHOR_BOTTOM_START = "BOTTOM_START"
+
 /**
  * A missing key keeps the Kotlin default. A raw 0, from a stricter decoder,
  * is not the historical layout. Non-positive values keep the old look:

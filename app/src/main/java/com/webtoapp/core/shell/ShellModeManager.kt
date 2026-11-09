@@ -911,6 +911,12 @@ data class MultiWebShellConfig(
     @SerializedName("drawerColumns")
     val drawerColumns: Int = 1,
 
+    @SerializedName("drawerEntry")
+    val drawerEntry: String = "FLOATING",
+
+    @SerializedName("drawerFabAnchor")
+    val drawerFabAnchor: String = "TOP_END",
+
     @SerializedName("cardAspectRatio")
     val cardAspectRatio: Float = 1.2f,
 

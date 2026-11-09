@@ -4092,6 +4092,8 @@ fun WebViewScreen(
                                 com.webtoapp.ui.shell.MULTI_WEB_DEFAULT_DRAWER_COLUMNS,
                                 com.webtoapp.ui.shell.MULTI_WEB_MAX_DRAWER_COLUMNS
                             ),
+                            drawerEntry = multiWebConfig.drawerEntry,
+                            drawerFabAnchor = multiWebConfig.drawerFabAnchor,
                             cardAspectRatio = com.webtoapp.ui.shell.resolvedCardAspect(multiWebConfig.cardAspectRatio),
                             sitesUseOwnConfig = multiWebConfig.sitesUseOwnConfig,
                             projectId = multiWebConfig.projectId,

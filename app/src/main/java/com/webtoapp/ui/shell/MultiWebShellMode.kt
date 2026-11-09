@@ -1387,6 +1387,8 @@ private fun DrawerMode(
     // TopAppBar here used to stack under it and re-apply the status-bar inset.
     val chromeHost = LocalBrowserChromeHost.current
     val showOwnSiteBar = drawerSiteBarVisible(chromeHost != null)
+    val floatingEntry = multiWebConfig.drawerEntry.equals("FLOATING", ignoreCase = true)
+    val showFab = floatingEntry && chromeHost == null
     val toggleDrawer = rememberUpdatedState { drawerVisible = !drawerVisible }
     DisposableEffect(chromeHost) {
         val host = chromeHost ?: return@DisposableEffect onDispose {}
@@ -1531,7 +1533,7 @@ private fun DrawerMode(
             containerColor = Color.Transparent,
             contentWindowInsets = WindowInsets(0),
             topBar = {
-                if (showOwnSiteBar) {
+                if (showOwnSiteBar && !floatingEntry) {
                     BrowserChromeBar(
                         title = currentSite?.name?.ifBlank { currentSite?.url?.let { extractDomain(it) } ?: "" } ?: "",
                         showTitle = true,
@@ -1591,6 +1593,49 @@ private fun DrawerMode(
                         Text(Strings.multiWebNoSiteSelected, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
+                if (showFab) {
+                    val topEnd = !multiWebConfig.drawerFabAnchor.equals("BOTTOM_START", ignoreCase = true)
+                    DrawerSiteFab(
+                        modifier = Modifier
+                            .align(if (topEnd) Alignment.TopEnd else Alignment.BottomStart)
+                            .zIndex(2f)
+                            .then(if (topEnd) Modifier.statusBarsPadding() else Modifier.navigationBarsPadding())
+                            .padding(12.dp),
+                        site = currentSite,
+                        contentDescription = Strings.multiWebSiteList,
+                        onClick = { drawerVisible = true }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DrawerSiteFab(
+    modifier: Modifier,
+    site: MultiWebSiteShellConfig?,
+    contentDescription: String,
+    onClick: () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        modifier = modifier.size(44.dp),
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
+        shadowElevation = 6.dp
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            val emoji = site?.iconEmoji?.takeIf { it.isNotBlank() }
+            if (emoji != null) {
+                Text(emoji, fontSize = 20.sp)
+            } else {
+                Icon(
+                    Icons.Outlined.GridView,
+                    contentDescription = contentDescription,
+                    modifier = Modifier.size(22.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }
