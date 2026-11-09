@@ -5,7 +5,6 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.Uri
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
@@ -28,6 +27,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -111,50 +111,64 @@ import com.webtoapp.ui.theme.LocalShowDescriptions
 import com.webtoapp.ui.theme.ifDescriptionsShown
 import com.webtoapp.ui.theme.ThemeManager
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 fun AboutScreen(onBack: () -> Unit) {
     val context = LocalContext.current
+    val appContext = context.applicationContext
     val snackbarHostState = remember { SnackbarHostState() }
-    val scrollState = rememberScrollState()
-    val versionName = remember(context) { context.currentVersionName() }
-    val versionCode = remember(context) { context.currentVersionCode() }
+    val listState = rememberLazyListState()
+    val version = remember(context) { com.webtoapp.core.host.AppVersionInfo.read(context) }
+    val repoState = remember { AuthorReposState() }
+    val repoScope = androidx.compose.runtime.rememberCoroutineScope()
+
+    LaunchedEffect(Unit) {
+        val cached = withContext(Dispatchers.IO) {
+            com.webtoapp.core.update.AuthorReposCache.read(appContext)
+        }
+        if (cached != null) {
+            repoState.repos = cached
+            repoState.loading = false
+        }
+        repoState.load(appContext)
+    }
 
     WtaScreen(
         title = Strings.about,
         snackbarHostState = snackbarHostState,
         onBack = onBack
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(scrollState)
-                .padding(
-                    horizontal = WtaSpacing.ScreenHorizontal,
-                    vertical = WtaSpacing.ScreenVertical
-                ),
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            state = listState,
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                horizontal = WtaSpacing.ScreenHorizontal,
+                vertical = WtaSpacing.ScreenVertical
+            ),
             verticalArrangement = Arrangement.spacedBy(WtaSpacing.SectionGap)
         ) {
-            AuthorHeroCard(
-                versionName = versionName,
-                versionCode = versionCode
-            )
-
-            ContactGrid()
-
-            DescriptionsToggleCard()
-
-            SeparateTasksCard()
-            AdvancedFeaturesCard()
-
-            LocalMcpCard()
-
-            OtherProjectsSection()
-
-            LegalTabContent()
-
-            MadeWithLoveFooter()
+            item(key = "hero") {
+                AuthorHeroCard(
+                    versionName = version.name,
+                    versionCode = version.code
+                )
+            }
+            item(key = "contact") { ContactGrid() }
+            item(key = "descriptions") { DescriptionsToggleCard() }
+            item(key = "separate_tasks") { SeparateTasksCard() }
+            item(key = "advanced_features") { AdvancedFeaturesCard() }
+            item(key = "local_mcp") { LocalMcpCard() }
+            item(key = "other_projects") {
+                OtherProjectsSection(
+                    state = repoState,
+                    onRefresh = { repoScope.launch { repoState.load(appContext) } }
+                )
+            }
+            item(key = "legal") { LegalTabContent() }
+            item(key = "footer") { MadeWithLoveFooter() }
         }
     }
 }
@@ -408,8 +422,6 @@ private fun AuthorHeroCard(
         androidx.compose.runtime.mutableStateMapOf<String, com.webtoapp.core.update.UpdateDownloadState>()
     }
 
-    val apkBuilder = remember(context) { com.webtoapp.core.apkbuilder.ApkBuilder(context.applicationContext) }
-
     if (showUpdateDialog) {
         UpdateCheckDialog(
             isChecking = isCheckingUpdate,
@@ -430,7 +442,7 @@ private fun AuthorHeroCard(
                 downloadState = com.webtoapp.core.update.UpdateDownloadState.Idle
             },
             onInstall = { file ->
-                val started = apkBuilder.installApk(file)
+                val started = com.webtoapp.core.apkbuilder.ApkInstaller.install(context.applicationContext, file)
                 if (!started) {
                     Toast.makeText(context, Strings.fileManagerInstallFailed, Toast.LENGTH_SHORT).show()
                 }
@@ -465,7 +477,7 @@ private fun AuthorHeroCard(
                 historyDownloadStates.remove(tag)
             },
             onInstall = { file ->
-                val started = apkBuilder.installApk(file)
+                val started = com.webtoapp.core.apkbuilder.ApkInstaller.install(context.applicationContext, file)
                 if (!started) {
                     Toast.makeText(context, Strings.fileManagerInstallFailed, Toast.LENGTH_SHORT).show()
                 }
@@ -1603,29 +1615,6 @@ private fun MadeWithLoveFooter() {
     }
 }
 
-private fun Context.currentVersionName(): String {
-    return try {
-        val packageInfo = packageManager.getPackageInfo(packageName, 0)
-        packageInfo.versionName ?: ""
-    } catch (_: PackageManager.NameNotFoundException) {
-        ""
-    }
-}
-
-private fun Context.currentVersionCode(): Long {
-    return try {
-        val packageInfo = packageManager.getPackageInfo(packageName, 0)
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
-            packageInfo.longVersionCode
-        } else {
-            @Suppress("DEPRECATION")
-            packageInfo.versionCode.toLong()
-        }
-    } catch (_: PackageManager.NameNotFoundException) {
-        0L
-    }
-}
-
 private fun Context.copyToClipboard(label: String, text: String) {
     val cm = getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager ?: return
     cm.setPrimaryClip(ClipData.newPlainText(label, text))
@@ -1745,6 +1734,28 @@ private fun versionCopiedToast(): String = when (Strings.currentLanguage.value) 
 
 private enum class RepoSortMode { STARS, RECENT }
 
+private class AuthorReposState {
+    var repos by androidx.compose.runtime.mutableStateOf<List<com.webtoapp.core.update.UpdateChecker.RepoSummary>>(emptyList())
+    var loading by androidx.compose.runtime.mutableStateOf(true)
+    var refreshing by androidx.compose.runtime.mutableStateOf(false)
+    var error by androidx.compose.runtime.mutableStateOf<String?>(null)
+
+    suspend fun load(context: android.content.Context) {
+        refreshing = true
+        error = null
+        try {
+            repos = withContext(Dispatchers.IO) {
+                com.webtoapp.core.update.UpdateChecker.fetchAuthorRepos(context)
+            }
+        } catch (e: Exception) {
+            error = e.message ?: e.javaClass.simpleName
+        } finally {
+            loading = false
+            refreshing = false
+        }
+    }
+}
+
 private const val COLLAPSED_REPO_COUNT = 5
 
 /**
@@ -1754,39 +1765,19 @@ private const val COLLAPSED_REPO_COUNT = 5
  * segmented toggle switches to most-recently-pushed, client-side.
  */
 @Composable
-private fun OtherProjectsSection() {
+private fun OtherProjectsSection(
+    state: AuthorReposState,
+    onRefresh: () -> Unit
+) {
     val context = LocalContext.current
-    val appContext = context.applicationContext
-    val scope = androidx.compose.runtime.rememberCoroutineScope()
 
-    var repos by remember { mutableStateOf<List<com.webtoapp.core.update.UpdateChecker.RepoSummary>>(emptyList()) }
-    var loading by remember { mutableStateOf(true) }
-    var refreshing by remember { mutableStateOf(false) }
-    var error by remember { mutableStateOf<String?>(null) }
     var sortMode by remember { mutableStateOf(RepoSortMode.STARS) }
     var showAllRepos by remember { mutableStateOf(false) }
 
-    fun load() {
-        scope.launch {
-            refreshing = true
-            error = null
-            try {
-                repos = com.webtoapp.core.update.UpdateChecker.fetchAuthorRepos(appContext)
-            } catch (e: Exception) {
-                error = e.message ?: e.javaClass.simpleName
-            } finally {
-                loading = false
-                refreshing = false
-            }
-        }
-    }
-    LaunchedEffect(Unit) {
-        com.webtoapp.core.update.AuthorReposCache.read(appContext)?.let { cached ->
-            repos = cached
-            loading = false
-        }
-        load()
-    }
+    val repos = state.repos
+    val loading = state.loading
+    val refreshing = state.refreshing
+    val error = state.error
 
     val sorted = remember(repos, sortMode) {
         when (sortMode) {
@@ -1809,7 +1800,7 @@ private fun OtherProjectsSection() {
                     .size(30.dp)
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-                    .clickable(enabled = !refreshing) { load() },
+                    .clickable(enabled = !refreshing) { onRefresh() },
                 contentAlignment = Alignment.Center
             ) {
                 if (refreshing) {
@@ -1835,7 +1826,7 @@ private fun OtherProjectsSection() {
                     repeat(3) { RepoCardSkeleton() }
                 }
                 error != null && repos.isEmpty() -> {
-                    RepoLoadErrorCard(message = error, onRetry = { load() })
+                    RepoLoadErrorCard(message = error, onRetry = onRefresh)
                 }
                 sorted.isEmpty() -> {
                     WtaCard(

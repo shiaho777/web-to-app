@@ -7,13 +7,11 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Typeface
-import android.net.Uri
 import android.os.Build
 import com.webtoapp.core.host.AdvancedAppTypes
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.WebToAppApplication
-import androidx.core.content.FileProvider
 import com.webtoapp.core.crypto.AssetEncryptor
 import com.webtoapp.core.crypto.EncryptedApkBuilder
 import com.webtoapp.core.crypto.EncryptionConfig
@@ -4048,31 +4046,7 @@ builtins.__import__ = _w2a_import
         return false
     }
 
-    fun installApk(apkFile: File): Boolean {
-        return try {
-            val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                FileProvider.getUriForFile(
-                    context,
-                    "${context.packageName}.fileprovider",
-                    apkFile
-                )
-            } else {
-                Uri.fromFile(apkFile)
-            }
-
-            val intent = Intent(Intent.ACTION_VIEW).apply {
-                setDataAndType(uri, "application/vnd.android.package-archive")
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            }
-
-            context.startActivity(intent)
-            true
-        } catch (e: Exception) {
-            AppLogger.e("ApkBuilder", "Operation failed", e)
-            false
-        }
-    }
+    fun installApk(apkFile: File): Boolean = ApkInstaller.install(context, apkFile)
 
     fun getBuiltApks(): List<File> {
         return outputDir.listFiles()?.filter { it.extension == "apk" } ?: emptyList()
