@@ -5,8 +5,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -19,6 +21,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
@@ -1238,11 +1241,22 @@ fun ContextMenuLongPressMenu(
         val itemHeight = 40.dp
         val menuHeight = itemHeight * menuItems.filterNotNull().size + 8.dp * (menuItems.count { it == null })
 
+        val density = LocalDensity.current
+        val screenHeight = LocalConfiguration.current.screenHeightDp.dp
+        val edgeGap = 16.dp
+        val menuTop = with(density) {
+            val screenPx = screenHeight.toPx()
+            val menuPx = menuHeight.toPx()
+            val gapPx = edgeGap.toPx()
+            val top = if (touchY + menuPx + gapPx > screenPx) touchY - menuPx else touchY
+            top.coerceIn(gapPx, (screenPx - menuPx - gapPx).coerceAtLeast(gapPx))
+        }
+
         Popup(
             alignment = Alignment.TopStart,
             offset = IntOffset(
                 x = touchX.roundToInt(),
-                y = touchY.roundToInt()
+                y = menuTop.roundToInt()
             ),
             properties = PopupProperties(clippingEnabled = false)
         ) {
@@ -1257,7 +1271,10 @@ fun ContextMenuLongPressMenu(
                 tonalElevation = 2.dp
             ) {
                 Column(
-                    modifier = Modifier.padding(vertical = 4.dp)
+                    modifier = Modifier
+                        .heightIn(max = screenHeight * 0.6f)
+                        .padding(vertical = 4.dp)
+                        .verticalScroll(rememberScrollState())
                 ) {
                     menuItems.forEach { item ->
                         if (item == null) {
