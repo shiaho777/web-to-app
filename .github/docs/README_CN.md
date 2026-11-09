@@ -424,10 +424,6 @@ GitHub/Play 的签名 release 通过 `local.properties` 和 `app/build.gradle.kt
 
 设备伪装等高级功能仅用于技术演示,必须在用户知情同意下使用。
 
-## 鸣谢
-
-[daoxe.com](https://daoxe.com) — 自用中转站。
-
 ## 社区支持
 
 关联的 pump.fun 代币交易手续费会用来支持后续开发：

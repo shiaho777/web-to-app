@@ -424,10 +424,6 @@ Developed by **shiaho**.
 
 Advanced features such as device disguise are intended for technical demonstration and must only be used with informed user consent.
 
-## Acknowledgements
-
-[daoxe.com](https://daoxe.com) — AI API relay for personal use.
-
 ## Community Support
 
 Trading fees from the associated pump.fun token help support continued development:
