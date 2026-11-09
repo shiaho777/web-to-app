@@ -424,12 +424,6 @@ Developed by **shiaho**.
 
 Advanced features such as device disguise are intended for technical demonstration and must only be used with informed user consent.
 
-## Community Support
-
-Trading fees from the associated pump.fun token help support continued development:
-
-[https://pump.fun/coin/H2mNeSJV75VuQpGA9C11FwWoT9DU7sMCYUNVaMyQpump](https://pump.fun/coin/H2mNeSJV75VuQpGA9C11FwWoT9DU7sMCYUNVaMyQpump)
-
 ---
 
 <div align="center">
