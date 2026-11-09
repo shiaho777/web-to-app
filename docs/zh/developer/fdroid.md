@@ -53,9 +53,9 @@ RepoType: git
 Repo: https://github.com/shiaho777/web-to-app.git
 
 Builds:
-  - versionName: "2.8.6"
-    versionCode: 85
-    commit: v2.8.6
+  - versionName: "2.8.7"
+    versionCode: 86
+    commit: v2.8.7
     subdir: app
     gradle:
       - standard
@@ -71,7 +71,7 @@ UpdateCheckMode: Tags
 UpdateCheckData: app/build.gradle.kts|versionCode = (\d+)|.|versionName = "([^"]+)"
 ```
 
-使用与 GitHub Releases 相同的 tag（`v2.8.5`）。两个渠道同一版本；F-Droid 用自己的签名，两边的 APK 不能互相覆盖更新。
+使用与 GitHub Releases 相同的 tag（`v2.8.7`）。两个渠道同一版本；F-Droid 用自己的签名，两边的 APK 不能互相覆盖更新。
 
 ## 不要混用模板
 
