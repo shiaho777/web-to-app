@@ -1,17 +1,22 @@
 package com.webtoapp.core.webview
 
-import kotlin.math.roundToInt
-
 /**
  * Whole-page zoom for [WebViewManager.configureWebView] (#654, #1264).
  *
- * `pageZoomPercent` is the build-time per-app zoom (100 = default). It scales
- * text, layout, images, and canvas together with CSS `zoom` on the root
- * element. Rewriting `<meta name="viewport">` reloaded the document on
- * Android WebView whenever the page restored its own meta (#1317).
+ * `pageZoomPercent` is the build-time per-app zoom (100 = default). Rewriting
+ * `<meta name="viewport">` reloaded the document on Android WebView whenever
+ * the page restored its own meta (#1317).
  * [android.webkit.WebView.setInitialScale] cannot do this either — with
  * `useWideViewPort` a page `<meta name="viewport">` (`width=device-width`,
  * often `maximum-scale=1`) wins, and the page stays at 100% (#1264).
+ *
+ * Zooming out is a view-level scale, not CSS `zoom`. `zoom` is a post-layout
+ * transform: a `height:100vh` container stays one viewport tall and is then
+ * painted at 90%, which leaves a band of the window unpainted (#1508). The
+ * host lays the WebView out at `1/scale` and scales it back down, so the CSS
+ * viewport itself grows and `100vh` still means "one screen". Zooming in
+ * keeps CSS `zoom`: the page overflows instead of leaving a gap, and a
+ * re-layout renders text sharper than an upscaled view layer.
  *
  * Pure logic, no Android dependencies: unit-tested on plain JVM.
  */
@@ -22,42 +27,44 @@ internal data class PageZoomPlan(
      * Percent to apply. 0 on the default path means "leave WebView scale alone"
      * unless [initialScaleField] itself is non-zero (legacy `initialScale`).
      */
-    val initialScalePercent: Int
+    val initialScalePercent: Int,
+    /** Factor the host applies to the surface view. 1 when the view is not scaled. */
+    val viewScale: Float,
+    /** True when [pageZoomDocumentScript] should install CSS `zoom` on the root. */
+    val cssZoomActive: Boolean
 )
 
 internal fun planPageZoom(pageZoomPercent: Int, initialScaleField: Int): PageZoomPlan {
     // 0 = legacy data without the field; treat as 100 (default).
     val zoom = if (pageZoomPercent > 0) pageZoomPercent else 100
-    if (zoom != 100) return PageZoomPlan(zoomActive = true, initialScalePercent = zoom)
-    // Default path preserves the dormant `initialScale` field semantics.
-    return PageZoomPlan(zoomActive = false, initialScalePercent = if (initialScaleField > 0) initialScaleField else 0)
-}
-
-/**
- * Layout viewport for [baseCssWidth] (the WebView's CSS width before zoom).
- * Null when zoom is default or the base width is not known yet.
- *
- * `layoutWidth * scale == baseCssWidth`, so `width` and `initial-scale` agree
- * and the browser does not drop one of them to resolve a conflict.
- * Keep the JS in [pageZoomDocumentScript] on this same formula.
- */
-internal data class PageZoomViewport(
-    val layoutWidthPx: Int,
-    val scale: Double,
-)
-
-internal fun planPageZoomViewport(baseCssWidth: Int, pageZoomPercent: Int): PageZoomViewport? {
-    val plan = planPageZoom(pageZoomPercent, 0)
-    if (!plan.zoomActive || baseCssWidth <= 0) return null
-    val zoom = plan.initialScalePercent / 100.0
-    val layout = (baseCssWidth / zoom).roundToInt().coerceAtLeast(1)
-    return PageZoomViewport(layoutWidthPx = layout, scale = baseCssWidth.toDouble() / layout)
+    return when {
+        zoom < 100 -> PageZoomPlan(
+            zoomActive = true,
+            initialScalePercent = zoom,
+            viewScale = zoom / 100f,
+            cssZoomActive = false
+        )
+        zoom > 100 -> PageZoomPlan(
+            zoomActive = true,
+            initialScalePercent = zoom,
+            viewScale = 1f,
+            cssZoomActive = true
+        )
+        // Default path preserves the dormant `initialScale` field semantics.
+        else -> PageZoomPlan(
+            zoomActive = false,
+            initialScalePercent = if (initialScaleField > 0) initialScaleField else 0,
+            viewScale = 1f,
+            cssZoomActive = false
+        )
+    }
 }
 
 /**
  * Document-start script that scales the top frame with CSS `zoom`.
- * Null when zoom is the default (100, or legacy 0). Idempotent across
- * document-start plus later `evaluateJavascript` calls. Ignores subframes.
+ * Null when zoom is the default (100, or legacy 0), or when the host owns the
+ * zoom through [PageZoomPlan.viewScale]. Idempotent across document-start plus
+ * later `evaluateJavascript` calls. Ignores subframes.
  *
  * Rewriting `<meta name="viewport">` made Android WebView reload the document.
  * Dashboard apps such as OpenChamber put their own viewport back, the script
@@ -75,7 +82,7 @@ internal fun pageZoomDocumentScript(
     nativeCssWidth: Int = 0,
 ): String? {
     val plan = planPageZoom(pageZoomPercent, 0)
-    if (!plan.zoomActive) return null
+    if (!plan.cssZoomActive) return null
     return PAGE_ZOOM_JS.replace("PCT_PLACEHOLDER", plan.initialScalePercent.toString())
 }
 

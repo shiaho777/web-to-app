@@ -103,6 +103,7 @@ import com.webtoapp.ui.shared.effectiveBottomContentPadding
 import com.webtoapp.ui.shared.pageEdgeBands
 import com.webtoapp.ui.shared.needsPanelImePadding
 import com.webtoapp.ui.shared.parseBandColor
+import com.webtoapp.ui.shared.pageZoomSurface
 import com.webtoapp.ui.shell.ConsoleLevel
 import com.webtoapp.ui.shell.ConsoleLogEntry
 import com.webtoapp.ui.shell.ConsolePanel
@@ -4523,7 +4524,9 @@ fun WebViewScreen(
                                 swipeLayout.removeAllViews()
                             }
                         },
-                        modifier = Modifier.weight(weight = 1f, fill = true)
+                        modifier = Modifier
+                            .weight(weight = 1f, fill = true)
+                            .pageZoomSurface(webApp?.webViewConfig?.pageZoomPercent ?: 100)
                     )
 
                     AnimatedVisibility(
