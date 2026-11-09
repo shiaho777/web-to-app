@@ -48,7 +48,7 @@ html {
   padding-bottom: 72px;
 }
 
-.VPHero .name {
+#app .VPHero .name {
   margin-bottom: 18px;
   font-size: 13px;
   font-weight: 600;
@@ -57,13 +57,13 @@ html {
   color: var(--vp-c-text-3);
 }
 
-.VPHero .name .clip {
+#app .VPHero .name .clip {
   -webkit-text-fill-color: currentColor;
   background: none;
   color: inherit;
 }
 
-.VPHero .text {
+#app .VPHero .text {
   max-width: 15ch;
   margin: 0;
   font-size: clamp(40px, 5.2vw, 62px);
@@ -73,7 +73,7 @@ html {
   color: var(--vp-c-text-1);
 }
 
-.VPHero .tagline {
+#app .VPHero .tagline {
   max-width: 48ch;
   margin-top: 36px;
   padding: 0;
@@ -82,7 +82,7 @@ html {
   color: var(--vp-c-text-2);
 }
 
-.VPHero .image-container {
+#app .VPHero .image-container {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -100,7 +100,7 @@ html {
   border-radius: 24%;
 }
 
-.VPHero .actions {
+#app .VPHero .actions {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
