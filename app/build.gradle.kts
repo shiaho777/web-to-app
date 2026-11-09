@@ -9,6 +9,7 @@ import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
+import org.gradle.api.tasks.testing.Test
 
 plugins {
     id("com.android.application")
@@ -785,4 +786,17 @@ tasks.register("checkConfigFieldDrift") {
             throw GradleException("checkConfigFieldDrift failed ($code)")
         }
     }
+}
+
+val releaseVersionInputs = listOf(
+    rootProject.file("app/build.gradle.kts"),
+    rootProject.file("shell/build.gradle.kts"),
+    rootProject.file("metadata/com.webtoapp.yml"),
+    rootProject.file(".github/CONTRIBUTING.md")
+)
+val releaseChangelogDir = rootProject.file("fastlane/metadata/android/en-US/changelogs")
+
+tasks.withType<Test>().configureEach {
+    inputs.files(releaseVersionInputs)
+    inputs.dir(releaseChangelogDir)
 }

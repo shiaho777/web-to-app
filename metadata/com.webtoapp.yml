@@ -31,8 +31,9 @@ MaintainerNotes: |-
   One source tree. -Pfdroid=true drops Firebase, Play Services Google
   Sign-In, AdMob, and GeckoView's FIDO client, and leaves the APK
   unsigned. Do not mix with a normal release in the same Gradle run.
-  UpdateCheckData is pinned to app/build.gradle.kts because the shell
-  template carries an older versionCode.
+  UpdateCheckData is pinned to app/build.gradle.kts because that is the
+  released host version. The shell template version is kept in sync with it
+  by ReleaseVersionParityTest, so either file would report the same release.
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags ^v[0-9.]+$
