@@ -1,0 +1,6 @@
+Fixed
+- In-app preview respects the separate-tasks switch, so Back returns to the editor instead of the home screen.
+- Page zoom below 100% no longer leaves a strip of window background at the bottom.
+- 35 Chinese strings that still returned English are translated.
+- Plugin clearData reports a refusal or failure instead of always reporting success.
+- The About byline is centred with the rest of the hero.
