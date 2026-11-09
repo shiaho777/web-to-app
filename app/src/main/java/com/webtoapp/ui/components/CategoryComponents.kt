@@ -319,21 +319,27 @@ fun MoveToCategoryDialog(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
-            com.webtoapp.ui.design.WtaSettingCard {
-                CategoryOptionRow(
-                    icon = Icons.Outlined.FolderOpen,
-                    name = Strings.uncategorized,
-                    selected = currentCategoryId == null,
-                    onClick = { onMoveToCategory(null) }
-                )
-                categories.forEach { category ->
-                    com.webtoapp.ui.design.WtaSectionDivider()
+            Column(
+                modifier = Modifier
+                    .heightIn(max = 360.dp)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                com.webtoapp.ui.design.WtaSettingCard {
                     CategoryOptionRow(
-                        icon = com.webtoapp.util.SvgIconMapper.getIcon(category.icon),
-                        name = category.name,
-                        selected = currentCategoryId == category.id,
-                        onClick = { onMoveToCategory(category.id) }
+                        icon = Icons.Outlined.FolderOpen,
+                        name = Strings.uncategorized,
+                        selected = currentCategoryId == null,
+                        onClick = { onMoveToCategory(null) }
                     )
+                    categories.forEach { category ->
+                        com.webtoapp.ui.design.WtaSectionDivider()
+                        CategoryOptionRow(
+                            icon = com.webtoapp.util.SvgIconMapper.getIcon(category.icon),
+                            name = category.name,
+                            selected = currentCategoryId == category.id,
+                            onClick = { onMoveToCategory(category.id) }
+                        )
+                    }
                 }
             }
         },
