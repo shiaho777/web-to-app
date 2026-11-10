@@ -1389,6 +1389,7 @@ private fun DrawerMode(
     val showOwnSiteBar = drawerSiteBarVisible(chromeHost != null)
     val floatingEntry = multiWebConfig.drawerEntry.equals("FLOATING", ignoreCase = true)
     val showFab = floatingEntry && chromeHost == null
+    val drawerWindowInsets = DrawerDefaults.windowInsets.exclude(WindowInsets.ime).only(WindowInsetsSides.Horizontal)
     val toggleDrawer = rememberUpdatedState { drawerVisible = !drawerVisible }
     DisposableEffect(chromeHost) {
         val host = chromeHost ?: return@DisposableEffect onDispose {}
@@ -1406,10 +1407,14 @@ private fun DrawerMode(
             // above the keyboard — keep the nav inset from double-stacking.
             ModalDrawerSheet(
                 modifier = Modifier.width(drawerSheetWidthDp(drawerColumns).dp),
-                windowInsets = DrawerDefaults.windowInsets.exclude(WindowInsets.ime)
+                windowInsets = drawerWindowInsets
             ) {
                 Column(
-                    modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.primaryContainer).padding(start = 24.dp, top = 24.dp, end = 12.dp, bottom = 16.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.surface)
+                        .statusBarsPadding()
+                        .padding(start = 24.dp, top = 12.dp, end = 12.dp, bottom = 16.dp)
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Column(modifier = Modifier.weight(1f)) {
@@ -1417,12 +1422,12 @@ private fun DrawerMode(
                                 Strings.multiWebSiteList,
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                                color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
                                 Strings.multiWebSiteCount.replace("%d", visibleSites.size.toString()),
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                         IconButton(onClick = {
@@ -1432,7 +1437,7 @@ private fun DrawerMode(
                             Icon(
                                 if (searchOpen) Icons.Filled.Close else Icons.Outlined.Search,
                                 contentDescription = Strings.multiWebSearchSites,
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
@@ -1444,19 +1449,26 @@ private fun DrawerMode(
                             singleLine = true,
                             placeholder = { Text(Strings.multiWebSearchSites) },
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedTextColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                                unfocusedTextColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                                focusedBorderColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                                unfocusedBorderColor = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.5f),
-                                cursorColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                                focusedPlaceholderColor = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.6f),
-                                unfocusedPlaceholderColor = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.6f)
+                                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                focusedBorderColor = MaterialTheme.colorScheme.onSurface,
+                                unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                                cursorColor = MaterialTheme.colorScheme.onSurface,
+                                focusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                             )
                         )
                     }
                 }
-                Spacer(modifier = Modifier.height(8.dp))
-                LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(vertical = 8.dp)) {
+                HorizontalDivider(
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)
+                )
+                LazyColumn(
+                    modifier = Modifier
+                        .weight(1f)
+                        .navigationBarsPadding(),
+                    contentPadding = PaddingValues(top = 8.dp, bottom = 8.dp)
+                ) {
                     if (searchQuery.isNotBlank() && visibleSites.isEmpty()) {
                         item(key = "search-empty") {
                             Text(
