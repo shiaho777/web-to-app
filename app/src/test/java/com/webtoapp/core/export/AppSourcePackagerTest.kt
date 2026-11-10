@@ -3,11 +3,13 @@ package com.webtoapp.core.export
 import android.app.Application
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
+import com.webtoapp.core.backup.DataBackupManager
 import com.webtoapp.data.model.AppType
 import com.webtoapp.data.model.GalleryConfig
 import com.webtoapp.data.model.GalleryItem
 import com.webtoapp.data.model.GalleryItemType
 import com.webtoapp.data.model.HtmlConfig
+import com.webtoapp.data.model.NodeJsConfig
 import com.webtoapp.data.model.WebApp
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -107,6 +109,54 @@ class AppSourcePackagerTest {
 
         assertThat(packed).hasSize(1)
         assertThat(packed.single().value).isEqualTo("\u0001\u0002\u0003\u0004")
+    }
+
+    @Test
+    fun `source zip is also an importable single-app backup`() {
+        val icon = File(context.cacheDir, "icon.png").apply {
+            writeBytes(byteArrayOf(1, 2, 3))
+        }
+        val app = WebApp(
+            id = 42,
+            name = "Recoverable",
+            url = "https://example.com",
+            iconPath = icon.absolutePath,
+            categoryId = 7
+        )
+
+        val entries = zipEntries(AppSourcePackager(context).pack(app))
+
+        assertThat(entries).containsKey("apps.json")
+        val backup = DataBackupManager(context).parseBackupData(entries.getValue("apps.json"))
+        assertThat(backup.version).isEqualTo(5)
+        assertThat(backup.appCount).isEqualTo(1)
+        assertThat(backup.apps.single().name).isEqualTo("Recoverable")
+        assertThat(backup.apps.single().categoryId).isNull()
+        val restoredIconPath = backup.apps.single().iconPath
+        assertThat(restoredIconPath).startsWith("resources/icons/")
+        assertThat(entries.keys).contains(restoredIconPath)
+        assertThat(entries.getValue("README.md")).contains("apps.json")
+    }
+
+    @Test
+    fun `source zip carries server runtime project files`() {
+        val project = File(context.filesDir, "nodejs_projects/p42")
+        File(project, "index.js").apply {
+            parentFile?.mkdirs()
+            writeText("console.log(1)")
+        }
+        val app = WebApp(
+            name = "Server",
+            url = "http://127.0.0.1:3000",
+            appType = AppType.NODEJS_APP,
+            nodejsConfig = NodeJsConfig(projectId = "p42")
+        )
+
+        val entries = zipEntries(AppSourcePackager(context).pack(app))
+
+        assertThat(entries.getValue("local/files/nodejs_projects/p42/index.js"))
+            .isEqualTo("console.log(1)")
+        assertThat(entries.getValue("apps.json")).contains("Server")
     }
 
     private fun zipEntries(file: File): Map<String, String> {

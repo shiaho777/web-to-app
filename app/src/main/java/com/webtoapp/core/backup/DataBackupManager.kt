@@ -10,6 +10,7 @@ import com.google.gson.JsonParser
 import com.webtoapp.data.converter.Converters
 import com.webtoapp.data.database.AppDatabase
 import com.webtoapp.data.model.AppCategory
+import com.webtoapp.data.model.AppType
 import com.webtoapp.data.model.WebApp
 import com.webtoapp.data.repository.WebAppRepository
 import com.webtoapp.core.stats.AppUsageStats
@@ -56,7 +57,8 @@ class DataBackupManager(private val context: Context) {
         private const val TAG = "DataBackupManager"
 
         private const val BACKUP_VERSION = 5
-        private const val APPS_JSON = "apps.json"
+        internal const val APPS_JSON = "apps.json"
+        internal const val SOURCE_BUNDLE_CONFIG = "app/src/main/assets/app_config.json"
         private const val RESOURCES_DIR = "resources/"
         private const val ICONS_DIR = "resources/icons/"
         private const val SPLASH_DIR = "resources/splash/"
@@ -199,6 +201,91 @@ class DataBackupManager(private val context: Context) {
         val healthRecords: List<com.webtoapp.core.stats.AppHealthRecord> = emptyList()
     )
 
+    data class AppBackupPayload(
+        val appsJson: String,
+        val resources: Map<String, File>,
+        val projectFiles: Map<String, File>
+    )
+
+    fun buildAppBackupPayload(app: WebApp): AppBackupPayload {
+        val resources = mutableMapOf<String, String>()
+        collectAppResources(app, resources)
+        val relativeApp = updateAppPathsToRelative(app, resources).copy(categoryId = null)
+        val backupData = BackupData(
+            version = BACKUP_VERSION,
+            exportTime = System.currentTimeMillis(),
+            appCount = 1,
+            apps = listOf(relativeApp)
+        )
+        val projectFiles = linkedMapOf<String, File>()
+        appProjectDirs(app).forEach { (dirName, projectId) ->
+            collectShareableProjectFiles(
+                sourceDir = File(context.filesDir, "$dirName/$projectId"),
+                zipRoot = "$LOCAL_FILES_DIR$dirName/$projectId/",
+                files = projectFiles
+            )
+        }
+        return AppBackupPayload(
+            appsJson = gson.toJson(backupData),
+            resources = resources.mapValues { File(it.value) },
+            projectFiles = projectFiles
+        )
+    }
+
+    private fun collectShareableProjectFiles(
+        sourceDir: File,
+        zipRoot: String,
+        files: MutableMap<String, File>
+    ) {
+        if (!sourceDir.exists() || !sourceDir.isDirectory) return
+        val base = sourceDir.canonicalFile
+        val basePath = base.path + File.separator
+        sourceDir.walkTopDown()
+            .onEnter { child ->
+                child.name != "node_modules" && child.name !in MANAGED_FILES_EXCLUDED_SEGMENTS
+            }
+            .filter { it.isFile && it.canRead() }
+            .forEach { file ->
+                val canonical = file.canonicalFile
+                if (canonical == base || !canonical.path.startsWith(basePath)) return@forEach
+                val relativePath = file.relativeTo(sourceDir).invariantSeparatorsPath
+                if (isExcludedManagedPath(relativePath)) return@forEach
+                files["$zipRoot$relativePath"] = file
+            }
+    }
+
+    private fun appProjectDirs(app: WebApp): List<Pair<String, String>> {
+        val dirs = mutableListOf<Pair<String, String>>()
+        fun add(dirName: String, projectId: String?) {
+            if (!projectId.isNullOrBlank()) dirs += dirName to projectId
+        }
+        when (app.appType) {
+            AppType.NODEJS_APP -> add("nodejs_projects", app.nodejsConfig?.projectId)
+            AppType.PHP_APP -> add("php_projects", app.phpAppConfig?.projectId)
+            AppType.PYTHON_APP -> add("python_projects", app.pythonAppConfig?.projectId)
+            AppType.GO_APP -> add("go_projects", app.goAppConfig?.projectId)
+            AppType.WORDPRESS -> {
+                add("wordpress_projects", app.wordpressConfig?.projectId)
+                add("html_projects", app.wordpressConfig?.sourceProjectId)
+            }
+            AppType.HTML, AppType.FRONTEND -> add("html_projects", app.htmlConfig?.projectId)
+            AppType.MULTI_WEB -> {
+                add("html_projects", app.multiWebConfig?.projectId)
+                app.multiWebConfig?.sites.orEmpty().forEach { site ->
+                    add("html_projects", site.sourceProjectId)
+                    add("html_projects", site.siteProjectId)
+                    add("nodejs_projects", site.nodejsConfig?.projectId)
+                    add("php_projects", site.phpAppConfig?.projectId)
+                    add("python_projects", site.pythonAppConfig?.projectId)
+                    add("go_projects", site.goAppConfig?.projectId)
+                    add("wordpress_projects", site.wordpressConfig?.projectId)
+                }
+            }
+            else -> Unit
+        }
+        return dirs.distinct()
+    }
+
     suspend fun exportAllData(
         repository: WebAppRepository,
         outputUri: Uri,
@@ -311,7 +398,7 @@ class DataBackupManager(private val context: Context) {
                         }
                     }
                 }
-            } ?: return@withContext Result.failure(Exception("无法创建输出文件"))
+            } ?: return@withContext Result.failure(Exception(Strings.backupOutputFailed))
 
             onProgress(100, 100, Strings.backupExportComplete)
 
@@ -343,6 +430,7 @@ class DataBackupManager(private val context: Context) {
             val extractedResources = mutableMapOf<String, String>()
             var modulesJsonBytes: ByteArray? = null
             var builtInStatesJsonBytes: ByteArray? = null
+            var looksLikeSourceBundle = false
             val pendingLocalEntries = mutableListOf<PendingLocalEntry>()
 
             context.contentResolver.openInputStream(inputUri)?.use { inputStream ->
@@ -370,6 +458,9 @@ class DataBackupManager(private val context: Context) {
                                 backupData = parseBackupData(jsonStr)
                                 AppLogger.i(TAG, "读取到 ${backupData?.appCount} 个应用")
                             }
+                            entry.name == SOURCE_BUNDLE_CONFIG -> {
+                                looksLikeSourceBundle = true
+                            }
                             entry.name == EXTENSION_MODULES_FILE -> {
                                 modulesJsonBytes = readJsonEntry(zipIn, entryGuard)
                             }
@@ -395,14 +486,19 @@ class DataBackupManager(private val context: Context) {
                 }
             } ?: run {
                 discardPendingLocalEntries(pendingLocalEntries)
-                return@withContext Result.failure(Exception("无法读取备份文件"))
+                return@withContext Result.failure(Exception(Strings.backupUnreadableFile))
             }
 
             val data = backupData
             if (data == null) {
                 cleanupExtractedFiles(extractedFiles)
                 discardPendingLocalEntries(pendingLocalEntries)
-                return@withContext Result.failure(Exception("备份文件格式无效"))
+                val message = if (looksLikeSourceBundle) {
+                    Strings.backupInvalidFormatSourceZip
+                } else {
+                    Strings.backupInvalidFormat
+                }
+                return@withContext Result.failure(Exception(message))
             }
 
             // The backup has validated — only now overwrite live local config files.

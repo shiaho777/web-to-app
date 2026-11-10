@@ -310,6 +310,7 @@ object Strings {
     val exportAppSource: String get() = StringsA.exportAppSource
     val exportAppSourceFailed: String get() = StringsA.exportAppSourceFailed
     fun sourceBundleReadme(name: String): String = StringsA.sourceBundleReadme(name)
+    val sourceBundleRestoreNote: String get() = StringsA.sourceBundleRestoreNote
     val btnSave: String get() = StringsA.btnSave
     val btnCancel: String get() = StringsA.btnCancel
     val btnImport: String get() = StringsA.btnImport
@@ -1760,6 +1761,7 @@ object Strings {
     val generalChatDesc: String get() = StringsB.generalChatDesc
     val dataBackupTitle: String get() = StringsB.dataBackupTitle
     val dataBackupDesc: String get() = StringsB.dataBackupDesc
+    val dataBackupUninstallWarning: String get() = StringsB.dataBackupUninstallWarning
     val dataBackupNote: String get() = StringsB.dataBackupNote
     val legalDisclaimer: String get() = StringsB.legalDisclaimer
     val tplElementHider: String get() = StringsB.tplElementHider
@@ -4572,6 +4574,10 @@ object Strings {
     val backupReadingData: String get() = StringsE.backupReadingData
     val backupCreatingFile: String get() = StringsE.backupCreatingFile
     val backupExportComplete: String get() = StringsE.backupExportComplete
+    val backupInvalidFormat: String get() = StringsE.backupInvalidFormat
+    val backupInvalidFormatSourceZip: String get() = StringsE.backupInvalidFormatSourceZip
+    val backupUnreadableFile: String get() = StringsE.backupUnreadableFile
+    val backupOutputFailed: String get() = StringsE.backupOutputFailed
     val backupReadingBackup: String get() = StringsE.backupReadingBackup
     val backupImportingData: String get() = StringsE.backupImportingData
     val backupImportComplete: String get() = StringsE.backupImportComplete

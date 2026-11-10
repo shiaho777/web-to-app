@@ -248,7 +248,7 @@ WebToApp has a large number of switches. The sections below group them by use ca
 <summary><b>🗂 File manager & project tooling</b></summary>
 
 - **File manager** — a single screen to view, share, install, open, and clear build outputs (APK builds, AAB exports, app clones, build logs) and a user-files directory, with a read-only build-log viewer.
-- **Export source** — a Gradle project you can open in Android Studio: manifest, WebView activity, config, and local files. The keystore, `node_modules`, `.git`, and the full shell runtime stay out.
+- **Export source** — a Gradle project you can open in Android Studio: manifest, WebView activity, config, and local files. The zip also doubles as a single-app backup: pick it from **Data Backup → Import Data** after reinstalling to restore that project, including its server-runtime sources. The keystore, `node_modules`, `.git`, and the full shell runtime stay out.
 - **Website scraper** for offline packs — HTML, CSS, JS, images, fonts, `url()`, `srcset`, `@import`, path rewriting, same-domain limits, depth limits, and size limits; parallel streaming worker pool with main-thread progress callbacks.
 - **Multi-Web layouts** — bottom tabs, top tabs that follow a sideways swipe, cards (1–4 columns and a height slider), feeds, drawers (1–3 columns), site order, the tab opened on launch, per-site icons/theme colors/extraction selectors/refresh intervals, and shared JS/CSS.
 - **Gallery apps** — categorized media, grid/list/timeline views, shuffle/single-loop, sorting, thumbnail bar, overlays, auto-next, and playback memory.

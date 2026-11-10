@@ -229,6 +229,13 @@ private fun ColumnScope.DataBackupControls() {
         }
     }
 
+    Spacer(Modifier.height(12.dp))
+    WtaStatusBanner(
+        message = Strings.dataBackupUninstallWarning,
+        tone = WtaStatusTone.Warning
+    )
+    Spacer(Modifier.height(12.dp))
+
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(10.dp)

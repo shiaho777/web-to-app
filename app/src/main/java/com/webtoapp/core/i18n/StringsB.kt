@@ -8433,6 +8433,19 @@ object StringsB {
         AppLanguage.KOREAN -> "설정, 아이콘, 스플래시 화면, BGM 등 리소스를 포함한 모든 앱 데이터 내보내기/가져오기"
     }
 
+    val dataBackupUninstallWarning: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "卸载 WebToApp 会永久删除所有项目与源码，本应用未开启系统备份。请定期导出备份并妥善保存。"
+        AppLanguage.ENGLISH -> "Uninstalling WebToApp permanently deletes every project and its source files — system backup is disabled. Export a backup regularly and keep it somewhere safe."
+        AppLanguage.ARABIC -> "إلغاء تثبيت WebToApp يحذف جميع المشاريع وملفاتها المصدرية نهائياً، والنسخ الاحتياطي للنظام معطّل. صدّر نسخة احتياطية بانتظام واحتفظ بها في مكان آمن."
+        AppLanguage.PORTUGUESE -> "Desinstalar o WebToApp exclui permanentemente todos os projetos e seus arquivos de origem, pois o backup do sistema está desativado. Exporte um backup regularmente e guarde-o em local seguro."
+        AppLanguage.SPANISH -> "Desinstalar WebToApp borra permanentemente todos los proyectos y sus archivos de código, ya que la copia de seguridad del sistema está desactivada. Exporta una copia con regularidad y guárdala en un lugar seguro."
+        AppLanguage.FRENCH -> "Désinstaller WebToApp supprime définitivement tous les projets et leurs fichiers source, la sauvegarde système étant désactivée. Exportez régulièrement une sauvegarde et conservez-la en lieu sûr."
+        AppLanguage.GERMAN -> "Beim Deinstallieren von WebToApp werden alle Projekte und ihre Quelldateien dauerhaft gelöscht, da die Systemsicherung deaktiviert ist. Exportiere regelmäßig ein Backup und bewahre es sicher auf."
+        AppLanguage.RUSSIAN -> "Удаление WebToApp безвозвратно удаляет все проекты и их исходники, поскольку системное резервирование отключено. Регулярно экспортируйте резервную копию и храните её в надёжном месте."
+        AppLanguage.JAPANESE -> "WebToApp をアンインストールすると、すべてのプロジェクトとソースが完全に削除されます。システムバックアップは無効です。定期的にバックアップを書き出して安全な場所に保管してください。"
+        AppLanguage.KOREAN -> "WebToApp 을 제거하면 모든 프로젝트와 소스가 영구 삭제됩니다. 시스템 백업이 꺼져 있으므로 정기적으로 백업을 내보내 안전한 곳에 보관하세요."
+    }
+
     val dataBackupNote: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "导入数据会添加新应用，不会覆盖现有数据。建议在更新应用前先导出备份。"
         AppLanguage.ENGLISH -> "Importing data adds new apps without overwriting existing data. It's recommended to export backup before updating."
