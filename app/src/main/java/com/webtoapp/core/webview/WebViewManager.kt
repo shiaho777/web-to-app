@@ -6866,14 +6866,17 @@ class WebViewManager(
                             && window.__wta_private_network_scope__ === 'CORS_BYPASS';
                         if (!shouldBridge(payload.url)) return nativeFetch(input, init);
                         if (isCorsBypass) {
-                            return nativeHttpRequest(payload).then(function(result) {
-                                var bytes = base64ToBytes(result.bodyBase64 || '');
-                                return new Response(bytes, {
-                                    status: Number(result.status || 0),
-                                    statusText: String(result.statusText || ''),
-                                    headers: result.headers || {}
+                            var viaBridge = function() {
+                                return nativeHttpRequest(payload).then(function(result) {
+                                    var bytes = base64ToBytes(result.bodyBase64 || '');
+                                    return new Response(bytes, {
+                                        status: Number(result.status || 0),
+                                        statusText: String(result.statusText || ''),
+                                        headers: result.headers || {}
+                                    });
                                 });
-                            });
+                            };
+                            return nativeFetch(input, init).catch(viaBridge);
                         }
                         if (payload.method !== 'GET' && payload.method !== 'HEAD') {
                             return nativeFetch(input, init);
