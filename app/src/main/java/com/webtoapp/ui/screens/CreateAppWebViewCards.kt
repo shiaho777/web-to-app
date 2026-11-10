@@ -2351,6 +2351,55 @@ fun FullscreenModeCard(
                 )
 
                 WtaSectionDivider()
+                Column(
+                    modifier = Modifier.padding(
+                        horizontal = WtaSpacing.RowHorizontal,
+                        vertical = WtaSpacing.ContentGap
+                    )
+                ) {
+                    Text(
+                        text = Strings.displayCutoutModeLabel,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(bottom = 4.dp)
+                    )
+                    Strings.displayCutoutModeHint.ifDescriptionsShown()?.let { hint ->
+                        Text(
+                            text = hint,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    val cutoutModes = listOf(
+                        DisplayCutoutMode.SHORT_EDGES to Strings.displayCutoutModeShortEdges,
+                        DisplayCutoutMode.DEFAULT to Strings.displayCutoutModeDefault,
+                        DisplayCutoutMode.NEVER to Strings.displayCutoutModeNever
+                    )
+                    cutoutModes.forEach { (mode, label) ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(MaterialTheme.shapes.small)
+                                .clickable {
+                                    onWebViewConfigChange(webViewConfig.copy(displayCutoutMode = mode))
+                                }
+                                .padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = webViewConfig.displayCutoutMode == mode,
+                                onClick = {
+                                    onWebViewConfigChange(webViewConfig.copy(displayCutoutMode = mode))
+                                }
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text(text = label, style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                }
+
+                WtaSectionDivider()
                 WtaSliderRow(
                     title = Strings.fullscreenContentPadding,
                     subtitle = Strings.fullscreenContentPaddingHint.ifDescriptionsShown(),

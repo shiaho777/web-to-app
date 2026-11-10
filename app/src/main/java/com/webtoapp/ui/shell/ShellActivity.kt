@@ -26,6 +26,7 @@ import com.webtoapp.core.i18n.Strings
 import com.webtoapp.ui.theme.ShellTheme
 import com.webtoapp.core.webview.BackgroundMediaRuntime
 import com.webtoapp.core.webview.TranslateBridge
+import com.webtoapp.data.model.DisplayCutoutMode
 import com.webtoapp.data.model.KeyboardAdjustMode
 import com.webtoapp.data.model.withNotificationPolyfill
 import com.webtoapp.core.floatingwindow.FloatingWindowService
@@ -81,6 +82,7 @@ class ShellActivity : AppCompatActivity() {
     private var topTabBarColor: String? = null
     private var pageBottomAutoColor: String? = null
     private var keyboardAdjustMode: KeyboardAdjustMode = KeyboardAdjustMode.RESIZE
+    private var displayCutoutMode: DisplayCutoutMode = DisplayCutoutMode.SHORT_EDGES
 
     private var pendingFloatingWindowLaunch = false
     private var notificationPolyfillEnabled = false
@@ -222,6 +224,7 @@ class ShellActivity : AppCompatActivity() {
             statusBarDarkIcons = resolvedStatusIcons(systemDark),
             statusBarBgType = if (systemDark) statusBarBackgroundTypeDark else statusBarBackgroundType,
             keyboardAdjustMode = keyboardAdjustMode,
+            displayCutoutMode = displayCutoutMode,
             tag = "ShellActivity"
         )
         // showNavigationBarInFullscreen only applies while fullscreen is on.
@@ -642,6 +645,12 @@ class ShellActivity : AppCompatActivity() {
         } catch (e: Exception) {
             com.webtoapp.core.shell.ShellLogger.w("ShellActivity", "键盘调整模式解析失败: ${config.webViewConfig.keyboardAdjustMode}, 使用默认值 RESIZE")
             KeyboardAdjustMode.RESIZE
+        }
+
+        displayCutoutMode = try {
+            DisplayCutoutMode.valueOf(config.webViewConfig.displayCutoutMode)
+        } catch (e: Exception) {
+            DisplayCutoutMode.SHORT_EDGES
         }
 
         shareReceiveMimeTypes = buildList {

@@ -189,6 +189,7 @@ internal object ApkConfigJsonFactory {
         "hideStatusBarInVideoFullscreen" to webView.hideStatusBarInVideoFullscreen,
         "showNavigationBarInFullscreen" to webView.showNavigationBarInFullscreen,
         "showToolbarInFullscreen" to webView.showToolbarInFullscreen,
+        "displayCutoutMode" to webView.displayCutoutMode,
         "fullscreenContentPaddingDp" to webView.fullscreenContentPaddingDp,
         "fullscreenContentPaddingTopDp" to webView.fullscreenContentPaddingTopDp,
         "fullscreenContentPaddingBottomDp" to webView.fullscreenContentPaddingBottomDp,

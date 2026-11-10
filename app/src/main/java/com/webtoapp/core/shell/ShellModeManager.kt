@@ -1130,6 +1130,9 @@ data class WebViewShellConfig(
     @SerializedName("showToolbarInFullscreen")
     val showToolbarInFullscreen: Boolean = false,
 
+    @SerializedName("displayCutoutMode")
+    val displayCutoutMode: String = "SHORT_EDGES",
+
     @SerializedName("fullscreenContentPaddingDp")
     val fullscreenContentPaddingDp: Int = 0,
 

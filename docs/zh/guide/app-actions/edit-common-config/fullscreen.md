@@ -9,6 +9,7 @@
 - **全屏** —— 启用沉浸式全屏(`hideToolbar`)。
 - **全屏常驻状态栏** —— 保持顶部状态栏持续可见(`showStatusBarInFullscreen`)。常驻模式永不自动隐藏。
 - **全屏显示导航栏** —— 保持底部导航栏可见(`showNavigationBarInFullscreen`)。
+- **刘海屏 / 挖孔避让** —— 选择全屏内容是否延伸到刘海或挖孔区域(`displayCutoutMode`):*延伸到刘海区*(`SHORT_EDGES`,默认,也是此前的行为)、*跟随系统默认*(`DEFAULT`)、*避开刘海区*(`NEVER`)。仅对 Android 9(API 28)及以上的 WebView 类应用生效,更早的设备没有刘海概念。
 - **全屏内容内边距** —— 内容内缩若干 dp(`fullscreenContentPaddingDp`)。
 - **自定义状态栏** —— 可展开子面板(`statusBarCustomizeLabel`),含亮色/暗色两个标签页:颜色模式(`THEME`/`PAGE_TOP`/`TRANSPARENT`/`CUSTOM`)、自定义颜色、深色图标,以及各模式的背景(颜色/图片)。`TRANSPARENT`/图片栏压盖内容,不预留占位。
 
@@ -25,3 +26,4 @@
 - 顶部和底部标签页只应用一次全屏内容内边距。卡片、抽屉和信息流本来就是这样。
 - 全屏**视频**方向(全屏视频播放的横屏/传感器方向,`fullscreenVideoOrientation`)在[特殊设置](/zh/guide/app-actions/edit-common-config/special-settings)中配置。同一卡片还有"视频全屏时隐藏状态栏"(`hideStatusBarInVideoFullscreen`,默认开启):网页视频进入 HTML5 全屏时,即使"全屏显示状态栏"开启也会强制隐藏状态栏。
 - Android 10 及以下的键盘避让走经典窗口缩放路径;键盘调整模式见[特殊设置](/zh/guide/app-actions/edit-common-config/special-settings)。
+- **避开刘海区**让整个窗口退出挖孔区域,是网页顶部按钮被遮挡时可靠的解法:Android WebView 并不保证为 CSS `env(safe-area-inset-*)` 提供非零值,而上面的全屏内容内边距是固定 dp,不是实测的挖孔尺寸。媒体与画廊播放器仍保持各自的全出血行为。

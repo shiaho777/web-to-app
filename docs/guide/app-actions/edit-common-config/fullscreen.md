@@ -9,6 +9,7 @@ Runs the app immersive, hiding the system bars and (optionally) working together
 - **Fullscreen** — enable immersive fullscreen (`hideToolbar`).
 - **Always show status bar in fullscreen** — keep the top status bar persistently visible (`showStatusBarInFullscreen`). Persistent mode never auto-hides.
 - **Show navigation bar in fullscreen** — keep the bottom navigation bar visible (`showNavigationBarInFullscreen`).
+- **Display cutout** — choose whether fullscreen content extends into the notch / punch-hole area (`displayCutoutMode`): *Extend into cutout* (`SHORT_EDGES`, the default and previous behavior), *Use system default* (`DEFAULT`), or *Avoid cutout area* (`NEVER`). Applies to WebView-based app types on Android 9 (API 28) and newer; earlier devices have no cutout to avoid.
 - **Fullscreen content padding** — inset content by a number of dp (`fullscreenContentPaddingDp`).
 - **Customize status bar** — an expandable sub-panel (`statusBarCustomizeLabel`) with light/dark tabs: color mode (`THEME`/`PAGE_TOP`/`TRANSPARENT`/`CUSTOM`), custom color, dark icons, and background (color/image) for each mode. `TRANSPARENT`/image bars overlay content instead of reserving space.
 
@@ -25,3 +26,4 @@ Fullscreen and the [browser toolbar](/guide/app-actions/edit-common-config/brows
 - Top and bottom tab pages use the fullscreen content padding once. Cards, the drawer, and the feed already did.
 - Fullscreen **video** orientation (landscape/sensor for fullscreen video playback, `fullscreenVideoOrientation`) is configured under [Special Settings](/guide/app-actions/edit-common-config/special-settings). The same card also has **hide status bar in video fullscreen** (`hideStatusBarInVideoFullscreen`, on by default), which force-hides the status bar while a web video is in HTML5 fullscreen even when "show status bar in fullscreen" is on.
 - Keyboard-avoidance behavior below Android 11 uses the classic window-resize path; see [Special Settings](/guide/app-actions/edit-common-config/special-settings) for the keyboard adjust mode.
+- **Avoid cutout area** keeps the whole window out of the notch region. This is the reliable fix for pages whose top buttons are obscured: CSS `env(safe-area-inset-*)` is not populated reliably by Android WebView, and the fullscreen content padding above is a fixed dp value rather than a measured cutout inset. Media and gallery player screens keep their own full-bleed behavior.

@@ -4331,6 +4331,7 @@ private fun com.webtoapp.data.model.WebViewConfig.toWebViewBlock(context: androi
         hideStatusBarInVideoFullscreen = hideStatusBarInVideoFullscreen,
         showNavigationBarInFullscreen = showNavigationBarInFullscreen,
         showToolbarInFullscreen = showToolbarInFullscreen,
+        displayCutoutMode = displayCutoutMode.name,
         fullscreenContentPaddingDp = fullscreenContentPaddingDp,
         fullscreenContentPaddingTopDp = fullscreenContentPaddingTopDp,
         fullscreenContentPaddingBottomDp = fullscreenContentPaddingBottomDp,
