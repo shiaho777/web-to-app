@@ -99,6 +99,29 @@ fun MultiWebShellMode(
         return
     }
 
+    val darkTheme = androidx.compose.foundation.isSystemInDarkTheme()
+    val barType = if (darkTheme) config.webViewConfig.statusBarBackgroundTypeDark else config.webViewConfig.statusBarBackgroundType
+    val barMode = if (darkTheme) config.webViewConfig.statusBarColorModeDark else config.webViewConfig.statusBarColorMode
+    val barColor = if (darkTheme) config.webViewConfig.statusBarColorDark else config.webViewConfig.statusBarColor
+    val barImage = if (darkTheme) config.webViewConfig.statusBarBackgroundImageDark else config.webViewConfig.statusBarBackgroundImage
+    val barAlpha = if (darkTheme) config.webViewConfig.statusBarBackgroundAlphaDark else config.webViewConfig.statusBarBackgroundAlpha
+    val explicitIcons = if (darkTheme) config.webViewConfig.statusBarDarkIconsDark else config.webViewConfig.statusBarDarkIcons
+    val paintsBand = barType != "COLOR" || barMode != com.webtoapp.data.model.StatusBarColorMode.TRANSPARENT.name
+    val lightStatusIcons = explicitIcons ?: when (barType) {
+        "COLOR" -> {
+            val hex = barColor
+            if (hex.isNullOrBlank()) {
+                !darkTheme
+            } else {
+                runCatching {
+                    com.webtoapp.ui.shared.WindowHelper.isColorLight(android.graphics.Color.parseColor(hex))
+                }.getOrDefault(!darkTheme)
+            }
+        }
+        else -> !darkTheme
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
     when (multiWebConfig.displayMode.uppercase()) {
         "TABS" -> TabsMode(config, multiWebConfig, sites, webViewConfig, webViewCallbacks, webViewManager, onWebViewCreated, swipeRefreshEnabled, isRefreshing, onRefresh, onBrowserSurfaceCreated, TabBarPlacement.BOTTOM, onTopTabColor)
         "TOP_TABS" -> TabsMode(config, multiWebConfig, sites, webViewConfig, webViewCallbacks, webViewManager, onWebViewCreated, swipeRefreshEnabled, isRefreshing, onRefresh, onBrowserSurfaceCreated, TabBarPlacement.TOP, onTopTabColor)
@@ -106,6 +129,25 @@ fun MultiWebShellMode(
         "FEED" -> FeedMode(config, multiWebConfig, sites, webViewConfig, webViewCallbacks, webViewManager, onWebViewCreated, swipeRefreshEnabled, isRefreshing, onRefresh, onBrowserSurfaceCreated)
         "DRAWER" -> DrawerMode(config, multiWebConfig, sites, webViewConfig, webViewCallbacks, webViewManager, onWebViewCreated, swipeRefreshEnabled, isRefreshing, onRefresh, onBrowserSurfaceCreated)
         else -> TabsMode(config, multiWebConfig, sites, webViewConfig, webViewCallbacks, webViewManager, onWebViewCreated, swipeRefreshEnabled, isRefreshing, onRefresh, onBrowserSurfaceCreated)
+    }
+
+    if (paintsBand) {
+        com.webtoapp.ui.components.StatusBarOverlay(
+            show = true,
+            backgroundType = barType,
+            backgroundColor = barColor ?: if (darkTheme) "#1C1B1F" else "#FFFBFE",
+            backgroundImagePath = barImage,
+            alpha = barAlpha,
+            heightDp = config.webViewConfig.statusBarHeightDp
+        )
+        val view = androidx.compose.ui.platform.LocalView.current
+        androidx.compose.runtime.SideEffect {
+            val window = (view.context as? android.app.Activity)?.window ?: return@SideEffect
+            val controller = androidx.core.view.WindowInsetsControllerCompat(window, window.decorView)
+            controller.isAppearanceLightStatusBars = lightStatusIcons
+            controller.isAppearanceLightNavigationBars = lightStatusIcons
+        }
+    }
     }
 }
 
@@ -212,10 +254,37 @@ private fun SiteContent(
         )
     )
     val siteWvCfg = remember(site.id) { buildWebViewConfig(effectiveConfig) }
+
+    var recreationTick by remember(site.id) { mutableIntStateOf(0) }
+    var liveWebView by remember(site.id) { mutableStateOf<WebView?>(null) }
+    val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner, site.id) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                val wv = liveWebView ?: return@LifecycleEventObserver
+                com.webtoapp.core.webview.RendererLivenessProbe.probe(
+                    webView = wv,
+                    stillCurrent = { liveWebView === wv }
+                ) {
+                    liveWebView = null
+                    runCatching {
+                        wv.stopLoading()
+                        (wv.parent as? android.view.ViewGroup)?.removeView(wv)
+                        wv.destroy()
+                    }
+                    webViewManager.discardWebView(wv)
+                    recreationTick++
+                }
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
     ShellContentRouter(
         appType = site.appType,
         config = effectiveConfig,
-        webViewRecreationKey = site.id.hashCode(),
+        webViewRecreationKey = site.id.hashCode() + recreationTick,
         webViewConfig = siteWvCfg,
         webViewCallbacks = webViewCallbacks,
         webViewManager = webViewManager,
@@ -224,9 +293,8 @@ private fun SiteContent(
         isRefreshing = isRefreshing,
         onRefresh = onRefresh,
         onWebViewCreated = { wv ->
-            // Stamp the site so the activity's WebView-state bundle only lands
-            // on the surface it was saved from (#1036).
             (wv as? com.webtoapp.core.webview.WtaWebView)?.siteId = site.id
+            liveWebView = wv
             onWebViewCreated(wv)
         },
         onWebViewRefUpdated = { },

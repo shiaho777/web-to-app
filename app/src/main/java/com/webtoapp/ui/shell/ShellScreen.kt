@@ -497,7 +497,7 @@ fun ShellScreen(
                     return@LifecycleEventObserver
                 }
                 val wv = webViewRef
-                if (wv != null && !isLoading) {
+                if (wv != null) {
                     com.webtoapp.core.webview.RendererLivenessProbe.probe(
                         wv,
                         stillCurrent = { webViewRef === wv }
