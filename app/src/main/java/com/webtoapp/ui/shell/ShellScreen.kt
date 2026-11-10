@@ -55,6 +55,7 @@ fun ShellScreen(
     onBrowserSurfaceCreated: (com.webtoapp.core.engine.BrowserSurface) -> Unit = {},
     onStatusBarAutoColorChanged: (String?) -> Unit = {},
     onPageBottomColorChanged: (String?) -> Unit = {},
+    onPageScroll: ((Int) -> Unit)? = null,
     onTopTabColor: (String?) -> Unit = {},
     onFileChooser: (ValueCallback<Array<Uri>>?, WebChromeClient.FileChooserParams?) -> Boolean,
     onShowCustomView: (View, WebChromeClient.CustomViewCallback?) -> Unit,
@@ -588,12 +589,14 @@ fun ShellScreen(
         }
     }
 
+    val pageScrollCallback = androidx.compose.runtime.rememberUpdatedState(onPageScroll)
     val handleWebViewCreated: (WebView) -> Unit = remember(onWebViewCreated, config) {
         { webView ->
             statusBarColorTracker?.detach()
             val tracker = com.webtoapp.core.webview.StatusBarPageColorTracker(
                 webView = webView,
                 shouldSample = { true },
+                onScroll = { y -> pageScrollCallback.value?.invoke(y) },
                 onColors = { colors ->
                     com.webtoapp.ui.shared.WindowHelper.setImeGapColor(colors.page)
                     if (usesPageEdgeColor()) {
@@ -616,6 +619,9 @@ fun ShellScreen(
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
+    androidx.compose.runtime.CompositionLocalProvider(
+        LocalPageScrollTracker provides statusBarColorTracker
+    ) {
 
     ShellScaffoldLayout(
         config = config,
@@ -824,5 +830,6 @@ fun ShellScreen(
         insetsController.isAppearanceLightNavigationBars = isLightOverlay
     }
 
+    }
     }
 }

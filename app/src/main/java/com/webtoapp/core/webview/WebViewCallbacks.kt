@@ -24,6 +24,8 @@ interface WebViewCallbacks {
      * permission dialog. Hosts use this to reload after the user allows access.
      */
     fun onPermissionRequestCanceled(request: PermissionRequest?) {}
+
+    fun onScrollChanged(webView: android.webkit.WebView?, scrollY: Int) {}
     fun onShowFileChooser(
         filePathCallback: ValueCallback<Array<Uri>>?,
         fileChooserParams: WebChromeClient.FileChooserParams?
