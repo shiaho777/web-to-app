@@ -3874,6 +3874,79 @@ object StringsA {
         """.trimIndent()
     }
 
+    val sourceBundleRestoreNote: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> """
+            ## 恢复项目
+
+            这个压缩包同时是一份 WebToApp 备份。根目录的 apps.json 保存完整项目配置，resources/ 保存图标与媒体，local/files/ 保存 HTML、前端以及 Node.js、PHP、Python、Go、WordPress 的项目源码。重装后打开「⋮ → 数据备份 → 导入数据」，选择本 zip 即可恢复。
+
+            它只含这一个应用，不含全局设置、扩展模块与签名密钥库。需要整机快照请使用「导出数据」。
+        """.trimIndent()
+        AppLanguage.ENGLISH -> """
+            ## Restoring the project
+
+            This archive is also a WebToApp backup. apps.json at the root holds the full project configuration, resources/ holds icons and media, and local/files/ holds HTML, frontend, and Node.js, PHP, Python, Go, and WordPress project sources. After reinstalling, open Menu > Data backup > Import data and pick this zip to restore the app.
+
+            It contains this one app only, with no global settings, extension modules, or signing keystores. Use Export data for a full snapshot.
+        """.trimIndent()
+        AppLanguage.ARABIC -> """
+            ## استعادة المشروع
+
+            هذا الأرشيف هو أيضاً نسخة احتياطية من WebToApp. يحتوي apps.json في الجذر على إعدادات المشروع الكاملة، و resources/ على الأيقونات والوسائط، و local/files/ على مصادر مشاريع HTML والواجهة الأمامية و Node.js و PHP و Python و Go و WordPress. بعد إعادة التثبيت، افتح القائمة > النسخ الاحتياطي للبيانات > استيراد البيانات واختر هذا الملف لاستعادة التطبيق.
+
+            يحتوي هذا التطبيق فقط، دون الإعدادات العامة أو وحدات الإضافات أو مخازن مفاتيح التوقيع. استخدم «تصدير البيانات» لأخذ لقطة كاملة.
+        """.trimIndent()
+        AppLanguage.PORTUGUESE -> """
+            ## Restaurar o projeto
+
+            Este arquivo também é um backup do WebToApp. O apps.json na raiz guarda a configuração completa, resources/ guarda ícones e mídia, e local/files/ guarda os fontes de HTML, frontend e dos projetos Node.js, PHP, Python, Go e WordPress. Após reinstalar, abra Menu > Backup de dados > Importar dados e selecione este zip para restaurar o app.
+
+            Contém apenas este app, sem configurações globais, módulos de extensão ou keystores de assinatura. Use Exportar dados para um snapshot completo.
+        """.trimIndent()
+        AppLanguage.SPANISH -> """
+            ## Restaurar el proyecto
+
+            Este archivo también es una copia de seguridad de WebToApp. apps.json en la raíz guarda la configuración completa, resources/ guarda iconos y multimedia, y local/files/ guarda los fuentes de HTML, frontend y de los proyectos Node.js, PHP, Python, Go y WordPress. Tras reinstalar, abre Menú > Copia de datos > Importar datos y elige este zip para restaurar la app.
+
+            Solo contiene esta app, sin ajustes globales, módulos de extensión ni almacenes de claves de firma. Usa Exportar datos para una instantánea completa.
+        """.trimIndent()
+        AppLanguage.FRENCH -> """
+            ## Restaurer le projet
+
+            Cette archive est aussi une sauvegarde WebToApp. apps.json à la racine contient la configuration complète, resources/ les icônes et médias, et local/files/ les sources HTML, frontend et des projets Node.js, PHP, Python, Go et WordPress. Après réinstallation, ouvrez Menu > Sauvegarde des données > Importer des données et choisissez ce zip pour restaurer l'app.
+
+            Elle ne contient que cette app, sans réglages généraux, modules d'extension ni magasins de clés de signature. Utilisez Exporter les données pour un instantané complet.
+        """.trimIndent()
+        AppLanguage.GERMAN -> """
+            ## Projekt wiederherstellen
+
+            Dieses Archiv ist zugleich ein WebToApp-Backup. apps.json im Stammverzeichnis enthält die vollständige Projektkonfiguration, resources/ enthält Symbole und Medien, und local/files/ enthält die Quellen von HTML-, Frontend- sowie Node.js-, PHP-, Python-, Go- und WordPress-Projekten. Öffne nach der Neuinstallation Menü > Datensicherung > Daten importieren und wähle dieses Zip zur Wiederherstellung.
+
+            Es enthält nur diese eine App, ohne globale Einstellungen, Erweiterungsmodule oder Signatur-Keystores. Für einen vollständigen Schnappschuss nutze „Daten exportieren“.
+        """.trimIndent()
+        AppLanguage.RUSSIAN -> """
+            ## Восстановление проекта
+
+            Этот архив одновременно является резервной копией WebToApp. apps.json в корне хранит полную конфигурацию проекта, resources/ — значки и медиафайлы, а local/files/ — исходники HTML, фронтенда и проектов Node.js, PHP, Python, Go и WordPress. После переустановки откройте «Меню → Резервное копирование → Импорт данных» и выберите этот zip для восстановления.
+
+            Архив содержит только это приложение, без общих настроек, модулей расширений и хранилищ ключей подписи. Для полного снимка используйте «Экспорт данных».
+        """.trimIndent()
+        AppLanguage.JAPANESE -> """
+            ## プロジェクトの復元
+
+            この書庫は WebToApp のバックアップも兼ねています。ルートの apps.json に完全なプロジェクト設定、resources/ にアイコンとメディア、local/files/ に HTML・フロントエンドおよび Node.js / PHP / Python / Go / WordPress のプロジェクトソースが含まれます。再インストール後、「メニュー → データバックアップ → データをインポート」でこの zip を選択すると復元できます。
+
+            含まれるのはこのアプリのみで、全体設定・拡張モジュール・署名キーストアは含まれません。全体のスナップショットには「データをエクスポート」を使用してください。
+        """.trimIndent()
+        AppLanguage.KOREAN -> """
+            ## 프로젝트 복원
+
+            이 압축 파일은 WebToApp 백업도 겸합니다. 루트의 apps.json 에 전체 프로젝트 설정이, resources/ 에 아이콘과 미디어가, local/files/ 에 HTML·프런트엔드 및 Node.js / PHP / Python / Go / WordPress 프로젝트 소스가 들어 있습니다. 재설치 후 「메뉴 → 데이터 백업 → 데이터 가져오기」에서 이 zip 을 선택하면 앱이 복원됩니다.
+
+            이 앱 하나만 포함하며 전체 설정, 확장 모듈, 서명 키 저장소는 들어 있지 않습니다. 전체 스냅샷이 필요하면 「데이터 내보내기」를 사용하세요.
+        """.trimIndent()
+    }
+
     val btnSave: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "保存"
         AppLanguage.ENGLISH -> "Save"

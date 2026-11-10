@@ -8625,6 +8625,54 @@ object StringsE {
         AppLanguage.JAPANESE -> "エクスポートが完了しました"
         AppLanguage.KOREAN -> "내보내기 완료"
     }
+    val backupInvalidFormat: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "备份文件格式无效"
+        AppLanguage.ENGLISH -> "Invalid backup file format"
+        AppLanguage.ARABIC -> "تنسيق ملف النسخ الاحتياطي غير صالح"
+        AppLanguage.PORTUGUESE -> "Formato de arquivo de backup inválido"
+        AppLanguage.SPANISH -> "Formato de archivo de copia de seguridad no válido"
+        AppLanguage.FRENCH -> "Format de fichier de sauvegarde non valide"
+        AppLanguage.GERMAN -> "Ungültiges Backup-Dateiformat"
+        AppLanguage.RUSSIAN -> "Неверный формат файла резервной копии"
+        AppLanguage.JAPANESE -> "バックアップファイルの形式が無効です"
+        AppLanguage.KOREAN -> "백업 파일 형식이 올바르지 않습니다"
+    }
+    val backupInvalidFormatSourceZip: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "这是「导出源码」生成的压缩包，不是数据备份。旧版源码包不含可导入的项目记录；请改用 WebToApp_Backup_*.zip，或升级后重新导出源码再导入。"
+        AppLanguage.ENGLISH -> "This is a source export archive, not a data backup. Source bundles from older versions contain no importable project record; use a WebToApp_Backup_*.zip file, or re-export the source with this version and import that."
+        AppLanguage.ARABIC -> "هذا أرشيف تصدير مصادر وليس نسخة احتياطية. حزم المصادر من الإصدارات القديمة لا تحتوي على سجل مشروع قابل للاستيراد؛ استخدم ملف WebToApp_Backup_*.zip أو أعد تصدير المصادر بهذا الإصدار ثم استوردها."
+        AppLanguage.PORTUGUESE -> "Este é um arquivo de exportação de código, não um backup de dados. Pacotes de versões antigas não contêm um registro de projeto importável; use um arquivo WebToApp_Backup_*.zip ou exporte o código novamente com esta versão e importe-o."
+        AppLanguage.SPANISH -> "Este es un archivo de exportación de código, no una copia de seguridad. Los paquetes de versiones anteriores no contienen un registro de proyecto importable; usa un archivo WebToApp_Backup_*.zip o vuelve a exportar el código con esta versión e impórtalo."
+        AppLanguage.FRENCH -> "Ceci est une archive d'export du code, pas une sauvegarde de données. Les paquets des anciennes versions ne contiennent aucun enregistrement de projet importable ; utilisez un fichier WebToApp_Backup_*.zip ou réexportez le code avec cette version puis importez-le."
+        AppLanguage.GERMAN -> "Dies ist ein Quellcode-Export, keine Datensicherung. Pakete älterer Versionen enthalten keinen importierbaren Projektdatensatz; verwende eine WebToApp_Backup_*.zip-Datei oder exportiere den Quellcode mit dieser Version erneut und importiere ihn."
+        AppLanguage.RUSSIAN -> "Это архив экспорта исходников, а не резервная копия. Пакеты старых версий не содержат импортируемой записи проекта; используйте файл WebToApp_Backup_*.zip или повторно экспортируйте исходники в этой версии и импортируйте их."
+        AppLanguage.JAPANESE -> "これはソースのエクスポート書庫であり、データバックアップではありません。旧バージョンのソースパッケージにはインポート可能なプロジェクト記録がありません。WebToApp_Backup_*.zip を使用するか、このバージョンでソースを再エクスポートしてからインポートしてください。"
+        AppLanguage.KOREAN -> "이것은 소스 내보내기 압축 파일이며 데이터 백업이 아닙니다. 이전 버전의 소스 패키지에는 가져올 수 있는 프로젝트 기록이 없습니다. WebToApp_Backup_*.zip 파일을 사용하거나 이 버전에서 소스를 다시 내보낸 뒤 가져오세요."
+    }
+    val backupUnreadableFile: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "无法读取备份文件"
+        AppLanguage.ENGLISH -> "Could not read the backup file"
+        AppLanguage.ARABIC -> "تعذر قراءة ملف النسخ الاحتياطي"
+        AppLanguage.PORTUGUESE -> "Não foi possível ler o arquivo de backup"
+        AppLanguage.SPANISH -> "No se pudo leer el archivo de copia de seguridad"
+        AppLanguage.FRENCH -> "Impossible de lire le fichier de sauvegarde"
+        AppLanguage.GERMAN -> "Die Backup-Datei konnte nicht gelesen werden"
+        AppLanguage.RUSSIAN -> "Не удалось прочитать файл резервной копии"
+        AppLanguage.JAPANESE -> "バックアップファイルを読み込めませんでした"
+        AppLanguage.KOREAN -> "백업 파일을 읽을 수 없습니다"
+    }
+    val backupOutputFailed: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "无法创建输出文件"
+        AppLanguage.ENGLISH -> "Could not create the output file"
+        AppLanguage.ARABIC -> "تعذر إنشاء ملف الإخراج"
+        AppLanguage.PORTUGUESE -> "Não foi possível criar o arquivo de saída"
+        AppLanguage.SPANISH -> "No se pudo crear el archivo de salida"
+        AppLanguage.FRENCH -> "Impossible de créer le fichier de sortie"
+        AppLanguage.GERMAN -> "Die Ausgabedatei konnte nicht erstellt werden"
+        AppLanguage.RUSSIAN -> "Не удалось создать выходной файл"
+        AppLanguage.JAPANESE -> "出力ファイルを作成できませんでした"
+        AppLanguage.KOREAN -> "출력 파일을 만들 수 없습니다"
+    }
     val backupReadingBackup: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "正在读取备份文件..."
         AppLanguage.ENGLISH -> "Reading backup file..."

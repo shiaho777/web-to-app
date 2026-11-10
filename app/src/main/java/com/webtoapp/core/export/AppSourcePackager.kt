@@ -10,6 +10,7 @@ import com.webtoapp.core.apkbuilder.ApkConfigJsonFactory
 import com.webtoapp.core.apkbuilder.GeneratedSdkLevels
 import com.webtoapp.core.apkbuilder.NetworkSecurityConfigBuilder
 import com.webtoapp.core.apkbuilder.toApkConfig
+import com.webtoapp.core.backup.DataBackupManager
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.data.model.AppType
@@ -42,11 +43,18 @@ class AppSourcePackager(private val context: Context) {
                 writer.attach(zip)
                 val packageName = ApkBuilder.resolvePackageName(webApp)
                 val config = webApp.toApkConfig(packageName, context)
-                writer.text("README.md", Strings.sourceBundleReadme(webApp.name))
+                writer.text(
+                    "README.md",
+                    Strings.sourceBundleReadme(webApp.name) + "\n\n" + Strings.sourceBundleRestoreNote
+                )
                 writer.androidProject(webApp, config)
                 writer.config(config)
                 writer.networkTrust(webApp)
                 writer.content(webApp)
+                val payload = DataBackupManager(context).buildAppBackupPayload(webApp)
+                writer.text(DataBackupManager.APPS_JSON, payload.appsJson)
+                payload.resources.forEach { (entryName, file) -> writer.payloadFile(entryName, file) }
+                payload.projectFiles.forEach { (entryName, file) -> writer.payloadFile(entryName, file) }
                 if (writer.truncated) {
                     writer.text(
                         "app/src/main/assets/TRUNCATED.txt",
@@ -403,18 +411,23 @@ class AppSourcePackager(private val context: Context) {
             }
         }
 
-        private fun file(entryName: String, source: File) {
+        fun payloadFile(entryName: String, source: File) {
+            if (entryName in usedEntries) return
+            file(entryName, source, deduplicateBySource = false)
+        }
+
+        private fun file(entryName: String, source: File, deduplicateBySource: Boolean = true) {
             if (truncated || !source.isFile || !source.canRead()) return
             val canonical = try {
                 source.canonicalPath
             } catch (_: Exception) {
                 return
             }
-            if (!copiedFiles.add(canonical)) return
+            if (deduplicateBySource && !copiedFiles.add(canonical)) return
             val entry = uniqueEntry(entryName) ?: return
             if (source.length() > MAX_BYTES - bytes) {
                 truncated = true
-                copiedFiles.remove(canonical)
+                if (deduplicateBySource) copiedFiles.remove(canonical)
                 return
             }
             try {
@@ -422,7 +435,7 @@ class AppSourcePackager(private val context: Context) {
             } catch (e: Exception) {
                 AppLogger.w(TAG, "Skipped unreadable file $canonical", e)
                 usedEntries.remove(entry)
-                copiedFiles.remove(canonical)
+                if (deduplicateBySource) copiedFiles.remove(canonical)
             }
         }
 
