@@ -1098,6 +1098,8 @@ data class MultiWebConfig(
     // historical layout (2 card columns, 1 drawer column, aspect 1.2).
     val cardColumns: Int = 2,
     val drawerColumns: Int = 1,
+    val drawerEntry: String = "FLOATING",
+    val drawerFabAnchor: String = "TOP_END",
     val cardAspectRatio: Float = 1.2f,
     // Inverted storage: stored JSON predating this field deserializes to false,
     // so existing and new apps both default to "sites follow the parent config".

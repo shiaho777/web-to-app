@@ -936,6 +936,8 @@ data class MultiWebBlock(
     val showSiteIcons: Boolean = true,
     val cardColumns: Int = 2,
     val drawerColumns: Int = 1,
+    val drawerEntry: String = "FLOATING",
+    val drawerFabAnchor: String = "TOP_END",
     val cardAspectRatio: Float = 1.2f,
     val sitesUseOwnConfig: Boolean = false,
     val projectId: String = "",

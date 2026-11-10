@@ -137,6 +137,12 @@ object Strings {
     val multiWebCardColumnsHint: String get() = StringsA.multiWebCardColumnsHint
     val multiWebDrawerColumns: String get() = StringsA.multiWebDrawerColumns
     val multiWebDrawerColumnsHint: String get() = StringsA.multiWebDrawerColumnsHint
+    val multiWebDrawerEntry: String get() = StringsA.multiWebDrawerEntry
+    val multiWebDrawerEntryFab: String get() = StringsA.multiWebDrawerEntryFab
+    val multiWebDrawerEntryBar: String get() = StringsA.multiWebDrawerEntryBar
+    val multiWebFabAnchor: String get() = StringsA.multiWebFabAnchor
+    val multiWebFabTopEnd: String get() = StringsA.multiWebFabTopEnd
+    val multiWebFabBottomStart: String get() = StringsA.multiWebFabBottomStart
     val multiWebCardHeight: String get() = StringsA.multiWebCardHeight
     val multiWebCardHeightHint: String get() = StringsA.multiWebCardHeightHint
     val multiWebDragToReorder: String get() = StringsA.multiWebDragToReorder

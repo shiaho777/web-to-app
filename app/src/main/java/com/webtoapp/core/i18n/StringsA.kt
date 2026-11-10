@@ -1091,6 +1091,84 @@ object StringsA {
         AppLanguage.KOREAN -> "서랍 안에서 한 줄에 놓을 사이트 수"
     }
 
+    val multiWebDrawerEntry: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "抽屉入口"
+        AppLanguage.ENGLISH -> "Drawer entry"
+        AppLanguage.ARABIC -> "مدخل الدرج"
+        AppLanguage.PORTUGUESE -> "Entrada da gaveta"
+        AppLanguage.SPANISH -> "Entrada del cajón"
+        AppLanguage.FRENCH -> "Entrée du tiroir"
+        AppLanguage.GERMAN -> "Schubladen-Eingang"
+        AppLanguage.RUSSIAN -> "Вход в панель"
+        AppLanguage.JAPANESE -> "ドロワーの入口"
+        AppLanguage.KOREAN -> "서랍 입구"
+    }
+
+    val multiWebDrawerEntryFab: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "悬浮按钮"
+        AppLanguage.ENGLISH -> "Floating button"
+        AppLanguage.ARABIC -> "زر عائم"
+        AppLanguage.PORTUGUESE -> "Botão flutuante"
+        AppLanguage.SPANISH -> "Botón flotante"
+        AppLanguage.FRENCH -> "Bouton flottant"
+        AppLanguage.GERMAN -> "Schwebende Schaltfläche"
+        AppLanguage.RUSSIAN -> "Плавающая кнопка"
+        AppLanguage.JAPANESE -> "フローティングボタン"
+        AppLanguage.KOREAN -> "플로팅 버튼"
+    }
+
+    val multiWebDrawerEntryBar: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "顶部栏"
+        AppLanguage.ENGLISH -> "Top bar"
+        AppLanguage.ARABIC -> "الشريط العلوي"
+        AppLanguage.PORTUGUESE -> "Barra superior"
+        AppLanguage.SPANISH -> "Barra superior"
+        AppLanguage.FRENCH -> "Barre supérieure"
+        AppLanguage.GERMAN -> "Obere Leiste"
+        AppLanguage.RUSSIAN -> "Верхняя панель"
+        AppLanguage.JAPANESE -> "上部バー"
+        AppLanguage.KOREAN -> "상단 바"
+    }
+
+    val multiWebFabAnchor: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "悬浮按钮位置"
+        AppLanguage.ENGLISH -> "Floating button position"
+        AppLanguage.ARABIC -> "موضع الزر العائم"
+        AppLanguage.PORTUGUESE -> "Posição do botão flutuante"
+        AppLanguage.SPANISH -> "Posición del botón flotante"
+        AppLanguage.FRENCH -> "Position du bouton flottant"
+        AppLanguage.GERMAN -> "Position der schwebenden Schaltfläche"
+        AppLanguage.RUSSIAN -> "Положение плавающей кнопки"
+        AppLanguage.JAPANESE -> "フローティングボタンの位置"
+        AppLanguage.KOREAN -> "플로팅 버튼 위치"
+    }
+
+    val multiWebFabTopEnd: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "右上角"
+        AppLanguage.ENGLISH -> "Top right"
+        AppLanguage.ARABIC -> "أعلى اليمين"
+        AppLanguage.PORTUGUESE -> "Canto superior direito"
+        AppLanguage.SPANISH -> "Esquina superior derecha"
+        AppLanguage.FRENCH -> "En haut à droite"
+        AppLanguage.GERMAN -> "Oben rechts"
+        AppLanguage.RUSSIAN -> "Справа сверху"
+        AppLanguage.JAPANESE -> "右上"
+        AppLanguage.KOREAN -> "오른쪽 위"
+    }
+
+    val multiWebFabBottomStart: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "左下角"
+        AppLanguage.ENGLISH -> "Bottom left"
+        AppLanguage.ARABIC -> "أسفل اليسار"
+        AppLanguage.PORTUGUESE -> "Canto inferior esquerdo"
+        AppLanguage.SPANISH -> "Esquina inferior izquierda"
+        AppLanguage.FRENCH -> "En bas à gauche"
+        AppLanguage.GERMAN -> "Unten links"
+        AppLanguage.RUSSIAN -> "Слева снизу"
+        AppLanguage.JAPANESE -> "左下"
+        AppLanguage.KOREAN -> "왼쪽 아래"
+    }
+
     val multiWebCardHeight: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "卡片高度"
         AppLanguage.ENGLISH -> "Card height"

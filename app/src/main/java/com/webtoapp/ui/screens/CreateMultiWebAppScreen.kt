@@ -36,6 +36,10 @@ import com.webtoapp.core.i18n.Strings
 import com.webtoapp.ui.shell.MULTI_WEB_DEFAULT_CARD_ASPECT
 import com.webtoapp.ui.shell.MULTI_WEB_DEFAULT_CARD_COLUMNS
 import com.webtoapp.ui.shell.MULTI_WEB_DEFAULT_DRAWER_COLUMNS
+import com.webtoapp.ui.shell.MULTI_WEB_DRAWER_ENTRY_BAR
+import com.webtoapp.ui.shell.MULTI_WEB_DRAWER_ENTRY_FLOATING
+import com.webtoapp.ui.shell.MULTI_WEB_FAB_ANCHOR_BOTTOM_START
+import com.webtoapp.ui.shell.MULTI_WEB_FAB_ANCHOR_TOP_END
 import com.webtoapp.ui.shell.MULTI_WEB_MAX_CARD_COLUMNS
 import com.webtoapp.ui.shell.MULTI_WEB_MAX_DRAWER_COLUMNS
 import com.webtoapp.ui.shell.MULTI_WEB_START_LAST
@@ -100,6 +104,8 @@ fun CreateMultiWebAppScreen(
     var showSiteIcons by remember { mutableStateOf(true) }
     var cardColumns by remember { mutableIntStateOf(MULTI_WEB_DEFAULT_CARD_COLUMNS) }
     var drawerColumns by remember { mutableIntStateOf(MULTI_WEB_DEFAULT_DRAWER_COLUMNS) }
+    var drawerEntry by remember { mutableStateOf(MULTI_WEB_DRAWER_ENTRY_FLOATING) }
+    var drawerFabAnchor by remember { mutableStateOf(MULTI_WEB_FAB_ANCHOR_TOP_END) }
     var cardAspectRatio by remember { mutableFloatStateOf(MULTI_WEB_DEFAULT_CARD_ASPECT) }
     var sitesInheritConfig by remember { mutableStateOf(true) }
     var startTab by remember { mutableStateOf(MULTI_WEB_START_LAST) }
@@ -143,6 +149,16 @@ fun CreateMultiWebAppScreen(
                         MULTI_WEB_DEFAULT_DRAWER_COLUMNS,
                         MULTI_WEB_MAX_DRAWER_COLUMNS
                     )
+                    drawerEntry = if (config.drawerEntry == MULTI_WEB_DRAWER_ENTRY_BAR) {
+                        MULTI_WEB_DRAWER_ENTRY_BAR
+                    } else {
+                        MULTI_WEB_DRAWER_ENTRY_FLOATING
+                    }
+                    drawerFabAnchor = if (config.drawerFabAnchor == MULTI_WEB_FAB_ANCHOR_BOTTOM_START) {
+                        MULTI_WEB_FAB_ANCHOR_BOTTOM_START
+                    } else {
+                        MULTI_WEB_FAB_ANCHOR_TOP_END
+                    }
                     cardAspectRatio = resolvedCardAspect(config.cardAspectRatio)
                     sitesInheritConfig = !config.sitesUseOwnConfig
                     startTab = if (config.startTab == MULTI_WEB_START_SITE) MULTI_WEB_START_SITE else MULTI_WEB_START_LAST
@@ -178,6 +194,8 @@ fun CreateMultiWebAppScreen(
                             showSiteIcons = showSiteIcons,
                             cardColumns = cardColumns,
                             drawerColumns = drawerColumns,
+                            drawerEntry = drawerEntry,
+                            drawerFabAnchor = drawerFabAnchor,
                             cardAspectRatio = cardAspectRatio,
                             sitesUseOwnConfig = !sitesInheritConfig,
                             projectId = "",
@@ -302,6 +320,34 @@ fun CreateMultiWebAppScreen(
                                 range = 1..MULTI_WEB_MAX_DRAWER_COLUMNS,
                                 onValueChange = { drawerColumns = it }
                             )
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Text(
+                                Strings.multiWebDrawerEntry,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            MultiWebRadioChoice(
+                                options = listOf(
+                                    MULTI_WEB_DRAWER_ENTRY_FLOATING to Strings.multiWebDrawerEntryFab,
+                                    MULTI_WEB_DRAWER_ENTRY_BAR to Strings.multiWebDrawerEntryBar
+                                ),
+                                selected = drawerEntry,
+                                onSelect = { drawerEntry = it }
+                            )
+                            if (drawerEntry == MULTI_WEB_DRAWER_ENTRY_FLOATING) {
+                                Spacer(modifier = Modifier.height(12.dp))
+                                Text(
+                                    Strings.multiWebFabAnchor,
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                                MultiWebRadioChoice(
+                                    options = listOf(
+                                        MULTI_WEB_FAB_ANCHOR_TOP_END to Strings.multiWebFabTopEnd,
+                                        MULTI_WEB_FAB_ANCHOR_BOTTOM_START to Strings.multiWebFabBottomStart
+                                    ),
+                                    selected = drawerFabAnchor,
+                                    onSelect = { drawerFabAnchor = it }
+                                )
+                            }
                         }
                         Spacer(modifier = Modifier.height(12.dp))
                         Row(
@@ -939,6 +985,23 @@ private fun StartTabChoice(
             label = Strings.multiWebStartSite,
             onClick = { onSelect(MULTI_WEB_START_SITE) }
         )
+    }
+}
+
+@Composable
+private fun MultiWebRadioChoice(
+    options: List<Pair<String, String>>,
+    selected: String,
+    onSelect: (String) -> Unit
+) {
+    Column {
+        options.forEach { (value, label) ->
+            StartTabRadioRow(
+                selected = selected == value,
+                label = label,
+                onClick = { onSelect(value) }
+            )
+        }
     }
 }
 

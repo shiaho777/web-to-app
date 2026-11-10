@@ -4965,6 +4965,8 @@ private fun WebApp.buildMultiWebBlock(context: android.content.Context?, package
             com.webtoapp.ui.shell.MULTI_WEB_DEFAULT_DRAWER_COLUMNS,
             com.webtoapp.ui.shell.MULTI_WEB_MAX_DRAWER_COLUMNS
         ),
+        drawerEntry = multiWebConfig?.drawerEntry ?: "FLOATING",
+        drawerFabAnchor = multiWebConfig?.drawerFabAnchor ?: "TOP_END",
         cardAspectRatio = com.webtoapp.ui.shell.resolvedCardAspect(multiWebConfig?.cardAspectRatio ?: 0f),
         sitesUseOwnConfig = multiWebConfig?.sitesUseOwnConfig ?: false,
         projectId = multiWebConfig?.projectId ?: "",
