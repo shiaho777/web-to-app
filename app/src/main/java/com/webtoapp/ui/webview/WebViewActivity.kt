@@ -4121,6 +4121,9 @@ fun WebViewScreen(
                         browserDisguiseConfig = mwApp.browserDisguiseConfig,
                         deviceDisguiseConfig = mwApp.deviceDisguiseConfig
                     )
+                    androidx.compose.runtime.CompositionLocalProvider(
+                        com.webtoapp.ui.shell.LocalPageScrollTracker provides statusBarColorTracker
+                    ) {
                     com.webtoapp.ui.shell.MultiWebShellMode(
                         config = shellConfig,
                         webViewConfig = mwApp.webViewConfig,
@@ -4179,6 +4182,7 @@ fun WebViewScreen(
                             }
                         }
                     )
+                        }
                     }
                 } else {
 

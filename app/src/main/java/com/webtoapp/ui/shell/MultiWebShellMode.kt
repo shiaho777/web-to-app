@@ -861,24 +861,53 @@ private fun CardsMode(
         LaunchedEffect(site.id) {
             webViewCallbacks.onTitleChanged(site.name.ifBlank { extractDomain(site.url) })
         }
-        Scaffold(
-            containerColor = Color.Transparent,
-            contentWindowInsets = WindowInsets(0),
-            topBar = {
-                TopAppBar(
-                    title = { Text(site.name.ifBlank { extractDomain(site.url) }) },
-                    navigationIcon = {
-                        IconButton(onClick = { closeSite() }) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = Strings.close)
-                        }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.surface
-                    )
-                )
+        val density = androidx.compose.ui.platform.LocalDensity.current
+        val statusTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+        val toolbarHeight = 64.dp + statusTop
+        val toolbarHeightPx = with(density) { toolbarHeight.toPx() }
+        var toolbarVisible by remember { mutableStateOf(true) }
+        var toolbarOffset by remember { mutableFloatStateOf(0f) }
+        var contentTop by remember { mutableStateOf(toolbarHeight) }
+        val pageScrollTracker = LocalPageScrollTracker.current
+
+        LaunchedEffect(site.id) {
+            toolbarVisible = true
+            contentTop = toolbarHeight
+            toolbarOffset = 0f
+        }
+        LaunchedEffect(toolbarVisible) {
+            if (toolbarVisible) {
+                androidx.compose.animation.core.animate(
+                    initialValue = toolbarOffset,
+                    targetValue = 0f,
+                    animationSpec = androidx.compose.animation.core.tween(220)
+                ) { value, _ -> toolbarOffset = value }
+                contentTop = toolbarHeight
+            } else {
+                contentTop = 0.dp
+                androidx.compose.animation.core.animate(
+                    initialValue = toolbarOffset,
+                    targetValue = -toolbarHeightPx,
+                    animationSpec = androidx.compose.animation.core.tween(220)
+                ) { value, _ -> toolbarOffset = value }
             }
-        ) { padding ->
-            Box(modifier = Modifier.fillMaxSize().padding(padding)) {
+        }
+        val reveal = remember(site.id) { ToolbarReveal() }
+        DisposableEffect(pageScrollTracker, site.id) {
+            if (pageScrollTracker == null) return@DisposableEffect onDispose {}
+            val listener: (Int) -> Unit = { y ->
+                if (reveal.onScroll(y)) toolbarVisible = reveal.visible
+            }
+            pageScrollTracker.addScrollListener(listener)
+            onDispose { pageScrollTracker.removeScrollListener(listener) }
+        }
+
+        Box(modifier = Modifier.fillMaxSize()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(top = contentTop)
+            ) {
                 key(site.id) {
                     SiteContent(
                         site, config, webViewConfig, webViewCallbacks, webViewManager,
@@ -896,6 +925,21 @@ private fun CardsMode(
                     )
                 }
             }
+            TopAppBar(
+                title = { Text(site.name.ifBlank { extractDomain(site.url) }) },
+                navigationIcon = {
+                    IconButton(onClick = { closeSite() }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = Strings.close)
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .align(Alignment.TopCenter)
+                    .offset { IntOffset(0, toolbarOffset.roundToInt()) },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
+            )
         }
     } else {
         CardsHomeGrid(

@@ -178,14 +178,26 @@ internal class PageColorSampleGate {
 class StatusBarPageColorTracker(
     private val webView: WebView,
     private val shouldSample: () -> Boolean,
-    private val onColors: (PageEdgeColors) -> Unit
+    private val onColors: (PageEdgeColors) -> Unit,
+    private val onScroll: ((Int) -> Unit)? = null
 ) {
     private val gate = PageColorSampleGate()
     private val pending = ArrayList<Runnable>(3)
+    private val scrollListeners = java.util.concurrent.CopyOnWriteArrayList<(Int) -> Unit>()
+
+    fun addScrollListener(listener: (Int) -> Unit) {
+        scrollListeners.addIfAbsent(listener)
+    }
+
+    fun removeScrollListener(listener: (Int) -> Unit) {
+        scrollListeners.remove(listener)
+    }
 
     fun attach() {
         webView.setOnScrollChangeListener { _, _, _, _, _ ->
-            // One sample is enough once the user is moving the page.
+            val y = webView.scrollY
+            onScroll?.invoke(y)
+            scrollListeners.forEach { it(y) }
             scheduleSample(48L)
         }
     }
