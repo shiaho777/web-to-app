@@ -1412,7 +1412,6 @@ private fun DrawerMode(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(MaterialTheme.colorScheme.surface)
                         .statusBarsPadding()
                         .padding(start = 24.dp, top = 12.dp, end = 12.dp, bottom = 16.dp)
                 ) {
@@ -1441,7 +1440,11 @@ private fun DrawerMode(
                             )
                         }
                     }
-                    if (searchOpen) {
+                    AnimatedVisibility(
+                        visible = searchOpen,
+                        enter = expandVertically() + fadeIn(),
+                        exit = shrinkVertically() + fadeOut()
+                    ) {
                         OutlinedTextField(
                             value = searchQuery,
                             onValueChange = { searchQuery = it },
@@ -1461,7 +1464,7 @@ private fun DrawerMode(
                     }
                 }
                 HorizontalDivider(
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)
+                    color = MaterialTheme.colorScheme.outlineVariant
                 )
                 LazyColumn(
                     modifier = Modifier
