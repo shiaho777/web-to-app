@@ -4551,6 +4551,71 @@ object StringsC {
         AppLanguage.KOREAN -> "페이지 로드 후 수동 클릭 없이 자동으로 번역"
     }
 
+    val displayCutoutModeLabel: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "刘海屏 / 挖孔避让"
+        AppLanguage.ENGLISH -> "Display cutout"
+        AppLanguage.ARABIC -> "تجنب منطقة القطع في الشاشة"
+        AppLanguage.PORTUGUESE -> "Área do entalhe da tela"
+        AppLanguage.SPANISH -> "Área del notch de pantalla"
+        AppLanguage.FRENCH -> "Zone d'encoche de l'écran"
+        AppLanguage.GERMAN -> "Bildschirm-Ausschnitt"
+        AppLanguage.RUSSIAN -> "Область выреза экрана"
+        AppLanguage.JAPANESE -> "画面の切り欠き領域"
+        AppLanguage.KOREAN -> "화면 컷아웃 영역"
+    }
+
+    val displayCutoutModeHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "全屏时内容是否延伸到刘海或挖孔区域；选择避开可防止网页顶部按钮被遮挡。"
+        AppLanguage.ENGLISH -> "Choose whether fullscreen content extends into the notch or punch-hole area. Avoid it to keep top web buttons reachable."
+        AppLanguage.ARABIC -> "اختر ما إذا كان المحتوى بملء الشاشة يمتد إلى منطقة القطع. اختر التجنب لإبقاء أزرار الصفحة العلوية قابلة للوصول."
+        AppLanguage.PORTUGUESE -> "Escolha se o conteúdo em tela cheia avança sobre o entalhe. Evite-o para manter os botões superiores da página acessíveis."
+        AppLanguage.SPANISH -> "Elige si el contenido a pantalla completa se extiende al notch. Evítalo para que los botones superiores sigan accesibles."
+        AppLanguage.FRENCH -> "Choisissez si le contenu plein écran s'étend dans l'encoche. Évitez-la pour garder les boutons du haut accessibles."
+        AppLanguage.GERMAN -> "Lege fest, ob Vollbildinhalte in den Ausschnitt reichen. Vermeiden hält die oberen Web-Schaltflächen erreichbar."
+        AppLanguage.RUSSIAN -> "Выберите, должен ли контент в полноэкранном режиме заходить в область выреза. При обходе верхние кнопки страницы остаются доступными."
+        AppLanguage.JAPANESE -> "全画面表示でコンテンツを切り欠き領域まで広げるか選びます。避けるとページ上部のボタンが隠れません。"
+        AppLanguage.KOREAN -> "전체 화면 콘텐츠를 컷아웃 영역까지 확장할지 선택합니다. 피하면 페이지 상단 버튼이 가려지지 않습니다."
+    }
+
+    val displayCutoutModeShortEdges: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "延伸到刘海区（全出血）"
+        AppLanguage.ENGLISH -> "Extend into cutout (full bleed)"
+        AppLanguage.ARABIC -> "التمدد إلى منطقة القطع (كامل الشاشة)"
+        AppLanguage.PORTUGUESE -> "Estender até o entalhe (tela inteira)"
+        AppLanguage.SPANISH -> "Extender hasta el notch (pantalla completa)"
+        AppLanguage.FRENCH -> "Étendre dans l'encoche (plein écran)"
+        AppLanguage.GERMAN -> "In den Ausschnitt erweitern (randlos)"
+        AppLanguage.RUSSIAN -> "Заходить в область выреза (без полей)"
+        AppLanguage.JAPANESE -> "切り欠き領域まで広げる（全画面）"
+        AppLanguage.KOREAN -> "컷아웃까지 확장 (전체 화면)"
+    }
+
+    val displayCutoutModeDefault: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "跟随系统默认"
+        AppLanguage.ENGLISH -> "Use system default"
+        AppLanguage.ARABIC -> "استخدام إعداد النظام الافتراضي"
+        AppLanguage.PORTUGUESE -> "Usar padrão do sistema"
+        AppLanguage.SPANISH -> "Usar valor predeterminado del sistema"
+        AppLanguage.FRENCH -> "Valeur par défaut du système"
+        AppLanguage.GERMAN -> "Systemstandard verwenden"
+        AppLanguage.RUSSIAN -> "Как в системе по умолчанию"
+        AppLanguage.JAPANESE -> "システムの既定に従う"
+        AppLanguage.KOREAN -> "시스템 기본값 사용"
+    }
+
+    val displayCutoutModeNever: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "避开刘海区"
+        AppLanguage.ENGLISH -> "Avoid cutout area"
+        AppLanguage.ARABIC -> "تجنب منطقة القطع"
+        AppLanguage.PORTUGUESE -> "Evitar área do entalhe"
+        AppLanguage.SPANISH -> "Evitar área del notch"
+        AppLanguage.FRENCH -> "Éviter la zone d'encoche"
+        AppLanguage.GERMAN -> "Ausschnittbereich meiden"
+        AppLanguage.RUSSIAN -> "Обходить область выреза"
+        AppLanguage.JAPANESE -> "切り欠き領域を避ける"
+        AppLanguage.KOREAN -> "컷아웃 영역 피하기"
+    }
+
     val showStatusBar: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "状态栏常驻"
         AppLanguage.ENGLISH -> "Always show status bar"

@@ -19,6 +19,7 @@ import com.webtoapp.data.model.AutoStartConfig
 import com.webtoapp.data.model.BgmConfig
 import com.webtoapp.data.model.BgmItem
 import com.webtoapp.data.model.BgmPlayMode
+import com.webtoapp.data.model.DisplayCutoutMode
 import com.webtoapp.data.model.ActivationDialogConfig
 import com.webtoapp.data.model.LrcTheme
 import com.webtoapp.data.model.RemoteActivationConfig
@@ -329,6 +330,7 @@ class ConfigRoundTripSentinelTest {
                 fullscreenEnabled = false,
                 hideToolbar = true,
                 landscapeMode = true,
+                displayCutoutMode = DisplayCutoutMode.NEVER,
                 userAgentMode = UserAgentMode.CHROME_MOBILE
             )
         )
@@ -343,6 +345,7 @@ class ConfigRoundTripSentinelTest {
         assertThat(shell.webViewConfig.fullscreenEnabled).isFalse()
         assertThat(shell.webViewConfig.hideToolbar).isTrue()
         assertThat(shell.webViewConfig.landscapeMode).isTrue()
+        assertThat(shell.webViewConfig.displayCutoutMode).isEqualTo("NEVER")
         assertThat(shell.webViewConfig.userAgentMode).isEqualTo("CHROME_MOBILE")
     }
 

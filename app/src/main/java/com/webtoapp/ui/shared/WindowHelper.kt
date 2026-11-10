@@ -15,12 +15,19 @@ import androidx.core.view.WindowInsetsAnimationCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.webtoapp.core.logging.AppLogger
+import com.webtoapp.data.model.DisplayCutoutMode
 import com.webtoapp.data.model.KeyboardAdjustMode
 import java.util.Collections
 import java.util.WeakHashMap
 
 internal fun needsPanelImePadding(mode: KeyboardAdjustMode?): Boolean =
     mode != KeyboardAdjustMode.RESIZE
+
+internal fun cutoutModeFor(mode: DisplayCutoutMode): Int = when (mode) {
+    DisplayCutoutMode.SHORT_EDGES -> WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+    DisplayCutoutMode.DEFAULT -> WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_DEFAULT
+    DisplayCutoutMode.NEVER -> WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_NEVER
+}
 
 object WindowHelper {
 
@@ -150,13 +157,18 @@ object WindowHelper {
         statusBarDarkIcons: Boolean? = null,
         statusBarBgType: String = "COLOR",
         keyboardAdjustMode: KeyboardAdjustMode? = null,
+        displayCutoutMode: DisplayCutoutMode = DisplayCutoutMode.SHORT_EDGES,
         tag: String = "WindowHelper"
     ) {
         try {
 
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
-                activity.window.attributes.layoutInDisplayCutoutMode =
-                    WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+                val attributes = activity.window.attributes
+                val targetCutoutMode = cutoutModeFor(displayCutoutMode)
+                if (attributes.layoutInDisplayCutoutMode != targetCutoutMode) {
+                    attributes.layoutInDisplayCutoutMode = targetCutoutMode
+                    activity.window.attributes = attributes
+                }
             }
 
             // Below API 30 the platform has no native IME-inset dispatch: with the window laid

@@ -512,6 +512,7 @@ data class WebViewBlock(
     val hideStatusBarInVideoFullscreen: Boolean = true,
     val showNavigationBarInFullscreen: Boolean = false,
     val showToolbarInFullscreen: Boolean = false,
+    val displayCutoutMode: String = "SHORT_EDGES",
     val fullscreenContentPaddingDp: Int = 0,
     val fullscreenContentPaddingTopDp: Int? = null,
     val fullscreenContentPaddingBottomDp: Int? = null,

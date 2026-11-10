@@ -75,6 +75,7 @@ import com.webtoapp.core.webview.WebViewCallbacks
 import com.webtoapp.core.webview.WebViewManager
 import com.webtoapp.core.host.HostRuntimePrefs
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.data.model.DisplayCutoutMode
 import com.webtoapp.data.model.KeyboardAdjustMode
 import com.webtoapp.data.model.LongPressMenuStyle
 import com.webtoapp.data.model.HtmlLoadMode
@@ -347,6 +348,7 @@ open class WebViewActivity : AppCompatActivity() {
     private var pageBottomAutoColor: String? = null
     private var topTabBarColor: String? = null
     internal var keyboardAdjustMode: KeyboardAdjustMode = KeyboardAdjustMode.RESIZE
+    internal var displayCutoutMode: DisplayCutoutMode = DisplayCutoutMode.SHORT_EDGES
 
     private var currentIsDarkTheme: Boolean = false
 
@@ -444,6 +446,7 @@ open class WebViewActivity : AppCompatActivity() {
             statusBarDarkIcons = resolvedStatusIcons(isDarkTheme),
             statusBarBgType = if (isDarkTheme) statusBarBackgroundTypeDark.name else statusBarBackgroundType.name,
             keyboardAdjustMode = keyboardAdjustMode,
+            displayCutoutMode = displayCutoutMode,
             tag = "WebViewActivity"
         )
         // showNavigationBarInFullscreen only applies while fullscreen is on.
@@ -2019,6 +2022,7 @@ fun WebViewScreen(
                 activity.showNavigationBarInFullscreen = app.webViewConfig.showNavigationBarInFullscreen
                 activity.hideStatusBarInVideoFullscreen = app.webViewConfig.hideStatusBarInVideoFullscreen
                 activity.keyboardAdjustMode = app.webViewConfig.keyboardAdjustMode
+                activity.displayCutoutMode = app.webViewConfig.displayCutoutMode
                 activity.geolocationPolicy = app.webViewConfig.geolocationPolicy.name
                 activity.geolocationAccuracy = app.webViewConfig.geolocationAccuracy.name
 

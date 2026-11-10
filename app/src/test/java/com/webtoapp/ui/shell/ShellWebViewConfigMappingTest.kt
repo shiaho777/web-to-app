@@ -4,6 +4,7 @@ import com.google.common.truth.Truth.assertThat
 import com.webtoapp.core.apkbuilder.ApkConfigJsonFactory
 import com.webtoapp.core.apkbuilder.toApkConfig
 import com.webtoapp.core.shell.ShellConfig
+import com.webtoapp.data.model.DisplayCutoutMode
 import com.webtoapp.data.model.WebApp
 import com.webtoapp.data.model.WebViewConfig
 import com.webtoapp.util.GsonProvider
@@ -99,5 +100,38 @@ class ShellWebViewConfigMappingTest {
 
         val disabled = runtimeConfigOf(WebApp(name = "t", url = "https://t.example.com"))
         assertThat(disabled.nativeBridgeCapabilities.directory).isFalse()
+    }
+
+    @Test
+    fun `display cutout mode survives shell config to runtime WebViewConfig`() {
+        DisplayCutoutMode.entries.forEach { mode ->
+            val runtime = runtimeConfigOf(
+                WebApp(
+                    name = "t",
+                    url = "https://t.example.com",
+                    webViewConfig = WebViewConfig(displayCutoutMode = mode)
+                )
+            )
+            assertThat(runtime.displayCutoutMode).isEqualTo(mode)
+        }
+    }
+
+    @Test
+    fun `shell config without cutout mode keeps the full bleed default`() {
+        val apk = WebApp(name = "t", url = "https://t.example.com").toApkConfig("com.example.test")
+        val root = com.google.gson.JsonParser
+            .parseString(ApkConfigJsonFactory.toShellConfigJson(apk))
+            .asJsonObject
+        root.removeKeyEverywhere("displayCutoutMode")
+        val shell = GsonProvider.gson.fromJson(root, ShellConfig::class.java)!!
+        assertThat(buildWebViewConfig(shell).displayCutoutMode)
+            .isEqualTo(DisplayCutoutMode.SHORT_EDGES)
+    }
+
+    private fun com.google.gson.JsonObject.removeKeyEverywhere(key: String) {
+        remove(key)
+        entrySet().toList().forEach { (_, value) ->
+            if (value.isJsonObject) value.asJsonObject.removeKeyEverywhere(key)
+        }
     }
 }
