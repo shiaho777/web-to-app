@@ -505,9 +505,8 @@ class MainViewModel(
 
                 if (_currentApp.value != null) {
                     repository.updateWebApp(webApp)
-                    // DB now references the new files — safe to remove the replaced ones.
-                    deleteReplacedIconIfUnused(previousIconPath, state.savedIconPath ?: state.iconUri?.toString())
-                    deleteReplacedSplashIfUnused(previousSplashPath, state.splashConfig?.mediaPath)
+                    deleteReplacedIconIfUnused(previousIconPath, webApp.iconPath)
+                    deleteReplacedSplashIfUnused(previousSplashPath, webApp.splashConfig?.mediaPath)
                 } else {
                     val newId = repository.createWebApp(webApp)
 
