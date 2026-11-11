@@ -1,0 +1,17 @@
+Added
+- Fullscreen apps can choose how the display cutout is handled.
+- Pages can read display cutout insets from CSS variables.
+- Multi-web drawer layouts can use a floating drawer button.
+- Multi-web cards hide the title bar while scrolling up.
+
+Improved
+- Cross-origin requests stay on the WebView stack, so large downloads stream again.
+- Multi-web sites recover after Android kills the renderer in the background.
+- Multi-web layouts paint the configured status bar overlay.
+- Source exports can be restored from Data Backup > Import Data.
+- Installing through QQ and vendor app stores no longer reports a missing certificate.
+
+Fixed
+- A splash video survives Save after Preview.
+- Long category lists and edge-of-screen long-press menus stay reachable.
+- About opens without a first-frame stall.
