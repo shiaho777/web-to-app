@@ -15,6 +15,7 @@ import androidx.core.view.WindowInsetsAnimationCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.webtoapp.core.logging.AppLogger
+import com.webtoapp.core.webview.SafeAreaInsetsBridge
 import com.webtoapp.data.model.DisplayCutoutMode
 import com.webtoapp.data.model.KeyboardAdjustMode
 import java.util.Collections
@@ -349,6 +350,13 @@ object WindowHelper {
                             }
                         }, delayMs)
                     }
+                }
+            }
+            activity.window.decorView.post {
+                try {
+                    SafeAreaInsetsBridge.publish(activity, displayCutoutMode)
+                } catch (e: Exception) {
+                    AppLogger.w(tag, "publish safe area insets failed", e)
                 }
             }
         } catch (e: Exception) {

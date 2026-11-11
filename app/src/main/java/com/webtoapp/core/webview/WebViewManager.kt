@@ -62,6 +62,9 @@ class WebViewManager(
     private val geolocationShimHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
     private val shareInboxScriptHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
     private val cosmeticFilterScriptHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
+    private val safeAreaScriptHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
+    private val safeAreaInstalledWebViews = java.util.WeakHashMap<WebView, Boolean>()
+    private var safeAreaUnsubscribe: (() -> Unit)? = null
     private val pageZoomScriptHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
     private val videoFitScriptHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
     private val wasmStreamScriptHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
@@ -1869,6 +1872,7 @@ class WebViewManager(
             installVideoFitDocumentStart(this, config)
             installWasmStreamDocumentStart(this, config)
             installKernelFlavorDocumentStart(this)
+            installSafeAreaDocumentStart(this, config)
 
             if (config.enablePrivateNetworkBridge || config.enableCorsBypass) {
                 installPrivateNetworkApiBridge(this, config)
@@ -2584,6 +2588,10 @@ class WebViewManager(
                 // one failing shim can't suppress the rest (separate evals used to
                 // provide that isolation for free).
                 val startBatch = StringBuilder()
+                if (config.javaScriptEnabled) {
+                    startBatch.append("try{").append(SafeAreaInsetsBridge.DOCUMENT_START_SCRIPT)
+                        .append("}catch(e){};\n")
+                }
                 if (config.enableClipboardPolyfill) {
                     startBatch.append("try{").append(CLIPBOARD_POLYFILL_JS).append("}catch(e){};\n")
                 }
@@ -3396,6 +3404,8 @@ class WebViewManager(
     fun discardWebView(webView: WebView) {
         userscriptInjectionState.remove(webView)
         pagePhaseExecutionState.remove(webView)
+        safeAreaScriptHandlers.remove(webView)?.let { handler -> runCatching { handler.remove() } }
+        safeAreaInstalledWebViews.remove(webView)
         managedWebViews.remove(webView)
         primeUserActivationDone.remove(webView)
         failoverCursor.remove(webView)
@@ -4457,6 +4467,13 @@ class WebViewManager(
             runCatching { handler.remove() }
         }
         kernelFlavorScriptHandlers.clear()
+        safeAreaUnsubscribe?.invoke()
+        safeAreaUnsubscribe = null
+        safeAreaScriptHandlers.values.toList().forEach { handler ->
+            runCatching { handler.remove() }
+        }
+        safeAreaScriptHandlers.clear()
+        safeAreaInstalledWebViews.clear()
         managedWebViews.keys.toList().forEach { webView ->
             destroyWebView(webView)
         }
@@ -4835,6 +4852,46 @@ class WebViewManager(
             AppLogger.i("WebViewManager", "[CosmeticFilter] Installed at document start (applies to all hosts)")
         } catch (e: Exception) {
             AppLogger.w("WebViewManager", "[CosmeticFilter] Document-start install failed, will use onPageFinished fallback", e)
+        }
+    }
+
+    private inner class SafeAreaJsInterface {
+        @JavascriptInterface
+        fun getInsets(): String = SafeAreaInsetsBridge.currentJson
+    }
+
+    private fun installSafeAreaDocumentStart(webView: WebView, config: WebViewConfig) {
+        if (!config.javaScriptEnabled) return
+        if (safeAreaInstalledWebViews.containsKey(webView)) return
+        try {
+            safeAreaInstalledWebViews[webView] = true
+            context.findActivity()?.let { activity ->
+                SafeAreaInsetsBridge.publish(activity, config.displayCutoutMode)
+            }
+            webView.addJavascriptInterface(
+                SafeAreaJsInterface(),
+                SafeAreaInsetsBridge.JS_BRIDGE_NAME
+            )
+            if (safeAreaUnsubscribe == null) {
+                safeAreaUnsubscribe = SafeAreaInsetsBridge.addListener(::refreshSafeAreaInsets)
+            }
+            if (WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
+                safeAreaScriptHandlers[webView] = addDocumentStartExceptChallenges(
+                    webView,
+                    SafeAreaInsetsBridge.DOCUMENT_START_SCRIPT,
+                    setOf("*")
+                )
+            }
+        } catch (e: Exception) {
+            safeAreaInstalledWebViews.remove(webView)
+            AppLogger.w("WebViewManager", "Safe-area document-start install failed", e)
+        }
+    }
+
+    private fun refreshSafeAreaInsets(insets: SafeAreaInsets) {
+        val script = SafeAreaInsetsBridge.updateScript(insets)
+        for (webView in managedWebViews.keys.toList()) {
+            webView.post { runCatching { webView.evaluateJavascript(script, null) } }
         }
     }
 
