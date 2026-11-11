@@ -17,7 +17,6 @@ import com.webtoapp.core.webview.WebViewCallbacks
 import com.webtoapp.core.webview.WebViewManager
 import com.webtoapp.data.model.WebViewConfig
 import com.webtoapp.ui.components.WebSwipeRefreshLayout
-import com.webtoapp.ui.shared.pageZoomSurface
 
 @Composable
 fun ShellBrowserAndroidView(
@@ -250,7 +249,7 @@ fun ShellBrowserAndroidView(
                     swipeLayout.removeAllViews()
                 }
             },
-            modifier = modifier.pageZoomSurface(webViewConfig.pageZoomPercent)
+            modifier = modifier
         )
     }
 }
