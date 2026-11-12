@@ -4583,6 +4583,8 @@ object Strings {
     val backupExportComplete: String get() = StringsE.backupExportComplete
     val backupInvalidFormat: String get() = StringsE.backupInvalidFormat
     val backupInvalidFormatSourceZip: String get() = StringsE.backupInvalidFormatSourceZip
+    val backupImportLegacySuccess: String get() = StringsE.backupImportLegacySuccess
+    val backupImportLegacyMissingFiles: String get() = StringsE.backupImportLegacyMissingFiles
     val backupUnreadableFile: String get() = StringsE.backupUnreadableFile
     val backupOutputFailed: String get() = StringsE.backupOutputFailed
     val backupReadingBackup: String get() = StringsE.backupReadingBackup

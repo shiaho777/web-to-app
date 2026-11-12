@@ -89,6 +89,7 @@ private fun ColumnScope.DataBackupControls() {
     var errorThrowable by remember { mutableStateOf<Throwable?>(null) }
     var errorScope by remember { mutableStateOf("") }
     var showRestartDialog by remember { mutableStateOf(false) }
+    var showLegacyMissingFilesDialog by remember { mutableStateOf(false) }
     val isBusy = isExporting || isImporting
 
     val exportLauncher = rememberLauncherForActivityResult(
@@ -141,7 +142,12 @@ private fun ColumnScope.DataBackupControls() {
                 result.onSuccess { importResult ->
                     Toast.makeText(
                         context,
-                        if (importResult.duplicateCount > 0) {
+                        if (importResult.legacySourceBundle) {
+                            Strings.backupImportLegacySuccess.format(
+                                importResult.importedCount,
+                                importResult.totalCount
+                            )
+                        } else if (importResult.duplicateCount > 0) {
                             Strings.backupImportSuccessDupes.format(
                                 importResult.importedCount,
                                 importResult.totalCount,
@@ -155,6 +161,9 @@ private fun ColumnScope.DataBackupControls() {
                         },
                         Toast.LENGTH_LONG
                     ).show()
+                    if (importResult.missingProjectFiles) {
+                        showLegacyMissingFilesDialog = true
+                    }
                     // Restored DataStore/SharedPreferences files only take effect
                     // after restart (in-memory caches would otherwise clobber them).
                     // Ask first — silently killing the process reads as a crash.
@@ -200,6 +209,23 @@ private fun ColumnScope.DataBackupControls() {
                     onClick = { showRestartDialog = false },
                     text = Strings.backupRestartLater,
                     variant = WtaButtonVariant.Text,
+                    size = WtaButtonSize.Medium
+                )
+            }
+        )
+    }
+
+    if (showLegacyMissingFilesDialog) {
+        com.webtoapp.ui.design.WtaAlertDialog(
+            onDismissRequest = { showLegacyMissingFilesDialog = false },
+            icon = Icons.Outlined.Inventory2,
+            title = Strings.dataBackupTitle,
+            text = Strings.backupImportLegacyMissingFiles,
+            confirmButton = {
+                WtaButton(
+                    onClick = { showLegacyMissingFilesDialog = false },
+                    text = Strings.close,
+                    variant = WtaButtonVariant.Primary,
                     size = WtaButtonSize.Medium
                 )
             }

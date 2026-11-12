@@ -491,6 +491,41 @@ class DataBackupManager(private val context: Context) {
 
             val data = backupData
             if (data == null) {
+                if (looksLikeSourceBundle) {
+                    val legacy = runCatching {
+                        context.contentResolver.openInputStream(inputUri)?.use { stream ->
+                            LegacySourceBundleImporter(context).restore(stream)
+                        } ?: throw IOException(Strings.backupUnreadableFile)
+                    }
+                    val restored = legacy.getOrNull()
+                    if (restored != null) {
+                        onProgress(60, 100, Strings.backupImportingData)
+                        coroutineContext.ensureActive()
+                        val existingKeys = repository.allWebApps.first()
+                            .mapTo(HashSet()) { backupDedupKey(it) }
+                        if (!existingKeys.add(backupDedupKey(restored.app))) {
+                            AppLogger.i(TAG, "跳过重复的旧版源码包应用: ${restored.app.name}")
+                            return@withContext Result.success(ImportResult(
+                                totalCount = 1,
+                                importedCount = 0,
+                                skippedCount = 0,
+                                duplicateCount = 1,
+                                legacySourceBundle = true
+                            ))
+                        }
+                        val now = System.currentTimeMillis()
+                        repository.createWebApp(restored.app.copy(id = 0, createdAt = now, updatedAt = now))
+                        onProgress(100, 100, Strings.backupImportComplete)
+                        return@withContext Result.success(ImportResult(
+                            totalCount = 1,
+                            importedCount = 1,
+                            skippedCount = 0,
+                            legacySourceBundle = true,
+                            missingProjectFiles = restored.missingProjectFiles
+                        ))
+                    }
+                    AppLogger.w(TAG, "旧版源码包恢复失败", legacy.exceptionOrNull())
+                }
                 cleanupExtractedFiles(extractedFiles)
                 discardPendingLocalEntries(pendingLocalEntries)
                 val message = if (looksLikeSourceBundle) {
@@ -1372,5 +1407,9 @@ data class ImportResult(
     /** Backup apps already installed (same type+name+URL), skipped not duplicated. */
     val duplicateCount: Int = 0,
     /** True when any local (prefs/datastore/shared/file) entry was committed. */
-    val localFilesRestored: Boolean = false
+    val localFilesRestored: Boolean = false,
+    /** True when the archive was a pre-#1522 source export restored via app_config.json. */
+    val legacySourceBundle: Boolean = false,
+    /** Legacy restore: the old export never carried this app's project/media files. */
+    val missingProjectFiles: Boolean = false
 )
