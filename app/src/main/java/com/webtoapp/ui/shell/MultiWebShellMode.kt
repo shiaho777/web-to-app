@@ -302,7 +302,12 @@ private fun SiteContent(
         // Without this the activity never sees per-site surfaces: on a Gecko site the
         // media-session adapter is never attached and back/forward/find stay dead (#593
         // parity for MULTI_WEB).
-        onBrowserSurfaceCreated = onBrowserSurfaceCreated
+        onBrowserSurfaceCreated = onBrowserSurfaceCreated,
+        webProfileName = if (config.multiWebConfig?.independentSessions == true) {
+            com.webtoapp.core.webview.SiteWebProfiles.profileNameFor(site.id)
+        } else {
+            null
+        }
     )
 }
 

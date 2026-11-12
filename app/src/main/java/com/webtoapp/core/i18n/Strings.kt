@@ -148,6 +148,8 @@ object Strings {
     val multiWebDragToReorder: String get() = StringsA.multiWebDragToReorder
     val multiWebSitesInheritConfig: String get() = StringsA.multiWebSitesInheritConfig
     val multiWebSitesInheritConfigHint: String get() = StringsA.multiWebSitesInheritConfigHint
+    val multiWebIndependentSessions: String get() = StringsA.multiWebIndependentSessions
+    val multiWebIndependentSessionsHint: String get() = StringsA.multiWebIndependentSessionsHint
     val multiWebStartTab: String get() = StringsA.multiWebStartTab
     val multiWebStartTabHint: String get() = StringsA.multiWebStartTabHint
     val multiWebStartLast: String get() = StringsA.multiWebStartLast

@@ -932,7 +932,10 @@ data class MultiWebShellConfig(
     val startTab: String = "LAST",
 
     @SerializedName("startSiteId")
-    val startSiteId: String = ""
+    val startSiteId: String = "",
+
+    @SerializedName("independentSessions")
+    val independentSessions: Boolean = false
 )
 
 data class MultiWebSiteShellConfig(

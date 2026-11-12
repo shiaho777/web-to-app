@@ -33,6 +33,7 @@ fun ShellBrowserAndroidView(
     initialUrl: String? = null,
     enableLongPress: Boolean = true,
     onSurfaceCreated: ((BrowserSurface) -> Unit)? = null,
+    webProfileName: String? = null,
     modifier: Modifier = Modifier.fillMaxSize()
 ) {
     key(webViewRecreationKey) {
@@ -103,7 +104,8 @@ fun ShellBrowserAndroidView(
                         pluginPanelStyle = com.webtoapp.core.plugin.PluginPanelStyle.parse(config.pluginPanelStyle),
                         browserDisguiseConfig = config.browserDisguiseConfig,
                         deviceDisguiseConfig = config.deviceDisguiseConfig,
-                        appOriginUrl = config.targetUrl
+                        appOriginUrl = config.targetUrl,
+                        webProfileName = webProfileName
                     )
                     surfaceRef = surface
                     tag = surface

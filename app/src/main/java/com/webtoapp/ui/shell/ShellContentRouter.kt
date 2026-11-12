@@ -30,7 +30,8 @@ fun ShellContentRouter(
     onBrowserSurfaceCreated: (com.webtoapp.core.engine.BrowserSurface) -> Unit = {},
     onWebViewRefUpdated: (WebView) -> Unit,
     onActivityFinish: () -> Unit,
-    onTopTabColor: (String?) -> Unit = {}
+    onTopTabColor: (String?) -> Unit = {},
+    webProfileName: String? = null
 ) {
     when {
         appType == "IMAGE" || appType == "VIDEO" -> {
@@ -206,7 +207,8 @@ fun ShellContentRouter(
                 onWebViewCreated = onWebViewCreated,
                 onWebViewRefUpdated = onWebViewRefUpdated,
                 initialUrl = resolvedUrl,
-                onSurfaceCreated = onBrowserSurfaceCreated
+                onSurfaceCreated = onBrowserSurfaceCreated,
+                webProfileName = webProfileName
             )
             }
         }
