@@ -5138,6 +5138,9 @@ object Strings {
     val appListSortName: String get() = StringsE.appListSortName
     val appListSortCustom: String get() = StringsE.appListSortCustom
     val appListSortDragHint: String get() = StringsE.appListSortDragHint
+    val homeViewMode: String get() = StringsE.homeViewMode
+    val homeViewList: String get() = StringsE.homeViewList
+    val homeViewGrid: String get() = StringsE.homeViewGrid
     val shareApkReadyMode: String get() = StringsE.shareApkReadyMode
 
     // Agent UI rework additions

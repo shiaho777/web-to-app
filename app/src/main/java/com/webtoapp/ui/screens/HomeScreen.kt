@@ -19,6 +19,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.lazy.grid.itemsIndexed as gridItemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -26,6 +30,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.Announcement
+import androidx.compose.material.icons.automirrored.outlined.ViewList
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.material3.SwipeToDismissBox
@@ -180,6 +185,8 @@ fun HomeScreen(
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
+    val homeThemeManager = remember { ThemeManager.getInstance(context) }
+    val homeViewMode by homeThemeManager.homeViewModeFlow.collectAsStateWithLifecycle()
     LaunchedEffect(uiState) {
         when (uiState) {
             is UiState.Success -> {
@@ -312,6 +319,33 @@ fun HomeScreen(
                             }
                         }
                     )
+
+                    IconButton(
+                        onClick = {
+                            val next = if (homeViewMode == ThemeManager.HomeViewMode.LIST) {
+                                ThemeManager.HomeViewMode.GRID
+                            } else {
+                                ThemeManager.HomeViewMode.LIST
+                            }
+                            scope.launch { homeThemeManager.setHomeViewMode(next) }
+                        },
+                        modifier = Modifier.size(44.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (homeViewMode == ThemeManager.HomeViewMode.GRID) {
+                                Icons.AutoMirrored.Outlined.ViewList
+                            } else {
+                                Icons.Outlined.GridView
+                            },
+                            contentDescription = if (homeViewMode == ThemeManager.HomeViewMode.GRID) {
+                                Strings.homeViewList
+                            } else {
+                                Strings.homeViewGrid
+                            },
+                            modifier = Modifier.size(22.dp),
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
 
                     Box {
                         IconButton(
@@ -612,6 +646,153 @@ fun HomeScreen(
 
 
 
+                    fun actionsFor(app: WebAppSummary): HomeAppActions = HomeAppActions(
+                        onEdit = {
+                            scope.launch {
+                                viewModel.getWebApp(app.id)?.let(onEditApp)
+                            }
+                        },
+                        onEditCore = {
+                            scope.launch {
+                                viewModel.getWebApp(app.id)?.let(onEditAppCore)
+                            }
+                        },
+                        onDelete = {
+                            selectedApp = app
+                            showDeleteDialog = true
+                        },
+                        onCreateShortcut = {
+                            scope.launch {
+                                val fullApp = viewModel.getWebApp(app.id) ?: return@launch
+                                when (val result = sharedExporter.createShortcut(fullApp)) {
+                                    is com.webtoapp.core.export.ShortcutResult.Success -> {
+                                        snackbarHostState.showSnackbar(Strings.shortcutCreatedSuccess)
+                                    }
+                                    is com.webtoapp.core.export.ShortcutResult.Pending -> {
+                                        snackbarHostState.showSnackbar(result.message)
+                                    }
+                                    is com.webtoapp.core.export.ShortcutResult.PermissionRequired -> {
+                                        snackbarHostState.showSnackbar(
+                                            message = result.message,
+                                            duration = SnackbarDuration.Long
+                                        )
+                                    }
+                                    is com.webtoapp.core.export.ShortcutResult.Error -> {
+                                        snackbarHostState.showSnackbar(result.message)
+                                    }
+                                }
+                            }
+                        },
+                        onExport = {
+                            scope.launch {
+                                val fullApp = viewModel.getWebApp(app.id) ?: return@launch
+                                val packed = withContext(Dispatchers.IO) {
+                                    runCatching {
+                                        com.webtoapp.core.export.AppSourcePackager(listContext).pack(fullApp)
+                                    }
+                                }
+                                val file = packed.getOrNull()
+                                val shared = file != null &&
+                                    com.webtoapp.core.export.AppSourcePackager(listContext).share(file)
+                                if (!shared) {
+                                    packed.exceptionOrNull()?.let {
+                                        AppLogger.e("HomeScreen", "Source export failed", it)
+                                    }
+                                    snackbarHostState.showSnackbar(Strings.exportAppSourceFailed)
+                                }
+                            }
+                        },
+                        onBuildApk = {
+                            onBuildApk(app.id)
+                        },
+                        onShareApk = {
+                            scope.launch {
+                                val fullApp = viewModel.getWebApp(app.id) ?: return@launch
+                                shareApkFailureReport = null
+                                snackbarHostState.showSnackbar(Strings.shareApkBuilding)
+                                val apkBuilder = withContext(Dispatchers.IO) { sharedApkBuilder.value }
+                                val result = apkBuilder.buildApk(fullApp) { _, _ -> }
+                                when (result) {
+                                    is BuildResult.Success -> {
+                                        snackbarHostState.showSnackbar(
+                                            Strings.shareApkReadyMode.replace(
+                                                "%s",
+                                                incrementalBuildModeLabel(result.buildMode)
+                                            )
+                                        )
+                                        try {
+                                            val apkUri = androidx.core.content.FileProvider.getUriForFile(
+                                                listContext,
+                                                "${listContext.packageName}.fileprovider",
+                                                result.apkFile
+                                            )
+                                            val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                                                type = "application/vnd.android.package-archive"
+                                                putExtra(android.content.Intent.EXTRA_STREAM, apkUri)
+                                                putExtra(android.content.Intent.EXTRA_SUBJECT, Strings.shareApkTitle.replace("%s", fullApp.name))
+                                                addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                            }
+                                            listContext.startActivity(android.content.Intent.createChooser(shareIntent, Strings.shareApkTitle.replace("%s", fullApp.name)))
+                                        } catch (e: Exception) {
+                                            shareApkFailureReport = buildActionFailureReport(
+                                                title = Strings.apkShareFailed,
+                                                stage = "share_apk_intent",
+                                                webApp = fullApp,
+                                                summary = Strings.shareApkFailed.replace("%s", e.message ?: "Unknown error"),
+                                                logPath = result.logPath,
+                                                throwable = e,
+                                                extraLines = listOf(
+                                                    "apkPath=${result.apkFile.absolutePath}",
+                                                    "apkSize=${result.apkFile.length()}"
+                                                )
+                                            )
+                                        }
+                                    }
+                                    is BuildResult.Error -> {
+                                        shareApkFailureReport = buildActionFailureReport(
+                                            title = Strings.apkShareFailed,
+                                            stage = result.diagnostic?.stage?.label ?: "build_apk_for_share",
+                                            webApp = fullApp,
+                                            summary = Strings.shareApkFailed.replace("%s", result.message),
+                                            logPath = result.logPath,
+                                            extraLines = buildDiagnosticLines(result)
+                                        )
+                                    }
+                                }
+                            }
+                        },
+                        onMoveToCategory = {
+                            appToMove = app
+                            showMoveToCategoryDialog = true
+                        },
+                        onClearCache = {
+                            appToClearCache = app
+                            showClearCacheDialog = true
+                        },
+                        onOpenInBrowser = {
+                            if (isExternalBrowserUrl(app.url)) {
+                                try {
+                                    val viewIntent = Intent(
+                                        Intent.ACTION_VIEW,
+                                        Uri.parse(app.url.trim())
+                                    ).apply {
+                                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                    }
+                                    listContext.startActivity(
+                                        Intent.createChooser(viewIntent, Strings.chooseBrowser)
+                                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                    )
+                                } catch (e: Exception) {
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar(
+                                            "${Strings.cannotOpenInBrowser}: ${e.message ?: Strings.failed}"
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    )
+
                     val listState = rememberLazyListState()
                     val listDrag = remember { HomeListDragState() }
                     val latestApps = rememberUpdatedState(apps)
@@ -681,6 +862,31 @@ fun HomeScreen(
                         }
                     }
 
+                    if (homeViewMode == ThemeManager.HomeViewMode.GRID) {
+                        LazyVerticalGrid(
+                            columns = GridCells.Adaptive(minSize = 150.dp),
+                            state = rememberLazyGridState(),
+                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp),
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            gridItemsIndexed(
+                                displayedApps,
+                                key = { _, app -> app.id },
+                                contentType = { _, _ -> "AppCard" }
+                            ) { _, app ->
+                                AppGridTile(
+                                    app = app,
+                                    onClick = { onPreviewApp(app) },
+                                    actions = actionsFor(app),
+                                    previewImageLoader = previewImageLoader,
+                                    healthStatus = healthMap[app.id]?.status,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
+                        }
+                    } else {
                     LazyColumn(
                     state = listState,
                     userScrollEnabled = listDrag.id == null,
@@ -702,7 +908,6 @@ fun HomeScreen(
                         key = { _, app -> app.id },
                         contentType = { _, _ -> "AppCard" }
                     ) { index, app ->
-                        val exporter = sharedExporter
                         val scope = sharedScope
                         val previewSpec = previewSpecs[app.id] ?: AppPreviewSpec()
 
@@ -832,6 +1037,7 @@ fun HomeScreen(
                             enableDismissFromEndToStart = listDrag.id == null
                         ) {
 
+                        val actions = actionsFor(app)
                         AppCard(
                             app = app,
                             modifier = if (dragged) {
@@ -841,150 +1047,16 @@ fun HomeScreen(
                             },
                             onClick = { onPreviewApp(app) },
                             onLongClick = { selectedApp = app },
-                            onEdit = {
-                                scope.launch {
-                                    viewModel.getWebApp(app.id)?.let(onEditApp)
-                                }
-                            },
-                            onEditCore = {
-                                scope.launch {
-                                    viewModel.getWebApp(app.id)?.let(onEditAppCore)
-                                }
-                            },
-                            onDelete = {
-                                selectedApp = app
-                                showDeleteDialog = true
-                            },
-                            onCreateShortcut = {
-                                scope.launch {
-                                    val fullApp = viewModel.getWebApp(app.id) ?: return@launch
-                                    when (val result = exporter.createShortcut(fullApp)) {
-                                        is com.webtoapp.core.export.ShortcutResult.Success -> {
-                                            snackbarHostState.showSnackbar(Strings.shortcutCreatedSuccess)
-                                        }
-                                        is com.webtoapp.core.export.ShortcutResult.Pending -> {
-                                            snackbarHostState.showSnackbar(result.message)
-                                        }
-                                        is com.webtoapp.core.export.ShortcutResult.PermissionRequired -> {
-                                            snackbarHostState.showSnackbar(
-                                                message = result.message,
-                                                duration = SnackbarDuration.Long
-                                            )
-                                        }
-                                        is com.webtoapp.core.export.ShortcutResult.Error -> {
-                                            snackbarHostState.showSnackbar(result.message)
-                                        }
-                                    }
-                                }
-                            },
-                            onExport = {
-                                scope.launch {
-                                    val fullApp = viewModel.getWebApp(app.id) ?: return@launch
-                                    val packed = withContext(Dispatchers.IO) {
-                                        runCatching {
-                                            com.webtoapp.core.export.AppSourcePackager(listContext).pack(fullApp)
-                                        }
-                                    }
-                                    val file = packed.getOrNull()
-                                    val shared = file != null &&
-                                        com.webtoapp.core.export.AppSourcePackager(listContext).share(file)
-                                    if (!shared) {
-                                        packed.exceptionOrNull()?.let {
-                                            AppLogger.e("HomeScreen", "Source export failed", it)
-                                        }
-                                        snackbarHostState.showSnackbar(Strings.exportAppSourceFailed)
-                                    }
-                                }
-                            },
-                            onBuildApk = {
-                                onBuildApk(app.id)
-                            },
-                            onShareApk = {
-                                scope.launch {
-                                    val fullApp = viewModel.getWebApp(app.id) ?: return@launch
-                                    shareApkFailureReport = null
-                                    snackbarHostState.showSnackbar(Strings.shareApkBuilding)
-                                    val apkBuilder = withContext(Dispatchers.IO) { sharedApkBuilder.value }
-                                    val result = apkBuilder.buildApk(fullApp) { _, _ -> }
-                                    when (result) {
-                                        is BuildResult.Success -> {
-                                            snackbarHostState.showSnackbar(
-                                                Strings.shareApkReadyMode.replace(
-                                                    "%s",
-                                                    incrementalBuildModeLabel(result.buildMode)
-                                                )
-                                            )
-                                            try {
-                                                val apkUri = androidx.core.content.FileProvider.getUriForFile(
-                                                    listContext,
-                                                    "${listContext.packageName}.fileprovider",
-                                                    result.apkFile
-                                                )
-                                                val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
-                                                    type = "application/vnd.android.package-archive"
-                                                    putExtra(android.content.Intent.EXTRA_STREAM, apkUri)
-                                                    putExtra(android.content.Intent.EXTRA_SUBJECT, Strings.shareApkTitle.replace("%s", fullApp.name))
-                                                    addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                                }
-                                                listContext.startActivity(android.content.Intent.createChooser(shareIntent, Strings.shareApkTitle.replace("%s", fullApp.name)))
-                                            } catch (e: Exception) {
-                                                shareApkFailureReport = buildActionFailureReport(
-                                                    title = Strings.apkShareFailed,
-                                                    stage = "share_apk_intent",
-                                                    webApp = fullApp,
-                                                    summary = Strings.shareApkFailed.replace("%s", e.message ?: "Unknown error"),
-                                                    logPath = result.logPath,
-                                                    throwable = e,
-                                                    extraLines = listOf(
-                                                        "apkPath=${result.apkFile.absolutePath}",
-                                                        "apkSize=${result.apkFile.length()}"
-                                                    )
-                                                )
-                                            }
-                                        }
-                                        is BuildResult.Error -> {
-                                            shareApkFailureReport = buildActionFailureReport(
-                                                title = Strings.apkShareFailed,
-                                                stage = result.diagnostic?.stage?.label ?: "build_apk_for_share",
-                                                webApp = fullApp,
-                                                summary = Strings.shareApkFailed.replace("%s", result.message),
-                                                logPath = result.logPath,
-                                                extraLines = buildDiagnosticLines(result)
-                                            )
-                                        }
-                                    }
-                                }
-                            },
-                            onMoveToCategory = {
-                                appToMove = app
-                                showMoveToCategoryDialog = true
-                            },
-                            onClearCache = {
-                                appToClearCache = app
-                                showClearCacheDialog = true
-                            },
-                            onOpenInBrowser = {
-                                if (isExternalBrowserUrl(app.url)) {
-                                    try {
-                                        val viewIntent = Intent(
-                                            Intent.ACTION_VIEW,
-                                            Uri.parse(app.url.trim())
-                                        ).apply {
-                                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                        }
-                                        listContext.startActivity(
-                                            Intent.createChooser(viewIntent, Strings.chooseBrowser)
-                                                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                        )
-                                    } catch (e: Exception) {
-                                        scope.launch {
-                                            snackbarHostState.showSnackbar(
-                                                "${Strings.cannotOpenInBrowser}: ${e.message ?: Strings.failed}"
-                                            )
-                                        }
-                                    }
-                                }
-                            },
+                            onEdit = actions.onEdit,
+                            onEditCore = actions.onEditCore,
+                            onDelete = actions.onDelete,
+                            onCreateShortcut = actions.onCreateShortcut,
+                            onExport = actions.onExport,
+                            onBuildApk = actions.onBuildApk,
+                            onShareApk = actions.onShareApk,
+                            onMoveToCategory = actions.onMoveToCategory,
+                            onClearCache = actions.onClearCache,
+                            onOpenInBrowser = actions.onOpenInBrowser,
                             healthStatus = healthMap[app.id]?.status,
                             previewImageLoader = previewImageLoader,
                             screenshotPath = if (previewSpec.captureUrl != null) {
@@ -1007,6 +1079,7 @@ fun HomeScreen(
                         Spacer(modifier = Modifier.height(16.dp))
                     }
                 }
+                    }
                 }
             }
 
@@ -1369,9 +1442,6 @@ fun AppCard(
 ) {
     var expanded by remember { mutableStateOf(false) }
     val colors = MaterialTheme.colorScheme
-    val canOpenInBrowser = (app.appType == com.webtoapp.data.model.AppType.WEB ||
-        app.appType == com.webtoapp.data.model.AppType.MULTI_WEB) &&
-        isExternalBrowserUrl(app.url)
     val secondaryText = when (app.appType) {
         com.webtoapp.data.model.AppType.IMAGE -> app.url.ifBlank { Strings.appTypeImage }
         com.webtoapp.data.model.AppType.VIDEO -> app.url.ifBlank { Strings.appTypeVideo }
@@ -1571,107 +1641,274 @@ fun AppCard(
                     contentDescription = Strings.more
                 )
 
-                DropdownMenu(
+                AppCardActionsMenu(
+                    app = app,
                     expanded = expanded,
-                    onDismissRequest = { expanded = false }
+                    onDismiss = { expanded = false },
+                    actions = HomeAppActions(
+                        onEdit = onEdit,
+                        onEditCore = onEditCore,
+                        onDelete = onDelete,
+                        onCreateShortcut = onCreateShortcut,
+                        onExport = onExport,
+                        onBuildApk = onBuildApk,
+                        onShareApk = onShareApk,
+                        onMoveToCategory = onMoveToCategory,
+                        onClearCache = onClearCache,
+                        onOpenInBrowser = onOpenInBrowser
+                    )
+                )
+            }
+        }
+    }
+}
+
+class HomeAppActions(
+    val onEdit: () -> Unit,
+    val onEditCore: () -> Unit,
+    val onDelete: () -> Unit,
+    val onCreateShortcut: () -> Unit,
+    val onExport: () -> Unit,
+    val onBuildApk: () -> Unit,
+    val onShareApk: () -> Unit,
+    val onMoveToCategory: () -> Unit,
+    val onClearCache: () -> Unit,
+    val onOpenInBrowser: () -> Unit
+)
+
+@Composable
+fun AppCardActionsMenu(
+    app: WebAppSummary,
+    expanded: Boolean,
+    onDismiss: () -> Unit,
+    actions: HomeAppActions
+) {
+    val canOpenInBrowser = (app.appType == com.webtoapp.data.model.AppType.WEB ||
+        app.appType == com.webtoapp.data.model.AppType.MULTI_WEB) &&
+        isExternalBrowserUrl(app.url)
+    DropdownMenu(
+        expanded = expanded,
+        onDismissRequest = onDismiss
+    ) {
+        if (app.appType == com.webtoapp.data.model.AppType.WEB) {
+            com.webtoapp.ui.design.WtaDropdownMenuItem(
+                text = Strings.btnEdit,
+                leadingIcon = Icons.Outlined.Edit,
+                onClick = {
+                    onDismiss()
+                    actions.onEdit()
+                }
+            )
+        } else {
+            com.webtoapp.ui.design.WtaDropdownMenuItem(
+                text = Strings.editCoreConfig,
+                leadingIcon = Icons.Outlined.Tune,
+                onClick = {
+                    onDismiss()
+                    actions.onEditCore()
+                }
+            )
+            com.webtoapp.ui.design.WtaDropdownMenuItem(
+                text = Strings.editCommonConfig,
+                leadingIcon = Icons.Outlined.Settings,
+                onClick = {
+                    onDismiss()
+                    actions.onEdit()
+                }
+            )
+        }
+        HorizontalDivider()
+        com.webtoapp.ui.design.WtaDropdownMenuItem(
+            text = Strings.btnShortcut,
+            leadingIcon = Icons.Outlined.AppShortcut,
+            onClick = {
+                onDismiss()
+                actions.onCreateShortcut()
+            }
+        )
+        com.webtoapp.ui.design.WtaDropdownMenuItem(
+            text = Strings.buildDialogTitle,
+            leadingIcon = Icons.Outlined.InstallMobile,
+            onClick = {
+                onDismiss()
+                actions.onBuildApk()
+            }
+        )
+        com.webtoapp.ui.design.WtaDropdownMenuItem(
+            text = Strings.shareApk,
+            leadingIcon = Icons.Outlined.Share,
+            onClick = {
+                onDismiss()
+                actions.onShareApk()
+            }
+        )
+        com.webtoapp.ui.design.WtaDropdownMenuItem(
+            text = Strings.exportAppSource,
+            leadingIcon = Icons.Outlined.Code,
+            onClick = {
+                onDismiss()
+                actions.onExport()
+            }
+        )
+        com.webtoapp.ui.design.WtaDropdownMenuItem(
+            text = Strings.moveToCategory,
+            leadingIcon = Icons.Outlined.Folder,
+            onClick = {
+                onDismiss()
+                actions.onMoveToCategory()
+            }
+        )
+        com.webtoapp.ui.design.WtaDropdownMenuItem(
+            text = Strings.clearAppCacheMenu,
+            leadingIcon = Icons.Outlined.CleaningServices,
+            onClick = {
+                onDismiss()
+                actions.onClearCache()
+            }
+        )
+        if (canOpenInBrowser) {
+            com.webtoapp.ui.design.WtaDropdownMenuItem(
+                text = Strings.openInBrowser,
+                leadingIcon = Icons.Outlined.OpenInBrowser,
+                onClick = {
+                    onDismiss()
+                    actions.onOpenInBrowser()
+                }
+            )
+        }
+        HorizontalDivider()
+        com.webtoapp.ui.design.WtaDropdownMenuItem(
+            text = Strings.btnDelete,
+            leadingIcon = Icons.Outlined.Delete,
+            destructive = true,
+            onClick = {
+                onDismiss()
+                actions.onDelete()
+            }
+        )
+    }
+}
+
+private fun appTypeDefaultIcon(appType: com.webtoapp.data.model.AppType): Int = when (appType) {
+    com.webtoapp.data.model.AppType.WEB -> R.drawable.ic_type_web
+    com.webtoapp.data.model.AppType.IMAGE -> R.drawable.ic_type_media
+    com.webtoapp.data.model.AppType.VIDEO -> R.drawable.ic_type_media
+    com.webtoapp.data.model.AppType.HTML -> R.drawable.ic_type_html
+    com.webtoapp.data.model.AppType.GALLERY -> R.drawable.ic_type_gallery
+    com.webtoapp.data.model.AppType.FRONTEND -> R.drawable.ic_type_frontend
+    com.webtoapp.data.model.AppType.WORDPRESS -> R.drawable.ic_type_wordpress
+    com.webtoapp.data.model.AppType.NODEJS_APP -> R.drawable.ic_type_nodejs
+    com.webtoapp.data.model.AppType.PHP_APP -> R.drawable.ic_type_php
+    com.webtoapp.data.model.AppType.PYTHON_APP -> R.drawable.ic_type_python
+    com.webtoapp.data.model.AppType.GO_APP -> R.drawable.ic_type_go
+    com.webtoapp.data.model.AppType.MULTI_WEB -> R.drawable.ic_type_multi_web
+}
+
+@Composable
+fun AppGridTile(
+    app: WebAppSummary,
+    onClick: () -> Unit,
+    actions: HomeAppActions,
+    previewImageLoader: ImageLoader,
+    healthStatus: com.webtoapp.core.stats.HealthStatus? = null,
+    modifier: Modifier = Modifier
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val colors = MaterialTheme.colorScheme
+    EnhancedElevatedCard(
+        onClick = onClick,
+        modifier = modifier.fillMaxWidth(),
+        pressScale = 0.97f
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 10.dp, vertical = 12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Box {
+                Box(
+                    modifier = Modifier
+                        .size(56.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(colors.secondaryContainer),
+                    contentAlignment = Alignment.Center
                 ) {
-                    if (app.appType == com.webtoapp.data.model.AppType.WEB) {
-                        com.webtoapp.ui.design.WtaDropdownMenuItem(
-                            text = Strings.btnEdit,
-                            leadingIcon = Icons.Outlined.Edit,
-                            onClick = {
-                                expanded = false
-                                onEdit()
-                            }
+                    if (app.iconPath != null) {
+                        AsyncImage(
+                            model = ImageRequest.Builder(LocalContext.current)
+                                .data(app.iconPath)
+                                .crossfade(false)
+                                .build(),
+                            contentDescription = app.name,
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
                         )
                     } else {
-                        com.webtoapp.ui.design.WtaDropdownMenuItem(
-                            text = Strings.editCoreConfig,
-                            leadingIcon = Icons.Outlined.Tune,
-                            onClick = {
-                                expanded = false
-                                onEditCore()
-                            }
-                        )
-                        com.webtoapp.ui.design.WtaDropdownMenuItem(
-                            text = Strings.editCommonConfig,
-                            leadingIcon = Icons.Outlined.Settings,
-                            onClick = {
-                                expanded = false
-                                onEdit()
-                            }
+                        Icon(
+                            painter = painterResource(appTypeDefaultIcon(app.appType)),
+                            contentDescription = null,
+                            modifier = Modifier.size(28.dp),
+                            tint = colors.onSecondaryContainer
                         )
                     }
-                    HorizontalDivider()
-                    com.webtoapp.ui.design.WtaDropdownMenuItem(
-                        text = Strings.btnShortcut,
-                        leadingIcon = Icons.Outlined.AppShortcut,
-                        onClick = {
-                            expanded = false
-                            onCreateShortcut()
-                        }
-                    )
-                    com.webtoapp.ui.design.WtaDropdownMenuItem(
-                        text = Strings.buildDialogTitle,
-                        leadingIcon = Icons.Outlined.InstallMobile,
-                        onClick = {
-                            expanded = false
-                            onBuildApk()
-                        }
-                    )
-                    com.webtoapp.ui.design.WtaDropdownMenuItem(
-                        text = Strings.shareApk,
-                        leadingIcon = Icons.Outlined.Share,
-                        onClick = {
-                            expanded = false
-                            onShareApk()
-                        }
-                    )
-                    com.webtoapp.ui.design.WtaDropdownMenuItem(
-                        text = Strings.exportAppSource,
-                        leadingIcon = Icons.Outlined.Code,
-                        onClick = {
-                            expanded = false
-                            onExport()
-                        }
-                    )
-                    com.webtoapp.ui.design.WtaDropdownMenuItem(
-                        text = Strings.moveToCategory,
-                        leadingIcon = Icons.Outlined.Folder,
-                        onClick = {
-                            expanded = false
-                            onMoveToCategory()
-                        }
-                    )
-                    com.webtoapp.ui.design.WtaDropdownMenuItem(
-                        text = Strings.clearAppCacheMenu,
-                        leadingIcon = Icons.Outlined.CleaningServices,
-                        onClick = {
-                            expanded = false
-                            onClearCache()
-                        }
-                    )
-                    if (canOpenInBrowser) {
-                        com.webtoapp.ui.design.WtaDropdownMenuItem(
-                            text = Strings.openInBrowser,
-                            leadingIcon = Icons.Outlined.OpenInBrowser,
-                            onClick = {
-                                expanded = false
-                                onOpenInBrowser()
-                            }
-                        )
+                }
+
+                if (healthStatus != null && healthStatus != com.webtoapp.core.stats.HealthStatus.UNKNOWN) {
+                    val semantic = com.webtoapp.ui.design.WtaColors.semantic
+                    val dotColor = when (healthStatus) {
+                        com.webtoapp.core.stats.HealthStatus.ONLINE -> semantic.success
+                        com.webtoapp.core.stats.HealthStatus.SLOW -> semantic.warning
+                        com.webtoapp.core.stats.HealthStatus.OFFLINE -> semantic.error
+                        else -> semantic.neutral
                     }
-                    HorizontalDivider()
-                    com.webtoapp.ui.design.WtaDropdownMenuItem(
-                        text = Strings.btnDelete,
-                        leadingIcon = Icons.Outlined.Delete,
-                        destructive = true,
-                        onClick = {
-                            expanded = false
-                            onDelete()
-                        }
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .offset(x = 2.dp, y = 2.dp)
+                            .size(12.dp)
+                            .clip(androidx.compose.foundation.shape.CircleShape)
+                            .background(colors.surface)
+                            .padding(2.dp)
+                            .clip(androidx.compose.foundation.shape.CircleShape)
+                            .background(dotColor)
                     )
                 }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = app.name,
+                style = MaterialTheme.typography.titleSmall,
+                color = colors.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            AppTypeChip(appType = app.appType)
+
+            Spacer(modifier = Modifier.height(2.dp))
+
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                com.webtoapp.ui.design.WtaIconButton(
+                    onClick = { expanded = true },
+                    icon = Icons.Default.MoreVert,
+                    contentDescription = Strings.more
+                )
+                AppCardActionsMenu(
+                    app = app,
+                    expanded = expanded,
+                    onDismiss = { expanded = false },
+                    actions = actions
+                )
             }
         }
     }

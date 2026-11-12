@@ -16877,4 +16877,43 @@ object StringsE {
         AppLanguage.KOREAN -> "카드를 길게 누른 뒤 위아래로 끌어 순서를 바꾸세요"
     }
 
+    val homeViewMode: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "视图模式"
+        AppLanguage.ENGLISH -> "View mode"
+        AppLanguage.ARABIC -> "وضع العرض"
+        AppLanguage.PORTUGUESE -> "Modo de exibição"
+        AppLanguage.SPANISH -> "Modo de vista"
+        AppLanguage.FRENCH -> "Mode d'affichage"
+        AppLanguage.GERMAN -> "Ansichtsmodus"
+        AppLanguage.RUSSIAN -> "Режим отображения"
+        AppLanguage.JAPANESE -> "表示モード"
+        AppLanguage.KOREAN -> "보기 모드"
+    }
+
+    val homeViewList: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "列表"
+        AppLanguage.ENGLISH -> "List"
+        AppLanguage.ARABIC -> "قائمة"
+        AppLanguage.PORTUGUESE -> "Lista"
+        AppLanguage.SPANISH -> "Lista"
+        AppLanguage.FRENCH -> "Liste"
+        AppLanguage.GERMAN -> "Liste"
+        AppLanguage.RUSSIAN -> "Список"
+        AppLanguage.JAPANESE -> "リスト"
+        AppLanguage.KOREAN -> "목록"
+    }
+
+    val homeViewGrid: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "网格"
+        AppLanguage.ENGLISH -> "Grid"
+        AppLanguage.ARABIC -> "شبكة"
+        AppLanguage.PORTUGUESE -> "Grade"
+        AppLanguage.SPANISH -> "Cuadrícula"
+        AppLanguage.FRENCH -> "Grille"
+        AppLanguage.GERMAN -> "Raster"
+        AppLanguage.RUSSIAN -> "Сетка"
+        AppLanguage.JAPANESE -> "グリッド"
+        AppLanguage.KOREAN -> "그리드"
+    }
+
 }
