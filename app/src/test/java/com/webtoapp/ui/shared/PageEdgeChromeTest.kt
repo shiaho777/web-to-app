@@ -84,6 +84,17 @@ class PageEdgeChromeTest {
         assertThat(preview).contains("if (!enabled || !shouldHideNavBar) applyPageEdgeNavigation")
     }
 
+    @Test
+    fun `focus changes resolve status icons from the sampled page`() {
+        val shellActivity = readSource("com/webtoapp/ui/shell/ShellActivity.kt")
+        val focusChanged = shellActivity
+            .substringAfter("override fun onWindowFocusChanged")
+            .substringBefore("override fun onSaveInstanceState")
+        assertThat(focusChanged).contains("refreshStatusBarAppearance()")
+        assertThat(focusChanged).doesNotContain("effectiveDarkIcons")
+        assertThat(shellActivity).contains("resolvedStatusIcons(systemDark)")
+    }
+
     private fun readSource(relativePath: String): String {
         val javaRoot = listOf("app/src/main/java", "src/main/java").asSequence()
             .map(::File).firstOrNull(File::exists)

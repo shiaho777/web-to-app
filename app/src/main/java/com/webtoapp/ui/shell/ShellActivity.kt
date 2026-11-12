@@ -1101,16 +1101,10 @@ class ShellActivity : AppCompatActivity() {
             backgroundMedia.onFocusLost(!isFinishing && !isChangingConfigurations)
         }
         if (hasFocus) {
-            if (customView != null || immersiveFullscreenEnabled) {
+            if (customView != null) {
                 applyImmersiveFullscreen(true, isDarkTheme = isSystemInDarkMode())
             } else {
-                val systemDark = isSystemInDarkMode()
-                val effectiveColorMode = if (systemDark) statusBarColorModeDark else statusBarColorMode
-                val effectiveCustomColor = if (systemDark) statusBarCustomColorDark else statusBarCustomColor
-                val effectiveDarkIcons = if (systemDark) statusBarDarkIconsDark else statusBarDarkIcons
-                val effectiveAlpha = if (systemDark) statusBarBackgroundAlphaDark else statusBarBackgroundAlpha
-                applyStatusBarColor(effectiveColorMode, effectiveCustomColor, effectiveDarkIcons, systemDark, effectiveAlpha)
-                applyPageEdgeNavigation(systemDark)
+                refreshStatusBarAppearance()
             }
         }
     }
