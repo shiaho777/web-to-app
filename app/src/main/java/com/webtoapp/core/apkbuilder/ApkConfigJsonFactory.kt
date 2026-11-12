@@ -579,7 +579,8 @@ internal object ApkConfigJsonFactory {
         "sitesUseOwnConfig" to multiWeb.sitesUseOwnConfig,
         "projectId" to multiWeb.projectId,
         "startTab" to multiWeb.startTab,
-        "startSiteId" to multiWeb.startSiteId
+        "startSiteId" to multiWeb.startSiteId,
+        "independentSessions" to multiWeb.independentSessions
     )
 
     private fun EmbeddedPlugin.toPayload(): Map<String, Any?> = linkedMapOf(

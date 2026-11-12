@@ -4972,7 +4972,8 @@ private fun WebApp.buildMultiWebBlock(context: android.content.Context?, package
         sitesUseOwnConfig = multiWebConfig?.sitesUseOwnConfig ?: false,
         projectId = multiWebConfig?.projectId ?: "",
         startTab = multiWebConfig?.startTab ?: "LAST",
-        startSiteId = multiWebConfig?.startSiteId ?: ""
+        startSiteId = multiWebConfig?.startSiteId ?: "",
+        independentSessions = multiWebConfig?.independentSessions ?: false
     )
 }
 

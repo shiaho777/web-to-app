@@ -943,7 +943,8 @@ data class MultiWebBlock(
     val sitesUseOwnConfig: Boolean = false,
     val projectId: String = "",
     val startTab: String = "LAST",
-    val startSiteId: String = ""
+    val startSiteId: String = "",
+    val independentSessions: Boolean = false
 )
 
 data class BackgroundRunConfig(

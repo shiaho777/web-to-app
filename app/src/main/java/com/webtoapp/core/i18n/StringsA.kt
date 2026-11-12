@@ -1234,6 +1234,32 @@ object StringsA {
         AppLanguage.KOREAN -> "사이트의 콘텐츠와 리소스만 로드하고 공통 설정은 메인 앱을 따릅니다"
     }
 
+    val multiWebIndependentSessions: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "独立会话"
+        AppLanguage.ENGLISH -> "Independent sessions"
+        AppLanguage.ARABIC -> "جلسات مستقلة"
+        AppLanguage.PORTUGUESE -> "Sessões independentes"
+        AppLanguage.SPANISH -> "Sesiones independientes"
+        AppLanguage.FRENCH -> "Sessions indépendantes"
+        AppLanguage.GERMAN -> "Unabhängige Sitzungen"
+        AppLanguage.RUSSIAN -> "Независимые сессии"
+        AppLanguage.JAPANESE -> "独立セッション"
+        AppLanguage.KOREAN -> "독립 세션"
+    }
+
+    val multiWebIndependentSessionsHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "每个站点持有独立登录态，重复网址可登录不同账号（需 Android 13+）"
+        AppLanguage.ENGLISH -> "Each site keeps its own login session, so duplicate URLs can hold different accounts (requires Android 13+)"
+        AppLanguage.ARABIC -> "يحتفظ كل موقع بجلسة تسجيل الدخول الخاصة به، لذا يمكن لعناوين URL المكررة استخدام حسابات مختلفة (يتطلب Android 13+)"
+        AppLanguage.PORTUGUESE -> "Cada site mantém sua própria sessão de login, então URLs duplicadas podem usar contas diferentes (requer Android 13+)"
+        AppLanguage.SPANISH -> "Cada sitio mantiene su propia sesión de inicio, por lo que las URL duplicadas pueden usar cuentas distintas (requiere Android 13+)"
+        AppLanguage.FRENCH -> "Chaque site garde sa propre session de connexion, ainsi les URL en double peuvent utiliser des comptes différents (nécessite Android 13+)"
+        AppLanguage.GERMAN -> "Jede Seite behält ihre eigene Anmeldesitzung, sodass doppelte URLs verschiedene Konten verwenden können (erfordert Android 13+)"
+        AppLanguage.RUSSIAN -> "Каждый сайт хранит собственную сессию входа, поэтому повторяющиеся URL могут использовать разные аккаунты (требуется Android 13+)"
+        AppLanguage.JAPANESE -> "各サイトが独自のログインセッションを保持するため、重複するURLで異なるアカウントにログインできます（Android 13+が必要）"
+        AppLanguage.KOREAN -> "각 사이트가 자체 로그인 세션을 유지하므로 중복 URL에서 다른 계정으로 로그인할 수 있습니다(Android 13+ 필요)"
+    }
+
     val multiWebStartTab: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "默认打开"
         AppLanguage.ENGLISH -> "Open on launch"

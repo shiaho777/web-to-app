@@ -1115,7 +1115,8 @@ data class MultiWebConfig(
     // LAST reopens the site from the last session. SITE opens startSiteId.
     // A missing key stays LAST so existing apps keep resuming.
     val startTab: String = "LAST",
-    val startSiteId: String = ""
+    val startSiteId: String = "",
+    val independentSessions: Boolean = false
 )
 
 data class MultiWebSite(

@@ -67,7 +67,8 @@ object EngineViewFactory {
          * path, which builds its NativeBridge inside the engine; the System WebView path gets
          * the same value from the host's own bridge construction sites.
          */
-        appOriginUrl: String = ""
+        appOriginUrl: String = "",
+        webProfileName: String? = null
     ): BrowserSurface {
         val engineType = resolveEngineType(engineTypeName, config, context)
         AppLogger.i(
@@ -98,6 +99,7 @@ object EngineViewFactory {
         }
 
         val webView = com.webtoapp.core.webview.WtaWebView(context).apply {
+            com.webtoapp.core.webview.SiteWebProfiles.applyTo(this, webProfileName)
             layoutParams = ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT

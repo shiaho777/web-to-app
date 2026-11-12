@@ -461,6 +461,18 @@ class ConfigRoundTripSentinelTest {
     }
 
     @Test
+    fun `multi-web independent sessions round-trips and a missing key stays shared`() {
+        val app = baseApp(AppType.MULTI_WEB).copy(
+            multiWebConfig = MultiWebConfig(independentSessions = true)
+        )
+        val shell = roundTrip(app)
+        assertThat(shell.multiWebConfig.independentSessions).isTrue()
+
+        val legacy = GsonProvider.gson.fromJson("""{"displayMode":"TABS"}""", MultiWebShellConfig::class.java)
+        assertThat(legacy.independentSessions).isFalse()
+    }
+
+    @Test
     fun `runtimePermissions are derived from backgroundRun and notification`() {
         val app = baseApp().copy(
             apkExportConfig = ApkExportConfig(
