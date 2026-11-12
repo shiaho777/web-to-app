@@ -65,6 +65,7 @@ class ThemeManager(private val context: Context) {
         private val KEY_FONT_SIZE = stringPreferencesKey("font_size")
         private val KEY_CORNER_STYLE = stringPreferencesKey("corner_style")
         private val KEY_SHOW_DESCRIPTIONS = booleanPreferencesKey("show_descriptions")
+        private val KEY_HOME_VIEW_MODE = stringPreferencesKey("home_view_mode")
 
         @Volatile
         private var instance: ThemeManager? = null
@@ -126,6 +127,11 @@ class ThemeManager(private val context: Context) {
             STANDARD -> Strings.cornerStandard
             ROUNDED -> Strings.cornerRounded
         }
+    }
+
+    enum class HomeViewMode {
+        LIST,
+        GRID
     }
 
     val themeTypeFlow: StateFlow<AppThemeType> = kotlinx.coroutines.flow.MutableStateFlow(AppThemeType.KIMI_NO_NAWA)
@@ -194,6 +200,19 @@ class ThemeManager(private val context: Context) {
         scope = scope,
         started = SharingStarted.Eagerly,
         initialValue = true
+    )
+
+    val homeViewModeFlow: StateFlow<HomeViewMode> = context.themeDataStore.data.map { prefs ->
+        val name = prefs[KEY_HOME_VIEW_MODE] ?: HomeViewMode.LIST.name
+        try {
+            HomeViewMode.valueOf(name)
+        } catch (e: Exception) {
+            HomeViewMode.LIST
+        }
+    }.stateIn(
+        scope = scope,
+        started = SharingStarted.Eagerly,
+        initialValue = HomeViewMode.LIST
     )
 
     /**
@@ -304,6 +323,12 @@ class ThemeManager(private val context: Context) {
     suspend fun setShowDescriptions(enabled: Boolean) {
         context.themeDataStore.edit { prefs ->
             prefs[KEY_SHOW_DESCRIPTIONS] = enabled
+        }
+    }
+
+    suspend fun setHomeViewMode(mode: HomeViewMode) {
+        context.themeDataStore.edit { prefs ->
+            prefs[KEY_HOME_VIEW_MODE] = mode.name
         }
     }
 
