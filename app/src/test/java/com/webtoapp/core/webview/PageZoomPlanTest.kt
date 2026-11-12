@@ -6,31 +6,17 @@ import org.junit.Test
 class PageZoomPlanTest {
 
     @Test
-    fun `zooming out scales the surface instead of the css root`() {
+    fun `zoom out activates whole-page scale`() {
         val plan = planPageZoom(pageZoomPercent = 75, initialScaleField = 0)
         assertThat(plan.zoomActive).isTrue()
         assertThat(plan.initialScalePercent).isEqualTo(75)
-        assertThat(plan.viewScale).isWithin(0.0001f).of(0.75f)
-        assertThat(plan.cssZoomActive).isFalse()
-        assertThat(pageZoomDocumentScript(75, pinchEnabled = true)).isNull()
     }
 
     @Test
-    fun `zooming out never leaves a viewport-sized box short of the window`() {
-        val plan = planPageZoom(pageZoomPercent = 90, initialScaleField = 0)
-        val layoutScale = plan.viewScale
-        val cssViewportHeight = 1000f / layoutScale
-        assertThat(cssViewportHeight * layoutScale).isWithin(0.01f).of(1000f)
-    }
-
-    @Test
-    fun `zooming in keeps css zoom so text is re-laid out`() {
+    fun `zoom in activates whole-page scale`() {
         val plan = planPageZoom(pageZoomPercent = 125, initialScaleField = 0)
         assertThat(plan.zoomActive).isTrue()
         assertThat(plan.initialScalePercent).isEqualTo(125)
-        assertThat(plan.viewScale).isWithin(0.0001f).of(1f)
-        assertThat(plan.cssZoomActive).isTrue()
-        assertThat(pageZoomDocumentScript(125, pinchEnabled = true)).isNotNull()
     }
 
     @Test
@@ -38,8 +24,6 @@ class PageZoomPlanTest {
         val plan = planPageZoom(pageZoomPercent = 100, initialScaleField = 0)
         assertThat(plan.zoomActive).isFalse()
         assertThat(plan.initialScalePercent).isEqualTo(0)
-        assertThat(plan.viewScale).isWithin(0.0001f).of(1f)
-        assertThat(plan.cssZoomActive).isFalse()
     }
 
     @Test
@@ -47,7 +31,6 @@ class PageZoomPlanTest {
         val plan = planPageZoom(pageZoomPercent = 0, initialScaleField = 0)
         assertThat(plan.zoomActive).isFalse()
         assertThat(plan.initialScalePercent).isEqualTo(0)
-        assertThat(plan.viewScale).isWithin(0.0001f).of(1f)
     }
 
     @Test
@@ -55,7 +38,6 @@ class PageZoomPlanTest {
         val plan = planPageZoom(pageZoomPercent = 75, initialScaleField = 80)
         assertThat(plan.zoomActive).isTrue()
         assertThat(plan.initialScalePercent).isEqualTo(75)
-        assertThat(plan.viewScale).isWithin(0.0001f).of(0.75f)
     }
 
     @Test
@@ -63,25 +45,32 @@ class PageZoomPlanTest {
         val plan = planPageZoom(pageZoomPercent = 100, initialScaleField = 80)
         assertThat(plan.zoomActive).isFalse()
         assertThat(plan.initialScalePercent).isEqualTo(80)
-        assertThat(plan.viewScale).isWithin(0.0001f).of(1f)
     }
 
     @Test
-    fun `document script zooms with css and does not rewrite the viewport meta`() {
-        val script = pageZoomDocumentScript(pageZoomPercent = 125, pinchEnabled = true)
+    fun `document script scales the viewport instead of the painted root`() {
+        val script = pageZoomDocumentScript(pageZoomPercent = 75, pinchEnabled = true)
         assertThat(script).isNotNull()
-        assertThat(script!!).contains("var PCT=125")
-        assertThat(script).contains("style.zoom")
+        assertThat(script!!).contains("var PCT=75")
+        assertThat(script).contains("initial-scale=")
         assertThat(script).contains("MutationObserver")
         assertThat(script).contains("window.top")
-        assertThat(script).doesNotContain("initial-scale=")
-        assertThat(script).doesNotContain("viewport")
-        assertThat(script).doesNotContain("device-width")
+        assertThat(script).contains("document.readyState==='loading'")
+        assertThat(script).doesNotContain("style.zoom")
         assertThat(script).doesNotContain("innerWidth")
-        val measured = pageZoomDocumentScript(125, pinchEnabled = false, nativeCssWidth = 800)
-        assertThat(measured).contains("var PCT=125")
-        assertThat(measured).doesNotContain("initial-scale=")
+        val measured = pageZoomDocumentScript(75, pinchEnabled = false, nativeCssWidth = 800)
+        assertThat(measured).contains("var PCT=75")
+        assertThat(measured).contains("initial-scale=")
         assertThat(pageZoomDocumentScript(pageZoomPercent = 100, pinchEnabled = true)).isNull()
         assertThat(pageZoomDocumentScript(pageZoomPercent = 0, pinchEnabled = false)).isNull()
+    }
+
+    @Test
+    fun `script patches the viewport the moment it appears during parsing`() {
+        val script = pageZoomDocumentScript(pageZoomPercent = 70, pinchEnabled = true)!!
+        assertThat(script).contains("document.documentElement||document")
+        assertThat(script).contains("childList:true,subtree:true")
+        assertThat(script).contains("maximum-scale=")
+        assertThat(script).contains("minimum-scale=")
     }
 }
