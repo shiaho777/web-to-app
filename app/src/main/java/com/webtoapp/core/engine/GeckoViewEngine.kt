@@ -2084,13 +2084,6 @@ class GeckoViewEngine(
         else -> error.message ?: "net::ERR_FAILED"
     }
 
-    /**
-     * GeckoView has no `setInitialScale`. The same CSS-zoom script the system
-     * WebView runs at document-start is applied once the page has stopped, so
-     * a non-100 `pageZoomPercent` is not a WebView-only feature (#1264, #1317).
-     * `evaluateJavascript` loads a `javascript:` URI; skip those URLs so the
-     * injection cannot schedule itself again.
-     */
     private fun injectBackgroundMediaScript(url: String?) {
         val cfg = lastConfig ?: return
         if (!cfg.backgroundMediaPlayback || !cfg.javaScriptEnabled) return
@@ -2103,15 +2096,7 @@ class GeckoViewEngine(
     private fun injectPageZoomIfNeeded(url: String?) {
         val cfg = lastConfig ?: return
         if (!cfg.javaScriptEnabled) return
-        val cssWidth = geckoView?.let { view ->
-            val density = view.resources.displayMetrics.density
-            if (view.width > 0 && density > 0f) (view.width / density).roundToInt() else 0
-        } ?: 0
-        val script = com.webtoapp.core.webview.pageZoomDocumentScript(
-            cfg.pageZoomPercent,
-            cfg.zoomEnabled,
-            cssWidth
-        ) ?: return
+        val script = com.webtoapp.core.webview.pageZoomDocumentScript(cfg.pageZoomPercent) ?: return
         if (url.isNullOrBlank() || url.startsWith("javascript:") || url.startsWith("about:")) return
         if (pageZoomInjectedUrl == url) return
         pageZoomInjectedUrl = url
@@ -2121,9 +2106,6 @@ class GeckoViewEngine(
     private fun setupProgressDelegate(session: GeckoSession, callback: BrowserEngineCallback) {
         session.progressDelegate = object : GeckoSession.ProgressDelegate {
             override fun onPageStart(session: GeckoSession, url: String) {
-                // A new document dropped the previous zoom script. Clear the
-                // guard so onPageStop installs it again. javascript: evals
-                // that also land here are ignored by [injectPageZoomIfNeeded].
                 if (!url.startsWith("javascript:")) {
                     pageZoomInjectedUrl = null
                     backgroundMediaInjectedUrl = null

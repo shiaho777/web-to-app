@@ -1658,9 +1658,6 @@ class WebViewManager(
                 displayZoomControls = false
 
                 useWideViewPort = true
-                // Overview fit recomputes scale from the page width and undoes an
-                // explicit page zoom. Default path (zoom 100) keeps the historical
-                // behavior. Viewport-mode branches below must not turn it back on.
                 loadWithOverviewMode = if (zoomPlan.zoomActive) {
                     false
                 } else {
@@ -1668,8 +1665,6 @@ class WebViewManager(
                 }
 
                 if (zoomPlan.zoomActive) {
-                    // Page zoom owns the viewport. FIT_SCREEN / DESKTOP / CUSTOM
-                    // would force overview and a scale of 1.
                     AppLogger.d("WebViewManager", "Page zoom active: viewport modes deferred (${config.pageZoomPercent}%)")
                 } else if (config.viewportMode == com.webtoapp.data.model.ViewportMode.FIT_SCREEN) {
                     useWideViewPort = true
@@ -1824,13 +1819,6 @@ class WebViewManager(
 
             com.webtoapp.core.perf.NativePerfEngine.optimizeWebViewSettings(this)
 
-            // Per-app page zoom (#654, #1264). setInitialScale is ignored once a
-            // viewport meta exists (useWideViewPort), which is every modern
-            // dashboard — the previous mechanism looked identical to 100%.
-            // The document-start script below owns the scale. textZoom stays at
-            // 100 so glyphs are not scaled twice. A pooled WebView must not keep
-            // a stale initial scale, so clear it. JS-disabled pages have no
-            // script and fall back to setInitialScale.
             if (zoomPlan.zoomActive) {
                 settings.textZoom = 100
                 settings.loadWithOverviewMode = false
@@ -2623,12 +2611,8 @@ class WebViewManager(
                     startBatch.append("try{").append(WasmStreamCompat.SCRIPT).append("}catch(e){};\n")
                 }
 
-                val pageZoomJs = view?.let { pageZoomScriptFor(it, config) }
+                val pageZoomJs = pageZoomScriptFor(config)
                 if (pageZoomJs != null) {
-                    // Fallback when document-start is unavailable, and a second
-                    // chance once the view has a size. The WebView's CSS width
-                    // wins over the screen.width guess from document-start.
-                    // FIT_SCREEN / CUSTOM force initial-scale=1 and would undo it.
                     startBatch.append("try{").append(pageZoomJs).append("}catch(e){};\n")
                 } else if (config.viewportMode == com.webtoapp.data.model.ViewportMode.FIT_SCREEN) {
                     startBatch.append("try{").append(VIEWPORT_FIT_SCREEN_JS).append("}catch(e){};\n")
@@ -2703,7 +2687,7 @@ class WebViewManager(
 
                 view?.let { injectScripts(it, config.injectScripts, ScriptRunTime.DOCUMENT_END, url) }
 
-                val pageZoomJs = view?.let { pageZoomScriptFor(it, config) }
+                val pageZoomJs = pageZoomScriptFor(config)
                 if (pageZoomJs != null) {
                     view?.evaluateJavascript(pageZoomJs, null)
                 } else if (config.viewportMode == com.webtoapp.data.model.ViewportMode.FIT_SCREEN) {
@@ -4525,18 +4509,8 @@ class WebViewManager(
         }
     }
 
-    private fun webViewCssWidth(webView: WebView): Int {
-        val density = webView.resources.displayMetrics.density
-        if (webView.width <= 0 || density <= 0f) return 0
-        return (webView.width / density).roundToInt()
-    }
-
-    private fun pageZoomScriptFor(webView: WebView, config: WebViewConfig): String? {
-        return pageZoomDocumentScript(
-            config.pageZoomPercent,
-            config.zoomEnabled,
-            webViewCssWidth(webView)
-        )
+    private fun pageZoomScriptFor(config: WebViewConfig): String? {
+        return pageZoomDocumentScript(config.pageZoomPercent)
     }
 
     /**
@@ -4583,22 +4557,11 @@ class WebViewManager(
         }
     }
 
-    /**
-     * Page zoom is CSS `zoom` on the root, installed before page scripts.
-     * Rewriting the viewport meta reloaded pages such as OpenChamber (#1317).
-     * [android.webkit.WebView.setInitialScale] loses to that meta (#1264).
-     * Re-installs on every configure so a pooled WebView does not keep the
-     * previous app's percent. Default zoom (100) removes a stale handler.
-     */
     private fun installPageZoomDocumentStart(webView: WebView, config: WebViewConfig) {
         pageZoomScriptHandlers.remove(webView)?.let { handler ->
             runCatching { handler.remove() }
         }
-        val script = pageZoomDocumentScript(
-            config.pageZoomPercent,
-            config.zoomEnabled,
-            webViewCssWidth(webView)
-        ) ?: return
+        val script = pageZoomDocumentScript(config.pageZoomPercent) ?: return
         if (!config.javaScriptEnabled) return
         if (!WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
             AppLogger.d("WebViewManager", "Document-start unsupported; page zoom will use onPageStarted")
