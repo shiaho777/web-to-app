@@ -117,7 +117,6 @@ import com.webtoapp.data.home.AppListSort
 import com.webtoapp.data.home.HomeDragSlot
 import com.webtoapp.data.home.stepCustomDrag
 import com.webtoapp.ui.design.WtaBadge
-import com.webtoapp.ui.design.WtaInfoChip
 import com.webtoapp.ui.theme.LocalShowDescriptions
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, ExperimentalMaterial3ExpressiveApi::class)
@@ -1870,22 +1869,6 @@ fun EmptyState(
             color = colors.onSurface,
             textAlign = TextAlign.Center
         )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = Strings.emptyStateHint,
-            style = MaterialTheme.typography.bodyMedium,
-            color = colors.onSurfaceVariant,
-            textAlign = TextAlign.Center
-        )
-        Spacer(modifier = Modifier.height(20.dp))
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            WtaInfoChip(label = Strings.appTypeWeb, icon = Icons.Outlined.Language)
-            WtaInfoChip(label = Strings.appTypeHtml, icon = Icons.Outlined.Code)
-            WtaInfoChip(label = Strings.appTypeNodeJs, icon = Icons.Outlined.Terminal)
-        }
     }
 }
 

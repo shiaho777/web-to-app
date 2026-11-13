@@ -759,7 +759,6 @@ object Strings {
     val enabled: String get() = StringsA.enabled
     val enable: String get() = StringsA.enable
     val disable: String get() = StringsA.disable
-    val emptyStateHint: String get() = StringsA.emptyStateHint
     val appIconModifier: String get() = StringsA.appIconModifier
     val searchApps: String get() = StringsA.searchApps
     val userApps: String get() = StringsA.userApps
