@@ -49,7 +49,6 @@ import androidx.compose.material.icons.outlined.Sync
 import androidx.compose.material.icons.outlined.SyncDisabled
 import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -96,6 +95,7 @@ import com.webtoapp.ui.design.WtaCardTone
 import com.webtoapp.ui.design.WtaChip
 import com.webtoapp.ui.design.WtaColors
 import com.webtoapp.ui.design.WtaFullEmptyState
+import com.webtoapp.ui.design.WtaLoadingIndicator
 import com.webtoapp.ui.design.WtaScreen
 import com.webtoapp.ui.design.WtaTab
 import com.webtoapp.ui.design.WtaTabRow
@@ -270,7 +270,7 @@ fun PortManagerScreen(onBack: () -> Unit) {
                 enabled = !isScanning && !isScanningWtaApps
             ) {
                 if (isScanning || isScanningWtaApps) {
-                    CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                    WtaLoadingIndicator(size = 20.dp)
                 } else {
                     Icon(Icons.Outlined.Refresh, contentDescription = Strings.refresh)
                 }
@@ -854,7 +854,7 @@ private fun AllAppsTabContent(
     when {
         reports.isEmpty() && isScanning -> {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
+                WtaLoadingIndicator()
             }
         }
         reports.isEmpty() -> {

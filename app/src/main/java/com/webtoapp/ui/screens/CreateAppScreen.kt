@@ -50,6 +50,7 @@ import com.webtoapp.data.model.*
 import com.webtoapp.ui.components.ActivationCodeCard
 import com.webtoapp.ui.components.AppNameTextField
 import com.webtoapp.ui.design.WtaBackground
+import com.webtoapp.ui.design.WtaLoadingIndicator
 import com.webtoapp.ui.components.AutoStartCard
 import com.webtoapp.ui.components.BgmCard
 import com.webtoapp.ui.components.*
@@ -682,10 +683,7 @@ private fun CreateAppBottomBar(
                 modifier = Modifier.weight(1f)
             ) {
                 if (isPreviewSaving) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(18.dp),
-                        strokeWidth = 2.dp
-                    )
+                    WtaLoadingIndicator(size = 18.dp)
                 } else {
                     Icon(Icons.Filled.PlayArrow, contentDescription = null)
                 }
@@ -699,10 +697,7 @@ private fun CreateAppBottomBar(
                 modifier = Modifier.weight(1f)
             ) {
                 if (isSaving) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(18.dp),
-                        strokeWidth = 2.dp
-                    )
+                    WtaLoadingIndicator(size = 18.dp)
                 } else {
                     Icon(Icons.Outlined.Save, contentDescription = null)
                 }
@@ -1039,10 +1034,7 @@ fun PwaAnalysisSection(
             shape = RoundedCornerShape(WtaRadius.Button)
         ) {
             if (isAnalyzing) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(18.dp),
-                    strokeWidth = 2.dp
-                )
+                WtaLoadingIndicator(size = 18.dp)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(Strings.pwaAnalyzing)
             } else {

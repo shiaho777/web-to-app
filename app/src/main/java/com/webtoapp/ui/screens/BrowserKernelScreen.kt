@@ -38,6 +38,7 @@ import com.webtoapp.ui.design.WtaBadge
 import com.webtoapp.ui.design.WtaCard
 import com.webtoapp.ui.design.WtaCardTone
 import com.webtoapp.ui.design.WtaEmptyState
+import com.webtoapp.ui.design.WtaLoadingIndicator
 import com.webtoapp.ui.design.WtaRadius
 import com.webtoapp.ui.design.WtaScreen
 import com.webtoapp.ui.design.WtaSection
@@ -251,10 +252,7 @@ private fun CurrentWebViewCard(
                 InfoRow(Strings.webViewVersion, webViewInfo.version)
                 InfoRow(Strings.webViewPackage, webViewInfo.packageName)
             } else {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(24.dp),
-                    strokeWidth = 2.dp
-                )
+                WtaLoadingIndicator(size = 24.dp)
             }
 
             if (webViewInfo != null) {

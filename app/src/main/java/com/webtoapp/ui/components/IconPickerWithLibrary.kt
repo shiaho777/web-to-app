@@ -24,6 +24,7 @@ import coil.request.ImageRequest
 import com.webtoapp.core.apkbuilder.ApkTemplate
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.ui.design.WtaChip
+import com.webtoapp.ui.design.WtaLoadingIndicator
 import com.webtoapp.ui.theme.ifDescriptionsShown
 import com.webtoapp.util.FaviconFetcher
 import kotlinx.coroutines.launch
@@ -170,10 +171,7 @@ fun IconPickerWithLibrary(
                         modifier = Modifier.height(32.dp)
                     ) {
                         if (isFetchingFavicon) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(14.dp),
-                                strokeWidth = 2.dp
-                            )
+                            WtaLoadingIndicator(size = 14.dp)
                         } else {
                             Icon(
                                 Icons.Outlined.Language,

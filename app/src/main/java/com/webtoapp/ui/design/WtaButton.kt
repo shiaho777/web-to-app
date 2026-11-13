@@ -6,9 +6,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ButtonShapes
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -35,7 +36,7 @@ fun WtaButton(
     leadingIcon: ImageVector? = null,
     trailingIcon: ImageVector? = null,
     contentPadding: PaddingValues? = null,
-    shape: Shape = RoundedCornerShape(WtaRadius.Button)
+    shape: Shape? = null
 ) {
     WtaButton(
         onClick = onClick,
@@ -58,6 +59,7 @@ fun WtaButton(
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun WtaButton(
     onClick: () -> Unit,
@@ -66,7 +68,7 @@ fun WtaButton(
     size: WtaButtonSize = WtaButtonSize.Medium,
     enabled: Boolean = true,
     contentPadding: PaddingValues? = null,
-    shape: Shape = RoundedCornerShape(WtaRadius.Button),
+    shape: Shape? = null,
     content: @Composable RowScope.() -> Unit
 ) {
     val hapticClick = rememberHapticClick(onClick)
@@ -82,45 +84,46 @@ fun WtaButton(
     }
     val btnModifier = modifier.heightIn(min = heightMin)
     val colors = MaterialTheme.colorScheme
+    val buttonShapes = if (shape != null) ButtonShapes(shape, shape) else ButtonDefaults.shapes()
 
     when (variant) {
         WtaButtonVariant.Primary -> Button(
             onClick = hapticClick,
+            shapes = buttonShapes,
             modifier = btnModifier,
             enabled = enabled,
-            shape = shape,
             contentPadding = padding,
             content = content
         )
         WtaButtonVariant.Tonal -> FilledTonalButton(
             onClick = hapticClick,
+            shapes = buttonShapes,
             modifier = btnModifier,
             enabled = enabled,
-            shape = shape,
             contentPadding = padding,
             content = content
         )
         WtaButtonVariant.Outlined -> OutlinedButton(
             onClick = hapticClick,
+            shapes = buttonShapes,
             modifier = btnModifier,
             enabled = enabled,
-            shape = shape,
             contentPadding = padding,
             content = content
         )
         WtaButtonVariant.Text -> TextButton(
             onClick = hapticClick,
+            shapes = buttonShapes,
             modifier = btnModifier,
             enabled = enabled,
-            shape = shape,
             contentPadding = padding,
             content = content
         )
         WtaButtonVariant.Destructive -> Button(
             onClick = hapticClick,
+            shapes = buttonShapes,
             modifier = btnModifier,
             enabled = enabled,
-            shape = shape,
             contentPadding = padding,
             colors = ButtonDefaults.buttonColors(
                 containerColor = colors.error,

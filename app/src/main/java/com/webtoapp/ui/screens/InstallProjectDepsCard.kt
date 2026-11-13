@@ -32,6 +32,7 @@ import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.linux.LinuxEnvironmentManager
 import com.webtoapp.core.linux.LocalBuildEnvironment
 import com.webtoapp.ui.components.PremiumButton
+import com.webtoapp.ui.design.WtaLoadingIndicator
 import com.webtoapp.ui.theme.LocalAppTheme
 import com.webtoapp.ui.theme.LocalShowDescriptions
 import kotlinx.coroutines.launch
@@ -186,11 +187,7 @@ fun InstallProjectDepsCard(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 if (installing) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(16.dp),
-                        strokeWidth = 2.dp,
-                        color = MaterialTheme.colorScheme.onPrimary,
-                    )
+                    WtaLoadingIndicator(size = 16.dp, color = MaterialTheme.colorScheme.onPrimary)
                     Spacer(modifier = Modifier.width(8.dp))
                 }
                 Text(buttonLabel)

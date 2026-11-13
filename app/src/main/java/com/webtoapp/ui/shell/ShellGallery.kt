@@ -38,6 +38,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.ui.design.WtaLoadingIndicator
 import com.webtoapp.ui.shared.AspectRatioSurface
 import com.webtoapp.ui.shared.ZoomableState
 import com.webtoapp.ui.shared.zoomable
@@ -493,7 +494,7 @@ fun ShellGalleryImageViewer(
         contentAlignment = Alignment.Center
     ) {
         if (isLoading) {
-            CircularProgressIndicator(color = Color.White)
+            WtaLoadingIndicator(color = Color.White)
         } else {
             bitmap?.let { bmp ->
                 BoxWithConstraints(

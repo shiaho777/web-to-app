@@ -1,6 +1,5 @@
 package com.webtoapp.ui.design
 
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -11,20 +10,15 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.AlertDialogDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -43,26 +37,12 @@ fun WtaAlertDialog(
     content: (@Composable ColumnScope.() -> Unit)? = null,
     properties: DialogProperties = DialogProperties(),
 ) {
-    var appeared by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) { appeared = true }
-
-    val scale by animateFloatAsState(
-        targetValue = if (appeared) 1f else 0.96f,
-        animationSpec = WtaMotion.settleSpring(),
-        label = "wtaDialogScale"
-    )
-
     val resolvedIconTint = iconTint ?: MaterialTheme.colorScheme.primary
 
     AlertDialog(
         onDismissRequest = onDismissRequest,
         confirmButton = confirmButton,
-        modifier = modifier
-            .widthIn(max = 400.dp)
-            .graphicsLayer {
-                scaleX = scale
-                scaleY = scale
-            },
+        modifier = modifier.widthIn(max = 400.dp),
         dismissButton = dismissButton,
         icon = icon?.let { iconVector ->
             {
@@ -113,7 +93,7 @@ fun WtaAlertDialog(
             }
             else -> null
         },
-        shape = RoundedCornerShape(WtaRadius.Dialog),
+        shape = AlertDialogDefaults.shape,
         containerColor = MaterialTheme.colorScheme.surface,
         iconContentColor = resolvedIconTint,
         titleContentColor = MaterialTheme.colorScheme.onSurface,

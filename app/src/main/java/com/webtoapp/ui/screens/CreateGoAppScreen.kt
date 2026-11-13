@@ -33,6 +33,7 @@ import com.webtoapp.data.model.GoAppConfig
 import com.webtoapp.ui.components.TypedSampleProjectsCard
 import com.webtoapp.ui.components.*
 import com.webtoapp.ui.design.WtaChip
+import com.webtoapp.ui.design.WtaLoadingIndicator
 import com.webtoapp.ui.design.WtaSpacing
 import com.webtoapp.ui.screens.create.WtaCreateFlowScaffold
 import com.webtoapp.ui.screens.create.WtaCreateFlowSection
@@ -1008,11 +1009,7 @@ private fun GoBuildInAppCard(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     if (building) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(16.dp),
-                            strokeWidth = 2.dp,
-                            color = MaterialTheme.colorScheme.onPrimary
-                        )
+                        WtaLoadingIndicator(size = 16.dp, color = MaterialTheme.colorScheme.onPrimary)
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(Strings.goBuildInProgress)
                     } else {

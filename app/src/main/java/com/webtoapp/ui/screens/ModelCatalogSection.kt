@@ -22,7 +22,6 @@ import androidx.compose.material.icons.outlined.Clear
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -55,6 +54,7 @@ import com.webtoapp.data.model.SavedModel
 import com.webtoapp.ui.design.WtaAlertDialog
 import com.webtoapp.ui.design.WtaCard
 import com.webtoapp.ui.design.WtaChip
+import com.webtoapp.ui.design.WtaLoadingIndicator
 import com.webtoapp.ui.design.WtaSpacing
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -196,7 +196,7 @@ fun ModelCatalogSection(
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    CircularProgressIndicator()
+                    WtaLoadingIndicator()
                     Spacer(Modifier.padding(top = WtaSpacing.Medium))
                     Text(Strings.aiCatalogLoading, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }

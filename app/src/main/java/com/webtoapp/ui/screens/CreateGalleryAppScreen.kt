@@ -48,6 +48,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.io.File
 import com.webtoapp.ui.design.WtaBackground
+import com.webtoapp.ui.design.WtaLoadingIndicator
 import com.webtoapp.ui.components.EnhancedElevatedCard
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -534,7 +535,7 @@ private fun MediaManagementTab(
                             .height(200.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        CircularProgressIndicator()
+                        WtaLoadingIndicator()
                     }
                 } else if (items.isEmpty()) {
 
@@ -1701,7 +1702,7 @@ fun CreateGalleryAppScreenV2(
             WtaCreateFlowSection(title = Strings.preview, modifier = Modifier.weight(1f)) {
             Box(modifier = Modifier.weight(weight = 1f, fill = true)) {
                 if (isLoadingMedia) {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { WtaLoadingIndicator() }
                 } else if (galleryItems.isEmpty()) {
                     EmptyGalleryState(onAddMedia = { mediaPickerLauncher.launch(arrayOf("image/*", "video/*")) })
                 } else {

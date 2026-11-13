@@ -39,6 +39,7 @@ import com.webtoapp.core.i18n.Strings
 import com.webtoapp.ui.theme.LocalShowDescriptions
 import com.webtoapp.core.linux.*
 import com.webtoapp.ui.components.*
+import com.webtoapp.ui.design.WtaLoadingIndicator
 import com.webtoapp.ui.design.WtaStatusBanner
 import com.webtoapp.ui.design.WtaStatusTone
 import com.webtoapp.ui.screens.create.WtaCreateFlowScaffold
@@ -305,10 +306,7 @@ fun CreateFrontendAppScreen(
                                 enabled = !zipImporting
                             ) {
                                 if (zipImporting) {
-                                    CircularProgressIndicator(
-                                        modifier = Modifier.size(18.dp),
-                                        strokeWidth = 2.dp
-                                    )
+                                    WtaLoadingIndicator(size = 18.dp)
                                 } else {
                                     Icon(Icons.Outlined.FolderZip, null)
                                 }
@@ -391,10 +389,7 @@ fun CreateFrontendAppScreen(
                                 brandColor = MaterialTheme.colorScheme.onSurface
                             ) {
                                 if (isDetecting) {
-                                    CircularProgressIndicator(
-                                        modifier = Modifier.size(16.dp),
-                                        strokeWidth = 2.dp
-                                    )
+                                    WtaLoadingIndicator(size = 16.dp)
                                 }
                             }
 
@@ -813,15 +808,12 @@ private fun BuildStatusCard(
             ) {
                 when (state) {
                     is BuildState.Scanning -> {
-                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                        WtaLoadingIndicator(size = 24.dp)
                         Spacer(modifier = Modifier.width(12.dp))
                         Text(Strings.scanningProject)
                     }
                     is BuildState.Importing -> {
-                        CircularProgressIndicator(
-                            progress = { state.progress },
-                            modifier = Modifier.size(24.dp)
-                        )
+                        WtaLoadingIndicator(size = 24.dp, progress = { state.progress })
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
                             Text(Strings.importing)
@@ -833,15 +825,12 @@ private fun BuildStatusCard(
                         }
                     }
                     is BuildState.CheckingEnvironment -> {
-                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                        WtaLoadingIndicator(size = 24.dp)
                         Spacer(modifier = Modifier.width(12.dp))
                         Text(Strings.checkingEnv)
                     }
                     is BuildState.CopyingProject -> {
-                        CircularProgressIndicator(
-                            progress = { state.progress },
-                            modifier = Modifier.size(24.dp)
-                        )
+                        WtaLoadingIndicator(size = 24.dp, progress = { state.progress })
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
                             Text(Strings.copyingProjectFiles)
@@ -853,10 +842,7 @@ private fun BuildStatusCard(
                         }
                     }
                     is BuildState.InstallingDependencies -> {
-                        CircularProgressIndicator(
-                            progress = { state.progress },
-                            modifier = Modifier.size(24.dp)
-                        )
+                        WtaLoadingIndicator(size = 24.dp, progress = { state.progress })
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
                             Text(Strings.installingDeps)
@@ -872,10 +858,7 @@ private fun BuildStatusCard(
                         }
                     }
                     is BuildState.BuildingProject -> {
-                        CircularProgressIndicator(
-                            progress = { state.progress },
-                            modifier = Modifier.size(24.dp)
-                        )
+                        WtaLoadingIndicator(size = 24.dp, progress = { state.progress })
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
                             Text(Strings.building)
@@ -887,7 +870,7 @@ private fun BuildStatusCard(
                         }
                     }
                     is BuildState.ProcessingOutput -> {
-                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                        WtaLoadingIndicator(size = 24.dp)
                         Spacer(modifier = Modifier.width(12.dp))
                         Text(Strings.processingOutput)
                     }
@@ -1357,16 +1340,9 @@ private fun GitHubStatusRow(
         verticalAlignment = Alignment.CenterVertically
     ) {
         if (indeterminate) {
-            CircularProgressIndicator(
-                modifier = Modifier.size(16.dp),
-                strokeWidth = 2.dp
-            )
+            WtaLoadingIndicator(size = 16.dp)
         } else {
-            CircularProgressIndicator(
-                progress = { progress },
-                modifier = Modifier.size(16.dp),
-                strokeWidth = 2.dp
-            )
+            WtaLoadingIndicator(size = 16.dp, progress = { progress })
         }
         Spacer(modifier = Modifier.width(8.dp))
         Text(text, style = MaterialTheme.typography.bodySmall)

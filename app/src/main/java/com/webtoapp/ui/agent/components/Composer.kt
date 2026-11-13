@@ -69,6 +69,7 @@ import com.webtoapp.ui.design.WtaAlpha
 import com.webtoapp.ui.design.WtaCard
 import com.webtoapp.ui.design.WtaCardTone
 import com.webtoapp.ui.design.WtaIconButton
+import com.webtoapp.ui.design.WtaLoadingIndicator
 import com.webtoapp.ui.design.WtaRadius
 import com.webtoapp.ui.design.WtaSettingRow
 import com.webtoapp.ui.design.WtaSize
@@ -740,10 +741,7 @@ private fun ContextChip(
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             if (compacting) {
-                androidx.compose.material3.CircularProgressIndicator(
-                    modifier = Modifier.size(12.dp),
-                    strokeWidth = 1.5.dp
-                )
+                WtaLoadingIndicator(size = 12.dp)
             } else {
                 Icon(
                     imageVector = if (warning) Icons.Outlined.Warning else Icons.Outlined.DataUsage,

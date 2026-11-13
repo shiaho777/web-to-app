@@ -57,7 +57,6 @@ import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material.icons.outlined.Subtitles
 import androidx.compose.material.icons.outlined.Sync
 import androidx.compose.material.icons.outlined.Tag
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -97,6 +96,7 @@ import com.webtoapp.core.i18n.Strings
 import com.webtoapp.ui.webview.WebViewDocumentActivity
 import com.webtoapp.ui.design.WtaCard
 import com.webtoapp.ui.design.WtaCardTone
+import com.webtoapp.ui.design.WtaLoadingIndicator
 import com.webtoapp.ui.design.WtaSettingRow
 import com.webtoapp.ui.design.WtaSwitch
 import com.webtoapp.ui.design.WtaRadius
@@ -984,10 +984,7 @@ private fun UpdateCheckDialog(
                 when {
                     isChecking || result == null -> {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            androidx.compose.material3.CircularProgressIndicator(
-                                modifier = Modifier.size(18.dp),
-                                strokeWidth = 2.dp
-                            )
+                            WtaLoadingIndicator(size = 18.dp)
                             Spacer(Modifier.width(12.dp))
                             Text(Strings.updateChecking, style = MaterialTheme.typography.bodyMedium)
                         }
@@ -1107,10 +1104,7 @@ private fun UpdateAvailableContent(
         }
         com.webtoapp.core.update.UpdateDownloadState.Verifying -> {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                androidx.compose.material3.CircularProgressIndicator(
-                    modifier = Modifier.size(16.dp),
-                    strokeWidth = 2.dp
-                )
+                WtaLoadingIndicator(size = 16.dp)
                 Spacer(Modifier.width(10.dp))
                 Text(Strings.updateVerifying, style = MaterialTheme.typography.bodyMedium)
             }
@@ -1199,7 +1193,7 @@ private fun VersionHistorySheet(
                         contentAlignment = Alignment.Center
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            CircularProgressIndicator(modifier = Modifier.size(28.dp), strokeWidth = 2.dp)
+                            WtaLoadingIndicator(size = 28.dp)
                             Spacer(Modifier.height(12.dp))
                             Text(
                                 Strings.versionHistoryLoading,
@@ -1414,7 +1408,7 @@ private fun VersionHistoryDownloadRow(
         }
         com.webtoapp.core.update.UpdateDownloadState.Verifying -> {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                WtaLoadingIndicator(size = 16.dp)
                 Spacer(Modifier.width(10.dp))
                 Text(Strings.updateVerifying, style = MaterialTheme.typography.bodyMedium)
             }
@@ -1804,11 +1798,7 @@ private fun OtherProjectsSection(
                 contentAlignment = Alignment.Center
             ) {
                 if (refreshing) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(14.dp),
-                        strokeWidth = 2.dp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    WtaLoadingIndicator(size = 14.dp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 } else {
                     Icon(
                         Icons.Outlined.RestartAlt,

@@ -60,7 +60,6 @@ import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.RadioButtonUnchecked
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Search
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -98,6 +97,7 @@ import com.webtoapp.ui.design.WtaCardTone
 import com.webtoapp.ui.design.WtaColors
 import com.webtoapp.ui.design.WtaIconButton
 import com.webtoapp.ui.design.WtaInfoChip
+import com.webtoapp.ui.design.WtaLoadingIndicator
 import com.webtoapp.ui.design.WtaSize
 import com.webtoapp.ui.design.WtaSpacing
 import com.webtoapp.ui.theme.AppColors
@@ -381,9 +381,8 @@ fun ThinkingBlock(
                 modifier = Modifier.weight(1f)
             )
             if (isLive) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(10.dp),
-                    strokeWidth = 1.2.dp,
+                WtaLoadingIndicator(
+                    size = 10.dp,
                     color = MaterialTheme.colorScheme.primary
                 )
                 Spacer(Modifier.width(WtaSpacing.Tiny + 2.dp))
@@ -800,9 +799,8 @@ fun ToolCallCard(tc: RecordedToolCall, live: Boolean) {
                         Spacer(Modifier.width(WtaSpacing.Tiny + 2.dp))
                     }
                     if (running) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(12.dp),
-                            strokeWidth = 1.5.dp,
+                        WtaLoadingIndicator(
+                            size = 12.dp,
                             color = MaterialTheme.colorScheme.primary
                         )
                         Spacer(Modifier.width(WtaSpacing.Tiny + 2.dp))
@@ -1213,9 +1211,9 @@ private fun ToolMonoBlock(text: String, spinner: Boolean = false, truncated: Boo
     ) {
         Row(modifier = Modifier.padding(horizontal = WtaSpacing.Small + 2.dp, vertical = WtaSpacing.Small)) {
             if (spinner) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(10.dp).padding(top = 4.dp),
-                    strokeWidth = 1.2.dp,
+                WtaLoadingIndicator(
+                    modifier = Modifier.padding(top = 4.dp),
+                    size = 10.dp,
                     color = AppColors.CodeGutter
                 )
                 Spacer(Modifier.width(WtaSpacing.Small))

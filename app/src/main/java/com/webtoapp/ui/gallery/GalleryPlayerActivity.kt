@@ -8,7 +8,9 @@ import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MotionScheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.LaunchedEffect
@@ -52,6 +54,7 @@ class GalleryPlayerActivity : ComponentActivity() {
     private var positionKey: String? = null
     private var startInOverview: Boolean = true
 
+    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         HostPreviewMotion.install(this)
@@ -98,7 +101,8 @@ class GalleryPlayerActivity : ComponentActivity() {
         setContent {
             val isDark = isSystemInDarkTheme()
             MaterialTheme(
-                colorScheme = if (isDark) darkColorScheme() else lightColorScheme()
+                colorScheme = if (isDark) darkColorScheme() else lightColorScheme(),
+                motionScheme = MotionScheme.expressive()
             ) {
                 LaunchedEffect(Unit) {
                     hideSystemBars()

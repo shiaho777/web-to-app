@@ -26,7 +26,6 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.outlined.Code
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -54,6 +53,7 @@ import com.webtoapp.ui.design.WtaButtonVariant
 import com.webtoapp.ui.design.WtaCard
 import com.webtoapp.ui.design.WtaCardTone
 import com.webtoapp.ui.design.WtaChip
+import com.webtoapp.ui.design.WtaLoadingIndicator
 import com.webtoapp.ui.design.WtaRadius
 import com.webtoapp.ui.design.WtaSpacing
 
@@ -84,7 +84,7 @@ fun GreasyForkSearchContent(
             contentAlignment = Alignment.Center
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                CircularProgressIndicator()
+                WtaLoadingIndicator()
                 Spacer(Modifier.height(12.dp))
                 Text(
                     text = Strings.gfSearching,
@@ -175,7 +175,7 @@ fun GreasyForkSearchContent(
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                    WtaLoadingIndicator(size = 16.dp)
                     Spacer(Modifier.width(8.dp))
                     Text(
                         Strings.gfSearching,
@@ -310,10 +310,7 @@ private fun GfResultCard(
         Spacer(Modifier.height(12.dp))
         if (isInstalling && installProgress != null) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(16.dp),
-                    strokeWidth = 2.dp
-                )
+                WtaLoadingIndicator(size = 16.dp)
                 Spacer(Modifier.width(8.dp))
                 Text(
                     installProgress.label,

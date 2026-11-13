@@ -28,6 +28,7 @@ import com.webtoapp.core.activation.ActivationResult
 import com.webtoapp.core.activation.ActivationCodeType
 import com.webtoapp.core.activation.ActivationStatus
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.ui.design.WtaLoadingIndicator
 import com.webtoapp.util.threadLocalCompat
 import java.text.SimpleDateFormat
 import java.util.*
@@ -130,10 +131,9 @@ fun EnhancedActivationDialog(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     if (isLoading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(18.dp),
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            strokeWidth = 2.dp
+                        WtaLoadingIndicator(
+                            size = 18.dp,
+                            color = MaterialTheme.colorScheme.onPrimary
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                     }
@@ -230,10 +230,9 @@ private fun ActivationDialogHeader(
             contentAlignment = Alignment.Center
         ) {
             if (isLoading) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(40.dp),
-                    color = iconBgColor,
-                    strokeWidth = 3.dp
+                WtaLoadingIndicator(
+                    size = 40.dp,
+                    color = iconBgColor
                 )
             } else {
                 Icon(

@@ -36,7 +36,6 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material.icons.outlined.Block
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -88,6 +87,7 @@ import com.webtoapp.ui.design.WtaButtonVariant
 import com.webtoapp.ui.design.WtaCard
 import com.webtoapp.ui.design.WtaCardTone
 import com.webtoapp.ui.design.WtaChip
+import com.webtoapp.ui.design.WtaLoadingIndicator
 import com.webtoapp.ui.design.WtaRadius
 import com.webtoapp.ui.design.WtaSpacing
 import com.webtoapp.ui.design.WtaTab
@@ -578,7 +578,7 @@ private fun CwsSearchContent(
             contentAlignment = Alignment.Center
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                CircularProgressIndicator()
+                WtaLoadingIndicator()
                 Spacer(Modifier.height(12.dp))
                 Text(
                     text = Strings.cwsSearching,
@@ -899,10 +899,7 @@ private fun InstallActionRow(
     if (isInstalling && installProgress != null) {
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(16.dp),
-                    strokeWidth = 2.dp
-                )
+                WtaLoadingIndicator(size = 16.dp)
                 Spacer(Modifier.width(8.dp))
                 Text(
                     installProgress.label,
@@ -986,7 +983,7 @@ private fun InstallButton(
     if (isInstalling) {
         Column {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                WtaLoadingIndicator(size = 18.dp)
                 Spacer(Modifier.width(8.dp))
                 Text(
                     installProgress?.label ?: Strings.moduleMarketInstalling,
@@ -1039,7 +1036,7 @@ private fun InstallButton(
 private fun LoadingPlaceholder() {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            CircularProgressIndicator()
+            WtaLoadingIndicator()
             Spacer(Modifier.height(12.dp))
             Text(
                 Strings.moduleMarketLoading,
