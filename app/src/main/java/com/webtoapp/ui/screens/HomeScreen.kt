@@ -229,35 +229,15 @@ fun HomeScreen(
         title = Strings.myApps,
         snackbarHostState = snackbarHostState,
         floatingActionButton = {
-            val fabRotation by animateFloatAsState(
-                targetValue = if (showFabMenu) 135f else 0f,
-                animationSpec = com.webtoapp.ui.design.WtaMotion.settleSpring(),
-                label = "fabRotation"
-            )
-            FloatingActionButton(
+            ExtendedFloatingActionButton(
                 onClick = { showFabMenu = true },
+                icon = { Icon(Icons.Default.Add, contentDescription = null) },
+                text = { Text(Strings.createApp) },
                 containerColor = MaterialTheme.colorScheme.primaryContainer,
                 contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-            ) {
-                Icon(
-                    Icons.Default.Add,
-                    contentDescription = Strings.createApp,
-                    modifier = Modifier.graphicsLayer { rotationZ = fabRotation }
-                )
-            }
+            )
         },
 
-        titleContent = if (isSearchActive) {
-            {
-                com.webtoapp.ui.design.WtaTextField(
-                    value = searchQuery,
-                    onValueChange = { viewModel.search(it) },
-                    placeholder = Strings.search,
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-        } else null,
         actions = {
                     val context = LocalContext.current
                     val themeManager = remember { ThemeManager.getInstance(context) }
@@ -523,6 +503,29 @@ fun HomeScreen(
                 .fillMaxSize()
         ) {
 
+            AnimatedVisibility(visible = isSearchActive) {
+                DockedSearchBar(
+                    query = searchQuery,
+                    onQueryChange = { viewModel.search(it) },
+                    onSearch = { viewModel.search(it) },
+                    active = false,
+                    onActiveChange = {},
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    placeholder = { Text(Strings.search) },
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                    trailingIcon = {
+                        IconButton(onClick = {
+                            isSearchActive = false
+                            viewModel.search("")
+                        }) {
+                            Icon(Icons.Default.Close, contentDescription = null)
+                        }
+                    }
+                ) {}
+            }
+
             CategoryTabRow(
                 categories = categories,
                 selectedCategoryId = selectedCategoryId,
@@ -548,9 +551,7 @@ fun HomeScreen(
                 if (apps.isEmpty()) {
 
                     EmptyState(
-                        modifier = Modifier.align(Alignment.Center),
-                        showCreateButton = !showFabMenu,
-                        onCreateApp = { showFabMenu = true }
+                        modifier = Modifier.align(Alignment.Center)
                     )
                 } else {
 
@@ -1846,9 +1847,7 @@ fun AppTypeChip(appType: com.webtoapp.data.model.AppType) {
 
 @Composable
 fun EmptyState(
-    modifier: Modifier = Modifier,
-    showCreateButton: Boolean = true,
-    onCreateApp: () -> Unit
+    modifier: Modifier = Modifier
 ) {
     Column(
         modifier = modifier.padding(horizontal = 32.dp, vertical = 40.dp),
@@ -1882,18 +1881,6 @@ fun EmptyState(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center
         )
-        AnimatedVisibility(visible = showCreateButton) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Spacer(modifier = Modifier.height(20.dp))
-                com.webtoapp.ui.design.WtaButton(
-                    onClick = onCreateApp,
-                    text = Strings.createApp,
-                    variant = com.webtoapp.ui.design.WtaButtonVariant.Primary,
-                    size = com.webtoapp.ui.design.WtaButtonSize.Medium,
-                    leadingIcon = Icons.Default.Add
-                )
-            }
-        }
     }
 }
 
