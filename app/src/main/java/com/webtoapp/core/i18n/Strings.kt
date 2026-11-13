@@ -1402,7 +1402,7 @@ object Strings {
     val animHaptics: String get() = StringsB.animHaptics
     val animSound: String get() = StringsB.animSound
     val animSpeedTitle: String get() = StringsB.animSpeedTitle
-    val accentDefault: String get() = StringsB.accentDefault
+    val accentPeriwinkleMint: String get() = StringsB.accentPeriwinkleMint
     val accentDynamic: String get() = StringsB.accentDynamic
     val accentCharcoalPink: String get() = StringsB.accentCharcoalPink
     val accentRoyalPurple: String get() = StringsB.accentRoyalPurple

@@ -4,6 +4,7 @@ import android.os.Build
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -60,6 +61,19 @@ fun SettingsScreen(
         }
     }
 
+    val systemDark = isSystemInDarkTheme()
+    val swatchDark = when (darkMode) {
+        ThemeManager.DarkModeSettings.SYSTEM -> systemDark
+        ThemeManager.DarkModeSettings.LIGHT -> false
+        ThemeManager.DarkModeSettings.DARK -> true
+    }
+    val dynamicSwatch = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        val scheme = if (swatchDark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+        scheme.primary to scheme.tertiary
+    } else {
+        null
+    }
+
     WtaScreen(title = Strings.uiConfig, onBack = onBack) {
         Column(
             modifier = Modifier
@@ -91,6 +105,7 @@ fun SettingsScreen(
                             AccentSwatch(
                                 accent = option,
                                 selected = accent == option,
+                                dynamicColors = if (option == AppAccent.DYNAMIC) dynamicSwatch else null,
                                 onClick = {
                                     scope.launch { themeManager.setAccent(option) }
                                 }
@@ -239,9 +254,12 @@ fun SettingsScreen(
 private fun AccentSwatch(
     accent: AppAccent,
     selected: Boolean,
+    dynamicColors: Pair<Color, Color>?,
     onClick: () -> Unit
 ) {
     val ringColor = MaterialTheme.colorScheme.primary
+    val swatchPrimary = dynamicColors?.first ?: accent.swatchPrimary
+    val swatchSecondary = dynamicColors?.second ?: accent.swatchSecondary
     Column(
         modifier = Modifier
             .width(64.dp)
@@ -264,13 +282,13 @@ private fun AccentSwatch(
                     )
             ) {
                 drawArc(
-                    color = accent.swatchPrimary,
+                    color = swatchPrimary,
                     startAngle = -90f,
                     sweepAngle = 180f,
                     useCenter = true
                 )
                 drawArc(
-                    color = accent.swatchSecondary,
+                    color = swatchSecondary,
                     startAngle = 90f,
                     sweepAngle = 180f,
                     useCenter = true

@@ -3980,17 +3980,17 @@ object StringsB {
         AppLanguage.KOREAN -> "애니메이션 속도"
     }
 
-    val accentDefault: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "默认黑白"
-        AppLanguage.ENGLISH -> "Default"
-        AppLanguage.ARABIC -> "افتراضي"
-        AppLanguage.PORTUGUESE -> "Padrão"
-        AppLanguage.SPANISH -> "Predeterminado"
-        AppLanguage.FRENCH -> "Par défaut"
-        AppLanguage.GERMAN -> "Standard"
-        AppLanguage.RUSSIAN -> "По умолчанию"
-        AppLanguage.JAPANESE -> "デフォルト"
-        AppLanguage.KOREAN -> "기본값"
+    val accentPeriwinkleMint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "雾蓝薄荷"
+        AppLanguage.ENGLISH -> "Periwinkle Mint"
+        AppLanguage.ARABIC -> "أزرق ونعناعي"
+        AppLanguage.PORTUGUESE -> "Azul e Menta"
+        AppLanguage.SPANISH -> "Azul y Menta"
+        AppLanguage.FRENCH -> "Pervenche et menthe"
+        AppLanguage.GERMAN -> "Blau und Minze"
+        AppLanguage.RUSSIAN -> "Сине-мятный"
+        AppLanguage.JAPANESE -> "ブルーミント"
+        AppLanguage.KOREAN -> "블루 민트"
     }
 
     val accentDynamic: String get() = when (Strings.lang) {
