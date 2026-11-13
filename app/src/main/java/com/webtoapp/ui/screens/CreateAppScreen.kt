@@ -552,11 +552,11 @@ fun CreateAppScreen(
     }
 
     if (showDiscardDialog) {
-        AlertDialog(
+        WtaAlertDialog(
             onDismissRequest = { showDiscardDialog = false },
-            icon = { Icon(Icons.Outlined.Warning, contentDescription = null) },
-            title = { Text(Strings.unsavedChangesTitle) },
-            text = { Text(Strings.unsavedChangesMessage) },
+            icon = Icons.Outlined.Warning,
+            title = Strings.unsavedChangesTitle,
+            text = Strings.unsavedChangesMessage,
             confirmButton = {
                 TextButton(
                     onClick = {

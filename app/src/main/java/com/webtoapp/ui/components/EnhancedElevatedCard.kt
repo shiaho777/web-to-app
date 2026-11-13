@@ -59,24 +59,3 @@ fun EnhancedElevatedCard(
         content = content
     )
 }
-
-@Composable
-fun EnhancedOutlinedCard(
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    enabled: Boolean = true,
-    shape: Shape = RoundedCornerShape(WtaRadius.Card),
-    containerColor: Color? = null,
-    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
-    content: @Composable ColumnScope.() -> Unit
-) {
-    WtaCard(
-        onClick = onClick,
-        modifier = modifier,
-        tone = WtaCardTone.Elevated,
-        enabled = enabled,
-        contentPadding = PaddingValues(0.dp),
-        shape = shape,
-        content = content
-    )
-}

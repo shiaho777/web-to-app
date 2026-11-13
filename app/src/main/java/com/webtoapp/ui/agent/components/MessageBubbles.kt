@@ -57,7 +57,6 @@ import androidx.compose.material.icons.outlined.HourglassTop
 import androidx.compose.material.icons.outlined.Lightbulb
 import androidx.compose.material.icons.outlined.MoreHoriz
 import androidx.compose.material.icons.outlined.PlayArrow
-import androidx.compose.material.icons.outlined.RadioButtonUnchecked
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.DropdownMenu
@@ -91,6 +90,7 @@ import com.webtoapp.core.agent.session.UserAttachment
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.ui.agent.AgentViewModel
 import com.webtoapp.ui.agent.ThinkingSegment
+import com.webtoapp.ui.design.WtaAlertDialog
 import com.webtoapp.ui.design.WtaAlpha
 import com.webtoapp.ui.design.WtaCard
 import com.webtoapp.ui.design.WtaCardTone
@@ -900,7 +900,7 @@ private fun formatElapsed(ms: Long): String = when {
 @Composable
 private fun ToolFullResultDialog(title: String, content: String, onDismiss: () -> Unit) {
     val clipboard = LocalClipboardManager.current
-    androidx.compose.material3.AlertDialog(
+    WtaAlertDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
             androidx.compose.material3.TextButton(onClick = onDismiss) {
@@ -915,8 +915,8 @@ private fun ToolFullResultDialog(title: String, content: String, onDismiss: () -
                 Text(Strings.agentMessageActionCopy)
             }
         },
-        title = { Text(title, style = MaterialTheme.typography.titleSmall) },
-        text = {
+        title = title,
+        content = {
             Box(modifier = Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState())) {
                 SelectionContainer {
                     Text(
@@ -1516,7 +1516,7 @@ fun TodoChecklist(todos: List<com.webtoapp.core.agent.todo.TodoManager.Item>) {
                                 Icons.Outlined.CheckCircle to WtaColors.semantic.success
                             com.webtoapp.core.agent.todo.TodoManager.Item.Status.InProgress ->
                                 Icons.Outlined.PlayArrow to MaterialTheme.colorScheme.primary
-                            else -> Icons.Outlined.RadioButtonUnchecked to MaterialTheme.colorScheme.onSurfaceVariant
+                            else -> Icons.Outlined.CheckCircle to MaterialTheme.colorScheme.onSurfaceVariant
                         }
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(

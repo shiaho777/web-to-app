@@ -14,7 +14,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -41,6 +40,7 @@ import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.ui.agent.components.ChoiceBottomSheet
 import com.webtoapp.ui.agent.components.PermissionDialog
 import com.webtoapp.ui.components.FirstLaunchLanguageScreen
+import com.webtoapp.ui.design.WtaAlertDialog
 import com.webtoapp.ui.navigation.AppNavigation
 import com.webtoapp.ui.shell.ShellActivity
 import com.webtoapp.ui.theme.CircularRevealOverlay
@@ -226,10 +226,10 @@ class MainActivity : ComponentActivity() {
                 }
 
                 if (showShortcutPermissionDialog) {
-                    AlertDialog(
+                    WtaAlertDialog(
                         onDismissRequest = { showShortcutPermissionDialog = false },
-                        title = { Text(Strings.shortcutPermissionTitle) },
-                        text = { Text(shortcutPermissionMessage) },
+                        title = Strings.shortcutPermissionTitle,
+                        text = shortcutPermissionMessage,
                         confirmButton = {
                             TextButton(
                                 onClick = {

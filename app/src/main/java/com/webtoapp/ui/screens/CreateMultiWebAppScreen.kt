@@ -59,6 +59,7 @@ import com.webtoapp.ui.components.RuntimeIconPickerCard
 import com.webtoapp.ui.design.WtaAlertDialog
 import com.webtoapp.ui.design.WtaChip
 import com.webtoapp.ui.design.WtaSegmentedRow
+import com.webtoapp.ui.design.WtaSelectableRow
 import com.webtoapp.ui.design.WtaSpacing
 import com.webtoapp.util.ensureWebUrlScheme
 import com.webtoapp.ui.screens.create.WtaCreateFlowScaffold
@@ -278,9 +279,9 @@ fun CreateMultiWebAppScreen(
                             )
                             if (startTab == MULTI_WEB_START_SITE) {
                                 sites.filter { it.enabled }.forEach { site ->
-                                    StartTabRadioRow(
+                                    WtaSelectableRow(
+                                        title = site.name.ifBlank { site.url },
                                         selected = startSiteId == site.id,
-                                        label = site.name.ifBlank { site.url },
                                         onClick = { startSiteId = site.id }
                                     )
                                 }
@@ -1022,31 +1023,6 @@ private fun MultiWebRadioChoice(
         selectedIndex = options.indexOfFirst { it.first == selected }.coerceAtLeast(0),
         onSelect = { index -> onSelect(options[index].first) }
     )
-}
-
-@Composable
-private fun StartTabRadioRow(
-    selected: Boolean,
-    label: String,
-    onClick: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(8.dp))
-            .clickable(onClick = onClick)
-            .padding(vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        RadioButton(selected = selected, onClick = onClick)
-        Spacer(modifier = Modifier.width(4.dp))
-        Text(
-            label,
-            style = MaterialTheme.typography.bodyMedium,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
-    }
 }
 
 private data class DisplayModeOption(

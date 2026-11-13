@@ -28,6 +28,7 @@ import com.webtoapp.core.activation.ActivationResult
 import com.webtoapp.core.activation.ActivationCodeType
 import com.webtoapp.core.activation.ActivationStatus
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.ui.design.WtaAlertDialog
 import com.webtoapp.ui.design.WtaLoadingIndicator
 import com.webtoapp.util.threadLocalCompat
 import java.text.SimpleDateFormat
@@ -48,11 +49,9 @@ fun EnhancedActivationDialog(
     var isLoading by remember { mutableStateOf(false) }
     var activationResult by remember { mutableStateOf<ActivationResult?>(null) }
 
-    AlertDialog(
+    WtaAlertDialog(
         onDismissRequest = onDismiss,
-        shape = RoundedCornerShape(24.dp),
-        title = null,
-        text = {
+        content = {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()

@@ -15,7 +15,6 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.selectable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Clear
@@ -27,7 +26,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -55,6 +53,7 @@ import com.webtoapp.ui.design.WtaAlertDialog
 import com.webtoapp.ui.design.WtaCard
 import com.webtoapp.ui.design.WtaChip
 import com.webtoapp.ui.design.WtaLoadingIndicator
+import com.webtoapp.ui.design.WtaSelectableRow
 import com.webtoapp.ui.design.WtaSpacing
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -400,26 +399,11 @@ private fun CatalogAddModelDialog(
                 Spacer(Modifier.padding(top = WtaSpacing.Small))
                 LazyColumn(modifier = Modifier.heightIn(max = 220.dp)) {
                     items(apiKeys, key = { it.id }) { key ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .selectable(
-                                    selected = selectedKey?.id == key.id,
-                                    onClick = { selectedKey = key }
-                                )
-                                .padding(vertical = WtaSpacing.Tiny),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            RadioButton(
-                                selected = selectedKey?.id == key.id,
-                                onClick = { selectedKey = key }
-                            )
-                            Spacer(Modifier.width(WtaSpacing.Small))
-                            Text(
-                                text = key.displayName,
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                        }
+                        WtaSelectableRow(
+                            title = key.displayName,
+                            selected = selectedKey?.id == key.id,
+                            onClick = { selectedKey = key }
+                        )
                     }
                 }
                 Spacer(Modifier.padding(top = WtaSpacing.Small))

@@ -221,11 +221,11 @@ fun ConfigTemplateMenuButton(
         val nameExists = trimmed.isNotEmpty() && templates.any {
             it.name.equals(trimmed, ignoreCase = true)
         }
-        AlertDialog(
+        WtaAlertDialog(
             onDismissRequest = { saveDialogOpen = false },
-            icon = { Icon(Icons.Outlined.LibraryAddCheck, null) },
-            title = { Text(Strings.templateSaveAs) },
-            text = {
+            icon = Icons.Outlined.LibraryAddCheck,
+            title = Strings.templateSaveAs,
+            content = {
                 Column {
                     if (LocalShowDescriptions.current) {
                         Text(
@@ -403,13 +403,13 @@ fun ConfigTemplateMenuButton(
 
     renameTarget?.let { target ->
         var nameExistsError by remember(target) { mutableStateOf(false) }
-        AlertDialog(
+        WtaAlertDialog(
             onDismissRequest = {
                 renameTarget = null
                 nameExistsError = false
             },
-            title = { Text(Strings.templateRename) },
-            text = {
+            title = Strings.templateRename,
+            content = {
                 PremiumTextField(
                     value = renameText,
                     onValueChange = {

@@ -47,6 +47,7 @@ import com.webtoapp.util.MediaStorage
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.io.File
+import com.webtoapp.ui.design.WtaAlertDialog
 import com.webtoapp.ui.design.WtaBackground
 import com.webtoapp.ui.design.WtaLoadingIndicator
 import com.webtoapp.ui.components.EnhancedElevatedCard
@@ -1236,10 +1237,10 @@ private fun CategoryEditDialog(
     val availableIcons = listOf("folder", "movie", "camera", "music_note", "heart", "star", "palette", "target", "home", "auto_awesome")
     val availableColors = listOf("#6200EE", "#03DAC6", "#FF5722", "#4CAF50", "#2196F3", "#E91E63")
 
-    AlertDialog(
+    WtaAlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (category != null) Strings.galleryEditCategory else Strings.galleryAddCategory) },
-        text = {
+        title = if (category != null) Strings.galleryEditCategory else Strings.galleryAddCategory,
+        content = {
             Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                 PremiumTextField(
                     value = name,
@@ -1326,10 +1327,10 @@ private fun MediaItemDetailDialog(
     var name by remember { mutableStateOf(item.name) }
     var categoryId by remember { mutableStateOf(item.categoryId) }
 
-    AlertDialog(
+    WtaAlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(Strings.galleryMediaDetail) },
-        text = {
+        title = Strings.galleryMediaDetail,
+        content = {
             Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
 
                 Box(
@@ -1878,10 +1879,10 @@ private fun GallerySettingsSheet(
 @Composable
 private fun MediaPreviewDialog(item: GalleryItem, onDismiss: () -> Unit, onDelete: () -> Unit) {
     val context = LocalContext.current
-    AlertDialog(
+    WtaAlertDialog(
         onDismissRequest = onDismiss,
         title = null,
-        text = {
+        content = {
             Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                 Box(modifier = Modifier.fillMaxWidth().aspectRatio(1f).clip(RoundedCornerShape(12.dp))) {
                     AsyncImage(

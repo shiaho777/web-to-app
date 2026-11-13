@@ -86,9 +86,13 @@ fixed corner radius is genuinely required (it disables the press morph).
 - `WtaSwitch(checked, onCheckedChange)` — the only toggle primitive.
 - `WtaSegmentedRow(options, selectedIndex, onSelect)` — Material 3 Expressive
   single-choice segmented button row. The default for static 2–4 option
-  groups with short labels; keep `RadioButton` rows for dynamic lists or
-  labels too long to fit a segment.
-- `WtaChip(selected, onClick, label, leadingIcon)` — selectable chip.
+  groups with short labels.
+- `WtaSelectableRow(title, selected, onClick, subtitle, accent, leading)` —
+  modern selection-list row with a trailing check for the selected item.
+  The default for dynamic lists and long-label option groups. `RadioButton`
+  rows are legacy and must not be reintroduced.
+- `WtaChip(selected, onClick, label, leadingIcon)` — selectable chip
+  (expressive pill shape).
 - `WtaInfoChip(label, icon)` — read-only badge for metadata.
 
 ### Display helpers
@@ -123,15 +127,22 @@ fixed corner radius is genuinely required (it disables the press morph).
   `FloatingCard`, `GradientBorderCard`, the themed loading / badge / divider
   helpers — **deleted**.
 - `PremiumSwitch` — deleted; call sites migrated to `WtaSwitch`.
+- `LiquidGlassEffect`, `LiquidTabBar`, `EnhancedOutlinedCard`,
+  `AnimatedAlertDialog` — **deleted** (dead code / superseded by
+  `WtaAlertDialog`).
+- `CircularProgressIndicator`, `RadioButton`, and direct `AlertDialog` calls
+  are fully migrated: use `WtaLoadingIndicator`, `WtaSegmentedRow` /
+  `WtaSelectableRow`, and `WtaAlertDialog` instead.
 - `PremiumButton`, `PremiumOutlinedButton`, `PremiumTextField`,
-  `PremiumFilterChip`, `EnhancedElevatedCard`, `EnhancedOutlinedCard`,
+  `PremiumFilterChip`, `EnhancedElevatedCard`,
   `SettingsSwitch`, `IconSwitchCard`, `IconTitleRow`, `CollapsibleCardHeader`,
   `WarningCard`, `EmptyStatePlaceholder`, `LoadingPlaceholder`,
   `ErrorPlaceholder`, `InfoChip`, `StatItem`, `CardContent(WithSpacing)` —
   retained as permanent **alias** layers over Wta internals. They are not
   deprecated: older screens that composed their own slot content keep using the
   slot-style Material API; everything renders through Wta so the visuals are
-  already unified.
+  already unified. `PremiumButton` / `PremiumOutlinedButton` use the expressive
+  `ButtonShapes` press morph like `WtaButton`.
 
 ## When to fall back to Material 3 directly
 

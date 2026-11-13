@@ -1339,24 +1339,11 @@ fun BrowserAdvancedConfigCard(
                                     )
 
                                     strategies.forEach { (value, label) ->
-                                        Row(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .clip(MaterialTheme.shapes.small)
-                                                .clickable { onConfigChange(config.copy(pwaOfflineStrategy = value)) }
-                                                .padding(vertical = 4.dp),
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            RadioButton(
-                                                selected = config.pwaOfflineStrategy == value,
-                                                onClick = { onConfigChange(config.copy(pwaOfflineStrategy = value)) }
-                                            )
-                                            Spacer(Modifier.width(4.dp))
-                                            Text(
-                                                text = label,
-                                                style = MaterialTheme.typography.bodySmall
-                                            )
-                                        }
+                                        WtaSelectableRow(
+                                            title = label,
+                                            selected = config.pwaOfflineStrategy == value,
+                                            onClick = { onConfigChange(config.copy(pwaOfflineStrategy = value)) }
+                                        )
                                     }
                                 }
                             }
@@ -2364,25 +2351,13 @@ fun FullscreenModeCard(
                         DisplayCutoutMode.NEVER to Strings.displayCutoutModeNever
                     )
                     cutoutModes.forEach { (mode, label) ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(MaterialTheme.shapes.small)
-                                .clickable {
-                                    onWebViewConfigChange(webViewConfig.copy(displayCutoutMode = mode))
-                                }
-                                .padding(vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            RadioButton(
-                                selected = webViewConfig.displayCutoutMode == mode,
-                                onClick = {
-                                    onWebViewConfigChange(webViewConfig.copy(displayCutoutMode = mode))
-                                }
-                            )
-                            Spacer(Modifier.width(4.dp))
-                            Text(text = label, style = MaterialTheme.typography.bodySmall)
-                        }
+                        WtaSelectableRow(
+                            title = label,
+                            selected = webViewConfig.displayCutoutMode == mode,
+                            onClick = {
+                                onWebViewConfigChange(webViewConfig.copy(displayCutoutMode = mode))
+                            }
+                        )
                     }
                 }
 

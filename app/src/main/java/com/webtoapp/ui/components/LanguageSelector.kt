@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import com.webtoapp.core.i18n.AppLanguage
 import com.webtoapp.core.i18n.LanguageManager
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.ui.design.WtaAlertDialog
 import com.webtoapp.util.isRunningOnTv
 import kotlinx.coroutines.launch
 
@@ -107,15 +108,10 @@ fun LanguageSelectionDialog(
     val scrollState = rememberScrollState()
     val maxListHeight = (LocalConfiguration.current.screenHeightDp * 0.55f).dp
 
-    AlertDialog(
+    WtaAlertDialog(
         onDismissRequest = onDismiss,
-        title = {
-            Text(
-                text = Strings.languageSettings,
-                style = MaterialTheme.typography.titleLarge
-            )
-        },
-        text = {
+        title = Strings.languageSettings,
+        content = {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -527,7 +523,12 @@ fun LanguageSettingsCard(
                             },
                             leadingIcon = {
                                 if (language == currentLanguage) {
-                                    RadioButton(selected = true, onClick = null)
+                                    Icon(
+                                        Icons.Default.Check,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(18.dp)
+                                    )
                                 }
                             }
                         )
