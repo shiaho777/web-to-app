@@ -229,7 +229,8 @@ fun HomeScreen(
     }
 
     WtaScreen(
-        title = Strings.myApps,
+        title = "",
+        actionsFillWidth = true,
         snackbarHostState = snackbarHostState,
         floatingActionButton = {
             ExtendedFloatingActionButton(
@@ -243,7 +244,7 @@ fun HomeScreen(
 
         actions = {
                     LanguageSelectorButton(
-                        buttonSize = 40.dp,
+                        buttonSize = 48.dp,
                         onLanguageChanged = {
                             scope.launch {
                                 snackbarHostState.showSnackbar(Strings.msgLanguageChanged)
@@ -260,7 +261,7 @@ fun HomeScreen(
                             }
                             scope.launch { homeThemeManager.setHomeViewMode(next) }
                         },
-                        modifier = Modifier.size(40.dp)
+                        modifier = Modifier.size(48.dp)
                     ) {
                         Crossfade(
                             targetState = homeViewMode,
@@ -278,7 +279,7 @@ fun HomeScreen(
                                 } else {
                                     Strings.homeViewGrid
                                 },
-                                modifier = Modifier.size(22.dp),
+                                modifier = Modifier.size(24.dp),
                                 tint = MaterialTheme.colorScheme.onSurface
                             )
                         }
@@ -287,12 +288,12 @@ fun HomeScreen(
                     Box {
                         IconButton(
                             onClick = { showSortMenu = true },
-                            modifier = Modifier.size(40.dp)
+                            modifier = Modifier.size(48.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.Outlined.Sort,
                                 contentDescription = Strings.appListSort,
-                                modifier = Modifier.size(22.dp),
+                                modifier = Modifier.size(24.dp),
                                 tint = MaterialTheme.colorScheme.onSurface
                             )
                         }
@@ -328,12 +329,12 @@ fun HomeScreen(
                             isSearchActive = !isSearchActive
                             if (!isSearchActive) viewModel.search("")
                         },
-                        modifier = Modifier.size(40.dp)
+                        modifier = Modifier.size(48.dp)
                     ) {
                         Icon(
                             imageVector = if (isSearchActive) Icons.Default.Close else Icons.Default.Search,
                             contentDescription = Strings.search,
-                            modifier = Modifier.size(22.dp),
+                            modifier = Modifier.size(24.dp),
                             tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
@@ -342,12 +343,12 @@ fun HomeScreen(
                     Box {
                         IconButton(
                             onClick = { showMoreMenu = true },
-                            modifier = Modifier.size(40.dp)
+                            modifier = Modifier.size(48.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.Outlined.MoreVert,
                                 contentDescription = Strings.more,
-                                modifier = Modifier.size(22.dp),
+                                modifier = Modifier.size(24.dp),
                                 tint = MaterialTheme.colorScheme.onSurface
                             )
                         }

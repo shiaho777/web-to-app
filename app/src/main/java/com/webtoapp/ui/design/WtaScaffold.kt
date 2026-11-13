@@ -53,6 +53,7 @@ fun WtaScreen(
     floatingActionButton: @Composable () -> Unit = {},
     floatingActionButtonPosition: FabPosition = FabPosition.End,
     contentPadding: PaddingValues = PaddingValues(),
+    actionsFillWidth: Boolean = false,
     content: @Composable BoxScope.(PaddingValues) -> Unit
 ) {
 
@@ -83,7 +84,8 @@ fun WtaScreen(
                     onBack = onBack,
                     actions = actions,
                     titleContent = titleContent,
-                    scrollBehavior = scrollBehavior
+                    scrollBehavior = scrollBehavior,
+                    actionsFillWidth = actionsFillWidth
                 )
             },
             bottomBar = bottomBar,
@@ -156,9 +158,23 @@ fun WtaTopBar(
     actions: @Composable RowScope.() -> Unit = {},
 
     titleContent: (@Composable () -> Unit)? = null,
-    scrollBehavior: TopAppBarScrollBehavior? = null
+    scrollBehavior: TopAppBarScrollBehavior? = null,
+    actionsFillWidth: Boolean = false
 ) {
     Column(modifier = modifier) {
+        if (actionsFillWidth) {
+            androidx.compose.foundation.layout.Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(64.dp)
+                    .background(MaterialTheme.colorScheme.background)
+                    .padding(horizontal = 4.dp),
+                horizontalArrangement = androidx.compose.foundation.layout.Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                actions()
+            }
+        } else {
         TopAppBar(
             title = {
                 if (titleContent != null) {
@@ -207,6 +223,7 @@ fun WtaTopBar(
             ),
             scrollBehavior = scrollBehavior
         )
+        }
 
         val fraction = scrollBehavior?.state?.overlappedFraction ?: 0f
         val dividerAlpha = (fraction * 2f).coerceIn(0f, 1f)
