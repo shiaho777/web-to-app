@@ -28,11 +28,9 @@ import androidx.compose.material.icons.outlined.PieChart
 import androidx.compose.material.icons.outlined.PlayCircleOutline
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material.icons.outlined.VerifiedUser
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -86,9 +84,11 @@ import com.webtoapp.ui.design.WtaAlertDialog
 import com.webtoapp.ui.design.WtaBadge
 import com.webtoapp.ui.design.WtaCard
 import com.webtoapp.ui.design.WtaCardTone
+import com.webtoapp.ui.design.WtaLoadingIndicator
 import com.webtoapp.ui.design.WtaLoadingState
 import com.webtoapp.ui.design.WtaRadius
 import com.webtoapp.ui.design.WtaScreen
+import com.webtoapp.ui.design.WtaSegmentedRow
 import com.webtoapp.ui.design.WtaSettingRow
 import com.webtoapp.ui.design.WtaSpacing
 import com.webtoapp.ui.design.WtaSwitch
@@ -643,7 +643,7 @@ private fun BuildApkContent(
                             .padding(vertical = 12.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                        WtaLoadingIndicator(size = 24.dp)
                     }
                 }
             }
@@ -937,12 +937,7 @@ private fun BuildApkContent(
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
-                            CircularProgressIndicator(
-                                progress = { animatedProgress },
-                                modifier = Modifier.size(48.dp),
-                                strokeWidth = 4.dp,
-                                trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-                            )
+                            WtaLoadingIndicator(size = 48.dp, progress = { animatedProgress })
                             Text(
                                 "${progress}%",
                                 style = MaterialTheme.typography.labelSmall,
@@ -1346,10 +1341,7 @@ private fun BuildSummaryCard(
                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
             ) {
                 if (exportingSource) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(16.dp),
-                        strokeWidth = 2.dp
-                    )
+                    WtaLoadingIndicator(size = 16.dp)
                 } else {
                     Icon(Icons.Outlined.Code, null, Modifier.size(16.dp))
                 }
@@ -1442,75 +1434,45 @@ fun EngineSelectionCard(
             )
         }
 
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(WtaRadius.Control))
-                .clickable { onEngineSelected("SYSTEM_WEBVIEW") }
-                .padding(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            RadioButton(
-                selected = selectedEngine == "SYSTEM_WEBVIEW",
-                onClick = { onEngineSelected("SYSTEM_WEBVIEW") }
-            )
-            Spacer(Modifier.width(8.dp))
-            Column(Modifier.weight(weight = 1f, fill = true)) {
-                Text(Strings.engineSystemWebView, style = MaterialTheme.typography.bodyMedium)
-                if (LocalShowDescriptions.current) {
-                    Text(
-                        Strings.engineSystemWebViewDesc,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+        WtaSegmentedRow(
+            options = listOf(Strings.engineSystemWebView, Strings.engineGeckoView),
+            selectedIndex = if (selectedEngine == "GECKOVIEW") 1 else 0,
+            onSelect = { index ->
+                if (index == 0) {
+                    onEngineSelected("SYSTEM_WEBVIEW")
+                } else if (isGeckoDownloaded) {
+                    onEngineSelected("GECKOVIEW")
                 }
             }
+        )
+        if (selectedEngine == "SYSTEM_WEBVIEW") {
+            Strings.engineSystemWebViewDesc.ifDescriptionsShown()?.let { desc ->
+                Text(
+                    desc,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(WtaRadius.Control))
-                .clickable {
-                    if (isGeckoDownloaded) onEngineSelected("GECKOVIEW")
-                }
-                .padding(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            RadioButton(
-                selected = selectedEngine == "GECKOVIEW",
-                onClick = { if (isGeckoDownloaded) onEngineSelected("GECKOVIEW") },
-                enabled = isGeckoDownloaded
+        if (!isGeckoDownloaded) {
+            Text(
+                Strings.engineGeckoNotDownloaded,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error
             )
-            Spacer(Modifier.width(8.dp))
-            Column(Modifier.weight(weight = 1f, fill = true)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+        } else {
+            Text(
+                Strings.engineApkSizeWarning.replace("%s", com.webtoapp.core.engine.EngineType.GECKOVIEW.estimatedSizeMb.toString()),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            if (selectedEngine == "GECKOVIEW") {
+                Strings.geckoPagePluginNote.ifDescriptionsShown()?.let { note ->
                     Text(
-                        Strings.engineGeckoView,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = if (isGeckoDownloaded) MaterialTheme.colorScheme.onSurface
-                                else MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                if (!isGeckoDownloaded) {
-                    Text(
-                        Strings.engineGeckoNotDownloaded,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                } else {
-                    Text(
-                        Strings.engineApkSizeWarning.replace("%s", com.webtoapp.core.engine.EngineType.GECKOVIEW.estimatedSizeMb.toString()),
+                        note,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    if (selectedEngine == "GECKOVIEW" && LocalShowDescriptions.current) {
-                        Text(
-                            Strings.geckoPagePluginNote,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
                 }
             }
         }

@@ -32,6 +32,7 @@ import com.webtoapp.core.ai.AiConfigManager
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.data.model.AiFeature
 import com.webtoapp.data.model.SavedModel
+import com.webtoapp.ui.design.WtaLoadingIndicator
 import com.webtoapp.util.IconLibraryStorage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -271,7 +272,7 @@ fun IconGeneratorDialog(
                         horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                        WtaLoadingIndicator(size = 20.dp)
                     }
                 }
             }
@@ -284,7 +285,7 @@ fun IconGeneratorDialog(
             } else if (generatedIcon != null) {
 
                 PremiumButton(enabled = false, onClick = {}) {
-                    CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                    WtaLoadingIndicator(size = 16.dp)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(Strings.saving)
                 }

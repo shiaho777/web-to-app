@@ -20,6 +20,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.ui.design.WtaLoadingIndicator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.withContext
@@ -162,7 +163,7 @@ fun VideoTrimmer(
             contentAlignment = Alignment.Center
         ) {
             if (isLoading) {
-                CircularProgressIndicator(modifier = Modifier.size(32.dp))
+                WtaLoadingIndicator(size = 32.dp)
             } else if (thumbnail != null) {
                 Image(
                     bitmap = thumbnail!!.asImageBitmap(),

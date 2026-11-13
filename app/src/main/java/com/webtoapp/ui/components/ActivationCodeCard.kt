@@ -6,6 +6,7 @@ import com.webtoapp.ui.design.WtaChip
 import com.webtoapp.ui.design.WtaButton
 import com.webtoapp.ui.design.WtaButtonVariant
 import com.webtoapp.ui.design.WtaSectionDivider
+import com.webtoapp.ui.design.WtaSegmentedRow
 import com.webtoapp.ui.design.WtaSize
 import com.webtoapp.ui.design.WtaSpacing
 import com.webtoapp.ui.design.WtaToggleRow
@@ -144,42 +145,13 @@ fun ActivationCodeCard(
                             color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.padding(bottom = 4.dp)
                         )
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(MaterialTheme.shapes.small)
-                                .clickable { onRemoteConfigChange(remoteConfig.copy(enabled = false)) }
-                                .padding(vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            RadioButton(
-                                selected = !remoteConfig.enabled,
-                                onClick = { onRemoteConfigChange(remoteConfig.copy(enabled = false)) }
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = Strings.activationModeLocal,
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        }
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(MaterialTheme.shapes.small)
-                                .clickable { onRemoteConfigChange(remoteConfig.copy(enabled = true)) }
-                                .padding(vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            RadioButton(
-                                selected = remoteConfig.enabled,
-                                onClick = { onRemoteConfigChange(remoteConfig.copy(enabled = true)) }
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = Strings.activationModeRemote,
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        }
+                        WtaSegmentedRow(
+                            options = listOf(Strings.activationModeLocal, Strings.activationModeRemote),
+                            selectedIndex = if (remoteConfig.enabled) 1 else 0,
+                            onSelect = { index ->
+                                onRemoteConfigChange(remoteConfig.copy(enabled = index == 1))
+                            }
+                        )
                     }
 
                     WtaSectionDivider()

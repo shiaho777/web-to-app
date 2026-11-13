@@ -42,6 +42,7 @@ import com.webtoapp.ui.components.TypedSampleProjectsCard
 import com.webtoapp.ui.screens.create.WtaCreateFlowScaffold
 import com.webtoapp.ui.screens.create.WtaCreateFlowSection
 import com.webtoapp.ui.design.WtaRadius
+import com.webtoapp.ui.design.WtaSegmentedRow
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -661,45 +662,37 @@ fun CreateNodeJsAppScreen(
                         )
                         Spacer(modifier = Modifier.height(12.dp))
 
-                        listOf(
-                            Triple(NodeJsBuildMode.STATIC, Strings.njsModeStatic, Strings.njsModeStaticDesc),
-                            Triple(NodeJsBuildMode.API_BACKEND, Strings.njsModeBackend, Strings.njsModeBackendDesc),
-                            Triple(NodeJsBuildMode.FULLSTACK, Strings.njsModeFullstack, Strings.njsModeFullstackDesc)
-                        ).forEach { (mode, label, desc) ->
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 2.dp)
-                                    .clip(RoundedCornerShape(WtaRadius.Button))
-                                    .background(if (buildMode == mode) accentColor.copy(alpha = 0.08f) else Color.Transparent)
-                                    .clickable { buildMode = mode }
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    RadioButton(
-                                        selected = buildMode == mode,
-                                        onClick = { buildMode = mode },
-                                        colors = RadioButtonDefaults.colors(selectedColor = accentColor)
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Column {
-                                        Text(
-                                            text = label,
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            fontWeight = if (buildMode == mode) FontWeight.SemiBold else FontWeight.Normal
-                                        )
-                                        if (LocalShowDescriptions.current) {
-                                            Text(
-                                                text = desc,
-                                                style = MaterialTheme.typography.bodySmall,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
-                                        }
-                                    }
+                        WtaSegmentedRow(
+                            options = listOf(
+                                Strings.njsModeStatic,
+                                Strings.njsModeBackend,
+                                Strings.njsModeFullstack
+                            ),
+                            selectedIndex = when (buildMode) {
+                                NodeJsBuildMode.API_BACKEND -> 1
+                                NodeJsBuildMode.FULLSTACK -> 2
+                                else -> 0
+                            },
+                            onSelect = { index ->
+                                buildMode = when (index) {
+                                    1 -> NodeJsBuildMode.API_BACKEND
+                                    2 -> NodeJsBuildMode.FULLSTACK
+                                    else -> NodeJsBuildMode.STATIC
                                 }
                             }
+                        )
+                        val buildModeDesc = when (buildMode) {
+                            NodeJsBuildMode.API_BACKEND -> Strings.njsModeBackendDesc
+                            NodeJsBuildMode.FULLSTACK -> Strings.njsModeFullstackDesc
+                            else -> Strings.njsModeStaticDesc
+                        }
+                        buildModeDesc.ifDescriptionsShown()?.let { desc ->
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = desc,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
 
                         if (buildMode != NodeJsBuildMode.STATIC) {

@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import com.webtoapp.core.bgm.bgmControlEnabled
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.shell.ShellConfig
+import com.webtoapp.ui.design.WtaLoadingIndicator
 import com.webtoapp.ui.shared.PageEdgeChrome
 import com.webtoapp.ui.shared.effectiveBottomContentPadding
 import com.webtoapp.ui.shared.pageEdgeBands
@@ -474,7 +475,7 @@ private fun ShellContentArea(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
-            CircularProgressIndicator()
+            WtaLoadingIndicator()
         }
     }
 

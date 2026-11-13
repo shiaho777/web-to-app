@@ -41,6 +41,7 @@ import com.webtoapp.core.plugin.*
 import com.webtoapp.ui.components.PremiumButton
 import com.webtoapp.ui.components.PremiumTextField
 import com.webtoapp.ui.design.*
+import com.webtoapp.ui.design.WtaLoadingIndicator
 import com.webtoapp.ui.plugin.kindLabel
 import com.webtoapp.ui.plugin.pluginIcon
 import kotlinx.coroutines.launch
@@ -343,7 +344,7 @@ fun PluginManagerScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                    WtaLoadingIndicator(size = 24.dp)
                     Text(Strings.importing)
                 }
             },

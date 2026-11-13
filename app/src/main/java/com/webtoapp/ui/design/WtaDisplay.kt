@@ -17,8 +17,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.Inbox
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -208,6 +209,28 @@ fun WtaIconTitle(
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+fun WtaLoadingIndicator(
+    modifier: Modifier = Modifier,
+    size: Dp = 40.dp,
+    color: Color = MaterialTheme.colorScheme.primary,
+    progress: (() -> Float)? = null
+) {
+    if (progress != null) {
+        LoadingIndicator(
+            progress = progress,
+            modifier = modifier.size(size),
+            color = color
+        )
+    } else {
+        LoadingIndicator(
+            modifier = modifier.size(size),
+            color = color
+        )
+    }
+}
+
 @Composable
 fun WtaLoadingState(
     modifier: Modifier = Modifier,
@@ -219,11 +242,7 @@ fun WtaLoadingState(
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            CircularProgressIndicator(
-                modifier = Modifier.size(36.dp),
-                strokeWidth = 3.dp,
-                color = MaterialTheme.colorScheme.primary
-            )
+            WtaLoadingIndicator(size = 40.dp)
             if (!message.isNullOrBlank()) {
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(

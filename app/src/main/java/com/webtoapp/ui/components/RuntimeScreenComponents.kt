@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.ui.design.WtaLoadingIndicator
 
 @Composable
 private fun runtimeAccentColor(): Color = MaterialTheme.colorScheme.onSurface
@@ -190,7 +191,7 @@ fun RuntimeBrandedLoadingCard(
         colors = CardDefaults.cardColors(containerColor = runtimeAccentContainer(0.08f))
     ) {
         Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp, color = accent)
+            WtaLoadingIndicator(size = 24.dp, color = accent)
             Spacer(modifier = Modifier.width(16.dp))
             Text(creationPhase, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f), maxLines = 2, overflow = TextOverflow.Ellipsis)
         }
@@ -319,7 +320,7 @@ fun RuntimeLoadingCard(creationPhase: String) {
         colors = CardDefaults.cardColors(containerColor = runtimeAccentContainer(0.08f))
     ) {
         Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.onSurface)
+            WtaLoadingIndicator(size = 24.dp, color = MaterialTheme.colorScheme.onSurface)
             Spacer(modifier = Modifier.width(12.dp))
             Text(creationPhase, modifier = Modifier.weight(1f), maxLines = 2, overflow = TextOverflow.Ellipsis)
         }

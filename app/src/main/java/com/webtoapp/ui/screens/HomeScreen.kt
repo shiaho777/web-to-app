@@ -6,10 +6,6 @@ import com.webtoapp.ui.components.PremiumButton
 import com.webtoapp.ui.components.SettingsSwitch
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.scrollBy
@@ -70,6 +66,7 @@ import com.webtoapp.ui.components.EnhancedElevatedCard
 import com.webtoapp.ui.components.PremiumTextField
 import com.webtoapp.ui.components.LanguageSelectorButton
 import com.webtoapp.ui.components.MoveToCategoryDialog
+import com.webtoapp.ui.design.WtaLoadingIndicator
 import com.webtoapp.ui.design.WtaScreen
 import com.webtoapp.ui.design.WtaRadius
 import com.webtoapp.ui.design.rememberHapticClick
@@ -231,6 +228,24 @@ fun HomeScreen(
     WtaScreen(
         title = Strings.myApps,
         snackbarHostState = snackbarHostState,
+        floatingActionButton = {
+            val fabRotation by animateFloatAsState(
+                targetValue = if (showFabMenu) 135f else 0f,
+                animationSpec = com.webtoapp.ui.design.WtaMotion.settleSpring(),
+                label = "fabRotation"
+            )
+            FloatingActionButton(
+                onClick = { showFabMenu = true },
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+            ) {
+                Icon(
+                    Icons.Default.Add,
+                    contentDescription = Strings.createApp,
+                    modifier = Modifier.graphicsLayer { rotationZ = fabRotation }
+                )
+            }
+        },
 
         titleContent = if (isSearchActive) {
             {
@@ -535,7 +550,7 @@ fun HomeScreen(
                     EmptyState(
                         modifier = Modifier.align(Alignment.Center),
                         showCreateButton = !showFabMenu,
-                        onCreateApp = onCreateApp
+                        onCreateApp = { showFabMenu = true }
                     )
                 } else {
 
@@ -583,8 +598,6 @@ fun HomeScreen(
 
                     val screenshotVersions = remember { mutableStateMapOf<Long, Int>() }
                     val screenshotLoadingStates = remember { mutableStateMapOf<Long, Boolean>() }
-                    // Apps already offered a capture this session; auto-capture never retries
-                    // (manual tap still re-captures). Reset when HomeScreen state resets.
                     val autoCaptureAttempted = remember { mutableSetOf<Long>() }
 
                     val runCapture: (WebAppSummary, AppPreviewSpec) -> Unit = { cardApp, spec ->
@@ -866,7 +879,7 @@ fun HomeScreen(
                         LazyVerticalGrid(
                             columns = GridCells.Adaptive(minSize = 150.dp),
                             state = rememberLazyGridState(),
-                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+                            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 88.dp),
                             horizontalArrangement = Arrangement.spacedBy(10.dp),
                             verticalArrangement = Arrangement.spacedBy(10.dp),
                             modifier = Modifier.fillMaxSize()
@@ -882,7 +895,7 @@ fun HomeScreen(
                                     actions = actionsFor(app),
                                     previewImageLoader = previewImageLoader,
                                     healthStatus = healthMap[app.id]?.status,
-                                    modifier = Modifier.fillMaxWidth()
+                                    modifier = Modifier.fillMaxWidth().animateItem()
                                 )
                             }
                         }
@@ -890,7 +903,7 @@ fun HomeScreen(
                     LazyColumn(
                     state = listState,
                     userScrollEnabled = listDrag.id == null,
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 88.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     if (showDragHint) {
@@ -911,9 +924,6 @@ fun HomeScreen(
                         val scope = sharedScope
                         val previewSpec = previewSpecs[app.id] ?: AppPreviewSpec()
 
-                        // Auto-capture the card thumbnail once per session when the card
-                        // is composed and no cached screenshot exists yet; tapping the
-                        // thumbnail still forces a recapture.
                         LaunchedEffect(app.id, previewSpec.captureUrl) {
                             if (previewSpec.captureUrl == null || app.id in autoCaptureAttempted) {
                                 return@LaunchedEffect
@@ -984,10 +994,7 @@ fun HomeScreen(
                                                 val anim = Animatable(listDrag.dy)
                                                 anim.animateTo(
                                                     targetValue = 0f,
-                                                    animationSpec = spring(
-                                                        dampingRatio = 0.86f,
-                                                        stiffness = Spring.StiffnessMedium,
-                                                    ),
+                                                    animationSpec = com.webtoapp.ui.design.WtaMotion.bouncySpring(),
                                                     initialVelocity = velocity,
                                                 ) {
                                                     if (!listDrag.tracking) listDrag.dy = value
@@ -1083,109 +1090,50 @@ fun HomeScreen(
                 }
             }
 
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 12.dp, vertical = 8.dp)
+            }
+    }
+
+    if (showFabMenu) {
+        ModalBottomSheet(
+            onDismissRequest = { showFabMenu = false },
+            sheetState = rememberModalBottomSheetState()
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(createMenuScrollState)
+                    .padding(horizontal = 16.dp)
+                    .padding(bottom = 32.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    text = Strings.createApp,
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                createActionItems.chunked(3).forEach { rowItems ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-
-                        AnimatedVisibility(
-                            visible = showFabMenu,
-                            enter = expandVertically(
-                                animationSpec = spring(
-                                    dampingRatio = 0.75f,
-                                    stiffness = Spring.StiffnessMediumLow
-                                ),
-                                expandFrom = Alignment.Bottom
-                            ) + fadeIn(
-                                animationSpec = spring(
-                                    dampingRatio = 0.85f,
-                                    stiffness = Spring.StiffnessMedium
-                                )
-                            ),
-                            exit = shrinkVertically(
-                                animationSpec = spring(
-                                    dampingRatio = 0.85f,
-                                    stiffness = Spring.StiffnessMedium
-                                ),
-                                shrinkTowards = Alignment.Bottom
-                            ) + fadeOut(
-                                animationSpec = spring(
-                                    dampingRatio = 0.85f,
-                                    stiffness = Spring.StiffnessMedium
-                                )
+                        rowItems.forEach { item ->
+                            CreateActionTile(
+                                label = item.label,
+                                iconRes = item.iconRes,
+                                onClick = {
+                                    showFabMenu = false
+                                    item.onClick()
+                                },
+                                modifier = Modifier.weight(1f)
                             )
-                        ) {
-                            EnhancedElevatedCard(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(bottom = 8.dp),
-                                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.92f)
-                            ) {
-                                Column(
-                                    modifier = Modifier
-                                        .heightIn(max = 360.dp)
-                                        .verticalScroll(createMenuScrollState)
-                                        .padding(10.dp),
-                                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    createActionItems.chunked(3).forEach { rowItems ->
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                        ) {
-                                            rowItems.forEach { item ->
-                                                CreateActionTile(
-                                                    label = item.label,
-                                                    iconRes = item.iconRes,
-                                                    onClick = {
-                                                        showFabMenu = false
-                                                        item.onClick()
-                                                    },
-                                                    modifier = Modifier.weight(1f)
-                                                )
-                                            }
-                                            repeat(3 - rowItems.size) {
-                                                Spacer(modifier = Modifier.weight(1f))
-                                            }
-                                        }
-                                    }
-                                }
-                            }
                         }
-
-                        val fabRotation by animateFloatAsState(
-                            targetValue = if (showFabMenu) 135f else 0f,
-                            animationSpec = com.webtoapp.ui.design.WtaMotion.settleSpring(),
-                            label = "fabRotation"
-                        )
-
-                        FilledTonalButton(
-                            onClick = { showFabMenu = !showFabMenu },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(48.dp),
-                            shape = RoundedCornerShape(WtaRadius.Button),
-                            colors = ButtonDefaults.filledTonalButtonColors(
-                                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
-                        ) {
-                            Icon(
-                                Icons.Default.Add,
-                                Strings.btnCreate,
-                                modifier = Modifier
-                                    .size(20.dp)
-                                    .graphicsLayer { rotationZ = fabRotation }
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                if (showFabMenu) Strings.close else Strings.createApp,
-                                style = MaterialTheme.typography.labelLarge
-                            )
+                        repeat(3 - rowItems.size) {
+                            Spacer(modifier = Modifier.weight(1f))
                         }
                     }
+                }
             }
+        }
     }
 
     shareApkFailureReport?.let { report ->
@@ -1326,90 +1274,6 @@ fun HomeScreen(
 
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun SidebarMenuItem(
-    label: String,
-    icon: ImageVector,
-    onClick: () -> Unit
-) {
-    val interactionSource = remember { MutableInteractionSource() }
-    val isPressed by interactionSource.collectIsPressedAsState()
-    val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.9f else 1f,
-        animationSpec = spring(dampingRatio = 0.6f, stiffness = Spring.StiffnessHigh),
-        label = "sidebarItemScale"
-    )
-
-    TooltipBox(
-        positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
-        tooltip = { PlainTooltip { Text(label) } },
-        state = rememberTooltipState()
-    ) {
-        Box(
-            modifier = Modifier
-                .size(40.dp)
-                .clip(RoundedCornerShape(WtaRadius.Control))
-                .graphicsLayer { scaleX = scale; scaleY = scale }
-                .clickable(
-                    interactionSource = interactionSource,
-                    indication = null,
-                    onClick = onClick
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = label,
-                modifier = Modifier.size(20.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun SidebarMenuItem(
-    label: String,
-    iconPainter: androidx.compose.ui.graphics.painter.Painter,
-    onClick: () -> Unit
-) {
-    val interactionSource = remember { MutableInteractionSource() }
-    val isPressed by interactionSource.collectIsPressedAsState()
-    val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.9f else 1f,
-        animationSpec = spring(dampingRatio = 0.6f, stiffness = Spring.StiffnessHigh),
-        label = "sidebarItemScale"
-    )
-
-    TooltipBox(
-        positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
-        tooltip = { PlainTooltip { Text(label) } },
-        state = rememberTooltipState()
-    ) {
-        Box(
-            modifier = Modifier
-                .size(40.dp)
-                .clip(RoundedCornerShape(WtaRadius.Control))
-                .graphicsLayer { scaleX = scale; scaleY = scale }
-                .clickable(
-                    interactionSource = interactionSource,
-                    indication = null,
-                    onClick = onClick
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                painter = iconPainter,
-                contentDescription = label,
-                modifier = Modifier.size(20.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
-
 private fun isExternalBrowserUrl(url: String): Boolean {
     val trimmed = url.trim()
     return trimmed.startsWith("http://", ignoreCase = true) ||
@@ -1466,7 +1330,7 @@ fun AppCard(
                 Box(
                     modifier = Modifier
                         .size(52.dp)
-                        .clip(RoundedCornerShape(14.dp))
+                        .clip(RoundedCornerShape(WtaRadius.Card))
                         .background(colors.secondaryContainer),
                     contentAlignment = Alignment.Center
                 ) {
@@ -1566,7 +1430,7 @@ fun AppCard(
                 modifier = Modifier
                     .width(44.dp)
                     .height(64.dp)
-                    .clip(RoundedCornerShape(12.dp))
+                    .clip(RoundedCornerShape(WtaRadius.Control))
                     .background(colors.surfaceContainerHigh)
                     .clickable(enabled = onCaptureScreenshot != null) {
                         onCaptureScreenshot?.invoke()
@@ -1588,18 +1452,10 @@ fun AppCard(
                         contentScale = ContentScale.Crop
                     )
                     if (isScreenshotLoading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(14.dp),
-                            strokeWidth = 1.5.dp,
-                            color = colors.onSurfaceVariant
-                        )
+                        WtaLoadingIndicator(size = 14.dp, color = colors.onSurfaceVariant)
                     }
                 } else if (isScreenshotLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(14.dp),
-                        strokeWidth = 1.5.dp,
-                        color = colors.onSurfaceVariant
-                    )
+                    WtaLoadingIndicator(size = 14.dp, color = colors.onSurfaceVariant)
                 } else if (onCaptureScreenshot != null) {
                     Icon(
                         imageVector = Icons.Outlined.Refresh,
@@ -1830,7 +1686,7 @@ fun AppGridTile(
                 Box(
                     modifier = Modifier
                         .size(56.dp)
-                        .clip(RoundedCornerShape(16.dp))
+                        .clip(RoundedCornerShape(WtaRadius.Card))
                         .background(colors.secondaryContainer),
                     contentAlignment = Alignment.Center
                 ) {
@@ -2001,7 +1857,7 @@ fun EmptyState(
         Box(
             modifier = Modifier
                 .size(72.dp)
-                .clip(RoundedCornerShape(20.dp))
+                .clip(RoundedCornerShape(WtaRadius.Dialog))
                 .background(MaterialTheme.colorScheme.surfaceContainerHigh),
             contentAlignment = Alignment.Center
         ) {
@@ -2052,7 +1908,7 @@ private fun CreateActionTile(
     val hapticClick = rememberHapticClick(onClick)
     Column(
         modifier = modifier
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(WtaRadius.Card))
             .clickable(
                 interactionSource = interactionSource,
                 indication = com.webtoapp.ui.design.rememberWtaIndication(),
@@ -2065,7 +1921,7 @@ private fun CreateActionTile(
         Box(
             modifier = Modifier
                 .size(48.dp)
-                .clip(RoundedCornerShape(14.dp))
+                .clip(RoundedCornerShape(WtaRadius.IconPlate))
                 .background(MaterialTheme.colorScheme.secondaryContainer),
             contentAlignment = Alignment.Center
         ) {

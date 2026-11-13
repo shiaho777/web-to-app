@@ -3,6 +3,7 @@ package com.webtoapp.ui.components
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.ui.design.WtaAlertDialog
 import com.webtoapp.ui.design.WtaChip
+import com.webtoapp.ui.design.WtaLoadingIndicator
 import com.webtoapp.ui.design.WtaSpacing
 import android.content.Context
 import android.media.MediaPlayer
@@ -1085,10 +1086,7 @@ private fun UploadBgmDialog(
                 enabled = bgmUri != null && !isUploading
             ) {
                 if (isUploading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(16.dp),
-                        strokeWidth = 2.dp
-                    )
+                    WtaLoadingIndicator(size = 16.dp)
                 } else {
                     Text(Strings.upload)
                 }

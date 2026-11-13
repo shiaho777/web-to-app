@@ -51,6 +51,7 @@ import com.webtoapp.data.model.HtmlFile
 import com.webtoapp.data.model.HtmlFileType
 import com.webtoapp.data.model.HtmlLoadMode
 import com.webtoapp.ui.components.*
+import com.webtoapp.ui.design.WtaLoadingIndicator
 import com.webtoapp.ui.design.WtaStatusBanner
 import com.webtoapp.ui.design.WtaStatusTone
 import com.webtoapp.ui.screens.create.WtaCreateFlowScaffold
@@ -70,9 +71,11 @@ import com.webtoapp.data.model.PortConflictMode
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
 import com.webtoapp.ui.theme.LocalShowDescriptions
+import com.webtoapp.ui.theme.ifDescriptionsShown
 import com.webtoapp.ui.design.WtaSettingCard
 import com.webtoapp.ui.design.WtaToggleRow
 import com.webtoapp.ui.design.WtaSectionDivider
+import com.webtoapp.ui.design.WtaSegmentedRow
 import com.webtoapp.ui.design.WtaSpacing
 
 private data class HtmlEditorStateSnapshot(
@@ -614,10 +617,7 @@ fun CreateHtmlAppScreen(
                 enabled = canCreate && !isOptimizing
             ) {
                 if (isOptimizing) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(16.dp),
-                        strokeWidth = 2.dp
-                    )
+                    WtaLoadingIndicator(size = 16.dp)
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(Strings.optimizing)
                 } else {
@@ -970,30 +970,16 @@ fun CreateHtmlAppScreen(
                         )
                     }
                     Spacer(modifier = Modifier.height(4.dp))
-                    listOf(
-                        HtmlLoadMode.AUTO to Strings.htmlLoadModeAuto,
-                        HtmlLoadMode.FILE to Strings.htmlLoadModeFile,
-                        HtmlLoadMode.LOCAL_HTTP to Strings.htmlLoadModeServer
-                    ).forEach { (mode, label) ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(MaterialTheme.shapes.small)
-                                .clickable { loadMode = mode }
-                                .padding(vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            RadioButton(
-                                selected = loadMode == mode,
-                                onClick = { loadMode = mode }
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = label,
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        }
-                    }
+                    val loadModes = listOf(HtmlLoadMode.AUTO, HtmlLoadMode.FILE, HtmlLoadMode.LOCAL_HTTP)
+                    WtaSegmentedRow(
+                        options = listOf(
+                            Strings.htmlLoadModeAuto,
+                            Strings.htmlLoadModeFile,
+                            Strings.htmlLoadModeServer
+                        ),
+                        selectedIndex = loadModes.indexOf(loadMode).coerceAtLeast(0),
+                        onSelect = { index -> loadMode = loadModes[index] }
+                    )
 
                     androidx.compose.animation.AnimatedVisibility(
                         visible = isLocalServer,
@@ -1106,49 +1092,24 @@ fun CreateHtmlAppScreen(
                             )
                             Spacer(modifier = Modifier.height(4.dp))
 
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = Strings.portConflictAutoKill,
-                                        style = MaterialTheme.typography.bodyMedium
-                                    )
-                                    Text(
-                                        text = Strings.portConflictAutoKillHint,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
+                            WtaSegmentedRow(
+                                options = listOf(Strings.portConflictAutoKill, Strings.portConflictAlert),
+                                selectedIndex = if (portConflictMode == PortConflictMode.AUTO_KILL) 0 else 1,
+                                onSelect = { index ->
+                                    portConflictMode = if (index == 0) PortConflictMode.AUTO_KILL else PortConflictMode.ALERT
                                 }
-                                RadioButton(
-                                    selected = portConflictMode == PortConflictMode.AUTO_KILL,
-                                    onClick = { portConflictMode = PortConflictMode.AUTO_KILL }
-                                )
+                            )
+                            val conflictHint = if (portConflictMode == PortConflictMode.AUTO_KILL) {
+                                Strings.portConflictAutoKillHint
+                            } else {
+                                Strings.portConflictAlertHint
                             }
-
-                            Spacer(modifier = Modifier.height(4.dp))
-
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = Strings.portConflictAlert,
-                                        style = MaterialTheme.typography.bodyMedium
-                                    )
-                                    Text(
-                                        text = Strings.portConflictAlertHint,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                                RadioButton(
-                                    selected = portConflictMode == PortConflictMode.ALERT,
-                                    onClick = { portConflictMode = PortConflictMode.ALERT }
+                            conflictHint.ifDescriptionsShown()?.let { hint ->
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = hint,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }
@@ -1653,7 +1614,7 @@ private fun ZipImportSection(
                     .padding(32.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                CircularProgressIndicator()
+                WtaLoadingIndicator()
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
                     text = Strings.zipImporting,
@@ -2096,7 +2057,7 @@ private fun FolderImportSection(
                     .padding(32.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                CircularProgressIndicator()
+                WtaLoadingIndicator()
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
                     text = Strings.folderImporting,

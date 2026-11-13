@@ -21,6 +21,7 @@ import com.webtoapp.core.shell.ShellConfig
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.webview.WebViewCallbacks
 import com.webtoapp.data.model.WebViewConfig
+import com.webtoapp.ui.design.WtaLoadingIndicator
 import androidx.activity.compose.BackHandler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -160,7 +161,7 @@ fun WordPressShellMode(
                     contentAlignment = Alignment.Center
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        CircularProgressIndicator()
+                        WtaLoadingIndicator()
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
                             text = if (phase == "extracting") Strings.wpCheckingDeps
@@ -401,7 +402,7 @@ fun HtmlFrontendShellMode(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
                     ) {
-                        CircularProgressIndicator()
+                        WtaLoadingIndicator()
                     }
                 }
 
@@ -559,7 +560,7 @@ fun NodeJsStaticShellMode(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
                     ) {
-                        CircularProgressIndicator()
+                        WtaLoadingIndicator()
                     }
                 }
             }
@@ -711,7 +712,7 @@ fun NodeJsShellMode(
                     contentAlignment = Alignment.Center
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        CircularProgressIndicator()
+                        WtaLoadingIndicator()
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
                             text = if (phase == "extracting") Strings.preparingNodeEnv
@@ -838,7 +839,7 @@ fun PhpAppShellMode(
             "extracting", "starting" -> {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        CircularProgressIndicator()
+                        WtaLoadingIndicator()
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(if (phase == "extracting") Strings.wpCheckingDeps else Strings.wpStartingServer)
                     }
@@ -1016,7 +1017,7 @@ fun PythonAppShellMode(
             "extracting", "starting" -> {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        CircularProgressIndicator()
+                        WtaLoadingIndicator()
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
                             text = when (phase) {
@@ -1167,7 +1168,7 @@ fun GoAppShellMode(
             "extracting", "starting" -> {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        CircularProgressIndicator()
+                        WtaLoadingIndicator()
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
                             text = when (phase) {
@@ -1345,7 +1346,7 @@ fun ServerAppShellMode(
             "extracting", "starting" -> {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        CircularProgressIndicator()
+                        WtaLoadingIndicator()
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(if (phase == "extracting") Strings.preparingEnv else Strings.startingServer)
                     }

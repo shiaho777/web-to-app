@@ -1081,37 +1081,24 @@ fun BrowserAdvancedConfigCard(
                                         color = MaterialTheme.colorScheme.primary,
                                         modifier = Modifier.padding(bottom = 4.dp)
                                     )
-                                    listOf(
-                                        com.webtoapp.data.model.SwipeRefreshZone.TOP_EDGE to Strings.swipeRefreshZoneTopEdge,
-                                        com.webtoapp.data.model.SwipeRefreshZone.ANYWHERE to Strings.swipeRefreshZoneAnywhere
-                                    ).forEach { (zone, label) ->
-                                        Row(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .clip(MaterialTheme.shapes.small)
-                                                .clickable {
-                                                    onConfigChange(
-                                                        config.copy(swipeRefreshZone = zone)
-                                                    )
-                                                }
-                                                .padding(vertical = 4.dp),
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            RadioButton(
-                                                selected = config.swipeRefreshZone == zone,
-                                                onClick = {
-                                                    onConfigChange(
-                                                        config.copy(swipeRefreshZone = zone)
-                                                    )
-                                                }
-                                            )
-                                            Spacer(modifier = Modifier.width(4.dp))
-                                            Text(
-                                                text = label,
-                                                style = MaterialTheme.typography.bodySmall
+                                    WtaSegmentedRow(
+                                        options = listOf(
+                                            Strings.swipeRefreshZoneTopEdge,
+                                            Strings.swipeRefreshZoneAnywhere
+                                        ),
+                                        selectedIndex = if (config.swipeRefreshZone == com.webtoapp.data.model.SwipeRefreshZone.TOP_EDGE) 0 else 1,
+                                        onSelect = { index ->
+                                            onConfigChange(
+                                                config.copy(
+                                                    swipeRefreshZone = if (index == 0) {
+                                                        com.webtoapp.data.model.SwipeRefreshZone.TOP_EDGE
+                                                    } else {
+                                                        com.webtoapp.data.model.SwipeRefreshZone.ANYWHERE
+                                                    }
+                                                )
                                             )
                                         }
-                                    }
+                                    )
                                 }
                             }
 
@@ -2669,30 +2656,26 @@ private fun ShareReceiveRows(
                             color = MaterialTheme.colorScheme.primary
                         )
 
-                        ShareDeliveryModeOption(
-                            label = Strings.receiveShareModeEvent,
-                            selected = deliveryMode == ShareDeliveryMode.JS_EVENT,
-                            onSelect = {
+                        WtaSegmentedRow(
+                            options = listOf(
+                                Strings.receiveShareModeEvent,
+                                Strings.receiveShareModeChooser,
+                                Strings.receiveShareModeBoth
+                            ),
+                            selectedIndex = when (deliveryMode) {
+                                ShareDeliveryMode.JS_EVENT -> 0
+                                ShareDeliveryMode.FILE_CHOOSER_PREFILL -> 1
+                                ShareDeliveryMode.BOTH -> 2
+                            },
+                            onSelect = { index ->
                                 onWebViewConfigChange(
-                                    webViewConfig.copy(shareDeliveryMode = ShareDeliveryMode.JS_EVENT)
-                                )
-                            }
-                        )
-                        ShareDeliveryModeOption(
-                            label = Strings.receiveShareModeChooser,
-                            selected = deliveryMode == ShareDeliveryMode.FILE_CHOOSER_PREFILL,
-                            onSelect = {
-                                onWebViewConfigChange(
-                                    webViewConfig.copy(shareDeliveryMode = ShareDeliveryMode.FILE_CHOOSER_PREFILL)
-                                )
-                            }
-                        )
-                        ShareDeliveryModeOption(
-                            label = Strings.receiveShareModeBoth,
-                            selected = deliveryMode == ShareDeliveryMode.BOTH,
-                            onSelect = {
-                                onWebViewConfigChange(
-                                    webViewConfig.copy(shareDeliveryMode = ShareDeliveryMode.BOTH)
+                                    webViewConfig.copy(
+                                        shareDeliveryMode = when (index) {
+                                            0 -> ShareDeliveryMode.JS_EVENT
+                                            1 -> ShareDeliveryMode.FILE_CHOOSER_PREFILL
+                                            else -> ShareDeliveryMode.BOTH
+                                        }
+                                    )
                                 )
                             }
                         )
@@ -2757,26 +2740,6 @@ private fun ShareReceiveRows(
                 onWebViewConfigChange(webViewConfig.copy(openWithEnabled = it))
             }
         )
-    }
-}
-
-@Composable
-private fun ShareDeliveryModeOption(
-    label: String,
-    selected: Boolean,
-    onSelect: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(MaterialTheme.shapes.small)
-            .clickable { onSelect() }
-            .padding(vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        RadioButton(selected = selected, onClick = onSelect)
-        Spacer(modifier = Modifier.width(4.dp))
-        Text(text = label, style = MaterialTheme.typography.bodySmall)
     }
 }
 

@@ -51,6 +51,7 @@ import com.webtoapp.core.shell.MultiWebSiteShellConfig
 import com.webtoapp.core.shell.ShellConfig
 import com.webtoapp.core.webview.WebViewCallbacks
 import com.webtoapp.data.model.WebViewConfig
+import com.webtoapp.ui.design.WtaLoadingIndicator
 import com.webtoapp.ui.design.WtaMotion
 import com.webtoapp.ui.design.performHaptic
 import com.webtoapp.ui.shared.TopTabChrome
@@ -1358,7 +1359,7 @@ private fun FeedMode(
             if (isLoading && feedItems.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        CircularProgressIndicator()
+                        WtaLoadingIndicator()
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(Strings.loading, style = MaterialTheme.typography.bodyMedium)
                     }

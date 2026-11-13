@@ -76,10 +76,18 @@ scale. Access it via `MaterialTheme.typography.*` the normal way. Do not set
 Variants: `Primary` (filled), `Tonal`, `Outlined`, `Text`, `Destructive`.
 Sizes: `Small` (36dp), `Medium` (44dp), `Large` (52dp).
 
+Buttons use the Material 3 Expressive `ButtonShapes` overload: the container
+shape morphs on press via `ButtonDefaults.shapes()`. Pass `shape` only when a
+fixed corner radius is genuinely required (it disables the press morph).
+
 ### Inputs & selection
 - `WtaTextField(value, onValueChange, label, placeholder, leadingIcon,
   trailingIcon, supportingText, isError)` — outlined input.
 - `WtaSwitch(checked, onCheckedChange)` — the only toggle primitive.
+- `WtaSegmentedRow(options, selectedIndex, onSelect)` — Material 3 Expressive
+  single-choice segmented button row. The default for static 2–4 option
+  groups with short labels; keep `RadioButton` rows for dynamic lists or
+  labels too long to fit a segment.
 - `WtaChip(selected, onClick, label, leadingIcon)` — selectable chip.
 - `WtaInfoChip(label, icon)` — read-only badge for metadata.
 
@@ -88,6 +96,10 @@ Sizes: `Small` (36dp), `Medium` (44dp), `Large` (52dp).
 - `WtaStatItem(value, label, accent)` — dashboard stat block.
 - `WtaBadge(text, icon)` — small pill badge.
 - `WtaDivider()` — full-width themed divider.
+- `WtaLoadingIndicator(size, color, progress)` — Material 3 Expressive loading
+  indicator (shape-morph animation). The only spinner primitive; use it for
+  both indeterminate and determinate (`progress = { value }`) loading.
+  `CircularProgressIndicator` is legacy and must not be reintroduced.
 
 ### Behavior
 - `rememberHapticClick { ... }` — wraps a click handler with a standard haptic
@@ -95,6 +107,15 @@ Sizes: `Small` (36dp), `Medium` (44dp), `Large` (52dp).
 - `Modifier.wtaPressScale(interactionSource)` — 3 % press scale used by
   buttons and clickable cards. Apply sparingly; prefer the built-in Material
   state layer.
+- Motion is Material 3 Expressive: every `MaterialTheme` entry point
+  (`WebToAppTheme`, `WebToAppThemeSimple`, `ShellTheme`, gallery player) passes
+  `MotionScheme.expressive()` (standard scheme when the user disables
+  animations). `WtaMotion` spring factories mirror the expressive spatial
+  tokens (default 0.8/380, fast 0.6/800, slow 0.8/200) and still honor the
+  global animation switch and speed scale. Do not hand-roll inline springs in
+  screens; route them through `WtaMotion`.
+- `WtaAlertDialog` uses `AlertDialogDefaults.shape` and the built-in
+  expressive dialog enter/exit motion — no manual scale animation.
 
 ## Migration status
 
