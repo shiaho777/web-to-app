@@ -59,6 +59,9 @@ way; use `*Emphasized` variants (e.g. `titleLargeEmphasized`,
 ### Settings building blocks
 - `WtaSettingCard { ... }` — neutral container for one group of related rows.
 - `WtaSettingRow(title, subtitle, icon, trailing = { ... })` — generic row.
+  Pass `iconContent` to supply a custom leading visual (e.g. a `WtaShapePlate`);
+  set `showIconPlate = false` to let that visual own the whole icon area instead
+  of sitting on the default muted plate.
 - `WtaToggleRow(title, checked, onCheckedChange)` — row with a trailing
   `WtaSwitch`.
 - `WtaChoiceRow(title, value, onClick)` — row that opens a picker.

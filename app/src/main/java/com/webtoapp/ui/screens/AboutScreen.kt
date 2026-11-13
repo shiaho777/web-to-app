@@ -8,6 +8,12 @@ import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -33,34 +39,40 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Book
+import androidx.compose.material.icons.rounded.Book
+import androidx.compose.material.icons.rounded.ContentCopy
+import androidx.compose.material.icons.rounded.Favorite
+import androidx.compose.material.icons.rounded.FilterNone
+import androidx.compose.material.icons.rounded.Forum
+import androidx.compose.material.icons.rounded.Groups
+import androidx.compose.material.icons.rounded.History
+import androidx.compose.material.icons.rounded.Hub
+import androidx.compose.material.icons.rounded.MenuBook
+import androidx.compose.material.icons.rounded.NorthEast
+import androidx.compose.material.icons.rounded.PlayCircle
+import androidx.compose.material.icons.rounded.Send
+import androidx.compose.material.icons.rounded.Subtitles
+import androidx.compose.material.icons.rounded.Sync
+import androidx.compose.material.icons.rounded.Tag
+import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.ExpandLess
 import androidx.compose.material.icons.outlined.ExpandMore
-import androidx.compose.material.icons.outlined.FavoriteBorder
-import androidx.compose.material.icons.outlined.FilterNone
-import androidx.compose.material.icons.outlined.Tune
-import androidx.compose.material.icons.outlined.Hub
 import androidx.compose.material.icons.outlined.ForkRight
-import androidx.compose.material.icons.outlined.Forum
-import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Link
-import androidx.compose.material.icons.outlined.MenuBook
 import androidx.compose.material.icons.outlined.NorthEast
-import androidx.compose.material.icons.outlined.PlayCircleOutline
 import androidx.compose.material.icons.outlined.RestartAlt
 import androidx.compose.material.icons.outlined.Schedule
-import androidx.compose.material.icons.outlined.Send
 import androidx.compose.material.icons.outlined.Star
-import androidx.compose.material.icons.outlined.Subtitles
 import androidx.compose.material.icons.outlined.Sync
-import androidx.compose.material.icons.outlined.Tag
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ProgressIndicatorDefaults
@@ -78,6 +90,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -99,7 +112,11 @@ import com.webtoapp.ui.design.WtaAlertDialog
 import com.webtoapp.ui.design.WtaCard
 import com.webtoapp.ui.design.WtaCardTone
 import com.webtoapp.ui.design.WtaLoadingIndicator
+import com.webtoapp.ui.design.WtaMaterialShape
+import com.webtoapp.ui.design.WtaMorphingShape
+import com.webtoapp.ui.design.WtaMotion
 import com.webtoapp.ui.design.WtaSettingRow
+import com.webtoapp.ui.design.WtaShapePlate
 import com.webtoapp.ui.design.WtaSwitch
 import com.webtoapp.ui.design.WtaRadius
 import com.webtoapp.ui.design.WtaScreen
@@ -109,14 +126,17 @@ import com.webtoapp.ui.design.WtaSpacing
 import com.webtoapp.ui.design.rememberHapticClick
 import com.webtoapp.ui.design.wtaPressScale
 import com.webtoapp.ui.theme.LocalIsDarkTheme
+import com.webtoapp.ui.theme.LocalAnimationSettings
 import com.webtoapp.ui.theme.LocalShowDescriptions
 import com.webtoapp.ui.theme.ifDescriptionsShown
 import com.webtoapp.ui.theme.ThemeManager
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.graphics.shapes.RoundedPolygon
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun AboutScreen(onBack: () -> Unit) {
     val context = LocalContext.current
@@ -188,7 +208,8 @@ private fun DescriptionsToggleCard() {
         contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)
     ) {
         WtaSettingRow(
-            icon = Icons.Outlined.Subtitles,
+            iconContent = { AboutShapeIcon(icon = Icons.Rounded.Subtitles, shapeIndex = 6, plateSize = 40.dp, iconSize = 20.dp) },
+            showIconPlate = false,
             title = Strings.showDescriptions,
             subtitle = Strings.showDescriptionsHint.ifDescriptionsShown(),
             onClick = { scope.launch { themeManager.setShowDescriptions(!showDescriptions) } },
@@ -217,7 +238,8 @@ private fun AdvancedFeaturesCard() {
         contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)
     ) {
         WtaSettingRow(
-            icon = Icons.Outlined.Tune,
+            iconContent = { AboutShapeIcon(icon = Icons.Rounded.Tune, shapeIndex = 3, plateSize = 40.dp, iconSize = 20.dp) },
+            showIconPlate = false,
             title = Strings.advancedFeatures,
             subtitle = Strings.advancedFeaturesDesc.ifDescriptionsShown(),
             onClick = { scope.launch { hostPrefs.setAdvancedFeaturesEnabled(!enabled) } },
@@ -250,7 +272,8 @@ private fun SeparateTasksCard() {
         contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)
     ) {
         WtaSettingRow(
-            icon = Icons.Outlined.FilterNone,
+            iconContent = { AboutShapeIcon(icon = Icons.Rounded.FilterNone, shapeIndex = 1, plateSize = 40.dp, iconSize = 20.dp) },
+            showIconPlate = false,
             title = Strings.webAppSeparateTasks,
             subtitle = Strings.webAppSeparateTasksDesc.ifDescriptionsShown(),
             onClick = { apply(!separateTasks) },
@@ -286,7 +309,8 @@ private fun LocalMcpCard() {
     ) {
         Column {
             WtaSettingRow(
-                icon = Icons.Outlined.Hub,
+                iconContent = { AboutShapeIcon(icon = Icons.Rounded.Hub, shapeIndex = 2, plateSize = 40.dp, iconSize = 20.dp) },
+                showIconPlate = false,
                 title = Strings.localMcp,
                 subtitle = Strings.localMcpDesc.ifDescriptionsShown(),
                 onClick = { setEnabled(!mcp.enabled) },
@@ -391,6 +415,7 @@ private fun CopyOnLongPressText(
     )
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun AuthorHeroCard(
     versionName: String,
@@ -506,14 +531,32 @@ private fun AuthorHeroCard(
         ) {
 
             Box(
-                modifier = Modifier
-                    .size(96.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.06f)),
+                modifier = Modifier.size(132.dp),
                 contentAlignment = Alignment.Center
             ) {
+                WtaMorphingShape(
+                    startPolygon = MaterialShapes.Cookie9Sided,
+                    endPolygon = MaterialShapes.Sunny,
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    modifier = Modifier.matchParentSize()
+                )
+                WtaMaterialShape(
+                    polygon = MaterialShapes.Gem,
+                    color = MaterialTheme.colorScheme.tertiaryContainer,
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .size(22.dp),
+                    rotationDegrees = 18f
+                )
+                WtaMaterialShape(
+                    polygon = MaterialShapes.Clover4Leaf,
+                    color = MaterialTheme.colorScheme.secondaryContainer,
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .size(18.dp),
+                    rotationDegrees = -12f
+                )
                 Image(
-
                     painter = painterResource(id = R.drawable.about_avatar),
                     contentDescription = Strings.authorAvatar,
                     modifier = Modifier
@@ -527,7 +570,7 @@ private fun AuthorHeroCard(
 
             Text(
                 text = "WebToApp",
-                style = MaterialTheme.typography.headlineSmall,
+                style = MaterialTheme.typography.headlineSmallEmphasized,
                 color = MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center
             )
@@ -631,7 +674,7 @@ private fun VersionPill(
     ) {
         Text(
             text = "v$versionName",
-            style = MaterialTheme.typography.labelLarge,
+            style = MaterialTheme.typography.labelLargeEmphasized,
             color = MaterialTheme.colorScheme.onSurface
         )
         Spacer(Modifier.width(6.dp))
@@ -688,44 +731,50 @@ private fun ContactGrid() {
     val entries = remember(groupWord, qqCopied, authorLabel, docsLabel) {
         listOf(
             ContactEntry(
-                icon = Icons.Outlined.MenuBook,
+                icon = Icons.Rounded.MenuBook,
                 label = docsLabel,
                 value = "shiaho777.github.io",
-                action = ContactAction.OpenUrl("https://shiaho777.github.io/web-to-app/")
+                action = ContactAction.OpenUrl("https://shiaho777.github.io/web-to-app/"),
+                shapeIndex = 0
             ),
             ContactEntry(
-                icon = Icons.Outlined.Send,
+                icon = Icons.Rounded.Send,
                 label = "Telegram",
                 value = "@webtoapp777",
-                action = ContactAction.OpenUrl("https://t.me/webtoapp777")
+                action = ContactAction.OpenUrl("https://t.me/webtoapp777"),
+                shapeIndex = 1
             ),
             ContactEntry(
-                icon = Icons.Outlined.Tag,
+                icon = Icons.Rounded.Tag,
                 label = "X (Twitter)",
                 value = "@shiaho777",
-                action = ContactAction.OpenUrl("https://x.com/shiaho777")
+                action = ContactAction.OpenUrl("https://x.com/shiaho777"),
+                shapeIndex = 2
             ),
             ContactEntry(
-                icon = Icons.Outlined.PlayCircleOutline,
+                icon = Icons.Rounded.PlayCircle,
                 label = "Bilibili",
                 value = "b23.tv/8mGDo2N",
-                action = ContactAction.OpenUrl("https://b23.tv/8mGDo2N")
+                action = ContactAction.OpenUrl("https://b23.tv/8mGDo2N"),
+                shapeIndex = 3
             ),
             ContactEntry(
-                icon = Icons.Outlined.Groups,
+                icon = Icons.Rounded.Groups,
                 label = "QQ $groupWord",
                 value = "1041130206",
                 action = ContactAction.CopyText(
                     label = "QQ Group",
                     text = "1041130206",
                     toast = qqCopied
-                )
+                ),
+                shapeIndex = 4
             ),
             ContactEntry(
-                icon = Icons.Outlined.Forum,
+                icon = Icons.Rounded.Forum,
                 label = authorLabel,
                 value = "shiaho",
-                action = ContactAction.OpenUrl("https://github.com/shiaho777")
+                action = ContactAction.OpenUrl("https://github.com/shiaho777"),
+                shapeIndex = 5
             )
         )
     }
@@ -771,7 +820,8 @@ private data class ContactEntry(
     val icon: ImageVector,
     val label: String,
     val value: String,
-    val action: ContactAction
+    val action: ContactAction,
+    val shapeIndex: Int
 )
 
 private sealed interface ContactAction {
@@ -783,6 +833,7 @@ private sealed interface ContactAction {
     ) : ContactAction
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun GitHubRepoCard(onClick: () -> Unit) {
     val isDark = LocalIsDarkTheme.current
@@ -800,17 +851,15 @@ private fun GitHubRepoCard(onClick: () -> Unit) {
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(RoundedCornerShape(14.dp))
-                    .background(badgeColor),
-                contentAlignment = Alignment.Center
+            WtaShapePlate(
+                polygon = MaterialShapes.Cookie6Sided,
+                containerColor = badgeColor,
+                modifier = Modifier.size(50.dp)
             ) {
                 Icon(
                     painter = painterResource(R.drawable.ic_github_mark),
                     contentDescription = null,
-                    modifier = Modifier.size(30.dp),
+                    modifier = Modifier.size(28.dp),
                     tint = markColor
                 )
             }
@@ -821,7 +870,7 @@ private fun GitHubRepoCard(onClick: () -> Unit) {
             ) {
                 Text(
                     text = "shiaho777 / web-to-app",
-                    style = MaterialTheme.typography.titleSmall,
+                    style = MaterialTheme.typography.titleSmallEmphasized,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -838,18 +887,16 @@ private fun GitHubRepoCard(onClick: () -> Unit) {
                 }
             }
             Spacer(Modifier.width(8.dp))
-            Box(
-                modifier = Modifier
-                    .size(30.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surfaceContainerHigh),
-                contentAlignment = Alignment.Center
+            WtaShapePlate(
+                polygon = MaterialShapes.Gem,
+                containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                modifier = Modifier.size(32.dp)
             ) {
                 Icon(
-                    Icons.Outlined.NorthEast,
+                    Icons.Rounded.NorthEast,
                     contentDescription = null,
-                    modifier = Modifier.size(16.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    modifier = Modifier.size(15.dp),
+                    tint = MaterialTheme.colorScheme.onTertiaryContainer
                 )
             }
         }
@@ -872,20 +919,12 @@ private fun ContactTile(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(
-                modifier = Modifier
-                    .size(36.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surfaceContainerHigh),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    entry.icon,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp),
-                    tint = MaterialTheme.colorScheme.onSurface
-                )
-            }
+            AboutShapeIcon(
+                icon = entry.icon,
+                shapeIndex = entry.shapeIndex,
+                plateSize = 38.dp,
+                iconSize = 19.dp
+            )
             Spacer(Modifier.width(12.dp))
             Column(
                 modifier = Modifier.weight(1f),
@@ -893,7 +932,7 @@ private fun ContactTile(
             ) {
                 Text(
                     text = entry.label,
-                    style = MaterialTheme.typography.labelLarge,
+                    style = MaterialTheme.typography.labelLargeEmphasized,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -926,28 +965,44 @@ private fun LegalTabContent() {
     ) {
         WtaCard(modifier = Modifier.fillMaxWidth()) {
             Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                LegalSection(Strings.legalDisclaimerTitle1, Strings.legalDisclaimerContent1)
-                LegalSection(Strings.legalDisclaimerTitle2, Strings.legalDisclaimerContent2)
-                LegalSection(Strings.legalDisclaimerTitle3, Strings.legalDisclaimerContent3)
-                LegalSection(Strings.legalDisclaimerTitle4, Strings.legalDisclaimerContent4)
-                LegalSection(Strings.legalDisclaimerTitle5, Strings.legalDisclaimerContent5)
+                LegalSection(Strings.legalDisclaimerTitle1, Strings.legalDisclaimerContent1, 0)
+                LegalSection(Strings.legalDisclaimerTitle2, Strings.legalDisclaimerContent2, 1)
+                LegalSection(Strings.legalDisclaimerTitle3, Strings.legalDisclaimerContent3, 2)
+                LegalSection(Strings.legalDisclaimerTitle4, Strings.legalDisclaimerContent4, 3)
+                LegalSection(Strings.legalDisclaimerTitle5, Strings.legalDisclaimerContent5, 4)
             }
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun LegalSection(title: String, content: String) {
+private fun LegalSection(title: String, content: String, shapeIndex: Int) {
+    val colors = MaterialTheme.colorScheme
+    val markerColor = when (shapeIndex % 3) {
+        0 -> colors.primary
+        1 -> colors.secondary
+        else -> colors.tertiary
+    }
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurface
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            WtaMaterialShape(
+                polygon = aboutShapePalette[shapeIndex % aboutShapePalette.size],
+                color = markerColor,
+                modifier = Modifier.size(11.dp)
+            )
+            Spacer(Modifier.width(7.dp))
+            Text(
+                text = title,
+                style = MaterialTheme.typography.labelLargeEmphasized,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        }
         Text(
             text = content,
             style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(start = 18.dp)
         )
     }
 }
@@ -1169,16 +1224,16 @@ private fun VersionHistorySheet(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    Icons.Outlined.History,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(20.dp)
+                AboutShapeIcon(
+                    icon = Icons.Rounded.History,
+                    shapeIndex = 7,
+                    plateSize = 34.dp,
+                    iconSize = 18.dp
                 )
                 Spacer(Modifier.width(10.dp))
                 Text(
                     Strings.versionHistoryTitle,
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.titleMediumEmphasized,
                     color = MaterialTheme.colorScheme.onSurface
                 )
             }
@@ -1583,26 +1638,138 @@ private fun formatBytes(bytes: Long): String {
     return if (unit == 0) "${bytes} B" else "%.1f %s".format(value, units[unit])
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun MadeWithLoveFooter() {
-    Row(
+    val colors = MaterialTheme.colorScheme
+    val motionEnabled = LocalAnimationSettings.current.enabled && WtaMotion.motionEnabled
+    val transition = rememberInfiniteTransition(label = "madeWithLove")
+    val pulse by transition.animateFloat(
+        initialValue = 1f,
+        targetValue = 1.16f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 900, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "heartPulse"
+    )
+    val heartScale = if (motionEnabled) pulse else 1f
+
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically
+            .padding(vertical = 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Icon(
-            Icons.Outlined.FavoriteBorder,
-            contentDescription = null,
-            modifier = Modifier.size(14.dp),
-            tint = MaterialTheme.colorScheme.outline
-        )
-        Spacer(Modifier.width(8.dp))
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            WtaMaterialShape(
+                polygon = MaterialShapes.Sunny,
+                color = colors.secondaryContainer,
+                modifier = Modifier.size(16.dp),
+                rotationDegrees = 12f
+            )
+            WtaMaterialShape(
+                polygon = MaterialShapes.Gem,
+                color = colors.tertiaryContainer,
+                modifier = Modifier.size(12.dp),
+                rotationDegrees = -10f
+            )
+            Box(
+                modifier = Modifier.size(56.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                WtaMorphingShape(
+                    startPolygon = MaterialShapes.Heart,
+                    endPolygon = MaterialShapes.Cookie9Sided,
+                    color = colors.primaryContainer,
+                    modifier = Modifier.matchParentSize(),
+                    morphDurationMillis = 3200,
+                    rotationDurationMillis = 30000
+                )
+                Icon(
+                    imageVector = Icons.Rounded.Favorite,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(24.dp)
+                        .graphicsLayer {
+                            scaleX = heartScale
+                            scaleY = heartScale
+                        },
+                    tint = colors.primary
+                )
+            }
+            WtaMaterialShape(
+                polygon = MaterialShapes.Gem,
+                color = colors.tertiaryContainer,
+                modifier = Modifier.size(12.dp),
+                rotationDegrees = 14f
+            )
+            WtaMaterialShape(
+                polygon = MaterialShapes.Sunny,
+                color = colors.secondaryContainer,
+                modifier = Modifier.size(16.dp),
+                rotationDegrees = -12f
+            )
+        }
         Text(
             text = Strings.madeWithLove,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.outline
+            style = MaterialTheme.typography.labelLargeEmphasized,
+            color = colors.onSurfaceVariant,
+            textAlign = TextAlign.Center
+        )
+    }
+}
+
+private val aboutShapePalette: List<RoundedPolygon>
+    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
+    get() = listOf(
+        MaterialShapes.Sunny,
+        MaterialShapes.Cookie4Sided,
+        MaterialShapes.Clover4Leaf,
+        MaterialShapes.Gem,
+        MaterialShapes.Fan,
+        MaterialShapes.Pentagon,
+        MaterialShapes.Cookie6Sided,
+        MaterialShapes.Arch,
+        MaterialShapes.VerySunny,
+        MaterialShapes.Ghostish
+    )
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun AboutShapeIcon(
+    icon: ImageVector,
+    shapeIndex: Int,
+    modifier: Modifier = Modifier,
+    plateSize: androidx.compose.ui.unit.Dp = 36.dp,
+    iconSize: androidx.compose.ui.unit.Dp = 18.dp
+) {
+    val colors = MaterialTheme.colorScheme
+    val tone = shapeIndex % 3
+    val container = when (tone) {
+        0 -> colors.primaryContainer
+        1 -> colors.secondaryContainer
+        else -> colors.tertiaryContainer
+    }
+    val onContainer = when (tone) {
+        0 -> colors.onPrimaryContainer
+        1 -> colors.onSecondaryContainer
+        else -> colors.onTertiaryContainer
+    }
+    WtaShapePlate(
+        polygon = aboutShapePalette[shapeIndex % aboutShapePalette.size],
+        containerColor = container,
+        modifier = modifier.size(plateSize)
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier.size(iconSize),
+            tint = onContainer
         )
     }
 }
@@ -1835,8 +2002,8 @@ private fun OtherProjectsSection(
                 }
                 else -> {
                     val visibleRepos = if (showAllRepos) sorted else sorted.take(COLLAPSED_REPO_COUNT)
-                    visibleRepos.forEach { repo ->
-                        RepoCard(repo = repo, onClick = { context.openUrl(repo.url) })
+                    visibleRepos.forEachIndexed { index, repo ->
+                        RepoCard(repo = repo, shapeIndex = index, onClick = { context.openUrl(repo.url) })
                     }
                     if (sorted.size > COLLAPSED_REPO_COUNT) {
                         Row(
@@ -1933,9 +2100,11 @@ private fun RepoSortToggle(
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun RepoCard(
     repo: com.webtoapp.core.update.UpdateChecker.RepoSummary,
+    shapeIndex: Int,
     onClick: () -> Unit
 ) {
     val pushedDate = remember(repo.pushedAt) {
@@ -1950,24 +2119,16 @@ private fun RepoCard(
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier
-                        .size(34.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(MaterialTheme.colorScheme.surfaceContainerHigh),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        Icons.Outlined.Book,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+                AboutShapeIcon(
+                    icon = Icons.Rounded.Book,
+                    shapeIndex = shapeIndex,
+                    plateSize = 36.dp,
+                    iconSize = 18.dp
+                )
                 Spacer(Modifier.width(10.dp))
                 Text(
                     text = repo.name,
-                    style = MaterialTheme.typography.titleSmall,
+                    style = MaterialTheme.typography.titleSmallEmphasized,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,

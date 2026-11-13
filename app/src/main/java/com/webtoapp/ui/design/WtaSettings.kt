@@ -319,6 +319,7 @@ fun WtaSettingRow(
     subtitle: String? = null,
     icon: ImageVector? = null,
     iconContent: (@Composable () -> Unit)? = null,
+    showIconPlate: Boolean = true,
     enabled: Boolean = true,
     active: Boolean? = null,
     tone: WtaRowTone = WtaRowTone.Normal,
@@ -375,8 +376,15 @@ fun WtaSettingRow(
                 Box(
                     modifier = Modifier
                         .size(WtaSize.IconPlate)
-                        .clip(RoundedCornerShape(WtaRadius.IconPlate))
-                        .background(iconPlate),
+                        .then(
+                            if (showIconPlate) {
+                                Modifier
+                                    .clip(RoundedCornerShape(WtaRadius.IconPlate))
+                                    .background(iconPlate)
+                            } else {
+                                Modifier
+                            }
+                        ),
                     contentAlignment = Alignment.Center
                 ) {
                     if (iconContent != null) {
