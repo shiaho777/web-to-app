@@ -232,6 +232,29 @@ fun HomeScreen(
 
     WtaScreen(
         title = Strings.myApps,
+        titleContent = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                WtaShapePlate(
+                    polygon = MaterialShapes.Cookie7Sided,
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    modifier = Modifier.size(30.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Apps,
+                        contentDescription = null,
+                        modifier = Modifier.size(17.dp),
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+                Spacer(modifier = Modifier.width(10.dp))
+                Text(
+                    text = Strings.myApps,
+                    style = MaterialTheme.typography.titleLargeEmphasized,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        },
         snackbarHostState = snackbarHostState,
         floatingActionButton = {
             ExtendedFloatingActionButton(
@@ -1867,12 +1890,30 @@ fun EmptyState(
             )
         }
         Spacer(modifier = Modifier.height(24.dp))
-        Text(
-            text = Strings.msgNoApps,
-            style = MaterialTheme.typography.titleLargeEmphasized,
-            color = colors.onSurface,
-            textAlign = TextAlign.Center
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            WtaMaterialShape(
+                polygon = MaterialShapes.Sunny,
+                color = colors.tertiaryContainer,
+                modifier = Modifier
+                    .size(22.dp)
+                    .offset(y = (-1).dp)
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Text(
+                text = Strings.msgNoApps,
+                style = MaterialTheme.typography.titleLargeEmphasized,
+                color = colors.onSurface,
+                textAlign = TextAlign.Center
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            WtaMaterialShape(
+                polygon = MaterialShapes.Sunny,
+                color = colors.tertiaryContainer,
+                modifier = Modifier
+                    .size(22.dp)
+                    .offset(y = (-1).dp)
+            )
+        }
     }
 }
 
