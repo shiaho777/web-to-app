@@ -33,7 +33,8 @@ fun CategoryTabRow(
     onDeleteCategory: (AppCategory) -> Unit,
     onMoveCategory: (AppCategory, Int) -> Unit,
     onManageCategories: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    trailingContent: (@Composable () -> Unit)? = null
 ) {
     var showCategoryMenu by remember { mutableStateOf<AppCategory?>(null) }
     var showDeleteConfirm by remember { mutableStateOf<AppCategory?>(null) }
@@ -144,6 +145,12 @@ fun CategoryTabRow(
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+            }
+        }
+
+        if (trailingContent != null) {
+            item {
+                trailingContent()
             }
         }
 
