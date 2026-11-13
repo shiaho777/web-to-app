@@ -74,6 +74,7 @@ import com.webtoapp.ui.design.WtaLoadingIndicator
 import com.webtoapp.ui.design.WtaMaterialShape
 import com.webtoapp.ui.design.WtaMorphingShape
 import com.webtoapp.ui.design.WtaShapePlate
+import com.webtoapp.ui.design.WtaPolygonShape
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialShapes
 import com.webtoapp.ui.design.WtaScreen
@@ -237,6 +238,7 @@ fun HomeScreen(
                 onClick = { showFabMenu = true },
                 icon = { Icon(Icons.Default.Add, contentDescription = null) },
                 text = { Text(Strings.createApp, style = MaterialTheme.typography.labelLargeEmphasized) },
+                shape = CreateFabShape,
                 containerColor = MaterialTheme.colorScheme.primaryContainer,
                 contentColor = MaterialTheme.colorScheme.onPrimaryContainer
             )
@@ -1875,6 +1877,8 @@ fun EmptyState(
 }
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
+private val CreateFabShape = WtaPolygonShape(MaterialShapes.Cookie12Sided)
+
 private val createActionTileShapes = listOf(
     MaterialShapes.Cookie4Sided,
     MaterialShapes.Sunny,

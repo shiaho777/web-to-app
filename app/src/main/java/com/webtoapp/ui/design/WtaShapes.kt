@@ -16,9 +16,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.graphics.shapes.Cubic
 import androidx.graphics.shapes.Morph
 import androidx.graphics.shapes.RoundedPolygon
@@ -120,5 +126,34 @@ fun WtaShapePlate(
             rotationDegrees = rotationDegrees
         )
         content()
+    }
+}
+
+class WtaPolygonShape(polygon: RoundedPolygon) : Shape {
+    private val cubics = polygon.normalized().cubics
+
+    override fun createOutline(
+        size: Size,
+        layoutDirection: LayoutDirection,
+        density: Density
+    ): Outline {
+        if (cubics.isEmpty() || size.minDimension <= 0f) {
+            return Outline.Rectangle(Rect(0f, 0f, size.width, size.height))
+        }
+        val path = Path()
+        val first = cubics.first()
+        path.moveTo(first.anchor0X * size.width, first.anchor0Y * size.height)
+        for (cubic in cubics) {
+            path.cubicTo(
+                cubic.control0X * size.width,
+                cubic.control0Y * size.height,
+                cubic.control1X * size.width,
+                cubic.control1Y * size.height,
+                cubic.anchor1X * size.width,
+                cubic.anchor1Y * size.height
+            )
+        }
+        path.close()
+        return Outline.Generic(path)
     }
 }

@@ -121,6 +121,10 @@ decorative plates and empty-state art instead of plain rounded rectangles.
   when the user disables animations.
 - `WtaShapePlate(polygon, containerColor) { content }` — shape-backed icon
   plate; center any icon inside.
+- `WtaPolygonShape(polygon)` — adapts an official `RoundedPolygon` into a
+  Compose `Shape` for component containers (e.g. the home create FAB uses
+  `MaterialShapes.Cookie12Sided`). Prefer container-friendly, symmetric shapes
+  for wide buttons; radial/lobed shapes distort when stretched.
 Pull colors from `MaterialTheme.colorScheme.*` containers; never hard-code.
 - `WtaLoadingIndicator(size, color, progress)` — Material 3 Expressive loading
   indicator (shape-morph animation). The only spinner primitive; use it for
