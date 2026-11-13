@@ -64,9 +64,7 @@ import com.webtoapp.ui.components.CategoryTabRow
 import com.webtoapp.ui.components.DataBackupDialog
 import com.webtoapp.ui.components.EnhancedElevatedCard
 import com.webtoapp.ui.components.PremiumTextField
-import com.webtoapp.ui.components.LanguageSelectionDialog
-import com.webtoapp.core.i18n.AppLanguage
-import com.webtoapp.core.i18n.LanguageManager
+import com.webtoapp.ui.components.LanguageSelectorButton
 import com.webtoapp.ui.components.MoveToCategoryDialog
 import com.webtoapp.ui.design.WtaAlertDialog
 import com.webtoapp.ui.design.WtaLoadingIndicator
@@ -84,7 +82,6 @@ import com.webtoapp.ui.theme.LocalAnimationSettings
 import com.webtoapp.ui.theme.AppColors
 import com.webtoapp.ui.theme.ThemeManager
 import com.webtoapp.ui.theme.LocalAppTheme
-import com.webtoapp.ui.theme.LocalThemeRevealState
 import com.webtoapp.ui.viewmodel.MainViewModel
 import com.webtoapp.ui.viewmodel.UiState
 import kotlinx.coroutines.Dispatchers
@@ -108,9 +105,6 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.foundation.Canvas
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.layout.boundsInRoot
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.ui.graphics.graphicsLayer
@@ -247,46 +241,14 @@ fun HomeScreen(
         },
 
         actions = {
-                    val context = LocalContext.current
-                    val themeManager = remember { ThemeManager.getInstance(context) }
-                    val darkModeState by themeManager.darkModeFlow.collectAsStateWithLifecycle()
-                    val isDarkNow = darkModeState == ThemeManager.DarkModeSettings.DARK
-
-                    val revealState = LocalThemeRevealState.current
-                    val view = LocalView.current
-                    val activity = context as? android.app.Activity
-
-                    var buttonCenter by remember { mutableStateOf(androidx.compose.ui.geometry.Offset.Zero) }
-
-                    val languageManager = remember { LanguageManager.getInstance(context) }
-                    val currentLanguage by languageManager.currentLanguageFlow.collectAsState(initial = AppLanguage.CHINESE)
-                    var showLanguageDialog by remember { mutableStateOf(false) }
-
-                    val toggleDarkMode: () -> Unit = {
-                        val switchToDark = !isDarkNow
-                        if (revealState != null) {
-                            revealState.triggerReveal(
-                                center = buttonCenter,
-                                switchToDark = switchToDark,
-                                view = view,
-                                window = activity?.window
-                            ) {
-                                scope.launch {
-                                    themeManager.setDarkMode(
-                                        if (switchToDark) ThemeManager.DarkModeSettings.DARK
-                                        else ThemeManager.DarkModeSettings.LIGHT
-                                    )
-                                }
-                            }
-                        } else {
+                    LanguageSelectorButton(
+                        buttonSize = 40.dp,
+                        onLanguageChanged = {
                             scope.launch {
-                                themeManager.setDarkMode(
-                                    if (switchToDark) ThemeManager.DarkModeSettings.DARK
-                                    else ThemeManager.DarkModeSettings.LIGHT
-                                )
+                                snackbarHostState.showSnackbar(Strings.msgLanguageChanged)
                             }
                         }
-                    }
+                    )
 
                     ButtonGroup {
                         ToggleButton(
@@ -296,7 +258,7 @@ fun HomeScreen(
                                     scope.launch { homeThemeManager.setHomeViewMode(ThemeManager.HomeViewMode.LIST) }
                                 }
                             },
-                            modifier = Modifier.size(44.dp),
+                            modifier = Modifier.size(40.dp),
                             contentPadding = PaddingValues(0.dp)
                         ) {
                             Icon(
@@ -312,7 +274,7 @@ fun HomeScreen(
                                     scope.launch { homeThemeManager.setHomeViewMode(ThemeManager.HomeViewMode.GRID) }
                                 }
                             },
-                            modifier = Modifier.size(44.dp),
+                            modifier = Modifier.size(40.dp),
                             contentPadding = PaddingValues(0.dp)
                         ) {
                             Icon(
@@ -323,12 +285,51 @@ fun HomeScreen(
                         }
                     }
 
+                    Box {
+                        IconButton(
+                            onClick = { showSortMenu = true },
+                            modifier = Modifier.size(40.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Sort,
+                                contentDescription = Strings.appListSort,
+                                modifier = Modifier.size(22.dp),
+                                tint = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                        DropdownMenu(
+                            expanded = showSortMenu,
+                            onDismissRequest = { showSortMenu = false }
+                        ) {
+                            AppListSort.entries.forEach { mode ->
+                                DropdownMenuItem(
+                                    text = { Text(mode.homeMenuLabel()) },
+                                    onClick = {
+                                        showSortMenu = false
+                                        viewModel.setAppListSort(mode)
+                                    },
+                                    leadingIcon = {
+                                        if (appListSort == mode) {
+                                            Icon(
+                                                Icons.Outlined.Check,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                        } else {
+                                            Spacer(Modifier.size(18.dp))
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                    }
+
                     IconButton(
                         onClick = {
                             isSearchActive = !isSearchActive
                             if (!isSearchActive) viewModel.search("")
                         },
-                        modifier = Modifier.size(44.dp)
+                        modifier = Modifier.size(40.dp)
                     ) {
                         Icon(
                             imageVector = if (isSearchActive) Icons.Default.Close else Icons.Default.Search,
@@ -342,15 +343,7 @@ fun HomeScreen(
                     Box {
                         IconButton(
                             onClick = { showMoreMenu = true },
-                            modifier = Modifier
-                                .size(44.dp)
-                                .onGloballyPositioned { coords ->
-                                    val bounds = coords.boundsInRoot()
-                                    buttonCenter = androidx.compose.ui.geometry.Offset(
-                                        bounds.left + bounds.width / 2,
-                                        bounds.top + bounds.height / 2
-                                    )
-                                }
+                            modifier = Modifier.size(40.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.Outlined.MoreVert,
@@ -363,33 +356,6 @@ fun HomeScreen(
                             expanded = showMoreMenu,
                             onDismissRequest = { showMoreMenu = false }
                         ) {
-                            DropdownMenuItem(
-                                text = { Text(Strings.appListSort) },
-                                onClick = { showMoreMenu = false; showSortMenu = true },
-                                leadingIcon = { Icon(Icons.Outlined.Sort, null, Modifier.size(20.dp)) }
-                            )
-                            DropdownMenuItem(
-                                text = {
-                                    Text(
-                                        if (isDarkNow) Strings.statusBarDarkModeLabel
-                                        else Strings.statusBarLightModeLabel
-                                    )
-                                },
-                                onClick = { showMoreMenu = false; toggleDarkMode() },
-                                leadingIcon = {
-                                    Icon(
-                                        if (isDarkNow) Icons.Outlined.DarkMode else Icons.Outlined.LightMode,
-                                        null,
-                                        Modifier.size(20.dp)
-                                    )
-                                }
-                            )
-                            DropdownMenuItem(
-                                text = { Text(Strings.languageSettings) },
-                                onClick = { showMoreMenu = false; showLanguageDialog = true },
-                                leadingIcon = { Icon(Icons.Outlined.Language, null, Modifier.size(20.dp)) }
-                            )
-                            HorizontalDivider()
                             DropdownMenuItem(
                                 text = { Text(Strings.menuAgent) },
                                 onClick = { showMoreMenu = false; onOpenAgent() },
@@ -471,45 +437,6 @@ fun HomeScreen(
                                 leadingIcon = { Icon(Icons.Outlined.Info, null, Modifier.size(20.dp)) }
                             )
                         }
-                        DropdownMenu(
-                            expanded = showSortMenu,
-                            onDismissRequest = { showSortMenu = false }
-                        ) {
-                            AppListSort.entries.forEach { mode ->
-                                DropdownMenuItem(
-                                    text = { Text(mode.homeMenuLabel()) },
-                                    onClick = {
-                                        showSortMenu = false
-                                        viewModel.setAppListSort(mode)
-                                    },
-                                    leadingIcon = {
-                                        if (appListSort == mode) {
-                                            Icon(
-                                                Icons.Outlined.Check,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(18.dp)
-                                            )
-                                        } else {
-                                            Spacer(Modifier.size(18.dp))
-                                        }
-                                    }
-                                )
-                            }
-                        }
-                    }
-
-                    if (showLanguageDialog) {
-                        LanguageSelectionDialog(
-                            currentLanguage = currentLanguage,
-                            onLanguageSelected = { language ->
-                                scope.launch {
-                                    languageManager.setLanguage(language)
-                                    snackbarHostState.showSnackbar(Strings.msgLanguageChanged)
-                                }
-                                showLanguageDialog = false
-                            },
-                            onDismiss = { showLanguageDialog = false }
-                        )
                     }
         }
     ) {
