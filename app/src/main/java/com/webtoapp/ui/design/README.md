@@ -100,6 +100,18 @@ fixed corner radius is genuinely required (it disables the press morph).
 - `WtaStatItem(value, label, accent)` — dashboard stat block.
 - `WtaBadge(text, icon)` — small pill badge.
 - `WtaDivider()` — full-width themed divider.
+
+### Material Shapes (`WtaShapes.kt`)
+Official Material 3 Expressive shape library (`MaterialShapes.Cookie9Sided`,
+`Sunny`, `Clover4Leaf`, `Gem`, `Fan`, `Pill`, `Arch`, ...). Use these for
+decorative plates and empty-state art instead of plain rounded rectangles.
+- `WtaMaterialShape(polygon, color, rotationDegrees)` — static official shape.
+- `WtaMorphingShape(startPolygon, endPolygon, color)` — infinite morph + slow
+  rotation between two official shapes; falls back to the static start shape
+  when the user disables animations.
+- `WtaShapePlate(polygon, containerColor) { content }` — shape-backed icon
+  plate; center any icon inside.
+Pull colors from `MaterialTheme.colorScheme.*` containers; never hard-code.
 - `WtaLoadingIndicator(size, color, progress)` — Material 3 Expressive loading
   indicator (shape-morph animation). The only spinner primitive; use it for
   both indeterminate and determinate (`progress = { value }`) loading.

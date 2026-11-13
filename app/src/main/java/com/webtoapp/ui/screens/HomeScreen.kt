@@ -68,6 +68,11 @@ import com.webtoapp.ui.components.LanguageSelectorButton
 import com.webtoapp.ui.components.MoveToCategoryDialog
 import com.webtoapp.ui.design.WtaAlertDialog
 import com.webtoapp.ui.design.WtaLoadingIndicator
+import com.webtoapp.ui.design.WtaMaterialShape
+import com.webtoapp.ui.design.WtaMorphingShape
+import com.webtoapp.ui.design.WtaShapePlate
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.MaterialShapes
 import com.webtoapp.ui.design.WtaScreen
 import com.webtoapp.ui.design.WtaRadius
 import com.webtoapp.ui.design.rememberHapticClick
@@ -115,6 +120,7 @@ import com.webtoapp.data.home.AppListSort
 import com.webtoapp.data.home.HomeDragSlot
 import com.webtoapp.data.home.stepCustomDrag
 import com.webtoapp.ui.design.WtaBadge
+import com.webtoapp.ui.design.WtaInfoChip
 import com.webtoapp.ui.theme.LocalShowDescriptions
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -1112,12 +1118,12 @@ fun HomeScreen(
                     style = MaterialTheme.typography.titleLarge,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
-                createActionItems.chunked(3).forEach { rowItems ->
+                createActionItems.chunked(3).forEachIndexed { rowIndex, rowItems ->
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        rowItems.forEach { item ->
+                        rowItems.forEachIndexed { colIndex, item ->
                             CreateActionTile(
                                 label = item.label,
                                 iconRes = item.iconRes,
@@ -1125,7 +1131,8 @@ fun HomeScreen(
                                     showFabMenu = false
                                     item.onClick()
                                 },
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier.weight(1f),
+                                shapeIndex = rowIndex * 3 + colIndex
                             )
                         }
                         repeat(3 - rowItems.size) {
@@ -1281,7 +1288,7 @@ private fun isExternalBrowserUrl(url: String): Boolean {
         trimmed.startsWith("https://", ignoreCase = true)
 }
 
-@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun AppCard(
     app: WebAppSummary,
@@ -1328,14 +1335,14 @@ fun AppCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box {
-                Box(
-                    modifier = Modifier
-                        .size(52.dp)
-                        .clip(RoundedCornerShape(WtaRadius.Card))
-                        .background(colors.secondaryContainer),
-                    contentAlignment = Alignment.Center
-                ) {
-                    if (app.iconPath != null) {
+                if (app.iconPath != null) {
+                    Box(
+                        modifier = Modifier
+                            .size(52.dp)
+                            .clip(RoundedCornerShape(WtaRadius.Card))
+                            .background(colors.secondaryContainer),
+                        contentAlignment = Alignment.Center
+                    ) {
                         AsyncImage(
                             model = ImageRequest.Builder(LocalContext.current)
                                 .data(app.iconPath)
@@ -1345,21 +1352,27 @@ fun AppCard(
                             modifier = Modifier.fillMaxSize(),
                             contentScale = ContentScale.Crop
                         )
-                    } else {
-                        val defaultIconRes = when (app.appType) {
-                            com.webtoapp.data.model.AppType.WEB -> R.drawable.ic_type_web
-                            com.webtoapp.data.model.AppType.IMAGE -> R.drawable.ic_type_media
-                            com.webtoapp.data.model.AppType.VIDEO -> R.drawable.ic_type_media
-                            com.webtoapp.data.model.AppType.HTML -> R.drawable.ic_type_html
-                            com.webtoapp.data.model.AppType.GALLERY -> R.drawable.ic_type_gallery
-                            com.webtoapp.data.model.AppType.FRONTEND -> R.drawable.ic_type_frontend
-                            com.webtoapp.data.model.AppType.WORDPRESS -> R.drawable.ic_type_wordpress
-                            com.webtoapp.data.model.AppType.NODEJS_APP -> R.drawable.ic_type_nodejs
-                            com.webtoapp.data.model.AppType.PHP_APP -> R.drawable.ic_type_php
-                            com.webtoapp.data.model.AppType.PYTHON_APP -> R.drawable.ic_type_python
-                            com.webtoapp.data.model.AppType.GO_APP -> R.drawable.ic_type_go
-                            com.webtoapp.data.model.AppType.MULTI_WEB -> R.drawable.ic_type_multi_web
-                        }
+                    }
+                } else {
+                    val defaultIconRes = when (app.appType) {
+                        com.webtoapp.data.model.AppType.WEB -> R.drawable.ic_type_web
+                        com.webtoapp.data.model.AppType.IMAGE -> R.drawable.ic_type_media
+                        com.webtoapp.data.model.AppType.VIDEO -> R.drawable.ic_type_media
+                        com.webtoapp.data.model.AppType.HTML -> R.drawable.ic_type_html
+                        com.webtoapp.data.model.AppType.GALLERY -> R.drawable.ic_type_gallery
+                        com.webtoapp.data.model.AppType.FRONTEND -> R.drawable.ic_type_frontend
+                        com.webtoapp.data.model.AppType.WORDPRESS -> R.drawable.ic_type_wordpress
+                        com.webtoapp.data.model.AppType.NODEJS_APP -> R.drawable.ic_type_nodejs
+                        com.webtoapp.data.model.AppType.PHP_APP -> R.drawable.ic_type_php
+                        com.webtoapp.data.model.AppType.PYTHON_APP -> R.drawable.ic_type_python
+                        com.webtoapp.data.model.AppType.GO_APP -> R.drawable.ic_type_go
+                        com.webtoapp.data.model.AppType.MULTI_WEB -> R.drawable.ic_type_multi_web
+                    }
+                    WtaShapePlate(
+                        polygon = MaterialShapes.Cookie6Sided,
+                        containerColor = colors.secondaryContainer,
+                        modifier = Modifier.size(52.dp)
+                    ) {
                         Icon(
                             painter = painterResource(defaultIconRes),
                             contentDescription = null,
@@ -1661,6 +1674,7 @@ private fun appTypeDefaultIcon(appType: com.webtoapp.data.model.AppType): Int = 
     com.webtoapp.data.model.AppType.MULTI_WEB -> R.drawable.ic_type_multi_web
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun AppGridTile(
     app: WebAppSummary,
@@ -1684,14 +1698,14 @@ fun AppGridTile(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Box {
-                Box(
-                    modifier = Modifier
-                        .size(56.dp)
-                        .clip(RoundedCornerShape(WtaRadius.Card))
-                        .background(colors.secondaryContainer),
-                    contentAlignment = Alignment.Center
-                ) {
-                    if (app.iconPath != null) {
+                if (app.iconPath != null) {
+                    Box(
+                        modifier = Modifier
+                            .size(56.dp)
+                            .clip(RoundedCornerShape(WtaRadius.Card))
+                            .background(colors.secondaryContainer),
+                        contentAlignment = Alignment.Center
+                    ) {
                         AsyncImage(
                             model = ImageRequest.Builder(LocalContext.current)
                                 .data(app.iconPath)
@@ -1701,7 +1715,13 @@ fun AppGridTile(
                             modifier = Modifier.fillMaxSize(),
                             contentScale = ContentScale.Crop
                         )
-                    } else {
+                    }
+                } else {
+                    WtaShapePlate(
+                        polygon = MaterialShapes.Sunny,
+                        containerColor = colors.secondaryContainer,
+                        modifier = Modifier.size(56.dp)
+                    ) {
                         Icon(
                             painter = painterResource(appTypeDefaultIcon(app.appType)),
                             contentDescription = null,
@@ -1845,51 +1865,118 @@ fun AppTypeChip(appType: com.webtoapp.data.model.AppType) {
     )
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun EmptyState(
     modifier: Modifier = Modifier
 ) {
+    val colors = MaterialTheme.colorScheme
     Column(
         modifier = modifier.padding(horizontal = 32.dp, vertical = 40.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Box(
-            modifier = Modifier
-                .size(72.dp)
-                .clip(RoundedCornerShape(WtaRadius.Dialog))
-                .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+            modifier = Modifier.size(232.dp),
             contentAlignment = Alignment.Center
         ) {
+            WtaMorphingShape(
+                startPolygon = MaterialShapes.Cookie9Sided,
+                endPolygon = MaterialShapes.Sunny,
+                color = colors.secondaryContainer,
+                modifier = Modifier.size(164.dp)
+            )
             Icon(
                 imageVector = Icons.Outlined.AppShortcut,
                 contentDescription = null,
-                modifier = Modifier.size(32.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                modifier = Modifier.size(56.dp),
+                tint = colors.onSecondaryContainer
+            )
+            WtaMaterialShape(
+                polygon = MaterialShapes.Clover4Leaf,
+                color = colors.tertiaryContainer,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .offset(x = (-14).dp, y = 22.dp)
+                    .size(44.dp),
+                rotationDegrees = 18f
+            )
+            WtaMaterialShape(
+                polygon = MaterialShapes.Gem,
+                color = colors.primaryContainer,
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .offset(x = 18.dp, y = (-26).dp)
+                    .size(36.dp),
+                rotationDegrees = -12f
+            )
+            WtaMaterialShape(
+                polygon = MaterialShapes.Pill,
+                color = colors.surfaceContainerHigh,
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .offset(x = 26.dp, y = 40.dp)
+                    .size(width = 34.dp, height = 18.dp),
+                rotationDegrees = -28f
+            )
+            WtaMaterialShape(
+                polygon = MaterialShapes.Triangle,
+                color = colors.tertiaryContainer.copy(alpha = 0.7f),
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .offset(x = (-24).dp, y = (-40).dp)
+                    .size(22.dp),
+                rotationDegrees = 24f
             )
         }
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(24.dp))
         Text(
             text = Strings.msgNoApps,
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurface,
+            style = MaterialTheme.typography.titleLarge,
+            color = colors.onSurface,
             textAlign = TextAlign.Center
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = Strings.emptyStateHint,
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = colors.onSurfaceVariant,
             textAlign = TextAlign.Center
         )
+        Spacer(modifier = Modifier.height(20.dp))
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            WtaInfoChip(label = Strings.appTypeWeb, icon = Icons.Outlined.Language)
+            WtaInfoChip(label = Strings.appTypeHtml, icon = Icons.Outlined.Code)
+            WtaInfoChip(label = Strings.appTypeNodeJs, icon = Icons.Outlined.Terminal)
+        }
     }
 }
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+private val createActionTileShapes = listOf(
+    MaterialShapes.Cookie4Sided,
+    MaterialShapes.Sunny,
+    MaterialShapes.Clover4Leaf,
+    MaterialShapes.Gem,
+    MaterialShapes.Cookie6Sided,
+    MaterialShapes.Fan,
+    MaterialShapes.Pentagon,
+    MaterialShapes.Pill,
+    MaterialShapes.Cookie9Sided,
+    MaterialShapes.Ghostish,
+    MaterialShapes.VerySunny,
+    MaterialShapes.Arch
+)
 
 @Composable
 private fun CreateActionTile(
     label: String,
     iconRes: Int,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    shapeIndex: Int = 0
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val hapticClick = rememberHapticClick(onClick)
@@ -1905,12 +1992,10 @@ private fun CreateActionTile(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Box(
-            modifier = Modifier
-                .size(48.dp)
-                .clip(RoundedCornerShape(WtaRadius.IconPlate))
-                .background(MaterialTheme.colorScheme.secondaryContainer),
-            contentAlignment = Alignment.Center
+        WtaShapePlate(
+            polygon = createActionTileShapes[shapeIndex % createActionTileShapes.size],
+            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+            modifier = Modifier.size(52.dp)
         ) {
             Icon(
                 painter = painterResource(iconRes),
