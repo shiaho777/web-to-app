@@ -27,11 +27,14 @@ Never hard-code a `dp`/`sp`/`Color()` value that maps to one of these tokens.
   for state accents. Each semantic tone ships with `{onX}` and `{xContainer}`
   variants mirroring Material 3.
 - The neutral skeleton is `AppThemes.KimiNoNawa` (calibrated light/dark
-  surfaces). The **default accent is `AppAccent.DYNAMIC`**: vibrant Material
-  You dynamic color on Android 12+, with a vibrant periwinkle/mint static
-  fallback (`AppAccentPalettes.DynamicFallback*`) on older releases. The
-  monochrome `DEFAULT` accent and ten vibrant dual-color accents remain
-  user-selectable in settings.
+  surfaces). The **default accent is `AppAccent.DYNAMIC`**, listed first in
+  settings: vibrant Material You dynamic color on Android 12+, with a vibrant
+  periwinkle/mint static fallback (`AppAccentPalettes.PeriwinkleMint*`) on
+  older releases. Its settings swatch renders the live wallpaper-derived
+  primary/tertiary pair instead of hardcoded colors. The static
+  `PERIWINKLE_MINT` accent preserves that pair as a fixed palette, followed by
+  ten vibrant dual-color accents. The legacy monochrome `DEFAULT` accent was
+  removed; persisted values migrate to `DYNAMIC`.
 - `AppColors` only holds colors that must stay constant across themes (editor
   chrome, Catppuccin presets, language/brand identity aliases). It is not a
   general-purpose color source.

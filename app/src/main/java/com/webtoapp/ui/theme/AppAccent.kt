@@ -13,8 +13,8 @@ import com.webtoapp.core.i18n.Strings
  * `primary`, the counterpoint color shows through `secondary`/containers.
  */
 enum class AppAccent(val swatchPrimary: Color, val swatchSecondary: Color) {
-    DEFAULT(Color(0xFF111113), Color(0xFF8A8A8E)),
     DYNAMIC(Color(0xFF88A0F8), Color(0xFFA9E2C3)),
+    PERIWINKLE_MINT(Color(0xFF88A0F8), Color(0xFFA9E2C3)),
     CHARCOAL_PINK(Color(0xFFE6397C), Color(0xFF1A1A1D)),
     ROYAL_PURPLE(Color(0xFF562583), Color(0xFFFFB929)),
     DEEP_SEA(Color(0xFF122E8A), Color(0xFFF5EFEA)),
@@ -27,8 +27,8 @@ enum class AppAccent(val swatchPrimary: Color, val swatchSecondary: Color) {
     MOCHA_LATTE(Color(0xFF7B5445), Color(0xFFE9D5C3));
 
     fun getDisplayName(): String = when (this) {
-        DEFAULT -> Strings.accentDefault
         DYNAMIC -> Strings.accentDynamic
+        PERIWINKLE_MINT -> Strings.accentPeriwinkleMint
         CHARCOAL_PINK -> Strings.accentCharcoalPink
         ROYAL_PURPLE -> Strings.accentRoyalPurple
         DEEP_SEA -> Strings.accentDeepSea
@@ -118,7 +118,7 @@ data class AccentScheme(
 
 object AppAccentPalettes {
 
-    private val DynamicFallbackLight = AccentScheme(
+    private val PeriwinkleMintLight = AccentScheme(
         primary = Color(0xFF4355B9), onPrimary = Color(0xFFFFFFFF),
         primaryContainer = Color(0xFFDEE0FF), onPrimaryContainer = Color(0xFF00105C),
         secondary = Color(0xFF006A60), onSecondary = Color(0xFFFFFFFF),
@@ -127,7 +127,7 @@ object AppAccentPalettes {
         tertiaryContainer = Color(0xFFCDEE8A), onTertiaryContainer = Color(0xFF131F00),
         inversePrimary = Color(0xFFBAC3FF)
     )
-    private val DynamicFallbackDark = AccentScheme(
+    private val PeriwinkleMintDark = AccentScheme(
         primary = Color(0xFFBAC3FF), onPrimary = Color(0xFF08218A),
         primaryContainer = Color(0xFF2B3D9E), onPrimaryContainer = Color(0xFFDEE0FF),
         secondary = Color(0xFF80D5C8), onSecondary = Color(0xFF003731),
@@ -331,9 +331,8 @@ object AppAccentPalettes {
         inversePrimary = Color(0xFF7B5445)
     )
 
-    fun scheme(accent: AppAccent, darkTheme: Boolean): AccentScheme? = when (accent) {
-        AppAccent.DEFAULT -> null
-        AppAccent.DYNAMIC -> if (darkTheme) DynamicFallbackDark else DynamicFallbackLight
+    fun scheme(accent: AppAccent, darkTheme: Boolean): AccentScheme = when (accent) {
+        AppAccent.DYNAMIC, AppAccent.PERIWINKLE_MINT -> if (darkTheme) PeriwinkleMintDark else PeriwinkleMintLight
         AppAccent.CHARCOAL_PINK -> if (darkTheme) CharcoalPinkDark else CharcoalPinkLight
         AppAccent.ROYAL_PURPLE -> if (darkTheme) RoyalPurpleDark else RoyalPurpleLight
         AppAccent.DEEP_SEA -> if (darkTheme) DeepSeaDark else DeepSeaLight

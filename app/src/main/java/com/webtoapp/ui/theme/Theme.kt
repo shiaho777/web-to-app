@@ -135,7 +135,7 @@ fun WebToAppTheme(
             if (useDarkTheme) dynamicDarkColorScheme(context)
             else dynamicLightColorScheme(context)
         }
-        else -> AppAccentPalettes.scheme(accent, useDarkTheme)?.applyTo(baseScheme) ?: baseScheme
+        else -> AppAccentPalettes.scheme(accent, useDarkTheme).applyTo(baseScheme)
     }
 
     val animationSettings = AnimationSettings(
