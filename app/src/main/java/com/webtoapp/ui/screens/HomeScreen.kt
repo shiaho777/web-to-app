@@ -6,6 +6,7 @@ import com.webtoapp.ui.components.PremiumButton
 import com.webtoapp.ui.components.SettingsSwitch
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.scrollBy
@@ -250,37 +251,35 @@ fun HomeScreen(
                         }
                     )
 
-                    ButtonGroup {
-                        ToggleButton(
-                            checked = homeViewMode == ThemeManager.HomeViewMode.LIST,
-                            onCheckedChange = { checked ->
-                                if (checked) {
-                                    scope.launch { homeThemeManager.setHomeViewMode(ThemeManager.HomeViewMode.LIST) }
-                                }
-                            },
-                            modifier = Modifier.size(40.dp),
-                            contentPadding = PaddingValues(0.dp)
-                        ) {
+                    IconButton(
+                        onClick = {
+                            val next = if (homeViewMode == ThemeManager.HomeViewMode.LIST) {
+                                ThemeManager.HomeViewMode.GRID
+                            } else {
+                                ThemeManager.HomeViewMode.LIST
+                            }
+                            scope.launch { homeThemeManager.setHomeViewMode(next) }
+                        },
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        Crossfade(
+                            targetState = homeViewMode,
+                            animationSpec = com.webtoapp.ui.design.WtaMotion.standardTween(),
+                            label = "homeViewModeIcon"
+                        ) { mode ->
                             Icon(
-                                imageVector = Icons.AutoMirrored.Outlined.ViewList,
-                                contentDescription = Strings.homeViewList,
-                                modifier = Modifier.size(22.dp)
-                            )
-                        }
-                        ToggleButton(
-                            checked = homeViewMode == ThemeManager.HomeViewMode.GRID,
-                            onCheckedChange = { checked ->
-                                if (checked) {
-                                    scope.launch { homeThemeManager.setHomeViewMode(ThemeManager.HomeViewMode.GRID) }
-                                }
-                            },
-                            modifier = Modifier.size(40.dp),
-                            contentPadding = PaddingValues(0.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.GridView,
-                                contentDescription = Strings.homeViewGrid,
-                                modifier = Modifier.size(22.dp)
+                                imageVector = if (mode == ThemeManager.HomeViewMode.GRID) {
+                                    Icons.AutoMirrored.Outlined.ViewList
+                                } else {
+                                    Icons.Outlined.GridView
+                                },
+                                contentDescription = if (mode == ThemeManager.HomeViewMode.GRID) {
+                                    Strings.homeViewList
+                                } else {
+                                    Strings.homeViewGrid
+                                },
+                                modifier = Modifier.size(22.dp),
+                                tint = MaterialTheme.colorScheme.onSurface
                             )
                         }
                     }
