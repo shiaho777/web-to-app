@@ -6,8 +6,6 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ZoomIn
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -15,6 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.ui.design.WtaAlertDialog
 import com.webtoapp.ui.design.WtaChip
 
 /** Page-zoom preset percentages offered in the overflow menu. Mirrors Chrome's stops. */
@@ -34,11 +33,11 @@ fun ZoomPresetsDialog(
     onDismiss: () -> Unit
 ) {
     val selected = if (currentZoom > 0) currentZoom else 100
-    AlertDialog(
+    WtaAlertDialog(
         onDismissRequest = onDismiss,
-        icon = { Icon(Icons.Outlined.ZoomIn, contentDescription = null) },
-        title = { Text(Strings.pageZoomLabel) },
-        text = {
+        icon = Icons.Outlined.ZoomIn,
+        title = Strings.pageZoomLabel,
+        content = {
             FlowRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),

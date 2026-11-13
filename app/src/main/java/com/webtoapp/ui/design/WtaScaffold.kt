@@ -19,6 +19,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarDefaults
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -114,12 +115,13 @@ private fun WtaSnackbar(
     message: String,
     actionLabel: String?,
     onAction: (() -> Unit)?,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val colors = MaterialTheme.colorScheme
     Snackbar(
-        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-        shape = RoundedCornerShape(4.dp),
+        modifier = modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+        shape = SnackbarDefaults.shape,
         containerColor = colors.inverseSurface,
         contentColor = colors.inverseOnSurface,
         actionContentColor = colors.inversePrimary,

@@ -51,6 +51,7 @@ import com.webtoapp.data.model.HtmlFile
 import com.webtoapp.data.model.HtmlFileType
 import com.webtoapp.data.model.HtmlLoadMode
 import com.webtoapp.ui.components.*
+import com.webtoapp.ui.design.WtaAlertDialog
 import com.webtoapp.ui.design.WtaLoadingIndicator
 import com.webtoapp.ui.design.WtaStatusBanner
 import com.webtoapp.ui.design.WtaStatusTone
@@ -396,11 +397,12 @@ fun CreateHtmlAppScreen(
     }
 
     if (showExitConfirmDialog) {
-        AlertDialog(
+        WtaAlertDialog(
             onDismissRequest = { showExitConfirmDialog = false },
-            icon = { Icon(Icons.Outlined.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
-            title = { Text(Strings.unsavedChangesTitle) },
-            text = { Text(Strings.unsavedChangesMessage) },
+            icon = Icons.Outlined.Warning,
+            iconTint = MaterialTheme.colorScheme.error,
+            title = Strings.unsavedChangesTitle,
+            text = Strings.unsavedChangesMessage,
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -1361,29 +1363,12 @@ private fun ProjectAnalysisDialog(
 ) {
     val actionableIssues = analysis.issues.filter { it.isActionableAnalysisIssue() }
 
-    AlertDialog(
+    WtaAlertDialog(
         onDismissRequest = onDismiss,
-        title = {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier
-                        .size(32.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        Icons.Outlined.Analytics,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(18.dp)
-                    )
-                }
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(Strings.projectAnalysisResult)
-            }
-        },
-        text = {
+        icon = Icons.Outlined.Analytics,
+        iconTint = MaterialTheme.colorScheme.primary,
+        title = Strings.projectAnalysisResult,
+        content = {
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
@@ -1871,29 +1856,12 @@ private fun ZipEntryFileDialog(
     onSelect: (String) -> Unit,
     onDismiss: () -> Unit
 ) {
-    AlertDialog(
+    WtaAlertDialog(
         onDismissRequest = onDismiss,
-        title = {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier
-                        .size(32.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        Icons.Outlined.Home,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(18.dp)
-                    )
-                }
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(Strings.zipSelectEntryTitle)
-            }
-        },
-        text = {
+        icon = Icons.Outlined.Home,
+        iconTint = MaterialTheme.colorScheme.primary,
+        title = Strings.zipSelectEntryTitle,
+        content = {
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
@@ -1915,8 +1883,8 @@ private fun ZipEntryFileDialog(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
-                            if (isSelected) Icons.Filled.RadioButtonChecked
-                            else Icons.Filled.RadioButtonUnchecked,
+                            if (isSelected) Icons.Filled.CheckCircle
+                            else Icons.Outlined.Circle,
                             contentDescription = null,
                             tint = if (isSelected)
                                 MaterialTheme.colorScheme.primary
@@ -1951,31 +1919,12 @@ private fun ZipFileListDialog(
     analysis: ZipProjectImporter.ZipProjectAnalysis,
     onDismiss: () -> Unit
 ) {
-    AlertDialog(
+    WtaAlertDialog(
         onDismissRequest = onDismiss,
-        title = {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier
-                        .size(32.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        Icons.Outlined.FolderOpen,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(18.dp)
-                    )
-                }
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    Strings.zipFileTreeTitle + " (${analysis.totalFileCount})"
-                )
-            }
-        },
-        text = {
+        icon = Icons.Outlined.FolderOpen,
+        iconTint = MaterialTheme.colorScheme.primary,
+        title = Strings.zipFileTreeTitle + " (${analysis.totalFileCount})",
+        content = {
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {

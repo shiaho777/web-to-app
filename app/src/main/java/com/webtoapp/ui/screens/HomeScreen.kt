@@ -66,6 +66,7 @@ import com.webtoapp.ui.components.EnhancedElevatedCard
 import com.webtoapp.ui.components.PremiumTextField
 import com.webtoapp.ui.components.LanguageSelectorButton
 import com.webtoapp.ui.components.MoveToCategoryDialog
+import com.webtoapp.ui.design.WtaAlertDialog
 import com.webtoapp.ui.design.WtaLoadingIndicator
 import com.webtoapp.ui.design.WtaScreen
 import com.webtoapp.ui.design.WtaRadius
@@ -77,7 +78,6 @@ import com.webtoapp.ui.theme.AppColors
 import com.webtoapp.ui.theme.ThemeManager
 import com.webtoapp.ui.theme.LocalAppTheme
 import com.webtoapp.ui.theme.LocalThemeRevealState
-import com.webtoapp.ui.animation.AnimatedAlertDialog
 import com.webtoapp.ui.viewmodel.MainViewModel
 import com.webtoapp.ui.viewmodel.UiState
 import kotlinx.coroutines.Dispatchers
@@ -1144,13 +1144,13 @@ fun HomeScreen(
     }
 
     if (showDeleteDialog && selectedApp != null) {
-        AnimatedAlertDialog(
+        WtaAlertDialog(
             onDismissRequest = {
                 showDeleteDialog = false
                 selectedApp = null
             },
-            title = { Text(Strings.deleteConfirmTitle) },
-            text = { Text(Strings.deleteConfirmMessage) },
+            title = Strings.deleteConfirmTitle,
+            text = Strings.deleteConfirmMessage,
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -1177,13 +1177,13 @@ fun HomeScreen(
     }
 
     if (showClearCacheDialog && appToClearCache != null) {
-        AnimatedAlertDialog(
+        WtaAlertDialog(
             onDismissRequest = {
                 showClearCacheDialog = false
                 appToClearCache = null
             },
-            title = { Text(Strings.clearAppCacheTitle) },
-            text = { Text(Strings.clearAppCacheConfirm) },
+            title = Strings.clearAppCacheTitle,
+            text = Strings.clearAppCacheConfirm,
             confirmButton = {
                 TextButton(
                     onClick = {

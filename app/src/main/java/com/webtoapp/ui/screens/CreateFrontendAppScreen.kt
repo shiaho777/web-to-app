@@ -39,6 +39,7 @@ import com.webtoapp.core.i18n.Strings
 import com.webtoapp.ui.theme.LocalShowDescriptions
 import com.webtoapp.core.linux.*
 import com.webtoapp.ui.components.*
+import com.webtoapp.ui.design.WtaAlertDialog
 import com.webtoapp.ui.design.WtaLoadingIndicator
 import com.webtoapp.ui.design.WtaStatusBanner
 import com.webtoapp.ui.design.WtaStatusTone
@@ -930,10 +931,10 @@ private fun BuildLogsDialog(
 ) {
     val context = LocalContext.current
     val clipboardManager = LocalClipboardManager.current
-    AlertDialog(
+    WtaAlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(Strings.importLogs) },
-        text = {
+        title = Strings.importLogs,
+        content = {
 
             SelectionContainer {
                 LazyColumn(
@@ -1024,19 +1025,15 @@ private fun FullErrorReportDialog(
 ) {
     val clipboardManager = LocalClipboardManager.current
 
-    AlertDialog(
+    WtaAlertDialog(
         onDismissRequest = onDismiss,
-        title = {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(title)
-                Text(
-                    summary,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        },
-        text = {
+        title = title,
+        content = {
+            Text(
+                summary,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -1288,10 +1285,10 @@ private fun GitHubImportCard(
 
         val context = LocalContext.current
         val clipboardManager = LocalClipboardManager.current
-        AlertDialog(
+        WtaAlertDialog(
             onDismissRequest = { showLogs = false },
-            title = { Text(Strings.logs) },
-            text = {
+            title = Strings.logs,
+            content = {
                 SelectionContainer {
                     LazyColumn(
                         modifier = Modifier

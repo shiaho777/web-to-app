@@ -42,6 +42,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import android.widget.Toast
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.ui.design.WtaAlertDialog
 
 fun buildErrorReport(
     scope: String,
@@ -193,13 +194,12 @@ fun WtaErrorDialog(
     }
     val displayMessage = message ?: throwable?.message ?: Strings.serverStartFailed
 
-    androidx.compose.material3.AlertDialog(
+    WtaAlertDialog(
         onDismissRequest = onDismiss,
-        icon = {
-            Icon(Icons.Outlined.ErrorOutline, contentDescription = null, tint = MaterialTheme.colorScheme.error)
-        },
-        title = { Text(title) },
-        text = {
+        icon = Icons.Outlined.ErrorOutline,
+        iconTint = MaterialTheme.colorScheme.error,
+        title = title,
+        content = {
             Column {
                 Text(
                     displayMessage,

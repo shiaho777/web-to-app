@@ -23,6 +23,7 @@ import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.data.model.SplashConfig
 import com.webtoapp.data.model.SplashType
+import com.webtoapp.ui.design.WtaAlertDialog
 import kotlinx.coroutines.delay
 import java.io.File
 
@@ -232,10 +233,10 @@ fun ActivationDialog(
     var code by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
 
-    AlertDialog(
+    WtaAlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(Strings.activateApp) },
-        text = {
+        title = Strings.activateApp,
+        content = {
             Column(
                 modifier = Modifier.verticalScroll(rememberScrollState())
             ) {

@@ -41,8 +41,10 @@ import com.webtoapp.ui.components.*
 import com.webtoapp.ui.components.TypedSampleProjectsCard
 import com.webtoapp.ui.screens.create.WtaCreateFlowScaffold
 import com.webtoapp.ui.screens.create.WtaCreateFlowSection
+import com.webtoapp.ui.design.WtaAlertDialog
 import com.webtoapp.ui.design.WtaRadius
 import com.webtoapp.ui.design.WtaSegmentedRow
+import com.webtoapp.ui.design.WtaSelectableRow
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -953,10 +955,10 @@ fun CreateNodeJsAppScreen(
     }
 
     if (showDownloadDialog) {
-        AlertDialog(
+        WtaAlertDialog(
             onDismissRequest = {},
-            title = { Text(Strings.njsDownloadDeps) },
-            text = {
+            title = Strings.njsDownloadDeps,
+            content = {
                 Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                     when (val state = downloadState) {
                         is NodeDependencyManager.DownloadState.Downloading -> {
@@ -1224,68 +1226,31 @@ private fun NodeJsScriptsCard(
             Spacer(modifier = Modifier.height(12.dp))
 
             scripts.forEach { (name, command) ->
-                val isSelected = name == selectedScript
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 2.dp)
-                        .clip(RoundedCornerShape(WtaRadius.Button))
-                        .background(
-                            if (isSelected) accentColor.copy(alpha = 0.1f)
-                            else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-                        )
-                        .clickable { onSelectScript(name) }
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        RadioButton(
-                            selected = isSelected,
-                            onClick = { onSelectScript(name) },
-                            modifier = Modifier.size(20.dp),
-                            colors = RadioButtonDefaults.colors(selectedColor = accentColor)
-                        )
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    text = name,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                                    color = if (isSelected) accentColor else MaterialTheme.colorScheme.onSurface,
-                                    modifier = Modifier.weight(1f, fill = false),
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
+                WtaSelectableRow(
+                    title = name,
+                    selected = name == selectedScript,
+                    onClick = { onSelectScript(name) },
+                    subtitle = "$packageManager run $name → $command",
+                    accent = accentColor,
+                    leading = if (name == "start" || name == "dev") {
+                        {
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(WtaRadius.Button))
+                                    .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.10f))
+                            ) {
+                                Icon(
+                                    Icons.Default.Star,
+                                    contentDescription = null,
+                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp).size(14.dp),
+                                    tint = MaterialTheme.colorScheme.onSurface
                                 )
-
-                                if (name == "start" || name == "dev") {
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Box(
-                                        modifier = Modifier
-                                            .clip(RoundedCornerShape(WtaRadius.Button))
-                                            .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.10f))
-                                    ) {
-                                        Icon(
-                                            Icons.Default.Star,
-                                            contentDescription = null,
-                                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp).size(14.dp),
-                                            tint = MaterialTheme.colorScheme.onSurface
-                                        )
-                                    }
-                                }
                             }
-                            Text(
-                                text = "$packageManager run $name → $command",
-                                style = MaterialTheme.typography.bodySmall,
-                                fontFamily = FontFamily.Monospace,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
                         }
+                    } else {
+                        null
                     }
-                }
+                )
             }
         }
     }

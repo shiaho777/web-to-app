@@ -847,10 +847,10 @@ private fun AddApiKeyDialog(
     val apiClient = remember { AiApiClient(context) }
     val uriHandler = LocalUriHandler.current
 
-    AlertDialog(
+    WtaAlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (initialConfig != null) Strings.editApiKey else Strings.addApiKey) },
-        text = {
+        title = if (initialConfig != null) Strings.editApiKey else Strings.addApiKey,
+        content = {
             Column(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -1006,8 +1006,6 @@ private fun AddApiKeyDialog(
                             expanded = formatExpanded,
                             onDismissRequest = { formatExpanded = false }
                         ) {
-                            // CUSTOM endpoints support the three wire formats; the Gemini
-                            // format is internal to the GOOGLE provider entry.
                             listOf(ApiFormat.OPENAI_COMPATIBLE, ApiFormat.ANTHROPIC, ApiFormat.OPENAI_RESPONSES)
                                 .forEach { format ->
                                     DropdownMenuItem(

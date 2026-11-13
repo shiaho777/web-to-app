@@ -7,6 +7,7 @@ import com.webtoapp.ui.design.WtaButton
 import com.webtoapp.ui.design.WtaButtonVariant
 import com.webtoapp.ui.design.WtaSectionDivider
 import com.webtoapp.ui.design.WtaSegmentedRow
+import com.webtoapp.ui.design.WtaSelectableRow
 import com.webtoapp.ui.design.WtaSize
 import com.webtoapp.ui.design.WtaSpacing
 import com.webtoapp.ui.design.WtaToggleRow
@@ -422,8 +423,6 @@ private fun RemoteActivationSection(
     onRemoteConfigChange: (com.webtoapp.data.model.RemoteActivationConfig) -> Unit,
     onShowGuide: () -> Unit
 ) {
-    // Same padded expanded-zone pattern as the proxy / PWA-strategy blocks in the
-    // browser advanced card: labelMedium primary group labels + radio rows.
     Column(
         modifier = Modifier.padding(
             horizontal = WtaSpacing.RowHorizontal,
@@ -461,24 +460,11 @@ private fun RemoteActivationSection(
             com.webtoapp.data.model.RemoteActivationOfflinePolicy.ALLOW to Strings.remoteActivationOfflineAllow
         )
         policies.forEach { (policy, label) ->
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(MaterialTheme.shapes.small)
-                    .clickable { onRemoteConfigChange(remoteConfig.copy(offlinePolicy = policy)) }
-                    .padding(vertical = 4.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                RadioButton(
-                    selected = remoteConfig.offlinePolicy == policy,
-                    onClick = { onRemoteConfigChange(remoteConfig.copy(offlinePolicy = policy)) }
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = label,
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
+            WtaSelectableRow(
+                title = label,
+                selected = remoteConfig.offlinePolicy == policy,
+                onClick = { onRemoteConfigChange(remoteConfig.copy(offlinePolicy = policy)) }
+            )
         }
 
         WtaToggleRow(

@@ -53,6 +53,7 @@ import com.webtoapp.core.webview.WebViewCallbacks
 import com.webtoapp.data.model.WebViewConfig
 import com.webtoapp.ui.design.WtaLoadingIndicator
 import com.webtoapp.ui.design.WtaMotion
+import com.webtoapp.ui.design.WtaRadius
 import com.webtoapp.ui.design.performHaptic
 import com.webtoapp.ui.shared.TopTabChrome
 import com.webtoapp.ui.shared.parseBandColor
@@ -598,17 +599,10 @@ private fun TabsMode(
                 Surface(
                     tonalElevation = 2.dp,
                     color = MaterialTheme.colorScheme.surface,
-                    // contentWindowInsets(0) leaves the bar under the gesture
-                    // nav strip — lift it so the last row stays tappable.
-                    // #1075: but not while the IME is open — the window-level
-                    // IME padding already sits the bar above the keyboard, and
-                    // a second nav-bar inset would leave a dead band in between.
                     modifier = Modifier
                         .fillMaxWidth()
                         .windowInsetsPadding(WindowInsets.navigationBars.exclude(WindowInsets.ime))
                 ) {
-                    // 站点少时每个 tab 平分整条底栏（对称布局，回归 #597 报告的行为）；
-                    // 平分后不足 72dp（站点多）则保持 #283 的最小宽度 + 横向滚动。
                     BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
                         val evenWidth =
                             (maxWidth - 16.dp - 4.dp * (sites.size - 1)) / sites.size
@@ -621,7 +615,7 @@ private fun TabsMode(
                             state = tabsListState,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(48.dp),
+                                .height(56.dp),
                             horizontalArrangement = Arrangement.spacedBy(4.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             contentPadding = PaddingValues(horizontal = 8.dp)
@@ -632,14 +626,14 @@ private fun TabsMode(
                                     targetValue = if (isSelected)
                                         MaterialTheme.colorScheme.secondaryContainer
                                     else Color.Transparent,
-                                    animationSpec = tween(180),
+                                    animationSpec = WtaMotion.standardTween(),
                                     label = "tabItemBg"
                                 )
                                 Column(
                                     modifier = tabModifier
                                         .fillMaxHeight()
                                         .padding(vertical = 4.dp)
-                                        .clip(RoundedCornerShape(10.dp))
+                                        .clip(RoundedCornerShape(WtaRadius.Pill))
                                         .background(itemBg)
                                         .clickable { selectedTab = index },
                                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -663,10 +657,9 @@ private fun TabsMode(
                                         site.name.ifBlank { extractDomain(site.url) },
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis,
-                                        fontSize = 10.sp,
+                                        style = MaterialTheme.typography.labelSmall,
                                         color = if (isSelected) MaterialTheme.colorScheme.primary
-                                               else MaterialTheme.colorScheme.onSurfaceVariant,
-                                        lineHeight = 12.sp
+                                               else MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                             }

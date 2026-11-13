@@ -13,9 +13,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.outlined.CheckCircle
-import androidx.compose.material.icons.outlined.RadioButtonChecked
-import androidx.compose.material.icons.outlined.RadioButtonUnchecked
+import androidx.compose.material.icons.outlined.Circle
 import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -271,9 +271,9 @@ private fun OptionRow(
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             val icon = when {
-                !selected -> Icons.Outlined.RadioButtonUnchecked
+                !selected -> Icons.Outlined.Circle
                 multi -> Icons.Outlined.CheckCircle
-                else -> Icons.Outlined.RadioButtonChecked
+                else -> Icons.Filled.CheckCircle
             }
             Icon(
                 imageVector = icon,

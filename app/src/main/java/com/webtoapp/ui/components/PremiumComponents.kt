@@ -12,6 +12,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ButtonElevation
+import androidx.compose.material3.ButtonShapes
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -84,12 +86,13 @@ fun PremiumTextField(
     )
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun PremiumButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    shape: Shape = RoundedCornerShape(WtaRadius.Button),
+    shape: Shape? = null,
     colors: ButtonColors = ButtonDefaults.buttonColors(),
     elevation: ButtonElevation? = null,
     border: BorderStroke? = null,
@@ -100,11 +103,11 @@ fun PremiumButton(
     val hapticClick = rememberHapticClick(onClick)
     Button(
         onClick = hapticClick,
+        shapes = if (shape != null) ButtonShapes(shape, shape) else ButtonDefaults.shapes(),
         modifier = modifier
             .heightIn(min = WtaSize.ButtonHeightMedium)
             .wtaPressScale(interactionSource),
         enabled = enabled,
-        shape = shape,
         colors = colors,
         elevation = elevation,
         border = border,
@@ -114,12 +117,13 @@ fun PremiumButton(
     )
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun PremiumOutlinedButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    shape: Shape = RoundedCornerShape(WtaRadius.Button),
+    shape: Shape? = null,
     colors: ButtonColors = ButtonDefaults.outlinedButtonColors(),
     elevation: ButtonElevation? = null,
     border: BorderStroke? = null,
@@ -130,11 +134,11 @@ fun PremiumOutlinedButton(
     val hapticClick = rememberHapticClick(onClick)
     OutlinedButton(
         onClick = hapticClick,
+        shapes = if (shape != null) ButtonShapes(shape, shape) else ButtonDefaults.shapes(),
         modifier = modifier
             .heightIn(min = WtaSize.ButtonHeightMedium)
             .wtaPressScale(interactionSource),
         enabled = enabled,
-        shape = shape,
         colors = colors,
         elevation = elevation,
         border = border ?: BorderStroke(

@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import coil.compose.AsyncImage
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.ui.design.WtaAlertDialog
 import com.webtoapp.util.IconLibraryItem
 import com.webtoapp.util.IconLibraryStorage
 import kotlinx.coroutines.launch
@@ -328,10 +329,10 @@ private fun IconGridItem(
     }
 
     if (showDeleteConfirm) {
-        AlertDialog(
+        WtaAlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
-            title = { Text(Strings.deleteIcon) },
-            text = { Text(Strings.deleteIconConfirm) },
+            title = Strings.deleteIcon,
+            text = Strings.deleteIconConfirm,
             confirmButton = {
                 TextButton(
                     onClick = {

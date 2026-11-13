@@ -94,6 +94,7 @@ import com.webtoapp.core.host.HostRuntimePrefs
 import com.webtoapp.core.i18n.AppLanguage
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.ui.webview.WebViewDocumentActivity
+import com.webtoapp.ui.design.WtaAlertDialog
 import com.webtoapp.ui.design.WtaCard
 import com.webtoapp.ui.design.WtaCardTone
 import com.webtoapp.ui.design.WtaLoadingIndicator
@@ -970,16 +971,14 @@ private fun UpdateCheckDialog(
     val hasActionButton = available != null ||
         downloadState is com.webtoapp.core.update.UpdateDownloadState.Done
 
-    androidx.compose.material3.AlertDialog(
+    WtaAlertDialog(
         onDismissRequest = {
-            // Block dismiss via outside touch while a download is in flight.
             if (!downloading) onDismiss()
         },
-        icon = {
-            Icon(Icons.Outlined.Sync, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-        },
-        title = { Text(Strings.updateCheckTitle) },
-        text = {
+        icon = Icons.Outlined.Sync,
+        iconTint = MaterialTheme.colorScheme.primary,
+        title = Strings.updateCheckTitle,
+        content = {
             Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                 when {
                     isChecking || result == null -> {
@@ -1021,7 +1020,6 @@ private fun UpdateCheckDialog(
         },
         confirmButton = {
             when {
-                // Download finished: show Install.
                 downloadState is com.webtoapp.core.update.UpdateDownloadState.Done -> {
                     androidx.compose.material3.TextButton(onClick = {
                         onInstall(downloadState.file)
@@ -1029,19 +1027,16 @@ private fun UpdateCheckDialog(
                         Text(Strings.install)
                     }
                 }
-                // Download failed: Retry.
                 downloadState is com.webtoapp.core.update.UpdateDownloadState.Failed && available != null -> {
                     androidx.compose.material3.TextButton(onClick = { onDownload(available.info) }) {
                         Text(Strings.updateRetry)
                     }
                 }
-                // Downloading / verifying: Cancel.
                 downloading -> {
                     androidx.compose.material3.TextButton(onClick = onCancelDownload) {
                         Text(Strings.updateCancelDownload)
                     }
                 }
-                // Update available, idle: Download.
                 available != null -> {
                     androidx.compose.material3.TextButton(onClick = { onDownload(available.info) }) {
                         Text(Strings.updateDownloadButton)
@@ -1054,13 +1049,13 @@ private fun UpdateCheckDialog(
                 }
             }
         },
-        dismissButton = {
-            if (hasActionButton) {
+        dismissButton = if (hasActionButton) {
+            {
                 androidx.compose.material3.TextButton(onClick = onDismiss) {
                     Text(Strings.close)
                 }
             }
-        }
+        } else null
     )
 }
 

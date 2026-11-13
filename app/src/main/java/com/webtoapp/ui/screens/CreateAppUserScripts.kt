@@ -1,6 +1,7 @@
 package com.webtoapp.ui.screens
 
 import android.net.Uri
+import com.webtoapp.ui.design.WtaAlertDialog
 import com.webtoapp.ui.design.WtaSwitch
 import com.webtoapp.ui.design.WtaSettingCard
 import com.webtoapp.ui.design.WtaSettingRow
@@ -203,10 +204,10 @@ fun UserScriptEditorDialog(
         }
     }
 
-    AlertDialog(
+    WtaAlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (isEdit) Strings.editScript else Strings.addScript) },
-        text = {
+        title = if (isEdit) Strings.editScript else Strings.addScript,
+        content = {
             Column(
                 modifier = Modifier
                     .verticalScroll(scrollState)
