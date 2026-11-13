@@ -3988,7 +3988,8 @@ fun WebViewScreen(
             ) {
                 LinearProgressIndicator(
                     progress = { loadProgress / 100f },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    gapSize = ProgressIndicatorDefaults.LinearIndicatorTrackGapSize
                 )
             }
 

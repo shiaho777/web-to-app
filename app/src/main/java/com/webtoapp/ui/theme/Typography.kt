@@ -112,6 +112,111 @@ val WtaTypography: Typography = Typography(
         fontSize = 10.5.sp,
         lineHeight = 14.sp,
         letterSpacing = 0.04.em
+    ),
+    displayLargeEmphasized = TextStyle(
+        fontFamily = FontFamily.Default,
+        fontWeight = FontWeight.Bold,
+        fontSize = 44.sp,
+        lineHeight = 50.sp,
+        letterSpacing = (-0.025).em
+    ),
+    displayMediumEmphasized = TextStyle(
+        fontFamily = FontFamily.Default,
+        fontWeight = FontWeight.Bold,
+        fontSize = 34.sp,
+        lineHeight = 40.sp,
+        letterSpacing = (-0.022).em
+    ),
+    displaySmallEmphasized = TextStyle(
+        fontFamily = FontFamily.Default,
+        fontWeight = FontWeight.Bold,
+        fontSize = 28.sp,
+        lineHeight = 34.sp,
+        letterSpacing = (-0.02).em
+    ),
+    headlineLargeEmphasized = TextStyle(
+        fontFamily = FontFamily.Default,
+        fontWeight = FontWeight.Bold,
+        fontSize = 26.sp,
+        lineHeight = 32.sp,
+        letterSpacing = (-0.015).em
+    ),
+    headlineMediumEmphasized = TextStyle(
+        fontFamily = FontFamily.Default,
+        fontWeight = FontWeight.Bold,
+        fontSize = 22.sp,
+        lineHeight = 28.sp,
+        letterSpacing = (-0.012).em
+    ),
+    headlineSmallEmphasized = TextStyle(
+        fontFamily = FontFamily.Default,
+        fontWeight = FontWeight.Bold,
+        fontSize = 20.sp,
+        lineHeight = 26.sp,
+        letterSpacing = (-0.008).em
+    ),
+    titleLargeEmphasized = TextStyle(
+        fontFamily = FontFamily.Default,
+        fontWeight = FontWeight.Bold,
+        fontSize = 19.sp,
+        lineHeight = 25.sp,
+        letterSpacing = (-0.005).em
+    ),
+    titleMediumEmphasized = TextStyle(
+        fontFamily = FontFamily.Default,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 16.sp,
+        lineHeight = 22.sp,
+        letterSpacing = 0.005.em
+    ),
+    titleSmallEmphasized = TextStyle(
+        fontFamily = FontFamily.Default,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 14.sp,
+        lineHeight = 20.sp,
+        letterSpacing = 0.005.em
+    ),
+    bodyLargeEmphasized = TextStyle(
+        fontFamily = FontFamily.Default,
+        fontWeight = FontWeight.Medium,
+        fontSize = 15.sp,
+        lineHeight = 22.sp,
+        letterSpacing = 0.008.em
+    ),
+    bodyMediumEmphasized = TextStyle(
+        fontFamily = FontFamily.Default,
+        fontWeight = FontWeight.Medium,
+        fontSize = 14.sp,
+        lineHeight = 20.sp,
+        letterSpacing = 0.01.em
+    ),
+    bodySmallEmphasized = TextStyle(
+        fontFamily = FontFamily.Default,
+        fontWeight = FontWeight.Medium,
+        fontSize = 12.5.sp,
+        lineHeight = 18.sp,
+        letterSpacing = 0.015.em
+    ),
+    labelLargeEmphasized = TextStyle(
+        fontFamily = FontFamily.Default,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 13.sp,
+        lineHeight = 18.sp,
+        letterSpacing = 0.01.em
+    ),
+    labelMediumEmphasized = TextStyle(
+        fontFamily = FontFamily.Default,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 11.5.sp,
+        lineHeight = 16.sp,
+        letterSpacing = 0.025.em
+    ),
+    labelSmallEmphasized = TextStyle(
+        fontFamily = FontFamily.Default,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 10.5.sp,
+        lineHeight = 14.sp,
+        letterSpacing = 0.04.em
     )
 )
 
@@ -135,6 +240,21 @@ fun Typography.withFontScale(factor: Float): Typography {
         bodySmall = bodySmall.scaledBy(factor),
         labelLarge = labelLarge.scaledBy(factor),
         labelMedium = labelMedium.scaledBy(factor),
-        labelSmall = labelSmall.scaledBy(factor)
+        labelSmall = labelSmall.scaledBy(factor),
+        displayLargeEmphasized = displayLargeEmphasized.scaledBy(factor),
+        displayMediumEmphasized = displayMediumEmphasized.scaledBy(factor),
+        displaySmallEmphasized = displaySmallEmphasized.scaledBy(factor),
+        headlineLargeEmphasized = headlineLargeEmphasized.scaledBy(factor),
+        headlineMediumEmphasized = headlineMediumEmphasized.scaledBy(factor),
+        headlineSmallEmphasized = headlineSmallEmphasized.scaledBy(factor),
+        titleLargeEmphasized = titleLargeEmphasized.scaledBy(factor),
+        titleMediumEmphasized = titleMediumEmphasized.scaledBy(factor),
+        titleSmallEmphasized = titleSmallEmphasized.scaledBy(factor),
+        bodyLargeEmphasized = bodyLargeEmphasized.scaledBy(factor),
+        bodyMediumEmphasized = bodyMediumEmphasized.scaledBy(factor),
+        bodySmallEmphasized = bodySmallEmphasized.scaledBy(factor),
+        labelLargeEmphasized = labelLargeEmphasized.scaledBy(factor),
+        labelMediumEmphasized = labelMediumEmphasized.scaledBy(factor),
+        labelSmallEmphasized = labelSmallEmphasized.scaledBy(factor)
     )
 }

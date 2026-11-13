@@ -556,7 +556,8 @@ fun CreateWordPressAppScreen(
                             LinearProgressIndicator(
                                 progress = { state.progress },
                                 modifier = Modifier.fillMaxWidth(),
-                                color = accentColor
+                                color = accentColor,
+                                gapSize = ProgressIndicatorDefaults.LinearIndicatorTrackGapSize
                             )
                             Text(
                                 text = "${(state.progress * 100).toInt()}%",
@@ -567,17 +568,17 @@ fun CreateWordPressAppScreen(
                         is WordPressDependencyManager.DownloadState.Extracting -> {
                             Text("${Strings.wpExtracting}: ${state.fileName}")
                             Spacer(modifier = Modifier.height(8.dp))
-                            LinearProgressIndicator(modifier = Modifier.fillMaxWidth(), color = accentColor)
+                            LinearProgressIndicator(modifier = Modifier.fillMaxWidth(), color = accentColor, gapSize = ProgressIndicatorDefaults.LinearIndicatorTrackGapSize)
                         }
                         is WordPressDependencyManager.DownloadState.Verifying -> {
                             Text(Strings.verifyingFile.replaceFirst("%s", state.fileName))
                             Spacer(modifier = Modifier.height(8.dp))
-                            LinearProgressIndicator(modifier = Modifier.fillMaxWidth(), color = accentColor)
+                            LinearProgressIndicator(modifier = Modifier.fillMaxWidth(), color = accentColor, gapSize = ProgressIndicatorDefaults.LinearIndicatorTrackGapSize)
                         }
                         else -> {
                             Text(Strings.wpCheckingDeps)
                             Spacer(modifier = Modifier.height(8.dp))
-                            LinearProgressIndicator(modifier = Modifier.fillMaxWidth(), color = accentColor)
+                            LinearProgressIndicator(modifier = Modifier.fillMaxWidth(), color = accentColor, gapSize = ProgressIndicatorDefaults.LinearIndicatorTrackGapSize)
                         }
                     }
 

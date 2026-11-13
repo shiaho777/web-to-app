@@ -54,6 +54,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -631,7 +632,8 @@ private fun PortStatsCard(
                                     stat.usagePercent > 0.5f -> semantic.warning
                                     else -> MaterialTheme.colorScheme.primary
                                 },
-                                trackColor = MaterialTheme.colorScheme.surfaceContainerHighest
+                                trackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                gapSize = ProgressIndicatorDefaults.LinearIndicatorTrackGapSize
                             )
                             Text(
                                 "${stat.allocated}/${stat.total}",

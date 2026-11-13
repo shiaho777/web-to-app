@@ -63,6 +63,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -1551,11 +1552,13 @@ private fun DownloadProgressRow(downloaded: Long, total: Long, speed: Long) {
             progress = { percent },
             modifier = Modifier.fillMaxWidth(),
             color = MaterialTheme.colorScheme.primary,
-            trackColor = MaterialTheme.colorScheme.surfaceVariant
+            trackColor = MaterialTheme.colorScheme.surfaceVariant,
+            gapSize = ProgressIndicatorDefaults.LinearIndicatorTrackGapSize
         )
     } else {
         androidx.compose.material3.LinearProgressIndicator(
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            gapSize = ProgressIndicatorDefaults.LinearIndicatorTrackGapSize
         )
     }
     Spacer(Modifier.height(6.dp))

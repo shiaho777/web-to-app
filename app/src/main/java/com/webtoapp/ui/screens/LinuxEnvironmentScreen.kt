@@ -46,6 +46,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -507,7 +508,8 @@ private fun ReadinessHero(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(6.dp)
-                            .clip(RoundedCornerShape(999.dp))
+                            .clip(RoundedCornerShape(999.dp)),
+                        gapSize = ProgressIndicatorDefaults.LinearIndicatorTrackGapSize
                     )
                     if (progress.currentStep.isNotBlank()) {
                         Text(
@@ -1005,7 +1007,8 @@ private fun OptionalRuntimeBlock(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(5.dp)
-                            .clip(RoundedCornerShape(999.dp))
+                            .clip(RoundedCornerShape(999.dp)),
+                        gapSize = ProgressIndicatorDefaults.LinearIndicatorTrackGapSize
                     )
                 } else {
                     LinearProgressIndicator(
@@ -1013,7 +1016,8 @@ private fun OptionalRuntimeBlock(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(5.dp)
-                            .clip(RoundedCornerShape(999.dp))
+                            .clip(RoundedCornerShape(999.dp)),
+                        gapSize = ProgressIndicatorDefaults.LinearIndicatorTrackGapSize
                     )
                 }
                 Text(

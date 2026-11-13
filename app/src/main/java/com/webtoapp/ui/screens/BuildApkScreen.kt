@@ -31,6 +31,7 @@ import androidx.compose.material.icons.outlined.VerifiedUser
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -908,10 +909,11 @@ private fun BuildApkContent(
                                 if (downloading != null && downloading.totalBytes > 0) {
                                     LinearProgressIndicator(
                                         progress = { downloading.progress },
-                                        modifier = Modifier.fillMaxWidth()
+                                        modifier = Modifier.fillMaxWidth(),
+                                        gapSize = ProgressIndicatorDefaults.LinearIndicatorTrackGapSize
                                     )
                                 } else {
-                                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth(), gapSize = ProgressIndicatorDefaults.LinearIndicatorTrackGapSize)
                                 }
                             }
                         }
@@ -955,7 +957,8 @@ private fun BuildApkContent(
                             LinearProgressIndicator(
                                 progress = { animatedProgress },
                                 modifier = Modifier.fillMaxWidth(),
-                                trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
+                                trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
+                                gapSize = ProgressIndicatorDefaults.LinearIndicatorTrackGapSize
                             )
                         }
                     }

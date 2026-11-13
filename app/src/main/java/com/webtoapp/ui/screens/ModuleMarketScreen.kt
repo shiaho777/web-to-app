@@ -41,6 +41,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -917,7 +918,8 @@ private fun InstallActionRow(
             if (installProgress.hasByteProgress) {
                 LinearProgressIndicator(
                     progress = { installProgress.byteFraction },
-                    modifier = Modifier.fillMaxWidth().height(4.dp)
+                    modifier = Modifier.fillMaxWidth().height(4.dp),
+                    gapSize = ProgressIndicatorDefaults.LinearIndicatorTrackGapSize
                 )
             }
         }
@@ -994,7 +996,8 @@ private fun InstallButton(
                 Spacer(Modifier.height(6.dp))
                 LinearProgressIndicator(
                     progress = { installProgress.fraction },
-                    modifier = Modifier.fillMaxWidth().height(4.dp)
+                    modifier = Modifier.fillMaxWidth().height(4.dp),
+                    gapSize = ProgressIndicatorDefaults.LinearIndicatorTrackGapSize
                 )
             }
         }
