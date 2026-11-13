@@ -27,6 +27,8 @@ import com.webtoapp.core.i18n.AppLanguage
 import com.webtoapp.core.i18n.LanguageManager
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.ui.design.WtaAlertDialog
+import com.webtoapp.ui.design.WtaFadeIn
+import com.webtoapp.ui.design.WtaFadeOut
 import com.webtoapp.ui.design.WtaRadius
 import com.webtoapp.ui.design.WtaShapePlate
 import com.webtoapp.util.isRunningOnTv
@@ -254,9 +256,9 @@ private fun LanguageOption(
             ) {
                 androidx.compose.animation.AnimatedVisibility(
                     visible = isSelected,
-                    enter = androidx.compose.animation.fadeIn() +
+                    enter = WtaFadeIn +
                         androidx.compose.animation.scaleIn(initialScale = 0.5f),
-                    exit = androidx.compose.animation.fadeOut() +
+                    exit = WtaFadeOut +
                         androidx.compose.animation.scaleOut(targetScale = 0.5f)
                 ) {
                     WtaShapePlate(
@@ -500,9 +502,9 @@ private fun FirstLaunchLanguageOption(
 
             androidx.compose.animation.AnimatedVisibility(
                 visible = isSelected,
-                enter = androidx.compose.animation.fadeIn() +
+                enter = WtaFadeIn +
                     androidx.compose.animation.scaleIn(initialScale = 0.6f),
-                exit = androidx.compose.animation.fadeOut()
+                exit = WtaFadeOut
             ) {
                 Box(
                     modifier = Modifier

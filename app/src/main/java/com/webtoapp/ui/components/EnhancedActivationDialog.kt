@@ -29,7 +29,11 @@ import com.webtoapp.core.activation.ActivationCodeType
 import com.webtoapp.core.activation.ActivationStatus
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.ui.design.WtaAlertDialog
+import com.webtoapp.ui.design.WtaExpandIn
+import com.webtoapp.ui.design.WtaFadeIn
+import com.webtoapp.ui.design.WtaFadeOut
 import com.webtoapp.ui.design.WtaLoadingIndicator
+import com.webtoapp.ui.design.WtaShrinkOut
 import com.webtoapp.util.threadLocalCompat
 import java.text.SimpleDateFormat
 import java.util.*
@@ -76,8 +80,8 @@ fun EnhancedActivationDialog(
                 AnimatedVisibility(
                     visible = activationResult !is ActivationResult.Success &&
                         activationResult !is ActivationResult.AlreadyActivated,
-                    enter = fadeIn() + expandVertically(),
-                    exit = fadeOut() + shrinkVertically()
+                    enter = WtaExpandIn,
+                    exit = WtaShrinkOut
                 ) {
                     PremiumTextField(
                         value = code,
@@ -113,8 +117,8 @@ fun EnhancedActivationDialog(
             AnimatedVisibility(
                 visible = activationResult !is ActivationResult.Success &&
                     activationResult !is ActivationResult.AlreadyActivated,
-                enter = fadeIn(),
-                exit = fadeOut()
+                enter = WtaFadeIn,
+                exit = WtaFadeOut
             ) {
                 PremiumButton(
                     onClick = {

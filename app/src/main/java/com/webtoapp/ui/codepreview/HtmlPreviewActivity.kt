@@ -42,6 +42,8 @@ import androidx.core.content.FileProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.webkit.WebViewAssetLoader
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.ui.design.WtaFadeIn
+import com.webtoapp.ui.design.WtaFadeOut
 import com.webtoapp.ui.theme.WebToAppTheme
 import java.io.File
 import java.text.SimpleDateFormat
@@ -285,8 +287,8 @@ private fun HtmlPreviewScreen(
 
             AnimatedVisibility(
                 visible = showDevTools,
-                enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
-                exit = slideOutVertically(targetOffsetY = { it }) + fadeOut()
+                enter = slideInVertically(initialOffsetY = { it }) + WtaFadeIn,
+                exit = slideOutVertically(targetOffsetY = { it }) + WtaFadeOut
             ) {
                 DevToolsPanel(
                     consoleMessages = consoleMessages,

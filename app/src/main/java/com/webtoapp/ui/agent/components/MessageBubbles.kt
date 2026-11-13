@@ -8,10 +8,6 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -95,9 +91,11 @@ import com.webtoapp.ui.design.WtaAlpha
 import com.webtoapp.ui.design.WtaCard
 import com.webtoapp.ui.design.WtaCardTone
 import com.webtoapp.ui.design.WtaColors
+import com.webtoapp.ui.design.WtaExpandIn
 import com.webtoapp.ui.design.WtaIconButton
 import com.webtoapp.ui.design.WtaInfoChip
 import com.webtoapp.ui.design.WtaLoadingIndicator
+import com.webtoapp.ui.design.WtaShrinkOut
 import com.webtoapp.ui.design.WtaSize
 import com.webtoapp.ui.design.WtaSpacing
 import com.webtoapp.ui.theme.AppColors
@@ -403,8 +401,8 @@ fun ThinkingBlock(
         }
         AnimatedVisibility(
             visible = expanded,
-            enter = expandVertically() + fadeIn(),
-            exit = shrinkVertically() + fadeOut()
+            enter = WtaExpandIn,
+            exit = WtaShrinkOut
         ) {
 
             val bodyMod = if (isLive) {
@@ -471,8 +469,8 @@ fun StreamingBubble(
                 val tailIsMarker = tail.isEmpty() || tail.last() == '\u2063'
                 AnimatedVisibility(
                     visible = toolSettled && !thinkingLive && tailIsMarker,
-                    enter = expandVertically() + fadeIn(),
-                    exit = shrinkVertically() + fadeOut()
+                    enter = WtaExpandIn,
+                    exit = WtaShrinkOut
                 ) {
                     Row(
                         modifier = Modifier.padding(top = WtaSpacing.Tiny + 2.dp),
@@ -821,8 +819,8 @@ fun ToolCallCard(tc: RecordedToolCall, live: Boolean) {
                 }
                 AnimatedVisibility(
                     visible = expanded,
-                    enter = expandVertically() + fadeIn(),
-                    exit = shrinkVertically() + fadeOut()
+                    enter = WtaExpandIn,
+                    exit = WtaShrinkOut
                 ) {
                     Column(
                         modifier = Modifier
@@ -1500,8 +1498,8 @@ fun TodoChecklist(todos: List<com.webtoapp.core.agent.todo.TodoManager.Item>) {
             }
             AnimatedVisibility(
                 visible = expanded,
-                enter = expandVertically() + fadeIn(),
-                exit = shrinkVertically() + fadeOut()
+                enter = WtaExpandIn,
+                exit = WtaShrinkOut
             ) {
                 Column(
                     modifier = Modifier

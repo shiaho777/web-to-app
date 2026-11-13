@@ -39,6 +39,8 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.data.model.*
+import com.webtoapp.ui.design.WtaFadeIn
+import com.webtoapp.ui.design.WtaFadeOut
 import com.webtoapp.ui.shared.AspectRatioSurface
 import com.webtoapp.ui.shared.ZoomableState
 import com.webtoapp.ui.shared.zoomable
@@ -205,8 +207,8 @@ fun GalleryPlayerScreen(
 
         AnimatedVisibility(
             visible = showControls && config.showMediaInfo,
-            enter = fadeIn() + slideInVertically(),
-            exit = fadeOut() + slideOutVertically(),
+            enter = WtaFadeIn + slideInVertically(),
+            exit = WtaFadeOut + slideOutVertically(),
             modifier = Modifier.align(Alignment.TopCenter)
         ) {
             TopInfoBar(
@@ -220,8 +222,8 @@ fun GalleryPlayerScreen(
         if (config.showThumbnailBar) {
             AnimatedVisibility(
                 visible = showControls,
-                enter = fadeIn() + slideInVertically(initialOffsetY = { it }),
-                exit = fadeOut() + slideOutVertically(targetOffsetY = { it }),
+                enter = WtaFadeIn + slideInVertically(initialOffsetY = { it }),
+                exit = WtaFadeOut + slideOutVertically(targetOffsetY = { it }),
                 modifier = Modifier.align(Alignment.BottomCenter)
             ) {
                 ThumbnailBar(
@@ -239,8 +241,8 @@ fun GalleryPlayerScreen(
         if (currentItem?.type == GalleryItemType.IMAGE) {
             AnimatedVisibility(
                 visible = showControls,
-                enter = fadeIn(),
-                exit = fadeOut(),
+                enter = WtaFadeIn,
+                exit = WtaFadeOut,
                 modifier = Modifier.align(Alignment.Center)
             ) {
                 IconButton(
@@ -264,8 +266,8 @@ fun GalleryPlayerScreen(
 
         AnimatedVisibility(
             visible = showControls && currentIndex > 0,
-            enter = fadeIn(),
-            exit = fadeOut(),
+            enter = WtaFadeIn,
+            exit = WtaFadeOut,
             modifier = Modifier
                 .align(Alignment.CenterStart)
                 .padding(16.dp)
@@ -293,8 +295,8 @@ fun GalleryPlayerScreen(
 
         AnimatedVisibility(
             visible = showControls && currentIndex < items.size - 1,
-            enter = fadeIn(),
-            exit = fadeOut(),
+            enter = WtaFadeIn,
+            exit = WtaFadeOut,
             modifier = Modifier
                 .align(Alignment.CenterEnd)
                 .padding(16.dp)
@@ -677,8 +679,8 @@ fun GalleryVideoPlayer(
 
         AnimatedVisibility(
             visible = showControls,
-            enter = fadeIn(),
-            exit = fadeOut(),
+            enter = WtaFadeIn,
+            exit = WtaFadeOut,
             modifier = Modifier.align(Alignment.BottomCenter)
         ) {
             VideoControlBar(
@@ -706,8 +708,8 @@ fun GalleryVideoPlayer(
 
         AnimatedVisibility(
             visible = isFastForwarding,
-            enter = fadeIn(),
-            exit = fadeOut(),
+            enter = WtaFadeIn,
+            exit = WtaFadeOut,
             modifier = Modifier.align(Alignment.Center)
         ) {
             Surface(

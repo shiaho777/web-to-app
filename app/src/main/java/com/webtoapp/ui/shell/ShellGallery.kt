@@ -1,8 +1,6 @@
 package com.webtoapp.ui.shell
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
@@ -38,6 +36,8 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.ui.design.WtaFadeIn
+import com.webtoapp.ui.design.WtaFadeOut
 import com.webtoapp.ui.design.WtaLoadingIndicator
 import com.webtoapp.ui.shared.AspectRatioSurface
 import com.webtoapp.ui.shared.ZoomableState
@@ -239,8 +239,8 @@ fun ShellGalleryPlayer(
 
         AnimatedVisibility(
             visible = showControls && galleryConfig.showMediaInfo,
-            enter = fadeIn() + slideInVertically(),
-            exit = fadeOut() + slideOutVertically(),
+            enter = WtaFadeIn + slideInVertically(),
+            exit = WtaFadeOut + slideOutVertically(),
             modifier = Modifier.align(Alignment.TopCenter)
         ) {
             Surface(
@@ -297,8 +297,8 @@ fun ShellGalleryPlayer(
         if (galleryConfig.showThumbnailBar) {
             AnimatedVisibility(
                 visible = showControls,
-                enter = fadeIn() + slideInVertically(initialOffsetY = { it }),
-                exit = fadeOut() + slideOutVertically(targetOffsetY = { it }),
+                enter = WtaFadeIn + slideInVertically(initialOffsetY = { it }),
+                exit = WtaFadeOut + slideOutVertically(targetOffsetY = { it }),
                 modifier = Modifier.align(Alignment.BottomCenter)
             ) {
                 ShellThumbnailBar(
@@ -315,8 +315,8 @@ fun ShellGalleryPlayer(
         if (currentItem?.type == "IMAGE") {
             AnimatedVisibility(
                 visible = showControls,
-                enter = fadeIn(),
-                exit = fadeOut(),
+                enter = WtaFadeIn,
+                exit = WtaFadeOut,
                 modifier = Modifier.align(Alignment.Center)
             ) {
                 IconButton(
@@ -340,8 +340,8 @@ fun ShellGalleryPlayer(
 
         AnimatedVisibility(
             visible = showControls && currentIndex > 0,
-            enter = fadeIn(),
-            exit = fadeOut(),
+            enter = WtaFadeIn,
+            exit = WtaFadeOut,
             modifier = Modifier
                 .align(Alignment.CenterStart)
                 .padding(16.dp)
@@ -367,8 +367,8 @@ fun ShellGalleryPlayer(
 
         AnimatedVisibility(
             visible = showControls && currentIndex < effectiveItems.size - 1,
-            enter = fadeIn(),
-            exit = fadeOut(),
+            enter = WtaFadeIn,
+            exit = WtaFadeOut,
             modifier = Modifier
                 .align(Alignment.CenterEnd)
                 .padding(16.dp)
@@ -757,8 +757,8 @@ fun ShellGalleryVideoPlayer(
 
         AnimatedVisibility(
             visible = showControls,
-            enter = fadeIn(),
-            exit = fadeOut(),
+            enter = WtaFadeIn,
+            exit = WtaFadeOut,
             modifier = Modifier.align(Alignment.BottomCenter)
         ) {
             Surface(

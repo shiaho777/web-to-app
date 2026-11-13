@@ -51,9 +51,11 @@ import com.webtoapp.core.shell.MultiWebSiteShellConfig
 import com.webtoapp.core.shell.ShellConfig
 import com.webtoapp.core.webview.WebViewCallbacks
 import com.webtoapp.data.model.WebViewConfig
+import com.webtoapp.ui.design.WtaExpandIn
 import com.webtoapp.ui.design.WtaLoadingIndicator
 import com.webtoapp.ui.design.WtaMotion
 import com.webtoapp.ui.design.WtaRadius
+import com.webtoapp.ui.design.WtaShrinkOut
 import com.webtoapp.ui.design.performHaptic
 import com.webtoapp.ui.shared.TopTabChrome
 import com.webtoapp.ui.shared.parseBandColor
@@ -1553,8 +1555,8 @@ private fun DrawerMode(
                     }
                     AnimatedVisibility(
                         visible = searchOpen,
-                        enter = expandVertically() + fadeIn(),
-                        exit = shrinkVertically() + fadeOut()
+                        enter = WtaExpandIn,
+                        exit = WtaShrinkOut
                     ) {
                         OutlinedTextField(
                             value = searchQuery,

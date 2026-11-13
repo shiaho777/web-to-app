@@ -1,8 +1,6 @@
 package com.webtoapp.ui.agent.components
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
@@ -35,6 +33,8 @@ import com.webtoapp.core.i18n.Strings
 import com.webtoapp.ui.agent.AgentUiState
 import com.webtoapp.ui.design.WtaAlpha
 import com.webtoapp.ui.design.WtaElevation
+import com.webtoapp.ui.design.WtaFadeIn
+import com.webtoapp.ui.design.WtaFadeOut
 import com.webtoapp.ui.design.WtaIconButton
 import com.webtoapp.ui.design.WtaRadius
 import com.webtoapp.ui.design.WtaSpacing
@@ -48,7 +48,7 @@ fun PreviewSheet(
 
     onSelectFile: (String) -> Unit = {}
 ) {
-    AnimatedVisibility(visible = visible, enter = fadeIn(), exit = fadeOut()) {
+    AnimatedVisibility(visible = visible, enter = WtaFadeIn, exit = WtaFadeOut) {
 
         Box(
             modifier = Modifier

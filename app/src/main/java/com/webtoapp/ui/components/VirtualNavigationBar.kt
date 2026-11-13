@@ -25,6 +25,8 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import com.webtoapp.ui.design.WtaFadeIn
+import com.webtoapp.ui.design.WtaFadeOut
 
 data class VirtualNavBarConfig(
     val showBackButton: Boolean = true,
@@ -54,8 +56,8 @@ fun VirtualNavigationBar(
 ) {
     AnimatedVisibility(
         visible = visible,
-        enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
-        exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
+        enter = slideInVertically(initialOffsetY = { it }) + WtaFadeIn,
+        exit = slideOutVertically(targetOffsetY = { it }) + WtaFadeOut,
         modifier = modifier
     ) {
         Box(

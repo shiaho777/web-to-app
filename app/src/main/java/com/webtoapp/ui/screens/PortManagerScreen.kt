@@ -5,10 +5,6 @@ import android.content.ClipboardManager
 import android.content.Context
 import androidx.core.graphics.drawable.toBitmap
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -95,9 +91,11 @@ import com.webtoapp.ui.design.WtaCard
 import com.webtoapp.ui.design.WtaCardTone
 import com.webtoapp.ui.design.WtaChip
 import com.webtoapp.ui.design.WtaColors
+import com.webtoapp.ui.design.WtaExpandIn
 import com.webtoapp.ui.design.WtaFullEmptyState
 import com.webtoapp.ui.design.WtaLoadingIndicator
 import com.webtoapp.ui.design.WtaScreen
+import com.webtoapp.ui.design.WtaShrinkOut
 import com.webtoapp.ui.design.WtaTab
 import com.webtoapp.ui.design.WtaTabRow
 import com.webtoapp.ui.design.WtaTextField
@@ -593,8 +591,8 @@ private fun PortStatsCard(
 
             AnimatedVisibility(
                 visible = showRangeStats,
-                enter = expandVertically() + fadeIn(),
-                exit = shrinkVertically() + fadeOut()
+                enter = WtaExpandIn,
+                exit = WtaShrinkOut
             ) {
                 Column(modifier = Modifier.padding(top = 12.dp)) {
                     HorizontalDivider()
@@ -761,8 +759,8 @@ private fun ServiceCard(
 
             AnimatedVisibility(
                 visible = expanded,
-                enter = expandVertically() + fadeIn(),
-                exit = shrinkVertically() + fadeOut()
+                enter = WtaExpandIn,
+                exit = WtaShrinkOut
             ) {
                 Column(modifier = Modifier.padding(top = 12.dp)) {
                     HorizontalDivider()
@@ -979,8 +977,8 @@ private fun WtaAppPortReportCard(
 
             AnimatedVisibility(
                 visible = expanded && report.allocations.isNotEmpty(),
-                enter = expandVertically() + fadeIn(),
-                exit = shrinkVertically() + fadeOut()
+                enter = WtaExpandIn,
+                exit = WtaShrinkOut
             ) {
                 Column(
                     modifier = Modifier.padding(top = 12.dp),

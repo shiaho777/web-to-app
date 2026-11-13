@@ -1,10 +1,6 @@
 package com.webtoapp.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -77,8 +73,10 @@ import com.webtoapp.ui.design.WtaButtonVariant
 import com.webtoapp.ui.design.WtaCard
 import com.webtoapp.ui.design.WtaCardTone
 import com.webtoapp.ui.design.WtaColors
+import com.webtoapp.ui.design.WtaExpandIn
 import com.webtoapp.ui.design.WtaLoadingIndicator
 import com.webtoapp.ui.design.WtaScreen
+import com.webtoapp.ui.design.WtaShrinkOut
 import com.webtoapp.ui.design.WtaTextField
 import com.webtoapp.ui.theme.ifDescriptionsShown
 import com.webtoapp.ui.viewmodel.MainViewModel
@@ -411,8 +409,8 @@ private fun ExportAppCard(
 
                 AnimatedVisibility(
                     visible = pickerExpanded && totalCount > 1,
-                    enter = expandVertically() + fadeIn(),
-                    exit = shrinkVertically() + fadeOut()
+                    enter = WtaExpandIn,
+                    exit = WtaShrinkOut
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         if (totalCount > 6) {
@@ -689,8 +687,8 @@ private fun PolicyAdviceCard(
 
             AnimatedVisibility(
                 visible = expanded,
-                enter = expandVertically() + fadeIn(),
-                exit = shrinkVertically() + fadeOut()
+                enter = WtaExpandIn,
+                exit = WtaShrinkOut
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
                     Spacer(modifier = Modifier.height(2.dp))
