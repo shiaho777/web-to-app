@@ -11,6 +11,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.outlined.Language
+import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -26,8 +27,36 @@ import com.webtoapp.core.i18n.AppLanguage
 import com.webtoapp.core.i18n.LanguageManager
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.ui.design.WtaAlertDialog
+import com.webtoapp.ui.design.WtaRadius
+import com.webtoapp.ui.design.WtaShapePlate
 import com.webtoapp.util.isRunningOnTv
 import kotlinx.coroutines.launch
+
+private val languageBadgeShapes = listOf(
+    MaterialShapes.Sunny,
+    MaterialShapes.Cookie4Sided,
+    MaterialShapes.Clover4Leaf,
+    MaterialShapes.Gem,
+    MaterialShapes.Fan,
+    MaterialShapes.Flower,
+    MaterialShapes.Pentagon,
+    MaterialShapes.Heart,
+    MaterialShapes.Cookie6Sided,
+    MaterialShapes.VerySunny
+)
+
+private fun AppLanguage.monogram(): String = when (this) {
+    AppLanguage.CHINESE -> "中"
+    AppLanguage.ENGLISH -> "En"
+    AppLanguage.ARABIC -> "ع"
+    AppLanguage.PORTUGUESE -> "Pt"
+    AppLanguage.SPANISH -> "Es"
+    AppLanguage.FRENCH -> "Fr"
+    AppLanguage.GERMAN -> "De"
+    AppLanguage.RUSSIAN -> "Ру"
+    AppLanguage.JAPANESE -> "あ"
+    AppLanguage.KOREAN -> "한"
+}
 
 @Composable
 private fun LanguageDisplayNameWithBadge(
@@ -111,6 +140,7 @@ fun LanguageSelectionDialog(
 
     WtaAlertDialog(
         onDismissRequest = onDismiss,
+        icon = Icons.Rounded.Translate,
         title = Strings.languageSettings,
         content = {
             Column(
@@ -120,10 +150,11 @@ fun LanguageSelectionDialog(
                     .verticalScroll(scrollState),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                AppLanguage.entries.forEach { language ->
+                AppLanguage.entries.forEachIndexed { index, language ->
                     LanguageOption(
                         language = language,
                         isSelected = language == currentLanguage,
+                        shapeIndex = index,
                         onClick = { onLanguageSelected(language) }
                     )
                 }
@@ -137,68 +168,116 @@ fun LanguageSelectionDialog(
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun LanguageOption(
     language: AppLanguage,
     isSelected: Boolean,
+    shapeIndex: Int,
     onClick: () -> Unit
 ) {
+    val colors = MaterialTheme.colorScheme
+    val badgeContainer: androidx.compose.ui.graphics.Color
+    val badgeOn: androidx.compose.ui.graphics.Color
+    when (shapeIndex % 3) {
+        0 -> {
+            badgeContainer = colors.primaryContainer
+            badgeOn = colors.onPrimaryContainer
+        }
+        1 -> {
+            badgeContainer = colors.secondaryContainer
+            badgeOn = colors.onSecondaryContainer
+        }
+        else -> {
+            badgeContainer = colors.tertiaryContainer
+            badgeOn = colors.onTertiaryContainer
+        }
+    }
     Card(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(WtaRadius.Card),
         colors = CardDefaults.cardColors(
             containerColor = if (isSelected) {
-                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
+                colors.primaryContainer
             } else {
-                MaterialTheme.colorScheme.surface
+                colors.surfaceContainerLow
             }
-        ),
-        border = androidx.compose.foundation.BorderStroke(
-            width = 1.dp,
-            color = if (isSelected) MaterialTheme.colorScheme.primary
-            else MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
+                .padding(horizontal = 14.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            WtaShapePlate(
+                polygon = languageBadgeShapes[shapeIndex % languageBadgeShapes.size],
+                containerColor = colors.surface,
+                modifier = Modifier.size(46.dp)
+            ) {
+                WtaShapePlate(
+                    polygon = languageBadgeShapes[shapeIndex % languageBadgeShapes.size],
+                    containerColor = badgeContainer,
+                    modifier = Modifier.size(38.dp)
+                ) {
+                    Text(
+                        text = language.monogram(),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = badgeOn
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.width(14.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = language.nativeName,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = if (isSelected) {
-                        MaterialTheme.colorScheme.onPrimaryContainer
+                    style = if (isSelected) {
+                        MaterialTheme.typography.titleMediumEmphasized
                     } else {
-                        MaterialTheme.colorScheme.onSurface
+                        MaterialTheme.typography.titleMedium
+                    },
+                    color = if (isSelected) {
+                        colors.onPrimaryContainer
+                    } else {
+                        colors.onSurface
                     }
                 )
                 LanguageDisplayNameWithBadge(language = language, isSelected = isSelected)
             }
-
-            androidx.compose.animation.AnimatedVisibility(
-                visible = isSelected,
-                enter = androidx.compose.animation.fadeIn() +
-                    androidx.compose.animation.scaleIn(initialScale = 0.6f),
-                exit = androidx.compose.animation.fadeOut()
+            Spacer(modifier = Modifier.width(8.dp))
+            Box(
+                modifier = Modifier.size(28.dp),
+                contentAlignment = Alignment.Center
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(24.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primary),
-                    contentAlignment = Alignment.Center
+                androidx.compose.animation.AnimatedVisibility(
+                    visible = isSelected,
+                    enter = androidx.compose.animation.fadeIn() +
+                        androidx.compose.animation.scaleIn(initialScale = 0.5f),
+                    exit = androidx.compose.animation.fadeOut() +
+                        androidx.compose.animation.scaleOut(targetScale = 0.5f)
                 ) {
-                    Icon(
-                        Icons.Default.Check,
-                        contentDescription = null,
-                        modifier = Modifier.size(14.dp),
-                        tint = MaterialTheme.colorScheme.onPrimary
+                    WtaShapePlate(
+                        polygon = MaterialShapes.Cookie4Sided,
+                        containerColor = colors.primary,
+                        modifier = Modifier.size(28.dp)
+                    ) {
+                        Icon(
+                            Icons.Rounded.Check,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                            tint = colors.onPrimary
+                        )
+                    }
+                }
+                if (!isSelected) {
+                    Box(
+                        modifier = Modifier
+                            .size(22.dp)
+                            .clip(CircleShape)
+                            .background(colors.surfaceContainerHighest)
                     )
                 }
             }
