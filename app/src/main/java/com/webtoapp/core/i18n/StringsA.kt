@@ -9756,19 +9756,6 @@ object StringsA {
         AppLanguage.KOREAN -> "비활성화"
     }
 
-    val emptyStateHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "点击右下角「创建应用」按钮，开始创建您的第一个应用"
-        AppLanguage.ENGLISH -> "Tap the Create app button at the bottom right to create your first app"
-        AppLanguage.ARABIC -> "اضغط على زر إنشاء تطبيق في أسفل اليمين لإنشاء تطبيقك الأول"
-        AppLanguage.PORTUGUESE -> "Toque no botão Criar app no canto inferior direito para criar seu primeiro app"
-        AppLanguage.SPANISH -> "Toca el botón Crear app en la esquina inferior derecha para crear tu primera app"
-        AppLanguage.FRENCH -> "Touchez le bouton Créer une app en bas à droite pour créer votre première app"
-        AppLanguage.GERMAN -> "Tippen Sie unten rechts auf App erstellen, um Ihre erste App zu erstellen"
-        AppLanguage.RUSSIAN -> "Нажмите кнопку «Создать приложение» в правом нижнем углу, чтобы создать своё первое приложение"
-        AppLanguage.JAPANESE -> "右下の「アプリを作成」ボタンをタップして最初のアプリを作成しましょう"
-        AppLanguage.KOREAN -> "오른쪽 아래 앱 만들기 버튼을 탭하여 첫 앱을 만드세요"
-    }
-
     val appIconModifier: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "应用修改器"
         AppLanguage.ENGLISH -> "App Modifier"
