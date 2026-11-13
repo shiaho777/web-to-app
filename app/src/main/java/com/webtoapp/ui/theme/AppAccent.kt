@@ -118,6 +118,25 @@ data class AccentScheme(
 
 object AppAccentPalettes {
 
+    private val DynamicFallbackLight = AccentScheme(
+        primary = Color(0xFF4355B9), onPrimary = Color(0xFFFFFFFF),
+        primaryContainer = Color(0xFFDEE0FF), onPrimaryContainer = Color(0xFF00105C),
+        secondary = Color(0xFF006A60), onSecondary = Color(0xFFFFFFFF),
+        secondaryContainer = Color(0xFF9CF2E4), onSecondaryContainer = Color(0xFF00201C),
+        tertiary = Color(0xFF4C6708), onTertiary = Color(0xFFFFFFFF),
+        tertiaryContainer = Color(0xFFCDEE8A), onTertiaryContainer = Color(0xFF131F00),
+        inversePrimary = Color(0xFFBAC3FF)
+    )
+    private val DynamicFallbackDark = AccentScheme(
+        primary = Color(0xFFBAC3FF), onPrimary = Color(0xFF08218A),
+        primaryContainer = Color(0xFF2B3D9E), onPrimaryContainer = Color(0xFFDEE0FF),
+        secondary = Color(0xFF80D5C8), onSecondary = Color(0xFF003731),
+        secondaryContainer = Color(0xFF005047), onSecondaryContainer = Color(0xFF9CF2E4),
+        tertiary = Color(0xFFB2D26E), onTertiary = Color(0xFF223500),
+        tertiaryContainer = Color(0xFF354E00), onTertiaryContainer = Color(0xFFCDEE8A),
+        inversePrimary = Color(0xFF4355B9)
+    )
+
     private val CharcoalPinkLight = AccentScheme(
         primary = Color(0xFFC81E63), onPrimary = Color(0xFFFFFFFF),
         primaryContainer = Color(0xFFFFD9E3), onPrimaryContainer = Color(0xFF40001D),
@@ -313,7 +332,8 @@ object AppAccentPalettes {
     )
 
     fun scheme(accent: AppAccent, darkTheme: Boolean): AccentScheme? = when (accent) {
-        AppAccent.DEFAULT, AppAccent.DYNAMIC -> null
+        AppAccent.DEFAULT -> null
+        AppAccent.DYNAMIC -> if (darkTheme) DynamicFallbackDark else DynamicFallbackLight
         AppAccent.CHARCOAL_PINK -> if (darkTheme) CharcoalPinkDark else CharcoalPinkLight
         AppAccent.ROYAL_PURPLE -> if (darkTheme) RoyalPurpleDark else RoyalPurpleLight
         AppAccent.DEEP_SEA -> if (darkTheme) DeepSeaDark else DeepSeaLight

@@ -150,16 +150,16 @@ class ThemeManager(private val context: Context) {
     )
 
     val accentFlow: StateFlow<AppAccent> = context.themeDataStore.data.map { prefs ->
-        val accentName = prefs[KEY_ACCENT] ?: AppAccent.DEFAULT.name
+        val accentName = prefs[KEY_ACCENT] ?: AppAccent.DYNAMIC.name
         try {
             AppAccent.valueOf(accentName)
         } catch (e: Exception) {
-            AppAccent.DEFAULT
+            AppAccent.DYNAMIC
         }
     }.stateIn(
         scope = scope,
         started = SharingStarted.Eagerly,
-        initialValue = AppAccent.DEFAULT
+        initialValue = AppAccent.DYNAMIC
     )
 
     val enableAnimationsFlow: StateFlow<Boolean> = context.themeDataStore.data.map { prefs ->
