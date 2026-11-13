@@ -26,8 +26,12 @@ Never hard-code a `dp`/`sp`/`Color()` value that maps to one of these tokens.
 - Prefer `WtaColors.semantic.*` (`success`, `warning`, `error`, `info`, `neutral`)
   for state accents. Each semantic tone ships with `{onX}` and `{xContainer}`
   variants mirroring Material 3.
-- The single theme is `AppThemes.KimiNoNawa`: a calibrated monochrome palette
-  with separate light and dark schemes. Dynamic color is opt-in per app policy.
+- The neutral skeleton is `AppThemes.KimiNoNawa` (calibrated light/dark
+  surfaces). The **default accent is `AppAccent.DYNAMIC`**: vibrant Material
+  You dynamic color on Android 12+, with a vibrant periwinkle/mint static
+  fallback (`AppAccentPalettes.DynamicFallback*`) on older releases. The
+  monochrome `DEFAULT` accent and ten vibrant dual-color accents remain
+  user-selectable in settings.
 - `AppColors` only holds colors that must stay constant across themes (editor
   chrome, Catppuccin presets, language/brand identity aliases). It is not a
   general-purpose color source.
