@@ -310,45 +310,6 @@ fun HomeScreen(
                         }
                     }
 
-                    Box {
-                        IconButton(
-                            onClick = { showSortMenu = true },
-                            modifier = Modifier.size(40.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.Sort,
-                                contentDescription = Strings.appListSort,
-                                modifier = Modifier.size(22.dp),
-                                tint = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
-                        DropdownMenu(
-                            expanded = showSortMenu,
-                            onDismissRequest = { showSortMenu = false }
-                        ) {
-                            AppListSort.entries.forEach { mode ->
-                                DropdownMenuItem(
-                                    text = { Text(mode.homeMenuLabel()) },
-                                    onClick = {
-                                        showSortMenu = false
-                                        viewModel.setAppListSort(mode)
-                                    },
-                                    leadingIcon = {
-                                        if (appListSort == mode) {
-                                            Icon(
-                                                Icons.Outlined.Check,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(18.dp)
-                                            )
-                                        } else {
-                                            Spacer(Modifier.size(18.dp))
-                                        }
-                                    }
-                                )
-                            }
-                        }
-                    }
-
                     IconButton(
                         onClick = {
                             isSearchActive = !isSearchActive
@@ -507,7 +468,47 @@ fun HomeScreen(
                 },
                 onDeleteCategory = { viewModel.deleteCategory(it) },
                 onMoveCategory = { category, delta -> viewModel.moveCategory(category, delta) },
-                onManageCategories = { showCategoryManager = true }
+                onManageCategories = { showCategoryManager = true },
+                trailingContent = {
+                    Box {
+                        IconButton(
+                            onClick = { showSortMenu = true },
+                            modifier = Modifier.size(28.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Sort,
+                                contentDescription = Strings.appListSort,
+                                modifier = Modifier.size(16.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        DropdownMenu(
+                            expanded = showSortMenu,
+                            onDismissRequest = { showSortMenu = false }
+                        ) {
+                            AppListSort.entries.forEach { mode ->
+                                DropdownMenuItem(
+                                    text = { Text(mode.homeMenuLabel()) },
+                                    onClick = {
+                                        showSortMenu = false
+                                        viewModel.setAppListSort(mode)
+                                    },
+                                    leadingIcon = {
+                                        if (appListSort == mode) {
+                                            Icon(
+                                                Icons.Outlined.Check,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                        } else {
+                                            Spacer(Modifier.size(18.dp))
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
             )
 
             Box(
