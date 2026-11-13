@@ -64,7 +64,9 @@ import com.webtoapp.ui.components.CategoryTabRow
 import com.webtoapp.ui.components.DataBackupDialog
 import com.webtoapp.ui.components.EnhancedElevatedCard
 import com.webtoapp.ui.components.PremiumTextField
-import com.webtoapp.ui.components.LanguageSelectorButton
+import com.webtoapp.ui.components.LanguageSelectionDialog
+import com.webtoapp.core.i18n.AppLanguage
+import com.webtoapp.core.i18n.LanguageManager
 import com.webtoapp.ui.components.MoveToCategoryDialog
 import com.webtoapp.ui.design.WtaAlertDialog
 import com.webtoapp.ui.design.WtaLoadingIndicator
@@ -256,70 +258,35 @@ fun HomeScreen(
 
                     var buttonCenter by remember { mutableStateOf(androidx.compose.ui.geometry.Offset.Zero) }
 
-                    IconButton(
-                        onClick = {
-                            val switchToDark = !isDarkNow
+                    val languageManager = remember { LanguageManager.getInstance(context) }
+                    val currentLanguage by languageManager.currentLanguageFlow.collectAsState(initial = AppLanguage.CHINESE)
+                    var showLanguageDialog by remember { mutableStateOf(false) }
 
-                            if (revealState != null) {
-
-                                revealState.triggerReveal(
-                                    center = buttonCenter,
-                                    switchToDark = switchToDark,
-                                    view = view,
-                                    window = activity?.window
-                                ) {
-
-                                    scope.launch {
-                                        val newMode = if (switchToDark) {
-                                            ThemeManager.DarkModeSettings.DARK
-                                        } else {
-                                            ThemeManager.DarkModeSettings.LIGHT
-                                        }
-                                        themeManager.setDarkMode(newMode)
-                                    }
-                                }
-                            } else {
-
+                    val toggleDarkMode: () -> Unit = {
+                        val switchToDark = !isDarkNow
+                        if (revealState != null) {
+                            revealState.triggerReveal(
+                                center = buttonCenter,
+                                switchToDark = switchToDark,
+                                view = view,
+                                window = activity?.window
+                            ) {
                                 scope.launch {
-                                    val newMode = if (switchToDark) {
-                                        ThemeManager.DarkModeSettings.DARK
-                                    } else {
-                                        ThemeManager.DarkModeSettings.LIGHT
-                                    }
-                                    themeManager.setDarkMode(newMode)
+                                    themeManager.setDarkMode(
+                                        if (switchToDark) ThemeManager.DarkModeSettings.DARK
+                                        else ThemeManager.DarkModeSettings.LIGHT
+                                    )
                                 }
                             }
-                        },
-                        modifier = Modifier
-                            .size(44.dp)
-                            .onGloballyPositioned { coords ->
-                                val bounds = coords.boundsInRoot()
-                                buttonCenter = androidx.compose.ui.geometry.Offset(
-                                    bounds.left + bounds.width / 2,
-                                    bounds.top + bounds.height / 2
+                        } else {
+                            scope.launch {
+                                themeManager.setDarkMode(
+                                    if (switchToDark) ThemeManager.DarkModeSettings.DARK
+                                    else ThemeManager.DarkModeSettings.LIGHT
                                 )
                             }
-                    ) {
-                        Icon(
-                            imageVector = if (isDarkNow) Icons.Outlined.DarkMode else Icons.Outlined.LightMode,
-                            contentDescription = if (isDarkNow) {
-                                Strings.statusBarDarkModeLabel
-                            } else {
-                                Strings.statusBarLightModeLabel
-                            },
-                            modifier = Modifier.size(22.dp),
-                            tint = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-
-                    LanguageSelectorButton(
-                        onLanguageChanged = {
-
-                            scope.launch {
-                                snackbarHostState.showSnackbar(Strings.msgLanguageChanged)
-                            }
                         }
-                    )
+                    }
 
                     ButtonGroup {
                         ToggleButton(
@@ -356,62 +323,6 @@ fun HomeScreen(
                         }
                     }
 
-                    Box {
-                        SplitButtonLayout(
-                            leadingButton = {
-                                IconButton(
-                                    onClick = { showSortMenu = true },
-                                    modifier = Modifier.size(44.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Outlined.Sort,
-                                        contentDescription = Strings.appListSort,
-                                        modifier = Modifier.size(22.dp),
-                                        tint = MaterialTheme.colorScheme.onSurface
-                                    )
-                                }
-                            },
-                            trailingButton = {
-                                IconButton(
-                                    onClick = { showSortMenu = true },
-                                    modifier = Modifier.size(width = 32.dp, height = 44.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.ArrowDropDown,
-                                        contentDescription = Strings.appListSort,
-                                        modifier = Modifier.size(22.dp),
-                                        tint = MaterialTheme.colorScheme.onSurface
-                                    )
-                                }
-                            }
-                        )
-                        DropdownMenu(
-                            expanded = showSortMenu,
-                            onDismissRequest = { showSortMenu = false }
-                        ) {
-                            AppListSort.entries.forEach { mode ->
-                                DropdownMenuItem(
-                                    text = { Text(mode.homeMenuLabel()) },
-                                    onClick = {
-                                        showSortMenu = false
-                                        viewModel.setAppListSort(mode)
-                                    },
-                                    leadingIcon = {
-                                        if (appListSort == mode) {
-                                            Icon(
-                                                Icons.Outlined.Check,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(18.dp)
-                                            )
-                                        } else {
-                                            Spacer(Modifier.size(18.dp))
-                                        }
-                                    }
-                                )
-                            }
-                        }
-                    }
-
                     IconButton(
                         onClick = {
                             isSearchActive = !isSearchActive
@@ -431,11 +342,19 @@ fun HomeScreen(
                     Box {
                         IconButton(
                             onClick = { showMoreMenu = true },
-                            modifier = Modifier.size(44.dp)
+                            modifier = Modifier
+                                .size(44.dp)
+                                .onGloballyPositioned { coords ->
+                                    val bounds = coords.boundsInRoot()
+                                    buttonCenter = androidx.compose.ui.geometry.Offset(
+                                        bounds.left + bounds.width / 2,
+                                        bounds.top + bounds.height / 2
+                                    )
+                                }
                         ) {
                             Icon(
                                 imageVector = Icons.Outlined.MoreVert,
-                                contentDescription = null,
+                                contentDescription = Strings.more,
                                 modifier = Modifier.size(22.dp),
                                 tint = MaterialTheme.colorScheme.onSurface
                             )
@@ -444,6 +363,33 @@ fun HomeScreen(
                             expanded = showMoreMenu,
                             onDismissRequest = { showMoreMenu = false }
                         ) {
+                            DropdownMenuItem(
+                                text = { Text(Strings.appListSort) },
+                                onClick = { showMoreMenu = false; showSortMenu = true },
+                                leadingIcon = { Icon(Icons.Outlined.Sort, null, Modifier.size(20.dp)) }
+                            )
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        if (isDarkNow) Strings.statusBarDarkModeLabel
+                                        else Strings.statusBarLightModeLabel
+                                    )
+                                },
+                                onClick = { showMoreMenu = false; toggleDarkMode() },
+                                leadingIcon = {
+                                    Icon(
+                                        if (isDarkNow) Icons.Outlined.DarkMode else Icons.Outlined.LightMode,
+                                        null,
+                                        Modifier.size(20.dp)
+                                    )
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text(Strings.languageSettings) },
+                                onClick = { showMoreMenu = false; showLanguageDialog = true },
+                                leadingIcon = { Icon(Icons.Outlined.Language, null, Modifier.size(20.dp)) }
+                            )
+                            HorizontalDivider()
                             DropdownMenuItem(
                                 text = { Text(Strings.menuAgent) },
                                 onClick = { showMoreMenu = false; onOpenAgent() },
@@ -525,8 +471,46 @@ fun HomeScreen(
                                 leadingIcon = { Icon(Icons.Outlined.Info, null, Modifier.size(20.dp)) }
                             )
                         }
+                        DropdownMenu(
+                            expanded = showSortMenu,
+                            onDismissRequest = { showSortMenu = false }
+                        ) {
+                            AppListSort.entries.forEach { mode ->
+                                DropdownMenuItem(
+                                    text = { Text(mode.homeMenuLabel()) },
+                                    onClick = {
+                                        showSortMenu = false
+                                        viewModel.setAppListSort(mode)
+                                    },
+                                    leadingIcon = {
+                                        if (appListSort == mode) {
+                                            Icon(
+                                                Icons.Outlined.Check,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                        } else {
+                                            Spacer(Modifier.size(18.dp))
+                                        }
+                                    }
+                                )
+                            }
+                        }
                     }
 
+                    if (showLanguageDialog) {
+                        LanguageSelectionDialog(
+                            currentLanguage = currentLanguage,
+                            onLanguageSelected = { language ->
+                                scope.launch {
+                                    languageManager.setLanguage(language)
+                                    snackbarHostState.showSnackbar(Strings.msgLanguageChanged)
+                                }
+                                showLanguageDialog = false
+                            },
+                            onDismiss = { showLanguageDialog = false }
+                        )
+                    }
         }
     ) {
         Column(
