@@ -88,6 +88,8 @@ import com.webtoapp.data.model.isBrowserToolbarVisible
 import com.webtoapp.data.model.resolveToolbarButtons
 import android.content.pm.ActivityInfo
 import com.webtoapp.ui.animation.HostPreviewMotion
+import com.webtoapp.ui.design.WtaFadeIn
+import com.webtoapp.ui.design.WtaFadeOut
 import com.webtoapp.ui.design.WtaLoadingIndicator
 import com.webtoapp.ui.theme.WebToAppTheme
 import com.webtoapp.util.DownloadHelper
@@ -3983,8 +3985,8 @@ fun WebViewScreen(
 
             AnimatedVisibility(
                 visible = isLoading,
-                enter = fadeIn(),
-                exit = fadeOut()
+                enter = WtaFadeIn,
+                exit = WtaFadeOut
             ) {
                 LinearProgressIndicator(
                     progress = { loadProgress / 100f },
@@ -4541,8 +4543,8 @@ fun WebViewScreen(
 
                     AnimatedVisibility(
                         visible = showConsole,
-                        enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
-                        exit = slideOutVertically(targetOffsetY = { it }) + fadeOut()
+                        enter = slideInVertically(initialOffsetY = { it }) + WtaFadeIn,
+                        exit = slideOutVertically(targetOffsetY = { it }) + WtaFadeOut
                     ) {
                         ConsolePanel(
                             consoleMessages = consoleMessages,
@@ -4575,8 +4577,8 @@ fun WebViewScreen(
 
                     AnimatedVisibility(
                         visible = showFindBar,
-                        enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
-                        exit = slideOutVertically(targetOffsetY = { it }) + fadeOut()
+                        enter = slideInVertically(initialOffsetY = { it }) + WtaFadeIn,
+                        exit = slideOutVertically(targetOffsetY = { it }) + WtaFadeOut
                     ) {
                         com.webtoapp.ui.shell.FindInPageBar(
                             surface = browserSurfaceRef ?: webViewRef?.let {

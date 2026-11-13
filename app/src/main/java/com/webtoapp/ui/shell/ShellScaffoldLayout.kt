@@ -4,8 +4,6 @@ import android.webkit.WebView
 import com.webtoapp.ui.components.PremiumButton
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -27,6 +25,8 @@ import androidx.compose.ui.unit.dp
 import com.webtoapp.core.bgm.bgmControlEnabled
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.shell.ShellConfig
+import com.webtoapp.ui.design.WtaFadeIn
+import com.webtoapp.ui.design.WtaFadeOut
 import com.webtoapp.ui.design.WtaLoadingIndicator
 import com.webtoapp.ui.shared.PageEdgeChrome
 import com.webtoapp.ui.shared.effectiveBottomContentPadding
@@ -334,8 +334,8 @@ fun BoxScope.ShellScaffoldLayout(
             // Console panel (slides up from bottom when toggled)
             AnimatedVisibility(
                 visible = showConsole,
-                enter = androidx.compose.animation.slideInVertically(initialOffsetY = { it }) + fadeIn(),
-                exit = androidx.compose.animation.slideOutVertically(targetOffsetY = { it }) + fadeOut(),
+                enter = androidx.compose.animation.slideInVertically(initialOffsetY = { it }) + WtaFadeIn,
+                exit = androidx.compose.animation.slideOutVertically(targetOffsetY = { it }) + WtaFadeOut,
                 modifier = Modifier.align(Alignment.BottomCenter)
             ) {
                 ConsolePanel(
@@ -351,8 +351,8 @@ fun BoxScope.ShellScaffoldLayout(
             // Find-in-page bar (native engine search; slides up like the console)
             AnimatedVisibility(
                 visible = showFindBar,
-                enter = androidx.compose.animation.slideInVertically(initialOffsetY = { it }) + fadeIn(),
-                exit = androidx.compose.animation.slideOutVertically(targetOffsetY = { it }) + fadeOut(),
+                enter = androidx.compose.animation.slideInVertically(initialOffsetY = { it }) + WtaFadeIn,
+                exit = androidx.compose.animation.slideOutVertically(targetOffsetY = { it }) + WtaFadeOut,
                 modifier = Modifier.align(Alignment.BottomCenter)
             ) {
                 FindInPageBar(

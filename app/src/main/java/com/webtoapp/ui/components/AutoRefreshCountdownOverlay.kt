@@ -1,8 +1,6 @@
 package com.webtoapp.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.clickable
@@ -26,6 +24,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.ui.design.WtaFadeIn
+import com.webtoapp.ui.design.WtaFadeOut
 import com.webtoapp.ui.theme.AppColors
 
 @Composable
@@ -36,8 +36,8 @@ fun AutoRefreshCountdownChip(
 ) {
     AnimatedVisibility(
         visible = remainingSeconds > 0,
-        enter = fadeIn() + scaleIn(initialScale = 0.85f),
-        exit = fadeOut() + scaleOut(targetScale = 0.85f),
+        enter = WtaFadeIn + scaleIn(initialScale = 0.85f),
+        exit = WtaFadeOut + scaleOut(targetScale = 0.85f),
         modifier = modifier
     ) {
         Surface(

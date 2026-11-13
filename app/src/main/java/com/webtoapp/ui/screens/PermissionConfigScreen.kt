@@ -1,8 +1,6 @@
 package com.webtoapp.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -88,9 +86,11 @@ import com.webtoapp.ui.components.PremiumButton
 import com.webtoapp.ui.components.PremiumTextField
 import com.webtoapp.ui.design.WtaBackground
 import com.webtoapp.ui.design.WtaChip
+import com.webtoapp.ui.design.WtaExpandIn
 import com.webtoapp.ui.design.WtaSettingCard
 import com.webtoapp.ui.design.WtaSettingRow
 import com.webtoapp.ui.design.WtaSectionDivider
+import com.webtoapp.ui.design.WtaShrinkOut
 import com.webtoapp.ui.design.WtaStatusBanner
 import com.webtoapp.ui.design.WtaStatusTone
 import com.webtoapp.ui.theme.LocalShowDescriptions
@@ -647,8 +647,8 @@ private fun PermissionGroupCard(
 
             AnimatedVisibility(
                 visible = shown,
-                enter = expandVertically(),
-                exit = shrinkVertically()
+                enter = WtaExpandIn,
+                exit = WtaShrinkOut
             ) {
                 Column(
                     modifier = Modifier.padding(start = 12.dp, end = 12.dp, bottom = 12.dp),

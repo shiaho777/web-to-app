@@ -14,10 +14,6 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
 import com.webtoapp.ui.animation.CardExpandTransition
 import com.webtoapp.ui.animation.CardCollapseTransition
 import com.webtoapp.ui.animation.WtaPersistentExpandedContent
@@ -64,6 +60,8 @@ import com.webtoapp.ui.webview.WebViewActivity
 import androidx.compose.ui.graphics.Color
 import com.webtoapp.ui.components.EnhancedElevatedCard
 import com.webtoapp.ui.design.*
+import com.webtoapp.ui.design.WtaExpandIn
+import com.webtoapp.ui.design.WtaShrinkOut
 import com.webtoapp.core.pwa.PwaAnalysisResult
 import com.webtoapp.core.pwa.PwaAnalysisState
 import com.webtoapp.core.pwa.PwaDataSource
@@ -1046,8 +1044,8 @@ fun PwaAnalysisSection(
 
         AnimatedVisibility(
             visible = pwaState is PwaAnalysisState.Error,
-            enter = fadeIn() + expandVertically(),
-            exit = fadeOut() + shrinkVertically()
+            enter = WtaExpandIn,
+            exit = WtaShrinkOut
         ) {
             Column {
                 Spacer(Modifier.height(8.dp))

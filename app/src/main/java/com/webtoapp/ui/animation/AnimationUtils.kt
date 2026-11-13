@@ -61,8 +61,8 @@ fun StaggeredAnimatedItem(
         visible = visible,
         enter = slideInVertically(
             initialOffsetY = { slideOffsetPx },
-            animationSpec = WtaMotion.enterTween(durationMillis = 180)
-        ),
+            animationSpec = WtaMotion.settleSpring()
+        ) + fadeIn(animationSpec = WtaMotion.enterTween(durationMillis = 180)),
         modifier = modifier
     ) {
         content()
@@ -125,19 +125,11 @@ fun tabSlideDirection(previousTab: Int, currentTab: Int): Int {
     return if (currentTab > previousTab) 1 else -1
 }
 
-fun tabEnterTransition(direction: Int): EnterTransition {
-    return slideInHorizontally(
-        initialOffsetX = { fullWidth -> direction * (fullWidth / 8) },
-        animationSpec = WtaMotion.enterTween(durationMillis = 200)
-    )
-}
+fun tabEnterTransition(direction: Int): EnterTransition =
+    com.webtoapp.ui.design.wtaTabEnterTransition(direction)
 
-fun tabExitTransition(direction: Int): ExitTransition {
-    return slideOutHorizontally(
-        targetOffsetX = { fullWidth -> -direction * (fullWidth / 12) },
-        animationSpec = WtaMotion.exitTween(durationMillis = 160)
-    )
-}
+fun tabExitTransition(direction: Int): ExitTransition =
+    com.webtoapp.ui.design.wtaTabExitTransition(direction)
 
 val CardExpandTransition: EnterTransition = expandVertically(
     animationSpec = WtaMotion.settleSpring(),

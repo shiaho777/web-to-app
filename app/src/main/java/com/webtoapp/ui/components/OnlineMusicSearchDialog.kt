@@ -44,7 +44,11 @@ import coil.request.ImageRequest
 import com.webtoapp.core.bgm.ChannelStatus
 import com.webtoapp.core.bgm.MusicChannel
 import com.webtoapp.ui.design.WtaChip
+import com.webtoapp.ui.design.WtaExpandIn
+import com.webtoapp.ui.design.WtaFadeIn
+import com.webtoapp.ui.design.WtaFadeOut
 import com.webtoapp.ui.design.WtaLoadingIndicator
+import com.webtoapp.ui.design.WtaShrinkOut
 import com.webtoapp.core.bgm.OnlineMusicApi
 import com.webtoapp.core.bgm.OnlineMusicDownloader
 import com.webtoapp.core.bgm.OnlineMusicTrack
@@ -536,8 +540,8 @@ fun OnlineMusicSearchDialog(
 
                     AnimatedVisibility(
                         visible = showDownloadLog && downloadLogs.isNotEmpty(),
-                        enter = expandVertically() + fadeIn(),
-                        exit = shrinkVertically() + fadeOut()
+                        enter = WtaExpandIn,
+                        exit = WtaShrinkOut
                     ) {
                         DownloadLogPanel(
                             logs = downloadLogs,
@@ -662,8 +666,8 @@ fun OnlineMusicSearchDialog(
 
                     AnimatedVisibility(
                         visible = previewingTrack != null && isPlayerPrepared,
-                        enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
-                        exit = slideOutVertically(targetOffsetY = { it }) + fadeOut()
+                        enter = slideInVertically(initialOffsetY = { it }) + WtaFadeIn,
+                        exit = slideOutVertically(targetOffsetY = { it }) + WtaFadeOut
                     ) {
                         previewingTrack?.let { track ->
                             EnhancedMiniPlayer(

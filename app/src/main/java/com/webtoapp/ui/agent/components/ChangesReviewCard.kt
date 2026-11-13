@@ -1,10 +1,6 @@
 package com.webtoapp.ui.agent.components
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -48,8 +44,10 @@ import com.webtoapp.ui.design.WtaAlpha
 import com.webtoapp.ui.design.WtaCard
 import com.webtoapp.ui.design.WtaCardTone
 import com.webtoapp.ui.design.WtaColors
+import com.webtoapp.ui.design.WtaExpandIn
 import com.webtoapp.ui.design.WtaInfoChip
 import com.webtoapp.ui.design.WtaRadius
+import com.webtoapp.ui.design.WtaShrinkOut
 import com.webtoapp.ui.design.WtaSize
 import com.webtoapp.ui.design.WtaSpacing
 
@@ -87,8 +85,8 @@ fun ChangesReviewCard(
             )
             AnimatedVisibility(
                 visible = expanded,
-                enter = expandVertically() + fadeIn(),
-                exit = shrinkVertically() + fadeOut()
+                enter = WtaExpandIn,
+                exit = WtaShrinkOut
             ) {
                 Column {
                     HorizontalDivider(

@@ -49,7 +49,9 @@ import kotlinx.coroutines.launch
 import java.io.File
 import com.webtoapp.ui.design.WtaAlertDialog
 import com.webtoapp.ui.design.WtaBackground
+import com.webtoapp.ui.design.WtaExpandIn
 import com.webtoapp.ui.design.WtaLoadingIndicator
+import com.webtoapp.ui.design.WtaShrinkOut
 import com.webtoapp.ui.components.EnhancedElevatedCard
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -1646,7 +1648,7 @@ fun CreateGalleryAppScreenV2(
 
             WtaCreateFlowSection(title = Strings.importProject) {
             if (existingAppId == null) {
-            AnimatedVisibility(visible = showAppInfoSection, enter = expandVertically(), exit = shrinkVertically()) {
+            AnimatedVisibility(visible = showAppInfoSection, enter = WtaExpandIn, exit = WtaShrinkOut) {
                 Surface(color = if (com.webtoapp.ui.theme.LocalIsDarkTheme.current) Color.White.copy(alpha = 0.10f) else Color.White.copy(alpha = 0.72f)) {
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(16.dp),

@@ -147,6 +147,14 @@ Pull colors from `MaterialTheme.colorScheme.*` containers; never hard-code.
   tokens (default 0.8/380, fast 0.6/800, slow 0.8/200) and still honor the
   global animation switch and speed scale. Do not hand-roll inline springs in
   screens; route them through `WtaMotion`.
+- `WtaTransitions.kt` is the shared transition vocabulary: `WtaFadeIn/Out`,
+  `WtaExpandIn/ShrinkOut`, `WtaPopIn/Out`, `WtaSlideUpIn/DownOut`, and
+  `wtaTabEnter/ExitTransition(direction)`. Never use bare `fadeIn()` /
+  `fadeOut()` / `expandVertically()` / `shrinkVertically()` — they fall back to
+  default bezier curves instead of the expressive motion scheme.
+- `WtaTabRow` renders a spring-driven sliding pill indicator with animated
+  colors and emphasized selected labels; tab content switches should use
+  `AnimatedContent` with `wtaTabEnter/ExitTransition`.
 - `WtaAlertDialog` uses `AlertDialogDefaults.shape` and the built-in
   expressive dialog enter/exit motion — no manual scale animation.
 
