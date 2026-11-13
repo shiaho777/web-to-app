@@ -123,7 +123,7 @@ import com.webtoapp.ui.design.WtaBadge
 import com.webtoapp.ui.design.WtaInfoChip
 import com.webtoapp.ui.theme.LocalShowDescriptions
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun HomeScreen(
     viewModel: MainViewModel,
@@ -238,7 +238,7 @@ fun HomeScreen(
             ExtendedFloatingActionButton(
                 onClick = { showFabMenu = true },
                 icon = { Icon(Icons.Default.Add, contentDescription = null) },
-                text = { Text(Strings.createApp) },
+                text = { Text(Strings.createApp, style = MaterialTheme.typography.labelLargeEmphasized) },
                 containerColor = MaterialTheme.colorScheme.primaryContainer,
                 contentColor = MaterialTheme.colorScheme.onPrimaryContainer
             )
@@ -321,45 +321,70 @@ fun HomeScreen(
                         }
                     )
 
-                    IconButton(
-                        onClick = {
-                            val next = if (homeViewMode == ThemeManager.HomeViewMode.LIST) {
-                                ThemeManager.HomeViewMode.GRID
-                            } else {
-                                ThemeManager.HomeViewMode.LIST
-                            }
-                            scope.launch { homeThemeManager.setHomeViewMode(next) }
-                        },
-                        modifier = Modifier.size(44.dp)
-                    ) {
-                        Icon(
-                            imageVector = if (homeViewMode == ThemeManager.HomeViewMode.GRID) {
-                                Icons.AutoMirrored.Outlined.ViewList
-                            } else {
-                                Icons.Outlined.GridView
+                    ButtonGroup {
+                        ToggleButton(
+                            checked = homeViewMode == ThemeManager.HomeViewMode.LIST,
+                            onCheckedChange = { checked ->
+                                if (checked) {
+                                    scope.launch { homeThemeManager.setHomeViewMode(ThemeManager.HomeViewMode.LIST) }
+                                }
                             },
-                            contentDescription = if (homeViewMode == ThemeManager.HomeViewMode.GRID) {
-                                Strings.homeViewList
-                            } else {
-                                Strings.homeViewGrid
+                            modifier = Modifier.size(44.dp),
+                            contentPadding = PaddingValues(0.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Outlined.ViewList,
+                                contentDescription = Strings.homeViewList,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+                        ToggleButton(
+                            checked = homeViewMode == ThemeManager.HomeViewMode.GRID,
+                            onCheckedChange = { checked ->
+                                if (checked) {
+                                    scope.launch { homeThemeManager.setHomeViewMode(ThemeManager.HomeViewMode.GRID) }
+                                }
                             },
-                            modifier = Modifier.size(22.dp),
-                            tint = MaterialTheme.colorScheme.onSurface
-                        )
+                            modifier = Modifier.size(44.dp),
+                            contentPadding = PaddingValues(0.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.GridView,
+                                contentDescription = Strings.homeViewGrid,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
                     }
 
                     Box {
-                        IconButton(
-                            onClick = { showSortMenu = true },
-                            modifier = Modifier.size(44.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.Sort,
-                                contentDescription = Strings.appListSort,
-                                modifier = Modifier.size(22.dp),
-                                tint = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
+                        SplitButtonLayout(
+                            leadingButton = {
+                                IconButton(
+                                    onClick = { showSortMenu = true },
+                                    modifier = Modifier.size(44.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Sort,
+                                        contentDescription = Strings.appListSort,
+                                        modifier = Modifier.size(22.dp),
+                                        tint = MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
+                            },
+                            trailingButton = {
+                                IconButton(
+                                    onClick = { showSortMenu = true },
+                                    modifier = Modifier.size(width = 32.dp, height = 44.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.ArrowDropDown,
+                                        contentDescription = Strings.appListSort,
+                                        modifier = Modifier.size(22.dp),
+                                        tint = MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
+                            }
+                        )
                         DropdownMenu(
                             expanded = showSortMenu,
                             onDismissRequest = { showSortMenu = false }
@@ -1115,7 +1140,7 @@ fun HomeScreen(
             ) {
                 Text(
                     text = Strings.createApp,
-                    style = MaterialTheme.typography.titleLarge,
+                    style = MaterialTheme.typography.titleLargeEmphasized,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
                 createActionItems.chunked(3).forEachIndexed { rowIndex, rowItems ->
@@ -1931,7 +1956,7 @@ fun EmptyState(
         Spacer(modifier = Modifier.height(24.dp))
         Text(
             text = Strings.msgNoApps,
-            style = MaterialTheme.typography.titleLarge,
+            style = MaterialTheme.typography.titleLargeEmphasized,
             color = colors.onSurface,
             textAlign = TextAlign.Center
         )

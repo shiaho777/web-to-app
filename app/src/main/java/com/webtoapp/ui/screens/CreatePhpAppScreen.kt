@@ -654,12 +654,12 @@ fun CreatePhpAppScreen(
                         is WordPressDependencyManager.DownloadState.Downloading -> {
                             Text(Strings.wpDownloading)
                             Spacer(modifier = Modifier.height(12.dp))
-                            LinearProgressIndicator(progress = { state.progress }, modifier = Modifier.fillMaxWidth())
+                            LinearProgressIndicator(progress = { state.progress }, modifier = Modifier.fillMaxWidth(), gapSize = ProgressIndicatorDefaults.LinearIndicatorTrackGapSize)
                         }
                         is WordPressDependencyManager.DownloadState.Extracting -> {
                             Text("${Strings.wpExtracting} ${state.fileName}...")
                             Spacer(modifier = Modifier.height(12.dp))
-                            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                            LinearProgressIndicator(modifier = Modifier.fillMaxWidth(), gapSize = ProgressIndicatorDefaults.LinearIndicatorTrackGapSize)
                         }
                         is WordPressDependencyManager.DownloadState.Complete -> {
                             Text(Strings.wpDepsReady)
@@ -670,7 +670,7 @@ fun CreatePhpAppScreen(
                         else -> {
                             Text(Strings.wpDownloading)
                             Spacer(modifier = Modifier.height(12.dp))
-                            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                            LinearProgressIndicator(modifier = Modifier.fillMaxWidth(), gapSize = ProgressIndicatorDefaults.LinearIndicatorTrackGapSize)
                         }
                     }
                 }

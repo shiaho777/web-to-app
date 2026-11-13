@@ -432,7 +432,8 @@ private fun GeckoViewEngineCard(
                 LinearProgressIndicator(
                     progress = { progress },
                     modifier = Modifier.fillMaxWidth(),
-                    trackColor = MaterialTheme.colorScheme.surfaceVariant
+                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                    gapSize = ProgressIndicatorDefaults.LinearIndicatorTrackGapSize
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Row(

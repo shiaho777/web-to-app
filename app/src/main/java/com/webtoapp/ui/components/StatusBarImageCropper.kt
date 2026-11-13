@@ -319,7 +319,7 @@ fun StatusBarImageCropper(
                 }
 
                 if (isCropping) {
-                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth(), gapSize = ProgressIndicatorDefaults.LinearIndicatorTrackGapSize)
                 }
             }
         },

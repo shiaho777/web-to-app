@@ -43,7 +43,8 @@ fun WordPressLoadingOverlay(
                         is WordPressDependencyManager.DownloadState.Downloading -> {
                             LinearProgressIndicator(
                                 progress = { dlState.progress },
-                                modifier = Modifier.fillMaxWidth(0.8f)
+                                modifier = Modifier.fillMaxWidth(0.8f),
+                                gapSize = ProgressIndicatorDefaults.LinearIndicatorTrackGapSize
                             )
                             Text("${Strings.wpDownloading}: ${dlState.currentFile}")
                             Text(
@@ -112,7 +113,8 @@ fun PhpAppLoadingOverlay(
                         is WordPressDependencyManager.DownloadState.Downloading -> {
                             LinearProgressIndicator(
                                 progress = { dlState.progress },
-                                modifier = Modifier.fillMaxWidth(0.8f)
+                                modifier = Modifier.fillMaxWidth(0.8f),
+                                gapSize = ProgressIndicatorDefaults.LinearIndicatorTrackGapSize
                             )
                             Text("${Strings.phpAppDownloading}: ${dlState.currentFile}")
                             Text(

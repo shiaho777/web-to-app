@@ -725,6 +725,7 @@ private fun AlignmentStep(
                 LinearProgressIndicator(
                     progress = { (currentAlignIndex + 1).toFloat() / lyricLines.size },
                     modifier = Modifier.fillMaxWidth(),
+                    gapSize = ProgressIndicatorDefaults.LinearIndicatorTrackGapSize,
                 )
                 Text(
                     "${com.webtoapp.core.i18n.Strings.progress}: ${currentAlignIndex + 1}/${lyricLines.size}",

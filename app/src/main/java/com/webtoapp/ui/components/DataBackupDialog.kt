@@ -22,6 +22,7 @@ import androidx.compose.material.icons.outlined.RestartAlt
 import androidx.compose.material.icons.outlined.Upload
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -241,7 +242,8 @@ private fun ColumnScope.DataBackupControls() {
             LinearProgressIndicator(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(3.dp)
+                    .height(3.dp),
+                gapSize = ProgressIndicatorDefaults.LinearIndicatorTrackGapSize
             )
             if (progressMessage.isNotBlank()) {
                 Spacer(Modifier.height(8.dp))

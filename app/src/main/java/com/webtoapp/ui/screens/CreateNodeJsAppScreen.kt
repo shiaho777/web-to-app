@@ -966,7 +966,8 @@ fun CreateNodeJsAppScreen(
                             Spacer(modifier = Modifier.height(12.dp))
                             LinearProgressIndicator(
                                 progress = { state.progress },
-                                modifier = Modifier.fillMaxWidth()
+                                modifier = Modifier.fillMaxWidth(),
+                                gapSize = ProgressIndicatorDefaults.LinearIndicatorTrackGapSize
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
@@ -977,12 +978,12 @@ fun CreateNodeJsAppScreen(
                         is NodeDependencyManager.DownloadState.Extracting -> {
                             Text(Strings.extracting.format(state.fileName))
                             Spacer(modifier = Modifier.height(12.dp))
-                            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                            LinearProgressIndicator(modifier = Modifier.fillMaxWidth(), gapSize = ProgressIndicatorDefaults.LinearIndicatorTrackGapSize)
                         }
                         is NodeDependencyManager.DownloadState.Verifying -> {
                             Text(Strings.verifying.format(state.fileName))
                             Spacer(modifier = Modifier.height(12.dp))
-                            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                            LinearProgressIndicator(modifier = Modifier.fillMaxWidth(), gapSize = ProgressIndicatorDefaults.LinearIndicatorTrackGapSize)
                         }
                         is NodeDependencyManager.DownloadState.Complete -> {
                             Text(Strings.njsDownloadComplete)
@@ -993,7 +994,7 @@ fun CreateNodeJsAppScreen(
                         else -> {
                             Text(Strings.njsDownloading)
                             Spacer(modifier = Modifier.height(12.dp))
-                            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                            LinearProgressIndicator(modifier = Modifier.fillMaxWidth(), gapSize = ProgressIndicatorDefaults.LinearIndicatorTrackGapSize)
                         }
                     }
                 }

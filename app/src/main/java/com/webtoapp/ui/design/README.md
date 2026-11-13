@@ -34,7 +34,10 @@ Never hard-code a `dp`/`sp`/`Color()` value that maps to one of these tokens.
 
 ### Typography
 `WtaTypography` in `ui/theme/Typography.kt` wires a custom Material 3 type
-scale. Access it via `MaterialTheme.typography.*` the normal way. Do not set
+scale, including the full Expressive **emphasized** scale (15 baseline +
+15 emphasized styles). Access it via `MaterialTheme.typography.*` the normal
+way; use `*Emphasized` variants (e.g. `titleLargeEmphasized`,
+`labelLargeEmphasized`) for key actions and focal headlines. Do not set
 `fontSize` / `lineHeight` ad-hoc; pick a scale entry.
 
 ### Layout primitives

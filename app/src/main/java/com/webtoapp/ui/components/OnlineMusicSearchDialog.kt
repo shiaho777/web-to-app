@@ -975,7 +975,8 @@ private fun OnlineMusicTrackItem(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(3.dp),
-                    trackColor = MaterialTheme.colorScheme.surfaceVariant
+                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                    gapSize = ProgressIndicatorDefaults.LinearIndicatorTrackGapSize
                 )
             }
         }
@@ -1200,7 +1201,8 @@ private fun DownloadLogPanel(
                         .fillMaxWidth()
                         .height(3.dp)
                         .padding(horizontal = 12.dp),
-                    trackColor = MaterialTheme.colorScheme.surfaceVariant
+                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                    gapSize = ProgressIndicatorDefaults.LinearIndicatorTrackGapSize
                 )
                 Spacer(modifier = Modifier.height(4.dp))
             }

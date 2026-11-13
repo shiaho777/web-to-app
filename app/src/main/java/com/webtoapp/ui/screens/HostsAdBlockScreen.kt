@@ -43,6 +43,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -808,11 +809,12 @@ private fun DownloadProgressPanel(
     val p = progress ?: DownloadProgress(0, 0, 0)
     Column(modifier = Modifier.fillMaxWidth()) {
         if (p.isIndeterminate) {
-            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+            LinearProgressIndicator(modifier = Modifier.fillMaxWidth(), gapSize = ProgressIndicatorDefaults.LinearIndicatorTrackGapSize)
         } else {
             LinearProgressIndicator(
                 progress = { p.fraction },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                gapSize = ProgressIndicatorDefaults.LinearIndicatorTrackGapSize
             )
         }
         Spacer(Modifier.height(6.dp))

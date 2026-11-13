@@ -521,7 +521,8 @@ private fun CoverageDashboard(
                     .height(6.dp)
                     .clip(RoundedCornerShape(3.dp)),
                 color = levelColor,
-                trackColor = levelColor.copy(alpha = 0.15f)
+                trackColor = levelColor.copy(alpha = 0.15f),
+                gapSize = ProgressIndicatorDefaults.LinearIndicatorTrackGapSize
             )
 
             Spacer(modifier = Modifier.height(8.dp))

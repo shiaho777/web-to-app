@@ -387,6 +387,7 @@ private fun ActivationResultCard(result: ActivationResult) {
     }
 }
 
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 private fun EnhancedActivationStatusCard(status: ActivationStatus) {
     val isValid = status.isValid
@@ -485,7 +486,8 @@ private fun EnhancedActivationStatusCard(status: ActivationStatus) {
                                     .height(6.dp)
                                     .clip(RoundedCornerShape(3.dp)),
                                 color = if (progress > 0.8f) semantic.warning else primaryColor,
-                                trackColor = primaryColor.copy(alpha = 0.1f)
+                                trackColor = primaryColor.copy(alpha = 0.1f),
+                                gapSize = ProgressIndicatorDefaults.LinearIndicatorTrackGapSize
                             )
                         }
                     }
@@ -515,7 +517,8 @@ private fun EnhancedActivationStatusCard(status: ActivationStatus) {
                         .height(6.dp)
                         .clip(RoundedCornerShape(3.dp)),
                     color = if (progress > 0.8f) semantic.warning else primaryColor,
-                    trackColor = primaryColor.copy(alpha = 0.1f)
+                    trackColor = primaryColor.copy(alpha = 0.1f),
+                    gapSize = ProgressIndicatorDefaults.LinearIndicatorTrackGapSize
                 )
             }
 

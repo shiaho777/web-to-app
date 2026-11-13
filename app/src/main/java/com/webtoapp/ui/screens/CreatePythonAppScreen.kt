@@ -650,7 +650,8 @@ fun CreatePythonAppScreen(
                             Spacer(modifier = Modifier.height(12.dp))
                             LinearProgressIndicator(
                                 progress = { state.progress },
-                                modifier = Modifier.fillMaxWidth()
+                                modifier = Modifier.fillMaxWidth(),
+                                gapSize = ProgressIndicatorDefaults.LinearIndicatorTrackGapSize
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
@@ -661,7 +662,7 @@ fun CreatePythonAppScreen(
                         is PythonDependencyManager.DownloadState.Extracting -> {
                             Text(Strings.extracting.format(state.fileName))
                             Spacer(modifier = Modifier.height(12.dp))
-                            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                            LinearProgressIndicator(modifier = Modifier.fillMaxWidth(), gapSize = ProgressIndicatorDefaults.LinearIndicatorTrackGapSize)
                         }
                         is PythonDependencyManager.DownloadState.Complete -> {
                             Text(Strings.pyProjectReady)
@@ -671,7 +672,8 @@ fun CreatePythonAppScreen(
                             Spacer(modifier = Modifier.height(12.dp))
                             LinearProgressIndicator(
                                 progress = { state.progress },
-                                modifier = Modifier.fillMaxWidth()
+                                modifier = Modifier.fillMaxWidth(),
+                                gapSize = ProgressIndicatorDefaults.LinearIndicatorTrackGapSize
                             )
                         }
                         is PythonDependencyManager.DownloadState.Error -> {
@@ -680,7 +682,7 @@ fun CreatePythonAppScreen(
                         else -> {
                             Text(Strings.preparingPythonEnv)
                             Spacer(modifier = Modifier.height(12.dp))
-                            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                            LinearProgressIndicator(modifier = Modifier.fillMaxWidth(), gapSize = ProgressIndicatorDefaults.LinearIndicatorTrackGapSize)
                         }
                     }
                 }

@@ -49,6 +49,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -785,7 +786,8 @@ private fun StatusOverviewCard(
                         .height(6.dp)
                         .clip(RoundedCornerShape(999.dp)),
                     color = statusColor,
-                    trackColor = MaterialTheme.colorScheme.surfaceContainerHighest
+                    trackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    gapSize = ProgressIndicatorDefaults.LinearIndicatorTrackGapSize
                 )
                 if (!allReady) {
                     WtaButton(
@@ -820,7 +822,8 @@ private fun StatusOverviewCard(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(6.dp)
-                            .clip(RoundedCornerShape(999.dp))
+                            .clip(RoundedCornerShape(999.dp)),
+                        gapSize = ProgressIndicatorDefaults.LinearIndicatorTrackGapSize
                     )
                     Row(
                         modifier = Modifier.fillMaxWidth(),
