@@ -106,7 +106,9 @@ fixed corner radius is genuinely required (it disables the press morph).
   rows are legacy and must not be reintroduced.
 - `WtaChip(selected, onClick, label, leadingIcon)` — selectable chip
   (expressive pill shape).
-- `WtaInfoChip(label, icon)` — read-only badge for metadata.
+- `WtaInfoChip(label, icon, emphasized)` — read-only badge for metadata;
+  `emphasized = true` renders the value in the emphasized type scale (use it
+  for key numbers like ratings, install counts, versions).
 
 ### Display helpers
 - `WtaIconTitle(icon, title, subtitle)` — icon plate + title header.
@@ -129,6 +131,10 @@ decorative plates and empty-state art instead of plain rounded rectangles.
   `MaterialShapes.Cookie12Sided`). Prefer container-friendly, symmetric shapes
   for wide buttons; radial/lobed shapes distort when stretched.
 Pull colors from `MaterialTheme.colorScheme.*` containers; never hard-code.
+Each screen keeps its own shape vocabulary so decorations stay distinctive:
+Home uses the Cookie/Sunny/Clover/Gem family, About adds Heart, and Module
+Market uses Puffy / Flower / ClamShell / Bun / SoftBurst / Clover8Leaf /
+Diamond / PuffyDiamond. Pick shapes no other screen uses for new screens.
 - `WtaLoadingIndicator(size, color, progress)` — Material 3 Expressive loading
   indicator (shape-morph animation). The only spinner primitive; use it for
   both indeterminate and determinate (`progress = { value }`) loading.
