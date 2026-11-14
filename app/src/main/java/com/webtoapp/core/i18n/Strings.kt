@@ -4286,6 +4286,10 @@ object Strings {
     val codeEditorBinaryFile: String get() = StringsE.codeEditorBinaryFile
     val codeEditorFileTooLarge: String get() = StringsE.codeEditorFileTooLarge
     val codeEditorSoftWrap: String get() = StringsE.codeEditorSoftWrap
+    fun codeEditorLineCount(count: Int): String = StringsE.codeEditorLineCount(count)
+    fun codeEditorCharCount(count: Int): String = StringsE.codeEditorCharCount(count)
+    fun codeEditorPosition(line: Int, col: Int): String = StringsE.codeEditorPosition(line, col)
+    fun codeEditorSelectionCount(count: Int): String = StringsE.codeEditorSelectionCount(count)
     val orWriteDirectly: String get() = StringsE.orWriteDirectly
     val deviceDisguiseTitle: String get() = StringsE.deviceDisguiseTitle
     val deviceDisguiseHint: String get() = StringsE.deviceDisguiseHint
