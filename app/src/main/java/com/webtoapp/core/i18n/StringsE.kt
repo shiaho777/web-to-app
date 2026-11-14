@@ -16341,6 +16341,45 @@ object StringsE {
         AppLanguage.KOREAN -> "이름"
     }
 
+    val pluginNamePlaceholder: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "我的插件"
+        AppLanguage.ENGLISH -> "My plugin"
+        AppLanguage.ARABIC -> "إضافتي"
+        AppLanguage.PORTUGUESE -> "Meu plugin"
+        AppLanguage.SPANISH -> "Mi plugin"
+        AppLanguage.FRENCH -> "Mon plugin"
+        AppLanguage.GERMAN -> "Mein Plugin"
+        AppLanguage.RUSSIAN -> "Мой плагин"
+        AppLanguage.JAPANESE -> "マイプラグイン"
+        AppLanguage.KOREAN -> "내 플러그인"
+    }
+
+    val pluginDescriptionPlaceholder: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "简要说明这个插件的功能"
+        AppLanguage.ENGLISH -> "Briefly describe what this plugin does"
+        AppLanguage.ARABIC -> "صف باختصار ما تفعله هذه الإضافة"
+        AppLanguage.PORTUGUESE -> "Descreva brevemente o que este plugin faz"
+        AppLanguage.SPANISH -> "Describe brevemente qué hace este plugin"
+        AppLanguage.FRENCH -> "Décrivez brièvement ce que fait ce plugin"
+        AppLanguage.GERMAN -> "Beschreibe kurz, was dieses Plugin tut"
+        AppLanguage.RUSSIAN -> "Кратко опишите, что делает этот плагин"
+        AppLanguage.JAPANESE -> "このプラグインの機能を簡潔に説明"
+        AppLanguage.KOREAN -> "이 플러그인의 기능을 간단히 설명"
+    }
+
+    val pluginMatchesHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "每行一个匹配规则，* 表示所有页面"
+        AppLanguage.ENGLISH -> "One match pattern per line; * matches every page"
+        AppLanguage.ARABIC -> "نمط مطابقة واحد في كل سطر؛ * يطابق كل الصفحات"
+        AppLanguage.PORTUGUESE -> "Um padrão de correspondência por linha; * corresponde a todas as páginas"
+        AppLanguage.SPANISH -> "Un patrón de coincidencia por línea; * coincide con todas las páginas"
+        AppLanguage.FRENCH -> "Un motif de correspondance par ligne ; * correspond à toutes les pages"
+        AppLanguage.GERMAN -> "Ein Match-Muster pro Zeile; * passt auf jede Seite"
+        AppLanguage.RUSSIAN -> "Один шаблон совпадения в строке; * соответствует всем страницам"
+        AppLanguage.JAPANESE -> "1 行に 1 つのマッチパターン。* はすべてのページに一致"
+        AppLanguage.KOREAN -> "한 줄에 하나의 일치 패턴; *는 모든 페이지와 일치"
+    }
+
     val pluginFieldId: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "插件 ID"
         AppLanguage.ENGLISH -> "Plugin ID"
@@ -16508,6 +16547,58 @@ object StringsE {
         AppLanguage.RUSSIAN -> "Загрузки (hcj.download)"
         AppLanguage.JAPANESE -> "ダウンロード (hcj.download)"
         AppLanguage.KOREAN -> "다운로드 (hcj.download)"
+    }
+
+    val pluginPermShare: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "分享（hcj.share)"
+        AppLanguage.ENGLISH -> "Share (hcj.share)"
+        AppLanguage.ARABIC -> "مشاركة (hcj.share)"
+        AppLanguage.PORTUGUESE -> "Compartilhar (hcj.share)"
+        AppLanguage.SPANISH -> "Compartir (hcj.share)"
+        AppLanguage.FRENCH -> "Partager (hcj.share)"
+        AppLanguage.GERMAN -> "Teilen (hcj.share)"
+        AppLanguage.RUSSIAN -> "Поделиться (hcj.share)"
+        AppLanguage.JAPANESE -> "共有 (hcj.share)"
+        AppLanguage.KOREAN -> "공유 (hcj.share)"
+    }
+
+    val pluginPermOpenExternal: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "外部打开（hcj.openExternal)"
+        AppLanguage.ENGLISH -> "Open externally (hcj.openExternal)"
+        AppLanguage.ARABIC -> "فتح خارجيًا (hcj.openExternal)"
+        AppLanguage.PORTUGUESE -> "Abrir externamente (hcj.openExternal)"
+        AppLanguage.SPANISH -> "Abrir externamente (hcj.openExternal)"
+        AppLanguage.FRENCH -> "Ouvrir en externe (hcj.openExternal)"
+        AppLanguage.GERMAN -> "Extern öffnen (hcj.openExternal)"
+        AppLanguage.RUSSIAN -> "Открыть внешне (hcj.openExternal)"
+        AppLanguage.JAPANESE -> "外部で開く (hcj.openExternal)"
+        AppLanguage.KOREAN -> "외부에서 열기 (hcj.openExternal)"
+    }
+
+    val pluginPermClearData: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "清除数据（hcj.clearData)"
+        AppLanguage.ENGLISH -> "Clear data (hcj.clearData)"
+        AppLanguage.ARABIC -> "مسح البيانات (hcj.clearData)"
+        AppLanguage.PORTUGUESE -> "Limpar dados (hcj.clearData)"
+        AppLanguage.SPANISH -> "Borrar datos (hcj.clearData)"
+        AppLanguage.FRENCH -> "Effacer les données (hcj.clearData)"
+        AppLanguage.GERMAN -> "Daten löschen (hcj.clearData)"
+        AppLanguage.RUSSIAN -> "Очистить данные (hcj.clearData)"
+        AppLanguage.JAPANESE -> "データ消去 (hcj.clearData)"
+        AppLanguage.KOREAN -> "데이터 지우기 (hcj.clearData)"
+    }
+
+    val pluginPermExitApp: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "退出应用（hcj.exitApp)"
+        AppLanguage.ENGLISH -> "Exit app (hcj.exitApp)"
+        AppLanguage.ARABIC -> "إنهاء التطبيق (hcj.exitApp)"
+        AppLanguage.PORTUGUESE -> "Sair do app (hcj.exitApp)"
+        AppLanguage.SPANISH -> "Salir de la app (hcj.exitApp)"
+        AppLanguage.FRENCH -> "Quitter l'app (hcj.exitApp)"
+        AppLanguage.GERMAN -> "App beenden (hcj.exitApp)"
+        AppLanguage.RUSSIAN -> "Выйти из приложения (hcj.exitApp)"
+        AppLanguage.JAPANESE -> "アプリを終了 (hcj.exitApp)"
+        AppLanguage.KOREAN -> "앱 종료 (hcj.exitApp)"
     }
 
     val pluginShowEntry: String get() = when (Strings.lang) {

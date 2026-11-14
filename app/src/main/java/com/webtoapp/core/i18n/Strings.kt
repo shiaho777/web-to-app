@@ -5293,6 +5293,9 @@ object Strings {
     val pluginEditorEdit: String get() = StringsE.pluginEditorEdit
 
     val pluginFieldName: String get() = StringsE.pluginFieldName
+    val pluginNamePlaceholder: String get() = StringsE.pluginNamePlaceholder
+    val pluginDescriptionPlaceholder: String get() = StringsE.pluginDescriptionPlaceholder
+    val pluginMatchesHint: String get() = StringsE.pluginMatchesHint
     val pluginFieldId: String get() = StringsE.pluginFieldId
     val pluginFieldVersion: String get() = StringsE.pluginFieldVersion
     val pluginFieldRunAt: String get() = StringsE.pluginFieldRunAt
@@ -5306,6 +5309,10 @@ object Strings {
     val pluginPermBadge: String get() = StringsE.pluginPermBadge
     val pluginPermClipboard: String get() = StringsE.pluginPermClipboard
     val pluginPermDownload: String get() = StringsE.pluginPermDownload
+    val pluginPermShare: String get() = StringsE.pluginPermShare
+    val pluginPermOpenExternal: String get() = StringsE.pluginPermOpenExternal
+    val pluginPermClearData: String get() = StringsE.pluginPermClearData
+    val pluginPermExitApp: String get() = StringsE.pluginPermExitApp
     val pluginShowEntry: String get() = StringsE.pluginShowEntry
     val pluginNameRequired: String get() = StringsE.pluginNameRequired
     val pluginAttachEmpty: String get() = StringsE.pluginAttachEmpty

@@ -1,38 +1,90 @@
 package com.webtoapp.ui.screens
 
 import android.widget.Toast
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Badge
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Code
+import androidx.compose.material.icons.rounded.DataObject
+import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.FormatLineSpacing
+import androidx.compose.material.icons.rounded.Subject
+import androidx.compose.material.icons.rounded.Tune
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialShapes
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.webtoapp.core.i18n.Strings
-import com.webtoapp.core.plugin.*
+import com.webtoapp.core.plugin.PluginKind
+import com.webtoapp.core.plugin.PluginManifest
+import com.webtoapp.core.plugin.PluginPermission
+import com.webtoapp.core.plugin.PluginRunAt
+import com.webtoapp.core.plugin.PluginStore
+import com.webtoapp.core.plugin.buildPluginHtml
+import com.webtoapp.ui.animation.CardCollapseTransition
+import com.webtoapp.ui.animation.CardExpandTransition
 import com.webtoapp.ui.components.PremiumTextField
 import com.webtoapp.ui.components.WtaCodeEditorDialog
-import com.webtoapp.ui.design.*
+import com.webtoapp.ui.design.WtaBackground
+import com.webtoapp.ui.design.WtaButton
+import com.webtoapp.ui.design.WtaButtonSize
+import com.webtoapp.ui.design.WtaButtonVariant
+import com.webtoapp.ui.design.WtaCard
+import com.webtoapp.ui.design.WtaCardTone
+import com.webtoapp.ui.design.WtaChip
+import com.webtoapp.ui.design.WtaChoiceRow
+import com.webtoapp.ui.design.WtaInfoChip
+import com.webtoapp.ui.design.WtaRadius
+import com.webtoapp.ui.design.WtaSegmentedRow
+import com.webtoapp.ui.design.WtaSettingCard
+import com.webtoapp.ui.design.WtaShapePlate
+import com.webtoapp.ui.design.WtaSpacing
+import com.webtoapp.ui.design.WtaToggleRow
+import com.webtoapp.ui.theme.LocalShowDescriptions
 import kotlinx.coroutines.launch
 
-/**
- * Plugin editor: manifest fields on the first tab, package files on the rest.
- * No DSL forms — what you write is what ships inside the .hcj directory.
- */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class, ExperimentalLayoutApi::class)
 @Composable
 fun PluginEditorScreen(
     pluginId: String?,
@@ -42,13 +94,9 @@ fun PluginEditorScreen(
     val scope = rememberCoroutineScope()
     val store = remember { PluginStore.getInstance(context) }
 
-    var loaded by remember { mutableStateOf(pluginId == null) }
     var isNew by remember { mutableStateOf(pluginId == null) }
     var kind by remember { mutableStateOf(PluginKind.HCJ) }
 
-    // Manifest fields. Only name/description are user-facing; the
-    // rest is preserved from the on-disk manifest (or defaulted for new
-    // plugins) — self-authored code needs no permission ceremony.
     var id by remember { mutableStateOf("") }
     var name by remember { mutableStateOf("") }
     var version by remember { mutableStateOf("1.0.0") }
@@ -61,17 +109,13 @@ fun PluginEditorScreen(
     var permissions by remember { mutableStateOf(PluginPermission.values().toSet()) }
     var showEntry by remember { mutableStateOf(true) }
 
-    // Package files — one authored document (plugin.html); css only survives
-    // a load→save round-trip for legacy packages that still carry style.css.
     var pluginHtml by remember { mutableStateOf("") }
     var css by remember { mutableStateOf("") }
     var extraFiles by remember { mutableStateOf(mapOf<String, String>()) }
 
     var showCodeEditor by remember { mutableStateOf(false) }
     var nameError by remember { mutableStateOf(false) }
-    // Fields the form doesn't edit (userscript grants/requires, legacyCompat,
-    // noframes, preferredEntry) — preserved from the on-disk manifest on save
-    // so editing a userscript or a migrated plugin doesn't silently strip them.
+    var advancedExpanded by remember { mutableStateOf(false) }
     var preservedManifest by remember { mutableStateOf<PluginManifest?>(null) }
 
     LaunchedEffect(pluginId) {
@@ -98,8 +142,6 @@ fun PluginEditorScreen(
         showEntry = plugin.showInToolbar
 
         val files = store.readPackageFiles(plugin.id)
-        // Manifest on disk may carry fields not mirrored into the Plugin record
-        // (e.g. gmGrants) — prefer it when present.
         val rawManifest = files[PluginStore.MANIFEST_FILE]
             ?.let { PluginManifest.fromJson(it) }
         preservedManifest = rawManifest
@@ -119,7 +161,6 @@ fun PluginEditorScreen(
         css = files[PluginStore.CSS_FILE].orEmpty()
         extraFiles = files - PluginStore.MANIFEST_FILE - PluginStore.MAIN_FILE -
             PluginStore.CSS_FILE - PluginStore.PANEL_FILE - PluginStore.PLUGIN_FILE
-        loaded = true
     }
 
     fun save() {
@@ -167,10 +208,32 @@ fun PluginEditorScreen(
         containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
-                title = { Text(if (isNew) Strings.pluginNew else Strings.pluginEditorEdit) },
+                title = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        WtaShapePlate(
+                            polygon = MaterialShapes.PixelCircle,
+                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            modifier = Modifier.size(30.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Code,
+                                contentDescription = null,
+                                modifier = Modifier.size(17.dp),
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Text(
+                            text = if (isNew) Strings.pluginNew else Strings.pluginEditorEdit,
+                            style = MaterialTheme.typography.titleLargeEmphasized,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = Strings.back)
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = Strings.back)
                     }
                 },
                 actions = {
@@ -179,7 +242,7 @@ fun PluginEditorScreen(
                         text = Strings.save,
                         variant = WtaButtonVariant.Primary,
                         size = WtaButtonSize.Small,
-                        leadingIcon = Icons.Filled.Check,
+                        leadingIcon = Icons.Rounded.Check,
                         modifier = Modifier.padding(end = 8.dp)
                     )
                 }
@@ -195,19 +258,153 @@ fun PluginEditorScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp)
+                    .padding(WtaSpacing.ScreenHorizontal),
+                verticalArrangement = Arrangement.spacedBy(WtaSpacing.SectionGap)
             ) {
-                Field(Strings.pluginFieldName, name, { name = it; nameError = false },
-                    isError = nameError, errorText = Strings.pluginNameRequired)
-                Field(Strings.description, description, { description = it })
-                CodeSection(
+                WtaCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    tone = WtaCardTone.Surface,
+                    contentPadding = PaddingValues(WtaSpacing.Large)
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(WtaSpacing.ContentGap)) {
+                        PremiumTextField(
+                            value = name,
+                            onValueChange = { name = it; nameError = false },
+                            modifier = Modifier.fillMaxWidth(),
+                            label = { Text(Strings.pluginFieldName) },
+                            placeholder = { Text(Strings.pluginNamePlaceholder) },
+                            leadingIcon = { Icon(Icons.Rounded.Badge, contentDescription = null) },
+                            singleLine = true,
+                            isError = nameError,
+                            supportingText = if (nameError) {
+                                { Text(Strings.pluginNameRequired) }
+                            } else null,
+                            shape = RoundedCornerShape(WtaRadius.Control)
+                        )
+                        PremiumTextField(
+                            value = description,
+                            onValueChange = { description = it },
+                            modifier = Modifier.fillMaxWidth(),
+                            label = { Text(Strings.description) },
+                            placeholder = { Text(Strings.pluginDescriptionPlaceholder) },
+                            leadingIcon = { Icon(Icons.Rounded.Subject, contentDescription = null) },
+                            minLines = 2,
+                            shape = RoundedCornerShape(WtaRadius.Control)
+                        )
+                    }
+                }
+
+                CodeCard(
                     content = pluginHtml,
-                    language = "HTML",
-                    fileName = PluginStore.PLUGIN_FILE,
-                    placeholder = HTML_PLACEHOLDER,
                     onEdit = { showCodeEditor = true }
                 )
+
+                WtaSettingCard {
+                    Column {
+                        WtaChoiceRow(
+                            title = Strings.advancedSettings,
+                            value = "",
+                            icon = Icons.Rounded.Tune,
+                            isExpanded = advancedExpanded,
+                            onClick = { advancedExpanded = !advancedExpanded }
+                        )
+                        AnimatedVisibility(
+                            visible = advancedExpanded,
+                            enter = CardExpandTransition,
+                            exit = CardCollapseTransition
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(
+                                    horizontal = WtaSpacing.RowHorizontal,
+                                    vertical = WtaSpacing.ContentGap
+                                ),
+                                verticalArrangement = Arrangement.spacedBy(WtaSpacing.ContentGap)
+                            ) {
+                                Row(horizontalArrangement = Arrangement.spacedBy(WtaSpacing.ContentGap)) {
+                                    PremiumTextField(
+                                        value = version,
+                                        onValueChange = { version = it },
+                                        modifier = Modifier.weight(1f),
+                                        label = { Text(Strings.pluginFieldVersion) },
+                                        singleLine = true,
+                                        textStyle = MaterialTheme.typography.bodyMedium.copy(
+                                            fontFamily = FontFamily.Monospace
+                                        ),
+                                        shape = RoundedCornerShape(WtaRadius.Control)
+                                    )
+                                    PremiumTextField(
+                                        value = author,
+                                        onValueChange = { author = it },
+                                        modifier = Modifier.weight(1f),
+                                        label = { Text(Strings.author) },
+                                        singleLine = true,
+                                        shape = RoundedCornerShape(WtaRadius.Control)
+                                    )
+                                }
+                                PremiumTextField(
+                                    value = matches,
+                                    onValueChange = { matches = it },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    label = { Text(Strings.moduleMarketUrlMatches) },
+                                    minLines = 2,
+                                    textStyle = MaterialTheme.typography.bodyMedium.copy(
+                                        fontFamily = FontFamily.Monospace
+                                    ),
+                                    supportingText = if (LocalShowDescriptions.current) {
+                                        { Text(Strings.pluginMatchesHint) }
+                                    } else null,
+                                    shape = RoundedCornerShape(WtaRadius.Control)
+                                )
+                                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Text(
+                                        Strings.pluginFieldRunAt,
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                    WtaSegmentedRow(
+                                        options = listOf(
+                                            Strings.runAtStart,
+                                            Strings.runAtEnd,
+                                            Strings.runAtIdle
+                                        ),
+                                        selectedIndex = runAt.ordinal,
+                                        onSelect = { runAt = PluginRunAt.entries[it] }
+                                    )
+                                }
+                                WtaToggleRow(
+                                    title = Strings.pluginShowEntry,
+                                    checked = showEntry,
+                                    onCheckedChange = { showEntry = it }
+                                )
+                                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Text(
+                                        Strings.pluginFieldPermissions,
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                    FlowRow(
+                                        horizontalArrangement = Arrangement.spacedBy(WtaSpacing.ContentGap),
+                                        verticalArrangement = Arrangement.spacedBy(WtaSpacing.ContentGap)
+                                    ) {
+                                        PluginPermission.entries.forEach { permission ->
+                                            WtaChip(
+                                                selected = permission in permissions,
+                                                onClick = {
+                                                    permissions = if (permission in permissions) {
+                                                        permissions - permission
+                                                    } else {
+                                                        permissions + permission
+                                                    }
+                                                },
+                                                label = permissionLabel(permission)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -228,6 +425,19 @@ fun PluginEditorScreen(
 
 private fun slugFor(name: String): String =
     name.lowercase().replace(Regex("[^a-z0-9]+"), "-").trim('-').ifBlank { "my-plugin" }
+
+private fun permissionLabel(permission: PluginPermission): String = when (permission) {
+    PluginPermission.STORAGE -> Strings.pluginPermStorage
+    PluginPermission.FETCH -> Strings.pluginPermFetch
+    PluginPermission.NOTIFY -> Strings.pluginPermNotify
+    PluginPermission.BADGE -> Strings.pluginPermBadge
+    PluginPermission.CLIPBOARD -> Strings.pluginPermClipboard
+    PluginPermission.DOWNLOAD -> Strings.pluginPermDownload
+    PluginPermission.SHARE -> Strings.pluginPermShare
+    PluginPermission.OPEN_EXTERNAL -> Strings.pluginPermOpenExternal
+    PluginPermission.CLEAR_DATA -> Strings.pluginPermClearData
+    PluginPermission.EXIT_APP -> Strings.pluginPermExitApp
+}
 
 private val HTML_PLACEHOLDER = """
 <!-- plugin.html — one file is the whole plugin -->
@@ -254,97 +464,99 @@ hcj.on('action', () => {
 
 """.trimStart()
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun Field(
-    label: String,
-    value: String,
-    onChange: (String) -> Unit,
-    minLines: Int = 1,
-    isError: Boolean = false,
-    errorText: String? = null,
-    placeholder: String? = null,
-    hint: String? = null
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text(label, style = MaterialTheme.typography.labelLarge)
-        PremiumTextField(
-            value = value,
-            onValueChange = onChange,
-            modifier = Modifier.fillMaxWidth(),
-            minLines = minLines,
-            isError = isError,
-            placeholder = placeholder?.let { p -> { Text(p) } },
-            shape = RoundedCornerShape(WtaRadius.Button)
-        )
-        when {
-            isError && errorText != null -> Text(
-                errorText,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.error
-            )
-            hint != null -> Text(
-                hint,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
-
-@Composable
-private fun CodeSection(
-    content: String,
-    language: String,
-    fileName: String,
-    placeholder: String,
-    onEdit: () -> Unit
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+private fun CodeCard(content: String, onEdit: () -> Unit) {
+    val colors = MaterialTheme.colorScheme
+    val display = content.ifBlank { HTML_PLACEHOLDER }
+    val monoStyle = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace)
+    WtaCard(
+        modifier = Modifier.fillMaxWidth(),
+        tone = WtaCardTone.Surface,
+        contentPadding = PaddingValues(WtaSpacing.Large)
+    ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                fileName,
-                style = MaterialTheme.typography.labelLarge,
-                fontFamily = FontFamily.Monospace,
-                modifier = Modifier.weight(1f)
-            )
-            Text(
-                language,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(Modifier.width(10.dp))
+            WtaShapePlate(
+                polygon = MaterialShapes.PixelCircle,
+                containerColor = colors.primaryContainer,
+                modifier = Modifier.size(40.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.Code,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                    tint = colors.onPrimaryContainer
+                )
+            }
+            Spacer(Modifier.width(12.dp))
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    PluginStore.PLUGIN_FILE,
+                    style = MaterialTheme.typography.titleSmallEmphasized,
+                    fontFamily = FontFamily.Monospace,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    WtaInfoChip(label = "HTML")
+                    WtaInfoChip(
+                        label = display.lines().size.toString(),
+                        icon = Icons.Rounded.FormatLineSpacing
+                    )
+                    WtaInfoChip(
+                        label = formatCodeSize(display.toByteArray().size),
+                        icon = Icons.Rounded.DataObject
+                    )
+                }
+            }
+            Spacer(Modifier.width(8.dp))
             WtaButton(
                 onClick = onEdit,
                 text = Strings.edit,
                 variant = WtaButtonVariant.Tonal,
                 size = WtaButtonSize.Small,
-                leadingIcon = Icons.Default.Edit
+                leadingIcon = Icons.Rounded.Edit
             )
         }
-        Column(
+        Spacer(Modifier.height(WtaSpacing.ContentGap))
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(180.dp)
-                .clip(RoundedCornerShape(WtaRadius.Button))
-                .background(MaterialTheme.colorScheme.surfaceContainerLow)
-                .verticalScroll(rememberScrollState())
-                .padding(14.dp)
+                .height(200.dp)
+                .clip(RoundedCornerShape(WtaRadius.Control))
+                .background(colors.surfaceContainerLow)
         ) {
-            if (content.isNotBlank()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(14.dp)
+            ) {
                 Text(
-                    text = content,
-                    style = MaterialTheme.typography.bodySmall,
-                    fontFamily = FontFamily.Monospace,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-            } else {
-                Text(
-                    text = placeholder,
-                    style = MaterialTheme.typography.bodySmall,
-                    fontFamily = FontFamily.Monospace,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    text = display,
+                    style = monoStyle,
+                    color = if (content.isBlank()) colors.onSurfaceVariant else colors.onSurface
                 )
             }
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .height(28.dp)
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(Color.Transparent, colors.surfaceContainerLow)
+                        )
+                    )
+            )
         }
     }
+}
+
+private fun formatCodeSize(bytes: Int): String {
+    if (bytes < 1024) return "${bytes}B"
+    return String.format(java.util.Locale.US, "%.1fKB", bytes / 1024.0)
 }
