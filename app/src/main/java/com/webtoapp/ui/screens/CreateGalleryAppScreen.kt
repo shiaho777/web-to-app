@@ -552,12 +552,9 @@ private fun MediaManagementTab(
                         contentAlignment = Alignment.Center
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(
-                                Icons.Outlined.AddPhotoAlternate,
-                                contentDescription = null,
-                                modifier = Modifier.size(48.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                            com.webtoapp.ui.design.WtaIdleFloat {
+                                com.webtoapp.ui.design.WtaKawaiiBox(modifier = Modifier.size(72.dp))
+                            }
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
                                 text = Strings.galleryClickToAdd,

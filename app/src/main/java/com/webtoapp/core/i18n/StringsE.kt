@@ -17094,4 +17094,213 @@ object StringsE {
         AppLanguage.KOREAN -> "그리드"
     }
 
+
+    val createTypeGalleryTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "选择应用类型"
+        AppLanguage.ENGLISH -> "Choose app type"
+        AppLanguage.ARABIC -> "اختر نوع التطبيق"
+        AppLanguage.PORTUGUESE -> "Escolha o tipo de app"
+        AppLanguage.SPANISH -> "Elige el tipo de app"
+        AppLanguage.FRENCH -> "Choisir le type d'app"
+        AppLanguage.GERMAN -> "App-Typ wählen"
+        AppLanguage.RUSSIAN -> "Выберите тип приложения"
+        AppLanguage.JAPANESE -> "アプリの種類を選択"
+        AppLanguage.KOREAN -> "앱 유형 선택"
+    }
+
+    val createTypeGallerySubtitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "挑一种类型，开始创建你的应用"
+        AppLanguage.ENGLISH -> "Pick a type to start building your app"
+        AppLanguage.ARABIC -> "اختر نوعًا لبدء إنشاء تطبيقك"
+        AppLanguage.PORTUGUESE -> "Escolha um tipo para começar a criar seu app"
+        AppLanguage.SPANISH -> "Elige un tipo para empezar a crear tu app"
+        AppLanguage.FRENCH -> "Choisissez un type pour commencer à créer votre app"
+        AppLanguage.GERMAN -> "Wähle einen Typ, um deine App zu erstellen"
+        AppLanguage.RUSSIAN -> "Выберите тип, чтобы начать создание приложения"
+        AppLanguage.JAPANESE -> "種類を選んでアプリの作成を始めましょう"
+        AppLanguage.KOREAN -> "유형을 선택하여 앱 만들기를 시작하세요"
+    }
+
+    val createTypeAdvancedGuide: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "带锁的类型需要高级功能，点按即可前往开启"
+        AppLanguage.ENGLISH -> "Locked types need advanced features — tap to enable them"
+        AppLanguage.ARABIC -> "الأنواع المقفلة تحتاج الميزات المتقدمة — اضغط لتفعيلها"
+        AppLanguage.PORTUGUESE -> "Tipos bloqueados precisam de recursos avançados — toque para ativar"
+        AppLanguage.SPANISH -> "Los tipos bloqueados necesitan funciones avanzadas: toca para activarlas"
+        AppLanguage.FRENCH -> "Les types verrouillés nécessitent les fonctions avancées — appuyez pour activer"
+        AppLanguage.GERMAN -> "Gesperrte Typen brauchen erweiterte Funktionen – zum Aktivieren tippen"
+        AppLanguage.RUSSIAN -> "Заблокированные типы требуют расширенных функций — нажмите, чтобы включить"
+        AppLanguage.JAPANESE -> "ロックされた種類には高度な機能が必要です。タップして有効化"
+        AppLanguage.KOREAN -> "잠긴 유형은 고급 기능이 필요합니다. 탭하여 활성화하세요"
+    }
+
+    val createTypeLocked: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "未开启"
+        AppLanguage.ENGLISH -> "Locked"
+        AppLanguage.ARABIC -> "مقفل"
+        AppLanguage.PORTUGUESE -> "Bloqueado"
+        AppLanguage.SPANISH -> "Bloqueado"
+        AppLanguage.FRENCH -> "Verrouillé"
+        AppLanguage.GERMAN -> "Gesperrt"
+        AppLanguage.RUSSIAN -> "Заблокировано"
+        AppLanguage.JAPANESE -> "ロック中"
+        AppLanguage.KOREAN -> "잠김"
+    }
+
+    val typeDescWeb: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "把任意网站包装成原生应用"
+        AppLanguage.ENGLISH -> "Wrap any website into a native app"
+        AppLanguage.ARABIC -> "حوّل أي موقع إلى تطبيق أصلي"
+        AppLanguage.PORTUGUESE -> "Transforme qualquer site em um app nativo"
+        AppLanguage.SPANISH -> "Convierte cualquier sitio en una app nativa"
+        AppLanguage.FRENCH -> "Transformez tout site en app native"
+        AppLanguage.GERMAN -> "Jede Website als native App verpacken"
+        AppLanguage.RUSSIAN -> "Превратите любой сайт в нативное приложение"
+        AppLanguage.JAPANESE -> "任意のサイトをネイティブアプリに"
+        AppLanguage.KOREAN -> "모든 웹사이트를 네이티브 앱으로"
+    }
+
+    val typeDescMultiWeb: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "多站点聚合，标签/卡片/抽屉布局"
+        AppLanguage.ENGLISH -> "Combine sites with tabs, cards or drawers"
+        AppLanguage.ARABIC -> "اجمع المواقع بتبويبات أو بطاقات أو أدراج"
+        AppLanguage.PORTUGUESE -> "Combine sites com abas, cards ou gavetas"
+        AppLanguage.SPANISH -> "Combina sitios con pestañas, tarjetas o cajones"
+        AppLanguage.FRENCH -> "Combinez des sites en onglets, cartes ou tiroirs"
+        AppLanguage.GERMAN -> "Sites kombinieren: Tabs, Karten oder Schubladen"
+        AppLanguage.RUSSIAN -> "Объедините сайты: вкладки, карточки или панели"
+        AppLanguage.JAPANESE -> "複数サイトをタブ/カード/ドロワーで統合"
+        AppLanguage.KOREAN -> "여러 사이트를 탭/카드/서랍으로 결합"
+    }
+
+    val typeDescHtml: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "导入 HTML 文件，离线运行"
+        AppLanguage.ENGLISH -> "Import HTML files and run them offline"
+        AppLanguage.ARABIC -> "استورد ملفات HTML وشغّلها دون اتصال"
+        AppLanguage.PORTUGUESE -> "Importe arquivos HTML e execute offline"
+        AppLanguage.SPANISH -> "Importa archivos HTML y ejecútalos sin conexión"
+        AppLanguage.FRENCH -> "Importez des fichiers HTML et lancez-les hors ligne"
+        AppLanguage.GERMAN -> "HTML-Dateien importieren und offline ausführen"
+        AppLanguage.RUSSIAN -> "Импортируйте HTML-файлы и запускайте офлайн"
+        AppLanguage.JAPANESE -> "HTMLファイルをインポートしてオフライン実行"
+        AppLanguage.KOREAN -> "HTML 파일을 가져와 오프라인으로 실행"
+    }
+
+    val typeDescOfflinePack: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "抓取整站资源，打包离线浏览"
+        AppLanguage.ENGLISH -> "Scrape a whole site for offline browsing"
+        AppLanguage.ARABIC -> "اجلب موقعًا كاملًا للتصفح دون اتصال"
+        AppLanguage.PORTUGUESE -> "Baixe um site inteiro para navegar offline"
+        AppLanguage.SPANISH -> "Descarga un sitio completo para verlo sin conexión"
+        AppLanguage.FRENCH -> "Aspirez un site entier pour le consulter hors ligne"
+        AppLanguage.GERMAN -> "Ganze Website für offline Browsen herunterladen"
+        AppLanguage.RUSSIAN -> "Скачайте весь сайт для офлайн-просмотра"
+        AppLanguage.JAPANESE -> "サイト全体を取得してオフライン閲覧"
+        AppLanguage.KOREAN -> "전체 사이트를 가져와 오프라인으로 탐색"
+    }
+
+    val typeDescFrontend: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "运行 Vue/React/Vite 前端项目"
+        AppLanguage.ENGLISH -> "Run Vue/React/Vite frontend projects"
+        AppLanguage.ARABIC -> "شغّل مشاريع Vue/React/Vite الأمامية"
+        AppLanguage.PORTUGUESE -> "Execute projetos frontend Vue/React/Vite"
+        AppLanguage.SPANISH -> "Ejecuta proyectos frontend Vue/React/Vite"
+        AppLanguage.FRENCH -> "Lancez des projets frontend Vue/React/Vite"
+        AppLanguage.GERMAN -> "Vue/React/Vite-Frontend-Projekte ausführen"
+        AppLanguage.RUSSIAN -> "Запускайте фронтенд-проекты Vue/React/Vite"
+        AppLanguage.JAPANESE -> "Vue/React/Vite フロントエンドを実行"
+        AppLanguage.KOREAN -> "Vue/React/Vite 프론트엔드 프로젝트 실행"
+    }
+
+    val typeDescGallery: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "分类媒体库，网格/时间线浏览"
+        AppLanguage.ENGLISH -> "Categorized media with grid/timeline views"
+        AppLanguage.ARABIC -> "وسائط مصنفة بعرض شبكي/زمني"
+        AppLanguage.PORTUGUESE -> "Mídia categorizada em grade/linha do tempo"
+        AppLanguage.SPANISH -> "Medios categorizados en cuadrícula/línea de tiempo"
+        AppLanguage.FRENCH -> "Médias classés en grille/chronologie"
+        AppLanguage.GERMAN -> "Kategorisierte Medien in Raster/Zeitachse"
+        AppLanguage.RUSSIAN -> "Медиа по категориям: сетка/хронология"
+        AppLanguage.JAPANESE -> "分類メディアをグリッド/タイムラインで"
+        AppLanguage.KOREAN -> "분류된 미디어를 그리드/타임라인으로"
+    }
+
+    val typeDescPhp: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "内置 PHP 8.4，本地运行 PHP 应用"
+        AppLanguage.ENGLISH -> "Built-in PHP 8.4 to run PHP apps locally"
+        AppLanguage.ARABIC -> "PHP 8.4 مدمج لتشغيل تطبيقات PHP محليًا"
+        AppLanguage.PORTUGUESE -> "PHP 8.4 integrado para rodar apps PHP localmente"
+        AppLanguage.SPANISH -> "PHP 8.4 integrado para ejecutar apps PHP localmente"
+        AppLanguage.FRENCH -> "PHP 8.4 intégré pour lancer des apps PHP en local"
+        AppLanguage.GERMAN -> "Integriertes PHP 8.4 für lokale PHP-Apps"
+        AppLanguage.RUSSIAN -> "Встроенный PHP 8.4 для локальных PHP-приложений"
+        AppLanguage.JAPANESE -> "PHP 8.4 内蔵、PHPアプリをローカル実行"
+        AppLanguage.KOREAN -> "PHP 8.4 내장, PHP 앱을 로컬에서 실행"
+    }
+
+    val typeDescWordPress: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "本地 PHP + SQLite 运行 WordPress"
+        AppLanguage.ENGLISH -> "Run WordPress on local PHP + SQLite"
+        AppLanguage.ARABIC -> "شغّل WordPress على PHP + SQLite محلي"
+        AppLanguage.PORTUGUESE -> "Rode WordPress em PHP + SQLite local"
+        AppLanguage.SPANISH -> "Ejecuta WordPress en PHP + SQLite local"
+        AppLanguage.FRENCH -> "Lancez WordPress sur PHP + SQLite local"
+        AppLanguage.GERMAN -> "WordPress auf lokalem PHP + SQLite betreiben"
+        AppLanguage.RUSSIAN -> "WordPress на локальных PHP + SQLite"
+        AppLanguage.JAPANESE -> "ローカル PHP + SQLite で WordPress を実行"
+        AppLanguage.KOREAN -> "로컬 PHP + SQLite에서 WordPress 실행"
+    }
+
+    val typeDescNodeJs: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "内置 Node.js，设备上跑服务端 JS"
+        AppLanguage.ENGLISH -> "Built-in Node.js for server-side JS on device"
+        AppLanguage.ARABIC -> "Node.js مدمج لتشغيل JS الخادم على الجهاز"
+        AppLanguage.PORTUGUESE -> "Node.js integrado para JS de servidor no dispositivo"
+        AppLanguage.SPANISH -> "Node.js integrado para JS de servidor en el dispositivo"
+        AppLanguage.FRENCH -> "Node.js intégré pour du JS serveur sur l'appareil"
+        AppLanguage.GERMAN -> "Integriertes Node.js für Server-JS auf dem Gerät"
+        AppLanguage.RUSSIAN -> "Встроенный Node.js для серверного JS на устройстве"
+        AppLanguage.JAPANESE -> "Node.js 内蔵、端末でサーバーサイドJS"
+        AppLanguage.KOREAN -> "Node.js 내장, 기기에서 서버 측 JS 실행"
+    }
+
+    val typeDescPython: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "内置 Python，Flask/Django/FastAPI"
+        AppLanguage.ENGLISH -> "Built-in Python for Flask/Django/FastAPI"
+        AppLanguage.ARABIC -> "Python مدمج لـ Flask/Django/FastAPI"
+        AppLanguage.PORTUGUESE -> "Python integrado para Flask/Django/FastAPI"
+        AppLanguage.SPANISH -> "Python integrado para Flask/Django/FastAPI"
+        AppLanguage.FRENCH -> "Python intégré pour Flask/Django/FastAPI"
+        AppLanguage.GERMAN -> "Integriertes Python für Flask/Django/FastAPI"
+        AppLanguage.RUSSIAN -> "Встроенный Python для Flask/Django/FastAPI"
+        AppLanguage.JAPANESE -> "Python 内蔵、Flask/Django/FastAPI 対応"
+        AppLanguage.KOREAN -> "Python 내장, Flask/Django/FastAPI 지원"
+    }
+
+    val typeDescGo: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "内置 Go 工具链，设备上编译运行"
+        AppLanguage.ENGLISH -> "Built-in Go toolchain, compile on device"
+        AppLanguage.ARABIC -> "سلسلة أدوات Go مدمجة، ترجم على الجهاز"
+        AppLanguage.PORTUGUESE -> "Toolchain Go integrado, compile no dispositivo"
+        AppLanguage.SPANISH -> "Toolchain Go integrado, compila en el dispositivo"
+        AppLanguage.FRENCH -> "Toolchain Go intégré, compilez sur l'appareil"
+        AppLanguage.GERMAN -> "Integrierte Go-Toolchain, auf dem Gerät kompilieren"
+        AppLanguage.RUSSIAN -> "Встроенный тулчейн Go, компиляция на устройстве"
+        AppLanguage.JAPANESE -> "Go ツールチェーン内蔵、端末でコンパイル"
+        AppLanguage.KOREAN -> "Go 툴체인 내장, 기기에서 컴파일"
+    }
+
+    val typeDescMedia: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "图片/视频专属播放器"
+        AppLanguage.ENGLISH -> "Dedicated player for images and videos"
+        AppLanguage.ARABIC -> "مشغّل مخصص للصور والفيديو"
+        AppLanguage.PORTUGUESE -> "Player dedicado para imagens e vídeos"
+        AppLanguage.SPANISH -> "Reproductor dedicado para imágenes y videos"
+        AppLanguage.FRENCH -> "Lecteur dédié aux images et vidéos"
+        AppLanguage.GERMAN -> "Eigener Player für Bilder und Videos"
+        AppLanguage.RUSSIAN -> "Отдельный плеер для изображений и видео"
+        AppLanguage.JAPANESE -> "画像/動画専用プレイヤー"
+        AppLanguage.KOREAN -> "이미지/동영상 전용 플레이어"
+    }
+
 }

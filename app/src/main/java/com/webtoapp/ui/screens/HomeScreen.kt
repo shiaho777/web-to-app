@@ -60,7 +60,6 @@ import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.data.dao.WebAppSummary
 import com.webtoapp.data.model.AppCategory
-import com.webtoapp.data.model.AppType
 import com.webtoapp.data.model.withRuntimePermissionsSyncedFromFeatures
 import com.webtoapp.data.model.WebApp
 import com.webtoapp.ui.components.CategoryEditorDialog
@@ -72,7 +71,6 @@ import com.webtoapp.ui.components.LanguageSelectorButton
 import com.webtoapp.ui.components.MoveToCategoryDialog
 import com.webtoapp.ui.design.WtaAlertDialog
 import com.webtoapp.ui.icons.WtaAppTypeIcon
-import com.webtoapp.ui.icons.WtaOfflinePackTypeIcon
 import com.webtoapp.ui.design.WtaLoadingIndicator
 import com.webtoapp.ui.design.WtaMaterialShape
 import com.webtoapp.ui.design.WtaMorphingShape
@@ -129,18 +127,7 @@ import com.webtoapp.ui.theme.LocalShowDescriptions
 @Composable
 fun HomeScreen(
     viewModel: MainViewModel,
-    onCreateApp: () -> Unit,
-    onCreateMediaApp: () -> Unit = {},
-    onCreateGalleryApp: () -> Unit = {},
-    onCreateHtmlApp: () -> Unit = {},
-    onCreateFrontendApp: () -> Unit = {},
-    onCreateNodeJsApp: () -> Unit = {},
-    onCreateWordPressApp: () -> Unit = {},
-    onCreatePhpApp: () -> Unit = {},
-    onCreatePythonApp: () -> Unit = {},
-    onCreateGoApp: () -> Unit = {},
-    onCreateMultiWebApp: () -> Unit = {},
-    onCreateOfflinePack: () -> Unit = {},
+    onOpenCreateGallery: () -> Unit,
     onEditApp: (WebApp) -> Unit,
     onEditAppCore: (WebApp) -> Unit = {},
     onPreviewApp: (WebAppSummary) -> Unit,
@@ -184,7 +171,6 @@ fun HomeScreen(
     var selectedApp by remember { mutableStateOf<WebAppSummary?>(null) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var shareApkFailureReport by remember { mutableStateOf<BuildFailureReport?>(null) }
-    var showFabMenu by remember { mutableStateOf(false) }
     var showDataBackupDialog by remember { mutableStateOf(false) }
 
     val scope = rememberCoroutineScope()
@@ -206,32 +192,9 @@ fun HomeScreen(
         }
     }
 
-    val createMenuScrollState = rememberScrollState()
     val advancedFeatures by HostRuntimePrefs.getInstance(context)
         .advancedFeaturesFlow
         .collectAsStateWithLifecycle()
-
-    data class CreateActionItem(
-        val label: String,
-        val icon: @Composable () -> Unit,
-        val onClick: () -> Unit
-    )
-    val createActionItems = buildList {
-        add(CreateActionItem(Strings.appTypeWeb, { WtaAppTypeIcon(AppType.WEB, Modifier.size(26.dp)) }, onCreateApp))
-        add(CreateActionItem(Strings.appTypeMultiWeb, { WtaAppTypeIcon(AppType.MULTI_WEB, Modifier.size(26.dp)) }, onCreateMultiWebApp))
-        add(CreateActionItem(Strings.appTypeHtml, { WtaAppTypeIcon(AppType.HTML, Modifier.size(26.dp)) }, onCreateHtmlApp))
-        add(CreateActionItem(Strings.websiteOfflinePack, { WtaOfflinePackTypeIcon(Modifier.size(26.dp)) }, onCreateOfflinePack))
-        add(CreateActionItem(Strings.appTypeFrontend, { WtaAppTypeIcon(AppType.FRONTEND, Modifier.size(26.dp)) }, onCreateFrontendApp))
-        if (advancedFeatures) {
-            add(CreateActionItem(Strings.appTypePhp, { WtaAppTypeIcon(AppType.PHP_APP, Modifier.size(26.dp)) }, onCreatePhpApp))
-            add(CreateActionItem(Strings.appTypeWordPress, { WtaAppTypeIcon(AppType.WORDPRESS, Modifier.size(26.dp)) }, onCreateWordPressApp))
-            add(CreateActionItem(Strings.appTypeNodeJs, { WtaAppTypeIcon(AppType.NODEJS_APP, Modifier.size(26.dp)) }, onCreateNodeJsApp))
-            add(CreateActionItem(Strings.appTypePython, { WtaAppTypeIcon(AppType.PYTHON_APP, Modifier.size(26.dp)) }, onCreatePythonApp))
-            add(CreateActionItem(Strings.appTypeGo, { WtaAppTypeIcon(AppType.GO_APP, Modifier.size(26.dp)) }, onCreateGoApp))
-            add(CreateActionItem(Strings.createMediaApp, { WtaAppTypeIcon(AppType.VIDEO, Modifier.size(26.dp)) }, onCreateMediaApp))
-        }
-        add(CreateActionItem(Strings.appTypeGallery, { WtaAppTypeIcon(AppType.GALLERY, Modifier.size(26.dp)) }, onCreateGalleryApp))
-    }
 
     WtaScreen(
         title = Strings.myApps,
@@ -261,7 +224,7 @@ fun HomeScreen(
         snackbarHostState = snackbarHostState,
         floatingActionButton = {
             ExtendedFloatingActionButton(
-                onClick = { showFabMenu = true },
+                onClick = onOpenCreateGallery,
                 icon = { Icon(Icons.Default.Add, contentDescription = null) },
                 text = { Text(Strings.createApp, style = MaterialTheme.typography.labelLargeEmphasized) },
                 shape = CreateFabShape,
@@ -1065,50 +1028,6 @@ fun HomeScreen(
             }
     }
 
-    if (showFabMenu) {
-        ModalBottomSheet(
-            onDismissRequest = { showFabMenu = false },
-            sheetState = rememberModalBottomSheetState()
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .verticalScroll(createMenuScrollState)
-                    .padding(horizontal = 16.dp)
-                    .padding(bottom = 32.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Text(
-                    text = Strings.createApp,
-                    style = MaterialTheme.typography.titleLargeEmphasized,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-                createActionItems.chunked(3).forEachIndexed { rowIndex, rowItems ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        rowItems.forEachIndexed { colIndex, item ->
-                            CreateActionTile(
-                                label = item.label,
-                                icon = item.icon,
-                                onClick = {
-                                    showFabMenu = false
-                                    item.onClick()
-                                },
-                                modifier = Modifier.weight(1f),
-                                shapeIndex = rowIndex * 3 + colIndex
-                            )
-                        }
-                        repeat(3 - rowItems.size) {
-                            Spacer(modifier = Modifier.weight(1f))
-                        }
-                    }
-                }
-            }
-        }
-    }
-
     shareApkFailureReport?.let { report ->
         BuildFailureReportDialog(
             report = report,
@@ -1879,62 +1798,6 @@ fun EmptyState(
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 private val CreateFabShape = WtaPolygonShape(MaterialShapes.Cookie12Sided)
-
-private val createActionTileShapes = listOf(
-    MaterialShapes.Cookie4Sided,
-    MaterialShapes.Sunny,
-    MaterialShapes.Clover4Leaf,
-    MaterialShapes.Gem,
-    MaterialShapes.Cookie6Sided,
-    MaterialShapes.Fan,
-    MaterialShapes.Pentagon,
-    MaterialShapes.Pill,
-    MaterialShapes.Cookie9Sided,
-    MaterialShapes.Ghostish,
-    MaterialShapes.VerySunny,
-    MaterialShapes.Arch
-)
-
-@Composable
-private fun CreateActionTile(
-    label: String,
-    icon: @Composable () -> Unit,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    shapeIndex: Int = 0
-) {
-    val interactionSource = remember { MutableInteractionSource() }
-    val hapticClick = rememberHapticClick(onClick)
-    Column(
-        modifier = modifier
-            .clip(RoundedCornerShape(WtaRadius.Card))
-            .clickable(
-                interactionSource = interactionSource,
-                indication = com.webtoapp.ui.design.rememberWtaIndication(),
-                onClick = hapticClick
-            )
-            .padding(vertical = 8.dp, horizontal = 4.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        WtaShapePlate(
-            polygon = createActionTileShapes[shapeIndex % createActionTileShapes.size],
-            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-            modifier = Modifier.size(52.dp)
-        ) {
-            icon()
-        }
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            label,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-            textAlign = TextAlign.Center
-        )
-    }
-}
 
 @Composable
 private fun MoreMenuIcon(

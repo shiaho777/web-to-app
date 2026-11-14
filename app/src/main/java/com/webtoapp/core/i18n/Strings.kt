@@ -3145,6 +3145,22 @@ object Strings {
     val advancedFeatures: String get() = StringsD.advancedFeatures
     val advancedFeaturesDesc: String get() = StringsD.advancedFeaturesDesc
     val advancedFeaturesOff: String get() = StringsD.advancedFeaturesOff
+    val createTypeGalleryTitle: String get() = StringsE.createTypeGalleryTitle
+    val createTypeGallerySubtitle: String get() = StringsE.createTypeGallerySubtitle
+    val createTypeAdvancedGuide: String get() = StringsE.createTypeAdvancedGuide
+    val createTypeLocked: String get() = StringsE.createTypeLocked
+    val typeDescWeb: String get() = StringsE.typeDescWeb
+    val typeDescMultiWeb: String get() = StringsE.typeDescMultiWeb
+    val typeDescHtml: String get() = StringsE.typeDescHtml
+    val typeDescOfflinePack: String get() = StringsE.typeDescOfflinePack
+    val typeDescFrontend: String get() = StringsE.typeDescFrontend
+    val typeDescGallery: String get() = StringsE.typeDescGallery
+    val typeDescPhp: String get() = StringsE.typeDescPhp
+    val typeDescWordPress: String get() = StringsE.typeDescWordPress
+    val typeDescNodeJs: String get() = StringsE.typeDescNodeJs
+    val typeDescPython: String get() = StringsE.typeDescPython
+    val typeDescGo: String get() = StringsE.typeDescGo
+    val typeDescMedia: String get() = StringsE.typeDescMedia
     val hostsRulesCount: String get() = StringsD.hostsRulesCount
     val importFromUrl: String get() = StringsD.importFromUrl
     val popularHostsSources: String get() = StringsD.popularHostsSources
@@ -5324,4 +5340,5 @@ fun InitializeLanguage() {
 
         }
     }
+
 }
