@@ -12,16 +12,17 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import com.webtoapp.core.i18n.AppLanguage
+import com.webtoapp.core.i18n.Strings
 
 val LocalAppTheme = staticCompositionLocalOf { AppThemes.Default }
 
 data class AnimationSettings(
     val enabled: Boolean = true,
-    val particlesEnabled: Boolean = true,
-    val hapticsEnabled: Boolean = true,
-    val soundEnabled: Boolean = true,
-    val speedMultiplier: Float = 1f
+    val hapticsEnabled: Boolean = true
 )
 
 val LocalAnimationSettings = staticCompositionLocalOf { AnimationSettings() }
@@ -87,6 +88,10 @@ fun String?.ifDescriptionsShown(): String? =
     if (LocalShowDescriptions.current) this else null
 
 @Composable
+private fun wtaLayoutDirection(): LayoutDirection =
+    if (Strings.lang == AppLanguage.ARABIC) LayoutDirection.Rtl else LayoutDirection.Ltr
+
+@Composable
 fun WebToAppTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     dynamicColor: Boolean = false,
@@ -111,9 +116,7 @@ fun WebToAppTheme(
     val darkModeSetting by themeManager.darkModeFlow.collectAsStateWithLifecycle()
     val accent by themeManager.accentFlow.collectAsStateWithLifecycle()
     val enableAnimations by themeManager.enableAnimationsFlow.collectAsStateWithLifecycle()
-    val enableParticles by themeManager.enableParticlesFlow.collectAsStateWithLifecycle()
     val enableHaptics by themeManager.enableHapticsFlow.collectAsStateWithLifecycle()
-    val enableSound by themeManager.enableSoundFlow.collectAsStateWithLifecycle()
     val animationSpeed by themeManager.animationSpeedFlow.collectAsStateWithLifecycle()
     val fontSize by themeManager.fontSizeFlow.collectAsStateWithLifecycle()
     val cornerStyle by themeManager.cornerStyleFlow.collectAsStateWithLifecycle()
@@ -140,10 +143,7 @@ fun WebToAppTheme(
 
     val animationSettings = AnimationSettings(
         enabled = enableAnimations,
-        particlesEnabled = enableParticles,
-        hapticsEnabled = enableHaptics,
-        soundEnabled = enableSound,
-        speedMultiplier = animationSpeed.multiplier
+        hapticsEnabled = enableHaptics
     )
 
     SideEffect {
@@ -165,6 +165,7 @@ fun WebToAppTheme(
     )
 
     CompositionLocalProvider(
+        LocalLayoutDirection provides wtaLayoutDirection(),
         LocalAppTheme provides currentTheme,
         LocalAnimationSettings provides animationSettings,
         LocalIsDarkTheme provides useDarkTheme,
@@ -198,6 +199,7 @@ fun WebToAppThemeSimple(
     val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
 
     CompositionLocalProvider(
+        LocalLayoutDirection provides wtaLayoutDirection(),
         LocalAppTheme provides AppThemes.Default,
         LocalAnimationSettings provides AnimationSettings(),
     ) {
@@ -237,9 +239,7 @@ fun ShellTheme(
 
     val animationSettings = AnimationSettings(
         enabled = true,
-        particlesEnabled = currentTheme.effects.enableParticles,
-        hapticsEnabled = true,
-        speedMultiplier = 1f
+        hapticsEnabled = true
     )
 
     val themeShapes = Shapes(
@@ -256,6 +256,7 @@ fun ShellTheme(
     )
 
     CompositionLocalProvider(
+        LocalLayoutDirection provides wtaLayoutDirection(),
         LocalAppTheme provides currentTheme,
         LocalAnimationSettings provides animationSettings,
         LocalIsDarkTheme provides useDarkTheme,

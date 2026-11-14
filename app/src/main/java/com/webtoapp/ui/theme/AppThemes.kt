@@ -4,7 +4,6 @@ import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Stable
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -17,69 +16,12 @@ enum class AppThemeType(val icon: String) {
     fun getDescription(): String = Strings.themeKimiNoNawaDesc
 }
 
-enum class AnimationStyle {
-    SMOOTH, BOUNCY, SNAPPY, ELEGANT, PLAYFUL, DRAMATIC;
-
-    fun getDisplayName(): String = when (this) {
-        SMOOTH -> Strings.animSmooth
-        BOUNCY -> Strings.animBouncy
-        SNAPPY -> Strings.animSnappy
-        ELEGANT -> Strings.animElegant
-        PLAYFUL -> Strings.animPlayful
-        DRAMATIC -> Strings.animDramatic
-    }
-}
-
-enum class InteractionStyle {
-    RIPPLE, GLOW, SCALE, SHAKE, MORPH, PARTICLE;
-
-    fun getDisplayName(): String = when (this) {
-        RIPPLE -> Strings.interRipple
-        GLOW -> Strings.interGlow
-        SCALE -> Strings.interScale
-        SHAKE -> Strings.interShake
-        MORPH -> Strings.interMorph
-        PARTICLE -> Strings.interParticle
-    }
-}
-
 @Stable
 data class AppTheme(
     val type: AppThemeType,
     val lightColors: ColorScheme,
     val darkColors: ColorScheme,
-    val animationStyle: AnimationStyle,
-    val interactionStyle: InteractionStyle,
-    val gradients: ThemeGradients,
-    val effects: ThemeEffects,
     val shapes: ThemeShapes
-)
-
-@Stable
-data class ThemeGradients(
-    val primary: List<Color>,
-    val secondary: List<Color>,
-    val background: List<Color>,
-    val accent: List<Color>,
-    val shimmer: List<Color>
-) {
-    val primaryBrush: Brush get() = Brush.linearGradient(primary)
-    val secondaryBrush: Brush get() = Brush.linearGradient(secondary)
-    val backgroundBrush: Brush get() = Brush.linearGradient(background)
-    val accentBrush: Brush get() = Brush.linearGradient(accent)
-}
-
-@Stable
-data class ThemeEffects(
-    val glowColor: Color,
-    val glowRadius: Dp,
-    val shadowColor: Color,
-    val shadowElevation: Dp,
-    val blurRadius: Dp,
-    val particleColor: Color,
-    val enableParticles: Boolean,
-    val enableGlow: Boolean,
-    val enableGlassmorphism: Boolean
 )
 
 @Stable
@@ -186,26 +128,6 @@ object AppThemes {
             inverseOnSurface = Color(0xFF111113),
             scrim = Color(0xFF000000)
         ),
-        animationStyle = AnimationStyle.SNAPPY,
-        interactionStyle = InteractionStyle.RIPPLE,
-        gradients = ThemeGradients(
-            primary = listOf(Color(0xFF111113), Color(0xFF2A2A2E)),
-            secondary = listOf(Color(0xFF474749), Color(0xFF7A7A7D)),
-            background = listOf(Color(0xFF0B0B0E), Color(0xFF111114)),
-            accent = listOf(Color(0xFFF2F2F4), Color(0xFFD5D5D8)),
-            shimmer = listOf(Color(0x08FFFFFF), Color(0x22FFFFFF), Color(0x08FFFFFF))
-        ),
-        effects = ThemeEffects(
-            glowColor = Color.Transparent,
-            glowRadius = 0.dp,
-            shadowColor = Color(0x14000000),
-            shadowElevation = 2.dp,
-            blurRadius = 0.dp,
-            particleColor = Color.Transparent,
-            enableParticles = false,
-            enableGlow = false,
-            enableGlassmorphism = false
-        ),
         shapes = ThemeShapes(
             cornerRadius = 14.dp,
             buttonRadius = 10.dp,
@@ -227,26 +149,4 @@ fun AppThemeType.getLocalizedDisplayName(): String {
 
 fun AppThemeType.getLocalizedDescription(): String {
     return Strings.themeKimiNoNawaDesc
-}
-
-fun AnimationStyle.getLocalizedDisplayName(): String {
-    return when (this) {
-        AnimationStyle.SMOOTH -> Strings.animSmooth
-        AnimationStyle.BOUNCY -> Strings.animBouncy
-        AnimationStyle.SNAPPY -> Strings.animSnappy
-        AnimationStyle.ELEGANT -> Strings.animElegant
-        AnimationStyle.PLAYFUL -> Strings.animPlayful
-        AnimationStyle.DRAMATIC -> Strings.animDramatic
-    }
-}
-
-fun InteractionStyle.getLocalizedDisplayName(): String {
-    return when (this) {
-        InteractionStyle.RIPPLE -> Strings.interRipple
-        InteractionStyle.GLOW -> Strings.interGlow
-        InteractionStyle.SCALE -> Strings.interScale
-        InteractionStyle.SHAKE -> Strings.interShake
-        InteractionStyle.MORPH -> Strings.interMorph
-        InteractionStyle.PARTICLE -> Strings.interParticle
-    }
 }

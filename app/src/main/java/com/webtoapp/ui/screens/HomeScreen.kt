@@ -60,6 +60,7 @@ import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.data.dao.WebAppSummary
 import com.webtoapp.data.model.AppCategory
+import com.webtoapp.data.model.AppType
 import com.webtoapp.data.model.withRuntimePermissionsSyncedFromFeatures
 import com.webtoapp.data.model.WebApp
 import com.webtoapp.ui.components.CategoryEditorDialog
@@ -70,6 +71,8 @@ import com.webtoapp.ui.components.PremiumTextField
 import com.webtoapp.ui.components.LanguageSelectorButton
 import com.webtoapp.ui.components.MoveToCategoryDialog
 import com.webtoapp.ui.design.WtaAlertDialog
+import com.webtoapp.ui.icons.WtaAppTypeIcon
+import com.webtoapp.ui.icons.WtaOfflinePackTypeIcon
 import com.webtoapp.ui.design.WtaLoadingIndicator
 import com.webtoapp.ui.design.WtaMaterialShape
 import com.webtoapp.ui.design.WtaMorphingShape
@@ -210,24 +213,24 @@ fun HomeScreen(
 
     data class CreateActionItem(
         val label: String,
-        val iconRes: Int,
+        val icon: @Composable () -> Unit,
         val onClick: () -> Unit
     )
     val createActionItems = buildList {
-        add(CreateActionItem(Strings.appTypeWeb, R.drawable.ic_type_web, onCreateApp))
-        add(CreateActionItem(Strings.appTypeMultiWeb, R.drawable.ic_type_multi_web, onCreateMultiWebApp))
-        add(CreateActionItem(Strings.appTypeHtml, R.drawable.ic_type_html, onCreateHtmlApp))
-        add(CreateActionItem(Strings.websiteOfflinePack, R.drawable.ic_type_offline_pack, onCreateOfflinePack))
-        add(CreateActionItem(Strings.appTypeFrontend, R.drawable.ic_type_frontend, onCreateFrontendApp))
+        add(CreateActionItem(Strings.appTypeWeb, { WtaAppTypeIcon(AppType.WEB, Modifier.size(26.dp)) }, onCreateApp))
+        add(CreateActionItem(Strings.appTypeMultiWeb, { WtaAppTypeIcon(AppType.MULTI_WEB, Modifier.size(26.dp)) }, onCreateMultiWebApp))
+        add(CreateActionItem(Strings.appTypeHtml, { WtaAppTypeIcon(AppType.HTML, Modifier.size(26.dp)) }, onCreateHtmlApp))
+        add(CreateActionItem(Strings.websiteOfflinePack, { WtaOfflinePackTypeIcon(Modifier.size(26.dp)) }, onCreateOfflinePack))
+        add(CreateActionItem(Strings.appTypeFrontend, { WtaAppTypeIcon(AppType.FRONTEND, Modifier.size(26.dp)) }, onCreateFrontendApp))
         if (advancedFeatures) {
-            add(CreateActionItem(Strings.appTypePhp, R.drawable.ic_type_php, onCreatePhpApp))
-            add(CreateActionItem(Strings.appTypeWordPress, R.drawable.ic_type_wordpress, onCreateWordPressApp))
-            add(CreateActionItem(Strings.appTypeNodeJs, R.drawable.ic_type_nodejs, onCreateNodeJsApp))
-            add(CreateActionItem(Strings.appTypePython, R.drawable.ic_type_python, onCreatePythonApp))
-            add(CreateActionItem(Strings.appTypeGo, R.drawable.ic_type_go, onCreateGoApp))
-            add(CreateActionItem(Strings.createMediaApp, R.drawable.ic_type_media, onCreateMediaApp))
+            add(CreateActionItem(Strings.appTypePhp, { WtaAppTypeIcon(AppType.PHP_APP, Modifier.size(26.dp)) }, onCreatePhpApp))
+            add(CreateActionItem(Strings.appTypeWordPress, { WtaAppTypeIcon(AppType.WORDPRESS, Modifier.size(26.dp)) }, onCreateWordPressApp))
+            add(CreateActionItem(Strings.appTypeNodeJs, { WtaAppTypeIcon(AppType.NODEJS_APP, Modifier.size(26.dp)) }, onCreateNodeJsApp))
+            add(CreateActionItem(Strings.appTypePython, { WtaAppTypeIcon(AppType.PYTHON_APP, Modifier.size(26.dp)) }, onCreatePythonApp))
+            add(CreateActionItem(Strings.appTypeGo, { WtaAppTypeIcon(AppType.GO_APP, Modifier.size(26.dp)) }, onCreateGoApp))
+            add(CreateActionItem(Strings.createMediaApp, { WtaAppTypeIcon(AppType.VIDEO, Modifier.size(26.dp)) }, onCreateMediaApp))
         }
-        add(CreateActionItem(Strings.appTypeGallery, R.drawable.ic_type_gallery, onCreateGalleryApp))
+        add(CreateActionItem(Strings.appTypeGallery, { WtaAppTypeIcon(AppType.GALLERY, Modifier.size(26.dp)) }, onCreateGalleryApp))
     }
 
     WtaScreen(
@@ -1088,7 +1091,7 @@ fun HomeScreen(
                         rowItems.forEachIndexed { colIndex, item ->
                             CreateActionTile(
                                 label = item.label,
-                                iconRes = item.iconRes,
+                                icon = item.icon,
                                 onClick = {
                                     showFabMenu = false
                                     item.onClick()
@@ -1316,30 +1319,16 @@ fun AppCard(
                         )
                     }
                 } else {
-                    val defaultIconRes = when (app.appType) {
-                        com.webtoapp.data.model.AppType.WEB -> R.drawable.ic_type_web
-                        com.webtoapp.data.model.AppType.IMAGE -> R.drawable.ic_type_media
-                        com.webtoapp.data.model.AppType.VIDEO -> R.drawable.ic_type_media
-                        com.webtoapp.data.model.AppType.HTML -> R.drawable.ic_type_html
-                        com.webtoapp.data.model.AppType.GALLERY -> R.drawable.ic_type_gallery
-                        com.webtoapp.data.model.AppType.FRONTEND -> R.drawable.ic_type_frontend
-                        com.webtoapp.data.model.AppType.WORDPRESS -> R.drawable.ic_type_wordpress
-                        com.webtoapp.data.model.AppType.NODEJS_APP -> R.drawable.ic_type_nodejs
-                        com.webtoapp.data.model.AppType.PHP_APP -> R.drawable.ic_type_php
-                        com.webtoapp.data.model.AppType.PYTHON_APP -> R.drawable.ic_type_python
-                        com.webtoapp.data.model.AppType.GO_APP -> R.drawable.ic_type_go
-                        com.webtoapp.data.model.AppType.MULTI_WEB -> R.drawable.ic_type_multi_web
-                    }
                     WtaShapePlate(
                         polygon = MaterialShapes.Cookie6Sided,
                         containerColor = colors.secondaryContainer,
                         modifier = Modifier.size(52.dp)
                     ) {
-                        Icon(
-                            painter = painterResource(defaultIconRes),
-                            contentDescription = null,
+                        WtaAppTypeIcon(
+                            type = app.appType,
                             modifier = Modifier.size(26.dp),
-                            tint = colors.onSecondaryContainer
+                            color = colors.onSecondaryContainer,
+                            accent = colors.primary
                         )
                     }
                 }
@@ -1440,26 +1429,11 @@ fun AppCard(
                         tint = colors.onSurfaceVariant
                     )
                 } else {
-                    Icon(
-                        painter = painterResource(
-                            when (app.appType) {
-                                com.webtoapp.data.model.AppType.WEB -> R.drawable.ic_type_web
-                                com.webtoapp.data.model.AppType.IMAGE -> R.drawable.ic_type_media
-                                com.webtoapp.data.model.AppType.VIDEO -> R.drawable.ic_type_media
-                                com.webtoapp.data.model.AppType.HTML -> R.drawable.ic_type_html
-                                com.webtoapp.data.model.AppType.GALLERY -> R.drawable.ic_type_gallery
-                                com.webtoapp.data.model.AppType.FRONTEND -> R.drawable.ic_type_frontend
-                                com.webtoapp.data.model.AppType.WORDPRESS -> R.drawable.ic_type_wordpress
-                                com.webtoapp.data.model.AppType.NODEJS_APP -> R.drawable.ic_type_nodejs
-                                com.webtoapp.data.model.AppType.PHP_APP -> R.drawable.ic_type_php
-                                com.webtoapp.data.model.AppType.PYTHON_APP -> R.drawable.ic_type_python
-                                com.webtoapp.data.model.AppType.GO_APP -> R.drawable.ic_type_go
-                                com.webtoapp.data.model.AppType.MULTI_WEB -> R.drawable.ic_type_multi_web
-                            }
-                        ),
-                        contentDescription = Strings.btnPreview,
+                    WtaAppTypeIcon(
+                        type = app.appType,
                         modifier = Modifier.size(18.dp),
-                        tint = colors.onSurfaceVariant
+                        color = colors.onSurfaceVariant,
+                        accent = colors.primary
                     )
                 }
             }
@@ -1621,21 +1595,6 @@ fun AppCardActionsMenu(
     }
 }
 
-private fun appTypeDefaultIcon(appType: com.webtoapp.data.model.AppType): Int = when (appType) {
-    com.webtoapp.data.model.AppType.WEB -> R.drawable.ic_type_web
-    com.webtoapp.data.model.AppType.IMAGE -> R.drawable.ic_type_media
-    com.webtoapp.data.model.AppType.VIDEO -> R.drawable.ic_type_media
-    com.webtoapp.data.model.AppType.HTML -> R.drawable.ic_type_html
-    com.webtoapp.data.model.AppType.GALLERY -> R.drawable.ic_type_gallery
-    com.webtoapp.data.model.AppType.FRONTEND -> R.drawable.ic_type_frontend
-    com.webtoapp.data.model.AppType.WORDPRESS -> R.drawable.ic_type_wordpress
-    com.webtoapp.data.model.AppType.NODEJS_APP -> R.drawable.ic_type_nodejs
-    com.webtoapp.data.model.AppType.PHP_APP -> R.drawable.ic_type_php
-    com.webtoapp.data.model.AppType.PYTHON_APP -> R.drawable.ic_type_python
-    com.webtoapp.data.model.AppType.GO_APP -> R.drawable.ic_type_go
-    com.webtoapp.data.model.AppType.MULTI_WEB -> R.drawable.ic_type_multi_web
-}
-
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun AppGridTile(
@@ -1684,11 +1643,11 @@ fun AppGridTile(
                         containerColor = colors.secondaryContainer,
                         modifier = Modifier.size(56.dp)
                     ) {
-                        Icon(
-                            painter = painterResource(appTypeDefaultIcon(app.appType)),
-                            contentDescription = null,
+                        WtaAppTypeIcon(
+                            type = app.appType,
                             modifier = Modifier.size(28.dp),
-                            tint = colors.onSecondaryContainer
+                            color = colors.onSecondaryContainer,
+                            accent = colors.primary
                         )
                     }
                 }
@@ -1939,7 +1898,7 @@ private val createActionTileShapes = listOf(
 @Composable
 private fun CreateActionTile(
     label: String,
-    iconRes: Int,
+    icon: @Composable () -> Unit,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     shapeIndex: Int = 0
@@ -1963,12 +1922,7 @@ private fun CreateActionTile(
             containerColor = MaterialTheme.colorScheme.secondaryContainer,
             modifier = Modifier.size(52.dp)
         ) {
-            Icon(
-                painter = painterResource(iconRes),
-                contentDescription = null,
-                modifier = Modifier.size(24.dp),
-                tint = MaterialTheme.colorScheme.onSecondaryContainer
-            )
+            icon()
         }
         Spacer(modifier = Modifier.height(8.dp))
         Text(

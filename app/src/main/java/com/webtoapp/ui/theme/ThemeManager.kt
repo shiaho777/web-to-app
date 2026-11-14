@@ -28,9 +28,6 @@ class ThemeManager(private val context: Context) {
 
     val currentDarkMode: DarkModeSettings
         get() = cachedDarkMode ?: run {
-            // Main-safe: never block UI thread on DataStore. Flow value is kept
-            // fresh by Eagerly-started stateIn; export path (IO thread) still gets
-            // the exact value via the blocking read below.
             if (android.os.Looper.myLooper() == android.os.Looper.getMainLooper()) {
                 darkModeFlow.value.also { cachedDarkMode = it }
             } else {
@@ -58,9 +55,7 @@ class ThemeManager(private val context: Context) {
         private val KEY_DARK_MODE = stringPreferencesKey("dark_mode")
         private val KEY_ACCENT = stringPreferencesKey("accent_color")
         private val KEY_ENABLE_ANIMATIONS = booleanPreferencesKey("enable_animations")
-        private val KEY_ENABLE_PARTICLES = booleanPreferencesKey("enable_particles")
         private val KEY_ENABLE_HAPTICS = booleanPreferencesKey("enable_haptics")
-        private val KEY_ENABLE_SOUND = booleanPreferencesKey("enable_sound")
         private val KEY_ANIMATION_SPEED = stringPreferencesKey("animation_speed")
         private val KEY_FONT_SIZE = stringPreferencesKey("font_size")
         private val KEY_CORNER_STYLE = stringPreferencesKey("corner_style")
@@ -170,24 +165,8 @@ class ThemeManager(private val context: Context) {
         initialValue = true
     )
 
-    val enableParticlesFlow: StateFlow<Boolean> = context.themeDataStore.data.map { prefs ->
-        prefs[KEY_ENABLE_PARTICLES] ?: true
-    }.stateIn(
-        scope = scope,
-        started = SharingStarted.Eagerly,
-        initialValue = true
-    )
-
     val enableHapticsFlow: StateFlow<Boolean> = context.themeDataStore.data.map { prefs ->
         prefs[KEY_ENABLE_HAPTICS] ?: true
-    }.stateIn(
-        scope = scope,
-        started = SharingStarted.Eagerly,
-        initialValue = true
-    )
-
-    val enableSoundFlow: StateFlow<Boolean> = context.themeDataStore.data.map { prefs ->
-        prefs[KEY_ENABLE_SOUND] ?: true
     }.stateIn(
         scope = scope,
         started = SharingStarted.Eagerly,
@@ -215,11 +194,6 @@ class ThemeManager(private val context: Context) {
         initialValue = HomeViewMode.LIST
     )
 
-    /**
-     * Flips true once the first DataStore read lands. Compose gates first
-     * content on this so a frame painted with default values never gets
-     * re-laid-out when the user's real theme settings arrive.
-     */
     val settingsLoadedFlow: StateFlow<Boolean> = context.themeDataStore.data
         .map { true }
         .stateIn(
@@ -240,10 +214,6 @@ class ThemeManager(private val context: Context) {
         started = SharingStarted.Eagerly,
         initialValue = AnimationSpeed.NORMAL
     )
-
-    suspend fun setThemeType(type: AppThemeType) {
-
-    }
 
     suspend fun setDarkMode(mode: DarkModeSettings) {
         context.themeDataStore.edit { prefs ->
@@ -302,21 +272,9 @@ class ThemeManager(private val context: Context) {
         }
     }
 
-    suspend fun setEnableParticles(enabled: Boolean) {
-        context.themeDataStore.edit { prefs ->
-            prefs[KEY_ENABLE_PARTICLES] = enabled
-        }
-    }
-
     suspend fun setEnableHaptics(enabled: Boolean) {
         context.themeDataStore.edit { prefs ->
             prefs[KEY_ENABLE_HAPTICS] = enabled
-        }
-    }
-
-    suspend fun setEnableSound(enabled: Boolean) {
-        context.themeDataStore.edit { prefs ->
-            prefs[KEY_ENABLE_SOUND] = enabled
         }
     }
 

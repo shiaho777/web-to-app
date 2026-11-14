@@ -316,6 +316,7 @@ fun WtaFullEmptyState(
     modifier: Modifier = Modifier,
     message: String? = null,
     icon: ImageVector = Icons.Outlined.Inbox,
+    art: (@Composable () -> Unit)? = null,
     action: (@Composable () -> Unit)? = null,
     fillMaxSize: Boolean = true
 ) {
@@ -327,21 +328,30 @@ fun WtaFullEmptyState(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.padding(horizontal = 32.dp)
         ) {
-            Box(
-                modifier = Modifier
-                    .size(72.dp)
-                    .clip(CircleShape)
-                    .background(
-                        MaterialTheme.colorScheme.primary.copy(alpha = WtaAlpha.MutedContainer)
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    icon,
-                    contentDescription = null,
-                    modifier = Modifier.size(36.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
+            if (art != null) {
+                Box(
+                    modifier = Modifier.size(128.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    art()
+                }
+            } else {
+                Box(
+                    modifier = Modifier
+                        .size(72.dp)
+                        .clip(CircleShape)
+                        .background(
+                            MaterialTheme.colorScheme.primary.copy(alpha = WtaAlpha.MutedContainer)
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        icon,
+                        contentDescription = null,
+                        modifier = Modifier.size(36.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
             }
             Spacer(modifier = Modifier.height(18.dp))
             Text(
