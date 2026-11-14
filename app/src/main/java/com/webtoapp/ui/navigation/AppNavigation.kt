@@ -52,6 +52,7 @@ import com.webtoapp.ui.screens.CreateWordPressAppScreen
 import com.webtoapp.ui.screens.PluginManagerScreen
 import com.webtoapp.ui.screens.FileManagerScreen
 import com.webtoapp.ui.screens.HomeScreen
+import com.webtoapp.ui.screens.create.CreateTypeGalleryScreen
 import com.webtoapp.ui.screens.HostsAdBlockScreen
 import com.webtoapp.ui.screens.LinuxEnvironmentScreen
 import com.webtoapp.ui.screens.PluginEditorScreen
@@ -68,6 +69,7 @@ object Routes {
     const val HOME = "home"
 
     const val CREATE_APP = "create_app"
+    const val CREATE_TYPE_GALLERY = "create_type_gallery"
     const val CREATE_MEDIA_APP = "create_media_app"
     const val CREATE_GALLERY_APP = "create_gallery_app"
     const val CREATE_HTML_APP = "create_html_app"
@@ -108,6 +110,7 @@ object Routes {
     const val PORT_MANAGER = "port_manager"
     const val STATS = "stats"
     const val ABOUT = "about"
+    const val ABOUT_ADVANCED = "about_advanced"
     const val SETTINGS = "settings"
     const val PLAY_STORE = "play_store?appId={appId}&autoStart={autoStart}"
     const val FILE_MANAGER = "file_manager"
@@ -172,21 +175,7 @@ fun AppNavigation() {
             composable(Routes.HOME) {
                 HomeScreen(
                     viewModel = viewModel,
-                    onCreateApp = {
-                            viewModel.createNewApp()
-                            navController.navigate(Routes.CREATE_APP)
-                        },
-                        onCreateMediaApp = { navController.navigate(Routes.CREATE_MEDIA_APP) },
-                        onCreateGalleryApp = { navController.navigate(Routes.CREATE_GALLERY_APP) },
-                        onCreateHtmlApp = { navController.navigate(Routes.CREATE_HTML_APP) },
-                        onCreateFrontendApp = { navController.navigate(Routes.CREATE_FRONTEND_APP) },
-                        onCreateNodeJsApp = { navController.navigate(Routes.CREATE_NODEJS_APP) },
-                        onCreateWordPressApp = { navController.navigate(Routes.CREATE_WORDPRESS_APP) },
-                        onCreatePhpApp = { navController.navigate(Routes.CREATE_PHP_APP) },
-                        onCreatePythonApp = { navController.navigate(Routes.CREATE_PYTHON_APP) },
-                        onCreateGoApp = { navController.navigate(Routes.CREATE_GO_APP) },
-                        onCreateMultiWebApp = { navController.navigate(Routes.CREATE_MULTI_WEB_APP) },
-                        onCreateOfflinePack = { navController.navigate(Routes.CREATE_OFFLINE_PACK) },
+                    onOpenCreateGallery = { navController.navigate(Routes.CREATE_TYPE_GALLERY) },
                         onEditApp = { webApp ->
                             viewModel.editApp(webApp)
                             navController.navigate(Routes.editApp(webApp.id))
@@ -295,6 +284,28 @@ fun AppNavigation() {
                     onRefreshOverall = {
                         overallStats.value = statsRepository.getOverallStats()
                     }
+                )
+            }
+
+            composable(Routes.CREATE_TYPE_GALLERY) {
+                CreateTypeGalleryScreen(
+                    onBack = { navController.popBackStackSafely() },
+                    onCreateApp = {
+                        viewModel.createNewApp()
+                        navController.navigate(Routes.CREATE_APP)
+                    },
+                    onCreateMediaApp = { navController.navigate(Routes.CREATE_MEDIA_APP) },
+                    onCreateGalleryApp = { navController.navigate(Routes.CREATE_GALLERY_APP) },
+                    onCreateHtmlApp = { navController.navigate(Routes.CREATE_HTML_APP) },
+                    onCreateFrontendApp = { navController.navigate(Routes.CREATE_FRONTEND_APP) },
+                    onCreateNodeJsApp = { navController.navigate(Routes.CREATE_NODEJS_APP) },
+                    onCreateWordPressApp = { navController.navigate(Routes.CREATE_WORDPRESS_APP) },
+                    onCreatePhpApp = { navController.navigate(Routes.CREATE_PHP_APP) },
+                    onCreatePythonApp = { navController.navigate(Routes.CREATE_PYTHON_APP) },
+                    onCreateGoApp = { navController.navigate(Routes.CREATE_GO_APP) },
+                    onCreateMultiWebApp = { navController.navigate(Routes.CREATE_MULTI_WEB_APP) },
+                    onCreateOfflinePack = { navController.navigate(Routes.CREATE_OFFLINE_PACK) },
+                    onOpenAbout = { navController.navigate(Routes.ABOUT_ADVANCED) }
                 )
             }
 
@@ -772,6 +783,13 @@ fun AppNavigation() {
 
             composable(Routes.ABOUT) {
                 AboutScreen(onBack = { navController.popBackStackSafely() })
+            }
+
+            composable(Routes.ABOUT_ADVANCED) {
+                AboutScreen(
+                    onBack = { navController.popBackStackSafely() },
+                    focusAdvanced = true
+                )
             }
 
             composable(Routes.SETTINGS) {

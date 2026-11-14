@@ -167,8 +167,10 @@ Pull colors from `MaterialTheme.colorScheme.*` containers; never hard-code.
 Each screen keeps its own shape vocabulary so decorations stay distinctive:
 Home uses the Cookie/Sunny/Clover/Gem family, About adds Heart, Module
 Market uses Puffy / Flower / ClamShell / Bun / SoftBurst / Clover8Leaf /
-Diamond / PuffyDiamond, the plugin editor uses PixelCircle, and the code
-editor dialog uses Slanted. Pick shapes no other screen uses for new screens.
+Diamond / PuffyDiamond, the plugin editor uses PixelCircle, the code
+editor dialog uses Slanted, and the create-type gallery uses Boom / Burst /
+SemiCircle / Oval / Square / Arrow. Pick shapes no other screen uses for new
+screens.
 - `WtaLoadingIndicator(size, color, progress)` — Material 3 Expressive loading
   indicator (shape-morph animation). The only spinner primitive; use it for
   both indeterminate and determinate (`progress = { value }`) loading.
