@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TransformedText
@@ -200,5 +201,39 @@ class CodeSyntaxTransformation(
         val HTML_TAG = Regex("""</?[A-Za-z][\w:-]*""")
         val HTML_ATTR = Regex("""(?<=\s)[A-Za-z_:][\w:.-]*(?=\s*=)""")
         val HTML_STRING = Regex(""""[^"]*"|'[^']*'""")
+    }
+}
+
+class SearchHighlightTransformation(
+    private val base: VisualTransformation,
+    private val matches: List<TextRange>,
+    private val activeIndex: Int,
+    private val matchColor: Color,
+    private val activeColor: Color
+) : VisualTransformation {
+
+    override fun filter(text: AnnotatedString): TransformedText {
+        val transformed = base.filter(text)
+        if (matches.isEmpty() || matches.size > MAX_HIGHLIGHT_MATCHES) return transformed
+        val active = activeIndex.coerceIn(0, matches.lastIndex)
+        val highlighted = buildAnnotatedString {
+            append(transformed.text)
+            matches.forEachIndexed { index, range ->
+                val end = range.end.coerceAtMost(transformed.text.length)
+                val start = range.start.coerceAtMost(end)
+                if (start < end) {
+                    addStyle(
+                        SpanStyle(background = if (index == active) activeColor else matchColor),
+                        start,
+                        end
+                    )
+                }
+            }
+        }
+        return TransformedText(highlighted, transformed.offsetMapping)
+    }
+
+    private companion object {
+        const val MAX_HIGHLIGHT_MATCHES = 2_000
     }
 }

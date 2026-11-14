@@ -5072,6 +5072,69 @@ object StringsE {
         AppLanguage.JAPANESE -> "折り返し"
         AppLanguage.KOREAN -> "자동 줄바꿈"
     }
+
+    fun codeEditorLineCount(count: Int): String = when (Strings.lang) {
+        AppLanguage.CHINESE -> "$count 行"
+        AppLanguage.ENGLISH -> if (count == 1) "1 line" else "$count lines"
+        AppLanguage.ARABIC -> "$count سطر"
+        AppLanguage.PORTUGUESE -> if (count == 1) "1 linha" else "$count linhas"
+        AppLanguage.SPANISH -> if (count == 1) "1 línea" else "$count líneas"
+        AppLanguage.FRENCH -> if (count == 1) "1 ligne" else "$count lignes"
+        AppLanguage.GERMAN -> if (count == 1) "1 Zeile" else "$count Zeilen"
+        AppLanguage.RUSSIAN -> "$count ${russianPlural(count, "строка", "строки", "строк")}"
+        AppLanguage.JAPANESE -> "$count 行"
+        AppLanguage.KOREAN -> "${count}줄"
+    }
+
+    fun codeEditorCharCount(count: Int): String = when (Strings.lang) {
+        AppLanguage.CHINESE -> "$count 字符"
+        AppLanguage.ENGLISH -> if (count == 1) "1 char" else "$count chars"
+        AppLanguage.ARABIC -> "$count حرف"
+        AppLanguage.PORTUGUESE -> if (count == 1) "1 caractere" else "$count caracteres"
+        AppLanguage.SPANISH -> if (count == 1) "1 carácter" else "$count caracteres"
+        AppLanguage.FRENCH -> if (count == 1) "1 caractère" else "$count caractères"
+        AppLanguage.GERMAN -> "$count Zeichen"
+        AppLanguage.RUSSIAN -> "$count ${russianPlural(count, "символ", "символа", "символов")}"
+        AppLanguage.JAPANESE -> "$count 文字"
+        AppLanguage.KOREAN -> "${count}자"
+    }
+
+    fun codeEditorPosition(line: Int, col: Int): String = when (Strings.lang) {
+        AppLanguage.CHINESE -> "行 $line，列 $col"
+        AppLanguage.ENGLISH -> "Ln $line, Col $col"
+        AppLanguage.ARABIC -> "سطر $line، عمود $col"
+        AppLanguage.PORTUGUESE -> "Ln $line, Col $col"
+        AppLanguage.SPANISH -> "Lín $line, Col $col"
+        AppLanguage.FRENCH -> "Lig $line, Col $col"
+        AppLanguage.GERMAN -> "Zl $line, Sp $col"
+        AppLanguage.RUSSIAN -> "Стр $line, кол $col"
+        AppLanguage.JAPANESE -> "$line 行 $col 列"
+        AppLanguage.KOREAN -> "${line}줄 ${col}열"
+    }
+
+    fun codeEditorSelectionCount(count: Int): String = when (Strings.lang) {
+        AppLanguage.CHINESE -> "已选 $count 字符"
+        AppLanguage.ENGLISH -> "$count selected"
+        AppLanguage.ARABIC -> "محدد $count"
+        AppLanguage.PORTUGUESE -> "$count selecionados"
+        AppLanguage.SPANISH -> "$count seleccionados"
+        AppLanguage.FRENCH -> "$count sélectionnés"
+        AppLanguage.GERMAN -> "$count ausgewählt"
+        AppLanguage.RUSSIAN -> "Выбрано: $count"
+        AppLanguage.JAPANESE -> "${count} 文字を選択"
+        AppLanguage.KOREAN -> "${count}자 선택"
+    }
+
+    private fun russianPlural(count: Int, one: String, few: String, many: String): String {
+        val mod10 = count % 10
+        val mod100 = count % 100
+        return when {
+            mod10 == 1 && mod100 != 11 -> one
+            mod10 in 2..4 && mod100 !in 12..14 -> few
+            else -> many
+        }
+    }
+
     val orWriteDirectly: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "或直接编写"
         AppLanguage.ENGLISH -> "or write directly"
