@@ -42,7 +42,8 @@ fun WtaInfoChip(
     modifier: Modifier = Modifier,
     icon: ImageVector? = null,
     containerColor: Color = MaterialTheme.colorScheme.surfaceContainerHigh,
-    contentColor: Color = MaterialTheme.colorScheme.onSurfaceVariant
+    contentColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
+    emphasized: Boolean = false
 ) {
     Surface(
         modifier = modifier,
@@ -64,7 +65,11 @@ fun WtaInfoChip(
             }
             Text(
                 text = label,
-                style = MaterialTheme.typography.labelSmall,
+                style = if (emphasized) {
+                    MaterialTheme.typography.labelSmallEmphasized
+                } else {
+                    MaterialTheme.typography.labelSmall
+                },
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )

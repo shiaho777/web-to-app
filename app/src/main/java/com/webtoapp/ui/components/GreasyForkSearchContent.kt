@@ -1,9 +1,10 @@
 package com.webtoapp.ui.components
 
 import android.widget.Toast
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -17,31 +18,41 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.CloudDownload
-import androidx.compose.material.icons.filled.OpenInNew
-import androidx.compose.material.icons.outlined.Code
+import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.CloudDownload
+import androidx.compose.material.icons.rounded.CloudOff
+import androidx.compose.material.icons.rounded.Code
+import androidx.compose.material.icons.rounded.Download
+import androidx.compose.material.icons.rounded.OpenInNew
+import androidx.compose.material.icons.rounded.SearchOff
+import androidx.compose.material.icons.rounded.Star
+import androidx.compose.material.icons.rounded.Tag
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.webtoapp.core.extension.UserScriptParser
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.logging.AppLogger
+import com.webtoapp.core.market.ChromeWebStoreSearch
 import com.webtoapp.core.market.GfBrowseCategory
 import com.webtoapp.core.market.GfSearchResult
 import com.webtoapp.core.market.GfSort
@@ -53,10 +64,20 @@ import com.webtoapp.ui.design.WtaButtonVariant
 import com.webtoapp.ui.design.WtaCard
 import com.webtoapp.ui.design.WtaCardTone
 import com.webtoapp.ui.design.WtaChip
+import com.webtoapp.ui.design.WtaIconButton
+import com.webtoapp.ui.design.WtaInfoChip
 import com.webtoapp.ui.design.WtaLoadingIndicator
+import com.webtoapp.ui.design.WtaMaterialShape
+import com.webtoapp.ui.design.WtaPopIn
+import com.webtoapp.ui.design.WtaPopOut
 import com.webtoapp.ui.design.WtaRadius
+import com.webtoapp.ui.design.WtaShapePlate
 import com.webtoapp.ui.design.WtaSpacing
+import com.webtoapp.ui.screens.InstallProgressCard
+import com.webtoapp.ui.screens.MarketLoadingHero
+import com.webtoapp.ui.screens.MarketShapeIcon
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun GreasyForkSearchContent(
     query: String,
@@ -79,20 +100,7 @@ fun GreasyForkSearchContent(
     val showBrowse = query.isBlank()
 
     if (isSearching && results.isEmpty()) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                WtaLoadingIndicator()
-                Spacer(Modifier.height(12.dp))
-                Text(
-                    text = Strings.gfSearching,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
+        MarketLoadingHero(message = Strings.gfSearching)
         return
     }
 
@@ -105,15 +113,28 @@ fun GreasyForkSearchContent(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            WtaShapePlate(
+                polygon = MaterialShapes.SoftBurst,
+                containerColor = MaterialTheme.colorScheme.errorContainer,
+                modifier = Modifier.size(64.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.CloudOff,
+                    contentDescription = null,
+                    modifier = Modifier.size(30.dp),
+                    tint = MaterialTheme.colorScheme.onErrorContainer
+                )
+            }
             Text(
                 text = Strings.gfSearchFailed,
-                style = MaterialTheme.typography.bodyLarge,
+                style = MaterialTheme.typography.titleMediumEmphasized,
                 color = MaterialTheme.colorScheme.error
             )
             Text(
                 text = errorMessage,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
             )
         }
         return
@@ -152,15 +173,22 @@ fun GreasyForkSearchContent(
                 GfSortRow(sortMode = sortMode, onSortModeChange = onSortModeChange)
             }
             item(key = "gf-section-title") {
-                Text(
-                    text = if (browseCategory == GfBrowseCategory.HOT) {
-                        Strings.gfHotTitle
-                    } else {
-                        gfBrowseCategoryLabel(browseCategory)
-                    },
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    WtaMaterialShape(
+                        polygon = MaterialShapes.Diamond,
+                        color = MaterialTheme.colorScheme.tertiaryContainer,
+                        modifier = Modifier.size(12.dp)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = if (browseCategory == GfBrowseCategory.HOT) {
+                            Strings.gfHotTitle
+                        } else {
+                            gfBrowseCategoryLabel(browseCategory)
+                        },
+                        style = MaterialTheme.typography.titleSmallEmphasized
+                    )
+                }
             }
         } else {
             item(key = "gf-sort") {
@@ -188,14 +216,34 @@ fun GreasyForkSearchContent(
 
         if (hasSearched && results.isEmpty()) {
             item(key = "gf-no-results") {
-                Text(
-                    text = Strings.gfNoResults,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    WtaShapePlate(
+                        polygon = MaterialShapes.Bun,
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        modifier = Modifier.size(64.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.SearchOff,
+                            contentDescription = null,
+                            modifier = Modifier.size(30.dp),
+                            tint = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                    }
+                    Text(
+                        text = Strings.gfNoResults,
+                        style = MaterialTheme.typography.titleMediumEmphasized,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
             }
         }
-        items(results, key = { "gf-${it.id}" }) { result ->
+        itemsIndexed(results, key = { _, result -> "gf-${result.id}" }) { index, result ->
             val id = "gf-${result.id}"
             GfResultCard(
                 result = result,
@@ -203,7 +251,9 @@ fun GreasyForkSearchContent(
                 isInstalling = installingId == id,
                 installProgress = if (installingId == id) installProgress else null,
                 onInstall = { onInstall(result) },
-                onOpenSource = { onOpenSource(result) }
+                onOpenSource = { onOpenSource(result) },
+                shapeIndex = index,
+                modifier = Modifier.animateItem()
             )
         }
     }
@@ -262,36 +312,35 @@ private fun GfResultCard(
     isInstalling: Boolean,
     installProgress: InstallProgress?,
     onInstall: () -> Unit,
-    onOpenSource: () -> Unit
+    onOpenSource: () -> Unit,
+    shapeIndex: Int,
+    modifier: Modifier = Modifier
 ) {
+    val installsLabel = if (result.totalInstalls > 0L) {
+        ChromeWebStoreSearch.formatCompactCount(result.totalInstalls.toInt())
+    } else ""
+    val scoreLabel = if (result.fanScore > 0.0) {
+        String.format(java.util.Locale.US, "%.1f", result.fanScore)
+    } else ""
     WtaCard(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .animateContentSize(),
         tone = WtaCardTone.Surface,
         contentPadding = PaddingValues(WtaSpacing.Large)
     ) {
         Row(verticalAlignment = Alignment.Top) {
-            Surface(
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.primaryContainer,
-                modifier = Modifier.size(52.dp)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        Icons.Outlined.Code,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(26.dp)
-                    )
-                }
-            }
+            MarketShapeIcon(
+                icon = Icons.Rounded.Code,
+                shapeIndex = shapeIndex,
+                plateSize = 48.dp,
+                iconSize = 24.dp
+            )
             Spacer(Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     result.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
+                    style = MaterialTheme.typography.titleMediumEmphasized,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -307,44 +356,75 @@ private fun GfResultCard(
                 }
             }
         }
-        Spacer(Modifier.height(12.dp))
-        if (isInstalling && installProgress != null) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                WtaLoadingIndicator(size = 16.dp)
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    installProgress.label,
-                    style = MaterialTheme.typography.labelMedium,
-                    modifier = Modifier.weight(1f)
-                )
-            }
-        } else {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onOpenSource, modifier = Modifier.size(36.dp)) {
-                    Icon(Icons.Default.OpenInNew, contentDescription = Strings.moduleMarketViewSource)
+        if (installsLabel.isNotBlank() || scoreLabel.isNotBlank() || result.version.isNotBlank()) {
+            Spacer(Modifier.height(10.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                if (installsLabel.isNotBlank()) {
+                    WtaInfoChip(
+                        label = installsLabel,
+                        icon = Icons.Rounded.Download,
+                        emphasized = true
+                    )
                 }
-                Spacer(Modifier.weight(1f))
-                if (isInstalled) {
-                    Icon(
-                        imageVector = Icons.Default.CheckCircle,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(20.dp)
+                if (scoreLabel.isNotBlank()) {
+                    WtaInfoChip(
+                        label = scoreLabel,
+                        icon = Icons.Rounded.Star,
+                        containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                        emphasized = true
                     )
-                    Spacer(Modifier.width(6.dp))
-                    Text(
-                        Strings.moduleMarketInstalled.replace("%s", ""),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.primary
+                }
+                if (result.version.isNotBlank()) {
+                    WtaInfoChip(
+                        label = "v${result.version}",
+                        icon = Icons.Rounded.Tag,
+                        modifier = Modifier.weight(1f, fill = false)
                     )
-                } else {
-                    WtaButton(
-                        onClick = onInstall,
-                        text = Strings.moduleMarketInstall,
-                        variant = WtaButtonVariant.Primary,
-                        size = WtaButtonSize.Small,
-                        leadingIcon = Icons.Default.CloudDownload
+                }
+            }
+        }
+        Spacer(Modifier.height(12.dp))
+        val showProgress = isInstalling && installProgress != null
+        var cachedProgress by remember { mutableStateOf<InstallProgress?>(null) }
+        LaunchedEffect(installProgress) {
+            if (installProgress != null) cachedProgress = installProgress
+        }
+        AnimatedContent(
+            targetState = showProgress,
+            transitionSpec = { WtaPopIn togetherWith WtaPopOut },
+            label = "gfInstallAction"
+        ) { progressVisible ->
+            val progress = cachedProgress
+            if (progressVisible && progress != null) {
+                InstallProgressCard(progress = progress)
+            } else {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    WtaIconButton(
+                        onClick = onOpenSource,
+                        icon = Icons.Rounded.OpenInNew,
+                        contentDescription = Strings.moduleMarketViewSource,
+                        modifier = Modifier.size(36.dp),
+                        tonal = true
                     )
+                    Spacer(Modifier.weight(1f))
+                    if (isInstalled) {
+                        WtaInfoChip(
+                            label = Strings.moduleMarketInstalled.replace("%s", "").trim(),
+                            icon = Icons.Rounded.CheckCircle,
+                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                            emphasized = true
+                        )
+                    } else {
+                        WtaButton(
+                            onClick = onInstall,
+                            text = Strings.moduleMarketInstall,
+                            variant = WtaButtonVariant.Primary,
+                            size = WtaButtonSize.Small,
+                            leadingIcon = Icons.Rounded.CloudDownload
+                        )
+                    }
                 }
             }
         }
