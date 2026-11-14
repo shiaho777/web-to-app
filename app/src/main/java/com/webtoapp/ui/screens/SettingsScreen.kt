@@ -49,7 +49,6 @@ fun SettingsScreen(
     val fontSize by themeManager.fontSizeFlow.collectAsStateWithLifecycle()
     val cornerStyle by themeManager.cornerStyleFlow.collectAsStateWithLifecycle()
     val enableAnimations by themeManager.enableAnimationsFlow.collectAsStateWithLifecycle()
-    val enableParticles by themeManager.enableParticlesFlow.collectAsStateWithLifecycle()
     val enableHaptics by themeManager.enableHapticsFlow.collectAsStateWithLifecycle()
     val animSpeed by themeManager.animationSpeedFlow.collectAsStateWithLifecycle()
 
@@ -226,15 +225,6 @@ fun SettingsScreen(
                             )
                         }
                     }
-                    WtaSectionDivider()
-                    WtaToggleRow(
-                        title = Strings.animParticles,
-                        checked = enableParticles,
-                        enabled = enableAnimations,
-                        onCheckedChange = {
-                            scope.launch { themeManager.setEnableParticles(it) }
-                        }
-                    )
                     WtaSectionDivider()
                     WtaToggleRow(
                         title = Strings.animHaptics,

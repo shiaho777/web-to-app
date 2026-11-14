@@ -56,7 +56,6 @@ import com.webtoapp.ui.screens.HostsAdBlockScreen
 import com.webtoapp.ui.screens.LinuxEnvironmentScreen
 import com.webtoapp.ui.screens.PluginEditorScreen
 import com.webtoapp.ui.screens.ModuleMarketScreen
-import com.webtoapp.ui.screens.MoreScreen
 import com.webtoapp.ui.screens.PortManagerScreen
 import com.webtoapp.ui.screens.PlayStoreScreen
 import com.webtoapp.ui.screens.RuntimeDepsScreen
@@ -67,7 +66,6 @@ import org.koin.androidx.compose.koinViewModel
 
 object Routes {
     const val HOME = "home"
-    const val MORE = "more"
 
     const val CREATE_APP = "create_app"
     const val CREATE_MEDIA_APP = "create_media_app"
