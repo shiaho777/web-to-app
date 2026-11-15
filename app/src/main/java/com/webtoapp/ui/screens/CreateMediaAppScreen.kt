@@ -2,7 +2,7 @@ package com.webtoapp.ui.screens
 
 import android.net.Uri
 import com.webtoapp.ui.design.WtaChip
-import com.webtoapp.ui.design.WtaShapePlate
+import com.webtoapp.ui.design.WtaIconPlate
 import com.webtoapp.ui.design.WtaSpacing
 import com.webtoapp.ui.design.WtaSwitch
 import com.webtoapp.ui.icons.WtaAppTypeIcon
@@ -562,8 +562,7 @@ private fun MediaHeroSection(
                 .padding(20.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                WtaShapePlate(
-                    polygon = MaterialShapes.PixelTriangle,
+                WtaIconPlate(
                     containerColor = accentColor.copy(alpha = 0.15f),
                     modifier = Modifier.size(56.dp)
                 ) {

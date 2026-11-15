@@ -14,7 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Lock
@@ -39,21 +39,10 @@ import com.webtoapp.data.model.AppType
 import com.webtoapp.ui.design.WtaAlpha
 import com.webtoapp.ui.design.WtaRadius
 import com.webtoapp.ui.design.WtaScreen
-import com.webtoapp.ui.design.WtaShapePlate
+import com.webtoapp.ui.design.WtaIconPlate
 import com.webtoapp.ui.design.WtaSpacing
 import com.webtoapp.ui.icons.WtaAppTypeIcon
 import com.webtoapp.ui.icons.WtaOfflinePackTypeIcon
-import androidx.compose.material3.MaterialShapes
-import androidx.graphics.shapes.RoundedPolygon
-
-private val galleryShapes: List<RoundedPolygon> = listOf(
-    MaterialShapes.Boom,
-    MaterialShapes.Burst,
-    MaterialShapes.SemiCircle,
-    MaterialShapes.Oval,
-    MaterialShapes.Square,
-    MaterialShapes.Arrow
-)
 
 private data class GalleryType(
     val label: String,
@@ -147,11 +136,10 @@ fun CreateTypeGalleryScreen(
                     }
                 }
             }
-            itemsIndexed(types) { index, type ->
+            items(types) { type ->
                 val locked = type.advanced && !advancedEnabled
                 GalleryTypeCard(
                     type = type,
-                    shape = galleryShapes[index % galleryShapes.size],
                     locked = locked,
                     onClick = if (locked) onOpenAbout else type.onClick
                 )
@@ -164,7 +152,6 @@ fun CreateTypeGalleryScreen(
 @Composable
 private fun GalleryTypeCard(
     type: GalleryType,
-    shape: RoundedPolygon,
     locked: Boolean,
     onClick: () -> Unit
 ) {
@@ -185,8 +172,7 @@ private fun GalleryTypeCard(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
             ) {
-                WtaShapePlate(
-                    polygon = shape,
+                WtaIconPlate(
                     containerColor = colors.secondaryContainer,
                     modifier = Modifier.size(64.dp)
                 ) {
