@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -77,7 +76,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.graphics.shapes.RoundedPolygon
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.market.GfBrowseCategory
 import com.webtoapp.core.market.GfSearchResult
@@ -103,14 +101,13 @@ import com.webtoapp.ui.design.WtaCard
 import com.webtoapp.ui.design.WtaCardTone
 import com.webtoapp.ui.design.WtaChip
 import com.webtoapp.ui.design.WtaIconButton
+import com.webtoapp.ui.design.WtaIconPlate
 import com.webtoapp.ui.design.WtaInfoChip
 import com.webtoapp.ui.design.WtaLoadingIndicator
-import com.webtoapp.ui.design.WtaMaterialShape
 import com.webtoapp.ui.design.WtaMorphingShape
 import com.webtoapp.ui.design.WtaPopIn
 import com.webtoapp.ui.design.WtaPopOut
 import com.webtoapp.ui.design.WtaRadius
-import com.webtoapp.ui.design.WtaShapePlate
 import com.webtoapp.ui.design.WtaSpacing
 import com.webtoapp.ui.design.WtaTab
 import com.webtoapp.ui.design.WtaTabRow
@@ -306,8 +303,7 @@ fun ModuleMarketScreen(
             TopAppBar(
                 title = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        WtaShapePlate(
-                            polygon = MaterialShapes.Puffy,
+                        WtaIconPlate(
                             containerColor = MaterialTheme.colorScheme.primaryContainer,
                             modifier = Modifier.size(30.dp)
                         ) {
@@ -452,8 +448,7 @@ fun ModuleMarketScreen(
                                     modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    WtaShapePlate(
-                                        polygon = MaterialShapes.SoftBurst,
+                                    WtaIconPlate(
                                         containerColor = MaterialTheme.colorScheme.secondaryContainer,
                                         modifier = Modifier.size(30.dp)
                                     ) {
@@ -654,8 +649,7 @@ private fun CwsSearchContent(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            WtaShapePlate(
-                polygon = MaterialShapes.SoftBurst,
+            WtaIconPlate(
                 containerColor = MaterialTheme.colorScheme.errorContainer,
                 modifier = Modifier.size(64.dp)
             ) {
@@ -712,22 +706,14 @@ private fun CwsSearchContent(
                 }
             }
             item(key = "cws-section-title") {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    WtaMaterialShape(
-                        polygon = MaterialShapes.Diamond,
-                        color = MaterialTheme.colorScheme.tertiaryContainer,
-                        modifier = Modifier.size(12.dp)
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Text(
-                        text = if (browseCategory == BrowserExtensionStore.Category.FEATURED) {
-                            Strings.cwsFeaturedTitle
-                        } else {
-                            cwsCategoryLabel(browseCategory)
-                        },
-                        style = MaterialTheme.typography.titleSmallEmphasized
-                    )
-                }
+                Text(
+                    text = if (browseCategory == BrowserExtensionStore.Category.FEATURED) {
+                        Strings.cwsFeaturedTitle
+                    } else {
+                        cwsCategoryLabel(browseCategory)
+                    },
+                    style = MaterialTheme.typography.titleSmallEmphasized
+                )
             }
             itemsIndexed(catalogViews, key = { _, view -> view.entry.id }) { index, view ->
                 CwsResultCard(
@@ -756,8 +742,7 @@ private fun CwsSearchContent(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            WtaShapePlate(
-                polygon = MaterialShapes.Bun,
+            WtaIconPlate(
                 containerColor = MaterialTheme.colorScheme.secondaryContainer,
                 modifier = Modifier.size(64.dp)
             ) {
@@ -1107,7 +1092,6 @@ internal fun InstallProgressCard(progress: InstallProgress, modifier: Modifier =
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun ModuleIcon(
     iconUrl: String?,
@@ -1151,9 +1135,8 @@ private fun ModuleIcon(
             )
         }
     } else {
-        WtaShapePlate(
-            polygon = marketShapePalette[shapeIndex % marketShapePalette.size],
-            containerColor = container,
+        WtaIconPlate(
+            toneIndex = shapeIndex,
             modifier = Modifier.size(size)
         ) {
             Text(
@@ -1232,24 +1215,6 @@ internal fun MarketLoadingHero(message: String, modifier: Modifier = Modifier) {
                     color = colors.primaryContainer,
                     modifier = Modifier.size(132.dp)
                 )
-                WtaMaterialShape(
-                    polygon = MaterialShapes.ClamShell,
-                    color = colors.tertiaryContainer,
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .offset(x = (-6).dp, y = 10.dp)
-                        .size(34.dp),
-                    rotationDegrees = 16f
-                )
-                WtaMaterialShape(
-                    polygon = MaterialShapes.Diamond,
-                    color = colors.secondaryContainer,
-                    modifier = Modifier
-                        .align(Alignment.BottomStart)
-                        .offset(x = 8.dp, y = (-12).dp)
-                        .size(26.dp),
-                    rotationDegrees = -14f
-                )
                 WtaLoadingIndicator(size = 40.dp)
             }
             Spacer(Modifier.height(18.dp))
@@ -1262,7 +1227,6 @@ internal fun MarketLoadingHero(message: String, modifier: Modifier = Modifier) {
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun EmptyState(searchQuery: String, onOpenContributing: () -> Unit) {
     val colors = MaterialTheme.colorScheme
@@ -1271,39 +1235,15 @@ private fun EmptyState(searchQuery: String, onOpenContributing: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.padding(24.dp)
         ) {
-            Box(
-                modifier = Modifier.size(120.dp),
-                contentAlignment = Alignment.Center
+            WtaIconPlate(
+                containerColor = colors.secondaryContainer,
+                modifier = Modifier.size(92.dp)
             ) {
-                WtaShapePlate(
-                    polygon = MaterialShapes.Bun,
-                    containerColor = colors.secondaryContainer,
-                    modifier = Modifier.size(92.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.Storefront,
-                        contentDescription = null,
-                        modifier = Modifier.size(40.dp),
-                        tint = colors.onSecondaryContainer
-                    )
-                }
-                WtaMaterialShape(
-                    polygon = MaterialShapes.Flower,
-                    color = colors.tertiaryContainer,
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .offset(x = (-4).dp, y = 6.dp)
-                        .size(28.dp),
-                    rotationDegrees = 18f
-                )
-                WtaMaterialShape(
-                    polygon = MaterialShapes.PuffyDiamond,
-                    color = colors.primaryContainer,
-                    modifier = Modifier
-                        .align(Alignment.BottomStart)
-                        .offset(x = 6.dp, y = (-8).dp)
-                        .size(22.dp),
-                    rotationDegrees = -12f
+                Icon(
+                    imageVector = Icons.Rounded.Storefront,
+                    contentDescription = null,
+                    modifier = Modifier.size(40.dp),
+                    tint = colors.onSecondaryContainer
                 )
             }
             Spacer(Modifier.height(18.dp))
@@ -1327,7 +1267,6 @@ private fun EmptyState(searchQuery: String, onOpenContributing: () -> Unit) {
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun ErrorState(message: String, onRetry: () -> Unit) {
     val colors = MaterialTheme.colorScheme
@@ -1341,8 +1280,7 @@ private fun ErrorState(message: String, onRetry: () -> Unit) {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                WtaShapePlate(
-                    polygon = MaterialShapes.SoftBurst,
+                WtaIconPlate(
                     containerColor = colors.errorContainer,
                     modifier = Modifier.size(64.dp)
                 ) {
@@ -1373,7 +1311,6 @@ private fun ErrorState(message: String, onRetry: () -> Unit) {
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 internal fun MarketShapeIcon(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
@@ -1383,21 +1320,14 @@ internal fun MarketShapeIcon(
     iconSize: Dp = 22.dp
 ) {
     val colors = MaterialTheme.colorScheme
-    val tone = shapeIndex % 3
-    val container = when (tone) {
-        0 -> colors.primaryContainer
-        1 -> colors.secondaryContainer
-        else -> colors.tertiaryContainer
-    }
-    val onContainer = when (tone) {
+    val onContainer = when (shapeIndex % 3) {
         0 -> colors.onPrimaryContainer
         1 -> colors.onSecondaryContainer
         else -> colors.onTertiaryContainer
     }
-    WtaShapePlate(
-        polygon = marketShapePalette[shapeIndex % marketShapePalette.size],
-        containerColor = container,
-        modifier = modifier.size(plateSize)
+    WtaIconPlate(
+        modifier = modifier.size(plateSize),
+        toneIndex = shapeIndex
     ) {
         Icon(
             imageVector = icon,
@@ -1407,19 +1337,6 @@ internal fun MarketShapeIcon(
         )
     }
 }
-
-private val marketShapePalette: List<RoundedPolygon>
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
-    get() = listOf(
-        MaterialShapes.Puffy,
-        MaterialShapes.Flower,
-        MaterialShapes.ClamShell,
-        MaterialShapes.Bun,
-        MaterialShapes.SoftBurst,
-        MaterialShapes.Clover8Leaf,
-        MaterialShapes.Diamond,
-        MaterialShapes.PuffyDiamond
-    )
 
 private fun cwsCategoryLabel(category: BrowserExtensionStore.Category): String {
     return when (category) {
