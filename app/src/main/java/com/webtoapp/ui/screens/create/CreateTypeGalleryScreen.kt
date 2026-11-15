@@ -101,12 +101,10 @@ fun CreateTypeGalleryScreen(
         GalleryType(Strings.createMediaApp, Strings.typeDescMedia, true, { WtaAppTypeIcon(AppType.VIDEO, Modifier.size(34.dp)) }, onCreateMediaApp)
     )
 
-    WtaScreen(title = Strings.createTypeGalleryTitle, onBack = onBack) { padding ->
+    WtaScreen(title = Strings.createTypeGalleryTitle, onBack = onBack) { _ ->
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding),
+            modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(
                 horizontal = WtaSpacing.ScreenHorizontal,
                 vertical = WtaSpacing.ScreenVertical
