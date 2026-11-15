@@ -4,7 +4,9 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -18,6 +20,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Clear
@@ -33,7 +36,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.material3.SnackbarHostState
@@ -73,15 +75,13 @@ import com.webtoapp.ui.design.WtaCardTone
 import com.webtoapp.ui.design.WtaChip
 import com.webtoapp.ui.design.WtaColors
 import com.webtoapp.ui.design.WtaFullEmptyState
-import com.webtoapp.ui.design.WtaMaterialShape
+import com.webtoapp.ui.design.WtaIconPlate
 import com.webtoapp.ui.design.WtaScreen
-import com.webtoapp.ui.design.WtaShapePlate
 import com.webtoapp.ui.design.WtaTab
 import com.webtoapp.ui.design.WtaTabRow
 import com.webtoapp.ui.design.WtaTextField
 import com.webtoapp.ui.design.wtaTabEnterTransition
 import com.webtoapp.ui.design.wtaTabExitTransition
-import androidx.graphics.shapes.RoundedPolygon
 import kotlinx.coroutines.launch
 
 private enum class StatsSortMode {
@@ -346,21 +346,18 @@ private fun OverallStatsCard(stats: OverallStats) {
             ) {
                 StatItem(
                     icon = Icons.Rounded.TouchApp,
-                    shape = MaterialShapes.Sunny,
                     value = stats.totalLaunchCount.toString(),
                     label = Strings.statsTotalLaunches,
                     color = MaterialTheme.colorScheme.primary
                 )
                 StatItem(
                     icon = Icons.Rounded.Timer,
-                    shape = MaterialShapes.Gem,
                     value = stats.formattedTotalUsage,
                     label = Strings.statsTotalUsage,
                     color = MaterialTheme.colorScheme.tertiary
                 )
                 StatItem(
                     icon = Icons.Rounded.Apps,
-                    shape = MaterialShapes.Clover4Leaf,
                     value = stats.activeAppCount.toString(),
                     label = Strings.statsActiveApps,
                     color = MaterialTheme.colorScheme.secondary
@@ -391,14 +388,12 @@ private fun OverallStatsCard(stats: OverallStats) {
 @Composable
 private fun StatItem(
     icon: ImageVector,
-    shape: RoundedPolygon,
     value: String,
     label: String,
     color: Color
 ) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        WtaShapePlate(
-            polygon = shape,
+        WtaIconPlate(
             containerColor = color.copy(alpha = 0.16f),
             modifier = Modifier.size(52.dp)
         ) {
@@ -459,13 +454,7 @@ private fun UsageRankCard(
                         2 -> MaterialTheme.colorScheme.secondary
                         else -> MaterialTheme.colorScheme.tertiary
                     }
-                    val rankShape = when (rank) {
-                        1 -> MaterialShapes.Cookie9Sided
-                        2 -> MaterialShapes.Sunny
-                        else -> MaterialShapes.Gem
-                    }
-                    WtaShapePlate(
-                        polygon = rankShape,
+                    WtaIconPlate(
                         containerColor = rankColor.copy(alpha = 0.18f),
                         modifier = Modifier.size(28.dp)
                     ) {
@@ -659,10 +648,11 @@ private fun HealthOverviewCard(
 @Composable
 private fun HealthStatItem(count: Int, label: String, color: Color) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        WtaMaterialShape(
-            polygon = MaterialShapes.Cookie6Sided,
-            color = color,
-            modifier = Modifier.size(14.dp)
+        Box(
+            modifier = Modifier
+                .size(14.dp)
+                .clip(CircleShape)
+                .background(color)
         )
         Spacer(Modifier.height(4.dp))
         Text(

@@ -43,7 +43,6 @@ import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.TextFields
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -95,7 +94,7 @@ import com.webtoapp.ui.design.WtaInfoChip
 import com.webtoapp.ui.design.WtaPopIn
 import com.webtoapp.ui.design.WtaPopOut
 import com.webtoapp.ui.design.WtaRadius
-import com.webtoapp.ui.design.WtaShapePlate
+import com.webtoapp.ui.design.WtaIconPlate
 import com.webtoapp.ui.design.WtaShrinkOut
 import com.webtoapp.ui.design.WtaSize
 import com.webtoapp.ui.design.WtaSpacing
@@ -255,8 +254,7 @@ fun WtaCodeEditorDialog(
                                 icon = Icons.Rounded.Close,
                                 contentDescription = Strings.close
                             )
-                            WtaShapePlate(
-                                polygon = MaterialShapes.Slanted,
+                            WtaIconPlate(
                                 containerColor = colors.primaryContainer,
                                 modifier = Modifier.size(30.dp)
                             ) {

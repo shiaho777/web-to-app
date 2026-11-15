@@ -534,8 +534,7 @@ private fun PluginRow(
         modifier = modifier
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            WtaShapePlate(
-                polygon = MaterialShapes.SoftBoom,
+            WtaIconPlate(
                 containerColor = MaterialTheme.colorScheme.secondaryContainer,
                 modifier = Modifier.size(44.dp)
             ) {
