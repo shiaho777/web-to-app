@@ -43,6 +43,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -194,8 +195,14 @@ fun PlayStoreScreen(
     }
 
     fun requestExport(app: WebApp) {
-        val current = report ?: PlayPolicyChecker.check(app)
-        report = current
+        val current = report
+        if (current == null) {
+            scope.launch {
+                report = withContext(Dispatchers.Default) { PlayPolicyChecker.check(app) }
+                requestExport(app)
+            }
+            return
+        }
         when {
             current.blockerCount > 0 -> {
                 policyExpanded = true
@@ -234,7 +241,7 @@ fun PlayStoreScreen(
             title = Strings.playStoreExportWarningTitle,
             text = String.format(
                 Strings.playStoreExportWarningBody,
-                report?.warningCount ?: pendingExportApp?.let { PlayPolicyChecker.check(it).warningCount } ?: 0
+                report?.warningCount ?: 0
             ),
             confirmButton = {
                 TextButton(
@@ -619,7 +626,10 @@ private fun PolicyAdviceCard(
     report: PlayPolicyChecker.Report?,
     webApp: WebApp
 ) {
-    val rpt = report ?: PlayPolicyChecker.check(webApp)
+    val rptState by produceState<PlayPolicyChecker.Report?>(report, webApp) {
+        value = report ?: withContext(Dispatchers.Default) { PlayPolicyChecker.check(webApp) }
+    }
+    val rpt = rptState ?: return
     WtaCard(tone = WtaCardTone.Surface) {
         Column(modifier = Modifier.padding(16.dp)) {
             Surface(
