@@ -291,19 +291,11 @@ fun AgentScreen(
                         contentDescription = Strings.agentSaveAsApp
                     )
                 }
-                var menuOpen by remember { mutableStateOf(false) }
                 WtaIconButton(
-                    onClick = { menuOpen = true },
-                    icon = Icons.Outlined.MoreVert,
-                    contentDescription = Strings.more
+                    onClick = onOpenAiSettings,
+                    icon = Icons.Outlined.Settings,
+                    contentDescription = Strings.aiSettings
                 )
-                DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                    DropdownMenuItem(
-                        text = { Text(Strings.aiSettings) },
-                        leadingIcon = { Icon(Icons.Outlined.Settings, contentDescription = null) },
-                        onClick = { menuOpen = false; onOpenAiSettings() }
-                    )
-                }
             }
         ) { _ ->
             Column(
