@@ -30,22 +30,9 @@ import com.webtoapp.ui.design.WtaAlertDialog
 import com.webtoapp.ui.design.WtaFadeIn
 import com.webtoapp.ui.design.WtaFadeOut
 import com.webtoapp.ui.design.WtaRadius
-import com.webtoapp.ui.design.WtaShapePlate
+import com.webtoapp.ui.design.WtaIconPlate
 import com.webtoapp.util.isRunningOnTv
 import kotlinx.coroutines.launch
-
-private val languageBadgeShapes = listOf(
-    MaterialShapes.Sunny,
-    MaterialShapes.Cookie4Sided,
-    MaterialShapes.Clover4Leaf,
-    MaterialShapes.Gem,
-    MaterialShapes.Fan,
-    MaterialShapes.Flower,
-    MaterialShapes.Pentagon,
-    MaterialShapes.Heart,
-    MaterialShapes.Cookie6Sided,
-    MaterialShapes.VerySunny
-)
 
 private fun AppLanguage.monogram(): String = when (this) {
     AppLanguage.CHINESE -> "中"
@@ -214,23 +201,16 @@ private fun LanguageOption(
                 .padding(horizontal = 14.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            WtaShapePlate(
-                polygon = languageBadgeShapes[shapeIndex % languageBadgeShapes.size],
-                containerColor = colors.surface,
-                modifier = Modifier.size(46.dp)
+            WtaIconPlate(
+                containerColor = badgeContainer,
+                modifier = Modifier.size(38.dp)
             ) {
-                WtaShapePlate(
-                    polygon = languageBadgeShapes[shapeIndex % languageBadgeShapes.size],
-                    containerColor = badgeContainer,
-                    modifier = Modifier.size(38.dp)
-                ) {
-                    Text(
-                        text = language.monogram(),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = badgeOn
-                    )
-                }
+                Text(
+                    text = language.monogram(),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = badgeOn
+                )
             }
             Spacer(modifier = Modifier.width(14.dp))
             Column(modifier = Modifier.weight(1f)) {
@@ -261,10 +241,12 @@ private fun LanguageOption(
                     exit = WtaFadeOut +
                         androidx.compose.animation.scaleOut(targetScale = 0.5f)
                 ) {
-                    WtaShapePlate(
-                        polygon = MaterialShapes.Cookie4Sided,
-                        containerColor = colors.primary,
-                        modifier = Modifier.size(28.dp)
+                    Box(
+                        modifier = Modifier
+                            .size(28.dp)
+                            .clip(CircleShape)
+                            .background(colors.primary),
+                        contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             Icons.Rounded.Check,

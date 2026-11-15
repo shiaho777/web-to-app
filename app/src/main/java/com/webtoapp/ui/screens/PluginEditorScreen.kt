@@ -34,7 +34,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -78,7 +77,7 @@ import com.webtoapp.ui.design.WtaInfoChip
 import com.webtoapp.ui.design.WtaRadius
 import com.webtoapp.ui.design.WtaSegmentedRow
 import com.webtoapp.ui.design.WtaSettingCard
-import com.webtoapp.ui.design.WtaShapePlate
+import com.webtoapp.ui.design.WtaIconPlate
 import com.webtoapp.ui.design.WtaSpacing
 import com.webtoapp.ui.design.WtaToggleRow
 import com.webtoapp.ui.theme.LocalShowDescriptions
@@ -210,8 +209,7 @@ fun PluginEditorScreen(
             TopAppBar(
                 title = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        WtaShapePlate(
-                            polygon = MaterialShapes.PixelCircle,
+                        WtaIconPlate(
                             containerColor = MaterialTheme.colorScheme.primaryContainer,
                             modifier = Modifier.size(30.dp)
                         ) {
@@ -490,8 +488,7 @@ private fun CodeCard(content: String, onEdit: () -> Unit) {
         contentPadding = PaddingValues(WtaSpacing.Large)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            WtaShapePlate(
-                polygon = MaterialShapes.PixelCircle,
+            WtaIconPlate(
                 containerColor = colors.primaryContainer,
                 modifier = Modifier.size(40.dp)
             ) {
