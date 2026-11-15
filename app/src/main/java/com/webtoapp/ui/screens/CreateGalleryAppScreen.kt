@@ -40,6 +40,7 @@ import com.webtoapp.core.i18n.Strings
 import com.webtoapp.ui.theme.LocalShowDescriptions
 import com.webtoapp.ui.theme.ifDescriptionsShown
 import com.webtoapp.data.model.*
+import com.webtoapp.ui.icons.WtaAppTypeIcon
 import com.webtoapp.ui.components.*
 import com.webtoapp.ui.screens.create.WtaCreateFlowScaffold
 import com.webtoapp.ui.screens.create.WtaCreateFlowSection
@@ -1665,7 +1666,12 @@ fun CreateGalleryAppScreenV2(
                                     contentScale = ContentScale.Crop
                                 )
                             } else {
-                                Icon(Icons.Outlined.PhotoLibrary, null, modifier = Modifier.size(32.dp), tint = MaterialTheme.colorScheme.onPrimaryContainer)
+                                WtaAppTypeIcon(
+                                    type = AppType.GALLERY,
+                                    modifier = Modifier.size(32.dp),
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    accent = MaterialTheme.colorScheme.primary
+                                )
                             }
                         }
                         PremiumTextField(
