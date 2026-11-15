@@ -17225,4 +17225,43 @@ object StringsE {
         AppLanguage.KOREAN -> "내보내기"
     }
 
+    val editorSearchPlaceholder: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "搜索设置…"
+        AppLanguage.ENGLISH -> "Search settings…"
+        AppLanguage.ARABIC -> "البحث في الإعدادات…"
+        AppLanguage.PORTUGUESE -> "Pesquisar configurações…"
+        AppLanguage.SPANISH -> "Buscar ajustes…"
+        AppLanguage.FRENCH -> "Rechercher des paramètres…"
+        AppLanguage.GERMAN -> "Einstellungen durchsuchen…"
+        AppLanguage.RUSSIAN -> "Поиск настроек…"
+        AppLanguage.JAPANESE -> "設定を検索…"
+        AppLanguage.KOREAN -> "설정 검색…"
+    }
+
+    val editorSearchNoResults: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "未找到匹配的设置"
+        AppLanguage.ENGLISH -> "No matching settings"
+        AppLanguage.ARABIC -> "لا توجد إعدادات مطابقة"
+        AppLanguage.PORTUGUESE -> "Nenhuma configuração correspondente"
+        AppLanguage.SPANISH -> "No hay ajustes coincidentes"
+        AppLanguage.FRENCH -> "Aucun paramètre correspondant"
+        AppLanguage.GERMAN -> "Keine passenden Einstellungen"
+        AppLanguage.RUSSIAN -> "Подходящие настройки не найдены"
+        AppLanguage.JAPANESE -> "一致する設定が見つかりません"
+        AppLanguage.KOREAN -> "일치하는 설정이 없습니다"
+    }
+
+    val editorSearchNoResultsHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "换个关键词试试"
+        AppLanguage.ENGLISH -> "Try a different keyword"
+        AppLanguage.ARABIC -> "جرّب كلمة مفتاحية أخرى"
+        AppLanguage.PORTUGUESE -> "Tente outra palavra-chave"
+        AppLanguage.SPANISH -> "Prueba con otra palabra clave"
+        AppLanguage.FRENCH -> "Essayez un autre mot-clé"
+        AppLanguage.GERMAN -> "Versuchen Sie ein anderes Stichwort"
+        AppLanguage.RUSSIAN -> "Попробуйте другое ключевое слово"
+        AppLanguage.JAPANESE -> "別のキーワードをお試しください"
+        AppLanguage.KOREAN -> "다른 키워드를 시도해 보세요"
+    }
+
 }

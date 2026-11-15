@@ -5313,6 +5313,9 @@ object Strings {
     val editorSectionContent: String get() = StringsE.editorSectionContent
     val editorSectionExtensions: String get() = StringsE.editorSectionExtensions
     val editorSectionExport: String get() = StringsE.editorSectionExport
+    val editorSearchPlaceholder: String get() = StringsE.editorSearchPlaceholder
+    val editorSearchNoResults: String get() = StringsE.editorSearchNoResults
+    val editorSearchNoResultsHint: String get() = StringsE.editorSearchNoResultsHint
     val pluginAdd: String get() = StringsE.pluginAdd
     val pluginSelectTitle: String get() = StringsE.pluginSelectTitle
     fun pluginSelectedCount(count: Int): String = StringsE.pluginSelectedCount(count)
