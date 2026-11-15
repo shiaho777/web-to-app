@@ -5312,7 +5312,6 @@ object Strings {
     val editorSectionBrowsing: String get() = StringsE.editorSectionBrowsing
     val editorSectionContent: String get() = StringsE.editorSectionContent
     val editorSectionExtensions: String get() = StringsE.editorSectionExtensions
-    val editorSectionMonetization: String get() = StringsE.editorSectionMonetization
     val editorSectionExport: String get() = StringsE.editorSectionExport
     val pluginAdd: String get() = StringsE.pluginAdd
     val pluginSelectTitle: String get() = StringsE.pluginSelectTitle

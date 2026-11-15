@@ -119,8 +119,7 @@ fun CreateAppScreen(
         EditorSection(Strings.editorSectionBrowsing, 5),
         EditorSection(Strings.editorSectionContent, 12),
         EditorSection(Strings.editorSectionExtensions, 17),
-        EditorSection(Strings.editorSectionMonetization, 24),
-        EditorSection(Strings.editorSectionExport, 27)
+        EditorSection(Strings.editorSectionExport, 26)
     )
 
     var showDiscardDialog by remember { mutableStateOf(false) }
@@ -543,8 +542,6 @@ fun CreateAppScreen(
                     onConfigChange = { viewModel.updateEditState { copy(webViewConfig = it) } }
                 )
             }
-
-            item { EditorSectionHeader(Strings.editorSectionMonetization) }
 
             item {
                 ActivationCodeCard(

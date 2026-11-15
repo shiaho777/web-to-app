@@ -17212,19 +17212,6 @@ object StringsE {
         AppLanguage.KOREAN -> "확장 및 네트워크"
     }
 
-    val editorSectionMonetization: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "变现"
-        AppLanguage.ENGLISH -> "Monetization"
-        AppLanguage.ARABIC -> "تحقيق الدخل"
-        AppLanguage.PORTUGUESE -> "Monetização"
-        AppLanguage.SPANISH -> "Monetización"
-        AppLanguage.FRENCH -> "Monétisation"
-        AppLanguage.GERMAN -> "Monetarisierung"
-        AppLanguage.RUSSIAN -> "Монетизация"
-        AppLanguage.JAPANESE -> "収益化"
-        AppLanguage.KOREAN -> "수익화"
-    }
-
     val editorSectionExport: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "导出"
         AppLanguage.ENGLISH -> "Export"
