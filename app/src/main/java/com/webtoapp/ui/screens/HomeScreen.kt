@@ -46,7 +46,6 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.painterResource
-import androidx.graphics.shapes.RoundedPolygon
 import com.webtoapp.R
 import com.webtoapp.core.host.HostRuntimePrefs
 import coil.ImageLoader
@@ -72,9 +71,8 @@ import com.webtoapp.ui.components.MoveToCategoryDialog
 import com.webtoapp.ui.design.WtaAlertDialog
 import com.webtoapp.ui.icons.WtaAppTypeIcon
 import com.webtoapp.ui.design.WtaLoadingIndicator
-import com.webtoapp.ui.design.WtaMaterialShape
+import com.webtoapp.ui.design.WtaIconPlate
 import com.webtoapp.ui.design.WtaMorphingShape
-import com.webtoapp.ui.design.WtaShapePlate
 import com.webtoapp.ui.design.WtaPolygonShape
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialShapes
@@ -200,8 +198,7 @@ fun HomeScreen(
         title = Strings.myApps,
         titleContent = {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                WtaShapePlate(
-                    polygon = MaterialShapes.Cookie7Sided,
+                WtaIconPlate(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     modifier = Modifier.size(30.dp)
                 ) {
@@ -311,82 +308,82 @@ fun HomeScreen(
                             DropdownMenuItem(
                                 text = { Text(Strings.menuAgent) },
                                 onClick = { showMoreMenu = false; onOpenAgent() },
-                                leadingIcon = { MoreMenuIcon(Icons.Rounded.SmartToy, MaterialShapes.Sunny, 0) }
+                                leadingIcon = { MoreMenuIcon(Icons.Rounded.SmartToy, 0) }
                             )
                             DropdownMenuItem(
                                 text = { Text(Strings.menuAiSettings) },
                                 onClick = { showMoreMenu = false; onOpenAiSettings() },
-                                leadingIcon = { MoreMenuIcon(Icons.Rounded.AutoAwesome, MaterialShapes.Cookie4Sided, 2) }
+                                leadingIcon = { MoreMenuIcon(Icons.Rounded.AutoAwesome, 2) }
                             )
                             HorizontalDivider()
                             DropdownMenuItem(
                                 text = { Text(Strings.pluginsManageTitle) },
                                 onClick = { showMoreMenu = false; onOpenPlugins() },
-                                leadingIcon = { MoreMenuIcon(Icons.Rounded.Extension, MaterialShapes.Clover4Leaf, 1) }
+                                leadingIcon = { MoreMenuIcon(Icons.Rounded.Extension, 1) }
                             )
                             DropdownMenuItem(
                                 text = { Text(Strings.menuAppModifier) },
                                 onClick = { showMoreMenu = false; onOpenAppModifier() },
-                                leadingIcon = { MoreMenuIcon(Icons.Rounded.AppShortcut, MaterialShapes.Gem, 0) }
+                                leadingIcon = { MoreMenuIcon(Icons.Rounded.AppShortcut, 0) }
                             )
                             if (advancedFeatures) {
                                 DropdownMenuItem(
                                     text = { Text(Strings.menuLinuxEnvironment) },
                                     onClick = { showMoreMenu = false; onOpenLinuxEnvironment() },
-                                    leadingIcon = { MoreMenuIcon(Icons.Rounded.Terminal, MaterialShapes.Fan, 1) }
+                                    leadingIcon = { MoreMenuIcon(Icons.Rounded.Terminal, 1) }
                                 )
                                 DropdownMenuItem(
                                     text = { Text(Strings.menuRuntimeDeps) },
                                     onClick = { showMoreMenu = false; onOpenRuntimeDeps() },
-                                    leadingIcon = { MoreMenuIcon(Icons.Rounded.Memory, MaterialShapes.Cookie6Sided, 2) }
+                                    leadingIcon = { MoreMenuIcon(Icons.Rounded.Memory, 2) }
                                 )
                                 DropdownMenuItem(
                                     text = { Text(Strings.menuPortManager) },
                                     onClick = { showMoreMenu = false; onOpenPortManager() },
-                                    leadingIcon = { MoreMenuIcon(Icons.Rounded.Router, MaterialShapes.Pentagon, 0) }
+                                    leadingIcon = { MoreMenuIcon(Icons.Rounded.Router, 0) }
                                 )
                             }
                             HorizontalDivider()
                             DropdownMenuItem(
                                 text = { Text(Strings.menuBrowserKernel) },
                                 onClick = { showMoreMenu = false; onOpenBrowserKernel() },
-                                leadingIcon = { MoreMenuIcon(Icons.Rounded.Public, MaterialShapes.Cookie9Sided, 1) }
+                                leadingIcon = { MoreMenuIcon(Icons.Rounded.Public, 1) }
                             )
                             DropdownMenuItem(
                                 text = { Text(Strings.menuHostsAdBlock) },
                                 onClick = { showMoreMenu = false; onOpenHostsAdBlock() },
-                                leadingIcon = { MoreMenuIcon(Icons.Rounded.Shield, MaterialShapes.Arch, 2) }
+                                leadingIcon = { MoreMenuIcon(Icons.Rounded.Shield, 2) }
                             )
                             HorizontalDivider()
                             DropdownMenuItem(
                                 text = { Text(Strings.menuStats) },
                                 onClick = { showMoreMenu = false; onOpenStats() },
-                                leadingIcon = { MoreMenuIcon(Icons.Rounded.Analytics, MaterialShapes.Sunny, 0) }
+                                leadingIcon = { MoreMenuIcon(Icons.Rounded.Analytics, 0) }
                             )
                             DropdownMenuItem(
                                 text = { Text(Strings.menuGooglePlay) },
                                 onClick = { showMoreMenu = false; onOpenPlayStore() },
-                                leadingIcon = { MoreMenuIcon(Icons.Rounded.Shop, MaterialShapes.Triangle, 1) }
+                                leadingIcon = { MoreMenuIcon(Icons.Rounded.Shop, 1) }
                             )
                             DropdownMenuItem(
                                 text = { Text(Strings.menuFileManager) },
                                 onClick = { showMoreMenu = false; onOpenFileManager() },
-                                leadingIcon = { MoreMenuIcon(Icons.Rounded.Folder, MaterialShapes.Pill, 2) }
+                                leadingIcon = { MoreMenuIcon(Icons.Rounded.Folder, 2) }
                             )
                             DropdownMenuItem(
                                 text = { Text(Strings.dataBackupTitle) },
                                 onClick = { showMoreMenu = false; showDataBackupDialog = true },
-                                leadingIcon = { MoreMenuIcon(Icons.Rounded.Backup, MaterialShapes.Ghostish, 0) }
+                                leadingIcon = { MoreMenuIcon(Icons.Rounded.Backup, 0) }
                             )
                             DropdownMenuItem(
                                 text = { Text(Strings.uiConfig) },
                                 onClick = { showMoreMenu = false; onOpenSettings() },
-                                leadingIcon = { MoreMenuIcon(Icons.Rounded.Palette, MaterialShapes.VerySunny, 1) }
+                                leadingIcon = { MoreMenuIcon(Icons.Rounded.Palette, 1) }
                             )
                             DropdownMenuItem(
                                 text = { Text(Strings.menuAbout) },
                                 onClick = { showMoreMenu = false; onOpenAbout() },
-                                leadingIcon = { MoreMenuIcon(Icons.Rounded.Info, MaterialShapes.Clover4Leaf, 2) }
+                                leadingIcon = { MoreMenuIcon(Icons.Rounded.Info, 2) }
                             )
                         }
                     }
@@ -1238,8 +1235,7 @@ fun AppCard(
                         )
                     }
                 } else {
-                    WtaShapePlate(
-                        polygon = MaterialShapes.Cookie6Sided,
+                    WtaIconPlate(
                         containerColor = colors.secondaryContainer,
                         modifier = Modifier.size(52.dp)
                     ) {
@@ -1557,8 +1553,7 @@ fun AppGridTile(
                         )
                     }
                 } else {
-                    WtaShapePlate(
-                        polygon = MaterialShapes.Sunny,
+                    WtaIconPlate(
                         containerColor = colors.secondaryContainer,
                         modifier = Modifier.size(56.dp)
                     ) {
@@ -1731,68 +1726,14 @@ fun EmptyState(
                 modifier = Modifier.size(56.dp),
                 tint = colors.onSecondaryContainer
             )
-            WtaMaterialShape(
-                polygon = MaterialShapes.Clover4Leaf,
-                color = colors.tertiaryContainer,
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .offset(x = (-14).dp, y = 22.dp)
-                    .size(44.dp),
-                rotationDegrees = 18f
-            )
-            WtaMaterialShape(
-                polygon = MaterialShapes.Gem,
-                color = colors.primaryContainer,
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .offset(x = 18.dp, y = (-26).dp)
-                    .size(36.dp),
-                rotationDegrees = -12f
-            )
-            WtaMaterialShape(
-                polygon = MaterialShapes.Pill,
-                color = colors.surfaceContainerHigh,
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .offset(x = 26.dp, y = 40.dp)
-                    .size(width = 34.dp, height = 18.dp),
-                rotationDegrees = -28f
-            )
-            WtaMaterialShape(
-                polygon = MaterialShapes.Triangle,
-                color = colors.tertiaryContainer.copy(alpha = 0.7f),
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .offset(x = (-24).dp, y = (-40).dp)
-                    .size(22.dp),
-                rotationDegrees = 24f
-            )
         }
         Spacer(modifier = Modifier.height(24.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            WtaMaterialShape(
-                polygon = MaterialShapes.Sunny,
-                color = colors.tertiaryContainer,
-                modifier = Modifier
-                    .size(22.dp)
-                    .offset(y = (-1).dp)
-            )
-            Spacer(modifier = Modifier.width(12.dp))
-            Text(
-                text = Strings.msgNoApps,
-                style = MaterialTheme.typography.titleLargeEmphasized,
-                color = colors.onSurface,
-                textAlign = TextAlign.Center
-            )
-            Spacer(modifier = Modifier.width(12.dp))
-            WtaMaterialShape(
-                polygon = MaterialShapes.Sunny,
-                color = colors.tertiaryContainer,
-                modifier = Modifier
-                    .size(22.dp)
-                    .offset(y = (-1).dp)
-            )
-        }
+        Text(
+            text = Strings.msgNoApps,
+            style = MaterialTheme.typography.titleLargeEmphasized,
+            color = colors.onSurface,
+            textAlign = TextAlign.Center
+        )
     }
 }
 
@@ -1802,30 +1743,17 @@ private val CreateFabShape = WtaPolygonShape(MaterialShapes.Cookie12Sided)
 @Composable
 private fun MoreMenuIcon(
     icon: ImageVector,
-    polygon: RoundedPolygon,
     tone: Int
 ) {
     val colors = MaterialTheme.colorScheme
-    val container: Color
-    val onContainer: Color
-    when (tone % 3) {
-        0 -> {
-            container = colors.primaryContainer
-            onContainer = colors.onPrimaryContainer
-        }
-        1 -> {
-            container = colors.secondaryContainer
-            onContainer = colors.onSecondaryContainer
-        }
-        else -> {
-            container = colors.tertiaryContainer
-            onContainer = colors.onTertiaryContainer
-        }
+    val onContainer = when (tone % 3) {
+        0 -> colors.onPrimaryContainer
+        1 -> colors.onSecondaryContainer
+        else -> colors.onTertiaryContainer
     }
-    WtaShapePlate(
-        polygon = polygon,
-        containerColor = container,
-        modifier = Modifier.size(36.dp)
+    WtaIconPlate(
+        modifier = Modifier.size(36.dp),
+        toneIndex = tone
     ) {
         Icon(
             imageVector = icon,
