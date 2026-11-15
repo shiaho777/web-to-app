@@ -112,11 +112,9 @@ import com.webtoapp.ui.design.WtaAlertDialog
 import com.webtoapp.ui.design.WtaCard
 import com.webtoapp.ui.design.WtaCardTone
 import com.webtoapp.ui.design.WtaLoadingIndicator
-import com.webtoapp.ui.design.WtaMaterialShape
 import com.webtoapp.ui.design.WtaMorphingShape
 import com.webtoapp.ui.design.WtaMotion
 import com.webtoapp.ui.design.WtaSettingRow
-import com.webtoapp.ui.design.WtaShapePlate
 import com.webtoapp.ui.design.WtaSwitch
 import com.webtoapp.ui.design.WtaRadius
 import com.webtoapp.ui.design.WtaScreen
@@ -131,7 +129,6 @@ import com.webtoapp.ui.theme.LocalShowDescriptions
 import com.webtoapp.ui.theme.ifDescriptionsShown
 import com.webtoapp.ui.theme.ThemeManager
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.graphics.shapes.RoundedPolygon
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -213,7 +210,7 @@ private fun DescriptionsToggleCard() {
         contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)
     ) {
         WtaSettingRow(
-            iconContent = { AboutShapeIcon(icon = Icons.Rounded.Subtitles, shapeIndex = 6, plateSize = 40.dp, iconSize = 20.dp) },
+            iconContent = { AboutTonalIcon(icon = Icons.Rounded.Subtitles, shapeIndex = 6, plateSize = 40.dp, iconSize = 20.dp) },
             showIconPlate = false,
             title = Strings.showDescriptions,
             subtitle = Strings.showDescriptionsHint.ifDescriptionsShown(),
@@ -243,7 +240,7 @@ private fun AdvancedFeaturesCard() {
         contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)
     ) {
         WtaSettingRow(
-            iconContent = { AboutShapeIcon(icon = Icons.Rounded.Tune, shapeIndex = 3, plateSize = 40.dp, iconSize = 20.dp) },
+            iconContent = { AboutTonalIcon(icon = Icons.Rounded.Tune, shapeIndex = 3, plateSize = 40.dp, iconSize = 20.dp) },
             showIconPlate = false,
             title = Strings.advancedFeatures,
             subtitle = Strings.advancedFeaturesDesc.ifDescriptionsShown(),
@@ -277,7 +274,7 @@ private fun SeparateTasksCard() {
         contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)
     ) {
         WtaSettingRow(
-            iconContent = { AboutShapeIcon(icon = Icons.Rounded.FilterNone, shapeIndex = 1, plateSize = 40.dp, iconSize = 20.dp) },
+            iconContent = { AboutTonalIcon(icon = Icons.Rounded.FilterNone, shapeIndex = 1, plateSize = 40.dp, iconSize = 20.dp) },
             showIconPlate = false,
             title = Strings.webAppSeparateTasks,
             subtitle = Strings.webAppSeparateTasksDesc.ifDescriptionsShown(),
@@ -314,7 +311,7 @@ private fun LocalMcpCard() {
     ) {
         Column {
             WtaSettingRow(
-                iconContent = { AboutShapeIcon(icon = Icons.Rounded.Hub, shapeIndex = 2, plateSize = 40.dp, iconSize = 20.dp) },
+                iconContent = { AboutTonalIcon(icon = Icons.Rounded.Hub, shapeIndex = 2, plateSize = 40.dp, iconSize = 20.dp) },
                 showIconPlate = false,
                 title = Strings.localMcp,
                 subtitle = Strings.localMcpDesc.ifDescriptionsShown(),
@@ -544,22 +541,6 @@ private fun AuthorHeroCard(
                     endPolygon = MaterialShapes.Sunny,
                     color = MaterialTheme.colorScheme.primaryContainer,
                     modifier = Modifier.matchParentSize()
-                )
-                WtaMaterialShape(
-                    polygon = MaterialShapes.Gem,
-                    color = MaterialTheme.colorScheme.tertiaryContainer,
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .size(22.dp),
-                    rotationDegrees = 18f
-                )
-                WtaMaterialShape(
-                    polygon = MaterialShapes.Clover4Leaf,
-                    color = MaterialTheme.colorScheme.secondaryContainer,
-                    modifier = Modifier
-                        .align(Alignment.BottomStart)
-                        .size(18.dp),
-                    rotationDegrees = -12f
                 )
                 Image(
                     painter = painterResource(id = R.drawable.about_avatar),
@@ -856,10 +837,12 @@ private fun GitHubRepoCard(onClick: () -> Unit) {
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            WtaShapePlate(
-                polygon = MaterialShapes.Cookie6Sided,
-                containerColor = badgeColor,
-                modifier = Modifier.size(50.dp)
+            Box(
+                modifier = Modifier
+                    .size(50.dp)
+                    .clip(RoundedCornerShape(WtaRadius.IconPlate))
+                    .background(badgeColor),
+                contentAlignment = Alignment.Center
             ) {
                 Icon(
                     painter = painterResource(R.drawable.ic_github_mark),
@@ -892,10 +875,12 @@ private fun GitHubRepoCard(onClick: () -> Unit) {
                 }
             }
             Spacer(Modifier.width(8.dp))
-            WtaShapePlate(
-                polygon = MaterialShapes.Gem,
-                containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                modifier = Modifier.size(32.dp)
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .clip(RoundedCornerShape(WtaRadius.IconPlate))
+                    .background(MaterialTheme.colorScheme.tertiaryContainer),
+                contentAlignment = Alignment.Center
             ) {
                 Icon(
                     Icons.Rounded.NorthEast,
@@ -924,7 +909,7 @@ private fun ContactTile(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            AboutShapeIcon(
+            AboutTonalIcon(
                 icon = entry.icon,
                 shapeIndex = entry.shapeIndex,
                 plateSize = 38.dp,
@@ -991,10 +976,11 @@ private fun LegalSection(title: String, content: String, shapeIndex: Int) {
     }
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            WtaMaterialShape(
-                polygon = aboutShapePalette[shapeIndex % aboutShapePalette.size],
-                color = markerColor,
-                modifier = Modifier.size(11.dp)
+            Box(
+                modifier = Modifier
+                    .size(8.dp)
+                    .clip(CircleShape)
+                    .background(markerColor)
             )
             Spacer(Modifier.width(7.dp))
             Text(
@@ -1229,7 +1215,7 @@ private fun VersionHistorySheet(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                AboutShapeIcon(
+                AboutTonalIcon(
                     icon = Icons.Rounded.History,
                     shapeIndex = 7,
                     plateSize = 34.dp,
@@ -1667,59 +1653,17 @@ private fun MadeWithLoveFooter() {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(14.dp)
-        ) {
-            WtaMaterialShape(
-                polygon = MaterialShapes.Sunny,
-                color = colors.secondaryContainer,
-                modifier = Modifier.size(16.dp),
-                rotationDegrees = 12f
-            )
-            WtaMaterialShape(
-                polygon = MaterialShapes.Gem,
-                color = colors.tertiaryContainer,
-                modifier = Modifier.size(12.dp),
-                rotationDegrees = -10f
-            )
-            Box(
-                modifier = Modifier.size(56.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                WtaMorphingShape(
-                    startPolygon = MaterialShapes.Heart,
-                    endPolygon = MaterialShapes.Cookie9Sided,
-                    color = colors.primaryContainer,
-                    modifier = Modifier.matchParentSize(),
-                    morphDurationMillis = 3200,
-                    rotationDurationMillis = 30000
-                )
-                Icon(
-                    imageVector = Icons.Rounded.Favorite,
-                    contentDescription = null,
-                    modifier = Modifier
-                        .size(24.dp)
-                        .graphicsLayer {
-                            scaleX = heartScale
-                            scaleY = heartScale
-                        },
-                    tint = colors.primary
-                )
-            }
-            WtaMaterialShape(
-                polygon = MaterialShapes.Gem,
-                color = colors.tertiaryContainer,
-                modifier = Modifier.size(12.dp),
-                rotationDegrees = 14f
-            )
-            WtaMaterialShape(
-                polygon = MaterialShapes.Sunny,
-                color = colors.secondaryContainer,
-                modifier = Modifier.size(16.dp),
-                rotationDegrees = -12f
-            )
-        }
+        Icon(
+            imageVector = Icons.Rounded.Favorite,
+            contentDescription = null,
+            modifier = Modifier
+                .size(28.dp)
+                .graphicsLayer {
+                    scaleX = heartScale
+                    scaleY = heartScale
+                },
+            tint = colors.primary
+        )
         Text(
             text = Strings.madeWithLove,
             style = MaterialTheme.typography.labelLargeEmphasized,
@@ -1729,24 +1673,8 @@ private fun MadeWithLoveFooter() {
     }
 }
 
-private val aboutShapePalette: List<RoundedPolygon>
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
-    get() = listOf(
-        MaterialShapes.Sunny,
-        MaterialShapes.Cookie4Sided,
-        MaterialShapes.Clover4Leaf,
-        MaterialShapes.Gem,
-        MaterialShapes.Fan,
-        MaterialShapes.Pentagon,
-        MaterialShapes.Cookie6Sided,
-        MaterialShapes.Arch,
-        MaterialShapes.VerySunny,
-        MaterialShapes.Ghostish
-    )
-
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun AboutShapeIcon(
+private fun AboutTonalIcon(
     icon: ImageVector,
     shapeIndex: Int,
     modifier: Modifier = Modifier,
@@ -1765,10 +1693,12 @@ private fun AboutShapeIcon(
         1 -> colors.onSecondaryContainer
         else -> colors.onTertiaryContainer
     }
-    WtaShapePlate(
-        polygon = aboutShapePalette[shapeIndex % aboutShapePalette.size],
-        containerColor = container,
-        modifier = modifier.size(plateSize)
+    Box(
+        modifier = modifier
+            .size(plateSize)
+            .clip(RoundedCornerShape(WtaRadius.IconPlate))
+            .background(container),
+        contentAlignment = Alignment.Center
     ) {
         Icon(
             imageVector = icon,
@@ -2124,7 +2054,7 @@ private fun RepoCard(
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                AboutShapeIcon(
+                AboutTonalIcon(
                     icon = Icons.Rounded.Book,
                     shapeIndex = shapeIndex,
                     plateSize = 36.dp,
