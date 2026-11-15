@@ -27,6 +27,8 @@ import androidx.compose.ui.window.Dialog
 import coil.compose.AsyncImage
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.ui.design.WtaAlertDialog
+import com.webtoapp.ui.design.WtaIdleFloat
+import com.webtoapp.ui.design.WtaKawaiiBox
 import com.webtoapp.util.IconLibraryItem
 import com.webtoapp.util.IconLibraryStorage
 import kotlinx.coroutines.launch
@@ -202,12 +204,9 @@ fun IconLibraryDialog(
                         contentAlignment = Alignment.Center
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(
-                                Icons.Outlined.Collections,
-                                null,
-                                modifier = Modifier.size(48.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                            )
+                            WtaIdleFloat {
+                                WtaKawaiiBox(modifier = Modifier.size(72.dp))
+                            }
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
                                 Strings.iconLibraryEmpty,
