@@ -2,8 +2,10 @@ package com.webtoapp.ui.screens
 
 import android.net.Uri
 import com.webtoapp.ui.design.WtaChip
+import com.webtoapp.ui.design.WtaShapePlate
 import com.webtoapp.ui.design.WtaSpacing
 import com.webtoapp.ui.design.WtaSwitch
+import com.webtoapp.ui.icons.WtaAppTypeIcon
 import android.provider.OpenableColumns
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -560,24 +562,23 @@ private fun MediaHeroSection(
                 .padding(20.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Surface(
-                    modifier = Modifier.size(56.dp),
-                    shape = RoundedCornerShape(14.dp),
-                    color = accentColor.copy(alpha = 0.15f)
+                WtaShapePlate(
+                    polygon = MaterialShapes.PixelTriangle,
+                    containerColor = accentColor.copy(alpha = 0.15f),
+                    modifier = Modifier.size(56.dp)
                 ) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Icon(
-                            if (mediaType == AppType.IMAGE) Icons.Outlined.Image else Icons.Outlined.Videocam,
-                            null, modifier = Modifier.size(32.dp), tint = accentColor
-                        )
-                    }
+                    WtaAppTypeIcon(
+                        type = mediaType,
+                        modifier = Modifier.size(32.dp),
+                        color = accentColor,
+                        accent = accentColor
+                    )
                 }
                 Spacer(modifier = Modifier.width(16.dp))
                 Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
                     Text(
                         text = if (mediaType == AppType.IMAGE) Strings.mediaImageInfo else Strings.mediaVideoInfo,
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.SemiBold,
+                        style = MaterialTheme.typography.titleLargeEmphasized,
                         color = accentColor
                     )
                     Text(
