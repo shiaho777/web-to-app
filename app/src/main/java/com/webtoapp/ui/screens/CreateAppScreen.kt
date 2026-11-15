@@ -316,8 +316,8 @@ fun CreateAppScreen(
                 ),
             verticalArrangement = Arrangement.spacedBy(WtaSpacing.SectionGap)
         ) {
-            item {
-                if (uiState is UiState.Error) {
+            if (uiState is UiState.Error) {
+                item {
                     WtaStatusBanner(
                         message = (uiState as UiState.Error).message,
                         tone = WtaStatusTone.Error
@@ -325,10 +325,12 @@ fun CreateAppScreen(
                 }
             }
 
-            item { if (q.isEmpty()) EditorSectionHeader(Strings.editorSectionBasic) }
+            if (q.isEmpty()) {
+                item { EditorSectionHeader(Strings.editorSectionBasic) }
+            }
 
-            item {
-                if (cardVisible(basicInfoKeywords)) {
+            if (cardVisible(basicInfoKeywords)) {
+                item {
                     BasicInfoCard(
                         editState = editState,
                         onNameChange = { viewModel.updateEditState { copy(name = it) } },
@@ -346,8 +348,8 @@ fun CreateAppScreen(
                 }
             }
 
-            item {
-                if (editState.appType == AppType.WEB && cardVisible(pwaKeywords)) {
+            if (editState.appType == AppType.WEB && cardVisible(pwaKeywords)) {
+                item {
                     PwaAnalysisSection(
                         viewModel = viewModel,
                         editState = editState
@@ -355,10 +357,12 @@ fun CreateAppScreen(
                 }
             }
 
-            item { if (q.isEmpty()) EditorSectionHeader(Strings.editorSectionBrowsing) }
+            if (q.isEmpty()) {
+                item { EditorSectionHeader(Strings.editorSectionBrowsing) }
+            }
 
-            item {
-                if (cardVisible(browserToolbarKeywords)) {
+            if (cardVisible(browserToolbarKeywords)) {
+                item {
                     BrowserToolbarCard(
                         enabled = editState.webViewConfig.browserToolbarEnabled,
                         webViewConfig = editState.webViewConfig,
@@ -376,8 +380,8 @@ fun CreateAppScreen(
                 }
             }
 
-            item {
-                if (cardVisible(fullscreenKeywords)) {
+            if (cardVisible(fullscreenKeywords)) {
+                item {
                     FullscreenModeCard(
                         enabled = editState.webViewConfig.hideToolbar,
                         showStatusBar = editState.webViewConfig.showStatusBarInFullscreen,
@@ -411,8 +415,8 @@ fun CreateAppScreen(
                 }
             }
 
-            item {
-                if (cardVisible(landscapeKeywords)) {
+            if (cardVisible(landscapeKeywords)) {
+                item {
                     LandscapeModeCard(
                         enabled = editState.webViewConfig.landscapeMode,
                         onEnabledChange = { enabled ->
@@ -441,8 +445,8 @@ fun CreateAppScreen(
                 }
             }
 
-            item {
-                if (cardVisible(keepScreenOnKeywords)) {
+            if (cardVisible(keepScreenOnKeywords)) {
+                item {
                     KeepScreenOnCard(
                         screenAwakeMode = editState.webViewConfig.screenAwakeMode,
                         onScreenAwakeModeChange = { mode ->
@@ -469,8 +473,8 @@ fun CreateAppScreen(
                 }
             }
 
-            item {
-                if (cardVisible(floatingWindowKeywords)) {
+            if (cardVisible(floatingWindowKeywords)) {
+                item {
                     FloatingWindowConfigCard(
                         config = editState.webViewConfig.floatingWindowConfig,
                         onConfigChange = { newConfig ->
@@ -482,8 +486,8 @@ fun CreateAppScreen(
                 }
             }
 
-            item {
-                if (cardVisible(longPressMenuKeywords)) {
+            if (cardVisible(longPressMenuKeywords)) {
+                item {
                     LongPressMenuCard(
                         style = editState.webViewConfig.longPressMenuStyle,
                         hapticOnActionOnly = editState.webViewConfig.longPressHapticOnActionOnly,
@@ -506,10 +510,12 @@ fun CreateAppScreen(
                 }
             }
 
-            item { if (q.isEmpty()) EditorSectionHeader(Strings.editorSectionContent) }
+            if (q.isEmpty()) {
+                item { EditorSectionHeader(Strings.editorSectionContent) }
+            }
 
-            item {
-                if (cardVisible(splashKeywords)) {
+            if (cardVisible(splashKeywords)) {
+                item {
                     SplashScreenCard(
                         editState = editState,
                         onEnabledChange = { viewModel.updateEditState { copy(splashEnabled = it) } },
@@ -559,8 +565,8 @@ fun CreateAppScreen(
                 }
             }
 
-            item {
-                if (cardVisible(bgmKeywords)) {
+            if (cardVisible(bgmKeywords)) {
+                item {
                     BgmCard(
                         enabled = editState.bgmEnabled,
                         config = editState.bgmConfig,
@@ -570,8 +576,8 @@ fun CreateAppScreen(
                 }
             }
 
-            item {
-                if (cardVisible(announcementKeywords)) {
+            if (cardVisible(announcementKeywords)) {
+                item {
                     AnnouncementCard(
                         editState = editState,
                         onEnabledChange = { viewModel.updateEditState { copy(announcementEnabled = it) } },
@@ -580,8 +586,8 @@ fun CreateAppScreen(
                 }
             }
 
-            item {
-                if (cardVisible(translateKeywords)) {
+            if (cardVisible(translateKeywords)) {
+                item {
                     TranslateCard(
                         enabled = editState.translateEnabled,
                         config = editState.translateConfig,
@@ -591,10 +597,12 @@ fun CreateAppScreen(
                 }
             }
 
-            item { if (q.isEmpty()) EditorSectionHeader(Strings.editorSectionExtensions) }
+            if (q.isEmpty()) {
+                item { EditorSectionHeader(Strings.editorSectionExtensions) }
+            }
 
-            item {
-                if (cardVisible(pluginKeywords)) {
+            if (cardVisible(pluginKeywords)) {
+                item {
                     com.webtoapp.ui.components.PluginPickerCard(
                         enabled = editState.pluginsEnabled,
                         selectedPluginIds = editState.pluginIds,
@@ -604,8 +612,8 @@ fun CreateAppScreen(
                 }
             }
 
-            item {
-                if (cardVisible(adBlockKeywords)) {
+            if (cardVisible(adBlockKeywords)) {
+                item {
                     AdBlockCard(
                         editState = editState,
                         onEnabledChange = { viewModel.updateEditState { copy(adBlockEnabled = it) } },
@@ -615,8 +623,8 @@ fun CreateAppScreen(
                 }
             }
 
-            item {
-                if (cardVisible(activationKeywords)) {
+            if (cardVisible(activationKeywords)) {
+                item {
                     ActivationCodeCard(
                         enabled = editState.activationEnabled,
                         activationCodes = editState.activationCodeList,
@@ -632,8 +640,8 @@ fun CreateAppScreen(
                 }
             }
 
-            item {
-                if (cardVisible(dnsKeywords)) {
+            if (cardVisible(dnsKeywords)) {
+                item {
                     com.webtoapp.ui.components.DnsConfigCard(
                         dnsMode = editState.webViewConfig.dnsMode,
                         dnsConfig = editState.webViewConfig.dnsConfig,
@@ -652,8 +660,8 @@ fun CreateAppScreen(
                 }
             }
 
-            item {
-                if (cardVisible(deviceDisguiseKeywords)) {
+            if (cardVisible(deviceDisguiseKeywords)) {
+                item {
                     DeviceDisguiseCard(
                         config = editState.deviceDisguiseConfig,
                         onConfigChange = { newConfig ->
@@ -665,8 +673,8 @@ fun CreateAppScreen(
                 }
             }
 
-            item {
-                if (cardVisible(autoStartKeywords)) {
+            if (cardVisible(autoStartKeywords)) {
+                item {
                     AutoStartCard(
                         config = editState.autoStartConfig,
                         onConfigChange = { viewModel.updateEditState { copy(autoStartConfig = it) } }
@@ -674,8 +682,8 @@ fun CreateAppScreen(
                 }
             }
 
-            item {
-                if (cardVisible(browserAdvancedKeywords)) {
+            if (cardVisible(browserAdvancedKeywords)) {
+                item {
                     BrowserAdvancedConfigCard(
                         config = editState.webViewConfig,
                         onConfigChange = { viewModel.updateEditState { copy(webViewConfig = it) } }
@@ -683,8 +691,8 @@ fun CreateAppScreen(
                 }
             }
 
-            item {
-                if (cardVisible(specialSettingsKeywords)) {
+            if (cardVisible(specialSettingsKeywords)) {
+                item {
                     SpecialSettingsCard(
                         config = editState.webViewConfig,
                         onConfigChange = { viewModel.updateEditState { copy(webViewConfig = it) } },
@@ -695,10 +703,12 @@ fun CreateAppScreen(
                 }
             }
 
-            item { if (q.isEmpty()) EditorSectionHeader(Strings.editorSectionExport) }
+            if (q.isEmpty()) {
+                item { EditorSectionHeader(Strings.editorSectionExport) }
+            }
 
-            item {
-                if (cardVisible(exportKeywords)) {
+            if (cardVisible(exportKeywords)) {
+                item {
                     ExportAndPermissionDrawer(
                         exportConfig = editState.apkExportConfig,
                         onExportConfigChange = { viewModel.updateEditState { copy(apkExportConfig = it) } },
@@ -726,8 +736,8 @@ fun CreateAppScreen(
                 }
             }
 
-            item {
-                if (q.isNotEmpty() && !hasResults) {
+            if (q.isNotEmpty() && !hasResults) {
+                item {
                     WtaFullEmptyState(
                         title = Strings.editorSearchNoResults,
                         message = Strings.editorSearchNoResultsHint,
