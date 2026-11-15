@@ -61,7 +61,7 @@ class ChromePluginRowsTest {
         assertThat(chrome.single().manifestJson).contains("Dark Reader")
         assertThat(chrome.single().matches.map { it.pattern })
             .containsExactly("https://example.com/*")
-        assertThat(store.enabledIds.value).contains("e_cs_0")
+        assertThat(store.effectiveIds(true, emptyList())).contains("e_cs_0")
     }
 
     @Test
@@ -111,7 +111,7 @@ class ChromePluginRowsTest {
         assertThat(chrome.single().backgroundScript).isEqualTo("bg.js")
         assertThat(chrome.single().optionsPagePath).isEqualTo("options.html")
         assertThat(chrome.single().manifestJson).contains("default_popup")
-        assertThat(store.enabledIds.value).containsExactly("ext_cs_0")
+        assertThat(store.effectiveIds(true, emptyList())).containsExactly("ext_cs_0")
         assertThat(store.getPlugin("ext_cs_2")?.id).isEqualTo("ext_cs_0")
         assertThat(store.getPluginsByIds(listOf("ext_cs_1", "ext_cs_0")).map { it.id })
             .containsExactly("ext_cs_0")
@@ -137,8 +137,8 @@ class ChromePluginRowsTest {
         assertThat(store.plugins.value.filter { it.kind == PluginKind.CHROME_EXTENSION }).isEmpty()
         assertThat(store.getPlugin("ext_cs_0")).isNull()
         assertThat(extDir.exists()).isFalse()
-        assertThat(store.enabledIds.value).doesNotContain("ext_cs_0")
-        assertThat(store.enabledIds.value).doesNotContain("ext_cs_1")
+        assertThat(store.effectiveIds(true, emptyList())).doesNotContain("ext_cs_0")
+        assertThat(store.effectiveIds(true, emptyList())).doesNotContain("ext_cs_1")
     }
 
     @Test
@@ -148,15 +148,14 @@ class ChromePluginRowsTest {
             chromePlugin("ext_cs_1", "Dark Reader [2]", popup = "popup.html"),
             Plugin(id = "script", name = "Script", kind = PluginKind.USERSCRIPT)
         )
-        val collapsed = collapseChromePlugins(rows, enabledIds = listOf("ext_cs_1", "script"))
+        val collapsed = collapseChromePlugins(rows)
         assertThat(collapsed.plugins.map { it.id }).containsExactly("ext_cs_0", "script").inOrder()
         assertThat(collapsed.plugins.first().name).isEqualTo("Dark Reader")
         assertThat(collapsed.plugins.first().popupPath).isEqualTo("popup.html")
-        assertThat(collapsed.enabledIds).containsExactly("ext_cs_0", "script").inOrder()
         assertThat(collapsed.aliases).containsEntry("ext_cs_1", "ext_cs_0")
         assertThat(collapsed.changed).isTrue()
         val again = collapseChromePlugins(
-            collapsed.plugins, collapsed.enabledIds, collapsed.aliases
+            collapsed.plugins, collapsed.aliases
         )
         assertThat(again.changed).isFalse()
     }

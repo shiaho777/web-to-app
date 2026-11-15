@@ -5318,7 +5318,10 @@ object Strings {
     val pluginNameRequired: String get() = StringsE.pluginNameRequired
     val pluginAttachEmpty: String get() = StringsE.pluginAttachEmpty
     val pluginAttachHint: String get() = StringsE.pluginAttachHint
-    val pluginGlobalEnable: String get() = StringsE.pluginGlobalEnable
+    val pluginHideBuiltIn: String get() = StringsE.pluginHideBuiltIn
+    val pluginHideBuiltInConfirmTitle: String get() = StringsE.pluginHideBuiltInConfirmTitle
+    val pluginExcludeMatches: String get() = StringsE.pluginExcludeMatches
+    val pluginExcludeMatchesHint: String get() = StringsE.pluginExcludeMatchesHint
     val pluginAdd: String get() = StringsE.pluginAdd
     val pluginSelectTitle: String get() = StringsE.pluginSelectTitle
     fun pluginSelectedCount(count: Int): String = StringsE.pluginSelectedCount(count)

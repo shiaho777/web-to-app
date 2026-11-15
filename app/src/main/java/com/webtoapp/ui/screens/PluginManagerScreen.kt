@@ -13,22 +13,17 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -46,11 +41,6 @@ import com.webtoapp.ui.plugin.kindLabel
 import com.webtoapp.ui.plugin.pluginIcon
 import kotlinx.coroutines.launch
 
-/**
- * Unified plugin management: HCJ packages, userscripts and Chrome extensions
- * in one list. Kind is a badge, not a tab — the user picked this app for
- * plugins, not for taxonomies.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PluginManagerScreen(
@@ -66,7 +56,6 @@ fun PluginManagerScreen(
 
     val installed by store.plugins.collectAsStateWithLifecycle()
     val builtIns by store.builtInPlugins.collectAsStateWithLifecycle()
-    val enabledIds by store.enabledIds.collectAsStateWithLifecycle()
     val hiddenBuiltIns by store.hiddenBuiltIns.collectAsStateWithLifecycle()
     val isLoading by store.isLoading.collectAsStateWithLifecycle()
 
@@ -106,7 +95,6 @@ fun PluginManagerScreen(
                 }
             }
             else -> {
-                // .hcj / .zip / unknown: HCJ package first, Chrome zip as fallback.
                 when (val r = importer.importHcj(uri)) {
                     is PluginImporter.ImportResult.Success ->
                         Toast.makeText(context, Strings.pluginImportSuccess(r.plugin.name), Toast.LENGTH_SHORT).show()
@@ -135,199 +123,180 @@ fun PluginManagerScreen(
         }
     }
 
-    Scaffold(
-        containerColor = Color.Transparent,
-        topBar = {
-            TopAppBar(
-                title = { Text(Strings.pluginsManageTitle) },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = Strings.back)
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { picker.launch("*/*") }) {
-                        Icon(Icons.Outlined.FileOpen, contentDescription = Strings.pluginImport)
-                    }
-                    IconButton(onClick = { onNavigateToEditor(null) }) {
-                        Icon(Icons.Outlined.Add, contentDescription = Strings.pluginNew)
-                    }
-                    IconButton(onClick = { onNavigateToMarket() }) {
-                        Icon(Icons.Outlined.Storefront, contentDescription = Strings.communityExtStoreTitle)
-                    }
-                    if (hiddenBuiltIns.isNotEmpty()) {
-                        IconButton(onClick = { scope.launch { store.restoreBuiltIns() } }) {
-                            Icon(Icons.Outlined.Restore, contentDescription = Strings.pluginRestoreBuiltIns)
-                        }
-                    }
+    WtaScreen(
+        title = Strings.pluginsManageTitle,
+        onBack = onNavigateBack,
+        actions = {
+            IconButton(onClick = { picker.launch("*/*") }) {
+                Icon(Icons.Outlined.FileOpen, contentDescription = Strings.pluginImport)
+            }
+            IconButton(onClick = { onNavigateToEditor(null) }) {
+                Icon(Icons.Outlined.Add, contentDescription = Strings.pluginNew)
+            }
+            IconButton(onClick = { onNavigateToMarket() }) {
+                Icon(Icons.Outlined.Storefront, contentDescription = Strings.communityExtStoreTitle)
+            }
+            if (hiddenBuiltIns.isNotEmpty()) {
+                IconButton(onClick = { scope.launch { store.restoreBuiltIns() } }) {
+                    Icon(Icons.Outlined.Restore, contentDescription = Strings.pluginRestoreBuiltIns)
                 }
-            )
+            }
         }
     ) { padding ->
-        WtaBackground(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            Column(modifier = Modifier.fillMaxSize()) {
-                PremiumTextField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    placeholder = { Text(Strings.searchPlugins) },
-                    leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
-                    trailingIcon = {
-                        if (searchQuery.isNotBlank()) {
-                            IconButton(onClick = { searchQuery = "" }) {
-                                Icon(Icons.Outlined.Close, contentDescription = Strings.clear)
-                            }
-                        }
-                    },
-                    singleLine = true,
-                    shape = RoundedCornerShape(WtaRadius.Button)
-                )
-
-                val shownInstalled = installed.filter(::matches)
-                val shownBuiltIns = builtIns.filter(::matches)
-
-                // Working copies while a drag is in flight. The store list is
-                // what we draw once the drag (and its reorder write) is done.
-                // Membership changes — a delete — apply immediately either way,
-                // so a row cannot linger until the screen is reopened.
-                var installedWorking by remember { mutableStateOf(shownInstalled) }
-                var builtinWorking by remember { mutableStateOf(shownBuiltIns) }
-                var installedOrderHold by remember { mutableStateOf<List<String>?>(null) }
-                var builtinOrderHold by remember { mutableStateOf<List<String>?>(null) }
-                val dragState = remember { PluginDragState() }
-                val installedDragging = dragState.itemKey?.startsWith("i:") == true
-                val builtinDragging = dragState.itemKey?.startsWith("b:") == true
-                installedOrderHold = releasePluginOrderHold(
-                    installedOrderHold, shownInstalled.map { it.id }, installedDragging
-                )
-                builtinOrderHold = releasePluginOrderHold(
-                    builtinOrderHold, shownBuiltIns.map { it.id }, builtinDragging
-                )
-                val syncedInstalled = syncPluginWorkingCopy(
-                    installedWorking,
-                    shownInstalled,
-                    holdWorkingOrder = installedDragging || installedOrderHold != null
-                )
-                val syncedBuiltIns = syncPluginWorkingCopy(
-                    builtinWorking,
-                    shownBuiltIns,
-                    holdWorkingOrder = builtinDragging || builtinOrderHold != null
-                )
-                if (installedWorking != syncedInstalled) installedWorking = syncedInstalled
-                if (builtinWorking != syncedBuiltIns) builtinWorking = syncedBuiltIns
-                val spacingPx = with(LocalDensity.current) { 10.dp.toPx() }
-                val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
-                val latestInstalled = rememberUpdatedState(installedWorking)
-                val latestBuiltIns = rememberUpdatedState(builtinWorking)
-
-                fun persistOrder(builtIn: Boolean) {
-                    val ids = (if (builtIn) latestBuiltIns else latestInstalled).value.map { it.id }
-                    if (builtIn) builtinOrderHold = ids else installedOrderHold = ids
-                    scope.launch {
-                        try {
-                            store.reorder(ids, builtIn)
-                        } catch (_: Exception) {
-                            if (builtIn) builtinOrderHold = null else installedOrderHold = null
+            PremiumTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                placeholder = { Text(Strings.searchPlugins) },
+                leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
+                trailingIcon = {
+                    if (searchQuery.isNotBlank()) {
+                        IconButton(onClick = { searchQuery = "" }) {
+                            Icon(Icons.Outlined.Close, contentDescription = Strings.clear)
                         }
                     }
-                }
+                },
+                singleLine = true,
+                shape = RoundedCornerShape(WtaRadius.Button)
+            )
 
-                if (!isLoading && shownInstalled.isEmpty() && shownBuiltIns.isEmpty()) {
-                    WtaFullEmptyState(
-                        icon = Icons.Outlined.Extension,
-                        title = Strings.pluginsEmpty,
-                        message = Strings.pluginsEmptyHint,
-                        modifier = Modifier.weight(1f)
-                    )
-                } else {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        if (installedWorking.isNotEmpty()) {
-                            item(key = "hdr_installed") {
-                                PluginSectionHeader(Strings.pluginSectionInstalled)
-                            }
-                            items(installedWorking, key = { "i:" + it.id }) { plugin ->
-                                val itemKey = "i:" + plugin.id
-                                PluginRow(
-                                    plugin = plugin,
-                                    isDragging = dragState.itemKey == itemKey,
-                                    modifier = Modifier
-                                        .animateItem()
-                                        .pluginReorderable(
-                                            itemKey = itemKey,
-                                            itemId = plugin.id,
-                                            dragState = dragState,
-                                            spacingPx = spacingPx,
-                                            haptic = haptic,
-                                            currentList = { latestInstalled.value },
-                                            onReorder = { installedWorking = it },
-                                            onPersist = { persistOrder(builtIn = false) },
-                                            onCancel = { installedOrderHold = null }
-                                        ),
-                                    enabled = plugin.id in enabledIds,
-                                    onEnabledChange = { on ->
-                                        scope.launch { store.setEnabled(plugin.id, on) }
-                                    },
-                                    onEdit = if (plugin.isScriptPlugin) {
-                                        { onNavigateToEditor(plugin.id) }
-                                    } else null,
-                                    onStyle = { styleTarget = plugin },
-                                    onExport = if (plugin.isScriptPlugin) {
-                                        {
-                                            scope.launch {
-                                                importer.exportHcj(plugin)?.let { shareHcj(context, it) }
-                                            }
-                                        }
-                                    } else null,
-                                    onDelete = { pendingDelete = plugin }
-                                )
-                            }
+            val shownInstalled = installed.filter(::matches)
+            val shownBuiltIns = builtIns.filter(::matches)
+
+            var installedWorking by remember { mutableStateOf(shownInstalled) }
+            var builtinWorking by remember { mutableStateOf(shownBuiltIns) }
+            var installedOrderHold by remember { mutableStateOf<List<String>?>(null) }
+            var builtinOrderHold by remember { mutableStateOf<List<String>?>(null) }
+            val dragState = remember { PluginDragState() }
+            val installedDragging = dragState.itemKey?.startsWith("i:") == true
+            val builtinDragging = dragState.itemKey?.startsWith("b:") == true
+            installedOrderHold = releasePluginOrderHold(
+                installedOrderHold, shownInstalled.map { it.id }, installedDragging
+            )
+            builtinOrderHold = releasePluginOrderHold(
+                builtinOrderHold, shownBuiltIns.map { it.id }, builtinDragging
+            )
+            val syncedInstalled = syncPluginWorkingCopy(
+                installedWorking,
+                shownInstalled,
+                holdWorkingOrder = installedDragging || installedOrderHold != null
+            )
+            val syncedBuiltIns = syncPluginWorkingCopy(
+                builtinWorking,
+                shownBuiltIns,
+                holdWorkingOrder = builtinDragging || builtinOrderHold != null
+            )
+            if (installedWorking != syncedInstalled) installedWorking = syncedInstalled
+            if (builtinWorking != syncedBuiltIns) builtinWorking = syncedBuiltIns
+            val spacingPx = with(LocalDensity.current) { 10.dp.toPx() }
+            val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
+            val latestInstalled = rememberUpdatedState(installedWorking)
+            val latestBuiltIns = rememberUpdatedState(builtinWorking)
+
+            fun persistOrder(builtIn: Boolean) {
+                val ids = (if (builtIn) latestBuiltIns else latestInstalled).value.map { it.id }
+                if (builtIn) builtinOrderHold = ids else installedOrderHold = ids
+                scope.launch {
+                    try {
+                        store.reorder(ids, builtIn)
+                    } catch (_: Exception) {
+                        if (builtIn) builtinOrderHold = null else installedOrderHold = null
+                    }
+                }
+            }
+
+            if (!isLoading && shownInstalled.isEmpty() && shownBuiltIns.isEmpty()) {
+                WtaFullEmptyState(
+                    title = Strings.pluginsEmpty,
+                    message = Strings.pluginsEmptyHint,
+                    art = {
+                        WtaIdleFloat {
+                            WtaKawaiiBox(modifier = Modifier.size(96.dp))
                         }
-                        if (builtinWorking.isNotEmpty()) {
-                            item(key = "hdr_builtin") {
-                                PluginSectionHeader(Strings.pluginSectionBuiltIn)
-                            }
-                            items(builtinWorking, key = { "b:" + it.id }) { plugin ->
-                                val itemKey = "b:" + plugin.id
-                                PluginRow(
-                                    plugin = plugin,
-                                    isDragging = dragState.itemKey == itemKey,
-                                    modifier = Modifier
-                                        .animateItem()
-                                        .pluginReorderable(
-                                            itemKey = itemKey,
-                                            itemId = plugin.id,
-                                            dragState = dragState,
-                                            spacingPx = spacingPx,
-                                            haptic = haptic,
-                                            currentList = { latestBuiltIns.value },
-                                            onReorder = { builtinWorking = it },
-                                            onPersist = { persistOrder(builtIn = true) },
-                                            onCancel = { builtinOrderHold = null }
-                                        ),
-                                    enabled = plugin.id in enabledIds,
-                                    onEnabledChange = { on ->
-                                        scope.launch { store.setEnabled(plugin.id, on) }
-                                    },
-                                    onEdit = { onNavigateToEditor(plugin.id) },
-                                    onStyle = { styleTarget = plugin },
-                                    onExport = {
+                    },
+                    modifier = Modifier.weight(1f)
+                )
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    if (installedWorking.isNotEmpty()) {
+                        item(key = "hdr_installed") {
+                            PluginSectionHeader(Strings.pluginSectionInstalled)
+                        }
+                        items(installedWorking, key = { "i:" + it.id }) { plugin ->
+                            val itemKey = "i:" + plugin.id
+                            PluginRow(
+                                plugin = plugin,
+                                isDragging = dragState.itemKey == itemKey,
+                                modifier = Modifier
+                                    .animateItem()
+                                    .pluginReorderable(
+                                        itemKey = itemKey,
+                                        itemId = plugin.id,
+                                        dragState = dragState,
+                                        spacingPx = spacingPx,
+                                        haptic = haptic,
+                                        currentList = { latestInstalled.value },
+                                        onReorder = { installedWorking = it },
+                                        onPersist = { persistOrder(builtIn = false) },
+                                        onCancel = { installedOrderHold = null }
+                                    ),
+                                onEdit = if (plugin.isScriptPlugin) {
+                                    { onNavigateToEditor(plugin.id) }
+                                } else null,
+                                onStyle = { styleTarget = plugin },
+                                onExport = if (plugin.isScriptPlugin) {
+                                    {
                                         scope.launch {
                                             importer.exportHcj(plugin)?.let { shareHcj(context, it) }
                                         }
-                                    },
-                                    onDelete = { pendingDelete = plugin }
-                                )
-                            }
+                                    }
+                                } else null,
+                                onDelete = { pendingDelete = plugin }
+                            )
+                        }
+                    }
+                    if (builtinWorking.isNotEmpty()) {
+                        item(key = "hdr_builtin") {
+                            PluginSectionHeader(Strings.pluginSectionBuiltIn)
+                        }
+                        items(builtinWorking, key = { "b:" + it.id }) { plugin ->
+                            val itemKey = "b:" + plugin.id
+                            PluginRow(
+                                plugin = plugin,
+                                isDragging = dragState.itemKey == itemKey,
+                                modifier = Modifier
+                                    .animateItem()
+                                    .pluginReorderable(
+                                        itemKey = itemKey,
+                                        itemId = plugin.id,
+                                        dragState = dragState,
+                                        spacingPx = spacingPx,
+                                        haptic = haptic,
+                                        currentList = { latestBuiltIns.value },
+                                        onReorder = { builtinWorking = it },
+                                        onPersist = { persistOrder(builtIn = true) },
+                                        onCancel = { builtinOrderHold = null }
+                                    ),
+                                onEdit = { onNavigateToEditor(plugin.id) },
+                                onStyle = { styleTarget = plugin },
+                                onExport = {
+                                    scope.launch {
+                                        importer.exportHcj(plugin)?.let { shareHcj(context, it) }
+                                    }
+                                },
+                                onDelete = { pendingDelete = plugin }
+                            )
                         }
                     }
                 }
@@ -407,17 +376,18 @@ fun PluginManagerScreen(
     }
 
     pendingDelete?.let { plugin ->
+        val hide = plugin.builtIn
         WtaAlertDialog(
             onDismissRequest = { pendingDelete = null },
-            title = Strings.pluginDeleteConfirmTitle,
+            title = if (hide) Strings.pluginHideBuiltInConfirmTitle else Strings.pluginDeleteConfirmTitle,
             text = plugin.localizedName(),
             confirmButton = {
                 PremiumButton(onClick = {
                     scope.launch {
-                        if (plugin.builtIn) store.hideBuiltIn(plugin.id) else store.removePlugin(plugin.id)
+                        if (hide) store.hideBuiltIn(plugin.id) else store.removePlugin(plugin.id)
                     }
                     pendingDelete = null
-                }) { Text(Strings.delete) }
+                }) { Text(if (hide) Strings.pluginHideBuiltIn else Strings.delete) }
             },
             dismissButton = {
                 TextButton(onClick = { pendingDelete = null }) { Text(Strings.btnCancel) }
@@ -479,14 +449,12 @@ private fun PluginSectionHeader(title: String) {
     )
 }
 
-/** Shared long-press drag state for the plugin lists. */
 private class PluginDragState {
     var itemKey by mutableStateOf<String?>(null)
     var offsetPx by mutableFloatStateOf(0f)
     var rowHeightPx by mutableIntStateOf(0)
 }
 
-/** Long-press then drag vertically to reorder within one list section. */
 private fun Modifier.pluginReorderable(
     itemKey: String,
     itemId: String,
@@ -556,8 +524,6 @@ private fun PluginRow(
     plugin: Plugin,
     isDragging: Boolean,
     modifier: Modifier = Modifier,
-    enabled: Boolean,
-    onEnabledChange: (Boolean) -> Unit,
     onEdit: (() -> Unit)?,
     onStyle: (() -> Unit)?,
     onExport: (() -> Unit)?,
@@ -568,12 +534,10 @@ private fun PluginRow(
         modifier = modifier
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                modifier = Modifier
-                    .size(44.dp)
-                    .clip(RoundedCornerShape(WtaRadius.Control))
-                    .background(MaterialTheme.colorScheme.secondaryContainer),
-                contentAlignment = Alignment.Center
+            WtaShapePlate(
+                polygon = MaterialShapes.SoftBoom,
+                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                modifier = Modifier.size(44.dp)
             ) {
                 Icon(
                     pluginIcon(plugin.icon),
@@ -616,14 +580,6 @@ private fun PluginRow(
                     )
                 }
             }
-            Spacer(modifier = Modifier.width(8.dp))
-            WtaSwitch(
-                checked = enabled,
-                onCheckedChange = onEnabledChange,
-                modifier = Modifier.semantics {
-                    contentDescription = Strings.pluginGlobalEnable
-                }
-            )
             if (onEdit != null || onStyle != null || onExport != null || onDelete != null) {
                 Box {
                     var rowMenu by remember { mutableStateOf(false) }
@@ -654,11 +610,22 @@ private fun PluginRow(
                         }
                         onDelete?.let { del ->
                             WtaDivider()
+                            val hide = plugin.builtIn
                             DropdownMenuItem(
-                                text = { Text(Strings.delete, color = MaterialTheme.colorScheme.error) },
+                                text = {
+                                    Text(
+                                        if (hide) Strings.pluginHideBuiltIn else Strings.delete,
+                                        color = if (hide) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.error
+                                    )
+                                },
                                 onClick = { rowMenu = false; del() },
                                 leadingIcon = {
-                                    Icon(Icons.Default.Delete, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.error)
+                                    Icon(
+                                        if (hide) Icons.Outlined.VisibilityOff else Icons.Default.Delete,
+                                        null,
+                                        Modifier.size(20.dp),
+                                        tint = if (hide) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.error
+                                    )
                                 }
                             )
                         }

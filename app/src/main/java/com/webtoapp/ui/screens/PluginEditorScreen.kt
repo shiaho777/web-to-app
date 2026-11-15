@@ -355,6 +355,20 @@ fun PluginEditorScreen(
                                     } else null,
                                     shape = RoundedCornerShape(WtaRadius.Control)
                                 )
+                                PremiumTextField(
+                                    value = excludeMatches,
+                                    onValueChange = { excludeMatches = it },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    label = { Text(Strings.pluginExcludeMatches) },
+                                    minLines = 2,
+                                    textStyle = MaterialTheme.typography.bodyMedium.copy(
+                                        fontFamily = FontFamily.Monospace
+                                    ),
+                                    supportingText = if (LocalShowDescriptions.current) {
+                                        { Text(Strings.pluginExcludeMatchesHint) }
+                                    } else null,
+                                    shape = RoundedCornerShape(WtaRadius.Control)
+                                )
                                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                                     Text(
                                         Strings.pluginFieldRunAt,

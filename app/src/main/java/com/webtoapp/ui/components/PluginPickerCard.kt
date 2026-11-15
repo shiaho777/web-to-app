@@ -31,13 +31,7 @@ import com.webtoapp.ui.animation.CardExpandTransition
 import com.webtoapp.ui.design.*
 import com.webtoapp.ui.plugin.kindLabel
 import com.webtoapp.ui.plugin.pluginIcon
-import com.webtoapp.ui.theme.ifDescriptionsShown
 
-/**
- * Per-app plugin attachment card (create/edit app flows). Apps get the global
- * enabled set unless an explicit id list is attached — the card manages that
- * list against [PluginStore].
- */
 @Composable
 fun PluginPickerCard(
     enabled: Boolean,
@@ -125,13 +119,11 @@ fun PluginPickerCard(
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Spacer(Modifier.height(14.dp))
 
-                    Strings.pluginAttachHint.ifDescriptionsShown()?.let { hint ->
-                        Text(
-                            hint,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+                    Text(
+                        Strings.pluginAttachHint,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
 
                     selectedPlugins.forEach { plugin ->
                         PluginAttachRow(

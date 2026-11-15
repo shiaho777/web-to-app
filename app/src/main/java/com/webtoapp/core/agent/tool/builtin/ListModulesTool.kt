@@ -11,7 +11,7 @@ class ListModulesTool : Tool {
     override val name = "ListModules"
     override val description = """
         List the installed plugins (HCJ packages, userscripts, Chrome extensions).
-        Returns each plugin's id, kind, enabled flag, and name. Use this to find a
+        Returns each plugin's id, kind, built-in flag, and name. Use this to find a
         plugin id before GetModule or UpdateModule.
     """.trimIndent()
 
@@ -32,7 +32,7 @@ class ListModulesTool : Tool {
             return ToolResult.ok("No plugins found${if (query.isEmpty()) "" else " matching \"$query\""}.")
         }
         val lines = filtered.joinToString("\n") {
-            "- id=${it.id}  kind=${it.kind}  enabled=${store.isGloballyEnabled(it.id)}  name=\"${it.name}\""
+            "- id=${it.id}  kind=${it.kind}  builtIn=${it.builtIn}  name=\"${it.name}\""
         }
         return ToolResult.ok("${filtered.size} plugin(s):\n$lines")
     }
