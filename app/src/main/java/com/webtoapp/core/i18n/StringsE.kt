@@ -17342,4 +17342,82 @@ object StringsE {
         AppLanguage.KOREAN -> "한 줄에 하나의 규칙. 일치하는 페이지에서는 실행하지 않습니다."
     }
 
+    val editorSectionBasic: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "基本"
+        AppLanguage.ENGLISH -> "Basic"
+        AppLanguage.ARABIC -> "أساسي"
+        AppLanguage.PORTUGUESE -> "Básico"
+        AppLanguage.SPANISH -> "Básico"
+        AppLanguage.FRENCH -> "Base"
+        AppLanguage.GERMAN -> "Basis"
+        AppLanguage.RUSSIAN -> "Основное"
+        AppLanguage.JAPANESE -> "基本"
+        AppLanguage.KOREAN -> "기본"
+    }
+
+    val editorSectionBrowsing: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "浏览显示"
+        AppLanguage.ENGLISH -> "Browsing"
+        AppLanguage.ARABIC -> "التصفح"
+        AppLanguage.PORTUGUESE -> "Navegação"
+        AppLanguage.SPANISH -> "Navegación"
+        AppLanguage.FRENCH -> "Navigation"
+        AppLanguage.GERMAN -> "Anzeige"
+        AppLanguage.RUSSIAN -> "Просмотр"
+        AppLanguage.JAPANESE -> "ブラウズ"
+        AppLanguage.KOREAN -> "탐색"
+    }
+
+    val editorSectionContent: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "启动内容"
+        AppLanguage.ENGLISH -> "Startup & Content"
+        AppLanguage.ARABIC -> "البدء والمحتوى"
+        AppLanguage.PORTUGUESE -> "Início e conteúdo"
+        AppLanguage.SPANISH -> "Inicio y contenido"
+        AppLanguage.FRENCH -> "Démarrage et contenu"
+        AppLanguage.GERMAN -> "Start & Inhalt"
+        AppLanguage.RUSSIAN -> "Запуск и контент"
+        AppLanguage.JAPANESE -> "起動とコンテンツ"
+        AppLanguage.KOREAN -> "시작 및 콘텐츠"
+    }
+
+    val editorSectionExtensions: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "扩展网络"
+        AppLanguage.ENGLISH -> "Extensions & Network"
+        AppLanguage.ARABIC -> "الإضافات والشبكة"
+        AppLanguage.PORTUGUESE -> "Extensões e rede"
+        AppLanguage.SPANISH -> "Extensiones y red"
+        AppLanguage.FRENCH -> "Extensions et réseau"
+        AppLanguage.GERMAN -> "Erweiterungen & Netzwerk"
+        AppLanguage.RUSSIAN -> "Расширения и сеть"
+        AppLanguage.JAPANESE -> "拡張とネットワーク"
+        AppLanguage.KOREAN -> "확장 및 네트워크"
+    }
+
+    val editorSectionMonetization: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "变现"
+        AppLanguage.ENGLISH -> "Monetization"
+        AppLanguage.ARABIC -> "تحقيق الدخل"
+        AppLanguage.PORTUGUESE -> "Monetização"
+        AppLanguage.SPANISH -> "Monetización"
+        AppLanguage.FRENCH -> "Monétisation"
+        AppLanguage.GERMAN -> "Monetarisierung"
+        AppLanguage.RUSSIAN -> "Монетизация"
+        AppLanguage.JAPANESE -> "収益化"
+        AppLanguage.KOREAN -> "수익화"
+    }
+
+    val editorSectionExport: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "导出"
+        AppLanguage.ENGLISH -> "Export"
+        AppLanguage.ARABIC -> "تصدير"
+        AppLanguage.PORTUGUESE -> "Exportar"
+        AppLanguage.SPANISH -> "Exportar"
+        AppLanguage.FRENCH -> "Exporter"
+        AppLanguage.GERMAN -> "Export"
+        AppLanguage.RUSSIAN -> "Экспорт"
+        AppLanguage.JAPANESE -> "エクスポート"
+        AppLanguage.KOREAN -> "내보내기"
+    }
+
 }

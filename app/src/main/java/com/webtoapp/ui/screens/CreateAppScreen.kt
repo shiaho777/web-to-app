@@ -18,6 +18,8 @@ import com.webtoapp.ui.animation.CardExpandTransition
 import com.webtoapp.ui.animation.CardCollapseTransition
 import com.webtoapp.ui.animation.WtaPersistentExpandedContent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
@@ -66,6 +68,39 @@ import com.webtoapp.core.pwa.PwaAnalysisResult
 import com.webtoapp.core.pwa.PwaAnalysisState
 import com.webtoapp.core.pwa.PwaDataSource
 
+private data class EditorSection(val title: String, val itemIndex: Int)
+
+@Composable
+private fun EditorSectionChips(sections: List<EditorSection>, onJump: (Int) -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.background)
+            .horizontalScroll(rememberScrollState())
+            .padding(horizontal = WtaSpacing.ScreenHorizontal, vertical = WtaSpacing.Small),
+        horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
+    ) {
+        sections.forEach { section ->
+            WtaChip(
+                selected = false,
+                onClick = { onJump(section.itemIndex) },
+                label = section.title,
+                showSelectedCheck = false
+            )
+        }
+    }
+}
+
+@Composable
+private fun EditorSectionHeader(title: String) {
+    Text(
+        text = title,
+        style = MaterialTheme.typography.titleSmallEmphasized,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.padding(top = WtaSpacing.Small, start = WtaSpacing.Tiny)
+    )
+}
+
 @OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun CreateAppScreen(
@@ -79,6 +114,14 @@ fun CreateAppScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val hasUnsavedChanges by viewModel.hasUnsavedChanges.collectAsStateWithLifecycle()
     val listState = rememberLazyListState()
+    val editorSections = listOf(
+        EditorSection(Strings.editorSectionBasic, 2),
+        EditorSection(Strings.editorSectionBrowsing, 5),
+        EditorSection(Strings.editorSectionContent, 12),
+        EditorSection(Strings.editorSectionExtensions, 17),
+        EditorSection(Strings.editorSectionMonetization, 24),
+        EditorSection(Strings.editorSectionExport, 27)
+    )
 
     var showDiscardDialog by remember { mutableStateOf(false) }
 
@@ -179,6 +222,12 @@ fun CreateAppScreen(
                 ),
             verticalArrangement = Arrangement.spacedBy(WtaSpacing.SectionGap)
         ) {
+            stickyHeader {
+                EditorSectionChips(
+                    sections = editorSections,
+                    onJump = { index -> coroutineScope.launch { listState.animateScrollToItem(index) } }
+                )
+            }
             item {
                 if (uiState is UiState.Error) {
                     WtaStatusBanner(
@@ -187,6 +236,8 @@ fun CreateAppScreen(
                     )
                 }
             }
+
+            item { EditorSectionHeader(Strings.editorSectionBasic) }
 
             item {
                 BasicInfoCard(
@@ -214,20 +265,7 @@ fun CreateAppScreen(
                 }
             }
 
-            item {
-                ActivationCodeCard(
-                    enabled = editState.activationEnabled,
-                    activationCodes = editState.activationCodeList,
-                    requireEveryTime = editState.activationRequireEveryTime,
-                    dialogConfig = editState.activationDialogConfig,
-                    remoteConfig = editState.activationRemoteConfig ?: com.webtoapp.data.model.RemoteActivationConfig(),
-                    onEnabledChange = { viewModel.updateEditState { copy(activationEnabled = it) } },
-                    onCodesChange = { viewModel.updateEditState { copy(activationCodeList = it) } },
-                    onRequireEveryTimeChange = { viewModel.updateEditState { copy(activationRequireEveryTime = it) } },
-                    onDialogConfigChange = { viewModel.updateEditState { copy(activationDialogConfig = it) } },
-                    onRemoteConfigChange = { viewModel.updateEditState { copy(activationRemoteConfig = it) } }
-                )
-            }
+            item { EditorSectionHeader(Strings.editorSectionBrowsing) }
 
             item {
                 BrowserToolbarCard(
@@ -366,6 +404,8 @@ fun CreateAppScreen(
                 )
             }
 
+            item { EditorSectionHeader(Strings.editorSectionContent) }
+
             item {
                 SplashScreenCard(
                     editState = editState,
@@ -441,6 +481,8 @@ fun CreateAppScreen(
                 )
             }
 
+            item { EditorSectionHeader(Strings.editorSectionExtensions) }
+
             item {
                 com.webtoapp.ui.components.PluginPickerCard(
                     enabled = editState.pluginsEnabled,
@@ -502,6 +544,23 @@ fun CreateAppScreen(
                 )
             }
 
+            item { EditorSectionHeader(Strings.editorSectionMonetization) }
+
+            item {
+                ActivationCodeCard(
+                    enabled = editState.activationEnabled,
+                    activationCodes = editState.activationCodeList,
+                    requireEveryTime = editState.activationRequireEveryTime,
+                    dialogConfig = editState.activationDialogConfig,
+                    remoteConfig = editState.activationRemoteConfig ?: com.webtoapp.data.model.RemoteActivationConfig(),
+                    onEnabledChange = { viewModel.updateEditState { copy(activationEnabled = it) } },
+                    onCodesChange = { viewModel.updateEditState { copy(activationCodeList = it) } },
+                    onRequireEveryTimeChange = { viewModel.updateEditState { copy(activationRequireEveryTime = it) } },
+                    onDialogConfigChange = { viewModel.updateEditState { copy(activationDialogConfig = it) } },
+                    onRemoteConfigChange = { viewModel.updateEditState { copy(activationRemoteConfig = it) } }
+                )
+            }
+
             item {
                 SpecialSettingsCard(
                     config = editState.webViewConfig,
@@ -515,6 +574,8 @@ fun CreateAppScreen(
                     onAdConfigChange = { viewModel.updateEditState { copy(adConfig = it) } }
                 )
             }
+
+            item { EditorSectionHeader(Strings.editorSectionExport) }
 
             item {
                 ExportAndPermissionDrawer(

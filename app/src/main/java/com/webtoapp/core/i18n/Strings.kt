@@ -5322,6 +5322,12 @@ object Strings {
     val pluginHideBuiltInConfirmTitle: String get() = StringsE.pluginHideBuiltInConfirmTitle
     val pluginExcludeMatches: String get() = StringsE.pluginExcludeMatches
     val pluginExcludeMatchesHint: String get() = StringsE.pluginExcludeMatchesHint
+    val editorSectionBasic: String get() = StringsE.editorSectionBasic
+    val editorSectionBrowsing: String get() = StringsE.editorSectionBrowsing
+    val editorSectionContent: String get() = StringsE.editorSectionContent
+    val editorSectionExtensions: String get() = StringsE.editorSectionExtensions
+    val editorSectionMonetization: String get() = StringsE.editorSectionMonetization
+    val editorSectionExport: String get() = StringsE.editorSectionExport
     val pluginAdd: String get() = StringsE.pluginAdd
     val pluginSelectTitle: String get() = StringsE.pluginSelectTitle
     fun pluginSelectedCount(count: Int): String = StringsE.pluginSelectedCount(count)
