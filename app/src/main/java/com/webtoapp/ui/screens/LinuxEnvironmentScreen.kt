@@ -550,33 +550,15 @@ private fun ReadinessRing(
     busy: Boolean,
     coreReady: Boolean
 ) {
-    val track = MaterialTheme.colorScheme.surfaceContainerHighest
     Box(
         modifier = Modifier.size(84.dp),
         contentAlignment = Alignment.Center
     ) {
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            val stroke = 8.dp.toPx()
-            val inset = stroke / 2f
-            drawArc(
-                color = track,
-                startAngle = -90f,
-                sweepAngle = 360f,
-                useCenter = false,
-                topLeft = Offset(inset, inset),
-                size = Size(size.width - stroke, size.height - stroke),
-                style = Stroke(width = stroke, cap = StrokeCap.Round)
-            )
-            drawArc(
-                color = color,
-                startAngle = -90f,
-                sweepAngle = 360f * progress.coerceIn(0f, 1f),
-                useCenter = false,
-                topLeft = Offset(inset, inset),
-                size = Size(size.width - stroke, size.height - stroke),
-                style = Stroke(width = stroke, cap = StrokeCap.Round)
-            )
-        }
+        WtaLoadingIndicator(
+            size = 84.dp,
+            color = color,
+            progress = { progress.coerceIn(0f, 1f) }
+        )
         when {
             busy -> WtaLoadingIndicator(size = 28.dp, color = color)
             coreReady -> Icon(
