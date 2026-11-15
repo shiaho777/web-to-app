@@ -70,7 +70,6 @@ internal fun chromeMatchRulesFromManifest(manifestJson: String): List<PluginMatc
 
 internal data class ChromePluginCollapse(
     val plugins: List<Plugin>,
-    val enabledIds: List<String>,
     val aliases: Map<String, String>,
     val changed: Boolean
 )
@@ -82,7 +81,6 @@ internal data class ChromePluginCollapse(
  */
 internal fun collapseChromePlugins(
     plugins: List<Plugin>,
-    enabledIds: List<String>,
     existingAliases: Map<String, String> = emptyMap()
 ): ChromePluginCollapse {
     val keptAt = linkedMapOf<String, Int>()
@@ -122,9 +120,7 @@ internal fun collapseChromePlugins(
     }
     if (aliases != existingAliases) changed = true
 
-    val remapped = remapEnabledIds(enabledIds, removedToKept)
-    if (remapped != enabledIds) changed = true
-    return ChromePluginCollapse(out, remapped, aliases, changed)
+    return ChromePluginCollapse(out, aliases, changed)
 }
 
 private fun mergeChromeFields(keep: Plugin, extra: Plugin): Plugin = keep.copy(
@@ -141,19 +137,6 @@ private fun mergeChromeFields(keep: Plugin, extra: Plugin): Plugin = keep.copy(
         ?: keep.createdAt,
     updatedAt = maxOf(keep.updatedAt, extra.updatedAt)
 )
-
-/** Dropped sibling ids become the kept id. Order of the remaining ids is kept. */
-internal fun remapEnabledIds(
-    enabledIds: List<String>,
-    removedToKept: Map<String, String>
-): List<String> {
-    val out = ArrayList<String>(enabledIds.size)
-    for (id in enabledIds) {
-        val mapped = removedToKept[id] ?: id
-        if (mapped.isNotBlank() && mapped !in out) out.add(mapped)
-    }
-    return out
-}
 
 /**
  * The manager draws a working copy so a long-press drag can reorder before

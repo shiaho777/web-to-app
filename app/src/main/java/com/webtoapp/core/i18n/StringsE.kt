@@ -16691,42 +16691,29 @@ object StringsE {
     }
 
     val pluginAttachEmpty: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "未单独选择，使用已启用的插件"
-        AppLanguage.ENGLISH -> "None picked; uses enabled plugins"
-        AppLanguage.ARABIC -> "لم يُحدَّد شيء؛ تُستخدم الإضافات المفعّلة"
-        AppLanguage.PORTUGUESE -> "Nenhum escolhido; usa os plugins ativos"
-        AppLanguage.SPANISH -> "Ninguno elegido; se usan los plugins activos"
-        AppLanguage.FRENCH -> "Aucun choisi ; les plugins activés sont utilisés"
-        AppLanguage.GERMAN -> "Keine Auswahl; aktivierte Plugins werden verwendet"
-        AppLanguage.RUSSIAN -> "Ничего не выбрано; используются включённые плагины"
-        AppLanguage.JAPANESE -> "個別未選択。有効なプラグインを使います"
-        AppLanguage.KOREAN -> "따로 선택하지 않음. 켠 플러그인을 사용합니다"
+        AppLanguage.CHINESE -> "未单独选择，运行全部已安装插件"
+        AppLanguage.ENGLISH -> "None picked; runs all installed plugins"
+        AppLanguage.ARABIC -> "لم يُحدَّد شيء؛ تُشغّل كل الإضافات المثبتة"
+        AppLanguage.PORTUGUESE -> "Nenhum escolhido; executa todos os plugins instalados"
+        AppLanguage.SPANISH -> "Ninguno elegido; ejecuta todos los plugins instalados"
+        AppLanguage.FRENCH -> "Aucun choisi ; tous les plugins installés s'exécutent"
+        AppLanguage.GERMAN -> "Keine Auswahl; alle installierten Plugins laufen"
+        AppLanguage.RUSSIAN -> "Ничего не выбрано; работают все установленные плагины"
+        AppLanguage.JAPANESE -> "個別未選択。インストール済み全体を実行します"
+        AppLanguage.KOREAN -> "따로 선택하지 않음. 설치된 모든 플러그인 실행"
     }
 
     val pluginAttachHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "不单独选择时，用「管理插件」里已启用的插件。单独选择后只运行这些。"
-        AppLanguage.ENGLISH -> "With nothing picked, plugins enabled in Manage Plugins run here. A picked list runs only those."
-        AppLanguage.ARABIC -> "عند عدم الاختيار، تعمل الإضافات المفعّلة في «إدارة الإضافات». وعند الاختيار تعمل هذه فقط."
-        AppLanguage.PORTUGUESE -> "Sem uma escolha própria, entram os plugins ativos em Gerir plugins. Uma lista escolhida executa só esses."
-        AppLanguage.SPANISH -> "Si no eliges ninguno, se usan los plugins activos en Gestionar plugins. Una lista elegida ejecuta solo esos."
-        AppLanguage.FRENCH -> "Sans sélection, les plugins activés dans Gérer les plugins s'exécutent ici. Une liste choisie n'exécute que ceux-là."
-        AppLanguage.GERMAN -> "Ohne eigene Auswahl laufen die in Plugins verwalten aktivierten Plugins. Eine eigene Liste führt nur diese aus."
-        AppLanguage.RUSSIAN -> "Если ничего не выбрано, работают плагины, включённые в «Управление плагинами». Свой список запускает только их."
-        AppLanguage.JAPANESE -> "個別に選ばないときは「プラグイン管理」で有効なプラグインを使います。選ぶとその一覧だけが動きます。"
-        AppLanguage.KOREAN -> "따로 고르지 않으면 '플러그인 관리'에서 켠 플러그인이 실행됩니다. 고르면 그 목록만 실행됩니다."
-    }
-
-    val pluginGlobalEnable: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "启用插件"
-        AppLanguage.ENGLISH -> "Enable plugin"
-        AppLanguage.ARABIC -> "تفعيل الإضافة"
-        AppLanguage.PORTUGUESE -> "Ativar plugin"
-        AppLanguage.SPANISH -> "Activar plugin"
-        AppLanguage.FRENCH -> "Activer le plugin"
-        AppLanguage.GERMAN -> "Plugin aktivieren"
-        AppLanguage.RUSSIAN -> "Включить плагин"
-        AppLanguage.JAPANESE -> "プラグインを有効にする"
-        AppLanguage.KOREAN -> "플러그인 켜기"
+        AppLanguage.CHINESE -> "开启后默认运行全部已安装插件；单独选择后只运行所选。"
+        AppLanguage.ENGLISH -> "When on, all installed plugins run by default; pick a list to run only those."
+        AppLanguage.ARABIC -> "عند التفعيل تعمل كل الإضافات المثبتة افتراضيًا؛ اختر قائمة لتشغيلها وحدها."
+        AppLanguage.PORTUGUESE -> "Ativado, todos os plugins instalados rodam por padrão; escolha uma lista para rodar só esses."
+        AppLanguage.SPANISH -> "Activado, todos los plugins instalados se ejecutan por defecto; elige una lista para ejecutar solo esos."
+        AppLanguage.FRENCH -> "Activé, tous les plugins installés s'exécutent par défaut ; choisissez une liste pour n'exécuter que ceux-là."
+        AppLanguage.GERMAN -> "Aktiviert laufen standardmäßig alle installierten Plugins; eine eigene Liste führt nur diese aus."
+        AppLanguage.RUSSIAN -> "При включении по умолчанию работают все установленные плагины; свой список запускает только их."
+        AppLanguage.JAPANESE -> "オンにするとインストール済み全体が既定で動きます。一覧を選ぶとそのみ実行します。"
+        AppLanguage.KOREAN -> "켜면 설치된 모든 플러그인이 기본 실행됩니다. 목록을 고르면 그것만 실행됩니다."
     }
 
     val pluginAdd: String get() = when (Strings.lang) {
@@ -17301,6 +17288,58 @@ object StringsE {
         AppLanguage.RUSSIAN -> "Отдельный плеер для изображений и видео"
         AppLanguage.JAPANESE -> "画像/動画専用プレイヤー"
         AppLanguage.KOREAN -> "이미지/동영상 전용 플레이어"
+    }
+
+    val pluginHideBuiltIn: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "隐藏"
+        AppLanguage.ENGLISH -> "Hide"
+        AppLanguage.ARABIC -> "إخفاء"
+        AppLanguage.PORTUGUESE -> "Ocultar"
+        AppLanguage.SPANISH -> "Ocultar"
+        AppLanguage.FRENCH -> "Masquer"
+        AppLanguage.GERMAN -> "Ausblenden"
+        AppLanguage.RUSSIAN -> "Скрыть"
+        AppLanguage.JAPANESE -> "非表示"
+        AppLanguage.KOREAN -> "숨기기"
+    }
+
+    val pluginHideBuiltInConfirmTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "隐藏内置插件？"
+        AppLanguage.ENGLISH -> "Hide built-in plugin?"
+        AppLanguage.ARABIC -> "إخفاء الإضافة المدمجة؟"
+        AppLanguage.PORTUGUESE -> "Ocultar plugin integrado?"
+        AppLanguage.SPANISH -> "¿Ocultar plugin integrado?"
+        AppLanguage.FRENCH -> "Masquer le plugin intégré ?"
+        AppLanguage.GERMAN -> "Integriertes Plugin ausblenden?"
+        AppLanguage.RUSSIAN -> "Скрыть встроенный плагин?"
+        AppLanguage.JAPANESE -> "内蔵プラグインを非表示にしますか？"
+        AppLanguage.KOREAN -> "내장 플러그인을 숨길까요?"
+    }
+
+    val pluginExcludeMatches: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "排除的网址"
+        AppLanguage.ENGLISH -> "Excluded URLs"
+        AppLanguage.ARABIC -> "الروابط المستبعدة"
+        AppLanguage.PORTUGUESE -> "URLs excluídos"
+        AppLanguage.SPANISH -> "URL excluidas"
+        AppLanguage.FRENCH -> "URL exclues"
+        AppLanguage.GERMAN -> "Ausgeschlossene URLs"
+        AppLanguage.RUSSIAN -> "Исключённые URL"
+        AppLanguage.JAPANESE -> "除外するURL"
+        AppLanguage.KOREAN -> "제외할 URL"
+    }
+
+    val pluginExcludeMatchesHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "每行一个匹配规则，命中的页面不运行此插件。"
+        AppLanguage.ENGLISH -> "One match rule per line; the plugin skips pages that match."
+        AppLanguage.ARABIC -> "قاعدة مطابقة واحدة في كل سطر؛ تتخطى الإضافة الصفوف المطابقة."
+        AppLanguage.PORTUGUESE -> "Uma regra por linha; o plugin ignora as páginas que correspondem."
+        AppLanguage.SPANISH -> "Una regla por línea; el plugin omite las páginas que coinciden."
+        AppLanguage.FRENCH -> "Une règle par ligne ; le plugin ignore les pages correspondantes."
+        AppLanguage.GERMAN -> "Eine Regel pro Zeile; das Plugin überspringt passende Seiten."
+        AppLanguage.RUSSIAN -> "По одному правилу в строке; плагин пропускает подходящие страницы."
+        AppLanguage.JAPANESE -> "1行に1つのマッチ規則。一致するページでは実行しません。"
+        AppLanguage.KOREAN -> "한 줄에 하나의 규칙. 일치하는 페이지에서는 실행하지 않습니다."
     }
 
 }

@@ -4029,20 +4029,21 @@ fun WebViewScreen(
                 val mwApp = webApp
                 val multiWebConfig = mwApp?.multiWebConfig
                 if (mwApp != null && multiWebConfig != null && multiWebConfig.sites.isNotEmpty()) {
-                    // App-level plugins: same rule as export. An explicit id list
-                    // wins. With the switch on and no list, the enabled set from
-                    // Manage Plugins is used. The switch off injects nothing.
                     val pluginStore = remember {
                         com.webtoapp.core.plugin.PluginStore.getInstance(context)
                     }
-                    val globalEnabledIds by pluginStore.enabledIds.collectAsStateWithLifecycle()
+                    val installedPlugins by pluginStore.plugins.collectAsStateWithLifecycle()
+                    val builtInPlugins by pluginStore.builtInPlugins.collectAsStateWithLifecycle()
+                    val hiddenBuiltIns by pluginStore.hiddenBuiltIns.collectAsStateWithLifecycle()
                     val mwPlugins by androidx.compose.runtime.produceState<
                         Pair<List<String>, List<com.webtoapp.core.shell.EmbeddedShellPlugin>>?
                     >(
                         initialValue = null,
                         mwApp.pluginsEnabled,
                         mwApp.pluginIds,
-                        globalEnabledIds
+                        installedPlugins,
+                        builtInPlugins,
+                        hiddenBuiltIns
                     ) {
                         value = if (!mwApp.pluginsEnabled) {
                             emptyList<String>() to emptyList()

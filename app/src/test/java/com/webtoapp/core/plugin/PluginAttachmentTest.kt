@@ -11,7 +11,7 @@ class PluginAttachmentTest {
             resolveAttachedPluginIds(
                 pluginsEnabled = false,
                 attachedIds = listOf("explicit"),
-                globalEnabledIds = listOf("global")
+                fallbackIds = listOf("installed")
             )
         ).isEmpty()
     }
@@ -22,31 +22,19 @@ class PluginAttachmentTest {
             resolveAttachedPluginIds(
                 pluginsEnabled = true,
                 attachedIds = listOf(" b ", "a", "b", ""),
-                globalEnabledIds = listOf("global")
+                fallbackIds = listOf("installed")
             )
         ).containsExactly("b", "a").inOrder()
     }
 
     @Test
-    fun `empty attachment uses the enabled set`() {
+    fun `empty attachment falls back to all installed`() {
         assertThat(
             resolveAttachedPluginIds(
                 pluginsEnabled = true,
                 attachedIds = listOf("  ", ""),
-                globalEnabledIds = listOf(" dark ", "dark", "reader")
+                fallbackIds = listOf(" dark ", "dark", "reader")
             )
         ).containsExactly("dark", "reader").inOrder()
-    }
-
-    @Test
-    fun `enabled set edits keep order and ignore blanks`() {
-        assertThat(updateGlobalEnabledIds(listOf("a", "b"), "c", enabled = true))
-            .containsExactly("a", "b", "c").inOrder()
-        assertThat(updateGlobalEnabledIds(listOf("a", "b"), "a", enabled = true))
-            .containsExactly("a", "b").inOrder()
-        assertThat(updateGlobalEnabledIds(listOf("a", "b"), "a", enabled = false))
-            .containsExactly("b")
-        assertThat(updateGlobalEnabledIds(listOf("a"), "  ", enabled = true))
-            .containsExactly("a")
     }
 }

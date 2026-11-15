@@ -118,13 +118,6 @@ class PluginStore private constructor(private val context: Context) {
     val hiddenBuiltIns: StateFlow<Set<String>> = _hiddenBuiltIns.asStateFlow()
 
     /**
-     * Ids turned on in Manage Plugins, in list order. Absent `enabled` in
-     * the state file stays empty so an upgrade does not inject every built-in.
-     */
-    private val _enabledIds = MutableStateFlow<List<String>>(emptyList())
-    val enabledIds: StateFlow<List<String>> = _enabledIds.asStateFlow()
-
-    /**
      * Old per-content-script row ids mapped onto the one kept plugin id.
      * Replaced as a whole under [saveMutex]; readers take the current map.
      */
@@ -163,7 +156,6 @@ class PluginStore private constructor(private val context: Context) {
         val chromeRecords: MutableList<Plugin> = mutableListOf(),
         val styles: MutableMap<String, StyleOverride> = mutableMapOf(),
         val hidden: MutableList<String> = mutableListOf(),
-        val enabled: MutableList<String> = mutableListOf(),
         val chromeIdAliases: MutableMap<String, String> = mutableMapOf()
     )
 
@@ -174,7 +166,6 @@ class PluginStore private constructor(private val context: Context) {
             val overlay = StateOverlay()
             obj.getAsJsonArray("order")?.forEach { overlay.order.add(it.asString) }
             obj.getAsJsonArray("hidden")?.forEach { overlay.hidden.add(it.asString) }
-            obj.getAsJsonArray("enabled")?.forEach { overlay.enabled.add(it.asString) }
             obj.getAsJsonObject("styles")?.entrySet()?.forEach { (id, el) ->
                 runCatching {
                     val s = el.asJsonObject
@@ -220,9 +211,6 @@ class PluginStore private constructor(private val context: Context) {
             val hidden = com.google.gson.JsonArray()
             hiddenBuiltIns.value.forEach { hidden.add(it) }
             overlay.add("hidden", hidden)
-            val enabled = com.google.gson.JsonArray()
-            _enabledIds.value.forEach { enabled.add(it) }
-            overlay.add("enabled", enabled)
             val styles = com.google.gson.JsonObject()
             (_plugins.value + _builtInPlugins.value).forEach { p ->
                 styleOverrides[p.id]?.let { o ->
@@ -314,12 +302,10 @@ class PluginStore private constructor(private val context: Context) {
                     loaded.filter { it.id !in overlay.order }
                 val collapsed = collapseChromePlugins(
                     ordered.map { it.withOverride() },
-                    overlay.enabled.toList(),
                     overlay.chromeIdAliases
                 )
                 val hydrated = collapsed.plugins.map { hydrateChromeMetadata(it) }
                 _plugins.value = hydrated
-                _enabledIds.value = collapsed.enabledIds
                 chromeIdAliases = collapsed.aliases
                 refreshBuiltIns()
                 if (collapsed.changed || hydrated != collapsed.plugins) writeOverlayLocked()
@@ -346,7 +332,6 @@ class PluginStore private constructor(private val context: Context) {
         val overlay = readOverlay()
         styleOverrides.putAll(overlay.styles)
         _hiddenBuiltIns.value = overlay.hidden.toSet()
-        _enabledIds.value = overlay.enabled.toList()
         val loaded = mutableListOf<Plugin>()
         try {
             val dirs = context.assets.list(BUILTIN_ASSET_DIR) ?: emptyArray()
@@ -444,25 +429,10 @@ class PluginStore private constructor(private val context: Context) {
         return out
     }
 
-    fun isGloballyEnabled(id: String): Boolean = id in _enabledIds.value
-
-    /** Enabled ids that still exist, in the order stored in the state file. */
-    fun globalEnabledIds(): List<String> {
-        val known = allCache.map { it.id }.toSet()
-        return _enabledIds.value.map { it.trim() }.filter { it.isNotEmpty() && it in known }.distinct()
-    }
-
     fun effectiveIds(pluginsEnabled: Boolean, attached: List<String>): List<String> =
-        resolveAttachedPluginIds(pluginsEnabled, attached, globalEnabledIds())
+        resolveAttachedPluginIds(pluginsEnabled, attached, allCache.map { it.id })
             .map { canonicalPluginId(it) }
             .distinct()
-
-    suspend fun setEnabled(id: String, enabled: Boolean) = withContext(Dispatchers.IO) {
-        saveMutex.withLock {
-            _enabledIds.value = updateGlobalEnabledIds(_enabledIds.value, id, enabled)
-            writeOverlayLocked()
-        }
-    }
 
     // ------------------------------------------------------------------
     // Code loading (injection path)
@@ -645,7 +615,6 @@ class PluginStore private constructor(private val context: Context) {
             } else {
                 File(pluginsDir, plugin.packageDir).deleteRecursively()
                 _plugins.value = _plugins.value.filter { it.id != plugin.id }
-                _enabledIds.value = updateGlobalEnabledIds(_enabledIds.value, plugin.id, enabled = false)
                 PluginConfigStore(context).clear(plugin.id)
                 refreshBuiltIns()
                 writeOverlayLocked()
@@ -730,7 +699,6 @@ class PluginStore private constructor(private val context: Context) {
                     createdAt = existing?.createdAt ?: System.currentTimeMillis()
                 )
                 _plugins.value = _plugins.value.filter { it.id != plugin.id } + plugin
-                _enabledIds.value = updateGlobalEnabledIds(_enabledIds.value, plugin.id, enabled = true)
                 refreshBuiltIns()
                 writeOverlayLocked()
                 rebuildCache()
@@ -762,18 +730,7 @@ class PluginStore private constructor(private val context: Context) {
             emptyList()
         }
         val siblingIds = siblings.map { it.id }.toSet()
-        val existed = _plugins.value.any { it.id == stored.id } || siblings.isNotEmpty()
-        val wasEnabled = stored.id in _enabledIds.value || siblingIds.any { it in _enabledIds.value }
         _plugins.value = _plugins.value.filter { it.id != stored.id && it.id !in siblingIds } + stored
-        _enabledIds.value = if (!existed || wasEnabled) {
-            updateGlobalEnabledIds(
-                _enabledIds.value.filterNot { it in siblingIds },
-                stored.id,
-                enabled = true
-            )
-        } else {
-            _enabledIds.value.filterNot { it in siblingIds || it == stored.id }
-        }
         chromeIdAliases = retargetChromeAliases(chromeIdAliases, siblingIds.associateWith { stored.id })
         siblingIds.forEach { PluginConfigStore(context).clear(it) }
         writeOverlayLocked()
@@ -798,7 +755,6 @@ class PluginStore private constructor(private val context: Context) {
     private fun removeChromeIdsLocked(removed: Set<String>, extId: String) {
         val ids = removed.filter { it.isNotBlank() }.toSet()
         _plugins.value = _plugins.value.filter { it.id !in ids }
-        _enabledIds.value = _enabledIds.value.filterNot { it in ids }
         chromeIdAliases = chromeIdAliases.filterKeys { it !in ids }.filterValues { it !in ids }
         ids.forEach { PluginConfigStore(context).clear(it) }
         if (extId.isNotBlank()) {
