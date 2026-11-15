@@ -848,8 +848,11 @@ private fun BuildApkContent(
                                 title = Strings.clearIncrementalCache,
                                 contentPadding = PaddingValues(horizontal = 0.dp, vertical = 6.dp),
                                 onClick = {
-                                    apkBuilderState?.clearIncrementalCache(currentBuildConfig())
-                                    cacheMessage = Strings.incrementalCacheCleared
+                                    val builder = apkBuilderState
+                                    if (builder != null) {
+                                        builder.clearIncrementalCache(currentBuildConfig())
+                                        cacheMessage = Strings.incrementalCacheCleared
+                                    }
                                 }
                             ) {
                                 if (cacheMessage != null) {
