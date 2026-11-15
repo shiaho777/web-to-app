@@ -34,7 +34,6 @@ import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material.icons.rounded.Tag
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -65,13 +64,12 @@ import com.webtoapp.ui.design.WtaCard
 import com.webtoapp.ui.design.WtaCardTone
 import com.webtoapp.ui.design.WtaChip
 import com.webtoapp.ui.design.WtaIconButton
+import com.webtoapp.ui.design.WtaIconPlate
 import com.webtoapp.ui.design.WtaInfoChip
 import com.webtoapp.ui.design.WtaLoadingIndicator
-import com.webtoapp.ui.design.WtaMaterialShape
 import com.webtoapp.ui.design.WtaPopIn
 import com.webtoapp.ui.design.WtaPopOut
 import com.webtoapp.ui.design.WtaRadius
-import com.webtoapp.ui.design.WtaShapePlate
 import com.webtoapp.ui.design.WtaSpacing
 import com.webtoapp.ui.screens.InstallProgressCard
 import com.webtoapp.ui.screens.MarketLoadingHero
@@ -113,8 +111,7 @@ fun GreasyForkSearchContent(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            WtaShapePlate(
-                polygon = MaterialShapes.SoftBurst,
+            WtaIconPlate(
                 containerColor = MaterialTheme.colorScheme.errorContainer,
                 modifier = Modifier.size(64.dp)
             ) {
@@ -173,22 +170,14 @@ fun GreasyForkSearchContent(
                 GfSortRow(sortMode = sortMode, onSortModeChange = onSortModeChange)
             }
             item(key = "gf-section-title") {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    WtaMaterialShape(
-                        polygon = MaterialShapes.Diamond,
-                        color = MaterialTheme.colorScheme.tertiaryContainer,
-                        modifier = Modifier.size(12.dp)
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Text(
-                        text = if (browseCategory == GfBrowseCategory.HOT) {
-                            Strings.gfHotTitle
-                        } else {
-                            gfBrowseCategoryLabel(browseCategory)
-                        },
-                        style = MaterialTheme.typography.titleSmallEmphasized
-                    )
-                }
+                Text(
+                    text = if (browseCategory == GfBrowseCategory.HOT) {
+                        Strings.gfHotTitle
+                    } else {
+                        gfBrowseCategoryLabel(browseCategory)
+                    },
+                    style = MaterialTheme.typography.titleSmallEmphasized
+                )
             }
         } else {
             item(key = "gf-sort") {
@@ -223,8 +212,7 @@ fun GreasyForkSearchContent(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    WtaShapePlate(
-                        polygon = MaterialShapes.Bun,
+                    WtaIconPlate(
                         containerColor = MaterialTheme.colorScheme.secondaryContainer,
                         modifier = Modifier.size(64.dp)
                     ) {
