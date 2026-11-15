@@ -117,6 +117,7 @@ import com.webtoapp.ui.design.WtaMotion
 import com.webtoapp.ui.design.WtaSettingRow
 import com.webtoapp.ui.design.WtaSwitch
 import com.webtoapp.ui.design.WtaRadius
+import com.webtoapp.ui.design.WtaIconPlate
 import com.webtoapp.ui.design.WtaScreen
 import com.webtoapp.ui.design.WtaSection
 import com.webtoapp.ui.design.WtaSectionHeaderStyle
@@ -1682,23 +1683,14 @@ private fun AboutTonalIcon(
     iconSize: androidx.compose.ui.unit.Dp = 18.dp
 ) {
     val colors = MaterialTheme.colorScheme
-    val tone = shapeIndex % 3
-    val container = when (tone) {
-        0 -> colors.primaryContainer
-        1 -> colors.secondaryContainer
-        else -> colors.tertiaryContainer
-    }
-    val onContainer = when (tone) {
+    val onContainer = when (shapeIndex % 3) {
         0 -> colors.onPrimaryContainer
         1 -> colors.onSecondaryContainer
         else -> colors.onTertiaryContainer
     }
-    Box(
-        modifier = modifier
-            .size(plateSize)
-            .clip(RoundedCornerShape(WtaRadius.IconPlate))
-            .background(container),
-        contentAlignment = Alignment.Center
+    WtaIconPlate(
+        modifier = modifier.size(plateSize),
+        toneIndex = shapeIndex
     ) {
         Icon(
             imageVector = icon,

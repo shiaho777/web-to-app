@@ -3,6 +3,7 @@ package com.webtoapp.ui.design
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -104,6 +105,28 @@ fun WtaStatItem(
             textAlign = TextAlign.Center
         )
     }
+}
+
+@Composable
+fun WtaIconPlate(
+    modifier: Modifier = Modifier,
+    toneIndex: Int = 0,
+    containerColor: Color? = null,
+    content: @Composable BoxScope.() -> Unit
+) {
+    val colors = MaterialTheme.colorScheme
+    val container = containerColor ?: when (toneIndex % 3) {
+        0 -> colors.primaryContainer
+        1 -> colors.secondaryContainer
+        else -> colors.tertiaryContainer
+    }
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(WtaRadius.IconPlate))
+            .background(container),
+        contentAlignment = Alignment.Center,
+        content = content
+    )
 }
 
 @Composable
