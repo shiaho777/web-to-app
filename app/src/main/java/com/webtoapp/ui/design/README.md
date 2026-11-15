@@ -59,9 +59,11 @@ way; use `*Emphasized` variants (e.g. `titleLargeEmphasized`,
 ### Settings building blocks
 - `WtaSettingCard { ... }` — neutral container for one group of related rows.
 - `WtaSettingRow(title, subtitle, icon, trailing = { ... })` — generic row.
-  Pass `iconContent` to supply a custom leading visual (e.g. a `WtaShapePlate`);
-  set `showIconPlate = false` to let that visual own the whole icon area instead
-  of sitting on the default muted plate.
+  The default leading visual is a rounded tonal icon plate. Pass `iconContent`
+  to supply a custom leading visual (e.g. a `WtaIconPlate` or brand art); set
+  `showIconPlate = false` to let that visual own the whole icon area instead
+  of sitting on the default muted plate. Do not use polygon shape plates for
+  routine row icons.
 - `WtaToggleRow(title, checked, onCheckedChange)` — row with a trailing
   `WtaSwitch`.
 - `WtaChoiceRow(title, value, onClick)` — row that opens a picker.
@@ -77,9 +79,9 @@ way; use `*Emphasized` variants (e.g. `titleLargeEmphasized`,
 - `WtaEmptyState(title, message, icon, actionLabel, onAction)` — when a card's
   interior should display an empty placeholder.
 - `WtaFullEmptyState(title, message, icon, art, action)` — screen-wide empty
-  state. Pass `art` (a composable slot, typically a `WtaIdleFloat`-wrapped
-  kawaii illustration) to replace the plain circle+icon hero; screens should
-  use the shared illustration primitives instead of rolling bespoke art.
+  state. The default circle+icon hero is fine for most screens. Pass `art`
+  (a composable slot, e.g. a `WtaIdleFloat`-wrapped kawaii illustration) only
+  for a deliberate focal hero — at most one per screen, not an expectation.
 - `WtaLoadingState(message)` — centered spinner with optional caption.
 - `WtaErrorState(message, retryLabel, onRetry)` — centered error with retry.
 
@@ -106,9 +108,10 @@ an `AppType`; `WtaOfflinePackTypeIcon(color, accent)` covers the offline-pack
 create entry (offline packs persist as `HTML`, so they have no `AppType`).
 The set shares one grammar: 48-unit design space, 3-unit rounded strokes,
 two-tone `color`/`accent` rendering, small faces where the type has character.
-Callers place the icon on a shape plate and pass the plate's on-color as
-`color` and a contrasting scheme color as `accent`. Never tint these icons to
-a single silhouette — the two-tone detail is the point. The only remaining
+Callers place the icon on a rounded tonal container (`WtaIconPlate`) and pass
+the container's on-color as `color` and a contrasting scheme color as `accent`.
+Never tint these icons to a single silhouette — the two-tone detail is the
+point. The only remaining
 `ic_type_*` drawable is `ic_type_web.xml`, kept solely as the
 `FloatingWindowManager` minimized-bubble fallback (shell-synced, View-based,
 fixed dark bubble background).
@@ -144,34 +147,38 @@ fixed corner radius is genuinely required (it disables the press morph).
   for key numbers like ratings, install counts, versions).
 
 ### Display helpers
+- `WtaIconPlate(modifier, toneIndex, containerColor) { content }` — the canonical
+  rounded tonal icon container: `RoundedCornerShape(WtaRadius.IconPlate)` over a
+  `colorScheme` container (primary/secondary/tertiaryContainer rotated by
+  `toneIndex % 3`, or an explicit `containerColor`). Use it for routine icon
+  plates instead of polygon shapes.
 - `WtaIconTitle(icon, title, subtitle)` — icon plate + title header.
 - `WtaStatItem(value, label, accent)` — dashboard stat block.
 - `WtaBadge(text, icon)` — small pill badge.
 - `WtaDivider()` — full-width themed divider.
 
-### Material Shapes (`WtaShapes.kt`)
+### Material Shapes (`WtaShapes.kt`) — accents, not the default
+Beautify with components, styles and interactions first. Routine icon plates,
+list items and section markers use rounded tonal containers (`WtaIconPlate`,
+`WtaSettingRow`, `WtaIconTitle`), NOT polygons. Material Shapes are reserved
+for a few deliberate focal moments — at most one or two per screen (a hero
+background, a signature container). Do not scatter satellite shapes around a
+hero or flank text with decorative polygons.
 Official Material 3 Expressive shape library (`MaterialShapes.Cookie9Sided`,
-`Sunny`, `Clover4Leaf`, `Gem`, `Fan`, `Pill`, `Arch`, ...). Use these for
-decorative plates and empty-state art instead of plain rounded rectangles.
+`Sunny`, `Clover4Leaf`, `Gem`, ...), available for those accents:
 - `WtaMaterialShape(polygon, color, rotationDegrees)` — static official shape.
 - `WtaMorphingShape(startPolygon, endPolygon, color)` — infinite morph + slow
   rotation between two official shapes; falls back to the static start shape
-  when the user disables animations.
-- `WtaShapePlate(polygon, containerColor) { content }` — shape-backed icon
-  plate; center any icon inside.
+  when the user disables animations. Good for a single hero moment.
+- `WtaShapePlate(polygon, containerColor) { content }` — shape-backed plate;
+  prefer `WtaIconPlate` unless a polygon is genuinely the focal intent.
 - `WtaPolygonShape(polygon)` — adapts an official `RoundedPolygon` into a
   Compose `Shape` for component containers (e.g. the home create FAB uses
   `MaterialShapes.Cookie12Sided`). Prefer container-friendly, symmetric shapes
   for wide buttons; radial/lobed shapes distort when stretched.
 Pull colors from `MaterialTheme.colorScheme.*` containers; never hard-code.
-Each screen keeps its own shape vocabulary so decorations stay distinctive:
-Home uses the Cookie/Sunny/Clover/Gem family, About adds Heart, Module
-Market uses Puffy / Flower / ClamShell / Bun / SoftBurst / Clover8Leaf /
-Diamond / PuffyDiamond, the plugin editor uses PixelCircle, the code
-editor dialog uses Slanted, the create-type gallery uses Boom / Burst /
-SemiCircle / Oval / Square / Arrow, plugin management uses SoftBoom, and the
-media create hero uses PixelTriangle. Pick shapes no other screen uses for new
-screens.
+There is no per-screen shape vocabulary — keep accents sparse and consistent
+rather than assigning each screen its own polygon family.
 - `WtaLoadingIndicator(size, color, progress)` — Material 3 Expressive loading
   indicator (shape-morph animation). The only spinner primitive; use it for
   both indeterminate and determinate (`progress = { value }`) loading.
