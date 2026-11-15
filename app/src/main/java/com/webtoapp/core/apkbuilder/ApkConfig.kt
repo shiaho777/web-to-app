@@ -8,7 +8,6 @@ data class ApkConfig(
     val activation: ActivationBlock = ActivationBlock(),
     val adBlock: AdBlockBlock = AdBlockBlock(),
     val announcement: AnnouncementBlock = AnnouncementBlock(),
-    val ads: AdsBlock = AdsBlock(),
     val webView: WebViewBlock = WebViewBlock(),
     val webViewBehavior: WebViewBehaviorBlock = WebViewBehaviorBlock(),
     val screenAwake: ScreenAwakeBlock = ScreenAwakeBlock(),
@@ -89,16 +88,6 @@ data class ApkConfig(
     val announcementTriggerOnLaunch: Boolean get() = announcement.triggerOnLaunch
     val announcementTriggerOnNoNetwork: Boolean get() = announcement.triggerOnNoNetwork
     val announcementTriggerIntervalMinutes: Int get() = announcement.triggerIntervalMinutes
-
-    val adsEnabled: Boolean get() = ads.enabled
-    val adAppId: String get() = ads.appId
-    val adTestMode: Boolean get() = ads.testMode
-    val adBannerEnabled: Boolean get() = ads.bannerEnabled
-    val adBannerId: String get() = ads.bannerId
-    val adInterstitialEnabled: Boolean get() = ads.interstitialEnabled
-    val adInterstitialId: String get() = ads.interstitialId
-    val adSplashEnabled: Boolean get() = ads.splashEnabled
-    val adSplashId: String get() = ads.splashId
 
     val javaScriptEnabled: Boolean get() = webView.javaScriptEnabled
     val domStorageEnabled: Boolean get() = webView.domStorageEnabled
@@ -472,18 +461,6 @@ data class AnnouncementBlock(
     val triggerIntervalIncludeLaunch: Boolean = false,
     val showIcon: Boolean = true,
     val hasCustomIcon: Boolean = false
-)
-
-data class AdsBlock(
-    val enabled: Boolean = false,
-    val appId: String = "",
-    val bannerEnabled: Boolean = false,
-    val bannerId: String = "",
-    val interstitialEnabled: Boolean = false,
-    val interstitialId: String = "",
-    val splashEnabled: Boolean = false,
-    val splashId: String = "",
-    val testMode: Boolean = false
 )
 
 data class WebViewBlock(

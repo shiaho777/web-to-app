@@ -251,7 +251,6 @@ val syncShellRuntimeSources by tasks.registering(Sync::class) {
         "**/core/engine/**",
         "**/core/scraper/**",
         "**/core/script/**",
-        "**/core/ads/**",
         "**/core/network/**",
         "**/core/errorpage/**",
         "**/core/golang/**",

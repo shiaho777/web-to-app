@@ -259,33 +259,6 @@ data class ShellConfig(
     @SerializedName("announcementHasCustomIcon")
     val announcementHasCustomIcon: Boolean = false,
 
-    @SerializedName("adsEnabled")
-    val adsEnabled: Boolean = false,
-
-    @SerializedName("adAppId")
-    val adAppId: String = "",
-
-    @SerializedName("adTestMode")
-    val adTestMode: Boolean = false,
-
-    @SerializedName("adBannerEnabled")
-    val adBannerEnabled: Boolean = false,
-
-    @SerializedName("adBannerId")
-    val adBannerId: String = "",
-
-    @SerializedName("adInterstitialEnabled")
-    val adInterstitialEnabled: Boolean = false,
-
-    @SerializedName("adInterstitialId")
-    val adInterstitialId: String = "",
-
-    @SerializedName("adSplashEnabled")
-    val adSplashEnabled: Boolean = false,
-
-    @SerializedName("adSplashId")
-    val adSplashId: String = "",
-
     @SerializedName("webViewConfig")
     val webViewConfig: WebViewShellConfig = WebViewShellConfig(),
 

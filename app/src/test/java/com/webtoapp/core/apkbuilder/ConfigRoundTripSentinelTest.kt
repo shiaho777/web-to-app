@@ -9,7 +9,6 @@ import com.webtoapp.core.privacy.IsolationConfig
 import com.webtoapp.core.bgm.bgmControlEnabled
 import com.webtoapp.core.shell.MultiWebShellConfig
 import com.webtoapp.core.shell.ShellConfig
-import com.webtoapp.data.model.AdConfig
 import com.webtoapp.data.model.Announcement
 import com.webtoapp.data.model.AnnouncementTemplateType
 import com.webtoapp.data.model.AppType
@@ -125,33 +124,6 @@ class ConfigRoundTripSentinelTest {
         assertThat(shell.adBlockEnabled).isTrue()
         assertThat(shell.adBlockRules).containsExactly("||ads.sentinel.example^", "||track.sentinel.example^").inOrder()
         assertThat(shell.adBlockSubscriptions).containsExactly("https://list.sentinel.example/block.txt")
-    }
-
-    @Test
-    fun `ads block round-trip through nullable flatten`() {
-        val app = baseApp().copy(
-            adsEnabled = true,
-            adConfig = AdConfig(
-                appId = "ca-app-pub-SEN~APP",
-                bannerEnabled = true,
-                bannerId = "SEN-BANNER",
-                interstitialEnabled = true,
-                interstitialId = "SEN-INTER",
-                splashEnabled = true,
-                splashId = "SEN-SPLASH",
-                testMode = true
-            )
-        )
-        val shell = roundTrip(app)
-        assertThat(shell.adsEnabled).isTrue()
-        assertThat(shell.adAppId).isEqualTo("ca-app-pub-SEN~APP")
-        assertThat(shell.adTestMode).isTrue()
-        assertThat(shell.adBannerEnabled).isTrue()
-        assertThat(shell.adBannerId).isEqualTo("SEN-BANNER")
-        assertThat(shell.adInterstitialEnabled).isTrue()
-        assertThat(shell.adInterstitialId).isEqualTo("SEN-INTER")
-        assertThat(shell.adSplashEnabled).isTrue()
-        assertThat(shell.adSplashId).isEqualTo("SEN-SPLASH")
     }
 
     @Test

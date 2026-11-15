@@ -14,7 +14,6 @@ import com.google.gson.stream.JsonReader
 import com.google.gson.stream.JsonToken
 import com.google.gson.stream.JsonWriter
 import com.webtoapp.data.model.ActivationDialogConfig
-import com.webtoapp.data.model.AdConfig
 import com.webtoapp.data.model.Announcement
 import com.webtoapp.data.model.ApkExportConfig
 import com.webtoapp.data.model.AppType
@@ -190,12 +189,6 @@ class Converters {
             emptyList()
         }
     }
-
-    @TypeConverter
-    fun fromAdConfig(value: AdConfig?): String = toJson(value)
-
-    @TypeConverter
-    fun toAdConfig(value: String): AdConfig? = fromJson(value)
 
     @TypeConverter
     fun fromAnnouncement(value: Announcement?): String = toJson(value)

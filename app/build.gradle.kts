@@ -38,8 +38,8 @@ val hasReleaseSigningConfig = releaseSigningStoreFile?.isFile == true &&
     !localProperties.getProperty("signing.keyAlias").isNullOrBlank() &&
     !localProperties.getProperty("signing.keyPassword").isNullOrBlank()
 
-// -Pfdroid=true builds the host and the embedded shell template without Firebase,
-// Play Services, or AdMob, and leaves the release APK unsigned for F-Droid to sign.
+// -Pfdroid=true builds the host and the embedded shell template without Firebase
+// or Play Services, and leaves the release APK unsigned for F-Droid to sign.
 // One Gradle invocation is one mode: do not mix this flag with a normal release.
 val isFdroidBuild: Boolean = run {
     val raw = findProperty("fdroid")?.toString()?.trim()?.lowercase()
@@ -47,7 +47,7 @@ val isFdroidBuild: Boolean = run {
 }
 
 if (isFdroidBuild) {
-    // Direct Firebase / sign-in / ads deps are already omitted. This also drops
+    // Direct Firebase / sign-in deps are already omitted. This also drops
     // GeckoView's Play Services FIDO client (WebAuthn only). Those two GeckoView
     // classes fail if WebAuthn runs; nothing else in the engine references them.
     configurations.configureEach {
@@ -236,7 +236,7 @@ android {
         // Django gettext sources (*.po, runtime reads .mo only) and Gecko's
         // omni.ja (downloaded on demand). packaging.resources.excludes does
         // NOT cover assets, hence aapt-level filtering (verified by APK audit).
-        ignoreAssetsPattern = if (isFdroidBuild) "*.po:*.ja:admob.zip" else "*.po:*.ja"
+        ignoreAssetsPattern = "*.po:*.ja"
 
         localeFilters += listOf("zh", "en", "ar")
     }
@@ -277,32 +277,6 @@ tasks.register<Copy>("syncShellTemplateApk") {
 tasks.matching { it.name == "preBuild" }.configureEach {
     if (!skipShellTemplateSync.get()) {
         dependsOn("syncShellTemplateApk")
-    }
-    if (!isFdroidBuild && !skipStackBundlesSync.get()) {
-        dependsOn("syncStackBundles")
-    }
-}
-
-// Optional feature stacks (issue #1115): bundle zips produced by
-// feature-stacks/* modules land in assets/stacks/ and are grafted into
-// generated APKs only for configs that enable them.
-val skipStackBundlesSync = providers.gradleProperty("skipStackBundlesSync").map(String::toBoolean).orElse(false)
-
-// Pre-configure the stack module during this script's configuration phase —
-// deferring it to task-graph resolution trips Gradle's class-loader-scope
-// locking under configuration-on-demand. F-Droid builds skip the module so
-// the proprietary ads SDK is neither compiled nor copied into assets.
-if (!isFdroidBuild) {
-    evaluationDependsOn(":feature-stacks:admob")
-
-    tasks.register<Copy>("syncStackBundles") {
-        description = "Copies built feature-stack bundles into app assets for optional APK grafting."
-        group = "build"
-        dependsOn(":feature-stacks:admob:bundleAdmobStack")
-        from(rootProject.layout.projectDirectory.dir("feature-stacks/admob/build/outputs/stack")) {
-            include("*.zip")
-        }
-        into(file("src/main/assets/stacks"))
     }
 }
 

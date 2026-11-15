@@ -1836,7 +1836,6 @@ fun WebViewScreen(
     var canGoBack by remember { mutableStateOf(false) }
     var canGoForward by remember { mutableStateOf(false) }
     var isRefreshing by remember { mutableStateOf(false) }
-    var adCapabilityNoticeShown by remember { mutableStateOf(false) }
 
     var showSplash by remember { mutableStateOf(false) }
     var splashCountdown by remember { mutableIntStateOf(0) }
@@ -2031,14 +2030,6 @@ fun WebViewScreen(
                 activity.refreshWindowConfig()
             }
 
-            if (!adCapabilityNoticeShown && hasConfiguredAds(app)) {
-                adCapabilityNoticeShown = true
-                AppLogger.w(
-                    "WebViewActivity",
-                    "Ad config detected for appId=${app.id}, but AdManager is placeholder-only and no ad SDK is integrated"
-                )
-                Toast.makeText(context, Strings.adSdkNotIntegrated, Toast.LENGTH_LONG).show()
-            }
             if (!usesPageEdgeColor(app)) {
                 statusBarAutoColor = null
                 pageBottomAutoColor = null

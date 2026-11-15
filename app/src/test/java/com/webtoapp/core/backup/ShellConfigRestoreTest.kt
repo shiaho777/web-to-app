@@ -6,7 +6,6 @@ import com.webtoapp.core.activation.ActivationCodeType
 import com.webtoapp.core.apkbuilder.ApkConfigJsonFactory
 import com.webtoapp.core.apkbuilder.toApkConfig
 import com.webtoapp.core.shell.ShellConfig
-import com.webtoapp.data.model.AdConfig
 import com.webtoapp.data.model.Announcement
 import com.webtoapp.data.model.AnnouncementTemplateType
 import com.webtoapp.data.model.ApkEncryptionConfig
@@ -237,7 +236,7 @@ class ShellConfigRestoreTest {
     }
 
     @Test
-    fun `activation announcement ads and translate survive the restore`() {
+    fun `activation announcement and translate survive the restore`() {
         val app = baseApp().copy(
             activationEnabled = true,
             activationCodeList = listOf(ActivationCode(code = "ABC", type = ActivationCodeType.PERMANENT)),
@@ -252,8 +251,6 @@ class ShellConfigRestoreTest {
                 template = AnnouncementTemplateType.DARK,
                 triggerIntervalMinutes = 30
             ),
-            adsEnabled = true,
-            adConfig = AdConfig(appId = "ca-app-pub-1", bannerEnabled = true, bannerId = "b1", testMode = true),
             translateEnabled = true,
             translateConfig = TranslateConfig(targetLanguage = TranslateLanguage.ENGLISH, showFloatingButton = false)
         )
@@ -271,10 +268,6 @@ class ShellConfigRestoreTest {
         assertThat(restored.announcement?.linkUrl).isEqualTo("https://link.example.com")
         assertThat(restored.announcement?.template).isEqualTo(AnnouncementTemplateType.DARK)
         assertThat(restored.announcement?.triggerIntervalMinutes).isEqualTo(30)
-        assertThat(restored.adsEnabled).isTrue()
-        assertThat(restored.adConfig?.appId).isEqualTo("ca-app-pub-1")
-        assertThat(restored.adConfig?.bannerId).isEqualTo("b1")
-        assertThat(restored.adConfig?.testMode).isTrue()
         assertThat(restored.translateEnabled).isTrue()
         assertThat(restored.translateConfig?.targetLanguage).isEqualTo(TranslateLanguage.ENGLISH)
         assertThat(restored.translateConfig?.showFloatingButton).isFalse()

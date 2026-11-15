@@ -382,11 +382,6 @@ class ApkBuilder(private val context: Context) {
         if (!AdvancedAppTypes.isUsable(context, webApp.appType)) {
             return BuildResult.Error(Strings.advancedFeaturesOff)
         }
-        if (webApp.adsEnabled && !com.webtoapp.BuildConfig.FDROID &&
-            AdMobAppIds.manifestValue(webApp.adConfig?.appId.orEmpty(), webApp.adConfig?.testMode == true) == null
-        ) {
-            return BuildResult.Error(Strings.adMobAppIdInvalid)
-        }
         return withContext(Dispatchers.IO) {
         // Serialize builds of the same package across all entry points (export screen,
         // home share, agent tools): the build writes deterministic temp paths keyed by
@@ -1642,12 +1637,7 @@ class ApkBuilder(private val context: Context) {
                             stackBundles.forEach { bundle ->
                                 modifiedData = featureStackGrafter.graftManifest(
                                     modifiedData, bundle, config.packageName,
-                                    mapOf(
-                                        "admobAppId" to (
-                                            AdMobAppIds.manifestValue(config.adAppId, config.adTestMode)
-                                                ?: config.adAppId
-                                            )
-                                    )
+                                    emptyMap()
                                 )
                             }
                             writeEntryDeflated(zipOut, entry.name, modifiedData)
@@ -4026,7 +4016,6 @@ builtins.__import__ = _w2a_import
         if ((targetUrl.startsWith("http://", ignoreCase = true) ||
                 targetUrl.startsWith("https://", ignoreCase = true)) &&
             !targetUrl.isLoopbackHttpUrl()) return true
-        if (adsEnabled || adBannerEnabled || adInterstitialEnabled || adSplashEnabled) return true
         if (announcementEnabled &&
             (announcementLink.startsWith("http://", ignoreCase = true) ||
                 announcementLink.startsWith("https://", ignoreCase = true) ||
@@ -4095,7 +4084,6 @@ fun WebApp.toApkConfig(packageName: String, context: android.content.Context? = 
         activation = buildActivationBlock(),
         adBlock = buildAdBlockBlock(),
         announcement = buildAnnouncementBlock(),
-        ads = buildAdsBlock(),
         webView = buildWebViewBlock(context),
         webViewBehavior = buildWebViewBehaviorBlock(),
         screenAwake = buildScreenAwakeBlock(),
@@ -4256,20 +4244,6 @@ private fun WebApp.buildAnnouncementBlock(): AnnouncementBlock = AnnouncementBlo
     triggerIntervalIncludeLaunch = announcement?.triggerIntervalIncludeLaunch ?: false,
     showIcon = announcement?.showIcon ?: true,
     hasCustomIcon = !announcement?.customIconPath.isNullOrBlank()
-)
-
-private fun WebApp.buildAdsBlock(): AdsBlock = AdsBlock(
-    // F-Droid hosts do not ship the admob stack, so export cannot graft it.
-    // Keep saved unit ids; only the enabled flag is forced off.
-    enabled = adsEnabled && !com.webtoapp.BuildConfig.FDROID,
-    appId = adConfig?.appId ?: "",
-    bannerEnabled = adConfig?.bannerEnabled ?: false,
-    bannerId = adConfig?.bannerId ?: "",
-    interstitialEnabled = adConfig?.interstitialEnabled ?: false,
-    interstitialId = adConfig?.interstitialId ?: "",
-    splashEnabled = adConfig?.splashEnabled ?: false,
-    splashId = adConfig?.splashId ?: "",
-    testMode = adConfig?.testMode ?: false
 )
 
 private fun com.webtoapp.data.model.WebViewConfig.toWebViewBlock(context: android.content.Context?): WebViewBlock {

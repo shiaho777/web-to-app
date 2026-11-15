@@ -7,7 +7,6 @@ import com.webtoapp.core.errorpage.MiniGameType
 import com.webtoapp.core.kernel.KernelFlavor
 import com.webtoapp.core.shell.ShellConfig
 import com.webtoapp.data.model.ActivationDialogConfig
-import com.webtoapp.data.model.AdConfig
 import com.webtoapp.data.model.Announcement
 import com.webtoapp.data.model.AnnouncementTemplateType
 import com.webtoapp.data.model.ApkEncryptionConfig
@@ -293,17 +292,6 @@ internal fun ShellConfig.toRestoredWebApp(): WebApp {
                 buttonText = activationDialogButtonText
             )
         } else null,
-        adsEnabled = adsEnabled,
-        adConfig = AdConfig(
-            appId = adAppId,
-            bannerEnabled = adBannerEnabled,
-            bannerId = adBannerId,
-            interstitialEnabled = adInterstitialEnabled,
-            interstitialId = adInterstitialId,
-            splashEnabled = adSplashEnabled,
-            splashId = adSplashId,
-            testMode = adTestMode
-        ),
         announcementEnabled = announcementEnabled,
         announcement = Announcement(
             title = announcementTitle,
