@@ -1,7 +1,6 @@
 package com.webtoapp.ui.webview
 
 import com.webtoapp.core.logging.AppLogger
-import com.webtoapp.data.model.WebApp
 import com.webtoapp.util.ensureWebUrlScheme
 import com.webtoapp.util.normalizeExternalIntentUrl
 
@@ -18,12 +17,4 @@ internal fun normalizeExternalUrlForIntent(rawUrl: String): String {
         return ""
     }
     return normalizeWebUrlForSecurity(safeUrl)
-}
-
-internal fun hasConfiguredAds(app: WebApp): Boolean {
-    val config = app.adConfig
-    return app.adsEnabled ||
-        config?.bannerId?.isNotBlank() == true ||
-        config?.interstitialId?.isNotBlank() == true ||
-        config?.splashId?.isNotBlank() == true
 }

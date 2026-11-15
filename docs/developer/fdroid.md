@@ -14,10 +14,9 @@ Output: `app/build/outputs/apk/standard/release/app-standard-release-unsigned.ap
 | --- | --- |
 | Firebase Cloud Messaging | Omitted. Push still works through the Web Notification polyfill, HTTP polling, and WebSocket. |
 | Google Sign-In (Play Services / Credential Manager) | Omitted. `NativeBridge.googleSignIn` returns `UNAVAILABLE`. |
-| AdMob feature stack | The `:feature-stacks:admob` module is not included. Editor ads UI is hidden. Export writes a disabled ads block. |
 | Play Services FIDO (GeckoView WebAuthn) | Excluded. Other GeckoView paths are unchanged. |
 | Release signing | `signingConfig` is null so the APK stays unsigned. |
-| Host editor | FCM / Google Sign-In / AdMob entries are hidden. Saved config fields stay in the schema so export no-ops instead of forking JSON. |
+| Host editor | FCM / Google Sign-In entries are hidden. Saved config fields stay in the schema so export no-ops instead of forking JSON. |
 
 `BuildConfig.FDROID` is `true` in both `:app` and `:shell`. Google-typed sources live in `app/src/google/java`; the F-Droid twins with the same FQCN live in `app/src/fdroid/java`. Shell sync copies one of those two trees.
 
@@ -63,7 +62,6 @@ Builds:
       - fdroid=true
     ndk: r28c
     rm:
-      - feature-stacks/admob
       - app/src/google
 
 AutoUpdateMode: Version

@@ -14,10 +14,9 @@ GitHub、Play 和 F-Droid 共用同一份源码。F-Droid 构建是 Gradle 属�
 | --- | --- |
 | Firebase Cloud Messaging | 不编入。推送仍走 Web Notification polyfill、HTTP 轮询和 WebSocket。 |
 | Google 登录（Play 服务 / Credential Manager） | 不编入。`NativeBridge.googleSignIn` 返回 `UNAVAILABLE`。 |
-| AdMob 功能栈 | 不 include `:feature-stacks:admob`。编辑器广告项隐藏。导出写入关闭的 ads 块。 |
 | Play Services FIDO（GeckoView WebAuthn） | 排除。GeckoView 其余路径不变。 |
 | Release 签名 | `signingConfig` 为空，APK 保持未签名。 |
-| 宿主编辑器 | 隐藏 FCM / Google 登录 / AdMob 入口。配置字段留在 schema 里，导出时空操作，不拆 JSON。 |
+| 宿主编辑器 | 隐藏 FCM / Google 登录入口。配置字段留在 schema 里，导出时空操作，不拆 JSON。 |
 
 `:app` 和 `:shell` 的 `BuildConfig.FDROID` 都为 `true`。带 Google 类型的源码在 `app/src/google/java`；同 FQCN 的 F-Droid 空实现在 `app/src/fdroid/java`。Shell 同步只拷其中一棵树。
 
@@ -63,7 +62,6 @@ Builds:
       - fdroid=true
     ndk: r28c
     rm:
-      - feature-stacks/admob
       - app/src/google
 
 AutoUpdateMode: Version

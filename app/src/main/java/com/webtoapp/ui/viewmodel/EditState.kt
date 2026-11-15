@@ -6,7 +6,6 @@ import androidx.compose.runtime.Stable
 import com.webtoapp.core.activation.ActivationCode
 import com.webtoapp.core.appearance.DeviceDisguiseConfig
 import com.webtoapp.data.model.ActivationDialogConfig
-import com.webtoapp.data.model.AdConfig
 import com.webtoapp.data.model.Announcement
 import com.webtoapp.data.model.ApkExportConfig
 import com.webtoapp.data.model.withRuntimePermissionsSyncedFromFeatures
@@ -35,8 +34,6 @@ data class EditState(
     val activationRequireEveryTime: Boolean = false,
     val activationDialogConfig: ActivationDialogConfig = ActivationDialogConfig(),
     val activationRemoteConfig: com.webtoapp.data.model.RemoteActivationConfig? = null,
-    val adsEnabled: Boolean = false,
-    val adConfig: AdConfig = AdConfig(),
     val announcementEnabled: Boolean = false,
     val announcement: Announcement = Announcement(),
     val adBlockEnabled: Boolean = false,
@@ -74,8 +71,6 @@ fun WebApp.toEditState(): EditState {
         activationRequireEveryTime = synced.activationRequireEveryTime,
         activationDialogConfig = synced.activationDialogConfig ?: ActivationDialogConfig(),
         activationRemoteConfig = synced.activationRemoteConfig,
-        adsEnabled = synced.adsEnabled,
-        adConfig = synced.adConfig ?: AdConfig(),
         announcementEnabled = synced.announcementEnabled,
         announcement = synced.announcement ?: Announcement(),
         adBlockEnabled = synced.adBlockEnabled,

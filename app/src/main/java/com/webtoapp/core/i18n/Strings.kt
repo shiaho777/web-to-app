@@ -4006,19 +4006,6 @@ object Strings {
     val aiPromptPython2: String get() = StringsE.aiPromptPython2
     val aiPromptGo1: String get() = StringsE.aiPromptGo1
     val aiPromptGo2: String get() = StringsE.aiPromptGo2
-    val adSdkNotIntegrated: String get() = StringsE.adSdkNotIntegrated
-    val adsMonetization: String get() = StringsE.adsMonetization
-    val adsMonetizationHint: String get() = StringsE.adsMonetizationHint
-    val adMobAppId: String get() = StringsE.adMobAppId
-    val adMobAppIdHint: String get() = StringsE.adMobAppIdHint
-    val adMobAppIdInvalid: String get() = StringsE.adMobAppIdInvalid
-    val adTestMode: String get() = StringsE.adTestMode
-    val adTestModeHint: String get() = StringsE.adTestModeHint
-    val adBannerAd: String get() = StringsE.adBannerAd
-    val adInterstitialAd: String get() = StringsE.adInterstitialAd
-    val adSplashAd: String get() = StringsE.adSplashAd
-    val adUnitIdLabel: String get() = StringsE.adUnitIdLabel
-    val adUnitIdPlaceholder: String get() = StringsE.adUnitIdPlaceholder
     val storagePermissionRequiredForExport: String get() = StringsE.storagePermissionRequiredForExport
     val shareImage: String get() = StringsE.shareImage
     val saveFailedCannotProcessHtml: String get() = StringsE.saveFailedCannotProcessHtml
@@ -5170,7 +5157,6 @@ object Strings {
     val filePrefixFile: String get() = StringsE.filePrefixFile
     fun httpErrorCode(code: Int): String = StringsE.httpErrorCode(code)
     fun wpProjectDirMissing(path: String): String = StringsE.wpProjectDirMissing(path)
-    val interstitialAdNotConfigured: String get() = StringsE.interstitialAdNotConfigured
     val translateEngineAuto: String get() = StringsE.translateEngineAuto
     val blobImageUsePageDownload: String get() = StringsE.blobImageUsePageDownload
     val blobVideoUsePageDownload: String get() = StringsE.blobVideoUsePageDownload

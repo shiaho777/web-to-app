@@ -567,11 +567,7 @@ fun CreateAppScreen(
                     onConfigChange = { viewModel.updateEditState { copy(webViewConfig = it) } },
                     runtimePermissions = editState.apkExportConfig?.runtimePermissions
                         ?: com.webtoapp.data.model.ApkRuntimePermissions(),
-                    onRuntimePermissionsTransform = viewModel::updateRuntimePermissions,
-                    adsEnabled = editState.adsEnabled,
-                    adConfig = editState.adConfig,
-                    onAdsEnabledChange = { viewModel.updateEditState { copy(adsEnabled = it) } },
-                    onAdConfigChange = { viewModel.updateEditState { copy(adConfig = it) } }
+                    onRuntimePermissionsTransform = viewModel::updateRuntimePermissions
                 )
             }
 
@@ -763,122 +759,6 @@ private fun CreateAppBottomBar(
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(Strings.btnSave)
             }
-        }
-    }
-}
-
-/**
- * AdMob monetization controls. Rendered inside
- * [SpecialSettingsCard]'s monetization section — no card wrapper here.
- */
-@Composable
-fun AdsMonetizationSection(
-    enabled: Boolean,
-    config: AdConfig,
-    onEnabledChange: (Boolean) -> Unit,
-    onConfigChange: (AdConfig) -> Unit
-) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        WtaToggleRow(
-            icon = Icons.Outlined.MonetizationOn,
-            title = Strings.adsMonetization,
-            subtitle = Strings.adsMonetizationHint.ifDescriptionsShown(),
-            checked = enabled,
-            onCheckedChange = onEnabledChange
-        )
-
-        AnimatedVisibility(
-            visible = enabled,
-            enter = CardExpandTransition,
-            exit = CardCollapseTransition
-        ) {
-            Column {
-                WtaSectionDivider()
-                Column(
-                    modifier = Modifier.padding(
-                        horizontal = WtaSpacing.RowHorizontal,
-                        vertical = WtaSpacing.ContentGap
-                    ),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    PremiumTextField(
-                        value = config.appId,
-                        onValueChange = { onConfigChange(config.copy(appId = it.trim())) },
-                        label = { Text(Strings.adMobAppId) },
-                        supportingText = if (LocalShowDescriptions.current) {
-                            { Text(Strings.adMobAppIdHint) }
-                        } else {
-                            null
-                        },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    WtaToggleRow(
-                        title = Strings.adTestMode,
-                        subtitle = Strings.adTestModeHint.ifDescriptionsShown(),
-                        checked = config.testMode,
-                        onCheckedChange = { onConfigChange(config.copy(testMode = it)) }
-                    )
-
-                    AdUnitRow(
-                        title = Strings.adBannerAd,
-                        enabled = config.bannerEnabled,
-                        unitId = config.bannerId,
-                        onEnabledChange = { onConfigChange(config.copy(bannerEnabled = it)) },
-                        onUnitIdChange = { onConfigChange(config.copy(bannerId = it.trim())) }
-                    )
-
-                    AdUnitRow(
-                        title = Strings.adInterstitialAd,
-                        enabled = config.interstitialEnabled,
-                        unitId = config.interstitialId,
-                        onEnabledChange = { onConfigChange(config.copy(interstitialEnabled = it)) },
-                        onUnitIdChange = { onConfigChange(config.copy(interstitialId = it.trim())) }
-                    )
-
-                    AdUnitRow(
-                        title = Strings.adSplashAd,
-                        enabled = config.splashEnabled,
-                        unitId = config.splashId,
-                        onEnabledChange = { onConfigChange(config.copy(splashEnabled = it)) },
-                        onUnitIdChange = { onConfigChange(config.copy(splashId = it.trim())) }
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun AdUnitRow(
-    title: String,
-    enabled: Boolean,
-    unitId: String,
-    onEnabledChange: (Boolean) -> Unit,
-    onUnitIdChange: (String) -> Unit
-) {
-    Column {
-        WtaToggleRow(
-            title = title,
-            checked = enabled,
-            onCheckedChange = onEnabledChange
-        )
-        AnimatedVisibility(
-            visible = enabled,
-            enter = CardExpandTransition,
-            exit = CardCollapseTransition
-        ) {
-            PremiumTextField(
-                value = unitId,
-                onValueChange = onUnitIdChange,
-                label = { Text(Strings.adUnitIdLabel) },
-                placeholder = { Text(Strings.adUnitIdPlaceholder) },
-                singleLine = true,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 8.dp)
-            )
         }
     }
 }

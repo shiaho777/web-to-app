@@ -90,9 +90,6 @@ data class WebApp(
     val activationRemoteConfig: RemoteActivationConfig? = null,
     val isActivated: Boolean = false,
 
-    val adsEnabled: Boolean = false,
-    val adConfig: AdConfig? = null,
-
     val announcementEnabled: Boolean = false,
     val announcement: Announcement? = null,
 
@@ -146,18 +143,6 @@ data class WebApp(
      */
     @ColumnInfo(defaultValue = "0")
     val homeSortIndex: Int = 0
-)
-
-data class AdConfig(
-    val appId: String = "",
-    val bannerEnabled: Boolean = false,
-    val bannerId: String = "",
-    val interstitialEnabled: Boolean = false,
-    val interstitialId: String = "",
-    val splashEnabled: Boolean = false,
-    val splashId: String = "",
-    val splashDuration: Int = 3,
-    val testMode: Boolean = false
 )
 
 enum class AnnouncementTemplateType {
