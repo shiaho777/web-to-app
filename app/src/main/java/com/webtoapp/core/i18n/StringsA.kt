@@ -6891,19 +6891,6 @@ object StringsA {
         AppLanguage.KOREAN -> "화면 방향"
     }
 
-    val orientationModeHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "设置应用的屏幕旋转方式"
-        AppLanguage.ENGLISH -> "Control how the app handles screen rotation"
-        AppLanguage.ARABIC -> "التحكم في كيفية تعامل التطبيق مع دوران الشاشة"
-        AppLanguage.PORTUGUESE -> "Controlar como o app gerencia a rotação da tela"
-        AppLanguage.SPANISH -> "Controlar cómo la app maneja la rotación de pantalla"
-        AppLanguage.FRENCH -> "Contrôler la gestion de la rotation d'écran par l'app"
-        AppLanguage.GERMAN -> "Steuern, wie die App die Bildschirmdrehung behandelt"
-        AppLanguage.RUSSIAN -> "Управление поворотом экрана в приложении"
-        AppLanguage.JAPANESE -> "アプリの画面回転の扱いを制御"
-        AppLanguage.KOREAN -> "앱이 화면 회전을 처리하는 방식 제어"
-    }
-
     val orientationLandscape: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "锁定横屏"
         AppLanguage.ENGLISH -> "Landscape"
