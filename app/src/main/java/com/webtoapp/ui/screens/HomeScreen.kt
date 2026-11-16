@@ -1317,8 +1317,7 @@ fun AppCard(
                         WtaAppTypeIcon(
                             type = app.appType,
                             modifier = Modifier.size(26.dp),
-                            color = colors.onSecondaryContainer,
-                            accent = colors.primary
+                            color = colors.onSecondaryContainer
                         )
                     }
                 }
@@ -1422,8 +1421,7 @@ fun AppCard(
                     WtaAppTypeIcon(
                         type = app.appType,
                         modifier = Modifier.size(18.dp),
-                        color = colors.onSurfaceVariant,
-                        accent = colors.primary
+                        color = colors.onSurfaceVariant
                     )
                 }
             }
@@ -1635,8 +1633,7 @@ fun AppGridTile(
                         WtaAppTypeIcon(
                             type = app.appType,
                             modifier = Modifier.size(28.dp),
-                            color = colors.onSecondaryContainer,
-                            accent = colors.primary
+                            color = colors.onSecondaryContainer
                         )
                     }
                 }

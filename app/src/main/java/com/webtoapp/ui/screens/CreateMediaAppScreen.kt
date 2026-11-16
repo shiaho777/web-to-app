@@ -569,8 +569,7 @@ private fun MediaHeroSection(
                     WtaAppTypeIcon(
                         type = mediaType,
                         modifier = Modifier.size(32.dp),
-                        color = accentColor,
-                        accent = accentColor
+                        color = accentColor
                     )
                 }
                 Spacer(modifier = Modifier.width(16.dp))

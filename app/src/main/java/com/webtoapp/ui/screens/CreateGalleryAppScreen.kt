@@ -1669,8 +1669,7 @@ fun CreateGalleryAppScreenV2(
                                 WtaAppTypeIcon(
                                     type = AppType.GALLERY,
                                     modifier = Modifier.size(32.dp),
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    accent = MaterialTheme.colorScheme.primary
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
                                 )
                             }
                         }

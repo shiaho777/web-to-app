@@ -48,8 +48,7 @@ fun WtaAppIcon(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(size * 2 / 9),
-                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                accent = MaterialTheme.colorScheme.primary
+                color = MaterialTheme.colorScheme.onPrimaryContainer
             )
         }
     }
