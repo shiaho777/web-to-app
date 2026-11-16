@@ -2436,10 +2436,12 @@ object Strings {
     val autoTranslateOnLoad: String get() = StringsC.autoTranslateOnLoad
     val autoTranslateOnLoadHint: String get() = StringsC.autoTranslateOnLoadHint
     val displayCutoutModeLabel: String get() = StringsC.displayCutoutModeLabel
-    val displayCutoutModeHint: String get() = StringsC.displayCutoutModeHint
     val displayCutoutModeShortEdges: String get() = StringsC.displayCutoutModeShortEdges
     val displayCutoutModeDefault: String get() = StringsC.displayCutoutModeDefault
     val displayCutoutModeNever: String get() = StringsC.displayCutoutModeNever
+    val displayCutoutModeShortEdgesDesc: String get() = StringsC.displayCutoutModeShortEdgesDesc
+    val displayCutoutModeDefaultDesc: String get() = StringsC.displayCutoutModeDefaultDesc
+    val displayCutoutModeNeverDesc: String get() = StringsC.displayCutoutModeNeverDesc
     val showStatusBar: String get() = StringsC.showStatusBar
     val showStatusBarHint: String get() = StringsC.showStatusBarHint
     val showNavigationBar: String get() = StringsC.showNavigationBar

@@ -2337,22 +2337,15 @@ fun FullscreenModeCard(
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.padding(bottom = 4.dp)
                     )
-                    Strings.displayCutoutModeHint.ifDescriptionsShown()?.let { hint ->
-                        Text(
-                            text = hint,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-
                     val cutoutModes = listOf(
-                        DisplayCutoutMode.SHORT_EDGES to Strings.displayCutoutModeShortEdges,
-                        DisplayCutoutMode.DEFAULT to Strings.displayCutoutModeDefault,
-                        DisplayCutoutMode.NEVER to Strings.displayCutoutModeNever
+                        Triple(DisplayCutoutMode.SHORT_EDGES, Strings.displayCutoutModeShortEdges, Strings.displayCutoutModeShortEdgesDesc),
+                        Triple(DisplayCutoutMode.DEFAULT, Strings.displayCutoutModeDefault, Strings.displayCutoutModeDefaultDesc),
+                        Triple(DisplayCutoutMode.NEVER, Strings.displayCutoutModeNever, Strings.displayCutoutModeNeverDesc)
                     )
-                    cutoutModes.forEach { (mode, label) ->
+                    cutoutModes.forEach { (mode, label, desc) ->
                         WtaSelectableRow(
                             title = label,
+                            subtitle = desc.ifDescriptionsShown(),
                             selected = webViewConfig.displayCutoutMode == mode,
                             onClick = {
                                 onWebViewConfigChange(webViewConfig.copy(displayCutoutMode = mode))
