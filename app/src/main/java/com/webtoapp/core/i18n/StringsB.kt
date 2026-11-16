@@ -1735,19 +1735,6 @@ object StringsB {
         AppLanguage.KOREAN -> "줌"
     }
 
-    val zoomSettingHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "允许用户缩放页面"
-        AppLanguage.ENGLISH -> "Allow user to zoom page"
-        AppLanguage.ARABIC -> "السماح للمستخدم بتكبير/تصغير الصفحة"
-        AppLanguage.PORTUGUESE -> "Permitir usuário aplicar zoom na página"
-        AppLanguage.SPANISH -> "Permitir al usuario hacer zoom en la página"
-        AppLanguage.FRENCH -> "Autoriser l'utilisateur à zoomer sur la page"
-        AppLanguage.GERMAN -> "Nutzern erlauben, die Seite zu zoomen"
-        AppLanguage.RUSSIAN -> "Разрешить пользователю масштабировать страницу"
-        AppLanguage.JAPANESE -> "ユーザーがページをズームすることを許可"
-        AppLanguage.KOREAN -> "사용자가 페이지를 줌하도록 허용"
-    }
-
     val swipeRefreshSetting: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "下拉刷新"
         AppLanguage.ENGLISH -> "Swipe Refresh"
@@ -1759,19 +1746,6 @@ object StringsB {
         AppLanguage.RUSSIAN -> "Обновление свайпом"
         AppLanguage.JAPANESE -> "スワイプで更新"
         AppLanguage.KOREAN -> "스와이프 새로고침"
-    }
-
-    val swipeRefreshSettingHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "允许下拉刷新页面"
-        AppLanguage.ENGLISH -> "Allow swipe down to refresh"
-        AppLanguage.ARABIC -> "السماح بالسحب لأسفل للتحديث"
-        AppLanguage.PORTUGUESE -> "Permitir deslizar para baixo para atualizar"
-        AppLanguage.SPANISH -> "Permitir deslizar hacia abajo para actualizar"
-        AppLanguage.FRENCH -> "Autoriser le glisser vers le bas pour actualiser"
-        AppLanguage.GERMAN -> "Wisch nach unten zum Aktualisieren erlauben"
-        AppLanguage.RUSSIAN -> "Разрешить обновление свайпом вниз"
-        AppLanguage.JAPANESE -> "下にスワイプして更新を許可"
-        AppLanguage.KOREAN -> "아래로 스와이프하여 새로고침 허용"
     }
 
     val overscrollEffectSetting: String get() = when (Strings.lang) {
@@ -1852,19 +1826,6 @@ object StringsB {
         AppLanguage.KOREAN -> "자동 새로고침"
     }
 
-    val autoRefreshSettingDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "定时自动刷新网页"
-        AppLanguage.ENGLISH -> "Periodically reload the page"
-        AppLanguage.ARABIC -> "إعادة تحميل الصفحة دورياً"
-        AppLanguage.PORTUGUESE -> "Recarregar a página periodicamente"
-        AppLanguage.SPANISH -> "Recargar la página periódicamente"
-        AppLanguage.FRENCH -> "Recharger la page périodiquement"
-        AppLanguage.GERMAN -> "Seite periodisch neu laden"
-        AppLanguage.RUSSIAN -> "Периодически перезагружать страницу"
-        AppLanguage.JAPANESE -> "定期的にページをリロード"
-        AppLanguage.KOREAN -> "주기적으로 페이지 새로고침"
-    }
-
     val autoRefreshIntervalLabel: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "刷新间隔"
         AppLanguage.ENGLISH -> "Refresh Interval"
@@ -1930,19 +1891,6 @@ object StringsB {
         AppLanguage.RUSSIAN -> "Полноэкранное видео"
         AppLanguage.JAPANESE -> "全画面動画"
         AppLanguage.KOREAN -> "전체 화면 동영상"
-    }
-
-    val fullscreenVideoSettingHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "允许视频全屏播放"
-        AppLanguage.ENGLISH -> "Allow video fullscreen playback"
-        AppLanguage.ARABIC -> "السماح بتشغيل الفيديو بملء الشاشة"
-        AppLanguage.PORTUGUESE -> "Permitir reprodução de vídeo em tela cheia"
-        AppLanguage.SPANISH -> "Permitir reproducción de video en pantalla completa"
-        AppLanguage.FRENCH -> "Autoriser la lecture vidéo en plein écran"
-        AppLanguage.GERMAN -> "Vollbild-Videowiedergabe erlauben"
-        AppLanguage.RUSSIAN -> "Разрешить полноэкранное воспроизведение видео"
-        AppLanguage.JAPANESE -> "動画の全画面再生を許可"
-        AppLanguage.KOREAN -> "동영상 전체 화면 재생 허용"
     }
 
     val externalLinksSetting: String get() = when (Strings.lang) {
