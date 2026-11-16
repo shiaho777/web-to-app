@@ -1009,7 +1009,6 @@ fun BrowserAdvancedConfigCard(
                             WtaSectionDivider()
                             WtaToggleRow(
                                 title = Strings.zoomSetting,
-                                subtitle = Strings.zoomSettingHint.ifDescriptionsShown(),
                                 checked = config.zoomEnabled,
                                 onCheckedChange = { onConfigChange(config.copy(zoomEnabled = it)) }
                             )
@@ -1040,7 +1039,6 @@ fun BrowserAdvancedConfigCard(
                             WtaSectionDivider()
                             WtaToggleRow(
                                 title = Strings.fullscreenVideoSetting,
-                                subtitle = Strings.fullscreenVideoSettingHint.ifDescriptionsShown(),
                                 checked = config.fullscreenEnabled,
                                 onCheckedChange = { onConfigChange(config.copy(fullscreenEnabled = it)) }
                             )
@@ -1057,7 +1055,6 @@ fun BrowserAdvancedConfigCard(
                         Column(modifier = Modifier.fillMaxWidth()) {
                             WtaToggleRow(
                                 title = Strings.swipeRefreshSetting,
-                                subtitle = Strings.swipeRefreshSettingHint.ifDescriptionsShown(),
                                 checked = config.swipeRefreshEnabled,
                                 onCheckedChange = { onConfigChange(config.copy(swipeRefreshEnabled = it)) }
                             )
@@ -1212,7 +1209,6 @@ fun BrowserAdvancedConfigCard(
                             WtaSectionDivider()
                             WtaToggleRow(
                                 title = Strings.autoRefreshSettingLabel,
-                                subtitle = Strings.autoRefreshSettingDesc.ifDescriptionsShown(),
                                 checked = config.autoRefreshEnabled,
                                 onCheckedChange = { onConfigChange(config.copy(autoRefreshEnabled = it)) }
                             )
@@ -2177,7 +2173,6 @@ private fun UserAgentControls(
 
         WtaToggleRow(
             title = Strings.desktopModeLabel,
-            subtitle = Strings.desktopModeHint.ifDescriptionsShown(),
             checked = config.desktopMode,
             onCheckedChange = { onConfigChange(config.copy(desktopMode = it)) }
         )
