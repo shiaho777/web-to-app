@@ -2753,15 +2753,6 @@ fun LandscapeModeCard(
             ) {
                 Column {
                     WtaSectionDivider()
-                    WtaStatusBanner(
-                        message = Strings.orientationModeHint,
-                        tone = WtaStatusTone.Info,
-                        modifier = Modifier.padding(
-                            horizontal = WtaSpacing.RowHorizontal,
-                            vertical = WtaSpacing.ContentGap
-                        )
-                    )
-
                     Text(
                         text = Strings.orientationBasicLabel,
                         style = MaterialTheme.typography.labelMedium,
