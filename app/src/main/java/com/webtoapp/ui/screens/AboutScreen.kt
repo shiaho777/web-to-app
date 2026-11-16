@@ -136,16 +136,11 @@ import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun AboutScreen(onBack: () -> Unit, focusAdvanced: Boolean = false) {
+fun AboutScreen(onBack: () -> Unit) {
     val context = LocalContext.current
     val appContext = context.applicationContext
     val snackbarHostState = remember { SnackbarHostState() }
     val listState = rememberLazyListState()
-    LaunchedEffect(focusAdvanced) {
-        if (focusAdvanced) {
-            listState.animateScrollToItem(4)
-        }
-    }
     val version = remember(context) { com.webtoapp.core.host.AppVersionInfo.read(context) }
     val repoState = remember { AuthorReposState() }
     val repoScope = androidx.compose.runtime.rememberCoroutineScope()

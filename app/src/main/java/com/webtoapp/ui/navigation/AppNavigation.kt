@@ -108,7 +108,6 @@ object Routes {
     const val PORT_MANAGER = "port_manager"
     const val STATS = "stats"
     const val ABOUT = "about"
-    const val ABOUT_ADVANCED = "about_advanced"
     const val SETTINGS = "settings"
     const val PLAY_STORE = "play_store?appId={appId}&autoStart={autoStart}"
     const val FILE_MANAGER = "file_manager"
@@ -188,7 +187,6 @@ fun AppNavigation() {
                     onCreateGoApp = { navController.navigate(Routes.CREATE_GO_APP) },
                     onCreateMultiWebApp = { navController.navigate(Routes.CREATE_MULTI_WEB_APP) },
                     onCreateOfflinePack = { navController.navigate(Routes.CREATE_OFFLINE_PACK) },
-                    onOpenAboutAdvanced = { navController.navigate(Routes.ABOUT_ADVANCED) },
                         onEditApp = { webApp ->
                             viewModel.editApp(webApp)
                             navController.navigate(Routes.editApp(webApp.id))
@@ -774,13 +772,6 @@ fun AppNavigation() {
 
             composable(Routes.ABOUT) {
                 AboutScreen(onBack = { navController.popBackStackSafely() })
-            }
-
-            composable(Routes.ABOUT_ADVANCED) {
-                AboutScreen(
-                    onBack = { navController.popBackStackSafely() },
-                    focusAdvanced = true
-                )
             }
 
             composable(Routes.SETTINGS) {
