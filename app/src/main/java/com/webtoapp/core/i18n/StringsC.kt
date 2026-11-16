@@ -4552,7 +4552,7 @@ object StringsC {
     }
 
     val displayCutoutModeLabel: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "刘海屏 / 挖孔避让"
+        AppLanguage.CHINESE -> "刘海 / 挖孔区域"
         AppLanguage.ENGLISH -> "Display cutout"
         AppLanguage.ARABIC -> "تجنب منطقة القطع في الشاشة"
         AppLanguage.PORTUGUESE -> "Área do entalhe da tela"
@@ -4564,30 +4564,17 @@ object StringsC {
         AppLanguage.KOREAN -> "화면 컷아웃 영역"
     }
 
-    val displayCutoutModeHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "全屏时内容是否延伸到刘海或挖孔区域；选择避开可防止网页顶部按钮被遮挡。"
-        AppLanguage.ENGLISH -> "Choose whether fullscreen content extends into the notch or punch-hole area. Avoid it to keep top web buttons reachable."
-        AppLanguage.ARABIC -> "اختر ما إذا كان المحتوى بملء الشاشة يمتد إلى منطقة القطع. اختر التجنب لإبقاء أزرار الصفحة العلوية قابلة للوصول."
-        AppLanguage.PORTUGUESE -> "Escolha se o conteúdo em tela cheia avança sobre o entalhe. Evite-o para manter os botões superiores da página acessíveis."
-        AppLanguage.SPANISH -> "Elige si el contenido a pantalla completa se extiende al notch. Evítalo para que los botones superiores sigan accesibles."
-        AppLanguage.FRENCH -> "Choisissez si le contenu plein écran s'étend dans l'encoche. Évitez-la pour garder les boutons du haut accessibles."
-        AppLanguage.GERMAN -> "Lege fest, ob Vollbildinhalte in den Ausschnitt reichen. Vermeiden hält die oberen Web-Schaltflächen erreichbar."
-        AppLanguage.RUSSIAN -> "Выберите, должен ли контент в полноэкранном режиме заходить в область выреза. При обходе верхние кнопки страницы остаются доступными."
-        AppLanguage.JAPANESE -> "全画面表示でコンテンツを切り欠き領域まで広げるか選びます。避けるとページ上部のボタンが隠れません。"
-        AppLanguage.KOREAN -> "전체 화면 콘텐츠를 컷아웃 영역까지 확장할지 선택합니다. 피하면 페이지 상단 버튼이 가려지지 않습니다."
-    }
-
     val displayCutoutModeShortEdges: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "延伸到刘海区（全出血）"
-        AppLanguage.ENGLISH -> "Extend into cutout (full bleed)"
-        AppLanguage.ARABIC -> "التمدد إلى منطقة القطع (كامل الشاشة)"
-        AppLanguage.PORTUGUESE -> "Estender até o entalhe (tela inteira)"
-        AppLanguage.SPANISH -> "Extender hasta el notch (pantalla completa)"
-        AppLanguage.FRENCH -> "Étendre dans l'encoche (plein écran)"
-        AppLanguage.GERMAN -> "In den Ausschnitt erweitern (randlos)"
-        AppLanguage.RUSSIAN -> "Заходить в область выреза (без полей)"
-        AppLanguage.JAPANESE -> "切り欠き領域まで広げる（全画面）"
-        AppLanguage.KOREAN -> "컷아웃까지 확장 (전체 화면)"
+        AppLanguage.CHINESE -> "延伸到刘海区"
+        AppLanguage.ENGLISH -> "Extend into cutout"
+        AppLanguage.ARABIC -> "التمدد إلى منطقة القطع"
+        AppLanguage.PORTUGUESE -> "Estender até o entalhe"
+        AppLanguage.SPANISH -> "Extender hasta el notch"
+        AppLanguage.FRENCH -> "Étendre dans l'encoche"
+        AppLanguage.GERMAN -> "In den Ausschnitt erweitern"
+        AppLanguage.RUSSIAN -> "Заходить в область выреза"
+        AppLanguage.JAPANESE -> "切り欠き領域まで広げる"
+        AppLanguage.KOREAN -> "컷아웃까지 확장"
     }
 
     val displayCutoutModeDefault: String get() = when (Strings.lang) {
@@ -4614,6 +4601,45 @@ object StringsC {
         AppLanguage.RUSSIAN -> "Обходить область выреза"
         AppLanguage.JAPANESE -> "切り欠き領域を避ける"
         AppLanguage.KOREAN -> "컷아웃 영역 피하기"
+    }
+
+    val displayCutoutModeShortEdgesDesc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "画面铺满整屏，沉浸感最强"
+        AppLanguage.ENGLISH -> "Fills the whole screen for full immersion"
+        AppLanguage.ARABIC -> "يملأ الشاشة بالكامل لأقصى اندماج"
+        AppLanguage.PORTUGUESE -> "Preenche toda a tela para imersão total"
+        AppLanguage.SPANISH -> "Llena toda la pantalla para máxima inmersión"
+        AppLanguage.FRENCH -> "Remplit tout l'écran pour une immersion totale"
+        AppLanguage.GERMAN -> "Füllt den ganzen Bildschirm für volle Immersion"
+        AppLanguage.RUSSIAN -> "Заполняет весь экран для полного погружения"
+        AppLanguage.JAPANESE -> "画面全体に表示し没入感を最大化"
+        AppLanguage.KOREAN -> "전체 화면을 채워 몰입감 극대화"
+    }
+
+    val displayCutoutModeDefaultDesc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "按系统默认规则处理刘海区"
+        AppLanguage.ENGLISH -> "Let the system handle the cutout area"
+        AppLanguage.ARABIC -> "دع النظام يتعامل مع منطقة القطع"
+        AppLanguage.PORTUGUESE -> "Deixe o sistema tratar a área do entalhe"
+        AppLanguage.SPANISH -> "Deja que el sistema gestione el notch"
+        AppLanguage.FRENCH -> "Laisse le système gérer l'encoche"
+        AppLanguage.GERMAN -> "System verwaltet den Ausschnittbereich"
+        AppLanguage.RUSSIAN -> "Система сама обрабатывает область выреза"
+        AppLanguage.JAPANESE -> "切り欠き領域はシステムの既定に従う"
+        AppLanguage.KOREAN -> "컷아웃 영역은 시스템 기본값을 따름"
+    }
+
+    val displayCutoutModeNeverDesc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "避开刘海区，顶部按钮不被遮挡"
+        AppLanguage.ENGLISH -> "Avoids the cutout so top buttons stay clear"
+        AppLanguage.ARABIC -> "يتجنب منطقة القطع لتبقى الأزرار العلوية ظاهرة"
+        AppLanguage.PORTUGUESE -> "Evita o entalhe para manter os botões superiores livres"
+        AppLanguage.SPANISH -> "Evita el notch para que los botones superiores queden libres"
+        AppLanguage.FRENCH -> "Évite l'encoche pour garder les boutons du haut dégagés"
+        AppLanguage.GERMAN -> "Meidet den Ausschnitt, obere Schaltflächen bleiben frei"
+        AppLanguage.RUSSIAN -> "Обходит вырез, верхние кнопки остаются открытыми"
+        AppLanguage.JAPANESE -> "切り欠きを避け上部ボタンを隠さない"
+        AppLanguage.KOREAN -> "컷아웃을 피해 상단 버튼을 가리지 않음"
     }
 
     val showStatusBar: String get() = when (Strings.lang) {
