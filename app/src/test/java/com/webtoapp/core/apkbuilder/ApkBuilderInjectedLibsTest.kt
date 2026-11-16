@@ -86,6 +86,15 @@ class ApkBuilderInjectedLibsTest {
     }
 
     @Test
+    fun `device injection abi honors the selected architecture set`() {
+        assertThat(ApkBuilder.deviceInjectionAbi("arm64-v8a", emptyList())).isEqualTo("arm64-v8a")
+        assertThat(ApkBuilder.deviceInjectionAbi("arm64-v8a", listOf("arm64-v8a", "x86_64")))
+            .isEqualTo("arm64-v8a")
+        assertThat(ApkBuilder.deviceInjectionAbi("x86_64", listOf("arm64-v8a"))).isNull()
+        assertThat(ApkBuilder.deviceInjectionAbi("armeabi-v7a", listOf("arm64-v8a", "x86_64"))).isNull()
+    }
+
+    @Test
     fun `multi-abi injection never targets unsupported or non-node types`() {
         // x86 (32-bit) has no upstream libnode.so — nothing to inject/skip for it.
         assertThat(

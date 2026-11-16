@@ -2,6 +2,15 @@ package com.webtoapp.core.nodejs
 
 object NodeServiceProtocol {
 
+    const val MAX_HEALTH_CHECK_RETRIES = 60
+    const val HEALTH_CHECK_INTERVAL_MS = 500L
+    const val HEALTH_PROBE_TIMEOUT_MS = 500
+
+    const val SERVER_READY_BUDGET_MS =
+        MAX_HEALTH_CHECK_RETRIES * (2L * HEALTH_PROBE_TIMEOUT_MS + HEALTH_CHECK_INTERVAL_MS)
+
+    const val START_REPLY_TIMEOUT_MS = SERVER_READY_BUDGET_MS + 15_000L
+
     const val MSG_START_SERVER = 1
 
     const val MSG_STOP_SERVER = 2

@@ -4609,6 +4609,7 @@ object Strings {
     val signInputValidationFailed: String get() = StringsE.signInputValidationFailed
     val signKeyInitFailed: String get() = StringsE.signKeyInitFailed
     val signApkFailed: String get() = StringsE.signApkFailed
+    val signKeyRegeneratedRetry: String get() = StringsE.signKeyRegeneratedRetry
     val zipTooManyEntries: String get() = StringsE.zipTooManyEntries
     val zipSizeExceeded: String get() = StringsE.zipSizeExceeded
     val zipFileSizeExceeded: String get() = StringsE.zipFileSizeExceeded

@@ -653,4 +653,94 @@ class ApkBuildCacheTest {
         assertThat(plan2.mode).isEqualTo(IncrementalBuildMode.FULL)
         assertThat(plan2.identityFingerprint).isNotEqualTo(plan1.identityFingerprint)
     }
+
+    @Test
+    fun `bgm cover lyrics and announcement icon changes invalidate cached content`() {
+        val context = RuntimeEnvironment.getApplication()
+        val cache = ApkBuildCache(context)
+        cache.clearAll()
+
+        val webApp = com.webtoapp.data.model.WebApp(
+            id = 77,
+            name = "BgmApp",
+            url = "https://example.com"
+        )
+        val template = File(context.cacheDir, "shell_bgm.apk").apply {
+            writeBytes(ByteArray(16) { 6 })
+        }
+        val config = ApkConfig(
+            meta = MetaBlock(
+                appName = "BgmApp",
+                packageName = "com.demo.bgm",
+                targetUrl = "https://example.com",
+                versionCode = 1,
+                versionName = "1.0",
+                appType = "WEB"
+            )
+        )
+        val bgm = File(context.cacheDir, "bgm_track.mp3").apply { writeBytes(ByteArray(32) { 1 }) }
+        val cover = File(context.cacheDir, "bgm_cover.png").apply { writeBytes(ByteArray(16) { 2 }) }
+        val icon = File(context.cacheDir, "announcement_icon.png").apply { writeBytes(ByteArray(16) { 3 }) }
+        val lrc = com.webtoapp.data.model.LrcData(
+            lines = listOf(com.webtoapp.data.model.LrcLine(0L, 1000L, "hello"))
+        )
+
+        fun planWith(
+            covers: List<String?>,
+            lrcs: List<com.webtoapp.data.model.LrcData?>,
+            announcementIcon: String?
+        ) = cache.plan(
+            webApp = webApp,
+            packageName = "com.demo.bgm",
+            config = config,
+            templateApk = template,
+            encryptionEnabled = false,
+            abiFilters = emptyList(),
+            projectDirs = emptyList(),
+            mediaContentPath = null,
+            splashMediaPath = null,
+            bgmPlaylistPaths = listOf(bgm.absolutePath),
+            bgmCoverPaths = covers,
+            bgmLrcDataList = lrcs,
+            announcementIconPath = announcementIcon,
+            htmlFiles = emptyList(),
+            galleryItems = emptyList(),
+            errorPageMediaPath = null,
+            forceFullRebuild = false
+        )
+
+        val base = planWith(listOf(cover.absolutePath), listOf(lrc), icon.absolutePath)
+        assertThat(base.mode).isEqualTo(IncrementalBuildMode.FULL)
+        val unsigned = File(context.cacheDir, "bgm_unsigned.apk").apply { writeBytes(ByteArray(64) { 9 }) }
+        cache.saveUnsigned(
+            webApp = webApp,
+            packageName = "com.demo.bgm",
+            unsignedApk = unsigned,
+            identityFingerprint = base.identityFingerprint,
+            contentFingerprint = base.contentFingerprint,
+            shellTemplateId = base.shellTemplateId
+        )
+        assertThat(
+            planWith(listOf(cover.absolutePath), listOf(lrc), icon.absolutePath).mode
+        ).isEqualTo(IncrementalBuildMode.REUSE_UNSIGNED)
+
+        cover.writeBytes(ByteArray(16) { 4 })
+        assertThat(
+            planWith(listOf(cover.absolutePath), listOf(lrc), icon.absolutePath).mode
+        ).isEqualTo(IncrementalBuildMode.CONTENT_OVERLAY)
+
+        val editedLrc = lrc.copy(
+            lines = listOf(com.webtoapp.data.model.LrcLine(0L, 1000L, "hello world"))
+        )
+        assertThat(
+            planWith(listOf(cover.absolutePath), listOf(editedLrc), icon.absolutePath).mode
+        ).isEqualTo(IncrementalBuildMode.CONTENT_OVERLAY)
+
+        icon.writeBytes(ByteArray(16) { 5 })
+        assertThat(
+            planWith(listOf(cover.absolutePath), listOf(editedLrc), icon.absolutePath).mode
+        ).isEqualTo(IncrementalBuildMode.CONTENT_OVERLAY)
+
+        cache.clear(webApp, "com.demo.bgm")
+    }
 }

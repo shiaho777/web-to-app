@@ -11,6 +11,7 @@ import com.webtoapp.core.shell.ShellLogger
 import com.webtoapp.util.destroyGracefullyCompat
 import com.webtoapp.util.destroyForciblyCompat
 import com.webtoapp.util.isAliveCompat
+import com.webtoapp.util.waitForCompat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -37,6 +38,7 @@ class PythonRuntime(private val context: Context) {
         private const val HEALTH_CHECK_INTERVAL_MS = 500L
         private const val HEALTH_CHECK_STABILITY_DELAY_MS = 150L
         private const val REQUIRED_HEALTHY_RESPONSES = 2
+        private const val BINARY_VERIFY_TIMEOUT_SECONDS = 30L
 
         // Consecutive bound-socket polls (without an HTTP probe success) that
         // alone count as ready — covers apps whose probe paths never answer
@@ -184,6 +186,7 @@ class PythonRuntime(private val context: Context) {
             if (!entryFilePath.exists()) {
                 _serverState.value = ServerState.Error(Strings.runtimeEntryMissing(entryFile))
                 PortManager.release(serverPort)
+                currentPort = 0
                 return@withContext -1
             }
 
@@ -613,8 +616,14 @@ ${if (escapedReqs.isNotBlank()) """<div class="section"><div class="section-titl
             env["TMPDIR"] = context.cacheDir.absolutePath
             pb.redirectErrorStream(true)
             val process = pb.start()
+            val finished = process.waitForCompat(BINARY_VERIFY_TIMEOUT_SECONDS * 1_000L)
+            if (!finished) {
+                process.destroyForciblyCompat()
+                AppLogger.e(TAG, "Python --version timed out after ${BINARY_VERIFY_TIMEOUT_SECONDS}s, killed")
+                return null
+            }
             val output = process.inputStream.bufferedReader().readText().trim()
-            val exitCode = process.waitFor()
+            val exitCode = process.exitValue()
             AppLogger.d(TAG, "Python --version: exitCode=$exitCode, output='$output'")
             if (exitCode == 0 && output.contains("Python", ignoreCase = true)) {
                 output

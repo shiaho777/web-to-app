@@ -4,6 +4,7 @@ import android.content.Context
 import android.os.Build
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.logging.AppLogger
+import com.webtoapp.core.network.NetworkModule
 import com.webtoapp.util.destroyForciblyCompat
 import com.webtoapp.util.waitForCompat
 import kotlinx.coroutines.Dispatchers
@@ -13,8 +14,6 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.*
-import java.net.HttpURLConnection
-import java.net.URL
 
 object NativeNodeEngine {
 
@@ -172,16 +171,22 @@ object NativeNodeEngine {
 
         AppLogger.d(TAG, "执行: ${cmdList.joinToString(" ")}")
 
-        val processBuilder = ProcessBuilder(cmdList)
-        processBuilder.directory(workingDir)
-        processBuilder.redirectErrorStream(false)
+        val launchEnv = mutableMapOf(
+            "HOME" to context.filesDir.absolutePath,
+            "TMPDIR" to context.cacheDir.absolutePath
+        )
+        launchEnv.putAll(env)
 
-        val processEnv = processBuilder.environment()
-        processEnv["HOME"] = context.filesDir.absolutePath
-        processEnv["TMPDIR"] = context.cacheDir.absolutePath
-        env.forEach { (k, v) -> processEnv[k] = v }
-
-        val process = processBuilder.start()
+        val launch = HostProcessLauncher.start(context, cmdList, launchEnv, workingDir, "esbuild")
+        val process = launch.process
+        if (process == null) {
+            return@withContext ExecutionResult(
+                exitCode = -1,
+                stdout = "",
+                stderr = launch.error ?: Strings.nodeEsbuildNotInstalled,
+                duration = System.currentTimeMillis() - startTime
+            )
+        }
 
         val stdout = StringBuilder()
         val stderr = StringBuilder()
@@ -225,39 +230,18 @@ object NativeNodeEngine {
         target: File,
         onProgress: (Float) -> Unit
     ) = withContext(Dispatchers.IO) {
-        val conn = URL(url).openConnection() as HttpURLConnection
-        conn.connectTimeout = 30000
-        conn.readTimeout = 60000
-        conn.instanceFollowRedirects = true
-
-        try {
-            conn.connect()
-
-            var finalConn = conn
-            var responseCode = conn.responseCode
-            var redirectCount = 0
-
-            while (responseCode in 300..399 && redirectCount < 5) {
-                val newUrl = conn.getHeaderField("Location")
-                finalConn.disconnect()
-                finalConn = URL(newUrl).openConnection() as HttpURLConnection
-                finalConn.connectTimeout = 30000
-                finalConn.readTimeout = 60000
-                finalConn.connect()
-                responseCode = finalConn.responseCode
-                redirectCount++
+        val request = okhttp3.Request.Builder().url(url).build()
+        NetworkModule.downloadClient.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) {
+                throw Exception("HTTP ${response.code}")
             }
-
-            if (responseCode != 200) {
-                throw Exception("HTTP $responseCode")
-            }
-
-            val total = finalConn.contentLength.toLong()
+            val body = response.body ?: throw Exception("Empty response body")
+            val total = body.contentLength()
             var downloaded = 0L
 
             target.parentFile?.mkdirs()
 
-            finalConn.inputStream.use { input ->
+            body.byteStream().use { input ->
                 FileOutputStream(target).use { output ->
                     val buffer = ByteArray(8192)
                     var read: Int
@@ -268,8 +252,6 @@ object NativeNodeEngine {
                     }
                 }
             }
-        } finally {
-            conn.disconnect()
         }
     }
 

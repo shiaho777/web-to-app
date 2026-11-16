@@ -5,10 +5,12 @@ import com.webtoapp.core.apkbuilder.ApkBuilder
 import com.webtoapp.core.host.AdvancedAppTypes
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.apkbuilder.BuildResult
+import com.webtoapp.core.apkbuilder.resolveOutputDir
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.core.playstore.aab.axml.ProtoManifestRewriter
 import com.webtoapp.data.model.AppType
 import com.webtoapp.data.model.WebApp
+import org.json.JSONObject
 import java.io.File
 
 class AabExportCoordinator(private val context: Context) {
@@ -16,7 +18,7 @@ class AabExportCoordinator(private val context: Context) {
     private val apkBuilder: ApkBuilder by lazy { ApkBuilder(context.applicationContext) }
 
     private val builtApkDir: File
-        get() = File(context.getExternalFilesDir(null), BUILT_APKS_DIR)
+        get() = resolveOutputDir(context)
 
     private val builtAabDir: File
         get() = File(context.getExternalFilesDir(null), BUILT_AABS_DIR)
@@ -48,20 +50,18 @@ class AabExportCoordinator(private val context: Context) {
             )
         }
 
-        val sourceApk = findMostRecentApkFor(webApp)
-        val apkToConvert = if (sourceApk != null) {
-            AppLogger.d(
-                TAG,
-                "Source APK: ${sourceApk.absolutePath} (${sourceApk.length() / 1024}KB)"
-            )
-            sourceApk
-        } else {
-            AppLogger.d(TAG, "No built APK found, building one on demand for '${webApp.name}'")
-            onProgress?.invoke(AabExporter.Stage.BUILDING_APK, 0)
-            buildApkOnDemand(webApp, onProgress)
-        }
+        onProgress?.invoke(AabExporter.Stage.BUILDING_APK, 0)
+        val buildResult = buildApkOnDemand(webApp, onProgress)
+        val apkToConvert = buildResult.apkFile
+        AppLogger.d(
+            TAG,
+            "Source APK: ${apkToConvert.absolutePath} " +
+                "(${apkToConvert.length() / 1024}KB, mode=${buildResult.buildMode})"
+        )
 
-        val versionName = webApp.apkExportConfig?.customVersionName ?: "1.0"
+        val versionName = builtVersionName(buildResult)
+            ?: webApp.apkExportConfig?.customVersionName?.takeIf { it.isNotBlank() }
+            ?: DEFAULT_VERSION_NAME
         val safeName = sanitizeFileName(webApp.name)
         val outputAab = File(builtAabDir, "${safeName}_v${versionName}.aab")
         AppLogger.d(TAG, "Target AAB: ${outputAab.absolutePath}")
@@ -83,7 +83,7 @@ class AabExportCoordinator(private val context: Context) {
         )
     }
 
-    fun hasBuiltApk(webApp: WebApp): Boolean = findMostRecentApkFor(webApp) != null
+    fun hasBuiltApk(webApp: WebApp): Boolean = findReusableApkFor(webApp) != null
 
     fun listExportedAabs(): List<File> {
         if (!builtAabDir.exists()) return emptyList()
@@ -92,16 +92,39 @@ class AabExportCoordinator(private val context: Context) {
             ?: emptyList()
     }
 
-    private fun findMostRecentApkFor(webApp: WebApp): File? {
+    private fun findReusableApkFor(webApp: WebApp): File? {
         if (!builtApkDir.exists()) return null
-        val safeName = sanitizeFileName(webApp.name)
+        val packageName = ApkBuilder.resolvePackageName(webApp)
+        val candidates = builtApkDir.listFiles { f ->
+            f.isFile && f.extension.equals("apk", ignoreCase = true)
+        } ?: return null
+        val installedCode = ApkBuilder.findInstalledVersionCode(context, packageName)
+        return candidates
+            .mapNotNull { apk -> readBuildMetadata(apk)?.let { apk to it } }
+            .filter { (_, metadata) ->
+                val app = metadata.optJSONObject("app") ?: return@filter false
+                val builtAtMs = metadata.optLong("generatedAtMs", 0L)
+                app.optString("packageName") == packageName &&
+                    builtAtMs > 0L &&
+                    builtAtMs >= webApp.updatedAt &&
+                    (installedCode == null || app.optLong("versionCode", 0L) >= installedCode)
+            }
+            .maxByOrNull { it.first.lastModified() }
+            ?.first
+    }
 
-        return builtApkDir.listFiles { f ->
-            f.isFile &&
-                f.extension.equals("apk", ignoreCase = true) &&
-                f.name.startsWith("${safeName}_")
-        }
-            ?.maxByOrNull { it.lastModified() }
+    private fun readBuildMetadata(apk: File): JSONObject? {
+        val sidecar = File(apk.parentFile, apk.nameWithoutExtension + BUILD_METADATA_SUFFIX)
+        if (!sidecar.isFile) return null
+        return runCatching { JSONObject(sidecar.readText()) }.getOrNull()
+    }
+
+    private fun builtVersionName(result: BuildResult.Success): String? {
+        val metadataPath = result.metadataPath ?: return null
+        return runCatching {
+            JSONObject(File(metadataPath).readText())
+                .optJSONObject("app")?.optString("versionName")
+        }.getOrNull()?.takeIf { it.isNotBlank() }
     }
 
     private fun sanitizeFileName(name: String): String {
@@ -111,7 +134,7 @@ class AabExportCoordinator(private val context: Context) {
     private suspend fun buildApkOnDemand(
         webApp: WebApp,
         onProgress: ((stage: AabExporter.Stage, percent: Int) -> Unit)?
-    ): File {
+    ): BuildResult.Success {
         val result = try {
             apkBuilder.buildApk(webApp) { percent, text ->
                 AppLogger.d(TAG, "Build APK progress: $percent% ($text)")
@@ -128,7 +151,7 @@ class AabExportCoordinator(private val context: Context) {
             )
         }
         return when (result) {
-            is BuildResult.Success -> result.apkFile
+            is BuildResult.Success -> result
             is BuildResult.Error -> throw AabExportException(
                 failureStage = FailureStage.BUILD_APK,
                 message = "Failed to build APK on demand: ${result.message}",
@@ -140,11 +163,13 @@ class AabExportCoordinator(private val context: Context) {
     companion object {
         private const val TAG = "AabExportCoordinator"
 
-        private const val BUILT_APKS_DIR = "built_apks"
-
         private const val BUILT_AABS_DIR = "built_aabs"
 
         private const val BUILD_PROGRESS_WEIGHT = 45
+
+        private const val BUILD_METADATA_SUFFIX = ".build.json"
+
+        private const val DEFAULT_VERSION_NAME = "1.0.0"
 
         @Deprecated(
             "Use AppType.requiresProcessExec / AppType.REQUIRES_PROCESS_EXEC",

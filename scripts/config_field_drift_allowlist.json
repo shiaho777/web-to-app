@@ -1,38 +1,11 @@
 {
-  "_doc": "Drift allowlist for scripts/check_config_field_drift.py. Every entry MUST have a non-empty 'reason'. Two valid exemption categories: (1) nested-object serialization — payload assigns a data class instance as a value, Gson recursively serializes its property names as JSON keys, so the field name only appears in the source class definition, not in ApkConfigJsonFactory.kt; (2) legitimately dead payload — written by payload but runtime path uses a different channel (e.g. networkSecurityConfig.xml) so ShellConfig intentionally does not declare it; (3) preview-only fields injected by ShellPreviewLauncher that exported APKs never populate. If a key here becomes stale (neither side references it) the script warns.",
+  "_doc": "Drift allowlist for scripts/check_config_field_drift.py. Every entry MUST have a non-empty 'reason'. Valid exemption categories: (1) nested-object serialization — payload assigns a data class instance as a value, Gson recursively serializes its property names as JSON keys, so the field name only appears in the source class definition, not in ApkConfigJsonFactory.kt (classes shared verbatim between payload and ShellConfig, e.g. com.webtoapp.data.model.NetworkTrustConfig and its nested types, are scanned on both sides automatically and need no entry); (2) preview-only fields injected by ShellPreviewLauncher that exported APKs never populate; (3) shell-internal defaults with no editor surface. If a key here becomes stale (neither side references it) the script warns.",
   "allowlist": [
     {
       "key": "schemaVersion",
       "reason": "Payload metadata written by toShellPayload header; ShellConfig does not version-track, runtime ignores it."
     },
-    {
-      "key": "networkTrustConfig",
-      "reason": "Dead payload subtree — ShellConfig never reads it. Real runtime paths: (1) source-project export writes res/xml/network_security_config.xml via NetworkSecurityConfigBuilder; (2) built APK embeds custom CA DERs at assets/wta_custom_ca/ (written by ApkBuilder), consumed at runtime by CustomCaTrustStore, NOT via JSON."
-    },
-    {
-      "key": "trustSystemCa",
-      "reason": "Dead payload subtree — see networkTrustConfig."
-    },
-    {
-      "key": "trustUserCa",
-      "reason": "Dead payload subtree — see networkTrustConfig."
-    },
-    {
-      "key": "customCaCertificates",
-      "reason": "Dead payload subtree — see networkTrustConfig; the cert bytes themselves ride assets/wta_custom_ca/, not this JSON."
-    },
-    {
-      "key": "cleartextTrafficPermitted",
-      "reason": "Dead payload subtree — see networkTrustConfig; built APK cleartext is governed by the shell manifest's usesCleartextTraffic, not this JSON."
-    },
-    {
-      "key": "displayName",
-      "reason": "Nested object field of CustomCaCertificate, serialized via customCaCertificates.map{...} in networkTrustConfigPayload. Dead payload subtree (see networkTrustConfig)."
-    },
-    {
-      "key": "sha256",
-      "reason": "Nested object field of CustomCaCertificate, serialized via customCaCertificates.map{...} in networkTrustConfigPayload. Dead payload subtree (see networkTrustConfig)."
-    },
+
     {
       "key": "siteDirName",
       "reason": "ShellConfig field present for runtime session isolation; export payload never emits it (preview-only)."

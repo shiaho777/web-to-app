@@ -1849,15 +1849,17 @@ private fun CreateActionTile(
                 overflow = TextOverflow.Ellipsis,
                 textAlign = TextAlign.Center
             )
-            Text(
-                text = item.description,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.height(32.dp)
-            )
+            if (LocalShowDescriptions.current) {
+                Text(
+                    text = item.description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.height(32.dp)
+                )
+            }
         }
     }
 }
