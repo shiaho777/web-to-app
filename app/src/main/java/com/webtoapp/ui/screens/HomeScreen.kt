@@ -37,7 +37,6 @@ import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
@@ -77,7 +76,6 @@ import com.webtoapp.ui.design.WtaLoadingIndicator
 import com.webtoapp.ui.design.WtaIconPlate
 import com.webtoapp.ui.design.WtaCard
 import com.webtoapp.ui.design.WtaCardTone
-import com.webtoapp.ui.design.WtaAlpha
 import com.webtoapp.ui.design.WtaMorphingShape
 import com.webtoapp.ui.design.WtaPolygonShape
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -144,7 +142,6 @@ fun HomeScreen(
     onCreateGoApp: () -> Unit = {},
     onCreateMultiWebApp: () -> Unit = {},
     onCreateOfflinePack: () -> Unit = {},
-    onOpenAboutAdvanced: () -> Unit = {},
     onEditApp: (WebApp) -> Unit,
     onEditAppCore: (WebApp) -> Unit = {},
     onPreviewApp: (WebAppSummary) -> Unit,
@@ -228,7 +225,7 @@ fun HomeScreen(
         CreateActionItem(Strings.appTypePython, Strings.typeDescPython, true, { WtaAppTypeIcon(AppType.PYTHON_APP, Modifier.size(30.dp)) }, onCreatePythonApp),
         CreateActionItem(Strings.appTypeGo, Strings.typeDescGo, true, { WtaAppTypeIcon(AppType.GO_APP, Modifier.size(30.dp)) }, onCreateGoApp),
         CreateActionItem(Strings.createMediaApp, Strings.typeDescMedia, true, { WtaAppTypeIcon(AppType.VIDEO, Modifier.size(30.dp)) }, onCreateMediaApp)
-    )
+    ).filter { advancedFeatures || !it.advanced }
 
     WtaScreen(
         title = Strings.myApps,
@@ -1079,48 +1076,17 @@ fun HomeScreen(
                     style = MaterialTheme.typography.titleLargeEmphasized,
                     modifier = Modifier.padding(bottom = WtaSpacing.Small)
                 )
-                if (!advancedFeatures) {
-                    Surface(
-                        onClick = rememberHapticClick {
-                            showFabMenu = false
-                            onOpenAboutAdvanced()
-                        },
-                        shape = RoundedCornerShape(WtaRadius.Card),
-                        color = MaterialTheme.colorScheme.tertiaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onTertiaryContainer
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = WtaSpacing.RowHorizontal, vertical = WtaSpacing.Small),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.Lock,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Text(
-                                text = Strings.createTypeAdvancedGuide,
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        }
-                    }
-                }
                 createActionItems.chunked(2).forEach { rowItems ->
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(WtaSpacing.CardGap)
                     ) {
                         rowItems.forEach { item ->
-                            val locked = item.advanced && !advancedFeatures
                             CreateActionTile(
                                 item = item,
-                                locked = locked,
                                 onClick = {
                                     showFabMenu = false
-                                    if (locked) onOpenAboutAdvanced() else item.onClick()
+                                    item.onClick()
                                 },
                                 modifier = Modifier.weight(1f)
                             )
@@ -1857,7 +1823,6 @@ private data class CreateActionItem(
 @Composable
 private fun CreateActionTile(
     item: CreateActionItem,
-    locked: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -1868,62 +1833,34 @@ private fun CreateActionTile(
         pressScale = 0.97f,
         contentPadding = PaddingValues(WtaSpacing.Medium)
     ) {
-        Box(modifier = Modifier.fillMaxWidth()) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .alpha(if (locked) WtaAlpha.Disabled else 1f),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
+        ) {
+            WtaIconPlate(
+                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                modifier = Modifier.size(52.dp)
             ) {
-                WtaIconPlate(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    modifier = Modifier.size(52.dp)
-                ) {
-                    item.icon()
-                }
-                Text(
-                    text = item.label,
-                    style = MaterialTheme.typography.titleSmallEmphasized,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    textAlign = TextAlign.Center
-                )
-                Text(
-                    text = item.description,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.height(32.dp)
-                )
+                item.icon()
             }
-            if (locked) {
-                Surface(
-                    shape = RoundedCornerShape(WtaRadius.Chip),
-                    color = MaterialTheme.colorScheme.surfaceContainerHighest,
-                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.align(Alignment.TopEnd)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(3.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.Lock,
-                            contentDescription = null,
-                            modifier = Modifier.size(12.dp)
-                        )
-                        Text(
-                            text = Strings.createTypeLocked,
-                            style = MaterialTheme.typography.labelSmall
-                        )
-                    }
-                }
-            }
+            Text(
+                text = item.label,
+                style = MaterialTheme.typography.titleSmallEmphasized,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Center
+            )
+            Text(
+                text = item.description,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.height(32.dp)
+            )
         }
     }
 }

@@ -16900,32 +16900,6 @@ object StringsE {
     }
 
 
-    val createTypeAdvancedGuide: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "带锁的类型需要高级功能，点按即可前往开启"
-        AppLanguage.ENGLISH -> "Locked types need advanced features — tap to enable them"
-        AppLanguage.ARABIC -> "الأنواع المقفلة تحتاج الميزات المتقدمة — اضغط لتفعيلها"
-        AppLanguage.PORTUGUESE -> "Tipos bloqueados precisam de recursos avançados — toque para ativar"
-        AppLanguage.SPANISH -> "Los tipos bloqueados necesitan funciones avanzadas: toca para activarlas"
-        AppLanguage.FRENCH -> "Les types verrouillés nécessitent les fonctions avancées — appuyez pour activer"
-        AppLanguage.GERMAN -> "Gesperrte Typen brauchen erweiterte Funktionen – zum Aktivieren tippen"
-        AppLanguage.RUSSIAN -> "Заблокированные типы требуют расширенных функций — нажмите, чтобы включить"
-        AppLanguage.JAPANESE -> "ロックされた種類には高度な機能が必要です。タップして有効化"
-        AppLanguage.KOREAN -> "잠긴 유형은 고급 기능이 필요합니다. 탭하여 활성화하세요"
-    }
-
-    val createTypeLocked: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "未开启"
-        AppLanguage.ENGLISH -> "Locked"
-        AppLanguage.ARABIC -> "مقفل"
-        AppLanguage.PORTUGUESE -> "Bloqueado"
-        AppLanguage.SPANISH -> "Bloqueado"
-        AppLanguage.FRENCH -> "Verrouillé"
-        AppLanguage.GERMAN -> "Gesperrt"
-        AppLanguage.RUSSIAN -> "Заблокировано"
-        AppLanguage.JAPANESE -> "ロック中"
-        AppLanguage.KOREAN -> "잠김"
-    }
-
     val typeDescWeb: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "把任意网站包装成原生应用"
         AppLanguage.ENGLISH -> "Wrap any website into a native app"
