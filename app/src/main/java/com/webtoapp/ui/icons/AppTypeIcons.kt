@@ -1,7 +1,10 @@
 package com.webtoapp.ui.icons
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.DynamicFeed
+import androidx.compose.material.icons.filled.Javascript
+import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -23,12 +26,9 @@ fun WtaAppTypeIcon(
         AppType.FRONTEND -> R.drawable.ic_type_frontend
         AppType.GALLERY -> R.drawable.ic_type_gallery
         AppType.IMAGE, AppType.VIDEO -> R.drawable.ic_type_media
-        AppType.NODEJS_APP -> R.drawable.ic_type_nodejs
-        AppType.PHP_APP -> R.drawable.ic_type_php
         AppType.PYTHON_APP -> R.drawable.ic_type_python
-        AppType.GO_APP -> R.drawable.ic_type_go
         AppType.WORDPRESS -> R.drawable.ic_type_wordpress
-        AppType.MULTI_WEB -> null
+        AppType.MULTI_WEB, AppType.NODEJS_APP, AppType.PHP_APP, AppType.GO_APP -> null
     }
     if (lineArt != null) {
         Icon(
@@ -38,8 +38,14 @@ fun WtaAppTypeIcon(
             tint = color
         )
     } else {
+        val vector = when (type) {
+            AppType.NODEJS_APP -> Icons.Filled.Javascript
+            AppType.PHP_APP -> Icons.Filled.Terminal
+            AppType.GO_APP -> Icons.Filled.Bolt
+            else -> Icons.Filled.DynamicFeed
+        }
         Icon(
-            imageVector = Icons.Filled.DynamicFeed,
+            imageVector = vector,
             contentDescription = null,
             modifier = modifier,
             tint = color
