@@ -3145,8 +3145,6 @@ object Strings {
     val advancedFeatures: String get() = StringsD.advancedFeatures
     val advancedFeaturesDesc: String get() = StringsD.advancedFeaturesDesc
     val advancedFeaturesOff: String get() = StringsD.advancedFeaturesOff
-    val createTypeGalleryTitle: String get() = StringsE.createTypeGalleryTitle
-    val createTypeGallerySubtitle: String get() = StringsE.createTypeGallerySubtitle
     val createTypeAdvancedGuide: String get() = StringsE.createTypeAdvancedGuide
     val createTypeLocked: String get() = StringsE.createTypeLocked
     val typeDescWeb: String get() = StringsE.typeDescWeb

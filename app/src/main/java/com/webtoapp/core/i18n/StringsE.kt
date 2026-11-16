@@ -16900,32 +16900,6 @@ object StringsE {
     }
 
 
-    val createTypeGalleryTitle: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "选择应用类型"
-        AppLanguage.ENGLISH -> "Choose app type"
-        AppLanguage.ARABIC -> "اختر نوع التطبيق"
-        AppLanguage.PORTUGUESE -> "Escolha o tipo de app"
-        AppLanguage.SPANISH -> "Elige el tipo de app"
-        AppLanguage.FRENCH -> "Choisir le type d'app"
-        AppLanguage.GERMAN -> "App-Typ wählen"
-        AppLanguage.RUSSIAN -> "Выберите тип приложения"
-        AppLanguage.JAPANESE -> "アプリの種類を選択"
-        AppLanguage.KOREAN -> "앱 유형 선택"
-    }
-
-    val createTypeGallerySubtitle: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "挑一种类型，开始创建你的应用"
-        AppLanguage.ENGLISH -> "Pick a type to start building your app"
-        AppLanguage.ARABIC -> "اختر نوعًا لبدء إنشاء تطبيقك"
-        AppLanguage.PORTUGUESE -> "Escolha um tipo para começar a criar seu app"
-        AppLanguage.SPANISH -> "Elige un tipo para empezar a crear tu app"
-        AppLanguage.FRENCH -> "Choisissez un type pour commencer à créer votre app"
-        AppLanguage.GERMAN -> "Wähle einen Typ, um deine App zu erstellen"
-        AppLanguage.RUSSIAN -> "Выберите тип, чтобы начать создание приложения"
-        AppLanguage.JAPANESE -> "種類を選んでアプリの作成を始めましょう"
-        AppLanguage.KOREAN -> "유형을 선택하여 앱 만들기를 시작하세요"
-    }
-
     val createTypeAdvancedGuide: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "带锁的类型需要高级功能，点按即可前往开启"
         AppLanguage.ENGLISH -> "Locked types need advanced features — tap to enable them"
