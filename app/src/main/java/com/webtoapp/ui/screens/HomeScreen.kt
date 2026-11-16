@@ -37,6 +37,7 @@ import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
@@ -59,6 +60,7 @@ import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.data.dao.WebAppSummary
 import com.webtoapp.data.model.AppCategory
+import com.webtoapp.data.model.AppType
 import com.webtoapp.data.model.withRuntimePermissionsSyncedFromFeatures
 import com.webtoapp.data.model.WebApp
 import com.webtoapp.ui.components.CategoryEditorDialog
@@ -70,14 +72,19 @@ import com.webtoapp.ui.components.LanguageSelectorButton
 import com.webtoapp.ui.components.MoveToCategoryDialog
 import com.webtoapp.ui.design.WtaAlertDialog
 import com.webtoapp.ui.icons.WtaAppTypeIcon
+import com.webtoapp.ui.icons.WtaOfflinePackTypeIcon
 import com.webtoapp.ui.design.WtaLoadingIndicator
 import com.webtoapp.ui.design.WtaIconPlate
+import com.webtoapp.ui.design.WtaCard
+import com.webtoapp.ui.design.WtaCardTone
+import com.webtoapp.ui.design.WtaAlpha
 import com.webtoapp.ui.design.WtaMorphingShape
 import com.webtoapp.ui.design.WtaPolygonShape
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialShapes
 import com.webtoapp.ui.design.WtaScreen
 import com.webtoapp.ui.design.WtaRadius
+import com.webtoapp.ui.design.WtaSpacing
 import com.webtoapp.ui.design.rememberHapticClick
 import com.webtoapp.ui.design.wtaPressScale
 import androidx.compose.ui.text.style.TextAlign
@@ -125,7 +132,19 @@ import com.webtoapp.ui.theme.LocalShowDescriptions
 @Composable
 fun HomeScreen(
     viewModel: MainViewModel,
-    onOpenCreateGallery: () -> Unit,
+    onCreateApp: () -> Unit,
+    onCreateMediaApp: () -> Unit = {},
+    onCreateGalleryApp: () -> Unit = {},
+    onCreateHtmlApp: () -> Unit = {},
+    onCreateFrontendApp: () -> Unit = {},
+    onCreateNodeJsApp: () -> Unit = {},
+    onCreateWordPressApp: () -> Unit = {},
+    onCreatePhpApp: () -> Unit = {},
+    onCreatePythonApp: () -> Unit = {},
+    onCreateGoApp: () -> Unit = {},
+    onCreateMultiWebApp: () -> Unit = {},
+    onCreateOfflinePack: () -> Unit = {},
+    onOpenAboutAdvanced: () -> Unit = {},
     onEditApp: (WebApp) -> Unit,
     onEditAppCore: (WebApp) -> Unit = {},
     onPreviewApp: (WebAppSummary) -> Unit,
@@ -170,6 +189,7 @@ fun HomeScreen(
     var showDeleteDialog by remember { mutableStateOf(false) }
     var shareApkFailureReport by remember { mutableStateOf<BuildFailureReport?>(null) }
     var showDataBackupDialog by remember { mutableStateOf(false) }
+    var showFabMenu by remember { mutableStateOf(false) }
 
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -193,6 +213,22 @@ fun HomeScreen(
     val advancedFeatures by HostRuntimePrefs.getInstance(context)
         .advancedFeaturesFlow
         .collectAsStateWithLifecycle()
+
+    val createMenuScrollState = rememberScrollState()
+    val createActionItems = listOf(
+        CreateActionItem(Strings.appTypeWeb, Strings.typeDescWeb, false, { WtaAppTypeIcon(AppType.WEB, Modifier.size(30.dp)) }, onCreateApp),
+        CreateActionItem(Strings.appTypeMultiWeb, Strings.typeDescMultiWeb, false, { WtaAppTypeIcon(AppType.MULTI_WEB, Modifier.size(30.dp)) }, onCreateMultiWebApp),
+        CreateActionItem(Strings.appTypeHtml, Strings.typeDescHtml, false, { WtaAppTypeIcon(AppType.HTML, Modifier.size(30.dp)) }, onCreateHtmlApp),
+        CreateActionItem(Strings.websiteOfflinePack, Strings.typeDescOfflinePack, false, { WtaOfflinePackTypeIcon(Modifier.size(30.dp)) }, onCreateOfflinePack),
+        CreateActionItem(Strings.appTypeFrontend, Strings.typeDescFrontend, false, { WtaAppTypeIcon(AppType.FRONTEND, Modifier.size(30.dp)) }, onCreateFrontendApp),
+        CreateActionItem(Strings.appTypeGallery, Strings.typeDescGallery, false, { WtaAppTypeIcon(AppType.GALLERY, Modifier.size(30.dp)) }, onCreateGalleryApp),
+        CreateActionItem(Strings.appTypePhp, Strings.typeDescPhp, true, { WtaAppTypeIcon(AppType.PHP_APP, Modifier.size(30.dp)) }, onCreatePhpApp),
+        CreateActionItem(Strings.appTypeWordPress, Strings.typeDescWordPress, true, { WtaAppTypeIcon(AppType.WORDPRESS, Modifier.size(30.dp)) }, onCreateWordPressApp),
+        CreateActionItem(Strings.appTypeNodeJs, Strings.typeDescNodeJs, true, { WtaAppTypeIcon(AppType.NODEJS_APP, Modifier.size(30.dp)) }, onCreateNodeJsApp),
+        CreateActionItem(Strings.appTypePython, Strings.typeDescPython, true, { WtaAppTypeIcon(AppType.PYTHON_APP, Modifier.size(30.dp)) }, onCreatePythonApp),
+        CreateActionItem(Strings.appTypeGo, Strings.typeDescGo, true, { WtaAppTypeIcon(AppType.GO_APP, Modifier.size(30.dp)) }, onCreateGoApp),
+        CreateActionItem(Strings.createMediaApp, Strings.typeDescMedia, true, { WtaAppTypeIcon(AppType.VIDEO, Modifier.size(30.dp)) }, onCreateMediaApp)
+    )
 
     WtaScreen(
         title = Strings.myApps,
@@ -221,10 +257,9 @@ fun HomeScreen(
         snackbarHostState = snackbarHostState,
         floatingActionButton = {
             ExtendedFloatingActionButton(
-                onClick = onOpenCreateGallery,
+                onClick = rememberHapticClick { showFabMenu = true },
                 icon = { Icon(Icons.Default.Add, contentDescription = null) },
                 text = { Text(Strings.createApp, style = MaterialTheme.typography.labelLargeEmphasized) },
-                shape = CreateFabShape,
                 containerColor = MaterialTheme.colorScheme.primaryContainer,
                 contentColor = MaterialTheme.colorScheme.onPrimaryContainer
             )
@@ -1025,6 +1060,80 @@ fun HomeScreen(
             }
     }
 
+    if (showFabMenu) {
+        ModalBottomSheet(
+            onDismissRequest = { showFabMenu = false },
+            sheetState = rememberModalBottomSheetState(),
+            containerColor = MaterialTheme.colorScheme.surface
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(createMenuScrollState)
+                    .padding(horizontal = WtaSpacing.ScreenHorizontal)
+                    .padding(bottom = 32.dp),
+                verticalArrangement = Arrangement.spacedBy(WtaSpacing.CardGap)
+            ) {
+                Text(
+                    text = Strings.createApp,
+                    style = MaterialTheme.typography.titleLargeEmphasized,
+                    modifier = Modifier.padding(bottom = WtaSpacing.Small)
+                )
+                if (!advancedFeatures) {
+                    Surface(
+                        onClick = rememberHapticClick {
+                            showFabMenu = false
+                            onOpenAboutAdvanced()
+                        },
+                        shape = RoundedCornerShape(WtaRadius.Card),
+                        color = MaterialTheme.colorScheme.tertiaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = WtaSpacing.RowHorizontal, vertical = WtaSpacing.Small),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Lock,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Text(
+                                text = Strings.createTypeAdvancedGuide,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+                }
+                createActionItems.chunked(2).forEach { rowItems ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(WtaSpacing.CardGap)
+                    ) {
+                        rowItems.forEach { item ->
+                            val locked = item.advanced && !advancedFeatures
+                            CreateActionTile(
+                                item = item,
+                                locked = locked,
+                                onClick = {
+                                    showFabMenu = false
+                                    if (locked) onOpenAboutAdvanced() else item.onClick()
+                                },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                        if (rowItems.size == 1) {
+                            Spacer(modifier = Modifier.weight(1f))
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     shareApkFailureReport?.let { report ->
         BuildFailureReportDialog(
             report = report,
@@ -1737,8 +1846,87 @@ fun EmptyState(
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
-private val CreateFabShape = WtaPolygonShape(MaterialShapes.Cookie12Sided)
+private data class CreateActionItem(
+    val label: String,
+    val description: String,
+    val advanced: Boolean,
+    val icon: @Composable () -> Unit,
+    val onClick: () -> Unit
+)
+
+@Composable
+private fun CreateActionTile(
+    item: CreateActionItem,
+    locked: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    WtaCard(
+        onClick = onClick,
+        modifier = modifier,
+        tone = WtaCardTone.Elevated,
+        pressScale = 0.97f,
+        contentPadding = PaddingValues(WtaSpacing.Medium)
+    ) {
+        Box(modifier = Modifier.fillMaxWidth()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .alpha(if (locked) WtaAlpha.Disabled else 1f),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
+            ) {
+                WtaIconPlate(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    modifier = Modifier.size(52.dp)
+                ) {
+                    item.icon()
+                }
+                Text(
+                    text = item.label,
+                    style = MaterialTheme.typography.titleSmallEmphasized,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center
+                )
+                Text(
+                    text = item.description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.height(32.dp)
+                )
+            }
+            if (locked) {
+                Surface(
+                    shape = RoundedCornerShape(WtaRadius.Chip),
+                    color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.align(Alignment.TopEnd)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(3.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Lock,
+                            contentDescription = null,
+                            modifier = Modifier.size(12.dp)
+                        )
+                        Text(
+                            text = Strings.createTypeLocked,
+                            style = MaterialTheme.typography.labelSmall
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
 
 @Composable
 private fun MoreMenuIcon(
