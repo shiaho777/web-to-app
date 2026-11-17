@@ -263,6 +263,97 @@ class ConfigRoundTripSentinelTest {
     }
 
     @Test
+    fun `gallery items export in the selected sort order and carry sort metadata`() {
+        val app = baseApp(appType = AppType.GALLERY).copy(
+            galleryConfig = com.webtoapp.data.model.GalleryConfig(
+                sortOrder = com.webtoapp.data.model.GallerySortOrder.NAME_DESC,
+                items = listOf(
+                    com.webtoapp.data.model.GalleryItem(
+                        id = "a", path = "/a.png", type = com.webtoapp.data.model.GalleryItemType.IMAGE,
+                        name = "alpha", sortIndex = 0, createdAt = 300L
+                    ),
+                    com.webtoapp.data.model.GalleryItem(
+                        id = "b", path = "/b.png", type = com.webtoapp.data.model.GalleryItemType.IMAGE,
+                        name = "beta", sortIndex = 1, createdAt = 100L
+                    ),
+                    com.webtoapp.data.model.GalleryItem(
+                        id = "c", path = "/c.png", type = com.webtoapp.data.model.GalleryItemType.VIDEO,
+                        name = "gamma", sortIndex = 2, createdAt = 200L
+                    )
+                )
+            )
+        )
+        val shell = roundTrip(app)
+        assertThat(shell.galleryConfig.sortOrder).isEqualTo("NAME_DESC")
+        assertThat(shell.galleryConfig.items.map { it.id }).containsExactly("c", "b", "a").inOrder()
+        assertThat(shell.galleryConfig.items.map { it.assetPath })
+            .containsExactly("gallery/item_0.mp4", "gallery/item_1.png", "gallery/item_2.png").inOrder()
+        assertThat(shell.galleryConfig.items[0].sortIndex).isEqualTo(2)
+        assertThat(shell.galleryConfig.items[0].createdAt).isEqualTo(200L)
+    }
+
+    @Test
+    fun `gallery custom sort follows sortIndex not list order`() {
+        val app = baseApp(appType = AppType.GALLERY).copy(
+            galleryConfig = com.webtoapp.data.model.GalleryConfig(
+                items = listOf(
+                    com.webtoapp.data.model.GalleryItem(
+                        id = "late", path = "/late.png", type = com.webtoapp.data.model.GalleryItemType.IMAGE,
+                        name = "late", sortIndex = 5
+                    ),
+                    com.webtoapp.data.model.GalleryItem(
+                        id = "early", path = "/early.png", type = com.webtoapp.data.model.GalleryItemType.IMAGE,
+                        name = "early", sortIndex = 1
+                    )
+                )
+            )
+        )
+        val shell = roundTrip(app)
+        assertThat(shell.galleryConfig.items.map { it.id }).containsExactly("early", "late").inOrder()
+    }
+
+    @Test
+    fun `lrc theme style fields round-trip`() {
+        val app = baseApp().copy(
+            bgmEnabled = true,
+            bgmConfig = BgmConfig(
+                lrcTheme = LrcTheme(
+                    id = "sen-style",
+                    name = "SEN-STYLE",
+                    fontFamily = "serif",
+                    strokeColor = "#112233",
+                    strokeWidth = 2.5f,
+                    shadowEnabled = false,
+                    showTranslation = false
+                )
+            )
+        )
+        val shell = roundTrip(app)
+        assertThat(shell.bgmLrcTheme?.fontFamily).isEqualTo("serif")
+        assertThat(shell.bgmLrcTheme?.strokeColor).isEqualTo("#112233")
+        assertThat(shell.bgmLrcTheme?.strokeWidth).isEqualTo(2.5f)
+        assertThat(shell.bgmLrcTheme?.shadowEnabled).isFalse()
+        assertThat(shell.bgmLrcTheme?.showTranslation).isFalse()
+    }
+
+    @Test
+    fun `bgm playlist exports in user sort order`() {
+        val app = baseApp().copy(
+            bgmEnabled = true,
+            bgmConfig = BgmConfig(
+                playlist = listOf(
+                    BgmItem(name = "second", path = "/second.mp3", sortOrder = 2),
+                    BgmItem(name = "first", path = "/first.mp3", sortOrder = 1)
+                )
+            )
+        )
+        val shell = roundTrip(app)
+        assertThat(shell.bgmPlaylist.map { it.name }).containsExactly("first", "second").inOrder()
+        assertThat(shell.bgmPlaylist.map { it.assetPath })
+            .containsExactly("bgm/bgm_0.mp3", "bgm/bgm_1.mp3").inOrder()
+    }
+
+    @Test
     fun `translate fields round-trip through nullable flatten and enum-to-string`() {
         val app = baseApp().copy(
             translateEnabled = true,

@@ -62,15 +62,16 @@ class BgmPlayer(private val context: Context) {
     fun initialize(bgmConfig: BgmConfig) {
         if (bgmConfig.playlist.isEmpty()) return
 
-        config = bgmConfig
+        val ordered = bgmConfig.copy(playlist = bgmConfig.playlist.sortedBy { it.sortOrder })
+        config = ordered
         currentIndex = 0
 
-        if (bgmConfig.playMode == BgmPlayMode.SHUFFLE) {
-            shuffledIndices = bgmConfig.playlist.indices.shuffled()
+        if (ordered.playMode == BgmPlayMode.SHUFFLE) {
+            shuffledIndices = ordered.playlist.indices.shuffled()
         }
 
         onTrackChangedListener?.invoke(getCurrentTrack())
-        if (bgmConfig.autoPlay) {
+        if (ordered.autoPlay) {
             playCurrentTrack()
         }
     }

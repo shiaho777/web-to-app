@@ -880,17 +880,8 @@ data class GalleryConfig(
         else items.filter { it.categoryId == categoryId }
     }
 
-    fun getSortedItems(categoryId: String? = null): List<GalleryItem> {
-        val filtered = getItemsByCategory(categoryId)
-        return when (sortOrder) {
-            GallerySortOrder.CUSTOM -> filtered.sortedBy { it.sortIndex }
-            GallerySortOrder.NAME_ASC -> filtered.sortedBy { it.name.lowercase() }
-            GallerySortOrder.NAME_DESC -> filtered.sortedByDescending { it.name.lowercase() }
-            GallerySortOrder.DATE_ASC -> filtered.sortedBy { it.createdAt }
-            GallerySortOrder.DATE_DESC -> filtered.sortedByDescending { it.createdAt }
-            GallerySortOrder.TYPE -> filtered.sortedBy { it.type.ordinal }
-        }
-    }
+    fun getSortedItems(categoryId: String? = null): List<GalleryItem> =
+        sortedGalleryItems(getItemsByCategory(categoryId), sortOrder)
 
     val imageCount: Int get() = items.count { it.type == GalleryItemType.IMAGE }
     val videoCount: Int get() = items.count { it.type == GalleryItemType.VIDEO }
@@ -961,6 +952,16 @@ enum class GallerySortOrder {
     DATE_DESC,
     TYPE
 }
+
+fun sortedGalleryItems(items: List<GalleryItem>, order: GallerySortOrder): List<GalleryItem> =
+    when (order) {
+        GallerySortOrder.CUSTOM -> items.sortedBy { it.sortIndex }
+        GallerySortOrder.NAME_ASC -> items.sortedBy { it.name.lowercase() }
+        GallerySortOrder.NAME_DESC -> items.sortedByDescending { it.name.lowercase() }
+        GallerySortOrder.DATE_ASC -> items.sortedBy { it.createdAt }
+        GallerySortOrder.DATE_DESC -> items.sortedByDescending { it.createdAt }
+        GallerySortOrder.TYPE -> items.sortedBy { it.type.ordinal }
+    }
 
 enum class NodeJsBuildMode {
     STATIC,

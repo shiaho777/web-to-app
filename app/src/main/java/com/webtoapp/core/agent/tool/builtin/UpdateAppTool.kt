@@ -48,12 +48,26 @@ class UpdateAppTool : Tool {
             createdAt = existing.createdAt,
             updatedAt = System.currentTimeMillis()
         )
+        val mergedObj = merged.asJsonObject
+        val existingObj = existingTree.asJsonObject
+        val requestedKeys = patch.takeIf { it.isJsonObject }?.asJsonObject?.keySet()?.toList().orEmpty()
+        val changedFields = requestedKeys.filter { key ->
+            mergedObj.get(key) != existingObj.get(key)
+        }
+        val droppedFields = requestedKeys - changedFields.toSet()
+        if (changedFields.isEmpty()) {
+            return ToolResult.error(
+                "UpdateApp: no field changed. The patch values match the current config or were " +
+                    "rejected as type-incompatible: ${droppedFields.joinToString(", ")}. " +
+                    "Inspect the app with GetApp and patch again with values of the declared types."
+            )
+        }
         ctx.appRepository.updateWebApp(safe)
-        // The patch's top-level keys are exactly what the caller asked to change —
-        // they drive the "what changed" line on the app-changes review card.
-        val changedFields = patch.takeIf { it.isJsonObject }?.asJsonObject?.keySet()?.toList().orEmpty()
+        val droppedNote = if (droppedFields.isEmpty()) "" else
+            " Ignored (unchanged or type-incompatible): ${droppedFields.joinToString(", ")}."
         return ToolResult(
-            text = "Updated app id=${safe.id} name=\"${safe.name}\" (type ${safe.appType}).",
+            text = "Updated app id=${safe.id} name=\"${safe.name}\" (type ${safe.appType}). " +
+                "Changed: ${changedFields.joinToString(", ")}.$droppedNote",
             appChange = AppChange(
                 appId = safe.id,
                 appName = safe.name,

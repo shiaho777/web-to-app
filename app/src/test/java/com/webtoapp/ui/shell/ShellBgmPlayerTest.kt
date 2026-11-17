@@ -63,4 +63,47 @@ class ShellBgmPlayerTest {
     fun `currentIndex falls back to zero when out of range`() {
         assertThat(BgmShuffleOrder(listOf(2, 0), 7).currentIndex()).isEqualTo(0)
     }
+
+    @Test
+    fun `parseLrcText attaches a same-timestamp second line as translation`() {
+        val parsed = parseLrcText(
+            """
+            [00:01.00]hello
+            [00:01.00]你好
+            [00:05.00]world
+            """.trimIndent()
+        )
+        assertThat(parsed).isNotNull()
+        assertThat(parsed!!.lines).hasSize(2)
+        assertThat(parsed.lines[0].text).isEqualTo("hello")
+        assertThat(parsed.lines[0].translation).isEqualTo("你好")
+        assertThat(parsed.lines[0].endTime).isEqualTo(5000L)
+        assertThat(parsed.lines[1].text).isEqualTo("world")
+        assertThat(parsed.lines[1].translation).isNull()
+    }
+
+    @Test
+    fun `parseLrcText keeps distinct timestamps as separate lines`() {
+        val parsed = parseLrcText(
+            """
+            [00:01.00]hello
+            [00:02.00]world
+            """.trimIndent()
+        )
+        assertThat(parsed!!.lines).hasSize(2)
+        assertThat(parsed.lines[0].translation).isNull()
+        assertThat(parsed.lines[1].text).isEqualTo("world")
+    }
+
+    @Test
+    fun `bgm playlist is ordered by sortOrder before playback`() {
+        val config = com.webtoapp.core.shell.ShellConfig(
+            bgmPlaylist = listOf(
+                com.webtoapp.core.shell.BgmShellItem(id = "b", name = "B", sortOrder = 2),
+                com.webtoapp.core.shell.BgmShellItem(id = "a", name = "A", sortOrder = 1)
+            )
+        )
+        val sorted = config.withSortedBgmPlaylist()
+        assertThat(sorted.bgmPlaylist.map { it.id }).containsExactly("a", "b").inOrder()
+    }
 }

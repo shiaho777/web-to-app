@@ -36,6 +36,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
@@ -61,7 +62,7 @@ fun BgmSelectorDialog(
 
     var availableBgm by remember { mutableStateOf<List<BgmItem>>(emptyList()) }
 
-    var selectedPlaylist by remember { mutableStateOf(currentConfig.playlist) }
+    var selectedPlaylist by remember { mutableStateOf(currentConfig.playlist.sortedBy { it.sortOrder }) }
 
     var previewingBgm by remember { mutableStateOf<BgmItem?>(null) }
     var mediaPlayer by remember { mutableStateOf<MediaPlayer?>(null) }
@@ -532,6 +533,7 @@ fun BgmSelectorDialog(
     if (showLrcPreviewDialog && previewLrcBgm != null) {
         LrcPreviewDialog(
             bgm = previewLrcBgm!!,
+            theme = currentConfig.lrcTheme ?: PresetLrcThemes.themes.first(),
             onDismiss = {
                 showLrcPreviewDialog = false
                 previewLrcBgm = null
@@ -1283,16 +1285,58 @@ private fun LrcThemePreviewCard(
                     .background(backgroundColor),
                 contentAlignment = Alignment.Center
             ) {
+                val fontFamily = com.webtoapp.ui.shell.lrcFontFamily(theme.fontFamily)
+                val shadow = if (theme.shadowEnabled) {
+                    androidx.compose.ui.graphics.Shadow(Color.Black.copy(alpha = 0.8f), blurRadius = 6f)
+                } else {
+                    null
+                }
+                val strokeColor = theme.strokeColor?.let {
+                    try {
+                        Color(android.graphics.Color.parseColor(it))
+                    } catch (e: Exception) {
+                        null
+                    }
+                }
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        Strings.sampleLyricsText,
-                        color = highlightColor,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
+                    if (strokeColor != null && theme.strokeWidth > 0f) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text(
+                                Strings.sampleLyricsText,
+                                fontSize = theme.fontSize.sp,
+                                fontFamily = fontFamily,
+                                style = androidx.compose.ui.text.TextStyle(
+                                    drawStyle = androidx.compose.ui.graphics.drawscope.Stroke(
+                                        width = theme.strokeWidth * 2f,
+                                        join = androidx.compose.ui.graphics.StrokeJoin.Round
+                                    ),
+                                    shadow = shadow
+                                ),
+                                color = strokeColor
+                            )
+                            Text(
+                                Strings.sampleLyricsText,
+                                color = highlightColor,
+                                fontSize = theme.fontSize.sp,
+                                fontFamily = fontFamily,
+                                style = androidx.compose.ui.text.TextStyle(shadow = shadow)
+                            )
+                        }
+                    } else {
+                        Text(
+                            Strings.sampleLyricsText,
+                            color = highlightColor,
+                            fontSize = theme.fontSize.sp,
+                            fontFamily = fontFamily,
+                            style = androidx.compose.ui.text.TextStyle(shadow = shadow)
+                        )
+                    }
                     Text(
                         "Example Lyrics Text",
                         color = textColor.copy(alpha = 0.7f),
-                        style = MaterialTheme.typography.bodySmall
+                        fontSize = (theme.fontSize * 0.8f).sp,
+                        fontFamily = fontFamily,
+                        style = androidx.compose.ui.text.TextStyle(shadow = shadow)
                     )
                 }
             }
@@ -1311,6 +1355,7 @@ private fun LrcThemePreviewCard(
 @Composable
 private fun LrcPreviewDialog(
     bgm: BgmItem,
+    theme: LrcTheme,
     onDismiss: () -> Unit,
     onEdit: (() -> Unit)? = null
 ) {
@@ -1441,21 +1486,85 @@ private fun LrcPreviewDialog(
                 ) {
                     itemsIndexed(lrcData.lines) { index, line ->
                         val isCurrent = index == currentLineIndex
-                        Text(
-                            text = line.text,
-                            style = if (isCurrent)
-                                MaterialTheme.typography.titleMedium
-                            else
-                                MaterialTheme.typography.bodyMedium,
-                            color = if (isCurrent)
+                        val fontFamily = com.webtoapp.ui.shell.lrcFontFamily(theme.fontFamily)
+                        val shadow = if (theme.shadowEnabled) {
+                            androidx.compose.ui.graphics.Shadow(Color.Black.copy(alpha = 0.8f), blurRadius = 6f)
+                        } else {
+                            null
+                        }
+                        val strokeColor = theme.strokeColor?.let {
+                            try {
+                                Color(android.graphics.Color.parseColor(it))
+                            } catch (e: Exception) {
+                                null
+                            }
+                        }
+                        val lineColor = if (isCurrent) {
+                            try {
+                                Color(android.graphics.Color.parseColor(theme.highlightColor))
+                            } catch (e: Exception) {
                                 MaterialTheme.colorScheme.primary
-                            else
-                                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                            textAlign = TextAlign.Center,
+                            }
+                        } else {
+                            try {
+                                Color(android.graphics.Color.parseColor(theme.textColor)).copy(alpha = 0.7f)
+                            } catch (e: Exception) {
+                                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                            }
+                        }
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(vertical = 8.dp, horizontal = 24.dp)
-                        )
+                        ) {
+                            if (strokeColor != null && theme.strokeWidth > 0f) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Text(
+                                        text = line.text,
+                                        fontSize = theme.fontSize.sp,
+                                        fontFamily = fontFamily,
+                                        textAlign = TextAlign.Center,
+                                        style = androidx.compose.ui.text.TextStyle(
+                                            drawStyle = androidx.compose.ui.graphics.drawscope.Stroke(
+                                                width = theme.strokeWidth * 2f,
+                                                join = androidx.compose.ui.graphics.StrokeJoin.Round
+                                            ),
+                                            shadow = shadow
+                                        ),
+                                        color = strokeColor
+                                    )
+                                    Text(
+                                        text = line.text,
+                                        fontSize = theme.fontSize.sp,
+                                        fontFamily = fontFamily,
+                                        textAlign = TextAlign.Center,
+                                        style = androidx.compose.ui.text.TextStyle(shadow = shadow),
+                                        color = lineColor
+                                    )
+                                }
+                            } else {
+                                Text(
+                                    text = line.text,
+                                    fontSize = theme.fontSize.sp,
+                                    fontFamily = fontFamily,
+                                    textAlign = TextAlign.Center,
+                                    style = androidx.compose.ui.text.TextStyle(shadow = shadow),
+                                    color = lineColor
+                                )
+                            }
+                            val translation = line.translation
+                            if (theme.showTranslation && translation != null && translation.isNotBlank()) {
+                                Text(
+                                    text = translation,
+                                    fontSize = (theme.fontSize * 0.8f).sp,
+                                    fontFamily = fontFamily,
+                                    textAlign = TextAlign.Center,
+                                    style = androidx.compose.ui.text.TextStyle(shadow = shadow),
+                                    color = lineColor.copy(alpha = 0.75f)
+                                )
+                            }
+                        }
                     }
                 }
 

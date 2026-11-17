@@ -53,10 +53,6 @@ class BgmPlayerState internal constructor(
     fun previous() = transport.previous()
 }
 
-/**
- * Shuffle order state. Mirrors the host [com.webtoapp.core.bgm.BgmPlayer]
- * semantics: a full permutation per cycle (no repeats), reshuffled on wrap.
- */
 internal data class BgmShuffleOrder(
     val order: List<Int> = emptyList(),
     val pos: Int = 0
@@ -79,6 +75,10 @@ internal fun advanceBgmOrder(state: BgmShuffleOrder, size: Int): BgmShuffleOrder
     return BgmShuffleOrder((0 until size).shuffled(), 0)
 }
 
+internal fun ShellConfig.withSortedBgmPlaylist(): ShellConfig =
+    if (bgmPlaylist.size < 2) this
+    else copy(bgmPlaylist = bgmPlaylist.sortedBy { it.sortOrder })
+
 internal fun parseLrcText(text: String): LrcData? {
     val lines = mutableListOf<LrcLine>()
 
@@ -93,7 +93,12 @@ internal fun parseLrcText(text: String): LrcData? {
 
             if (lyricText.isNotEmpty()) {
                 val startTime = minutes * 60000 + seconds * 1000 + millis
-                lines.add(LrcLine(startTime = startTime, endTime = startTime + 5000, text = lyricText))
+                val previous = lines.lastOrNull()
+                if (previous != null && previous.startTime == startTime && previous.translation == null) {
+                    lines[lines.lastIndex] = previous.copy(translation = lyricText)
+                } else {
+                    lines.add(LrcLine(startTime = startTime, endTime = startTime + 5000, text = lyricText))
+                }
             }
         }
     }
@@ -118,7 +123,10 @@ private class ShellBgmSession(
     private val titleState: MutableState<String>,
     private val tempFiles: MutableMap<String, File>
 ) {
-    var config: ShellConfig = initialConfig
+    var config: ShellConfig = initialConfig.withSortedBgmPlaylist()
+        set(value) {
+            field = value.withSortedBgmPlaylist()
+        }
     private var order: BgmShuffleOrder = BgmShuffleOrder()
 
     fun startInitial(autoPlay: Boolean) {

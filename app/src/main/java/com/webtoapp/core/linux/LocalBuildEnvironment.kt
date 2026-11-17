@@ -365,28 +365,24 @@ object LocalBuildEnvironment {
         }
         command.addAll(arguments)
 
-        val pb = ProcessBuilder(command)
-        pb.directory(workingDir)
-        pb.redirectErrorStream(false)
-        val processEnv = pb.environment()
-        processEnv["HOME"] = getRootDir(context).absolutePath
-        processEnv["TMPDIR"] = context.cacheDir.absolutePath
-        processEnv["COMPOSER_HOME"] = File(getRootDir(context), "composer").absolutePath
-        processEnv["COMPOSER_CACHE_DIR"] = File(getRootDir(context), "cache/composer").absolutePath
-        processEnv["COMPOSER_NO_INTERACTION"] = "1"
-
-        processEnv["COMPOSER_MEMORY_LIMIT"] = "-1"
-
-        processEnv["COMPOSER_DISABLE_XDEBUG_WARN"] = "1"
-
-        processEnv["COMPOSER_ALLOW_SUPERUSER"] = "1"
-
-        processEnv["USE_ZEND_ALLOC"] = "0"
+        val processEnv = mutableMapOf(
+            "HOME" to getRootDir(context).absolutePath,
+            "TMPDIR" to context.cacheDir.absolutePath,
+            "COMPOSER_HOME" to File(getRootDir(context), "composer").absolutePath,
+            "COMPOSER_CACHE_DIR" to File(getRootDir(context), "cache/composer").absolutePath,
+            "COMPOSER_NO_INTERACTION" to "1",
+            "COMPOSER_MEMORY_LIMIT" to "-1",
+            "COMPOSER_DISABLE_XDEBUG_WARN" to "1",
+            "COMPOSER_ALLOW_SUPERUSER" to "1",
+            "USE_ZEND_ALLOC" to "0"
+        )
         env.forEach { (k, v) ->
             if (k != "PHP_INI_OVERRIDES_OFF") processEnv[k] = v
         }
 
-        val process = pb.start()
+        val launch = HostProcessLauncher.start(context, command, processEnv, workingDir, "PHP")
+        val process = launch.process
+            ?: return@withContext ExecutionResult(-1, "", launch.error ?: "PHP 启动失败", 0)
         val stdout = StringBuilder()
         val stderr = StringBuilder()
         val tOut = Thread {
@@ -676,11 +672,7 @@ object LocalBuildEnvironment {
         val command = mutableListOf(launcher.absolutePath)
         command.addAll(arguments)
 
-        val processBuilder = ProcessBuilder(command)
-        processBuilder.directory(workingDir)
-        processBuilder.redirectErrorStream(false)
-
-        val processEnv = processBuilder.environment()
+        val processEnv = System.getenv().toMutableMap()
         val rootDir = getRootDir(context)
         val originalPath = processEnv["PATH"].orEmpty()
         processEnv["HOME"] = rootDir.absolutePath
@@ -705,9 +697,6 @@ object LocalBuildEnvironment {
         processEnv["npm_config_prefix"] = getNpmPrefixDir(context).absolutePath
         processEnv["npm_config_userconfig"] = File(rootDir, "npmrc").absolutePath
 
-        // CN region: ride the npmmirror registry for every npm/pnpm/yarn
-        // invocation (install included) unless the project or the managed
-        // userconfig pins one already, or the caller supplied its own.
         if (processEnv["npm_config_registry"] == null &&
             !npmrcPinsRegistry(workingDir) &&
             !npmrcPinsRegistry(File(rootDir, "npmrc")) &&
@@ -723,7 +712,9 @@ object LocalBuildEnvironment {
         env.forEach { (key, value) -> processEnv[key] = value }
 
         AppLogger.d(TAG, "exec: ${command.joinToString(" ")}")
-        val process = processBuilder.start()
+        val launch = HostProcessLauncher.start(context, command, processEnv, workingDir, "Node.js")
+        val process = launch.process
+            ?: return@withContext ExecutionResult(-1, "", launch.error ?: "Node.js 启动失败", 0)
 
         val stdout = StringBuilder()
         val stderr = StringBuilder()

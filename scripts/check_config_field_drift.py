@@ -13,7 +13,13 @@ SHELLCONFIG_FILE = ROOT / "app/src/main/java/com/webtoapp/core/shell/ShellModeMa
 MODEL_FILE = ROOT / "app/src/main/java/com/webtoapp/data/model/WebApp.kt"
 ALLOWLIST_FILE = ROOT / "scripts/config_field_drift_allowlist.json"
 
-OBJECT_RETURN_PAYLOAD_CLASSES = ("BackgroundRunConfig", "NotificationConfig")
+OBJECT_RETURN_PAYLOAD_CLASSES = (
+    "BackgroundRunConfig",
+    "NotificationConfig",
+    "GalleryShellItemConfig",
+    "BgmShellItem",
+    "LrcShellTheme",
+)
 
 PAYLOAD_FUNCS = [
     ("ApkConfig", "toShellPayload"),
@@ -78,10 +84,11 @@ def extract_class_keys(text: str, cls: str) -> set[str]:
     return set(DATA_CLASS_VAL.findall(m.group(1)))
 
 
-def extract_object_returned_keys(text: str) -> set[str]:
+def extract_object_returned_keys(*texts: str) -> set[str]:
     keys: set[str] = set()
     for cls in OBJECT_RETURN_PAYLOAD_CLASSES:
-        keys |= extract_class_keys(text, cls)
+        for text in texts:
+            keys |= extract_class_keys(text, cls)
     return keys
 
 
@@ -157,7 +164,7 @@ def main() -> int:
     model_text = args.model_file.read_text(encoding="utf-8")
 
     payload_keys = extract_payload_keys(payload_text, errors)
-    payload_keys |= extract_object_returned_keys(apkconfig_text)
+    payload_keys |= extract_object_returned_keys(apkconfig_text, shell_text)
     shell_keys = extract_shell_keys(shell_text)
     shared_model_keys = extract_shared_model_keys(shell_text, model_text)
     payload_keys |= shared_model_keys
