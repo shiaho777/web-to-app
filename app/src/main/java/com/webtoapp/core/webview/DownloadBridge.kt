@@ -934,7 +934,10 @@ class DownloadBridge(
             DownloadLocationMode.APP_PRIVATE -> saveToAppPrivateDir(bytes, filename)
             DownloadLocationMode.ASK -> null
             DownloadLocationMode.CUSTOM -> {
-                saveToCustomDir(bytes, filename) ?: saveToAppPrivateDir(bytes, filename)
+                saveToCustomDir(bytes, filename) ?: run {
+                    notifyCustomDirFallback()
+                    saveToAppPrivateDir(bytes, filename)
+                }
             }
             DownloadLocationMode.SYSTEM_DOWNLOAD -> {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -951,7 +954,10 @@ class DownloadBridge(
             DownloadLocationMode.APP_PRIVATE -> saveToAppPrivateDirFromFile(sourceFile, filename)
             DownloadLocationMode.ASK -> null
             DownloadLocationMode.CUSTOM -> {
-                saveToCustomDirFromFile(sourceFile, filename) ?: saveToAppPrivateDirFromFile(sourceFile, filename)
+                saveToCustomDirFromFile(sourceFile, filename) ?: run {
+                    notifyCustomDirFallback()
+                    saveToAppPrivateDirFromFile(sourceFile, filename)
+                }
             }
             DownloadLocationMode.SYSTEM_DOWNLOAD -> {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -1240,6 +1246,11 @@ class DownloadBridge(
     }
 
     private fun saveToCustomDir(bytes: ByteArray, filename: String): File? {
+        if (customDownloadDirUri.startsWith("content://")) {
+            return if (saveToCustomTreeUri(filename, getMimeType(filename)) { out -> out.write(bytes) }) {
+                java.io.File(customDownloadDirUri, filename)
+            } else null
+        }
         val dir = getCustomDir() ?: return null
         val targetFile = resolveUniqueFile(dir, filename)
         return try {
@@ -1254,6 +1265,14 @@ class DownloadBridge(
     }
 
     private fun saveToCustomDirFromFile(sourceFile: File, filename: String): File? {
+        if (customDownloadDirUri.startsWith("content://")) {
+            val ok = saveToCustomTreeUri(filename, getMimeType(filename)) { out ->
+                java.io.FileInputStream(sourceFile).use { input ->
+                    input.copyTo(out, bufferSize = 64 * 1024)
+                }
+            }
+            return if (ok) java.io.File(customDownloadDirUri, filename) else null
+        }
         val dir = getCustomDir() ?: return null
         val targetFile = resolveUniqueFile(dir, filename)
         return try {
@@ -1268,6 +1287,45 @@ class DownloadBridge(
         } catch (e: Exception) {
             AppLogger.e("DownloadBridge", "自定义目录流式写入失败", e)
             null
+        }
+    }
+
+    private fun notifyCustomDirFallback() {
+        AppLogger.w("DownloadBridge", "自定义下载目录不可写，回退到应用私有目录: $customDownloadDirUri")
+        scope.launch(Dispatchers.Main) {
+            Toast.makeText(
+                context,
+                Strings.downloadCustomDirFallback.replace("%s", customDownloadDirUri),
+                Toast.LENGTH_LONG
+            ).show()
+        }
+    }
+
+    private fun saveToCustomTreeUri(
+        filename: String,
+        mime: String,
+        write: (java.io.OutputStream) -> Unit
+    ): Boolean {
+        return try {
+            val tree = androidx.documentfile.provider.DocumentFile.fromTreeUri(
+                context, android.net.Uri.parse(customDownloadDirUri)
+            ) ?: return false
+            if (!tree.exists() || !tree.canWrite()) return false
+            val baseName = filename.substringBeforeLast(".")
+            val ext = filename.substringAfterLast(".", "")
+            var candidate = filename
+            var counter = 1
+            while (tree.findFile(candidate) != null) {
+                candidate = if (ext.isNotEmpty()) "${baseName}_$counter.$ext" else "${baseName}_$counter"
+                counter++
+            }
+            val doc = tree.createFile(mime.ifBlank { "application/octet-stream" }, candidate) ?: return false
+            context.contentResolver.openOutputStream(doc.uri)?.use(write) ?: return false
+            AppLogger.d("DownloadBridge", "文件已通过 SAF 保存到自定义目录: ${doc.uri}")
+            true
+        } catch (e: Exception) {
+            AppLogger.e("DownloadBridge", "SAF 自定义目录写入失败", e)
+            false
         }
     }
 

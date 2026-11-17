@@ -18,11 +18,16 @@ object SiteWebProfiles {
 
     fun applyTo(webView: WebView, profileName: String?) {
         if (profileName == null) return
-        if (!WebViewFeature.isFeatureSupported(WebViewFeature.MULTI_PROFILE)) return
+        if (!isSupported()) {
+            AppLogger.w(TAG, "MULTI_PROFILE unsupported by this WebView; site sessions share cookies")
+            return
+        }
         try {
             WebViewCompat.setProfile(webView, profileName)
         } catch (e: Exception) {
             AppLogger.w(TAG, "Failed to apply site profile $profileName", e)
         }
     }
+
+    fun isSupported(): Boolean = WebViewFeature.isFeatureSupported(WebViewFeature.MULTI_PROFILE)
 }

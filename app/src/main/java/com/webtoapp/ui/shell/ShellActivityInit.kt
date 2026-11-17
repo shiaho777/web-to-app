@@ -62,7 +62,8 @@ object ShellActivityInit {
                         appId = 0L,
                         enabled = true,
                         time = autoStartConfig.scheduledTime,
-                        days = autoStartConfig.scheduledDays
+                        days = autoStartConfig.scheduledDays,
+                        repeat = autoStartConfig.scheduledRepeat
                     )
                 } else {
                     autoStartManager.setScheduledStart(appId = 0L, enabled = false)
@@ -111,13 +112,29 @@ object ShellActivityInit {
             } catch (e: Exception) {
                 com.webtoapp.core.shell.ShellLogger.e("ShellActivity", "后台运行服务启动失败", e)
             }
+        } else {
+            try {
+                com.webtoapp.core.background.BackgroundRunService.stop(activity)
+            } catch (e: Exception) {
+                com.webtoapp.core.shell.ShellLogger.e("ShellActivity", "后台运行服务停止失败", e)
+            }
         }
     }
 
     fun initNotificationService(activity: AppCompatActivity, config: ShellConfig) {
-        if (config.notificationEnabled && config.notificationConfig != null) {
+        val nc = config.notificationConfig?.takeIf { config.notificationEnabled }
+        try {
+            if (nc == null || nc.type != "polling") {
+                com.webtoapp.core.notification.NotificationPollingService.stop(activity)
+            }
+            if (nc == null || nc.type != "websocket") {
+                com.webtoapp.core.notification.NotificationWebSocketService.stop(activity)
+            }
+        } catch (e: Exception) {
+            com.webtoapp.core.shell.ShellLogger.e("ShellActivity", "通知服务停止失败", e)
+        }
+        if (nc != null) {
             try {
-                val nc = config.notificationConfig
                 when {
                     nc.type == "polling" && nc.pollUrl.isNotBlank() -> {
                         com.webtoapp.core.notification.NotificationPollingService.start(

@@ -25,6 +25,7 @@ class AutoStartManager(private val context: Context) {
         const val KEY_SCHEDULED_TIME = "scheduled_time"
         const val KEY_SCHEDULED_TIMES = "scheduled_times"
         const val KEY_SCHEDULED_DAYS = "scheduled_days"
+        const val KEY_SCHEDULED_REPEAT = "scheduled_repeat"
         const val KEY_LAST_SCHEDULE_HASH = "last_schedule_hash"
         const val KEY_LAST_TRIGGER_TIME = "last_trigger_time"
         const val KEY_TRIGGER_COUNT = "trigger_count"
@@ -74,20 +75,22 @@ class AutoStartManager(private val context: Context) {
         enabled: Boolean,
         time: String = "08:00",
         times: List<String> = emptyList(),
-        days: List<Int> = listOf(1, 2, 3, 4, 5, 6, 7)
+        days: List<Int> = listOf(1, 2, 3, 4, 5, 6, 7),
+        repeat: Boolean = true
     ) {
         if (enabled) {
             val effectiveTimes = times.ifEmpty { listOf(time) }
 
             val normalizedTimes = effectiveTimes.map { normalizeTime(it) }.distinct().sorted()
 
-            val scheduleHash = "${appId}_${normalizedTimes.joinToString(",")}_${days.sorted().joinToString(",")}"
+            val scheduleHash = "${appId}_${normalizedTimes.joinToString(",")}_${days.sorted().joinToString(",")}_r=$repeat"
 
             prefs.edit().apply {
                 putLong(KEY_SCHEDULED_START_APP_ID, appId)
                 putString(KEY_SCHEDULED_TIME, normalizedTimes.firstOrNull() ?: time)
                 putString(KEY_SCHEDULED_TIMES, normalizedTimes.joinToString(","))
                 putString(KEY_SCHEDULED_DAYS, days.joinToString(","))
+                putBoolean(KEY_SCHEDULED_REPEAT, repeat)
                 putString(KEY_LAST_SCHEDULE_HASH, scheduleHash)
                 apply()
             }
@@ -98,12 +101,13 @@ class AutoStartManager(private val context: Context) {
                 remove(KEY_SCHEDULED_TIME)
                 remove(KEY_SCHEDULED_TIMES)
                 remove(KEY_SCHEDULED_DAYS)
+                remove(KEY_SCHEDULED_REPEAT)
                 remove(KEY_LAST_SCHEDULE_HASH)
                 apply()
             }
             cancelAlarm()
         }
-        AppLogger.d(TAG, "定时自启动 ${if (enabled) "已启用" else "已禁用"}, appId=$appId, time=$time, times=${times}, days=$days")
+        AppLogger.d(TAG, "定时自启动 ${if (enabled) "已启用" else "已禁用"}, appId=$appId, time=$time, times=${times}, days=$days, repeat=$repeat")
     }
 
     fun getScheduledStartConfig(): ScheduledStartConfig? {
@@ -115,8 +119,9 @@ class AutoStartManager(private val context: Context) {
         val times = timesStr?.split(",")?.filter { it.isNotBlank() } ?: listOf(time)
         val daysStr = prefs.getString(KEY_SCHEDULED_DAYS, "1,2,3,4,5,6,7") ?: "1,2,3,4,5,6,7"
         val days = daysStr.split(",").mapNotNull { it.trim().toIntOrNull() }
+        val repeat = prefs.getBoolean(KEY_SCHEDULED_REPEAT, true)
 
-        return ScheduledStartConfig(appId, time, days, times)
+        return ScheduledStartConfig(appId, time, days, times, repeat)
     }
 
     fun calculateNextTriggerTime(times: List<String>, days: List<Int>): Calendar? {
@@ -256,6 +261,20 @@ class AutoStartManager(private val context: Context) {
 
         recordTrigger()
         val config = getScheduledStartConfig() ?: return
+        if (!config.repeat) {
+            prefs.edit().apply {
+                remove(KEY_SCHEDULED_START_APP_ID)
+                remove(KEY_SCHEDULED_TIME)
+                remove(KEY_SCHEDULED_TIMES)
+                remove(KEY_SCHEDULED_DAYS)
+                remove(KEY_SCHEDULED_REPEAT)
+                remove(KEY_LAST_SCHEDULE_HASH)
+                apply()
+            }
+            cancelAlarm()
+            AppLogger.d(TAG, "定时自启动为单次模式，触发后不再重排")
+            return
+        }
         val effectiveTimes = config.times.ifEmpty { listOf(config.time) }
         scheduleNextAlarm(config.appId, effectiveTimes, config.days)
     }
@@ -401,5 +420,6 @@ data class ScheduledStartConfig(
     val appId: Long,
     val time: String,
     val days: List<Int>,
-    val times: List<String> = emptyList()
+    val times: List<String> = emptyList(),
+    val repeat: Boolean = true
 )

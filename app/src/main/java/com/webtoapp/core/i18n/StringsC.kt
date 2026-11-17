@@ -6111,6 +6111,19 @@ object StringsC {
         AppLanguage.KOREAN -> "지정된 시간에 이 앱 자동 시작"
     }
 
+    val scheduledRepeat: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "重复启动"
+        AppLanguage.ENGLISH -> "Repeat"
+        AppLanguage.ARABIC -> "تكرار"
+        AppLanguage.PORTUGUESE -> "Repetir"
+        AppLanguage.SPANISH -> "Repetir"
+        AppLanguage.FRENCH -> "Répéter"
+        AppLanguage.GERMAN -> "Wiederholen"
+        AppLanguage.RUSSIAN -> "Повторять"
+        AppLanguage.JAPANESE -> "繰り返し"
+        AppLanguage.KOREAN -> "반복"
+    }
+
     val launchDate: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "启动日期"
         AppLanguage.ENGLISH -> "Launch Date"

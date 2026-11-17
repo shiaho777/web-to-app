@@ -879,7 +879,7 @@ class ShellActivity : AppCompatActivity() {
                             backgroundMedia.bind(mediaBridge)
                         }
 
-                        if (config.webViewConfig.enableNativeBridge) {
+                        if (config.webViewConfig.enableNativeBridge || config.webViewConfig.enableNotificationPolyfill) {
                             val capabilities = com.webtoapp.data.model.NativeBridgeCapabilities(
                                 clipboard = config.webViewConfig.nativeBridgeClipboard,
                                 vibration = config.webViewConfig.nativeBridgeVibration,
