@@ -70,7 +70,7 @@ class JarSignerSchemeLadderTest {
         val ladder = JarSigner.schemeFallbackLadder(listOf(1, 2, 3), emptySet(), autoFallback = true)
 
         assertThat(ladder).isEqualTo(
-            listOf(listOf(1, 2, 3), listOf(1, 2), listOf(2), listOf(1))
+            listOf(listOf(1, 2, 3), listOf(1, 2), listOf(1))
         )
     }
 
@@ -90,7 +90,7 @@ class JarSignerSchemeLadderTest {
         assertThat(JarSigner.isKeystoreUnusableFailure(InvalidKeyException("unsupported key"))).isTrue()
         assertThat(
             JarSigner.isKeystoreUnusableFailure(
-                RuntimeException("signing failed", java.io.IOException("wrapper", KeyStoreException("root")))
+                RuntimeException("load failed", java.io.IOException("wrapper", KeyStoreException("root")))
             )
         ).isTrue()
     }
@@ -114,6 +114,11 @@ class JarSignerSchemeLadderTest {
         assertThat(
             JarSigner.isKeystoreUnusableFailure(
                 com.android.apksig.apk.ApkFormatException("bad manifest", NoSuchAlgorithmException("digest"))
+            )
+        ).isFalse()
+        assertThat(
+            JarSigner.isKeystoreUnusableFailure(
+                InvalidKeyException("Failed to sign using signer \"CERT\"", InvalidKeyException("unsupported key encoding"))
             )
         ).isFalse()
     }
@@ -224,57 +229,48 @@ class JarSignerSchemeLadderTest {
     }
 
     @Test
-    fun `unusable key regenerates the auto keystore and aborts the build`() {
-        val signer = JarSigner(context)
-        val originalHash = signer.getCertificateSignatureHash()
+    fun `corrupt auto keystore is regenerated on load with a new identity`() {
+        val first = JarSigner(context)
+        val originalHash = first.getCertificateSignatureHash()
         val keystoreFile = File(context.filesDir, "webtoapp_keystore.p12")
         assertThat(keystoreFile.exists()).isTrue()
 
-        val brokenKey = object : PrivateKey {
-            override fun getAlgorithm(): String = "WTA_UNSUPPORTED"
-            override fun getFormat(): String = "RAW"
-            override fun getEncoded(): ByteArray = ByteArray(8)
-        }
-        val keyField = JarSigner::class.java.getDeclaredField("privateKey")
-        keyField.isAccessible = true
-        keyField.set(signer, brokenKey)
+        keystoreFile.writeBytes(byteArrayOf(0x01, 0x02, 0x03, 0x04))
+
+        val second = JarSigner(context)
+        assertThat(keystoreFile.exists()).isTrue()
+        assertThat(second.getCertificateSignatureHash()).isNotEqualTo(originalHash)
 
         val input = minimalApk(minSdk = 23, targetSdk = 35)
-        val output = File(context.cacheDir, "ladder-broken-key.apk")
-
-        var thrown: Throwable? = null
-        try {
-            signer.sign(input, output, targetSdk = 35, minSdk = 23)
-        } catch (e: Throwable) {
-            thrown = e
-        }
-
-        assertThat(thrown).isInstanceOf(IllegalStateException::class.java)
-        assertThat(thrown!!.message).isEqualTo(Strings.signKeyRegeneratedRetry)
-        assertThat(thrown.cause).isInstanceOf(InvalidKeyException::class.java)
-        assertThat(output.exists()).isFalse()
-        assertThat(keystoreFile.exists()).isTrue()
-        assertThat(signer.getCertificateSignatureHash()).isNotEqualTo(originalHash)
+        val output = File(context.cacheDir, "ladder-regenerated-identity.apk")
+        assertThat(second.sign(input, output, targetSdk = 35, minSdk = 23)).isTrue()
     }
 
     @Test
     fun `non-keystore signing failure never touches the auto keystore`() {
         val signer = JarSigner(context)
+        signer.setSigningSchemeOptions(
+            JarSigner.SigningSchemeOptions(v1Enabled = true, v2Enabled = true, v3Enabled = false, autoFallback = true)
+        )
         val keystoreFile = File(context.filesDir, "webtoapp_keystore.p12")
         val originalBytes = keystoreFile.readBytes()
         val originalHash = signer.getCertificateSignatureHash()
 
-        val corruptInput = File(context.cacheDir, "ladder-corrupt-input.apk")
-        ZipOutputStream(corruptInput.outputStream()).use { zip ->
-            zip.putNextEntry(ZipEntry("AndroidManifest.xml"))
-            zip.write(byteArrayOf(0x01, 0x02, 0x03, 0x04))
-            zip.closeEntry()
+        val signingFailureKey = object : PrivateKey {
+            override fun getAlgorithm(): String = "RSA"
+            override fun getFormat(): String = "RAW"
+            override fun getEncoded(): ByteArray = throw InvalidKeyException("unsupported key encoding")
         }
-        val output = File(context.cacheDir, "ladder-corrupt-output.apk")
+        val keyField = JarSigner::class.java.getDeclaredField("privateKey")
+        keyField.isAccessible = true
+        keyField.set(signer, signingFailureKey)
+
+        val input = minimalApk(minSdk = 23, targetSdk = 35)
+        val output = File(context.cacheDir, "ladder-signing-failure.apk")
 
         var thrown: Throwable? = null
         try {
-            signer.sign(corruptInput, output, targetSdk = 35, minSdk = 23)
+            signer.sign(input, output, targetSdk = 35, minSdk = 23)
         } catch (e: Throwable) {
             thrown = e
         }

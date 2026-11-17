@@ -64,6 +64,7 @@ class JarSigner(private val context: Context) {
             var current = selected
             while (true) {
                 ladder.add(current)
+                if (current.size <= 1) break
                 val droppable = current.lastOrNull { it !in forced } ?: break
                 current = current.filter { it != droppable }
             }
@@ -75,6 +76,9 @@ class JarSigner(private val context: Context) {
             var depth = 0
             while (current != null && depth < 10) {
                 if (current.javaClass.name.startsWith("com.android.apksig.")) {
+                    return false
+                }
+                if (current.message?.contains("Failed to sign using signer") == true) {
                     return false
                 }
                 if (current is KeyStoreException ||
@@ -477,6 +481,17 @@ class JarSigner(private val context: Context) {
             true
         } catch (e: Exception) {
             AppLogger.e(TAG, "Auto PKCS12 key scheme failed", e)
+            if (keyStoreFile.exists()) {
+                AppLogger.e(TAG, Strings.signKeyRegeneratedRetry)
+                keyStoreFile.delete()
+                return try {
+                    createNewPkcs12(keyStoreFile, keyStorePassword, FALLBACK_KEY_ALIAS)
+                    true
+                } catch (e2: Exception) {
+                    AppLogger.e(TAG, "Auto PKCS12 recreation failed", e2)
+                    false
+                }
+            }
             false
         }
     }
@@ -1266,14 +1281,6 @@ class JarSigner(private val context: Context) {
                 AppLogger.e(TAG, "Full stack trace:", e)
 
                 if (outputApk.exists()) outputApk.delete()
-
-                if (identity == null && isKeystoreUnusableFailure(e)) {
-                    AppLogger.w(TAG, "Auto keystore is unusable, regenerating and aborting this build")
-                    File(context.filesDir, DEFAULT_PKCS12_FILE).delete()
-                    File(context.filesDir, ".ks_credential").delete()
-                    initializeKey()
-                    throw IllegalStateException(Strings.signKeyRegeneratedRetry, e)
-                }
             }
         }
 
