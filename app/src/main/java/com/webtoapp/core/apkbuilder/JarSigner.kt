@@ -74,6 +74,9 @@ class JarSigner(private val context: Context) {
             var current: Throwable? = e
             var depth = 0
             while (current != null && depth < 10) {
+                if (current.javaClass.name.startsWith("com.android.apksig.")) {
+                    return false
+                }
                 if (current is KeyStoreException ||
                     current is UnrecoverableKeyException ||
                     current is NoSuchAlgorithmException ||
@@ -1369,9 +1372,15 @@ class JarSigner(private val context: Context) {
 
             if (!result.isVerified) {
                 AppLogger.w(TAG, "[$source] ApkVerifier reported a verification failure — treating the signature as invalid")
+                return false
             }
 
-            result.isVerified
+            if (targetSdk >= 30 && !result.isVerifiedUsingV2Scheme && !result.isVerifiedUsingV3Scheme) {
+                AppLogger.w(TAG, "[$source] targetSdk $targetSdk requires a verified V2/V3 signature; V1-only output is not installable on Android 11+")
+                return false
+            }
+
+            true
         } catch (e: Exception) {
             AppLogger.w(TAG, "[$source] Verification raised an exception (build is unaffected): ${e.message}")
             false

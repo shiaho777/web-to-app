@@ -70,7 +70,7 @@ class JarSignerSchemeLadderTest {
         val ladder = JarSigner.schemeFallbackLadder(listOf(1, 2, 3), emptySet(), autoFallback = true)
 
         assertThat(ladder).isEqualTo(
-            listOf(listOf(1, 2, 3), listOf(1, 2), listOf(1))
+            listOf(listOf(1, 2, 3), listOf(1, 2), listOf(2), listOf(1))
         )
     }
 
@@ -105,6 +105,16 @@ class JarSignerSchemeLadderTest {
         ).isFalse()
         assertThat(
             JarSigner.isKeystoreUnusableFailure(IllegalStateException("signature verification failed"))
+        ).isFalse()
+        assertThat(
+            JarSigner.isKeystoreUnusableFailure(
+                com.android.apksig.apk.ApkFormatException("bad manifest")
+            )
+        ).isFalse()
+        assertThat(
+            JarSigner.isKeystoreUnusableFailure(
+                com.android.apksig.apk.ApkFormatException("bad manifest", NoSuchAlgorithmException("digest"))
+            )
         ).isFalse()
     }
 
