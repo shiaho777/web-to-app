@@ -1944,13 +1944,15 @@ class ApkBuilder(private val context: Context) {
                         fnAddGalleryItems = ::addGalleryItemsToAssets,
                         fnAddWordPressFiles = { zo, dir -> addWordPressFilesToAssets(zo, dir, abiFilters, alignDir, logger) },
                         fnAddNodeJsFiles = { zo, dir -> addNodeJsFilesToAssets(zo, dir, abiFilters, alignDir, logger) },
-                        fnAddFrontendFiles = { zo, dir, files -> addFrontendFilesToAssets(zo, dir, files, logger) },
+                        fnAddFrontendFiles = { zo, dir, files, enc, ec -> addFrontendFilesToAssets(zo, dir, files, logger, enc, ec) },
+                        fnAddFrontendFallback = { zo, files, enc, ec -> addFrontendFilesFallback(zo, files, enc, ec, logger) },
                         fnAddPhpAppFiles = { zo, dir -> addPhpAppFilesToAssets(zo, dir, abiFilters, alignDir, logger) },
                         fnAddPythonAppFiles = { zo, dir -> addPythonAppFilesToAssets(zo, dir, abiFilters, alignDir, logger) },
                         fnAddGoAppFiles = { zo, dir -> addGoAppFilesToAssets(zo, dir, abiFilters, alignDir, logger) },
                         multiWebSiteSourceDirs = multiWebSiteSourceDirs,
                         multiWebSiteGalleryItems = multiWebSiteGalleryItems,
-                        multiWebSiteMediaPaths = multiWebSiteMediaPaths
+                        multiWebSiteMediaPaths = multiWebSiteMediaPaths,
+                        projectFileHook = projectEncryptionHook(assetEncryptor, encryptionConfig, logger)
                     )
                     val result = embedder.embed(zipOut, embedCtx)
                     logger.log("Content embedding [${config.appType}]: ${result.message}")
@@ -3221,13 +3223,74 @@ builtins.__import__ = _w2a_import
         )
     }
 
+    private fun projectEncryptionHook(
+        encryptor: AssetEncryptor?,
+        encryptionConfig: EncryptionConfig,
+        logger: BuildLogger
+    ): ((ZipOutputStream, String, File) -> Boolean)? {
+        if (!encryptionConfig.enabled || encryptor == null) return null
+        return { zipOut, assetPath, file ->
+            val assetName = assetPath.removePrefix("assets/")
+            val entry = java.util.zip.ZipEntry("${assetPath}.enc")
+            entry.method = java.util.zip.ZipEntry.DEFLATED
+            zipOut.putNextEntry(entry)
+            val written = file.inputStream().buffered().use { input ->
+                encryptor.encryptStreaming(input, assetName, zipOut)
+            }
+            zipOut.closeEntry()
+            logger.log("File encrypted: ${assetPath}.enc ($written bytes)")
+            true
+        }
+    }
+
     private fun addFrontendFilesToAssets(
         zipOut: ZipOutputStream,
         projectDir: File,
         htmlFiles: List<com.webtoapp.data.model.HtmlFile>,
-        logger: BuildLogger = logDirectory
+        logger: BuildLogger = logDirectory,
+        encryptor: AssetEncryptor? = null,
+        encryptionConfig: EncryptionConfig = EncryptionConfig.DISABLED
     ) {
-        RuntimeAssetEmbedder.embedProjectFiles(zipOut, projectDir, RuntimeAssetEmbedder.frontendConfig(), logger)
+        RuntimeAssetEmbedder.embedProjectFiles(
+            zipOut,
+            projectDir,
+            RuntimeAssetEmbedder.frontendConfig().copy(
+                fileHook = projectEncryptionHook(encryptor, encryptionConfig, logger)
+            ),
+            logger
+        )
+    }
+
+    private fun addFrontendFilesFallback(
+        zipOut: ZipOutputStream,
+        htmlFiles: List<com.webtoapp.data.model.HtmlFile>,
+        encryptor: AssetEncryptor?,
+        encryptionConfig: EncryptionConfig,
+        logger: BuildLogger
+    ): Int {
+        var count = 0
+        htmlFiles.forEach { htmlFile ->
+            val sourceFile = File(htmlFile.path)
+            if (!sourceFile.exists() || !sourceFile.canRead()) {
+                logger.warn("Frontend fallback file not accessible: ${htmlFile.path}")
+                return@forEach
+            }
+            val assetPath = "assets/frontend_app/${htmlFile.name}"
+            val assetName = "frontend_app/${htmlFile.name}"
+            val hook = projectEncryptionHook(encryptor, encryptionConfig, logger)
+            if (hook != null && hook(zipOut, assetPath, sourceFile)) {
+                count++
+                return@forEach
+            }
+            val bytes = sourceFile.readBytes()
+            if (isTextFile(htmlFile.name)) {
+                writeEntryDeflated(zipOut, assetPath, bytes)
+            } else {
+                writeEntryStoredSimple(zipOut, assetPath, bytes)
+            }
+            count++
+        }
+        return count
     }
 
     /**
@@ -3410,7 +3473,8 @@ builtins.__import__ = _w2a_import
 
         AppLogger.d("ApkBuilder", "File categories: HTML=${htmlFilesList.size}, CSS=${cssFilesList.size}, JS=${jsFilesList.size}, Other=${otherFiles.size}")
 
-        val isComplexProject = isComplexHtmlProject(htmlFiles, htmlFilesList, jsFilesList, otherFiles)
+        val hasModuleScripts = htmlFiles.any { it.name.endsWith(".mjs", ignoreCase = true) }
+        val isComplexProject = hasModuleScripts || isComplexHtmlProject(htmlFiles, htmlFilesList, jsFilesList, otherFiles)
 
         if (isComplexProject) {
             AppLogger.i("ApkBuilder", "Complex project detected (React/WASM/ES modules) — using PRESERVE mode (no inlining)")
@@ -4262,7 +4326,8 @@ private fun WebApp.buildMetaBlock(packageName: String, effectiveTargetUrl: Strin
         themeType = themeType,
         darkMode = darkMode,
         language = com.webtoapp.core.i18n.Strings.currentLanguage.value.name,
-        engineType = apkExportConfig?.engineType ?: "SYSTEM_WEBVIEW",
+        engineType = apkExportConfig?.engineType
+            ?: if (webViewConfig.dnsConfig.echEffective) "GECKOVIEW" else "SYSTEM_WEBVIEW",
         htmlUsesFileScheme = htmlUsesFileScheme,
         loggingEnabled = apkExportConfig?.loggingEnabled ?: false,
         targetSdkOverride = sdk.targetSdkRewrite,
@@ -4314,17 +4379,21 @@ private fun WebApp.buildAnnouncementBlock(): AnnouncementBlock = AnnouncementBlo
     hasCustomIcon = !announcement?.customIconPath.isNullOrBlank()
 )
 
-private fun com.webtoapp.data.model.WebViewConfig.toWebViewBlock(context: android.content.Context?): WebViewBlock {
-    val resolvedInjectScripts = buildList {
-
-        if (enableKernelDisguise) {
-            add(com.webtoapp.data.model.UserScript(
-                name = "__kernel__",
-                code = com.webtoapp.core.kernel.BrowserKernel.getBuildTimeKernelJs(),
-                enabled = true,
-                runAt = com.webtoapp.data.model.ScriptRunTime.DOCUMENT_START
-            ))
-        }
+internal fun buildExportInjectScripts(
+    config: com.webtoapp.data.model.WebViewConfig,
+    context: android.content.Context?
+): List<com.webtoapp.data.model.UserScript> = buildList {
+    if (config.enableKernelDisguise &&
+        config.kernelDisguiseLevel != com.webtoapp.data.model.KernelDisguiseLevel.BASIC
+    ) {
+        add(com.webtoapp.data.model.UserScript(
+            name = "__kernel__",
+            code = com.webtoapp.core.kernel.BrowserKernel.getBuildTimeKernelJs(),
+            enabled = true,
+            runAt = com.webtoapp.data.model.ScriptRunTime.DOCUMENT_START
+        ))
+    }
+    if (config.performanceOptimization) {
         add(com.webtoapp.data.model.UserScript(
             name = "__perf_start__",
             code = com.webtoapp.core.perf.NativePerfEngine.getPerfJsStart(),
@@ -4337,15 +4406,19 @@ private fun com.webtoapp.data.model.WebViewConfig.toWebViewBlock(context: androi
             enabled = true,
             runAt = com.webtoapp.data.model.ScriptRunTime.DOCUMENT_END
         ))
-        val userScripts = if (context != null && injectScripts.any {
-                com.webtoapp.core.script.UserScriptStorage.isFileReference(it.code)
-            }) {
-            com.webtoapp.core.script.UserScriptStorage.internalizeScripts(context, injectScripts)
-        } else {
-            injectScripts
-        }
-        addAll(userScripts)
     }
+    val userScripts = if (context != null && config.injectScripts.any {
+            com.webtoapp.core.script.UserScriptStorage.isFileReference(it.code)
+        }) {
+        com.webtoapp.core.script.UserScriptStorage.internalizeScripts(context, config.injectScripts)
+    } else {
+        config.injectScripts
+    }
+    addAll(userScripts)
+}
+
+private fun com.webtoapp.data.model.WebViewConfig.toWebViewBlock(context: android.content.Context?): WebViewBlock {
+    val resolvedInjectScripts = buildExportInjectScripts(this, context)
 
     return WebViewBlock(
         javaScriptEnabled = javaScriptEnabled,

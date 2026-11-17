@@ -210,7 +210,7 @@ class ApkArtifactVerifierTest {
         }
         val apk = createApk(
             ApkTemplate.CONFIG_PATH,
-            "assets/html/index.html"
+            "assets/frontend_app/index.html"
         )
 
         val result = ApkArtifactVerifier.verify(
@@ -232,6 +232,37 @@ class ApkArtifactVerifierTest {
 
         assertThat(result.passed).isTrue()
         assertThat(result.checkedEntryCount).isEqualTo(2)
+    }
+
+    @Test
+    fun `frontend fallback under the html prefix is rejected because the shell reads frontend_app`() {
+        val index = temp.newFile("index.html").apply {
+            writeText("<html></html>")
+        }
+        val apk = createApk(
+            ApkTemplate.CONFIG_PATH,
+            "assets/html/index.html"
+        )
+
+        val result = ApkArtifactVerifier.verify(
+            ApkArtifactVerificationRequest(
+                apkFile = apk,
+                config = ApkConfig(
+                    meta = MetaBlock(
+                        appName = "Frontend",
+                        packageName = "com.example.frontend",
+                        targetUrl = "",
+                        appType = "FRONTEND"
+                    ),
+                    html = HtmlBlock(entryFile = "index.html")
+                ),
+                encryptionEnabled = false,
+                htmlFiles = listOf(HtmlFile("index.html", index.absolutePath, HtmlFileType.HTML))
+            )
+        )
+
+        assertThat(result.passed).isFalse()
+        assertThat(result.issues.map { it.key }).contains("frontendEntryFile")
     }
 
     @Test

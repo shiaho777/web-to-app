@@ -732,7 +732,9 @@ fun ShellScreen(
         )
     }
 
-    if (showAnnouncementDialog && config.announcementTitle.isNotEmpty()) {
+    if (showAnnouncementDialog &&
+        (config.announcementTitle.isNotEmpty() || config.announcementContent.isNotEmpty())
+    ) {
         ShellAnnouncementDialog(
             config = config,
             onDismiss = { showAnnouncementDialog = false }

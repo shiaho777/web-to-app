@@ -146,7 +146,7 @@ internal object ApkArtifactVerifier {
                                 entries = entries,
                                 checkedEntries = checkedEntries,
                                 key = "frontendEntryFile",
-                                path = "assets/html/${normalizeAssetPath(request.config.htmlEntryFile)}",
+                                path = "assets/frontend_app/${normalizeAssetPath(request.config.htmlEntryFile)}",
                                 label = "frontend entry file",
                                 encrypted = request.encryptionEnabled
                             )
