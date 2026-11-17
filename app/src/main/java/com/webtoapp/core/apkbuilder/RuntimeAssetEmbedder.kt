@@ -105,14 +105,14 @@ object RuntimeAssetEmbedder {
     fun frontendConfig(): EmbedConfig = EmbedConfig(
         runtimeName = "frontend",
         assetPrefix = "assets/frontend_app",
-        excludeDirs = setOf("node_modules", ".git", ".cache", "__pycache__", ".next", ".nuxt"),
+        excludeDirs = com.webtoapp.util.ZipProjectImporter.WEB_CONTENT_EXCLUDED_DIRS,
         runtimeType = "nodejs"
     )
 
     fun multiWebConfig(): EmbedConfig = EmbedConfig(
         runtimeName = "multiWeb",
         assetPrefix = "assets/html_projects",
-        excludeDirs = setOf("node_modules", ".git", ".cache", "__pycache__", ".next", ".nuxt"),
+        excludeDirs = com.webtoapp.util.ZipProjectImporter.WEB_CONTENT_EXCLUDED_DIRS,
         runtimeType = "nodejs"
     )
 

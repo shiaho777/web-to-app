@@ -1813,18 +1813,6 @@ class ApkBuilder(private val context: Context) {
                     logger.log("Resource encryption enabled: shell enforces runtime protection (anti-debug / anti-Frida / DEX-tamper) at launch via app_config.json")
                 }
 
-                if (perfConfig != null && perfConfig.injectPerformanceScript) {
-                    onProgress(82, "Injecting performance assets...")
-                    logger.section("Performance Optimization")
-                    val perfScript = com.webtoapp.core.linux.PerformanceOptimizer.generatePerformanceScript()
-                    val scriptData = perfScript.toByteArray(Charsets.UTF_8)
-                    writeEntryDeflated(zipOut, "assets/wta_perf_optimize.js", scriptData)
-                    logger.log("Performance script injected (${scriptData.size} bytes)")
-                    logger.log("Perf features: images=${perfConfig.compressImages}, code=${perfConfig.minifyCode}, " +
-                        "webp=${perfConfig.convertToWebP}, preload=${perfConfig.injectPreloadHints}, " +
-                        "lazy=${perfConfig.injectLazyLoading}, scripts=${perfConfig.optimizeScripts}")
-                }
-
                 if (mode == ModifyApkMode.FULL && stackBundles.isNotEmpty()) {
                     featureStackGrafter.extraEntries(stackBundles, entryNames)
                         .forEach { (name, data) -> writeEntryDeflated(zipOut, name, data) }
@@ -3474,10 +3462,12 @@ builtins.__import__ = _w2a_import
         AppLogger.d("ApkBuilder", "File categories: HTML=${htmlFilesList.size}, CSS=${cssFilesList.size}, JS=${jsFilesList.size}, Other=${otherFiles.size}")
 
         val hasModuleScripts = htmlFiles.any { it.name.endsWith(".mjs", ignoreCase = true) }
-        val isComplexProject = hasModuleScripts || isComplexHtmlProject(htmlFiles, htmlFilesList, jsFilesList, otherFiles)
+        val tooLargeToInline = exceedsInlineSizeLimit(htmlFilesList + cssFilesList + jsFilesList)
+        val isComplexProject = hasModuleScripts || tooLargeToInline ||
+            isComplexHtmlProject(htmlFiles, htmlFilesList, jsFilesList, otherFiles)
 
         if (isComplexProject) {
-            AppLogger.i("ApkBuilder", "Complex project detected (React/WASM/ES modules) — using PRESERVE mode (no inlining)")
+            AppLogger.i("ApkBuilder", "Complex/large project detected (React/WASM/ES modules/size limit) — using PRESERVE mode (no inlining)")
             return addHtmlFilesPreserveStructure(zipOut, htmlFiles, encryptor, encryptionConfig)
         }
 
@@ -3702,7 +3692,8 @@ builtins.__import__ = _w2a_import
                              htmlFile.name.endsWith(".txt", ignoreCase = true)
 
                 val finalBytes = if (isHtml) {
-                    var content = String(fileBytes, Charsets.UTF_8)
+                    val encoding = detectFileEncoding(sourceFile)
+                    var content = com.webtoapp.util.HtmlProjectProcessor.readFileWithEncoding(sourceFile, encoding)
                     if (!content.contains("viewport", ignoreCase = true)) {
                         content = com.webtoapp.util.HtmlProjectProcessor.processHtmlContent(
                             htmlContent = content,
@@ -3711,6 +3702,8 @@ builtins.__import__ = _w2a_import
                             fixPaths = false,
                             removeLocalRefs = false
                         )
+                    } else {
+                        content = com.webtoapp.util.HtmlProjectProcessor.rewriteCharsetDeclaration(content)
                     }
                     content.toByteArray(Charsets.UTF_8)
                 } else {
@@ -4378,6 +4371,20 @@ private fun WebApp.buildAnnouncementBlock(): AnnouncementBlock = AnnouncementBlo
     showIcon = announcement?.showIcon ?: true,
     hasCustomIcon = !announcement?.customIconPath.isNullOrBlank()
 )
+
+internal fun exceedsInlineSizeLimit(files: List<com.webtoapp.data.model.HtmlFile>): Boolean {
+    val maxInlineSize = 2L * 1024 * 1024
+    var total = 0L
+    for (htmlFile in files) {
+        val file = File(htmlFile.path)
+        if (!file.exists()) continue
+        val length = file.length()
+        if (length > maxInlineSize) return true
+        total += length
+        if (total > maxInlineSize * 3) return true
+    }
+    return false
+}
 
 internal fun buildExportInjectScripts(
     config: com.webtoapp.data.model.WebViewConfig,

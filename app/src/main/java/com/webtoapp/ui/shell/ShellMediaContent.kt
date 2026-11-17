@@ -322,10 +322,11 @@ fun MediaContentDisplay(
     val previewFile = remember(mediaPath) {
         mediaPath?.let { java.io.File(it) }?.takeIf { it.isFile && it.canRead() }
     }
-    // Unused when previewFile hits; otherwise the asset to open (site-prefixed
-    // for multi-web sites, legacy root asset for standalone exports).
+    val remoteUrl = remember(mediaPath) {
+        mediaPath?.takeIf { it.startsWith("http://") || it.startsWith("https://") }
+    }
     val assetPath = remember(mediaPath, isVideo) {
-        mediaPath?.takeIf { it.isNotBlank() }
+        mediaPath?.takeIf { it.isNotBlank() && remoteUrl == null }
             ?: if (isVideo) "media_content.mp4" else "media_content.png"
     }
 
@@ -371,12 +372,11 @@ fun MediaContentDisplay(
             modifier = Modifier.fillMaxSize(),
             onSurfaceCreated = { holder ->
                 try {
-                    // Host-run preview points at a real file: play it directly
-                    // (mirrors the splash previewFile branch).
                     val hostFile = previewFile
-                    if (hostFile != null) {
+                    val directSource = remoteUrl ?: hostFile?.absolutePath
+                    if (directSource != null) {
                         mediaPlayer = android.media.MediaPlayer().apply {
-                            setDataSource(hostFile.absolutePath)
+                            setDataSource(directSource)
                             setSurface(holder.surface)
                             val volume = if (mediaConfig.enableAudio) 1f else 0f
                             setVolume(volume, volume)
@@ -474,37 +474,49 @@ fun MediaContentDisplay(
                 }
             }
         } else {
-
-            var bitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
-
-            LaunchedEffect(assetPath) {
-                bitmap = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                    try {
-                        val hostFile = previewFile
-                        val imageBytes = if (hostFile != null) {
-                            hostFile.readBytes()
-                        } else {
-                            val decryptor = com.webtoapp.core.crypto.AssetDecryptor(context)
-                            decryptor.loadAsset(assetPath)
-                        }
-                        com.webtoapp.util.BoundedBitmaps.decodeBoundedBitmapBytes(imageBytes)
-                    } catch (e: Exception) {
-                        AppLogger.e("MediaContent", "Failed to load image media", e)
-                        null
-                    }
-                }
-            }
-
-            bitmap?.let { bmp ->
+            val contentScaleMode = if (mediaConfig.fillScreen) ContentScale.Crop else ContentScale.Fit
+            if (remoteUrl != null) {
+                val painter = coil.compose.rememberAsyncImagePainter(
+                    coil.request.ImageRequest.Builder(context)
+                        .data(remoteUrl)
+                        .crossfade(true)
+                        .build()
+                )
                 Image(
-                    bitmap = bmp.asImageBitmap(),
+                    painter = painter,
                     contentDescription = Strings.cdMediaContent,
                     modifier = Modifier.fillMaxSize(),
-                    contentScale = if (mediaConfig.fillScreen)
-                        ContentScale.Crop
-                    else
-                        ContentScale.Fit
+                    contentScale = contentScaleMode
                 )
+            } else {
+                var bitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
+
+                LaunchedEffect(assetPath) {
+                    bitmap = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                        try {
+                            val hostFile = previewFile
+                            val imageBytes = if (hostFile != null) {
+                                hostFile.readBytes()
+                            } else {
+                                val decryptor = com.webtoapp.core.crypto.AssetDecryptor(context)
+                                decryptor.loadAsset(assetPath)
+                            }
+                            com.webtoapp.util.BoundedBitmaps.decodeBoundedBitmapBytes(imageBytes)
+                        } catch (e: Exception) {
+                            AppLogger.e("MediaContent", "Failed to load image media", e)
+                            null
+                        }
+                    }
+                }
+
+                bitmap?.let { bmp ->
+                    Image(
+                        bitmap = bmp.asImageBitmap(),
+                        contentDescription = Strings.cdMediaContent,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = contentScaleMode
+                    )
+                }
             }
         }
     }
