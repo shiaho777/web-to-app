@@ -143,6 +143,55 @@ class HtmlProjectProcessorTest {
     }
 
     @Test
+    fun `injected default viewport allows pinch zoom`() {
+        val result = HtmlProjectProcessor.processHtmlContent(
+            htmlContent = "<html><head></head><body><p>hi</p></body></html>",
+            cssContent = null,
+            jsContent = null,
+            fixPaths = false
+        )
+
+        assertThat(result).contains("""<meta name="viewport" content="width=device-width, initial-scale=1.0">""")
+        assertThat(result).doesNotContain("user-scalable=no")
+        assertThat(result).doesNotContain("maximum-scale=1.0")
+    }
+
+    @Test
+    fun `legacy injected zoom-locked viewport is upgraded on reprocess`() {
+        val legacy = "<html><head>\n" +
+            """<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">""" +
+            "\n</head><body></body></html>"
+
+        val result = HtmlProjectProcessor.processHtmlContent(
+            htmlContent = legacy,
+            cssContent = null,
+            jsContent = null,
+            fixPaths = false
+        )
+
+        assertThat(result).contains("""<meta name="viewport" content="width=device-width, initial-scale=1.0">""")
+        assertThat(result).doesNotContain("user-scalable=no")
+        assertThat(Regex("""<meta[^>]*name\s*=\s*["']viewport["']""", RegexOption.IGNORE_CASE).findAll(result).count())
+            .isEqualTo(1)
+    }
+
+    @Test
+    fun `author viewport is preserved untouched`() {
+        val authored = """<html><head><meta name="viewport" content="width=1200, user-scalable=no"></head><body></body></html>"""
+
+        val result = HtmlProjectProcessor.processHtmlContent(
+            htmlContent = authored,
+            cssContent = null,
+            jsContent = null,
+            fixPaths = false
+        )
+
+        assertThat(result).contains("""content="width=1200, user-scalable=no"""")
+        assertThat(Regex("""<meta[^>]*name\s*=\s*["']viewport["']""", RegexOption.IGNORE_CASE).findAll(result).count())
+            .isEqualTo(1)
+    }
+
+    @Test
     fun `re-inlining picks up edited css content instead of the stale copy`() {
         val first = HtmlProjectProcessor.processHtmlContent(
             htmlContent = "<html><head></head><body></body></html>",
