@@ -3898,7 +3898,7 @@ builtins.__import__ = _w2a_import
     }
 
     private fun runtimeAssetsRequiredFor(appType: String): List<String> = when (appType) {
-        "PHP_APP", "WORDPRESS" -> listOf("php_router_server.php")
+        "PHP_APP", "WORDPRESS" -> listOf(com.webtoapp.core.php.PhpServerLaunch.ROUTER_ASSET)
         else -> emptyList()
     }
 
