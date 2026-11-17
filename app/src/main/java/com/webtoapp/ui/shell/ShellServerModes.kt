@@ -77,8 +77,12 @@ fun WordPressShellMode(
 
                 if (shouldReextractAssets(marker, extractionToken)) {
                     AppLogger.i("WordPressShell", "Extracting WordPress files to ${wpDir.absolutePath}")
-                    wpDir.deleteRecursively()
-                    extractAssetsRecursive(context, config.siteAssetBase.ifBlank { "wordpress" }, wpDir)
+                    refreshRuntimeAssetsPreservingData(
+                        context,
+                        config.siteAssetBase.ifBlank { "wordpress" },
+                        wpDir,
+                        setOf("wp-content/database", "wp-content/uploads")
+                    )
                     writeExtractionMarker(marker, extractionToken)
                 }
 

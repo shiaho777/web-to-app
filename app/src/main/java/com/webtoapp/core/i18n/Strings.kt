@@ -5050,6 +5050,7 @@ object Strings {
     val appModifierRecommended: String get() = StringsE.appModifierRecommended
     val appModifierCloneNeedsOriginalIcon: String get() = StringsE.appModifierCloneNeedsOriginalIcon
     val appModifierCloneNoEnhancements: String get() = StringsE.appModifierCloneNoEnhancements
+    val appModifierCloneEncryptedUnsupported: String get() = StringsE.appModifierCloneEncryptedUnsupported
     val appModifierPackageInUse: String get() = StringsE.appModifierPackageInUse
     val appModifierShortcutHint: String get() = StringsE.appModifierShortcutHint
     val appModifierWorking: String get() = StringsE.appModifierWorking

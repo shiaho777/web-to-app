@@ -33,6 +33,24 @@ import java.util.zip.ZipOutputStream
 import com.webtoapp.core.apkbuilder.ZipUtils
 import com.webtoapp.util.AppConstants
 
+internal fun apkUsesSignatureBoundEncryption(sourceApk: File): Boolean {
+    return try {
+        ZipFile(sourceApk).use { zip ->
+            val entry = zip.getEntry("assets/${com.webtoapp.core.crypto.CryptoConstants.ENCRYPTION_META_FILE}")
+                ?: return false
+            val meta = zip.getInputStream(entry).bufferedReader().use { it.readText() }
+            val parsed = com.webtoapp.util.GsonProvider.gson.fromJson(
+                meta,
+                com.webtoapp.core.crypto.EncryptionMetadataRuntime::class.java
+            )
+            parsed != null && parsed.keyMode != "EMBEDDED"
+        }
+    } catch (e: Exception) {
+        AppLogger.w("AppCloner", "Encryption metadata check failed: ${e.message}")
+        false
+    }
+}
+
 class AppCloner(private val context: Context) {
 
     companion object {
@@ -258,6 +276,13 @@ class AppCloner(private val context: Context) {
                 ?: return@withContext AppModifyResult.Error(resolveClonePackageError(config))
             AppLogger.d("AppCloner", "New package name: $newPackageName")
 
+            if (hasSignatureBoundEncryption(sourceApk)) {
+                AppLogger.w("AppCloner", "Source APK uses signature-bound encryption; clone would break decryption")
+                return@withContext AppModifyResult.Error(
+                    com.webtoapp.core.i18n.Strings.appModifierCloneEncryptedUnsupported
+                )
+            }
+
             val hasModifications = CloneConfigBuilder.hasAnyModification(config)
             AppLogger.d("AppCloner", "Has modifications: $hasModifications")
 
@@ -359,6 +384,9 @@ class AppCloner(private val context: Context) {
             null
         }
     }
+
+    private fun hasSignatureBoundEncryption(sourceApk: File): Boolean =
+        apkUsesSignatureBoundEncryption(sourceApk)
 
     private fun resolveClonePackageName(config: AppModifyConfig): String? {
         val requested = config.newPackageName?.trim().orEmpty()
