@@ -1,6 +1,7 @@
 package com.webtoapp.util
 
 import com.webtoapp.core.logging.AppLogger
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -70,6 +71,26 @@ object SafeZip {
                 onBytes(read)
                 out.write(buffer, 0, read)
             }
+        }
+
+        fun readBytes(input: InputStream, maxBytes: Long = maxTotalBytes): ByteArray {
+            val out = ByteArrayOutputStream()
+            val buffer = ByteArray(64 * 1024)
+            var entryBytes = 0L
+            while (true) {
+                val read = input.read(buffer)
+                if (read < 0) break
+                entryBytes += read
+                if (entryBytes > maxBytes) {
+                    throw ZipBombException(
+                        ZipBombException.Kind.TOTAL_SIZE,
+                        "Archive entry exceeds ${maxBytes / 1024 / 1024} MB"
+                    )
+                }
+                onBytes(read)
+                out.write(buffer, 0, read)
+            }
+            return out.toByteArray()
         }
 
         private var entryCount = 0

@@ -620,23 +620,11 @@ class DataBackupManager(private val context: Context) {
         }
     }
 
-    /**
-     * Reads a JSON entry fully, bounded by the shared zip-bomb guard and a hard
-     * per-entry cap — a corrupt archive must not OOM the importer mid-read.
-     */
-    private fun readJsonEntry(
+    internal fun readJsonEntry(
         zipIn: ZipInputStream,
         guard: com.webtoapp.util.SafeZip.EntryGuard
     ): ByteArray {
-        val out = ByteArrayOutputStream()
-        guard.copyTo(zipIn, out)
-        if (out.size() > MAX_JSON_ENTRY_BYTES) {
-            throw com.webtoapp.util.SafeZip.ZipBombException(
-                com.webtoapp.util.SafeZip.ZipBombException.Kind.TOTAL_SIZE,
-                "JSON entry exceeds ${MAX_JSON_ENTRY_BYTES / 1024 / 1024} MB"
-            )
-        }
-        return out.toByteArray()
+        return guard.readBytes(zipIn, MAX_JSON_ENTRY_BYTES)
     }
 
     /**

@@ -4610,6 +4610,8 @@ object Strings {
     val signKeyInitFailed: String get() = StringsE.signKeyInitFailed
     val signApkFailed: String get() = StringsE.signApkFailed
     val signKeyRegeneratedRetry: String get() = StringsE.signKeyRegeneratedRetry
+    val signKeyCredentialUnreadable: String get() = StringsE.signKeyCredentialUnreadable
+    val signKeyKeystoreUnreadable: String get() = StringsE.signKeyKeystoreUnreadable
     val zipTooManyEntries: String get() = StringsE.zipTooManyEntries
     val zipSizeExceeded: String get() = StringsE.zipSizeExceeded
     val zipFileSizeExceeded: String get() = StringsE.zipFileSizeExceeded

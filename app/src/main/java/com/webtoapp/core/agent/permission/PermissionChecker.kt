@@ -74,7 +74,7 @@ class PermissionChecker(
     }
 
     private fun checkDream(tool: Tool, args: JsonObject, ctx: ToolContext): PermissionDecision {
-        if (tool.isReadOnly()) return PermissionDecision.Allow
+        if (tool.isReadOnly(args)) return PermissionDecision.Allow
         if (tool.name in planWriteTools) {
             val path = args.get("path")?.asString ?: args.get("file_path")?.asString
             val resolved = path?.let { ctx.resolveSafePath(it) }
@@ -85,7 +85,7 @@ class PermissionChecker(
     }
 
     private suspend fun checkDefault(tool: Tool, args: JsonObject, ctx: ToolContext): PermissionDecision {
-        if (tool.isReadOnly()) return PermissionDecision.Allow
+        if (tool.isReadOnly(args)) return PermissionDecision.Allow
         if (tool.name in alwaysAllow) return PermissionDecision.Allow
         val req = PermissionRequest(
             toolCallId = "perm-${System.nanoTime()}",

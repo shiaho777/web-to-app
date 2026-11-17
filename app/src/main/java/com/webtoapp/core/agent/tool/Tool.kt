@@ -13,6 +13,8 @@ interface Tool {
 
     fun isReadOnly(): Boolean = false
 
+    fun isReadOnly(args: JsonObject): Boolean = isReadOnly()
+
     fun activityDescription(args: JsonObject): String? = null
 
     suspend fun execute(args: JsonObject, ctx: ToolContext): ToolResult

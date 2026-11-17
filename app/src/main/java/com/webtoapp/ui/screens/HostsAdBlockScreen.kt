@@ -507,8 +507,7 @@ fun HostsAdBlockScreen(onBack: () -> Unit) {
                 TextButton(
                     onClick = {
                         scope.launch {
-                            adBlocker.clearHostsFileRules()
-                            adBlocker.saveHostsRules(context)
+                            adBlocker.clearHostsFileRules(context)
                             refreshState()
                             showClearDialog = false
                             snackbarHostState.showSnackbar(Strings.hostsCleared)

@@ -171,10 +171,11 @@ class ActivationManager(private val context: Context) {
         validCodes: List<ActivationCode>
     ): ActivationResult {
 
+        val inputDigest = sha256Hash(normalizedInput)
         val matchedCode = validCodes.firstOrNull { code ->
             val normalizedCode = normalizeCode(code.code)
             constantTimeEquals(normalizedInput, normalizedCode) ||
-                constantTimeEquals(sha256Hash(normalizedInput), normalizedCode)
+                constantTimeEquals(inputDigest, normalizedCode.lowercase())
         }
 
         if (matchedCode == null) {

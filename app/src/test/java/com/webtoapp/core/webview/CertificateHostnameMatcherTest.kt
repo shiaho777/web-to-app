@@ -59,6 +59,20 @@ class CertificateHostnameMatcherTest {
         assertThat(CertificateHostnameMatcher.matches("api.example.com.", cert)).isTrue()
     }
 
+    @Test
+    fun `ipv6 compressed literal matches full san`() {
+        val cert = newCert(ipSans = listOf("2001:db8:0:0:0:0:0:1"))
+        assertThat(CertificateHostnameMatcher.matches("2001:db8::1", cert)).isTrue()
+        assertThat(CertificateHostnameMatcher.matches("[2001:db8::1]", cert)).isTrue()
+        assertThat(CertificateHostnameMatcher.matches("2001:db8::2", cert)).isFalse()
+    }
+
+    @Test
+    fun `ipv6 loopback compressed literal matches`() {
+        val cert = newCert(ipSans = listOf("0:0:0:0:0:0:0:1"))
+        assertThat(CertificateHostnameMatcher.matches("::1", cert)).isTrue()
+    }
+
     private fun newCert(cn: String = "localhost", sans: List<String> = emptyList(), ipSans: List<String> = emptyList()): X509Certificate {
         val keyPair: KeyPair = KeyPairGenerator.getInstance("RSA").apply { initialize(2048) }.generateKeyPair()
         val issuer = X500Name("CN=$cn")

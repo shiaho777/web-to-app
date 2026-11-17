@@ -184,6 +184,12 @@ object LocalHttpToSocksBridge {
         val host = hostPort.substring(0, sep).trim().trim('[', ']')
         val port = hostPort.substring(sep + 1).toIntOrNull() ?: 443
 
+        if (!TlsMitmBridge.isHostAllowed(host)) {
+            AppLogger.w(TAG, "CONNECT rejected (host not requested by the WebView): $host")
+            sendStatus(clientOut, 403, "Forbidden")
+            safeClose(client); return
+        }
+
         val up = upstream
         if (up == null) {
             sendStatus(clientOut, 502, "Bad Gateway")
@@ -226,6 +232,12 @@ object LocalHttpToSocksBridge {
         val rawPath = uri.rawPath ?: "/"
         val path = if (rawPath.isEmpty()) "/" else rawPath
         val pathAndQuery = uri.rawQuery?.let { "$path?$it" } ?: path
+
+        if (!TlsMitmBridge.isHostAllowed(host)) {
+            AppLogger.w(TAG, "HTTP forward rejected (host not requested by the WebView): $host")
+            sendStatus(clientOut, 403, "Forbidden")
+            safeClose(client); return
+        }
 
         val up = upstream
         if (up == null) {

@@ -1,10 +1,13 @@
 package com.webtoapp.core.webview
 
+import com.webtoapp.core.dns.DnsManager
+import com.webtoapp.core.dns.selectDohConnectAddresses
 import com.webtoapp.core.logging.AppLogger
 import java.io.IOException
 import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.Socket
+import java.net.UnknownHostException
 import java.security.KeyStore
 import java.security.cert.CertificateException
 import java.security.cert.X509Certificate
@@ -33,7 +36,8 @@ object TlsUpstreamConnector {
         customCipherSuites: List<String> = emptyList(),
         upstreamSocks: LocalHttpToSocksBridge.Upstream? = null,
         restrictAlpnTo: String? = null,
-        customCaAnchors: List<X509Certificate> = emptyList()
+        customCaAnchors: List<X509Certificate> = emptyList(),
+        dnsManager: DnsManager? = null
     ): TlsResult {
         val rawSocket = if (upstreamSocks != null) {
             LocalHttpToSocksBridge.Socks5Connector.connect(
@@ -45,11 +49,7 @@ object TlsUpstreamConnector {
                 upstreamSocks.password
             )
         } else {
-            Socket().apply {
-                tcpNoDelay = true
-                connect(InetSocketAddress(host, port), CONNECT_TIMEOUT_MS)
-                soTimeout = READ_TIMEOUT_MS
-            }
+            connectDirect(host, port, dnsManager)
         }
 
         // The bridge only spoofs the ClientHello (cipher/ALPN ordering); the trust decision
@@ -100,6 +100,36 @@ object TlsUpstreamConnector {
 
         AppLogger.d(TAG, "TLS upstream connected to $host:$port, template=${template.id}, alpn=$negotiatedProtocol")
         return TlsResult(sslSocket, negotiatedProtocol)
+    }
+
+    private fun connectDirect(host: String, port: Int, dnsManager: DnsManager?): Socket {
+        val manager = dnsManager
+        val dohActive = manager != null &&
+            manager.getCurrentConfig()?.let { it.provider != "SYSTEM" && it.effectiveDohUrl.isNotBlank() } == true
+        val endpoints = if (dohActive && manager != null) {
+            val resolved = selectDohConnectAddresses(
+                manager.resolveWithDoh(host),
+                manager.reachableFamilies()
+            )
+            if (resolved.isEmpty()) throw UnknownHostException("No DoH DNS result for $host")
+            resolved.map { InetSocketAddress(it, port) }
+        } else {
+            listOf(InetSocketAddress(host, port))
+        }
+        var last: Exception? = null
+        for (endpoint in endpoints) {
+            val socket = Socket()
+            try {
+                socket.tcpNoDelay = true
+                socket.connect(endpoint, CONNECT_TIMEOUT_MS)
+                socket.soTimeout = READ_TIMEOUT_MS
+                return socket
+            } catch (e: Exception) {
+                try { socket.close() } catch (_: Exception) {}
+                last = e
+            }
+        }
+        throw last ?: IOException("No address for $host")
     }
 
     private fun buildUpstreamTrustManager(anchors: List<X509Certificate>): X509TrustManager {

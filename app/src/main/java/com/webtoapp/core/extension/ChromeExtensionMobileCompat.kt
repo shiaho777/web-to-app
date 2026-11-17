@@ -810,13 +810,14 @@ object ChromeExtensionMobileCompat {
 })();
 """.trimIndent()
 
-    fun getPopupOnClickScript(extensionId: String, popupPath: String): String {
+    fun getPopupOnClickScript(extensionId: String, popupPath: String, token: String = ""): String {
         val safeExtId = extensionId.replace("'", "\\'")
         val safePath = popupPath.replace("'", "\\'")
+        val safeToken = token.replace("'", "\\'")
         return """
             function() {
                 if (typeof WtaExtBridge !== 'undefined' && typeof WtaExtBridge.openPopup === 'function') {
-                    WtaExtBridge.openPopup('$safeExtId', '$safePath');
+                    WtaExtBridge.openPopup('$safeExtId', '$safeToken', '$safePath');
                 } else {
                     // Fallback: 在面板 iframe 中加载 popup
                     var url = 'chrome-extension://$safeExtId/$safePath';

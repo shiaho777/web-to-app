@@ -74,7 +74,7 @@ class AabExportCoordinator(private val context: Context) {
                 .toSigningIdentity()
         } else null
 
-        return AabExporter(context).export(
+        return AabExporter(context, progressStart = BUILD_PROGRESS_WEIGHT).export(
             sourceApk = apkToConvert,
             outputAab = outputAab,
             targetSdkOverride = ProtoManifestRewriter.DEFAULT_PLAY_TARGET_SDK,
@@ -165,7 +165,7 @@ class AabExportCoordinator(private val context: Context) {
 
         private const val BUILT_AABS_DIR = "built_aabs"
 
-        private const val BUILD_PROGRESS_WEIGHT = 45
+        private const val BUILD_PROGRESS_WEIGHT = 50
 
         private const val BUILD_METADATA_SUFFIX = ".build.json"
 

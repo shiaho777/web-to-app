@@ -96,8 +96,9 @@ class ManageHostsRulesTool : Tool {
                 else ToolResult.error("Remove failed: ${result.exceptionOrNull()?.message}")
             }
             "clear" -> {
-                blocker.clearHostsFileRules()
-                ToolResult.ok("Cleared all hosts rules.")
+                val result = blocker.clearHostsFileRules(ctx.androidContext)
+                if (result.isSuccess) ToolResult.ok("Cleared all hosts rules and sources (persisted).")
+                else ToolResult.error("Clear failed: ${result.exceptionOrNull()?.message}")
             }
             else -> ToolResult.error("ManageHostsRules: unknown action `$action`.")
         }
@@ -182,20 +183,31 @@ class InstallRuntimeTool : Tool {
 
 class ClearRuntimeCacheTool : Tool {
     override val name = "ClearRuntimeCache"
-    override val description = "Clear the download cache for one or all runtimes to free disk space."
+    override val description = """
+        Uninstall one or all server runtimes (PHP/WordPress, Node.js, Python, Go) to free disk
+        space. This deletes the installed runtime binaries, not just a temporary download cache:
+        afterwards GetRuntimeStatus reports them not ready, and preview/export for those app
+        types fails until InstallRuntime downloads them again. Only call this when the user
+        explicitly wants to remove a runtime or reclaim its disk space.
+    """.trimIndent()
     override val parametersSchema: JsonElement = jsonSchema {
-        enum("runtime", listOf("php", "node", "python", "go"), "Clear a specific runtime only (default: all).")
+        enum("runtime", listOf("php", "node", "python", "go"), "Uninstall a specific runtime only (default: all).")
     }
     override fun isReadOnly() = false
     override fun activityDescription(args: JsonObject): String? =
-        "Clearing runtime cache ${args.get("runtime")?.asString ?: "(all)"}"
+        "Uninstalling runtime ${args.get("runtime")?.asString ?: "(all)"}"
     override suspend fun execute(args: JsonObject, ctx: ToolContext): ToolResult {
         val c = ctx.androidContext
         val target = args.get("runtime")?.asString
+        if (target != null && target !in setOf("php", "node", "python", "go")) {
+            return ToolResult.error("ClearRuntimeCache: unknown runtime '$target' (valid: php/node/python/go).")
+        }
         if (target == null || target == "php") WordPressDependencyManager.clearCache(c)
         if (target == null || target == "node") NodeDependencyManager.clearCache(c)
         if (target == null || target == "python") PythonDependencyManager.clearCache(c)
         if (target == null || target == "go") GoToolchainManager.clearCache(c)
-        return ToolResult.ok("Cleared ${target ?: "all"} runtime cache(s).")
+        return ToolResult.ok(
+            "Uninstalled ${target ?: "all"} runtime(s). They must be re-downloaded via InstallRuntime before preview/export works again."
+        )
     }
 }

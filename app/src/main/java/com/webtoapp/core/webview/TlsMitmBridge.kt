@@ -61,6 +61,12 @@ object TlsMitmBridge {
     /** User-imported CA anchors additionally trusted when verifying upstream certificates. */
     @Volatile private var customCaAnchors: List<java.security.cert.X509Certificate> = emptyList()
 
+    @Volatile private var dnsManager: com.webtoapp.core.dns.DnsManager? = null
+
+    fun setDnsManager(manager: com.webtoapp.core.dns.DnsManager?) {
+        dnsManager = manager
+    }
+
     /**
      * Android loopback is shared by every app on the device, so the proxy must not be an
      * open relay: only hosts the WebView actually navigated/requested may be tunneled, and
@@ -172,6 +178,7 @@ object TlsMitmBridge {
         allowedHosts.clear()
         hostAllowlistEnforcement = true
         appContext = null
+        dnsManager = null
         try { CronetForwarder.stop() } catch (_: Throwable) {}
     }
 
@@ -280,16 +287,18 @@ object TlsMitmBridge {
             return
         }
 
-        // Handshake with the WebView FIRST and remember which ALPN protocol it picked,
-        // so the upstream connection can be restricted to the same protocol. The bridge
-        // relays raw bytes — if the two sides negotiated independently, a WebView on h2
-        // facing an http/1.1-only origin would stream HTTP/2 frames into an HTTP/1.1
-        // server and every request to that host would fail.
+        try {
+            clientOut.write("HTTP/1.1 200 Connection Established\r\n\r\n".toByteArray(StandardCharsets.US_ASCII))
+            clientOut.flush()
+        } catch (e: Exception) {
+            AppLogger.w(TAG, "Failed to send CONNECT 200: ${e.message}")
+            safeClose(client); return
+        }
+
         val mitmSocket = try {
             performTlsHandshake(client, host)
         } catch (e: Exception) {
             AppLogger.w(TAG, "MITM TLS handshake failed for $host: ${e.message}")
-            sendStatus(clientOut, 502, "Bad Gateway")
             safeClose(client); return
         }
         val clientProtocol = try { mitmSocket.applicationProtocol } catch (_: Exception) { null }
@@ -302,20 +311,12 @@ object TlsMitmBridge {
                 customCipherSuites = config.customCipherSuites,
                 upstreamSocks = config.upstreamSocks,
                 restrictAlpnTo = clientProtocol,
-                customCaAnchors = customCaAnchors
+                customCaAnchors = customCaAnchors,
+                dnsManager = dnsManager
             ).sslSocket
         } catch (e: Exception) {
             AppLogger.w(TAG, "Upstream TLS connect failed for $host:$port: ${e.message}")
             safeClose(mitmSocket)
-            safeClose(client); return
-        }
-
-        try {
-            clientOut.write("HTTP/1.1 200 Connection Established\r\n\r\n".toByteArray(StandardCharsets.US_ASCII))
-            clientOut.flush()
-        } catch (e: Exception) {
-            AppLogger.w(TAG, "Failed to send CONNECT 200: ${e.message}")
-            safeClose(upstreamSocket)
             safeClose(client); return
         }
 
@@ -478,6 +479,13 @@ object TlsMitmBridge {
                     "https://$hostPart$portPart$target"
                 }
 
+                val targetHost = runCatching { URI(requestUrl).host }.getOrNull()
+                if (!isHostAllowed(targetHost)) {
+                    AppLogger.w(TAG, "h3 request rejected (absolute-form host not requested by the WebView): $targetHost")
+                    sendStatus(output, 403, "Forbidden")
+                    return
+                }
+
                 val forwarded = try {
                     CronetForwarder.forward(
                         context = context,
@@ -531,7 +539,8 @@ object TlsMitmBridge {
                 customCipherSuites = config.customCipherSuites,
                 upstreamSocks = config.upstreamSocks,
                 restrictAlpnTo = "http/1.1",
-                customCaAnchors = customCaAnchors
+                customCaAnchors = customCaAnchors,
+                dnsManager = dnsManager
             ).sslSocket
         } catch (e: Exception) {
             AppLogger.w(TAG, "h3 upgrade fallback upstream connect failed for $host:$port: ${e.message}")

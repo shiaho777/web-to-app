@@ -48,6 +48,7 @@ class NodeService : Service() {
     @Volatile private var isRunning = false
     @Volatile private var dnsProxyStarted = false
     @Volatile private var lastExitCode: Int? = null
+    @Volatile private var currentRequestId: String = ""
 
     /**
      * Tail of the Node process's stdout/stderr for the current start attempt. On failure
@@ -108,12 +109,17 @@ class NodeService : Service() {
                 }
                 NodeServiceProtocol.MSG_STOP_SERVER -> {
                     val replyTo = msg.replyTo
+                    val targetRequestId = msg.data?.getString(NodeServiceProtocol.Keys.REQUEST_ID).orEmpty()
                     service.workerHandler.post {
-                        val engineKilled = service.stopServerInternal()
-                        sendBack(replyTo, NodeServiceProtocol.MSG_SERVER_STOPPED, Bundle())
-                        if (engineKilled) {
-                            // Reply already queued; now tear down the poisoned :nodejs process
-                            // so the framework restarts a clean engine on the next start.
+                        val engineKilled = service.stopServerForRequest(targetRequestId)
+                        sendBack(
+                            replyTo,
+                            NodeServiceProtocol.MSG_SERVER_STOPPED,
+                            Bundle().apply {
+                                putBoolean(NodeServiceProtocol.Keys.STOP_APPLIED, engineKilled != null)
+                            }
+                        )
+                        if (engineKilled == true) {
                             Process.killProcess(Process.myPid())
                         }
                     }
@@ -159,6 +165,7 @@ class NodeService : Service() {
 
     private fun handleStartServer(data: Bundle, replyTo: Messenger?) {
         val requestId = data.getString(NodeServiceProtocol.Keys.REQUEST_ID).orEmpty()
+        currentRequestId = requestId
         val projectDir = data.getString(NodeServiceProtocol.Keys.PROJECT_DIR).orEmpty()
         val entryFile = data.getString(NodeServiceProtocol.Keys.ENTRY_FILE) ?: "index.js"
         val portPref = data.getInt(NodeServiceProtocol.Keys.PORT_PREF, 0)
@@ -398,6 +405,14 @@ class NodeService : Service() {
      * its IPC reply first, then honor this by self-terminating so the framework rebuilds
      * a clean engine).
      */
+    private fun stopServerForRequest(requestId: String): Boolean? {
+        if (requestId.isNotEmpty() && currentRequestId.isNotEmpty() && requestId != currentRequestId) {
+            AppLogger.i(TAG, "忽略定向停止：请求 $requestId 不是当前启动 $currentRequestId")
+            return null
+        }
+        return stopServerInternal()
+    }
+
     private fun stopServerInternal(): Boolean {
         var threadStuck = false
         try {
@@ -421,11 +436,9 @@ class NodeService : Service() {
             nodeThread = null
             currentPort = 0
             isRunning = false
+            currentRequestId = ""
         }
         if (threadStuck) {
-            // Thread.interrupt() cannot break the native V8 event loop (the bootstrap keeps
-            // it alive on purpose): the port is released above but the JS server still holds
-            // the socket bound with nobody tracking it. Escalate to a full engine kill.
             AppLogger.w(TAG, "Node 线程在 interrupt+join 后仍在运行，升级为 KILL_ENGINE 重建 :nodejs 进程")
             ShellLogger.w(TAG, "Node 线程未能停止，正在重建 :nodejs 进程")
         }

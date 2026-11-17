@@ -4,11 +4,17 @@ import android.content.Context
 import com.webtoapp.core.logging.AppLogger
 import java.io.File
 
-class AabExporter(private val context: Context) {
+class AabExporter(
+    private val context: Context,
+    private val progressStart: Int = 0
+) {
 
     companion object {
         private const val TAG = "AabExporter"
     }
+
+    private fun scaled(percent: Int): Int =
+        progressStart + (100 - progressStart) * percent.coerceIn(0, 100) / 100
 
     enum class Stage {
         STARTING,
@@ -41,7 +47,7 @@ class AabExporter(private val context: Context) {
 
         try {
 
-            onProgress?.invoke(Stage.ASSEMBLING, 10)
+            onProgress?.invoke(Stage.ASSEMBLING, scaled(10))
             AppLogger.d(TAG, "Stage 1: assembling unsigned AAB from ${sourceApk.name}")
 
             val stats = try {
@@ -54,9 +60,9 @@ class AabExporter(private val context: Context) {
                 )
             }
             AppLogger.d(TAG, "Stage 1 done: $stats")
-            onProgress?.invoke(Stage.ASSEMBLED, 70)
+            onProgress?.invoke(Stage.ASSEMBLED, scaled(70))
 
-            onProgress?.invoke(Stage.SIGNING, 75)
+            onProgress?.invoke(Stage.SIGNING, scaled(75))
             AppLogger.d(TAG, "Stage 2: signing AAB")
 
             val signed = try {
@@ -74,7 +80,7 @@ class AabExporter(private val context: Context) {
                     message = "AAB signer returned false (see log for details)"
                 )
             }
-            onProgress?.invoke(Stage.SIGNED, 100)
+            onProgress?.invoke(Stage.SIGNED, scaled(100))
 
             // Validate the signed AAB to ensure all resources are present
             // This prevents Google Play Console rejection due to missing resource files

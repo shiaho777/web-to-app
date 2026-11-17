@@ -257,21 +257,19 @@ class PluginImporter(private val context: Context) {
     // .hcj zip
     // ------------------------------------------------------------------
 
-    private fun unzipPackage(uri: Uri): Map<String, String>? {
+    internal fun unzipPackage(uri: Uri): Map<String, String>? {
         val files = linkedMapOf<String, String>()
         context.contentResolver.openInputStream(uri)?.use { input ->
             ZipInputStream(input.buffered()).use { zis ->
-                var total = 0L
+                val guard = com.webtoapp.util.SafeZip.EntryGuard(maxTotalBytes = MAX_PACKAGE_BYTES)
                 var entry: ZipEntry? = zis.nextEntry
                 var rootPrefix: String? = null
                 while (entry != null) {
                     val e = entry
+                    guard.onEntry()
                     if (!e.isDirectory) {
                         var name = e.name
-                        total += e.size.coerceAtLeast(0)
-                        if (total > MAX_PACKAGE_BYTES) throw IllegalStateException("package too large")
-                        // Detect a single wrapping root folder on the fly.
-                        val body = zis.readBytes()
+                        val body = guard.readBytes(zis, MAX_PACKAGE_BYTES)
                         if (name.endsWith("/" + PluginStore.MANIFEST_FILE) || name == PluginStore.MANIFEST_FILE) {
                             if (rootPrefix == null && name != PluginStore.MANIFEST_FILE) {
                                 rootPrefix = name.removeSuffix(PluginStore.MANIFEST_FILE)

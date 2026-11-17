@@ -41,6 +41,7 @@ object LocalDnsBridgeProxy {
 
     private val liveClients = ConcurrentHashMap.newKeySet<Socket>()
     private val liveTargets = ConcurrentHashMap.newKeySet<Socket>()
+    private val socketLock = Any()
 
     /**
      * Per-session credential. Any app on the device can reach a loopback
@@ -130,19 +131,21 @@ object LocalDnsBridgeProxy {
     }
 
     private fun stopInternal() {
-        running = false
-        refCount = 0
-        try { serverSocket?.close() } catch (_: Exception) {}
-        serverSocket = null
-        try { executor?.shutdownNow() } catch (_: Exception) {}
-        executor = null
-        acceptThread = null
-        liveClients.forEach { safeClose(it) }
-        liveClients.clear()
-        liveTargets.forEach { safeClose(it) }
-        liveTargets.clear()
-        listenPort = 0
-        authToken = ""
+        synchronized(socketLock) {
+            running = false
+            refCount = 0
+            try { serverSocket?.close() } catch (_: Exception) {}
+            serverSocket = null
+            try { executor?.shutdownNow() } catch (_: Exception) {}
+            executor = null
+            acceptThread = null
+            liveClients.forEach { safeClose(it) }
+            liveClients.clear()
+            liveTargets.forEach { safeClose(it) }
+            liveTargets.clear()
+            listenPort = 0
+            authToken = ""
+        }
     }
 
     private fun newSessionToken(): String {
@@ -175,7 +178,13 @@ object LocalDnsBridgeProxy {
     }
 
     private fun handleClient(client: Socket) {
-        liveClients.add(client)
+        synchronized(socketLock) {
+            if (!running) {
+                safeClose(client)
+                return
+            }
+            liveClients.add(client)
+        }
         try {
             handleClientInner(client)
         } finally {
@@ -384,7 +393,13 @@ object LocalDnsBridgeProxy {
 
             val resolved = InetAddress.getByName(host)
             socket.connect(InetSocketAddress(resolved, port), CONNECT_TIMEOUT_MS)
-            liveTargets.add(socket)
+            synchronized(socketLock) {
+                if (!running) {
+                    safeClose(socket)
+                    throw IOException("DNS bridge proxy stopped")
+                }
+                liveTargets.add(socket)
+            }
             return socket
         } catch (e: Exception) {
             safeClose(socket)

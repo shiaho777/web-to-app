@@ -387,46 +387,100 @@ data class ExtensionModule(
     }
 
     private fun matchRule(url: String, rule: UrlMatchRule): Boolean {
-        return if (rule.isRegex) {
-            safeRegexMatch(rule.pattern, url)
-        } else {
-            val pattern = rule.pattern
-            if (pattern == "*" || pattern == "<all_urls>") return true
+        if (rule.isRegex) return safeRegexMatch(rule.pattern, url)
 
-            val regexPattern = buildString {
-                append("^")
-                var i = 0
-                while (i < pattern.length) {
-                    val c = pattern[i]
-                    when {
-                        c == '*' && pattern.startsWith("*://", i) -> {
-                            append("(https?|ftp|file)://")
-                            i += 4
-                        }
-                        c == '*' -> {
-                            append(".*")
-                            i++
-                        }
-                        c in ".+?^\${}()|[]\\/" -> {
-                            append("\\")
-                            append(c)
-                            i++
-                        }
-                        else -> {
-                            append(c)
-                            i++
-                        }
+        val pattern = rule.pattern
+        if (pattern == "*" || pattern == "<all_urls>") return true
+
+        if (pattern.contains("://")) return matchChromePattern(pattern, url)
+
+        val regexPattern = buildString {
+            append("^")
+            var i = 0
+            while (i < pattern.length) {
+                val c = pattern[i]
+                when {
+                    c == '*' -> {
+                        append(".*")
+                        i++
+                    }
+                    c in ".+?^\${}()|[]\\/" -> {
+                        append("\\")
+                        append(c)
+                        i++
+                    }
+                    else -> {
+                        append(c)
+                        i++
                     }
                 }
-                append("$")
             }
-            try {
-                val compiled = cachedRegex(regexPattern, ignoreCase = true)
-                    ?: return url.contains(pattern, ignoreCase = true)
-                compiled.matches(url)
-            } catch (e: Exception) {
-                url.contains(pattern, ignoreCase = true)
-            }
+            append("$")
         }
+        return try {
+            val compiled = cachedRegex(regexPattern, ignoreCase = true)
+                ?: return url.contains(pattern, ignoreCase = true)
+            compiled.matches(url)
+        } catch (e: Exception) {
+            url.contains(pattern, ignoreCase = true)
+        }
+    }
+
+    private fun matchChromePattern(pattern: String, url: String): Boolean {
+        val p = splitMatchUrl(pattern) ?: return false
+        val u = splitMatchUrl(url) ?: return false
+
+        val schemeOk = when (p.scheme) {
+            "*" -> u.scheme == "http" || u.scheme == "https"
+            else -> p.scheme == u.scheme
+        }
+        if (!schemeOk) return false
+        if (!hostComponentMatches(p.host, u.host)) return false
+        return pathComponentMatches(p.path, u.path)
+    }
+
+    private data class MatchUrlParts(val scheme: String, val host: String, val path: String)
+
+    private fun splitMatchUrl(raw: String): MatchUrlParts? {
+        val sep = raw.indexOf("://")
+        if (sep <= 0) return null
+        val scheme = raw.substring(0, sep).lowercase()
+        val rest = raw.substring(sep + 3)
+        if (rest.isEmpty()) return null
+        val pathStart = rest.indexOf('/')
+        val authority = if (pathStart >= 0) rest.substring(0, pathStart) else rest
+        val path = if (pathStart >= 0) rest.substring(pathStart) else "/"
+        val host = authority.substringBefore('@').substringBefore(':').lowercase()
+        if (host.isEmpty()) return null
+        return MatchUrlParts(scheme, host, path)
+    }
+
+    private fun hostComponentMatches(patternHost: String, host: String): Boolean {
+        if (patternHost == "*") return true
+        if (patternHost == host) return true
+        if (patternHost.startsWith("*.")) {
+            val suffix = patternHost.substring(1)
+            return host.endsWith(suffix) || host == suffix.removePrefix(".")
+        }
+        return false
+    }
+
+    private fun pathComponentMatches(patternPath: String, path: String): Boolean {
+        if (patternPath == "/*" || patternPath == "*" || patternPath == path) return true
+        if (!patternPath.contains('*')) return false
+        val regex = buildString {
+            append('^')
+            patternPath.forEach { ch ->
+                when (ch) {
+                    '*' -> append(".*")
+                    else -> {
+                        if ("\\.[]{}()+?^$|".contains(ch)) append('\\')
+                        append(ch)
+                    }
+                }
+            }
+            append('$')
+        }
+        return runCatching { Regex(regex).matches(path) }.getOrDefault(false)
     }
 }

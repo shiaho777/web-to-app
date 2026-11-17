@@ -1218,7 +1218,15 @@ class WebViewManager(
     private var geoBridge: GeolocationBridge? = null
 
     private var extensionRuntimes: MutableMap<String, com.webtoapp.core.extension.ChromeExtensionRuntime> = mutableMapOf()
+    private val extensionTokens = java.util.concurrent.ConcurrentHashMap<String, String>()
     private val extensionPopupDialogs = mutableMapOf<String, Dialog>()
+
+    private fun extensionTokenFor(extId: String): String =
+        extensionTokens.getOrPut(extId) {
+            val bytes = ByteArray(24)
+            java.security.SecureRandom().nextBytes(bytes)
+            android.util.Base64.encodeToString(bytes, android.util.Base64.NO_WRAP or android.util.Base64.URL_SAFE)
+        }
 
     private val extensionFileManager by lazy {
         com.webtoapp.core.extension.ExtensionFileManager(context)
@@ -1567,6 +1575,7 @@ class WebViewManager(
 
             if (mitmPort > 0) {
                 AppLogger.d("WebViewManager", "TLS MITM bridge started on 127.0.0.1:$mitmPort template=${template.id} socks=${upstreamSocks != null}")
+                TlsMitmBridge.setDnsManager(if (config.dnsMode != "SYSTEM") dnsManager else null)
                 GeckoViewEngine.setTlsMitmActive(true)
                 proxyApplyJob?.cancel()
                 proxyApplyJob = proxyScope.launch {
@@ -4960,7 +4969,8 @@ class WebViewManager(
                     runtimes = extensionRuntimes,
                     currentWebViewProvider = { webView },
                     openPopupHandler = { extId, popupPath -> showChromeExtensionPage(extId, popupPath) },
-                    openOptionsPageHandler = { extId, optionsPath -> showChromeExtensionPage(extId, optionsPath) }
+                    openOptionsPageHandler = { extId, optionsPath -> showChromeExtensionPage(extId, optionsPath) },
+                    tokenProvider = { extId -> extensionTokens[extId] }
                 )
                 webView.addJavascriptInterface(contentBridge, com.webtoapp.core.extension.ChromeExtensionRuntime.JS_BRIDGE_NAME)
                 com.webtoapp.core.extension.ChromeExtensionAuthChannel.install(webView, contentBridge)
@@ -6091,7 +6101,8 @@ class WebViewManager(
                     codeBuilder.appendLine(
                         com.webtoapp.core.extension.ChromeExtensionPolyfill.generatePolyfill(
                             extensionId = extId,
-                            manifestJson = manifestJson
+                            manifestJson = manifestJson,
+                            token = extensionTokenFor(extId)
                         )
                     )
                     codeBuilder.appendLine()
@@ -6119,7 +6130,8 @@ class WebViewManager(
                     extBuilder.appendLine(
                         com.webtoapp.core.extension.ChromeExtensionPolyfill.generatePolyfill(
                             extensionId = extId,
-                            manifestJson = manifestJson
+                            manifestJson = manifestJson,
+                            token = extensionTokenFor(extId)
                         )
                     )
                     appendChromeExtCss(extBuilder, extId, extModules)
@@ -6242,11 +6254,14 @@ class WebViewManager(
                 // The polyfill carries a random storage alias, not the raw plugin id: the
                 // bridge object is reachable from every frame, so raw ids would let any
                 // embedded content read/write another script's GM storage.
+                val gmAlias = gmBridge?.storageAliasFor(plugin.id) ?: plugin.id
+                val gmToken = gmBridge?.registerScript(plugin.id, plugin.gmGrants) ?: ""
                 val polyfill = com.webtoapp.core.extension.GreasemonkeyBridge.generatePolyfillScript(
-                    scriptId = gmBridge?.storageAliasFor(plugin.id) ?: plugin.id,
+                    scriptId = gmAlias,
                     grants = plugin.gmGrants,
                     scriptInfo = scriptInfo,
-                    resources = resolvedResources
+                    resources = resolvedResources,
+                    token = gmToken
                 )
 
                 // Embedded payloads carry require bodies inline; the host
@@ -6436,7 +6451,8 @@ class WebViewManager(
             targetWebViewProvider = { managedWebViews.keys.firstOrNull() },
             manifestJson = plugin.manifestJson.ifBlank { "{}" },
             openPopupHandler = { nextExtId, nextPath -> showChromeExtensionPage(nextExtId, nextPath) },
-            openOptionsPageHandler = { nextExtId, nextPath -> showChromeExtensionPage(nextExtId, nextPath) }
+            openOptionsPageHandler = { nextExtId, nextPath -> showChromeExtensionPage(nextExtId, nextPath) },
+            token = extensionTokenFor(extId)
         )
         chromePanelManagers[extId] = manager
         return manager.createPopupWebView()
@@ -6473,7 +6489,8 @@ class WebViewManager(
                 targetWebViewProvider = { managedWebViews.keys.firstOrNull() },
                 manifestJson = primaryPlugin.manifestJson.ifBlank { "{}" },
                 openPopupHandler = { nextExtId, nextPath -> showChromeExtensionPage(nextExtId, nextPath) },
-                openOptionsPageHandler = { nextExtId, nextPath -> showChromeExtensionPage(nextExtId, nextPath) }
+                openOptionsPageHandler = { nextExtId, nextPath -> showChromeExtensionPage(nextExtId, nextPath) },
+                token = extensionTokenFor(extId)
             )
             val popupWebView = popupManager.createPopupWebView()
             val dialog = Dialog(activity).apply {

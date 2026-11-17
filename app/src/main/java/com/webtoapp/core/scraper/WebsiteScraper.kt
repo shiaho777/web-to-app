@@ -335,8 +335,13 @@ class WebsiteScraper(private val context: Context) {
                 return null to emptyList()
             }
 
-            val data = body.bytes()
+            val data = readBoundedBody(body, config.maxFileSize)
             response.close()
+            if (data == null) {
+                failedUrls[normalizedUrl] = "Too large: exceeds ${config.maxFileSize / 1024} KB"
+                downloadedUrls.remove(normalizedUrl)
+                return null to emptyList()
+            }
 
             synchronized(downloadedBytesLock) {
                 if (totalDownloadedBytes + data.size > config.maxTotalSize) {
@@ -378,6 +383,23 @@ class WebsiteScraper(private val context: Context) {
             AppLogger.d(TAG, "Download failed: $normalizedUrl -> ${e.message}")
             return null to emptyList()
         }
+    }
+
+    internal fun readBoundedBody(body: ResponseBody, maxBytes: Long): ByteArray? {
+        val input = body.byteStream()
+        val out = java.io.ByteArrayOutputStream()
+        val buffer = ByteArray(64 * 1024)
+        var total = 0L
+        while (true) {
+            val read = input.read(buffer)
+            if (read < 0) break
+            total += read
+            if (total > maxBytes) {
+                return null
+            }
+            out.write(buffer, 0, read)
+        }
+        return out.toByteArray()
     }
 
     private fun discoverResources(
@@ -498,7 +520,6 @@ class WebsiteScraper(private val context: Context) {
             if (ext in setOf("html", "htm", "css", "js", "svg")) {
                 try {
                     var content = file.readText(Charsets.UTF_8)
-                    val originalContent = content
                     var modified = false
 
                     val sortedEntries = downloadedUrls.entries
@@ -518,8 +539,9 @@ class WebsiteScraper(private val context: Context) {
                             .sortedByDescending { it.length }
 
                         for (variant in urlVariants) {
-                            if (originalContent.contains(variant)) {
-                                content = content.replace(variant, relativePath)
+                            val rewritten = replaceWholeUrl(content, variant, relativePath)
+                            if (rewritten != null) {
+                                content = rewritten
                                 modified = true
                             }
                         }
@@ -533,6 +555,19 @@ class WebsiteScraper(private val context: Context) {
                 }
             }
         }
+    }
+
+    internal fun replaceWholeUrl(content: String, url: String, replacement: String): String? {
+        if (url.isEmpty() || !content.contains(url)) return null
+        val pattern = Regex(
+            Regex.escape(url) + """(?=["'\s)<>]|$)"""
+        )
+        var changed = false
+        val result = pattern.replace(content) {
+            changed = true
+            replacement
+        }
+        return if (changed) result else null
     }
 
     private fun generateUrlVariants(url: String): List<String> {

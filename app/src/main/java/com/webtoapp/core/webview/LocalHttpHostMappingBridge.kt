@@ -214,6 +214,13 @@ object LocalHttpHostMappingBridge {
         val host = hostPort.substring(0, sep).trim().trim('[', ']')
         val port = hostPort.substring(sep + 1).toIntOrNull() ?: 443
 
+        if (!isRelayAllowed(host)) {
+            AppLogger.w(TAG, "CONNECT rejected (host not requested by the WebView): $host")
+            sendStatus(clientOut, 403, "Forbidden")
+            safeClose(client)
+            return
+        }
+
         val mappedIp = normalizedMappings[host.lowercase(Locale.ROOT)]
         val targetSocket = try {
             connectTarget(host = host, mappedIp = mappedIp, port = port)
@@ -265,6 +272,14 @@ object LocalHttpHostMappingBridge {
         val rawPath = requestUri?.rawPath
         val path = if (rawPath.isNullOrEmpty()) "/" else rawPath
         val pathAndQuery = requestUri?.rawQuery?.let { "$path?$it" } ?: path
+
+        if (!isRelayAllowed(host)) {
+            AppLogger.w(TAG, "HTTP forward rejected (host not requested by the WebView): $host")
+            sendStatus(clientOut, 403, "Forbidden")
+            safeClose(client)
+            return
+        }
+
         val mappedIp = normalizedMappings[host.lowercase(Locale.ROOT)]
 
         val targetSocket = try {
@@ -300,6 +315,9 @@ object LocalHttpHostMappingBridge {
 
         bridge(client, targetSocket)
     }
+
+    private fun isRelayAllowed(host: String): Boolean =
+        normalizedMappings.containsKey(host.lowercase(Locale.ROOT)) || TlsMitmBridge.isHostAllowed(host)
 
     private fun connectTarget(host: String, mappedIp: String?, port: Int): Socket {
         val endpoints = if (!mappedIp.isNullOrBlank()) {

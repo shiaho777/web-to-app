@@ -5,16 +5,19 @@ object ChromeExtensionPolyfill {
     fun generatePolyfill(
         extensionId: String,
         manifestJson: String = "{}",
-        isBackground: Boolean = false
+        isBackground: Boolean = false,
+        token: String = ""
     ): String {
         val safeExtId = extensionId.replace("\\", "\\\\").replace("'", "\\\'")
         val safeManifest = manifestJson.replace("\\", "\\\\").replace("'", "\\'").replace("\n", " ")
+        val safeToken = token.replace("\\", "\\\\").replace("'", "\\'")
 
         return """
 (function() {
     'use strict';
 
     var EXT_ID = '$safeExtId';
+    var EXT_TOKEN = '$safeToken';
     var STORAGE_PREFIX = '__WTA_EXT_' + EXT_ID + '_';
 
     // ===== Prevent double-init (per extension) =====
@@ -132,11 +135,11 @@ object ChromeExtensionPolyfill {
     StorageArea.prototype._bridgeGet = function(key) {
         if (typeof WtaExtBridge === 'undefined') return '';
         if (this._bridgeSupportsSharedArea()) {
-            return WtaExtBridge.storageGetForExt(EXT_ID, this._area, key);
+            return WtaExtBridge.storageGetForExt(EXT_ID, EXT_TOKEN, this._area, key);
         }
         if (this._area === 'sync') {
             return (typeof WtaExtBridge.syncStorageGetForExt === 'function')
-                ? WtaExtBridge.syncStorageGetForExt(EXT_ID, key)
+                ? WtaExtBridge.syncStorageGetForExt(EXT_ID, EXT_TOKEN, key)
                 : WtaExtBridge.syncStorageGet(key);
         }
         return '';
@@ -145,12 +148,12 @@ object ChromeExtensionPolyfill {
     StorageArea.prototype._bridgeSet = function(key, value) {
         if (typeof WtaExtBridge === 'undefined') return;
         if (this._bridgeSupportsSharedArea()) {
-            WtaExtBridge.storageSetForExt(EXT_ID, this._area, key, value);
+            WtaExtBridge.storageSetForExt(EXT_ID, EXT_TOKEN, this._area, key, value);
             return;
         }
         if (this._area === 'sync') {
             if (typeof WtaExtBridge.syncStorageSetForExt === 'function') {
-                WtaExtBridge.syncStorageSetForExt(EXT_ID, key, value);
+                WtaExtBridge.syncStorageSetForExt(EXT_ID, EXT_TOKEN, key, value);
             } else {
                 WtaExtBridge.syncStorageSet(key, value);
             }
@@ -160,12 +163,12 @@ object ChromeExtensionPolyfill {
     StorageArea.prototype._bridgeRemove = function(key) {
         if (typeof WtaExtBridge === 'undefined') return;
         if (this._bridgeSupportsSharedArea()) {
-            WtaExtBridge.storageRemoveForExt(EXT_ID, this._area, key);
+            WtaExtBridge.storageRemoveForExt(EXT_ID, EXT_TOKEN, this._area, key);
             return;
         }
         if (this._area === 'sync') {
             if (typeof WtaExtBridge.syncStorageRemoveForExt === 'function') {
-                WtaExtBridge.syncStorageRemoveForExt(EXT_ID, key);
+                WtaExtBridge.syncStorageRemoveForExt(EXT_ID, EXT_TOKEN, key);
             } else {
                 WtaExtBridge.syncStorageRemove(key);
             }
@@ -175,11 +178,11 @@ object ChromeExtensionPolyfill {
     StorageArea.prototype._bridgeGetAll = function() {
         if (typeof WtaExtBridge === 'undefined') return '{}';
         if (this._bridgeSupportsSharedArea()) {
-            return WtaExtBridge.storageGetAllForExt(EXT_ID, this._area);
+            return WtaExtBridge.storageGetAllForExt(EXT_ID, EXT_TOKEN, this._area);
         }
         if (this._area === 'sync') {
             return (typeof WtaExtBridge.syncStorageGetAllForExt === 'function')
-                ? WtaExtBridge.syncStorageGetAllForExt(EXT_ID)
+                ? WtaExtBridge.syncStorageGetAllForExt(EXT_ID, EXT_TOKEN)
                 : WtaExtBridge.syncStorageGetAll();
         }
         return '{}';
@@ -188,12 +191,12 @@ object ChromeExtensionPolyfill {
     StorageArea.prototype._bridgeClear = function() {
         if (typeof WtaExtBridge === 'undefined') return;
         if (this._bridgeSupportsSharedArea()) {
-            WtaExtBridge.storageClearForExt(EXT_ID, this._area);
+            WtaExtBridge.storageClearForExt(EXT_ID, EXT_TOKEN, this._area);
             return;
         }
         if (this._area === 'sync') {
             if (typeof WtaExtBridge.syncStorageClearForExt === 'function') {
-                WtaExtBridge.syncStorageClearForExt(EXT_ID);
+                WtaExtBridge.syncStorageClearForExt(EXT_ID, EXT_TOKEN);
             } else {
                 WtaExtBridge.syncStorageClear();
             }
@@ -383,7 +386,7 @@ object ChromeExtensionPolyfill {
                         };
                     });
                     try {
-                        WtaExtBridge.postMessageToBackground(EXT_ID, JSON.stringify({
+                        WtaExtBridge.postMessageToBackground(EXT_ID, EXT_TOKEN, JSON.stringify({
                             msgId: msgId,
                             message: message
                         }));
@@ -444,7 +447,7 @@ object ChromeExtensionPolyfill {
                     if (MANIFEST.options_ui && MANIFEST.options_ui.page) path = MANIFEST.options_ui.page;
                     else if (MANIFEST.options_page) path = MANIFEST.options_page;
                     if (path && typeof WtaExtBridge !== 'undefined' && typeof WtaExtBridge.openOptionsPage === 'function') {
-                        WtaExtBridge.openOptionsPage(EXT_ID, String(path));
+                        WtaExtBridge.openOptionsPage(EXT_ID, EXT_TOKEN, String(path));
                     }
                 } catch (e) {
                     console.warn('[ChromePolyfill] openOptionsPage error:', e);
@@ -658,6 +661,7 @@ object ChromeExtensionPolyfill {
                     try {
                         WtaExtBridge.registerWebRequestFilter(
                             EXT_ID,
+                            EXT_TOKEN,
                             JSON.stringify(filter.urls),
                             types,
                             isBlocking
@@ -760,7 +764,7 @@ object ChromeExtensionPolyfill {
                     if (typeof WtaExtBridge !== 'undefined' && typeof WtaExtBridge.updateDnrDynamicRules === 'function') {
                         var addRules = (options && options.addRules) ? JSON.stringify(options.addRules) : '[]';
                         var removeIds = (options && options.removeRuleIds) ? JSON.stringify(options.removeRuleIds) : '[]';
-                        WtaExtBridge.updateDnrDynamicRules(EXT_ID, addRules, removeIds);
+                        WtaExtBridge.updateDnrDynamicRules(EXT_ID, EXT_TOKEN, addRules, removeIds);
                     }
                 } catch(e) { console.error('[ChromePolyfill] updateDynamicRules error:', e); }
                 if (typeof callback === 'function') callback();
@@ -770,7 +774,7 @@ object ChromeExtensionPolyfill {
                 var rules = [];
                 try {
                     if (typeof WtaExtBridge !== 'undefined' && typeof WtaExtBridge.getDnrDynamicRules === 'function') {
-                        var json = WtaExtBridge.getDnrDynamicRules(EXT_ID);
+                        var json = WtaExtBridge.getDnrDynamicRules(EXT_ID, EXT_TOKEN);
                         rules = JSON.parse(json || '[]');
                     }
                 } catch(e) { console.warn('[ChromePolyfill] getDynamicRules error:', e); }
@@ -782,7 +786,7 @@ object ChromeExtensionPolyfill {
                     if (typeof WtaExtBridge !== 'undefined' && typeof WtaExtBridge.updateDnrSessionRules === 'function') {
                         var addRules = (options && options.addRules) ? JSON.stringify(options.addRules) : '[]';
                         var removeIds = (options && options.removeRuleIds) ? JSON.stringify(options.removeRuleIds) : '[]';
-                        WtaExtBridge.updateDnrSessionRules(EXT_ID, addRules, removeIds);
+                        WtaExtBridge.updateDnrSessionRules(EXT_ID, EXT_TOKEN, addRules, removeIds);
                     }
                 } catch(e) { console.error('[ChromePolyfill] updateSessionRules error:', e); }
                 if (typeof callback === 'function') callback();
@@ -792,7 +796,7 @@ object ChromeExtensionPolyfill {
                 var rules = [];
                 try {
                     if (typeof WtaExtBridge !== 'undefined' && typeof WtaExtBridge.getDnrSessionRules === 'function') {
-                        var json = WtaExtBridge.getDnrSessionRules(EXT_ID);
+                        var json = WtaExtBridge.getDnrSessionRules(EXT_ID, EXT_TOKEN);
                         rules = JSON.parse(json || '[]');
                     }
                 } catch(e) { console.warn('[ChromePolyfill] getSessionRules error:', e); }
@@ -803,7 +807,7 @@ object ChromeExtensionPolyfill {
                 var rulesetIds = [];
                 try {
                     if (typeof WtaExtBridge !== 'undefined' && typeof WtaExtBridge.getEnabledDnrStaticRulesets === 'function') {
-                        var json = WtaExtBridge.getEnabledDnrStaticRulesets(EXT_ID);
+                        var json = WtaExtBridge.getEnabledDnrStaticRulesets(EXT_ID, EXT_TOKEN);
                         rulesetIds = JSON.parse(json || '[]');
                     }
                 } catch(e) { console.warn('[ChromePolyfill] getEnabledRulesets error:', e); }
@@ -815,7 +819,7 @@ object ChromeExtensionPolyfill {
                     if (typeof WtaExtBridge !== 'undefined' && typeof WtaExtBridge.updateEnabledDnrStaticRulesets === 'function') {
                         var enableIds = (options && options.enableRulesetIds) ? JSON.stringify(options.enableRulesetIds) : '[]';
                         var disableIds = (options && options.disableRulesetIds) ? JSON.stringify(options.disableRulesetIds) : '[]';
-                        WtaExtBridge.updateEnabledDnrStaticRulesets(EXT_ID, enableIds, disableIds);
+                        WtaExtBridge.updateEnabledDnrStaticRulesets(EXT_ID, EXT_TOKEN, enableIds, disableIds);
                     }
                 } catch(e) { console.error('[ChromePolyfill] updateEnabledRulesets error:', e); }
                 if (typeof callback === 'function') callback();
@@ -836,7 +840,7 @@ object ChromeExtensionPolyfill {
                 var count = 0;
                 try {
                     if (typeof WtaExtBridge !== 'undefined' && typeof WtaExtBridge.getAvailableDnrStaticRuleCount === 'function') {
-                        count = Number(WtaExtBridge.getAvailableDnrStaticRuleCount(EXT_ID)) || 0;
+                        count = Number(WtaExtBridge.getAvailableDnrStaticRuleCount(EXT_ID, EXT_TOKEN)) || 0;
                     }
                 } catch (e) { console.warn('[ChromePolyfill] getAvailableStaticRuleCount error:', e); }
                 if (typeof callback === 'function') callback(count);
@@ -967,7 +971,7 @@ object ChromeExtensionPolyfill {
                         } else if (injection && typeof injection.code === 'string') {
                             payload.code = injection.code;
                         }
-                        var json = WtaExtBridge.executeScript(EXT_ID, JSON.stringify(payload));
+                        var json = WtaExtBridge.executeScript(EXT_ID, EXT_TOKEN, JSON.stringify(payload));
                         results = JSON.parse(json || '[{"result":null}]');
                     }
                 } catch (e) {
@@ -979,7 +983,7 @@ object ChromeExtensionPolyfill {
             insertCSS: function(injection, callback) {
                 try {
                     if (typeof WtaExtBridge !== 'undefined' && typeof WtaExtBridge.insertCss === 'function') {
-                        WtaExtBridge.insertCss(EXT_ID, JSON.stringify({
+                        WtaExtBridge.insertCss(EXT_ID, EXT_TOKEN, JSON.stringify({
                             target: (injection && injection.target) || { tabId: 1 },
                             files: (injection && Array.isArray(injection.files)) ? injection.files.slice() : [],
                             css: (injection && injection.css) || '',
@@ -996,7 +1000,7 @@ object ChromeExtensionPolyfill {
             removeCSS: function(injection, callback) {
                 try {
                     if (typeof WtaExtBridge !== 'undefined' && typeof WtaExtBridge.removeCss === 'function') {
-                        WtaExtBridge.removeCss(EXT_ID, JSON.stringify({
+                        WtaExtBridge.removeCss(EXT_ID, EXT_TOKEN, JSON.stringify({
                             target: (injection && injection.target) || { tabId: 1 },
                             files: (injection && Array.isArray(injection.files)) ? injection.files.slice() : [],
                             css: (injection && injection.css) || '',
@@ -1013,7 +1017,7 @@ object ChromeExtensionPolyfill {
             registerContentScripts: function(scripts, callback) {
                 try {
                     if (typeof WtaExtBridge !== 'undefined' && typeof WtaExtBridge.registerContentScripts === 'function') {
-                        WtaExtBridge.registerContentScripts(EXT_ID, JSON.stringify(scripts || []));
+                        WtaExtBridge.registerContentScripts(EXT_ID, EXT_TOKEN, JSON.stringify(scripts || []));
                     }
                 } catch (e) {
                     console.error('[ChromePolyfill] registerContentScripts error:', e);
@@ -1024,7 +1028,7 @@ object ChromeExtensionPolyfill {
             unregisterContentScripts: function(filter, callback) {
                 try {
                     if (typeof WtaExtBridge !== 'undefined' && typeof WtaExtBridge.unregisterContentScripts === 'function') {
-                        WtaExtBridge.unregisterContentScripts(EXT_ID, JSON.stringify(filter || {}));
+                        WtaExtBridge.unregisterContentScripts(EXT_ID, EXT_TOKEN, JSON.stringify(filter || {}));
                     }
                 } catch (e) {
                     console.error('[ChromePolyfill] unregisterContentScripts error:', e);
@@ -1036,7 +1040,7 @@ object ChromeExtensionPolyfill {
                 var scripts = [];
                 try {
                     if (typeof WtaExtBridge !== 'undefined' && typeof WtaExtBridge.getRegisteredContentScripts === 'function') {
-                        var json = WtaExtBridge.getRegisteredContentScripts(EXT_ID, JSON.stringify(filter || {}));
+                        var json = WtaExtBridge.getRegisteredContentScripts(EXT_ID, EXT_TOKEN, JSON.stringify(filter || {}));
                         scripts = JSON.parse(json || '[]');
                     }
                 } catch (e) {
@@ -1069,7 +1073,7 @@ object ChromeExtensionPolyfill {
                     var popup = details && typeof details.popup === 'string' ? details.popup : '';
                     _popupPathOverride = popup;
                     if (typeof WtaExtBridge !== 'undefined' && typeof WtaExtBridge.setPopupPath === 'function') {
-                        WtaExtBridge.setPopupPath(EXT_ID, popup);
+                        WtaExtBridge.setPopupPath(EXT_ID, EXT_TOKEN, popup);
                     }
                 } catch (e) {
                     console.warn('[ChromePolyfill] action.setPopup error:', e);
@@ -1081,7 +1085,7 @@ object ChromeExtensionPolyfill {
                 var popup = '';
                 try {
                     if (typeof WtaExtBridge !== 'undefined' && typeof WtaExtBridge.getPopupPath === 'function') {
-                        popup = WtaExtBridge.getPopupPath(EXT_ID) || '';
+                        popup = WtaExtBridge.getPopupPath(EXT_ID, EXT_TOKEN) || '';
                     }
                 } catch (e) {}
                 if (!popup) popup = resolvePopupPath();
@@ -1710,7 +1714,7 @@ object ChromeExtensionPolyfill {
                     responded = true;
                     try {
                         if (typeof WtaExtBridge !== 'undefined' && typeof WtaExtBridge.postMessageToBackground === 'function') {
-                            WtaExtBridge.postMessageToBackground(EXT_ID, JSON.stringify({
+                            WtaExtBridge.postMessageToBackground(EXT_ID, EXT_TOKEN, JSON.stringify({
                                 msgId: msgId,
                                 response: response
                             }));
@@ -1750,7 +1754,7 @@ object ChromeExtensionPolyfill {
         var portId = '';
         try {
             if (typeof WtaExtBridge !== 'undefined' && typeof WtaExtBridge.openPort === 'function') {
-                portId = WtaExtBridge.openPort(extensionId, name);
+                portId = WtaExtBridge.openPort(extensionId, EXT_TOKEN, name);
             }
         } catch(e) { console.warn('[ChromePolyfill] openPort error:', e); }
         if (!portId) portId = 'local_port_' + (++_msgCounter);
