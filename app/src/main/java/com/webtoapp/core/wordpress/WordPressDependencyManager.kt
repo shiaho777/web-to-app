@@ -34,7 +34,7 @@ object WordPressDependencyManager {
     const val PHP_RUNTIME_RELEASE = "php-8.4.16-android-arm64-wta1"
 
     private const val PHP_GITHUB_URL =
-        "https://github.com/fjmsh/web2app-priv/releases/download/$PHP_RUNTIME_RELEASE/PHP-$PHP_VERSION-Android-arm64-WebToApp.tar.gz"
+        "https://github.com/fjmsh/web2app-php/releases/download/$PHP_RUNTIME_RELEASE/PHP-$PHP_VERSION-Android-arm64-WebToApp.tar.gz"
 
     const val PHP_TARBALL_SHA256 =
         "6c9edef600c51f29bad1d5739197142976e6be900b29bfd89f00ddb2046f5c2b"
