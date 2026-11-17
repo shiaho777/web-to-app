@@ -1824,6 +1824,19 @@ object StringsE {
         AppLanguage.KOREAN -> "PHP 런타임(libphp.so)이 설치되지 않았습니다 — PHP 런타임이 초기화되지 않았습니다; 설정 → 런타임 엔진 → PHP 8.4를 열고 다운로드를 탭하세요"
     }
 
+    val wpInstallFailed: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "WordPress 自动安装失败，请重试；若持续失败，站点将停留在安装向导页"
+        AppLanguage.ENGLISH -> "WordPress auto-install failed. Retry; if it keeps failing, the site stays on the install wizard page"
+        AppLanguage.ARABIC -> "فشل التثبيت التلقائي لـ WordPress. أعد المحاولة؛ إذا استمر الفشل فسيبقى الموقع على صفحة معالج التثبيت"
+        AppLanguage.PORTUGUESE -> "Falha na instalação automática do WordPress. Tente novamente; se persistir, o site permanecerá na página do assistente de instalação"
+        AppLanguage.SPANISH -> "Falló la instalación automática de WordPress. Reintenta; si persiste, el sitio quedará en la página del asistente de instalación"
+        AppLanguage.FRENCH -> "Échec de l'installation automatique de WordPress. Réessayez ; si l'échec persiste, le site restera sur la page de l'assistant d'installation"
+        AppLanguage.GERMAN -> "Automatische WordPress-Installation fehlgeschlagen. Erneut versuchen; bei anhaltendem Fehler bleibt die Seite auf dem Installationsassistenten"
+        AppLanguage.RUSSIAN -> "Автоустановка WordPress не удалась. Повторите попытку; при повторных сбоях сайт останется на странице мастера установки"
+        AppLanguage.JAPANESE -> "WordPressの自動インストールに失敗しました。再試行してください。失敗が続くとサイトはインストールウィザードのページに留まります"
+        AppLanguage.KOREAN -> "WordPress 자동 설치에 실패했습니다. 다시 시도하세요. 계속 실패하면 사이트가 설치 마법사 페이지에 머물게 됩니다"
+    }
+
     val nodeRuntimeNotFound: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "Node.js 运行时 (libnode.so) 未安装 — Node.js 运行时未下载；请打开设置 → 运行时引擎，下载 Node.js"
         AppLanguage.ENGLISH -> "Node.js runtime (libnode.so) not installed — Node.js runtime not downloaded; open Settings → Runtime Engines and download Node.js"

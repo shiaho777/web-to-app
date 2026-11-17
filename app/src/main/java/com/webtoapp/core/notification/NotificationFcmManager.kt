@@ -132,14 +132,15 @@ object NotificationFcmManager {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().clear().apply()
     }
 
-    fun start(context: Context, config: FcmConfig) {
+    fun start(context: Context, config: FcmConfig): Boolean {
         val resolved = resolveConfig(config)
         if (!isConfigured(resolved)) {
             AppLogger.w(TAG, "FCM config incomplete, skip start")
-            return
+            return false
         }
         persist(context, resolved)
         FcmRuntime.start(context, resolved)
+        return true
     }
 
     fun restoreIfNeeded(context: Context) {

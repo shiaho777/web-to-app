@@ -79,10 +79,12 @@ class WebViewManager(
         private val MIME_TYPE_MAP = mapOf(
             "html" to "text/html", "htm" to "text/html",
             "css" to "text/css", "js" to "application/javascript",
+            "mjs" to "application/javascript",
             "json" to "application/json", "xml" to "application/xml",
             "txt" to "text/plain", "png" to "image/png",
             "jpg" to "image/jpeg", "jpeg" to "image/jpeg",
             "gif" to "image/gif", "webp" to "image/webp",
+            "avif" to "image/avif", "bmp" to "image/bmp",
             "svg" to "image/svg+xml", "ico" to "image/x-icon",
             "mp3" to "audio/mpeg", "wav" to "audio/wav",
             "ogg" to "audio/ogg", "mp4" to "video/mp4",
@@ -1926,6 +1928,15 @@ class WebViewManager(
                 installNotificationPolyfillDocumentStart(this)
             }
 
+            if (config.staticAssetPackEnabled) {
+                ServiceWorkerRequestRouter.addHandler { request ->
+                    val reqUrl = request.url?.toString() ?: return@addHandler null
+                    if (request.isForMainFrame) return@addHandler null
+                    if (!reqUrl.startsWith("http://") && !reqUrl.startsWith("https://")) return@addHandler null
+                    resolveStaticPackAsset(reqUrl, config)
+                }
+            }
+
             // Cosmetic filtering at document start so the hide stylesheet and the
             // mutation observer are in place before the page can paint (#998).
             if (adBlocker.isEnabled() && config.javaScriptEnabled) {
@@ -2779,16 +2790,21 @@ class WebViewManager(
                 if (config.pwaOfflineEnabled) {
                     view?.postDelayed({
                         if (view.url == finishedUrl) {
-                            val strategy = try {
-                                PwaOfflineSupport.CacheStrategy.valueOf(config.pwaOfflineStrategy)
-                            } catch (_: Exception) {
-                                PwaOfflineSupport.CacheStrategy.NETWORK_FIRST
+                            val pageUrl = view.url.orEmpty()
+                            if (pageUrl.startsWith("file://") || pageUrl.startsWith("content://")) {
+                                AppLogger.i("WebViewManager", "PWA offline skipped: service workers cannot register on $pageUrl")
+                            } else {
+                                val strategy = try {
+                                    PwaOfflineSupport.CacheStrategy.valueOf(config.pwaOfflineStrategy)
+                                } catch (_: Exception) {
+                                    PwaOfflineSupport.CacheStrategy.NETWORK_FIRST
+                                }
+                                val offlineConfig = PwaOfflineSupport.OfflineConfig(
+                                    enabled = true,
+                                    strategy = strategy
+                                )
+                                PwaOfflineSupport.injectServiceWorker(view, offlineConfig)
                             }
-                            val offlineConfig = PwaOfflineSupport.OfflineConfig(
-                                enabled = true,
-                                strategy = strategy
-                            )
-                            PwaOfflineSupport.injectServiceWorker(view, offlineConfig)
                         }
                     }, 800)
                 }

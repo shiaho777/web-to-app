@@ -162,7 +162,7 @@ object ShellActivityInit {
                         com.webtoapp.core.shell.ShellLogger.i("ShellActivity", "WebSocket 通知服务已启动: url=${nc.wsUrl}")
                     }
                     nc.type == "fcm" -> {
-                        com.webtoapp.core.notification.NotificationFcmManager.start(
+                        val started = com.webtoapp.core.notification.NotificationFcmManager.start(
                             context = activity,
                             config = com.webtoapp.core.notification.NotificationFcmManager.FcmConfig(
                                 projectId = nc.fcmProjectId,
@@ -177,7 +177,14 @@ object ShellActivityInit {
                                 googleServicesJson = nc.fcmGoogleServicesJson
                             )
                         )
-                        com.webtoapp.core.shell.ShellLogger.i("ShellActivity", "FCM 通知通道已启动: project=${nc.fcmProjectId}")
+                        if (started) {
+                            com.webtoapp.core.shell.ShellLogger.i("ShellActivity", "FCM 通知通道已启动: project=${nc.fcmProjectId}")
+                        } else {
+                            com.webtoapp.core.shell.ShellLogger.w(
+                                "ShellActivity",
+                                "FCM 配置不完整（projectId/applicationId/apiKey/senderId），推送未启动"
+                            )
+                        }
                     }
                 }
 
