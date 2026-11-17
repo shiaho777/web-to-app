@@ -42,6 +42,11 @@ object HtmlProjectProcessor {
 
     private val openHeadRegex = Regex("<head>", RegexOption.IGNORE_CASE)
 
+    private val legacyInjectedViewportRegex = Regex(
+        """<meta\s+name\s*=\s*["']viewport["']\s+content\s*=\s*["']width=device-width,\s*initial-scale=1\.0,\s*maximum-scale=1\.0,\s*user-scalable=no["']\s*/?>""",
+        RegexOption.IGNORE_CASE
+    )
+
     data class ProjectAnalysis(
         val htmlFiles: List<FileInfo>,
         val cssFiles: List<FileInfo>,
@@ -255,6 +260,8 @@ object HtmlProjectProcessor {
             result = inlineJs(result, jsContent)
         }
 
+        result = legacyInjectedViewportRegex.replace(result, """<meta name="viewport" content="width=device-width, initial-scale=1.0">""")
+
         if (!result.contains("viewport", ignoreCase = true)) {
             result = addViewportMeta(result)
         }
@@ -390,7 +397,7 @@ $trimmed
     }
 
     private fun addViewportMeta(html: String): String {
-        val viewportMeta = """<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">"""
+        val viewportMeta = """<meta name="viewport" content="width=device-width, initial-scale=1.0">"""
 
         return when {
             html.contains("<head>", ignoreCase = true) -> {
