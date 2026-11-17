@@ -133,7 +133,7 @@ object NodeServiceClient {
         val result = withTimeoutOrNull(NodeServiceProtocol.START_REPLY_TIMEOUT_MS) { deferred.await() }
         if (result == null) {
             pendingStartRequests.remove(requestId)
-            cancelStartRequest()
+            cancelStartRequest(requestId)
             return@withContext StartResult.Failure("等 :nodejs 子进程回包超时", v8Exhausted = false)
         }
         pendingStartRequests.remove(requestId)
@@ -143,11 +143,14 @@ object NodeServiceClient {
         result
     }
 
-    private fun cancelStartRequest() {
+    private fun cancelStartRequest(requestId: String) {
         val messenger = serviceMessenger ?: return
         try {
             messenger.send(Message.obtain().apply {
                 what = NodeServiceProtocol.MSG_STOP_SERVER
+                data = Bundle().apply {
+                    putString(NodeServiceProtocol.Keys.REQUEST_ID, requestId)
+                }
                 replyTo = replyMessenger
             })
         } catch (e: RemoteException) {

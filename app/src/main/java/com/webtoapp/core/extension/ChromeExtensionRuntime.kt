@@ -477,10 +477,19 @@ class ContentExtensionBridge(
     private val runtimes: Map<String, ChromeExtensionRuntime>,
     private val currentWebViewProvider: (() -> WebView?)? = null,
     private val openPopupHandler: (String, String) -> Unit = { _, _ -> },
-    private val openOptionsPageHandler: (String, String) -> Unit = { _, _ -> }
+    private val openOptionsPageHandler: (String, String) -> Unit = { _, _ -> },
+    private val tokenProvider: (String) -> String? = { null }
 ) : WebViewCompat.WebMessageListener {
+
+    private fun authorizedExt(extId: String, token: String): Boolean {
+        if (!runtimes.containsKey(extId)) return false
+        val expected = tokenProvider(extId) ?: return false
+        return expected.isNotEmpty() && expected == token
+    }
+
     @JavascriptInterface
-    fun postMessageToBackground(extId: String, msgJson: String) {
+    fun postMessageToBackground(extId: String, token: String, msgJson: String) {
+        if (!authorizedExt(extId, token)) return
         AppLogger.d("ChromeExtRuntime", "Content→BG [$extId]: ${msgJson.take(200)}")
         runtimes[extId]?.deliverToBackground(msgJson)
     }
@@ -595,8 +604,8 @@ class ContentExtensionBridge(
     }
 
     @JavascriptInterface
-    fun syncStorageGetForExt(extId: String, key: String): String {
-        if (!isKnownExtension(extId)) return ""
+    fun syncStorageGetForExt(extId: String, token: String, key: String): String {
+        if (!authorizedExt(extId, token)) return ""
         return ExtensionStorageSync.get(extId, key, ExtensionStorageSync.Area.SYNC)
     }
 
@@ -608,8 +617,8 @@ class ContentExtensionBridge(
     }
 
     @JavascriptInterface
-    fun syncStorageSetForExt(extId: String, key: String, value: String) {
-        if (!isKnownExtension(extId)) return
+    fun syncStorageSetForExt(extId: String, token: String, key: String, value: String) {
+        if (!authorizedExt(extId, token)) return
         ExtensionStorageSync.set(extId, key, value, ExtensionStorageSync.Area.SYNC)
     }
 
@@ -621,8 +630,8 @@ class ContentExtensionBridge(
     }
 
     @JavascriptInterface
-    fun syncStorageRemoveForExt(extId: String, key: String) {
-        if (!isKnownExtension(extId)) return
+    fun syncStorageRemoveForExt(extId: String, token: String, key: String) {
+        if (!authorizedExt(extId, token)) return
         ExtensionStorageSync.remove(extId, key, ExtensionStorageSync.Area.SYNC)
     }
 
@@ -634,8 +643,8 @@ class ContentExtensionBridge(
     }
 
     @JavascriptInterface
-    fun syncStorageGetAllForExt(extId: String): String {
-        if (!isKnownExtension(extId)) return "{}"
+    fun syncStorageGetAllForExt(extId: String, token: String): String {
+        if (!authorizedExt(extId, token)) return "{}"
         return ExtensionStorageSync.getAll(extId, ExtensionStorageSync.Area.SYNC)
     }
 
@@ -647,8 +656,8 @@ class ContentExtensionBridge(
     }
 
     @JavascriptInterface
-    fun syncStorageClearForExt(extId: String) {
-        if (!isKnownExtension(extId)) return
+    fun syncStorageClearForExt(extId: String, token: String) {
+        if (!authorizedExt(extId, token)) return
         ExtensionStorageSync.clear(extId, ExtensionStorageSync.Area.SYNC)
     }
 
@@ -660,8 +669,8 @@ class ContentExtensionBridge(
     }
 
     @JavascriptInterface
-    fun storageGetForExt(extId: String, area: String, key: String): String {
-        if (!isKnownExtension(extId)) return ""
+    fun storageGetForExt(extId: String, token: String, area: String, key: String): String {
+        if (!authorizedExt(extId, token)) return ""
         return ExtensionStorageSync.get(extId, key, ExtensionStorageSync.Area.fromWireName(area))
     }
 
@@ -673,8 +682,8 @@ class ContentExtensionBridge(
     }
 
     @JavascriptInterface
-    fun storageSetForExt(extId: String, area: String, key: String, value: String) {
-        if (!isKnownExtension(extId)) return
+    fun storageSetForExt(extId: String, token: String, area: String, key: String, value: String) {
+        if (!authorizedExt(extId, token)) return
         ExtensionStorageSync.set(extId, key, value, ExtensionStorageSync.Area.fromWireName(area))
     }
 
@@ -686,8 +695,8 @@ class ContentExtensionBridge(
     }
 
     @JavascriptInterface
-    fun storageRemoveForExt(extId: String, area: String, key: String) {
-        if (!isKnownExtension(extId)) return
+    fun storageRemoveForExt(extId: String, token: String, area: String, key: String) {
+        if (!authorizedExt(extId, token)) return
         ExtensionStorageSync.remove(extId, key, ExtensionStorageSync.Area.fromWireName(area))
     }
 
@@ -699,8 +708,8 @@ class ContentExtensionBridge(
     }
 
     @JavascriptInterface
-    fun storageGetAllForExt(extId: String, area: String): String {
-        if (!isKnownExtension(extId)) return "{}"
+    fun storageGetAllForExt(extId: String, token: String, area: String): String {
+        if (!authorizedExt(extId, token)) return "{}"
         return ExtensionStorageSync.getAll(extId, ExtensionStorageSync.Area.fromWireName(area))
     }
 
@@ -712,78 +721,80 @@ class ContentExtensionBridge(
     }
 
     @JavascriptInterface
-    fun storageClearForExt(extId: String, area: String) {
-        if (!isKnownExtension(extId)) return
+    fun storageClearForExt(extId: String, token: String, area: String) {
+        if (!authorizedExt(extId, token)) return
         ExtensionStorageSync.clear(extId, ExtensionStorageSync.Area.fromWireName(area))
     }
 
     @JavascriptInterface
-    fun registerWebRequestFilter(extId: String, urlPatternsJson: String, resourceTypesJson: String, blocking: Boolean) {
-        if (!isKnownExtension(extId)) return
+    fun registerWebRequestFilter(extId: String, token: String, urlPatternsJson: String, resourceTypesJson: String, blocking: Boolean) {
+        if (!authorizedExt(extId, token)) return
         WebRequestBridge.registerFilter(extId, urlPatternsJson, resourceTypesJson, blocking)
     }
 
     @JavascriptInterface
-    fun updateDnrDynamicRules(extId: String, addRulesJson: String, removeRuleIdsJson: String) {
-        if (!isKnownExtension(extId)) return
+    fun updateDnrDynamicRules(extId: String, token: String, addRulesJson: String, removeRuleIdsJson: String) {
+        if (!authorizedExt(extId, token)) return
         DeclarativeNetRequestEngine.updateDynamicRules(extId, addRulesJson, removeRuleIdsJson)
     }
 
-    /**
-     * Guard for the extId-bearing entry points: only installed extensions may be
-     * addressed. Any frame can reach this bridge object, so without this check a
-     * foreign page could read/write another extension's storage or register web
-     * request filters in its name.
-     */
-    private fun isKnownExtension(extId: String): Boolean = runtimes.containsKey(extId)
-
     @JavascriptInterface
-    fun updateDnrSessionRules(extId: String, addRulesJson: String, removeRuleIdsJson: String) {
+    fun updateDnrSessionRules(extId: String, token: String, addRulesJson: String, removeRuleIdsJson: String) {
+        if (!authorizedExt(extId, token)) return
         DeclarativeNetRequestEngine.updateSessionRules(extId, addRulesJson, removeRuleIdsJson)
     }
 
     @JavascriptInterface
-    fun getDnrDynamicRules(extId: String): String {
+    fun getDnrDynamicRules(extId: String, token: String): String {
+        if (!authorizedExt(extId, token)) return "[]"
         return DeclarativeNetRequestEngine.getDynamicRulesJson(extId)
     }
 
     @JavascriptInterface
-    fun getDnrSessionRules(extId: String): String {
+    fun getDnrSessionRules(extId: String, token: String): String {
+        if (!authorizedExt(extId, token)) return "[]"
         return DeclarativeNetRequestEngine.getSessionRulesJson(extId)
     }
 
     @JavascriptInterface
-    fun getEnabledDnrStaticRulesets(extId: String): String {
+    fun getEnabledDnrStaticRulesets(extId: String, token: String): String {
+        if (!authorizedExt(extId, token)) return "[]"
         return DeclarativeNetRequestEngine.getEnabledStaticRulesetIdsJson(extId)
     }
 
     @JavascriptInterface
-    fun updateEnabledDnrStaticRulesets(extId: String, enableRulesetIdsJson: String, disableRulesetIdsJson: String) {
+    fun updateEnabledDnrStaticRulesets(extId: String, token: String, enableRulesetIdsJson: String, disableRulesetIdsJson: String) {
+        if (!authorizedExt(extId, token)) return
         DeclarativeNetRequestEngine.updateEnabledStaticRulesets(extId, enableRulesetIdsJson, disableRulesetIdsJson)
     }
 
     @JavascriptInterface
-    fun getAvailableDnrStaticRuleCount(extId: String): Int {
+    fun getAvailableDnrStaticRuleCount(extId: String, token: String): Int {
+        if (!authorizedExt(extId, token)) return 0
         return DeclarativeNetRequestEngine.getAvailableStaticRuleCount(extId)
     }
 
     @JavascriptInterface
-    fun registerContentScripts(extId: String, scriptsJson: String) {
+    fun registerContentScripts(extId: String, token: String, scriptsJson: String) {
+        if (!authorizedExt(extId, token)) return
         ChromeExtensionContentScriptRegistry.registerContentScripts(extId, scriptsJson)
     }
 
     @JavascriptInterface
-    fun unregisterContentScripts(extId: String, filterJson: String) {
+    fun unregisterContentScripts(extId: String, token: String, filterJson: String) {
+        if (!authorizedExt(extId, token)) return
         ChromeExtensionContentScriptRegistry.unregisterContentScripts(extId, filterJson)
     }
 
     @JavascriptInterface
-    fun getRegisteredContentScripts(extId: String, filterJson: String): String {
+    fun getRegisteredContentScripts(extId: String, token: String, filterJson: String): String {
+        if (!authorizedExt(extId, token)) return "[]"
         return ChromeExtensionContentScriptRegistry.getRegisteredContentScriptsJson(extId, filterJson)
     }
 
     @JavascriptInterface
-    fun executeScript(extId: String, injectionJson: String): String {
+    fun executeScript(extId: String, token: String, injectionJson: String): String {
+        if (!authorizedExt(extId, token)) return resultsJson(null)
         val runtime = runtimes[extId]
         if (runtime != null) {
             return runtime.executeScript(injectionJson)
@@ -798,7 +809,8 @@ class ContentExtensionBridge(
     }
 
     @JavascriptInterface
-    fun insertCss(extId: String, injectionJson: String): Boolean {
+    fun insertCss(extId: String, token: String, injectionJson: String): Boolean {
+        if (!authorizedExt(extId, token)) return false
         val runtime = runtimes[extId]
         return if (runtime != null) {
             runtime.insertCss(injectionJson)
@@ -814,7 +826,8 @@ class ContentExtensionBridge(
     }
 
     @JavascriptInterface
-    fun removeCss(extId: String, injectionJson: String): Boolean {
+    fun removeCss(extId: String, token: String, injectionJson: String): Boolean {
+        if (!authorizedExt(extId, token)) return false
         val runtime = runtimes[extId]
         return if (runtime != null) {
             runtime.removeCss(injectionJson)
@@ -830,27 +843,32 @@ class ContentExtensionBridge(
     }
 
     @JavascriptInterface
-    fun openPopup(extId: String, popupPath: String) {
+    fun openPopup(extId: String, token: String, popupPath: String) {
+        if (!authorizedExt(extId, token)) return
         openPopupHandler(extId, popupPath)
     }
 
     @JavascriptInterface
-    fun openOptionsPage(extId: String, optionsPath: String) {
+    fun openOptionsPage(extId: String, token: String, optionsPath: String) {
+        if (!authorizedExt(extId, token)) return
         openOptionsPageHandler(extId, optionsPath)
     }
 
     @JavascriptInterface
-    fun setPopupPath(extId: String, popupPath: String) {
+    fun setPopupPath(extId: String, token: String, popupPath: String) {
+        if (!authorizedExt(extId, token)) return
         runtimes[extId]?.setPopupPath(popupPath)
     }
 
     @JavascriptInterface
-    fun getPopupPath(extId: String): String {
+    fun getPopupPath(extId: String, token: String): String {
+        if (!authorizedExt(extId, token)) return ""
         return runtimes[extId]?.getEffectivePopupPath().orEmpty()
     }
 
     @JavascriptInterface
-    fun openPort(extId: String, name: String): String {
+    fun openPort(extId: String, token: String, name: String): String {
+        if (!authorizedExt(extId, token)) return ""
         val portId = "port_${System.currentTimeMillis()}_${(Math.random() * 10000).toInt()}"
 
         val portInfo = org.json.JSONObject().apply {

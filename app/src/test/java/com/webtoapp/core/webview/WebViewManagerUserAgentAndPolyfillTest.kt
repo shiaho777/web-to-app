@@ -177,10 +177,10 @@ class WebViewManagerUserAgentAndPolyfillTest {
         val script = ChromeExtensionPolyfill.generatePolyfill("ext-test", """{"manifest_version":3}""")
 
         assertThat(script).contains("typeof WtaExtBridge !== 'undefined' && typeof WtaExtBridge.executeScript === 'function'")
-        assertThat(script).contains("WtaExtBridge.executeScript(EXT_ID, JSON.stringify(payload))")
+        assertThat(script).contains("WtaExtBridge.executeScript(EXT_ID, EXT_TOKEN, JSON.stringify(payload))")
         assertThat(script).contains("files: (injection && Array.isArray(injection.files)) ? injection.files.slice() : []")
-        assertThat(script).contains("WtaExtBridge.insertCss(EXT_ID, JSON.stringify(")
-        assertThat(script).contains("WtaExtBridge.removeCss(EXT_ID, JSON.stringify(")
+        assertThat(script).contains("WtaExtBridge.insertCss(EXT_ID, EXT_TOKEN, JSON.stringify(")
+        assertThat(script).contains("WtaExtBridge.removeCss(EXT_ID, EXT_TOKEN, JSON.stringify(")
         assertThat(script).doesNotContain("Stub: executeScript is handled natively by WebViewManager")
     }
 

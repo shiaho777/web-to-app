@@ -51,7 +51,7 @@ class JarSigner(private val context: Context) {
 
         internal fun requiredSigningSchemes(minSdk: Int, targetSdk: Int): Set<Int> = buildSet {
             if (minSdk < 24) add(1)
-            if (targetSdk >= 30) add(2)
+            if (minSdk < 28 || targetSdk >= 30) add(2)
         }
 
         internal fun schemeFallbackLadder(
@@ -81,18 +81,42 @@ class JarSigner(private val context: Context) {
                 if (current.message?.contains("Failed to sign using signer") == true) {
                     return false
                 }
+                if (current is UnrecoverableKeyException) {
+                    return false
+                }
+                val message = current.message?.lowercase(Locale.US).orEmpty()
+                if (message.contains("password")) {
+                    return false
+                }
                 if (current is KeyStoreException ||
-                    current is UnrecoverableKeyException ||
                     current is NoSuchAlgorithmException ||
                     current is CertificateException ||
                     current is InvalidKeyException
                 ) {
                     return true
                 }
+                if (current is java.io.IOException && isStructuralDerFailure(message)) {
+                    return true
+                }
                 current = current.cause
                 depth++
             }
             return false
+        }
+
+        private fun isStructuralDerFailure(message: String): Boolean {
+            return message.contains("toderinputstream") ||
+                message.contains("der input") ||
+                message.contains("invalid der") ||
+                message.contains("not a der") ||
+                message.contains("unexpected end of") ||
+                message.contains("truncated") ||
+                message.contains("invalid stream header") ||
+                message.contains("invalid magic") ||
+                message.contains("not pkcs12") ||
+                message.contains("short read") ||
+                message.contains("sequence tag error") ||
+                message.contains("extra data at end")
         }
 
         /**
@@ -331,7 +355,9 @@ class JarSigner(private val context: Context) {
             return
         }
 
-        initError = "无法初始化签名密钥"
+        if (initError == null) {
+            initError = "无法初始化签名密钥"
+        }
         AppLogger.e(TAG, initError!!)
     }
 
@@ -448,63 +474,105 @@ class JarSigner(private val context: Context) {
 
     private fun tryLoadOrCreateAutoPkcs12(): Boolean {
         val keyStoreFile = File(context.filesDir, DEFAULT_PKCS12_FILE)
-        val keyStorePassword = getOrCreateKeystorePassword()
+        val credential = resolveKeystoreCredential()
+        if (credential.readFailed) {
+            AppLogger.e(TAG, "Keystore credential unreadable; refusing to touch the existing keystore")
+            initError = Strings.signKeyCredentialUnreadable
+            return false
+        }
+        val keyStorePassword = credential.password
+            ?: generateKeystorePassword(allowOverwrite = !keyStoreFile.exists())
+            ?: return false
+
+        if (!keyStoreFile.exists()) {
+            return try {
+                createNewPkcs12(keyStoreFile, keyStorePassword, FALLBACK_KEY_ALIAS)
+                true
+            } catch (e: Exception) {
+                AppLogger.e(TAG, "Auto PKCS12 creation failed", e)
+                false
+            }
+        }
 
         return try {
             val keyStore = KeyStore.getInstance("PKCS12")
+            FileInputStream(keyStoreFile).use { fis ->
+                keyStore.load(fis, keyStorePassword.copyOf())
+            }
+            privateKey = keyStore.getKey(FALLBACK_KEY_ALIAS, keyStorePassword.copyOf()) as? PrivateKey
+            certificate = keyStore.getCertificate(FALLBACK_KEY_ALIAS) as? X509Certificate
 
-            if (keyStoreFile.exists()) {
-                FileInputStream(keyStoreFile).use { fis ->
-
-                    keyStore.load(fis, keyStorePassword.copyOf())
+            if (privateKey != null && certificate != null) {
+                val cert = certificate!!
+                if (cert.notAfter.before(Date())) {
+                    AppLogger.w(TAG, "Certificate expired (notAfter=${cert.notAfter}), regenerating...")
+                    keyStoreFile.delete()
+                    privateKey = null
+                    certificate = null
+                    createNewPkcs12(keyStoreFile, keyStorePassword, FALLBACK_KEY_ALIAS)
+                    noticeIdentityRotation()
+                    return true
                 }
-                privateKey = keyStore.getKey(FALLBACK_KEY_ALIAS, keyStorePassword.copyOf()) as? PrivateKey
-                certificate = keyStore.getCertificate(FALLBACK_KEY_ALIAS) as? X509Certificate
-
-                if (privateKey != null && certificate != null) {
-
-                    val cert = certificate!!
-                    val now = Date()
-                    if (cert.notAfter.before(now)) {
-                        AppLogger.w(TAG, "Certificate expired or invalid (notAfter=${cert.notAfter}), regenerating...")
-                        keyStoreFile.delete()
-                        privateKey = null
-                        certificate = null
-                    } else {
-                        AppLogger.d(TAG, "Loaded auto-generated PKCS12 successfully, valid until ${cert.notAfter}")
-                        return true
-                    }
-                }
+                AppLogger.d(TAG, "Loaded auto-generated PKCS12 successfully, valid until ${cert.notAfter}")
+                return true
             }
 
-            createNewPkcs12(keyStoreFile, keyStorePassword, FALLBACK_KEY_ALIAS)
-            true
+            if (credential.freshlyGenerated) {
+                keyStoreFile.delete()
+                createNewPkcs12(keyStoreFile, keyStorePassword, FALLBACK_KEY_ALIAS)
+                noticeIdentityRotation()
+                true
+            } else {
+                AppLogger.e(TAG, "Auto keystore holds no usable key entry; leaving the file untouched")
+                false
+            }
         } catch (e: Exception) {
-            AppLogger.e(TAG, "Auto PKCS12 key scheme failed", e)
-            if (keyStoreFile.exists()) {
-                AppLogger.e(TAG, Strings.signKeyRegeneratedRetry)
+            AppLogger.e(TAG, "Auto PKCS12 load failed", e)
+            if (isKeystoreUnusableFailure(e)) {
                 keyStoreFile.delete()
                 return try {
                     createNewPkcs12(keyStoreFile, keyStorePassword, FALLBACK_KEY_ALIAS)
+                    noticeIdentityRotation()
                     true
                 } catch (e2: Exception) {
                     AppLogger.e(TAG, "Auto PKCS12 recreation failed", e2)
                     false
                 }
             }
+            if (!credential.freshlyGenerated) {
+                initError = Strings.signKeyKeystoreUnreadable
+            }
             false
         }
     }
 
-    private fun getOrCreateKeystorePassword(): CharArray {
-        val passwordFile = File(context.filesDir, ".ks_credential")
+    private fun noticeIdentityRotation() {
+        AppLogger.e(TAG, Strings.signKeyRegeneratedRetry)
+        val previous = initError
+        initError = if (previous.isNullOrBlank()) {
+            Strings.signKeyRegeneratedRetry
+        } else {
+            "$previous\n${Strings.signKeyRegeneratedRetry}"
+        }
+    }
 
+    private data class KeystoreCredential(
+        val password: CharArray?,
+        val freshlyGenerated: Boolean,
+        val readFailed: Boolean
+    )
+
+    private fun resolveKeystoreCredential(): KeystoreCredential {
+        val passwordFile = File(context.filesDir, ".ks_credential")
         if (passwordFile.exists()) {
-            try {
-                val saved = passwordFile.readText().trim()
-                if (saved.isNotEmpty()) return saved.toCharArray()
+            val saved = try {
+                passwordFile.readText().trim()
             } catch (e: Exception) {
                 AppLogger.w(TAG, "Failed to read password file", e)
+                return KeystoreCredential(null, freshlyGenerated = false, readFailed = true)
+            }
+            if (saved.isNotEmpty()) {
+                return KeystoreCredential(saved.toCharArray(), freshlyGenerated = false, readFailed = false)
             }
         }
 
@@ -514,26 +582,33 @@ class JarSigner(private val context: Context) {
             try {
                 val ks = KeyStore.getInstance("PKCS12")
                 FileInputStream(keyStoreFile).use { fis -> ks.load(fis, legacyPassword.toCharArray()) }
-
                 passwordFile.writeText(legacyPassword)
                 AppLogger.d(TAG, "Migrating legacy password to file storage")
-                return legacyPassword.toCharArray()
+                return KeystoreCredential(legacyPassword.toCharArray(), freshlyGenerated = false, readFailed = false)
             } catch (_: Exception) {
-
             }
         }
 
+        return KeystoreCredential(null, freshlyGenerated = false, readFailed = false)
+    }
+
+    private fun generateKeystorePassword(allowOverwrite: Boolean): CharArray? {
+        val passwordFile = File(context.filesDir, ".ks_credential")
+        if (passwordFile.exists() && !allowOverwrite) {
+            AppLogger.e(TAG, "Refusing to overwrite an existing keystore credential")
+            initError = Strings.signKeyCredentialUnreadable
+            return null
+        }
         val chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#%^&*"
         val random = SecureRandom()
         val password = CharArray(32) { chars[random.nextInt(chars.length)] }
-
-        try {
+        return try {
             passwordFile.writeText(String(password))
+            password
         } catch (e: Exception) {
             AppLogger.e(TAG, "Failed to save password file", e)
+            null
         }
-
-        return password
     }
 
     /**
@@ -1157,8 +1232,10 @@ class JarSigner(private val context: Context) {
             if (key == null || cert == null) {
                 AppLogger.e(TAG, "Key or certificate is empty, retrying initialisation...")
 
-                File(context.filesDir, DEFAULT_PKCS12_FILE).delete()
-                File(context.filesDir, ".ks_credential").delete()
+                val autoKeystore = File(context.filesDir, DEFAULT_PKCS12_FILE)
+                if (!autoKeystore.exists()) {
+                    File(context.filesDir, ".ks_credential").delete()
+                }
                 initializeKey()
                 if (privateKey == null || certificate == null) {
                     val errorDetail = initError ?: "key=${privateKey != null}, cert=${certificate != null}"
@@ -1234,7 +1311,7 @@ class JarSigner(private val context: Context) {
             AppLogger.w(TAG, "V1 signing forced on: minSdk $minSdk requires a JAR signature")
         }
         if (!options.v2Enabled && 2 in forced) {
-            AppLogger.w(TAG, "V2 signing forced on: targetSdk $targetSdk >= 30 requires an APK Signature Scheme v2 block")
+            AppLogger.w(TAG, "V2 signing forced on: minSdk $minSdk < 28 or targetSdk $targetSdk >= 30 requires an APK Signature Scheme v2 block")
         }
 
         val selected = buildList {

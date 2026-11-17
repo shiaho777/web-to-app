@@ -142,17 +142,39 @@ class CloneAppTool : Tool {
 class BatchImportAppsTool : Tool {
     override val name = "BatchImportApps"
     override val description = """
-        Parse a text block of app names and URLs (one per line, supports Markdown links, pipe/tab/comma
-        separators, bare URLs) and import them as new web apps. Skips URLs that already exist.
+        Import new web apps from either a text block of app names and URLs (one per line, supports
+        Markdown links, pipe/tab/comma separators, bare URLs) or a single JSON template produced by
+        ExportAppTemplate. Pass mode="template" with the template JSON in `text` to restore an
+        exported app's configuration; the default mode="text" parses name/URL lines. Skips URLs
+        that already exist.
     """.trimIndent()
     override val parametersSchema: JsonElement = jsonSchema {
-        string("text", "Text to parse and import (one app per line).", required = true)
+        string("text", "Text to parse and import (one app per line), or a template JSON when mode=template.", required = true)
+        enum("mode", listOf("text", "template"), "Import mode (default: text). Use template for ExportAppTemplate JSON.")
     }
     override fun isReadOnly() = false
     override fun activityDescription(args: JsonObject): String? = "Batch importing apps"
     override suspend fun execute(args: JsonObject, ctx: ToolContext): ToolResult {
         val text = args.get("text")?.asString ?: return ToolResult.error("BatchImportApps: missing `text`.")
+        val mode = args.get("mode")?.takeIf { !it.isJsonNull }?.asString ?: "text"
         val service = BatchImportService(ctx.androidContext, ctx.appRepository)
+        if (mode == "template") {
+            val template = service.parseTemplate(text)
+                ?: return ToolResult.error("BatchImportApps: `text` is not a valid app template JSON.")
+            val normalized = service.normalizeUrl(template.url)
+                ?: return ToolResult.error("BatchImportApps: template has an invalid url '${template.url}'.")
+            val existing = ctx.appRepository.getAllUrls()
+                .mapNotNull { service.normalizeUrl(it)?.lowercase(java.util.Locale.US) }
+                .toHashSet()
+            if (normalized.lowercase(java.util.Locale.US) in existing) {
+                return ToolResult.ok("Skipped template \"${template.name}\": an app with this URL already exists.")
+            }
+            val id = service.importFromTemplate(template)
+            return ToolResult.ok("Imported template \"${template.name}\" as app id=$id.")
+        }
+        if (mode != "text") {
+            return ToolResult.error("BatchImportApps: unknown mode '$mode' (valid: text/template).")
+        }
         val parseResult = service.parseTextDetailed(text)
         if (parseResult.entries.isEmpty()) {
             return ToolResult.error("BatchImportApps: no valid app entries found. Invalid lines: ${parseResult.invalidLineCount}")
@@ -165,8 +187,9 @@ class BatchImportAppsTool : Tool {
 class ExportAppTemplateTool : Tool {
     override val name = "ExportAppTemplate"
     override val description = """
-        Export an app's configuration as a shareable JSON template (can be re-imported via BatchImportApps
-        or shared with others). Returns the template JSON.
+        Export an app's configuration as a shareable JSON template. Re-import it with
+        BatchImportApps using mode="template" (pass the JSON as `text`), or share it with others.
+        Returns the template JSON.
     """.trimIndent()
     override val parametersSchema: JsonElement = jsonSchema {
         integer("appId", "The app id to export as template.", required = true)

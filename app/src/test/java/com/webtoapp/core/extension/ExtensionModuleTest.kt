@@ -32,6 +32,35 @@ class ExtensionModuleTest {
     }
 
     @Test
+    fun `wildcard host pattern does not match a url embedded in another origin's query`() {
+        val module = ExtensionModule(
+            name = "Bank Module",
+            code = "console.log('ok')",
+            urlMatches = listOf(UrlMatchRule(pattern = "*://*.bank.com/*"))
+        )
+
+        assertThat(module.matchesUrl("https://www.bank.com/account")).isTrue()
+        assertThat(module.matchesUrl("https://bank.com/account")).isTrue()
+        assertThat(module.matchesUrl("https://evil.com/?u=https://www.bank.com/")).isFalse()
+        assertThat(module.matchesUrl("https://evil.com/path#https://www.bank.com/")).isFalse()
+        assertThat(module.matchesUrl("https://bank.com.evil.com/")).isFalse()
+    }
+
+    @Test
+    fun `star scheme matches only http and https`() {
+        val module = ExtensionModule(
+            name = "Web Module",
+            code = "console.log('ok')",
+            urlMatches = listOf(UrlMatchRule(pattern = "*://example.com/*"))
+        )
+
+        assertThat(module.matchesUrl("https://example.com/page")).isTrue()
+        assertThat(module.matchesUrl("http://example.com/page")).isTrue()
+        assertThat(module.matchesUrl("file:///example.com/page")).isFalse()
+        assertThat(module.matchesUrl("ftp://example.com/page")).isFalse()
+    }
+
+    @Test
     fun `invalid regex rule fails closed without crashing`() {
         val module = ExtensionModule(
             name = "Regex Module",

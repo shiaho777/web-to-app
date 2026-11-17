@@ -169,8 +169,10 @@ fun PlayStoreScreen(
             exportState = ExportState.Running(AabExporter.Stage.STARTING, 0)
             exportState = withContext(Dispatchers.IO) {
                 try {
+                    var lastPercent = 0
                     val result = coordinator.export(app) { stage, percent ->
-                        exportState = ExportState.Running(stage, percent)
+                        lastPercent = maxOf(lastPercent, percent.coerceIn(0, 100))
+                        exportState = ExportState.Running(stage, lastPercent)
                     }
                     refreshRecentAabs()
                     hasBuiltApk = true

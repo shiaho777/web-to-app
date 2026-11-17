@@ -41,5 +41,6 @@ object NodeServiceProtocol {
         const val ERROR_MESSAGE = "errorMessage"
         const val V8_STARTED = "v8Started"
         const val SERVER_RUNNING = "serverRunning"
+        const val STOP_APPLIED = "stopApplied"
     }
 }

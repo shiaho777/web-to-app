@@ -13,7 +13,8 @@ class ExtensionPopupManager(
     private val targetWebViewProvider: (() -> WebView?)? = null,
     private val manifestJson: String = "{}",
     private val openPopupHandler: (String, String) -> Unit = { _, _ -> },
-    private val openOptionsPageHandler: (String, String) -> Unit = { _, _ -> }
+    private val openOptionsPageHandler: (String, String) -> Unit = { _, _ -> },
+    private val token: String = ""
 ) {
     companion object {
         private const val TAG = "ExtPopupManager"
@@ -36,7 +37,8 @@ class ExtensionPopupManager(
                 runtimes = runtime?.let { mapOf(extensionId to it) } ?: emptyMap(),
                 currentWebViewProvider = targetWebViewProvider,
                 openPopupHandler = openPopupHandler,
-                openOptionsPageHandler = openOptionsPageHandler
+                openOptionsPageHandler = openOptionsPageHandler,
+                tokenProvider = { if (it == extensionId) token else null }
             )
             addJavascriptInterface(contentBridge, ChromeExtensionRuntime.JS_BRIDGE_NAME)
             ChromeExtensionAuthChannel.install(this, contentBridge)
@@ -77,7 +79,8 @@ class ExtensionPopupManager(
         val polyfill = ChromeExtensionPolyfill.generatePolyfill(
             extensionId = extensionId,
             manifestJson = manifestJson,
-            isBackground = false
+            isBackground = false,
+            token = token
         )
         webView.evaluateJavascript(polyfill, null)
     }
@@ -91,7 +94,8 @@ class ExtensionPopupManager(
             val polyfill = ChromeExtensionPolyfill.generatePolyfill(
                 extensionId = extensionId,
                 manifestJson = manifestJson,
-                isBackground = false
+                isBackground = false,
+                token = token
             )
             val injectedHtml = injectPolyfillIntoHtml(html, polyfill)
             webView.loadDataWithBaseURL(popupUrl, injectedHtml, "text/html", "UTF-8", popupUrl)

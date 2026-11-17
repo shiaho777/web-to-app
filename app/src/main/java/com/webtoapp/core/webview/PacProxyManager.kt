@@ -218,57 +218,25 @@ class PacProxyManager(private val context: Context) {
             cachedPacScript = pacScript
             cachedPacUrl = pacUrl
 
-            val proxyEntries = parsePacScript(pacScript)
+            val pacResult = PacScriptEvaluator.evaluate(pacScript, bypassRules)
 
-            if (proxyEntries.isEmpty()) {
-                AppLogger.w(TAG, "No proxy entries found in PAC script, using DIRECT")
+            if (pacResult.proxies.isEmpty()) {
+                AppLogger.w(TAG, "PAC script resolves to DIRECT for all sampled hosts, clearing proxy")
                 clearProxy()
                 return
             }
 
-            publishTranslationRoute(proxyEntries)
+            publishTranslationRoute(pacResult.proxies)
 
             val builder = ProxyConfig.Builder()
-
-            proxyEntries.forEach { entry ->
-                when {
-                    entry.startsWith("DIRECT", ignoreCase = true) -> {
-                        builder.addDirect()
-                    }
-                    entry.startsWith("SOCKS5 ", ignoreCase = true) ||
-                    entry.startsWith("SOCKS ", ignoreCase = true) -> {
-                        val server = entry.substringAfter(" ").trim()
-                        if (server.isNotBlank()) {
-                            builder.addProxyRule("socks5://$server")
-                        }
-                    }
-                    entry.startsWith("PROXY ", ignoreCase = true) -> {
-                        val server = entry.substringAfter(" ").trim()
-                        if (server.isNotBlank()) {
-                            builder.addProxyRule(server)
-                        }
-                    }
-                    entry.startsWith("HTTPS ", ignoreCase = true) -> {
-                        val server = entry.substringAfter(" ").trim()
-                        if (server.isNotBlank()) {
-                            builder.addProxyRule("https://$server")
-                        }
-                    }
-                    else -> {
-
-                        if (entry.isNotBlank()) {
-                            builder.addProxyRule(entry)
-                        }
-                    }
-                }
-            }
+            pacResult.proxies.forEach { entry -> addProxyEntry(builder, entry) }
 
             builder.addBypassRule("localhost")
             builder.addBypassRule("127.0.0.1")
             builder.addBypassRule("[::1]")
             builder.addBypassRule("10.0.2.2")
 
-            bypassRules.filter { it.isNotBlank() }.forEach { rule ->
+            (bypassRules + pacResult.directHosts).filter { it.isNotBlank() }.distinct().forEach { rule ->
                 builder.addBypassRule(rule)
             }
 
@@ -277,7 +245,7 @@ class PacProxyManager(private val context: Context) {
                 { command -> command.run() },
                 {
                     AppLogger.d(TAG, "PAC proxy applied from $pacUrl, " +
-                            "${proxyEntries.size} proxy entries extracted")
+                            "${pacResult.proxies.size} proxy entries, ${pacResult.directHosts.size} direct hosts")
                 }
             )
         } catch (e: Exception) {
@@ -361,9 +329,14 @@ class PacProxyManager(private val context: Context) {
                     LegacyProxyFetchBridge.clear()
                     return
                 }
-                val entries = parsePacScript(pacScript)
+                val pacResult = PacScriptEvaluator.evaluate(pacScript, bypassRules)
                 LegacyProxyFetchBridge.configure(
-                    LegacyProxyFetchBridge.resolvePacEntries(entries, bypassRules, username, password)
+                    LegacyProxyFetchBridge.resolvePacEntries(
+                        pacResult.proxies,
+                        bypassRules + pacResult.directHosts,
+                        username,
+                        password
+                    )
                 )
             }
             else -> {
@@ -397,48 +370,23 @@ class PacProxyManager(private val context: Context) {
         }
     }
 
-    private fun parsePacScript(script: String): List<String> {
-        val entries = mutableListOf<String>()
-        val seen = mutableSetOf<String>()
-
-        val returnPattern = Regex(
-            """(?:return\s+['"])([^'"]+)['"]""",
-            RegexOption.IGNORE_CASE
-        )
-
-        returnPattern.findAll(script).forEach { match ->
-            val returnValue = match.groupValues[1].trim()
-
-            returnValue.split(";").forEach { entry ->
-                val trimmed = entry.trim()
-                if (trimmed.isNotBlank() && trimmed !in seen) {
-                    seen.add(trimmed)
-                    entries.add(trimmed)
-                }
+    private fun addProxyEntry(builder: ProxyConfig.Builder, entry: String) {
+        when {
+            entry.startsWith("SOCKS5 ", ignoreCase = true) ||
+            entry.startsWith("SOCKS ", ignoreCase = true) -> {
+                val server = entry.substringAfter(" ").trim()
+                if (server.isNotBlank()) builder.addProxyRule("socks5://$server")
             }
+            entry.startsWith("PROXY ", ignoreCase = true) -> {
+                val server = entry.substringAfter(" ").trim()
+                if (server.isNotBlank()) builder.addProxyRule(server)
+            }
+            entry.startsWith("HTTPS ", ignoreCase = true) -> {
+                val server = entry.substringAfter(" ").trim()
+                if (server.isNotBlank()) builder.addProxyRule("https://$server")
+            }
+            entry.isNotBlank() && !entry.equals("DIRECT", ignoreCase = true) -> builder.addProxyRule(entry)
         }
-
-        if (entries.isEmpty()) {
-
-            val proxyPattern = Regex(
-                """(PROXY|SOCKS5?|HTTPS|DIRECT)\s+[\w.\-]+:\d+""",
-                RegexOption.IGNORE_CASE
-            )
-            proxyPattern.findAll(script).forEach { match ->
-                val trimmed = match.value.trim()
-                if (trimmed !in seen) {
-                    seen.add(trimmed)
-                    entries.add(trimmed)
-                }
-            }
-
-            if (script.contains("DIRECT", ignoreCase = true) && "DIRECT" !in seen) {
-                entries.add("DIRECT")
-            }
-        }
-
-        AppLogger.d(TAG, "Parsed ${entries.size} proxy entries from PAC: $entries")
-        return entries
     }
 
     fun getCachedPacUrl(): String? = cachedPacUrl

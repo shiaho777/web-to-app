@@ -47,6 +47,20 @@ class ChromeExtensionPolyfillTest {
     }
 
     @Test
+    fun `polyfill passes the extension token to privileged bridge calls`() {
+        val polyfill = ChromeExtensionPolyfill.generatePolyfill(
+            extensionId = "abcdefghijklmnop",
+            manifestJson = "{}",
+            isBackground = false,
+            token = "tok123"
+        )
+        assertThat(polyfill).contains("var EXT_TOKEN = 'tok123';")
+        assertThat(polyfill).contains("WtaExtBridge.storageGetForExt(EXT_ID, EXT_TOKEN, this._area, key)")
+        assertThat(polyfill).contains("WtaExtBridge.registerContentScripts(EXT_ID, EXT_TOKEN, JSON.stringify(scripts || []))")
+        assertThat(polyfill).contains("WtaExtBridge.executeScript(EXT_ID, EXT_TOKEN, JSON.stringify(payload))")
+    }
+
+    @Test
     fun `content polyfill reads cookies through the origin-checked channel`() {
         val content = ChromeExtensionPolyfill.generatePolyfill("ext", "{}", isBackground = false)
         assertThat(content).contains("wtaAuthCall('getCookies'")

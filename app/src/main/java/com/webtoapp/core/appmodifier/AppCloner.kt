@@ -435,9 +435,7 @@ class AppCloner(private val context: Context) {
 
                     when {
 
-                        entry.name.startsWith("META-INF/") &&
-                        (entry.name.endsWith(".SF") || entry.name.endsWith(".RSA") ||
-                         entry.name.endsWith(".DSA") || entry.name == "META-INF/MANIFEST.MF") -> {
+                        isV1SignatureEntry(entry.name) -> {
                         }
 
                         entry.name == "AndroidManifest.xml" -> {
@@ -563,6 +561,15 @@ class AppCloner(private val context: Context) {
                 }
             }
         }
+    }
+
+    private fun isV1SignatureEntry(entryName: String): Boolean {
+        if (!entryName.startsWith("META-INF/")) return false
+        if (entryName == "META-INF/MANIFEST.MF") return true
+        val fileName = entryName.removePrefix("META-INF/")
+        if (fileName.contains('/')) return false
+        return fileName.endsWith(".SF") || fileName.endsWith(".RSA") ||
+            fileName.endsWith(".DSA") || fileName.endsWith(".EC")
     }
 
     private fun isIconEntry(entryName: String): Boolean {

@@ -68,28 +68,27 @@ object CertificateHostnameMatcher {
     }
 
     private fun matchesIpAddress(host: String, cert: X509Certificate): Boolean {
+        val hostBytes = literalAddressBytes(host) ?: return false
         val sans = runCatching { cert.subjectAlternativeNames }.getOrNull() ?: return false
         for (san in sans) {
             if (san.getOrNull(0) != 7) continue
-            when (val value = san.getOrNull(1)) {
-                is ByteArray -> {
-                    val certAddr = bytesToIpAddressString(value) ?: continue
-                    if (certAddr == host) return true
-                }
-                is String -> {
-                    if (value.trim() == host) return true
-                }
-            }
+            val certBytes = when (val value = san.getOrNull(1)) {
+                is ByteArray -> value.takeIf { it.size == 4 || it.size == 16 }
+                is String -> literalAddressBytes(value.trim())
+                else -> null
+            } ?: continue
+            if (certBytes.contentEquals(hostBytes)) return true
         }
         return false
     }
 
-    private fun bytesToIpAddressString(bytes: ByteArray): String? = when (bytes.size) {
-        4 -> bytes.joinToString(".") { (it.toInt() and 0xFF).toString() }
-        16 -> bytes.toList().chunked(2).joinToString(":") {
-            ((it[0].toInt() and 0xFF) shl 8 or (it[1].toInt() and 0xFF)).toString(16)
-        }
-        else -> null
+    private fun literalAddressBytes(host: String): ByteArray? {
+        val cleaned = host.trim().removeSurrounding("[", "]")
+        if (cleaned.isEmpty()) return null
+        val isLiteral = cleaned.contains(':') ||
+            (cleaned.all { it.isDigit() || it == '.' } && cleaned.count { it == '.' } == 3)
+        if (!isLiteral) return null
+        return runCatching { java.net.InetAddress.getByName(cleaned).address }.getOrNull()
     }
 
     private fun cnValues(cert: X509Certificate): List<String> = runCatching {

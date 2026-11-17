@@ -26,30 +26,151 @@ class GreasemonkeyBridge(
         private const val TAG = "GreasemonkeyBridge"
         private const val PREFS_PREFIX = "gm_storage_"
 
+        private val STORAGE_GRANTS = setOf("GM_getValue", "GM_setValue", "GM_deleteValue", "GM_listValues", "GM.getValue", "GM.setValue", "GM.deleteValue", "GM.listValues")
+        private val NETWORK_GRANTS = setOf("GM_xmlhttpRequest", "GM.xmlHttpRequest")
+        private val CLIPBOARD_GRANTS = setOf("GM_setClipboard", "GM.setClipboard")
+        private val TAB_GRANTS = setOf("GM_openInTab", "GM.openInTab")
+        private val MENU_GRANTS = setOf("GM_registerMenuCommand", "GM_unregisterMenuCommand", "GM.registerMenuCommand", "GM.unregisterMenuCommand")
+
+        internal fun hasGrant(grants: Collection<String>, names: Set<String>): Boolean =
+            grants.any { it in names }
+
+        internal fun grantsByName(grants: Collection<String>): Set<String> = grants.toSet()
+
         fun generatePolyfillScript(
             scriptId: String,
             grants: List<String>,
             scriptInfo: Map<String, String> = emptyMap(),
-            resources: Map<String, String> = emptyMap()
+            resources: Map<String, String> = emptyMap(),
+            token: String = ""
         ): String {
             val infoJson = JSONObject(scriptInfo).toString()
             val resourcesJson = JSONObject(resources).toString()
+            val g = grantsByName(grants)
+            val storage = hasGrant(g, STORAGE_GRANTS)
+            val network = hasGrant(g, NETWORK_GRANTS)
+            val clipboard = hasGrant(g, CLIPBOARD_GRANTS)
+            val tabs = hasGrant(g, TAB_GRANTS)
+            val menu = hasGrant(g, MENU_GRANTS)
+            val safeToken = token.replace("\\", "\\\\").replace("'", "\\'")
+
+            val storageFns = if (storage) """
+    function GM_getValue(key, defaultValue) {
+        var raw = _bridge.getValue(_sid, _token, key, null);
+        if (raw === null || raw === undefined) return defaultValue;
+        try { return JSON.parse(raw); } catch(e) { return raw; }
+    }
+    function GM_setValue(key, value) {
+        _bridge.setValue(_sid, _token, key, typeof value === 'string' ? value : JSON.stringify(value));
+    }
+    function GM_deleteValue(key) { _bridge.deleteValue(_sid, _token, key); }
+    function GM_listValues() {
+        try { return JSON.parse(_bridge.listValues(_sid, _token)); } catch(e) { return []; }
+    }
+""" else ""
+
+            val networkFn = if (network) """
+    function GM_xmlhttpRequest(details) {
+        var cbId = _nextCbId();
+        window.__WTA_GM_CALLBACKS__[cbId] = {
+            onload: details.onload,
+            onerror: details.onerror,
+            ontimeout: details.ontimeout,
+            onprogress: details.onprogress
+        };
+        _bridge.xmlHttpRequest(_sid, _token, cbId, JSON.stringify({
+            method: details.method || 'GET',
+            url: details.url,
+            headers: details.headers || {},
+            data: details.data || '',
+            responseType: details.responseType || ''
+        }));
+        return { abort: function() {} };
+    }
+""" else ""
+
+            val clipboardFn = if (clipboard) """
+    function GM_setClipboard(text, type) {
+        _bridge.setClipboard(_sid, _token, text, type || 'text/plain');
+    }
+""" else ""
+
+            val tabFn = if (tabs) """
+    function GM_openInTab(url, options) {
+        var bg = (typeof options === 'object') ? !!options.active === false : !!options;
+        _bridge.openInTab(_sid, _token, url, bg);
+    }
+""" else ""
+
+            val menuFns = if (menu) """
+    var _menuCommands = {};
+    window.__WTA_GM_MENU__ = window.__WTA_GM_MENU__ || {};
+    window.__WTA_GM_MENU__[_sid] = _menuCommands;
+    function GM_registerMenuCommand(name, fn, accessKey) {
+        _menuCommands[name] = fn;
+        _bridge.menuCommand(_sid, _token, name, false);
+        if (window.__WTA_SCRIPT_WINDOWS__) {
+            window.__WTA_SCRIPT_WINDOWS__.addMenuButton(_sid, name, fn, {
+                windowTitle: _info.name || _sid,
+                windowIcon: '\uD83D\uDC35'
+            });
+        }
+        return name;
+    }
+    function GM_unregisterMenuCommand(name) {
+        delete _menuCommands[name];
+        _bridge.menuCommand(_sid, _token, name, true);
+    }
+""" else ""
+
+            val gmMembers = StringBuilder()
+            gmMembers.append("        info: GM_info,\n")
+            gmMembers.append("        addStyle: GM_addStyle,\n")
+            gmMembers.append("        log: GM_log,\n")
+            gmMembers.append("        notification: GM_notification,\n")
+            gmMembers.append("        getResourceText: function(n) { return Promise.resolve(GM_getResourceText(n)); },\n")
+            gmMembers.append("        getResourceUrl: function(n) { return Promise.resolve(GM_getResourceURL(n)); },\n")
+            gmMembers.append("        openScriptWindow: GM_openScriptWindow,\n")
+            gmMembers.append("        updateScriptWindow: GM_updateScriptWindow,\n")
+            gmMembers.append("        closeScriptWindow: GM_closeScriptWindow")
+            if (storage) gmMembers.append(",\n        getValue: function(k, d) { return Promise.resolve(GM_getValue(k, d)); },\n        setValue: function(k, v) { GM_setValue(k, v); return Promise.resolve(); },\n        deleteValue: function(k) { GM_deleteValue(k); return Promise.resolve(); },\n        listValues: function() { return Promise.resolve(GM_listValues()); }")
+            if (network) gmMembers.append(",\n        xmlHttpRequest: GM_xmlhttpRequest")
+            if (clipboard) gmMembers.append(",\n        setClipboard: GM_setClipboard")
+            if (tabs) gmMembers.append(",\n        openInTab: GM_openInTab")
+            if (menu) gmMembers.append(",\n        registerMenuCommand: GM_registerMenuCommand,\n        unregisterMenuCommand: GM_unregisterMenuCommand")
+
+            val expose = StringBuilder()
+            expose.append("    window.GM_info = GM_info;\n")
+            expose.append("    window.GM_addStyle = GM_addStyle;\n")
+            expose.append("    window.GM_log = GM_log;\n")
+            expose.append("    window.GM_notification = GM_notification;\n")
+            expose.append("    window.GM_getResourceText = GM_getResourceText;\n")
+            expose.append("    window.GM_getResourceURL = GM_getResourceURL;\n")
+            expose.append("    window.GM_openScriptWindow = GM_openScriptWindow;\n")
+            expose.append("    window.GM_updateScriptWindow = GM_updateScriptWindow;\n")
+            expose.append("    window.GM_closeScriptWindow = GM_closeScriptWindow;\n")
+            if (storage) expose.append("    window.GM_getValue = GM_getValue;\n    window.GM_setValue = GM_setValue;\n    window.GM_deleteValue = GM_deleteValue;\n    window.GM_listValues = GM_listValues;\n")
+            if (network) expose.append("    window.GM_xmlhttpRequest = GM_xmlhttpRequest;\n")
+            if (clipboard) expose.append("    window.GM_setClipboard = GM_setClipboard;\n")
+            if (tabs) expose.append("    window.GM_openInTab = GM_openInTab;\n")
+            if (menu) expose.append("    window.GM_registerMenuCommand = GM_registerMenuCommand;\n    window.GM_unregisterMenuCommand = GM_unregisterMenuCommand;\n")
+            expose.append("    window.GM = GM;\n")
+            expose.append("    window.unsafeWindow = window;")
 
             return """
 (function() {
     'use strict';
 
-    // GM callback registry
     if (!window.__WTA_GM_CALLBACKS__) window.__WTA_GM_CALLBACKS__ = {};
     var _cbId = 0;
     function _nextCbId() { return 'gm_' + (++_cbId) + '_' + Date.now(); }
 
     var _bridge = window.$JS_INTERFACE_NAME;
     var _sid = '$scriptId';
+    var _token = '$safeToken';
     var _info = $infoJson;
     var _resources = $resourcesJson;
 
-    // ===== GM_info =====
     var GM_info = {
         script: {
             name: _info.name || '',
@@ -63,99 +184,25 @@ class GreasemonkeyBridge(
         scriptHandler: 'WebToApp',
         version: '1.0'
     };
-
-    // ===== Storage =====
-    function GM_getValue(key, defaultValue) {
-        var raw = _bridge.getValue(_sid, key, null);
-        if (raw === null || raw === undefined) return defaultValue;
-        try { return JSON.parse(raw); } catch(e) { return raw; }
-    }
-    function GM_setValue(key, value) {
-        _bridge.setValue(_sid, key, typeof value === 'string' ? value : JSON.stringify(value));
-    }
-    function GM_deleteValue(key) { _bridge.deleteValue(_sid, key); }
-    function GM_listValues() {
-        try { return JSON.parse(_bridge.listValues(_sid)); } catch(e) { return []; }
-    }
-
-    // ===== Network =====
-    function GM_xmlhttpRequest(details) {
-        var cbId = _nextCbId();
-        window.__WTA_GM_CALLBACKS__[cbId] = {
-            onload: details.onload,
-            onerror: details.onerror,
-            ontimeout: details.ontimeout,
-            onprogress: details.onprogress
-        };
-        _bridge.xmlHttpRequest(cbId, JSON.stringify({
-            method: details.method || 'GET',
-            url: details.url,
-            headers: details.headers || {},
-            data: details.data || '',
-            responseType: details.responseType || ''
-        }));
-        return { abort: function() {} };
-    }
-
-    // ===== Style =====
+$storageFns$networkFn$clipboardFn$tabFn$menuFns
     function GM_addStyle(css) {
         var s = document.createElement('style');
         s.textContent = css;
         (document.head || document.documentElement).appendChild(s);
         return s;
     }
-
-    // ===== Clipboard =====
-    function GM_setClipboard(text, type) {
-        _bridge.setClipboard(text, type || 'text/plain');
-    }
-
-    // ===== Tabs =====
-    function GM_openInTab(url, options) {
-        var bg = (typeof options === 'object') ? !!options.active === false : !!options;
-        _bridge.openInTab(url, bg);
-    }
-
-    // ===== Logging =====
     function GM_log(message) { _bridge.log(String(message)); }
-
-    // ===== Notification (simplified) =====
     function GM_notification(details, ondone) {
         var text = typeof details === 'string' ? details : (details.text || details.title || '');
         _bridge.log('[Notification] ' + text);
         if (ondone) setTimeout(ondone, 100);
     }
-
-    // ===== Resources =====
     function GM_getResourceText(name) { return _resources[name] || ''; }
     function GM_getResourceURL(name) { return _resources[name] || ''; }
-
-    // ===== Menu Commands (integrated with floating window) =====
-    var _menuCommands = {};
-    window.__WTA_GM_MENU__ = window.__WTA_GM_MENU__ || {};
-    window.__WTA_GM_MENU__[_sid] = _menuCommands;
-    function GM_registerMenuCommand(name, fn, accessKey) {
-        _menuCommands[name] = fn;
-        if (_bridge.menuCommand) _bridge.menuCommand(_sid, name, false);
-        // Register to floating window if window manager available
-        if (window.__WTA_SCRIPT_WINDOWS__) {
-            window.__WTA_SCRIPT_WINDOWS__.addMenuButton(_sid, name, fn, {
-                windowTitle: _info.name || _sid,
-                windowIcon: '\uD83D\uDC35'
-            });
-        }
-        return name;
-    }
-    function GM_unregisterMenuCommand(name) {
-        delete _menuCommands[name];
-        if (_bridge.menuCommand) _bridge.menuCommand(_sid, name, true);
-    }
-
-    // ===== Script Window API (WebToApp extension) =====
     function GM_openScriptWindow(html, options) {
         if (!window.__WTA_SCRIPT_WINDOWS__) return null;
         options = options || {};
-        var w = window.__WTA_SCRIPT_WINDOWS__.createWindow(_sid, {
+        return window.__WTA_SCRIPT_WINDOWS__.createWindow(_sid, {
             title: options.title || _info.name || _sid,
             icon: options.icon || '\uD83D\uDC35',
             width: options.width || 300,
@@ -163,64 +210,19 @@ class GreasemonkeyBridge(
             content: html || '',
             resizable: options.resizable !== false
         });
-        return w;
     }
     function GM_updateScriptWindow(html) {
-        if (window.__WTA_SCRIPT_WINDOWS__) {
-            window.__WTA_SCRIPT_WINDOWS__.updateContent(_sid, html);
-        }
+        if (window.__WTA_SCRIPT_WINDOWS__) window.__WTA_SCRIPT_WINDOWS__.updateContent(_sid, html);
     }
     function GM_closeScriptWindow() {
-        if (window.__WTA_SCRIPT_WINDOWS__) {
-            window.__WTA_SCRIPT_WINDOWS__.closeWindow(_sid);
-        }
+        if (window.__WTA_SCRIPT_WINDOWS__) window.__WTA_SCRIPT_WINDOWS__.closeWindow(_sid);
     }
 
-    // ===== GM.* Promise-based API (Tampermonkey 4.x compat) =====
     var GM = {
-        info: GM_info,
-        getValue: function(k, d) { return Promise.resolve(GM_getValue(k, d)); },
-        setValue: function(k, v) { GM_setValue(k, v); return Promise.resolve(); },
-        deleteValue: function(k) { GM_deleteValue(k); return Promise.resolve(); },
-        listValues: function() { return Promise.resolve(GM_listValues()); },
-        xmlHttpRequest: GM_xmlhttpRequest,
-        addStyle: GM_addStyle,
-        setClipboard: GM_setClipboard,
-        openInTab: GM_openInTab,
-        notification: GM_notification,
-        getResourceText: function(n) { return Promise.resolve(GM_getResourceText(n)); },
-        getResourceUrl: function(n) { return Promise.resolve(GM_getResourceURL(n)); },
-        registerMenuCommand: GM_registerMenuCommand,
-        unregisterMenuCommand: GM_unregisterMenuCommand,
-        log: GM_log,
-        openScriptWindow: GM_openScriptWindow,
-        updateScriptWindow: GM_updateScriptWindow,
-        closeScriptWindow: GM_closeScriptWindow
+$gmMembers
     };
 
-    // ===== Expose to global scope =====
-    window.GM_info = GM_info;
-    window.GM_getValue = GM_getValue;
-    window.GM_setValue = GM_setValue;
-    window.GM_deleteValue = GM_deleteValue;
-    window.GM_listValues = GM_listValues;
-    window.GM_xmlhttpRequest = GM_xmlhttpRequest;
-    window.GM_addStyle = GM_addStyle;
-    window.GM_setClipboard = GM_setClipboard;
-    window.GM_openInTab = GM_openInTab;
-    window.GM_log = GM_log;
-    window.GM_notification = GM_notification;
-    window.GM_getResourceText = GM_getResourceText;
-    window.GM_getResourceURL = GM_getResourceURL;
-    window.GM_registerMenuCommand = GM_registerMenuCommand;
-    window.GM_unregisterMenuCommand = GM_unregisterMenuCommand;
-    window.GM_openScriptWindow = GM_openScriptWindow;
-    window.GM_updateScriptWindow = GM_updateScriptWindow;
-    window.GM_closeScriptWindow = GM_closeScriptWindow;
-    window.GM = GM;
-
-    // unsafeWindow — in WebView there's no sandbox, so it's just window
-    window.unsafeWindow = window;
+$expose
 })();
 """.trimIndent()
         }
@@ -230,15 +232,10 @@ class GreasemonkeyBridge(
 
     private val httpClient get() = NetworkModule.defaultClient
 
-    /**
-     * Storage namespaces are addressed through unguessable per-script aliases instead of
-     * the raw script id: the bridge object is reachable from every page and iframe in the
-     * app, so with raw ids any embedded content could read/write another script's GM
-     * storage by simply naming it. The alias is random per script; only the pages that
-     * received the polyfill ever see it.
-     */
     private val aliasByScriptId = java.util.concurrent.ConcurrentHashMap<String, String>()
     private val scriptIdByAlias = java.util.concurrent.ConcurrentHashMap<String, String>()
+    private val tokenByScriptId = java.util.concurrent.ConcurrentHashMap<String, String>()
+    private val grantsByScriptId = java.util.concurrent.ConcurrentHashMap<String, Set<String>>()
 
     fun storageAliasFor(scriptId: String): String {
         aliasByScriptId.getOrPut(scriptId) {
@@ -250,34 +247,69 @@ class GreasemonkeyBridge(
         return aliasByScriptId[scriptId] ?: scriptId
     }
 
+    fun registerScript(scriptId: String, grants: Collection<String>): String {
+        grantsByScriptId[scriptId] = grants.toSet()
+        return tokenByScriptId.getOrPut(scriptId) {
+            val bytes = ByteArray(24)
+            java.security.SecureRandom().nextBytes(bytes)
+            android.util.Base64.encodeToString(bytes, android.util.Base64.NO_WRAP or android.util.Base64.URL_SAFE)
+        }
+    }
+
+    private fun authorized(alias: String, token: String, grants: Set<String>): String? {
+        val scriptId = scriptIdByAlias[alias] ?: return null
+        val expected = tokenByScriptId[scriptId] ?: return null
+        if (expected != token) return null
+        val registered = grantsByScriptId[scriptId] ?: return null
+        if (!hasGrant(registered, grants)) return null
+        return scriptId
+    }
+
+    private fun authorizedExact(alias: String, token: String, vararg names: String): String? {
+        val scriptId = scriptIdByAlias[alias] ?: return null
+        val expected = tokenByScriptId[scriptId] ?: return null
+        if (expected != token) return null
+        val registered = grantsByScriptId[scriptId] ?: return null
+        if (names.none { it in registered }) return null
+        return scriptId
+    }
+
     private fun getPrefs(alias: String): android.content.SharedPreferences? {
         val scriptId = scriptIdByAlias[alias] ?: return null
         return context.getSharedPreferences("$PREFS_PREFIX$scriptId", Context.MODE_PRIVATE)
     }
 
     @JavascriptInterface
-    fun getValue(alias: String, key: String, defaultValue: String?): String? {
+    fun getValue(alias: String, token: String, key: String, defaultValue: String?): String? {
+        if (authorizedExact(alias, token, "GM_getValue", "GM.getValue") == null) return defaultValue
         return getPrefs(alias)?.getString(key, defaultValue)
     }
 
     @JavascriptInterface
-    fun setValue(alias: String, key: String, value: String) {
+    fun setValue(alias: String, token: String, key: String, value: String) {
+        if (authorizedExact(alias, token, "GM_setValue", "GM.setValue") == null) return
         getPrefs(alias)?.edit()?.putString(key, value)?.apply()
     }
 
     @JavascriptInterface
-    fun deleteValue(alias: String, key: String) {
+    fun deleteValue(alias: String, token: String, key: String) {
+        if (authorizedExact(alias, token, "GM_deleteValue", "GM.deleteValue") == null) return
         getPrefs(alias)?.edit()?.remove(key)?.apply()
     }
 
     @JavascriptInterface
-    fun listValues(alias: String): String {
+    fun listValues(alias: String, token: String): String {
+        if (authorizedExact(alias, token, "GM_listValues", "GM.listValues") == null) return "[]"
         val keys = getPrefs(alias)?.all?.keys ?: emptySet()
         return JSONArray(keys.toList()).toString()
     }
 
     @JavascriptInterface
-    fun xmlHttpRequest(callbackId: String, detailsJson: String) {
+    fun xmlHttpRequest(alias: String, token: String, callbackId: String, detailsJson: String) {
+        if (authorized(alias, token, NETWORK_GRANTS) == null) {
+            callbackToJs(callbackId, "onerror", JSONObject().put("error", "GM_xmlhttpRequest is not granted").put("status", 0).toString())
+            return
+        }
         scope.launch {
             try {
                 val details = JSONObject(detailsJson)
@@ -287,10 +319,6 @@ class GreasemonkeyBridge(
                 val headersObj = details.optJSONObject("headers")
                 val responseType = details.optString("responseType", "")
 
-                // GM_xmlhttpRequest is cross-origin by design, but only for the open
-                // internet: the bridge object is reachable from any frame of any page
-                // the app displays, so private/loopback targets are reserved for local
-                // (packaged / local-server) pages.
                 val uri = runCatching { java.net.URI(url) }.getOrNull()
                 val scheme = uri?.scheme?.lowercase()
                 if (scheme != "http" && scheme != "https") {
@@ -307,9 +335,6 @@ class GreasemonkeyBridge(
                         "GM_xmlhttpRequest to local network addresses is only allowed from local pages"
                     )
                 }
-                // Redirect gate: when the calling page is not local, every redirect hop
-                // must stay off the private network — a public URL 302-ing into
-                // 127.0.0.1 would otherwise bypass the target gate above.
                 val client = if (pageIsLocal) {
                     httpClient
                 } else {
@@ -348,9 +373,6 @@ class GreasemonkeyBridge(
                     else -> requestBuilder.get()
                 }
 
-                // Cap the response like NativeBridge.httpRequest does (16 MB): GM
-                // results are serialized into a JS callback payload, so a multi-GB
-                // body would OOM the WebView process instead of failing the request.
                 val maxResponseBytes = 16L * 1024 * 1024
                 client.newCall(requestBuilder.build()).execute().use { response ->
                     val charset = response.body?.contentType()?.charset(Charsets.UTF_8)
@@ -402,7 +424,8 @@ class GreasemonkeyBridge(
     }
 
     @JavascriptInterface
-    fun setClipboard(text: String, type: String) {
+    fun setClipboard(alias: String, token: String, text: String, type: String) {
+        if (authorized(alias, token, CLIPBOARD_GRANTS) == null) return
         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         val clip = ClipData.newPlainText("GM_setClipboard", text)
         clipboard.setPrimaryClip(clip)
@@ -410,11 +433,9 @@ class GreasemonkeyBridge(
     }
 
     @JavascriptInterface
-    fun openInTab(url: String, openInBackground: Boolean): Boolean {
+    fun openInTab(alias: String, token: String, url: String, openInBackground: Boolean): Boolean {
+        if (authorized(alias, token, TAB_GRANTS) == null) return false
         return try {
-            // Scheme allowlist: GM_openInTab takes a raw URL from script/page context and an
-            // `intent://` / `file://` value here would turn into component-launch or
-            // local-file access (intent redirection). Web URLs only.
             val scheme = runCatching { java.net.URI(url).scheme?.lowercase() }.getOrNull()
             if (scheme != "http" && scheme != "https") {
                 AppLogger.w(TAG, "GM_openInTab blocked non-web URL: $url")
@@ -435,22 +456,16 @@ class GreasemonkeyBridge(
         AppLogger.d(TAG, "[GM_log] $message")
     }
 
-    // ------------------------------------------------------------------
-    // Menu commands -> unified plugin surface
-    // ------------------------------------------------------------------
-
-    /** scriptId -> ordered menu-command names registered by the running script. */
     private val menuCommands = java.util.concurrent.ConcurrentHashMap<String, LinkedHashSet<String>>()
 
-    /** Fires on the JS bridge thread whenever a script's command set changes. */
     var onMenuCommandsChanged: ((scriptId: String, names: List<String>) -> Unit)? = null
 
     fun menuCommandsFor(scriptId: String): List<String> =
         menuCommands[scriptId]?.toList() ?: emptyList()
 
     @JavascriptInterface
-    fun menuCommand(alias: String, name: String, remove: Boolean) {
-        val scriptId = scriptIdByAlias[alias] ?: return
+    fun menuCommand(alias: String, token: String, name: String, remove: Boolean) {
+        val scriptId = authorized(alias, token, MENU_GRANTS) ?: return
         val set = menuCommands.getOrPut(scriptId) { LinkedHashSet() }
         synchronized(set) {
             if (remove) set.remove(name) else set.add(name)
@@ -459,9 +474,6 @@ class GreasemonkeyBridge(
     }
 
     private fun callbackToJs(callbackId: String, event: String, dataJson: String) {
-        // callbackId comes from page JS; quote it as a JSON string so a crafted id
-        // ('x');payload();//) cannot break out of the JS string literal and execute
-        // in whatever page is loaded when the async callback lands.
         val quotedCallbackId = com.webtoapp.util.JsStrings.quote(callbackId ?: "")
         val quotedEvent = com.webtoapp.util.JsStrings.quote(event)
         val escapedData = dataJson.replace("\\", "\\\\").replace("'", "\\'").replace("\n", "\\n").replace("\r", "\\r")

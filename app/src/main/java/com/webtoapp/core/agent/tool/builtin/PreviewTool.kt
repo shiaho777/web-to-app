@@ -43,7 +43,10 @@ class PreviewTool : Tool {
         )
     }
 
-    override fun isReadOnly() = true
+    override fun isReadOnly() = false
+
+    override fun isReadOnly(args: JsonObject): Boolean =
+        args.get("script")?.takeIf { !it.isJsonNull }?.asString.isNullOrBlank()
 
     override fun activityDescription(args: JsonObject): String? {
         val appId = args.get("appId")?.takeIf { !it.isJsonNull }?.asLong
@@ -69,14 +72,13 @@ class PreviewTool : Tool {
         if ((appId == null || appId <= 0) && url.isEmpty()) {
             return ToolResult.error("preview: pass appId or url.")
         }
-        if (script.isNotBlank() && !confirmScript(ctx, script)) {
-            return ToolResult.error("preview: the user denied running the script on the device.")
-        }
-
         val document = if (appId != null && appId > 0) {
             PreviewSessions.documentUriForApp(appId)
         } else {
             PreviewSessions.documentUriForUrl(url)
+        }
+        if (script.isNotBlank() && !confirmScript(ctx, script, document.toString())) {
+            return ToolResult.error("preview: the user denied running the script on the device.")
         }
         val intent = WebViewActivity.buildLaunchIntent(
             context = ctx.androidContext,
@@ -122,8 +124,9 @@ class PreviewTool : Tool {
         return ToolResult.ok(body)
     }
 
-    private suspend fun confirmScript(ctx: ToolContext, script: String): Boolean {
-        if (scriptApproved) return true
+    private suspend fun confirmScript(ctx: ToolContext, script: String, target: String): Boolean {
+        val approvalKey = "${ctx.sessionId}|$target"
+        if (approvalKey in approvedScripts) return true
         val response = ctx.prompter.request(
             PermissionRequest(
                 toolCallId = "preview-${System.nanoTime()}",
@@ -135,7 +138,7 @@ class PreviewTool : Tool {
         return when (response) {
             is PermissionResponse.Deny -> false
             is PermissionResponse.AlwaysAllow -> {
-                scriptApproved = true
+                approvedScripts.add(approvalKey)
                 true
             }
             is PermissionResponse.Allow -> true
@@ -143,7 +146,7 @@ class PreviewTool : Tool {
     }
 
     private companion object {
-        @Volatile
-        private var scriptApproved: Boolean = false
+        private val approvedScripts: MutableSet<String> =
+            java.util.Collections.synchronizedSet(mutableSetOf())
     }
 }

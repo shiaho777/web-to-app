@@ -40,11 +40,12 @@ class JarSignerSchemeLadderTest {
     }
 
     @Test
-    fun `required schemes force v1 below api 24 and v2 at target 30 plus`() {
+    fun `required schemes force v1 below api 24 and v2 below api 28 or target 30 plus`() {
         assertThat(JarSigner.requiredSigningSchemes(23, 35)).containsExactly(1, 2)
-        assertThat(JarSigner.requiredSigningSchemes(23, 28)).containsExactly(1)
+        assertThat(JarSigner.requiredSigningSchemes(23, 28)).containsExactly(1, 2)
         assertThat(JarSigner.requiredSigningSchemes(24, 35)).containsExactly(2)
-        assertThat(JarSigner.requiredSigningSchemes(24, 28)).isEmpty()
+        assertThat(JarSigner.requiredSigningSchemes(24, 28)).containsExactly(2)
+        assertThat(JarSigner.requiredSigningSchemes(28, 28)).isEmpty()
     }
 
     @Test
@@ -82,9 +83,8 @@ class JarSignerSchemeLadderTest {
     }
 
     @Test
-    fun `keystore unusable classifier accepts real key material failures`() {
+    fun `keystore unusable classifier accepts structural failures but not password errors`() {
         assertThat(JarSigner.isKeystoreUnusableFailure(KeyStoreException("corrupt store"))).isTrue()
-        assertThat(JarSigner.isKeystoreUnusableFailure(UnrecoverableKeyException("bad password"))).isTrue()
         assertThat(JarSigner.isKeystoreUnusableFailure(CertificateException("bad cert"))).isTrue()
         assertThat(JarSigner.isKeystoreUnusableFailure(NoSuchAlgorithmException("no algo"))).isTrue()
         assertThat(JarSigner.isKeystoreUnusableFailure(InvalidKeyException("unsupported key"))).isTrue()
@@ -93,6 +93,11 @@ class JarSignerSchemeLadderTest {
                 RuntimeException("load failed", java.io.IOException("wrapper", KeyStoreException("root")))
             )
         ).isTrue()
+        assertThat(JarSigner.isKeystoreUnusableFailure(UnrecoverableKeyException("bad password"))).isFalse()
+        assertThat(JarSigner.isKeystoreUnusableFailure(java.io.IOException("keystore password was incorrect"))).isFalse()
+        assertThat(
+            JarSigner.isKeystoreUnusableFailure(KeyStoreException("failed to decrypt safe contents: password invalid"))
+        ).isFalse()
     }
 
     @Test
@@ -125,9 +130,6 @@ class JarSignerSchemeLadderTest {
 
     private fun minimalApk(minSdk: Int, targetSdk: Int): File {
         val strings = listOf(
-            "android",
-            "http://schemas.android.com/apk/res/android",
-            "manifest",
             "package",
             "com.test.signer",
             "versionCode",
@@ -136,6 +138,9 @@ class JarSignerSchemeLadderTest {
             minSdk.toString(),
             "targetSdkVersion",
             targetSdk.toString(),
+            "android",
+            "http://schemas.android.com/apk/res/android",
+            "manifest",
             "uses-sdk",
             "application"
         )
@@ -143,32 +148,33 @@ class JarSignerSchemeLadderTest {
             .stringPool(strings)
             .resourceMap(
                 intArrayOf(
-                    0, 0, 0, 0, 0, 0x0101021b, 0,
-                    0x0101020c, 0, 0x01010270, 0, 0, 0
+                    0, 0, 0x0101021b, 0,
+                    0x0101020c, 0, 0x01010270, 0,
+                    0, 0, 0, 0, 0
                 )
             )
-            .startNamespace(prefixIdx = 0, uriIdx = 1)
+            .startNamespace(prefixIdx = 8, uriIdx = 9)
             .startElement(
                 namespaceIdx = -1,
-                nameIdx = 2,
+                nameIdx = 10,
                 attributes = listOf(
-                    AxmlBuilder.Attr(-1, 3, 4, AxmlConstants.TYPE_STRING, 4),
-                    AxmlBuilder.Attr(1, 5, 6, AxmlConstants.TYPE_INT_DEC, 1)
+                    AxmlBuilder.Attr(-1, 0, 1, AxmlConstants.TYPE_STRING, 1),
+                    AxmlBuilder.Attr(8, 2, 3, AxmlConstants.TYPE_INT_DEC, 1)
                 )
             )
             .startElement(
                 namespaceIdx = -1,
                 nameIdx = 11,
                 attributes = listOf(
-                    AxmlBuilder.Attr(1, 7, 8, AxmlConstants.TYPE_INT_DEC, minSdk),
-                    AxmlBuilder.Attr(1, 9, 10, AxmlConstants.TYPE_INT_DEC, targetSdk)
+                    AxmlBuilder.Attr(8, 4, 5, AxmlConstants.TYPE_INT_DEC, minSdk),
+                    AxmlBuilder.Attr(8, 6, 7, AxmlConstants.TYPE_INT_DEC, targetSdk)
                 )
             )
             .endElement(namespaceIdx = -1, nameIdx = 11)
             .startElement(namespaceIdx = -1, nameIdx = 12, attributes = emptyList())
             .endElement(namespaceIdx = -1, nameIdx = 12)
-            .endElement(namespaceIdx = -1, nameIdx = 2)
-            .endNamespace(prefixIdx = 0, uriIdx = 1)
+            .endElement(namespaceIdx = -1, nameIdx = 10)
+            .endNamespace(prefixIdx = 8, uriIdx = 9)
             .build()
 
         val apk = File(context.cacheDir, "ladder-input-$minSdk-$targetSdk.apk")
@@ -193,18 +199,23 @@ class JarSignerSchemeLadderTest {
     }
 
     @Test
-    fun `v1-only output is rejected for the android 11 plus platform range`() {
+    fun `v2 is forced for android 11 plus targets even when the user disables it`() {
         val signer = JarSigner(context)
         signer.setSigningSchemeOptions(
             JarSigner.SigningSchemeOptions(v1Enabled = true, v2Enabled = false, v3Enabled = false, autoFallback = false)
         )
-        val input = minimalApk(minSdk = 24, targetSdk = 28)
-        val output = File(context.cacheDir, "ladder-v1-only.apk")
+        val input = minimalApk(minSdk = 24, targetSdk = 35)
+        val output = File(context.cacheDir, "ladder-forced-v2-no-fallback.apk")
 
-        assertThat(signer.sign(input, output, targetSdk = 28, minSdk = 24)).isTrue()
+        assertThat(signer.sign(input, output, targetSdk = 35, minSdk = 24)).isTrue()
 
-        assertThat(verifyDetailed(signer, output, minSdk = 24, targetSdk = 28)).isTrue()
-        assertThat(verifyDetailed(signer, output, minSdk = 23, targetSdk = 35)).isFalse()
+        assertThat(verifyDetailed(signer, output, minSdk = 24, targetSdk = 35)).isTrue()
+        val result = ApkVerifier.Builder(output)
+            .setMinCheckedPlatformVersion(24)
+            .setMaxCheckedPlatformVersion(35)
+            .build()
+            .verify()
+        assertThat(result.isVerifiedUsingV2Scheme).isTrue()
     }
 
     @Test
@@ -244,6 +255,59 @@ class JarSignerSchemeLadderTest {
         val input = minimalApk(minSdk = 23, targetSdk = 35)
         val output = File(context.cacheDir, "ladder-regenerated-identity.apk")
         assertThat(second.sign(input, output, targetSdk = 35, minSdk = 23)).isTrue()
+    }
+
+    @Test
+    fun `wrong credential never destroys a good auto keystore`() {
+        val first = JarSigner(context)
+        val keystoreFile = File(context.filesDir, "webtoapp_keystore.p12")
+        val credentialFile = File(context.filesDir, ".ks_credential")
+        val originalBytes = keystoreFile.readBytes()
+        val originalHash = first.getCertificateSignatureHash()
+        val originalPassword = credentialFile.readText()
+
+        credentialFile.writeText("definitely-the-wrong-password")
+
+        JarSigner(context)
+        assertThat(keystoreFile.readBytes()).isEqualTo(originalBytes)
+
+        credentialFile.writeText(originalPassword)
+        val third = JarSigner(context)
+        assertThat(third.getCertificateSignatureHash()).isEqualTo(originalHash)
+    }
+
+    @Test
+    fun `unreadable credential leaves the auto keystore untouched`() {
+        JarSigner(context)
+        val keystoreFile = File(context.filesDir, "webtoapp_keystore.p12")
+        val originalBytes = keystoreFile.readBytes()
+        val credentialFile = File(context.filesDir, ".ks_credential")
+        assertThat(credentialFile.delete()).isTrue()
+        assertThat(credentialFile.mkdirs()).isTrue()
+
+        JarSigner(context)
+        assertThat(keystoreFile.readBytes()).isEqualTo(originalBytes)
+        assertThat(credentialFile.isDirectory).isTrue()
+    }
+
+    @Test
+    fun `v3 only selection still carries v2 for api 24 to 27 devices`() {
+        val signer = JarSigner(context)
+        signer.setSigningSchemeOptions(
+            JarSigner.SigningSchemeOptions(v1Enabled = false, v2Enabled = false, v3Enabled = true, autoFallback = false)
+        )
+        val input = minimalApk(minSdk = 24, targetSdk = 28)
+        val output = File(context.cacheDir, "ladder-v3-only.apk")
+
+        assertThat(signer.sign(input, output, targetSdk = 28, minSdk = 24)).isTrue()
+
+        val result = ApkVerifier.Builder(output)
+            .setMinCheckedPlatformVersion(24)
+            .setMaxCheckedPlatformVersion(28)
+            .build()
+            .verify()
+        assertThat(result.isVerified).isTrue()
+        assertThat(result.isVerifiedUsingV2Scheme).isTrue()
     }
 
     @Test

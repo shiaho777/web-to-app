@@ -17,6 +17,8 @@ class DnsManager(private val context: Context) {
 
     companion object {
         private const val TAG = "DnsManager"
+        private const val MAX_CACHE_ENTRIES = 512
+        private const val CACHE_TTL_MS = 5 * 60 * 1000L
 
         fun isDohSupported(): Boolean {
             return try {
@@ -30,7 +32,12 @@ class DnsManager(private val context: Context) {
 
     private val client = OkHttpClient.Builder().build()
 
-    private val dnsCache = ConcurrentHashMap<String, List<InetAddress>>()
+    private data class CachedAddresses(val addresses: List<InetAddress>, val expiresAtMs: Long)
+
+    private val dnsCache = object : LinkedHashMap<String, CachedAddresses?>(256, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, CachedAddresses?>?): Boolean =
+            size > MAX_CACHE_ENTRIES
+    }
 
     @Volatile
     private var currentConfig: DnsConfig? = null
@@ -57,7 +64,7 @@ class DnsManager(private val context: Context) {
 
     fun clearDnsConfig() {
         currentConfig = null
-        dnsCache.clear()
+        synchronized(dnsCache) { dnsCache.clear() }
         clearBypassSystemDns()
         AppLogger.d(TAG, "DNS config cleared, using system default")
     }
@@ -94,7 +101,13 @@ class DnsManager(private val context: Context) {
             throw UnknownHostException("DoH URL is blank")
         }
 
-        dnsCache[hostname]?.let { return it }
+        synchronized(dnsCache) {
+            val cached = dnsCache[hostname]
+            if (cached != null) {
+                if (cached.expiresAtMs > System.currentTimeMillis()) return cached.addresses
+                dnsCache.remove(hostname)
+            }
+        }
 
         AppLogger.d(TAG, "Resolving $hostname via DoH: $dohUrl")
 
@@ -116,7 +129,9 @@ class DnsManager(private val context: Context) {
         }
 
         if (result.isNotEmpty()) {
-            dnsCache[hostname] = result
+            synchronized(dnsCache) {
+                dnsCache[hostname] = CachedAddresses(result, System.currentTimeMillis() + CACHE_TTL_MS)
+            }
         }
         return result
     }
@@ -141,15 +156,11 @@ class DnsManager(private val context: Context) {
     }
 
     private fun setupBypassSystemDns() {
-        try {
-            val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-
-            clearBypassSystemDns()
-
-            AppLogger.d(TAG, "Bypass system DNS enabled — all DNS queries will use DoH")
-        } catch (e: Exception) {
-            AppLogger.e(TAG, "Failed to setup bypass system DNS", e)
-        }
+        clearBypassSystemDns()
+        AppLogger.i(
+            TAG,
+            "bypassSystemDns has no effect on the system WebView engine; DoH is enforced through the local DNS proxy bridge. The Gecko engine applies it as TRR-only mode."
+        )
     }
 
     private fun clearBypassSystemDns() {
@@ -165,6 +176,6 @@ class DnsManager(private val context: Context) {
     }
 
     fun clearCache() {
-        dnsCache.clear()
+        synchronized(dnsCache) { dnsCache.clear() }
     }
 }

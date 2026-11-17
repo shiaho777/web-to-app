@@ -821,8 +821,8 @@ class AdBlocker {
     }
 
     @Suppress("serial")
-    private val blockResultCache = object : LinkedHashMap<Int, Boolean>(512, 0.75f, true) {
-        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<Int, Boolean>?): Boolean = size > 2048
+    private val blockResultCache = object : LinkedHashMap<String, Boolean>(512, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Boolean>?): Boolean = size > 2048
     }
 
     // Memoized per-host CSS/scriptlets. Building them scans every cosmetic rule
@@ -955,14 +955,7 @@ class AdBlocker {
 
         if (ESSENTIAL_RESOURCE_REGEX.containsMatchIn(lowerUrl)) return false
 
-        // Cache key must include pageHost + resource type: exception rules like
-        // @@||ads.com$domain=example.com give different results per page.
-        // Including them makes the cache correct across navigations, so callers
-        // must NOT clear it on every page load (only on rule changes).
-        var cacheKey = url.hashCode()
-        cacheKey = cacheKey * 31 + (pageHost?.hashCode() ?: 0)
-        cacheKey = cacheKey * 31 + resType.ordinal
-        cacheKey = cacheKey * 31 + (if (isThirdParty) 1 else 0)
+        val cacheKey = "$lowerUrl|${pageHost?.lowercase()}|${resType.ordinal}|${if (isThirdParty) 1 else 0}"
         synchronized(blockResultCache) {
             val cached = blockResultCache[cacheKey]
             if (cached != null) {
@@ -1662,13 +1655,38 @@ class AdBlocker {
         bumpCosmeticVersion()
     }
 
-    fun clearHostsFileRules() {
-        hostsFileHosts.clear()
-        enabledHostsSources.clear()
-        disabledHostsSources.clear()
-        sourceRuleCounts.clear()
-        synchronized(blockResultCache) { blockResultCache.clear() }
-        bumpCosmeticVersion()
+    suspend fun clearHostsFileRules(context: Context): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            val sourceKeys = (enabledHostsSources + disabledHostsSources).toList()
+            hostsFileHosts.clear()
+            exactHosts.clear()
+            enabledHostsSources.clear()
+            disabledHostsSources.clear()
+            sourceRuleCounts.clear()
+            customSourceNames.clear()
+            sourceLastRefresh.clear()
+            sourceIntervals.clear()
+            sourceRefreshFailures.clear()
+            networkBlockFilters.clear()
+            networkExceptionFilters.clear()
+            anchorDomainIndex.clear()
+            exceptionAnchorDomainIndex.clear()
+            cosmeticBlockFilters.clear()
+            cosmeticExceptionFilters.clear()
+            scriptletRules.clear()
+            for (key in sourceKeys) {
+                AdBlockFilterCache.removeSourceContent(context, key)
+                if (key.startsWith("http://") || key.startsWith("https://")) {
+                    AdBlockFilterCache.removeUrlContent(context, key)
+                }
+            }
+            synchronized(blockResultCache) { blockResultCache.clear() }
+            rebuildUnanchoredIndex()
+            bumpCosmeticVersion()
+            saveHostsRules(context)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 
     fun getEnabledHostsSources(): Set<String> = enabledHostsSources.toSet()

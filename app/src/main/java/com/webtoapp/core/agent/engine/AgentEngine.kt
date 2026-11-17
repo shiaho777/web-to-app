@@ -66,11 +66,12 @@ class AgentEngine(
         var totalToolCalls = 0
         val accText = StringBuilder()
         val maxContinuations = 3
-        var rateLimitRetries = 0
 
         try {
             for (turn in 1..input.maxTurns) {
                 if (abortController.aborted) { send(AgentEvent.Aborted); return@channelFlow }
+
+                var rateLimitRetries = 0
 
                 val allowedNames = permissionChecker.allowedToolNames()
                 val declarations = input.registry.all
@@ -542,7 +543,7 @@ class AgentEngine(
     private fun batchToolCalls(calls: List<LlmToolCall>, registry: ToolRegistry): List<Batch> {
         val batches = mutableListOf<Batch>()
         for (call in calls) {
-            val readOnly = registry[call.name]?.isReadOnly() == true
+            val readOnly = registry[call.name]?.isReadOnly(parseArgs(call.argumentsJson)) == true
             val last = batches.lastOrNull()
             if (readOnly && last != null && last.parallel) {
                 last.calls += call

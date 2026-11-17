@@ -18,6 +18,7 @@ class CloneManifestRewriter {
         private const val CHUNK_END_ELEMENT = 0x0103
 
         private const val ATTR_NAME = 0x01010003
+        private const val ATTR_AUTHORITIES = 0x01010018
         private const val ATTR_EXPORTED = 0x01010010
 
         private const val CLONE_LAUNCHER_CLASS = "com.webtoapp.clone.CloneLauncherActivity"
@@ -42,6 +43,8 @@ class CloneManifestRewriter {
             }
 
             replacePackageString(parsed, originalPackage, newPackage)
+
+            rewriteProviderAuthorities(parsed, originalPackage, newPackage)
 
             val originalLauncher = findOriginalLauncherActivity(parsed, originalPackage)
 
@@ -589,6 +592,50 @@ class CloneManifestRewriter {
                         parsed.stringPool.strings[i] = newPackage + str.substring(oldPackage.length)
                     }
                 }
+            }
+        }
+    }
+
+    private fun rewriteProviderAuthorities(parsed: ParsedAxml, oldPackage: String, newPackage: String) {
+        val resourceMap = parsed.resourceMap ?: return
+        val authoritiesAttrIndex = resourceMap.indexOf(ATTR_AUTHORITIES)
+        if (authoritiesAttrIndex < 0) return
+        val providerStrIndex = parsed.stringPool.strings.indexOf("provider")
+        if (providerStrIndex < 0) return
+
+        for (chunk in parsed.chunks) {
+            if (chunk.type != CHUNK_START_ELEMENT) continue
+            if (readElementNameIndex(chunk) != providerStrIndex) continue
+            if (chunk.data.size < 36) continue
+            val buffer = ByteBuffer.wrap(chunk.data).order(ByteOrder.LITTLE_ENDIAN)
+            val attrStart = buffer.getShort(24).toInt() and 0xFFFF
+            val attrSize = buffer.getShort(26).toInt() and 0xFFFF
+            val attrCount = buffer.getShort(28).toInt() and 0xFFFF
+            if (attrSize == 0 || attrCount == 0) continue
+
+            for (i in 0 until attrCount) {
+                val attrOffset = 16 + attrStart + i * attrSize
+                if (attrOffset + 20 > chunk.data.size) break
+                if (buffer.getInt(attrOffset + 4) != authoritiesAttrIndex) continue
+                val attrValueType = buffer.get(attrOffset + 15).toInt() and 0xFF
+                if (attrValueType != 0x03) continue
+                val valueIndex = buffer.getInt(attrOffset + 16)
+                val value = parsed.stringPool.strings.getOrNull(valueIndex) ?: continue
+                val rewritten = rewriteAuthorityValue(value, oldPackage, newPackage) ?: continue
+                val newIndex = getOrAddString(parsed.stringPool, rewritten)
+                buffer.putInt(attrOffset + 8, newIndex)
+                buffer.putInt(attrOffset + 16, newIndex)
+            }
+        }
+    }
+
+    private fun rewriteAuthorityValue(value: String, oldPackage: String, newPackage: String): String? {
+        if (!value.contains(oldPackage)) return null
+        return value.split(";").joinToString(";") { segment ->
+            when {
+                segment == oldPackage -> newPackage
+                segment.startsWith("$oldPackage.") -> newPackage + segment.substring(oldPackage.length)
+                else -> segment
             }
         }
     }

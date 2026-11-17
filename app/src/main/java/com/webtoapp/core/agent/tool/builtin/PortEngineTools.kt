@@ -29,30 +29,47 @@ class ScanPortsTool : Tool {
 
 class KillPortTool : Tool {
     override val name = "KillPort"
-    override val description = "Kill the process occupying a specific port."
+    override val description = """
+        Stop the WebToApp-managed service allocated on a specific port and release that
+        allocation. This only affects runtimes the app started and tracks; it cannot kill an
+        external process holding the port. If nothing is allocated on the port, the result says
+        so instead of claiming a kill.
+    """.trimIndent()
     override val parametersSchema: JsonElement = jsonSchema {
         integer("port", "The port number to free.", required = true)
     }
     override fun isReadOnly() = false
     override fun activityDescription(args: JsonObject): String? =
-        args.get("port")?.asString?.let { "Killing process on port $it" }
+        args.get("port")?.asString?.let { "Stopping managed service on port $it" }
     override suspend fun execute(args: JsonObject, ctx: ToolContext): ToolResult {
         val port = args.get("port")?.asInt ?: return ToolResult.error("KillPort: missing `port`.")
         if (port !in 1..65535) return ToolResult.error("KillPort: port must be in 1..65535, got $port.")
+        val allocation = com.webtoapp.core.port.PortManager.getAllocation(port)
+        if (allocation == null) {
+            return ToolResult.ok(
+                "No WebToApp-managed service is allocated on port $port; nothing was killed. " +
+                    "An external process holding this port cannot be stopped by this tool."
+            )
+        }
         val killed = ProcessPortScanner.killProcess(port)
-        return if (killed) ToolResult.ok("Killed process on port $port.")
-        else ToolResult.error("KillPort: no process found on port $port or kill failed.")
+        return if (killed) ToolResult.ok("Stopped managed service '${allocation.owner}' on port $port and released the allocation.")
+        else ToolResult.error("KillPort: failed to stop the managed service on port $port.")
     }
 }
 
 class KillAllPortsTool : Tool {
     override val name = "KillAllPorts"
-    override val description = "Kill all running local server processes (release all allocated ports)."
+    override val description = """
+        Stop all WebToApp-managed local server runtimes and release every allocated port.
+        Only tracked runtimes are affected; external processes are not killed. The result
+        reports how many managed allocations were released.
+    """.trimIndent()
     override val parametersSchema: JsonElement = jsonSchema {}
     override fun isReadOnly() = false
     override suspend fun execute(args: JsonObject, ctx: ToolContext): ToolResult {
         val count = ProcessPortScanner.killAllProcesses(ctx.androidContext)
-        return ToolResult.ok("Killed $count running service(s).")
+        return if (count == 0) ToolResult.ok("No WebToApp-managed services were running; nothing was released.")
+        else ToolResult.ok("Stopped $count managed service(s) and released their port allocations.")
     }
 }
 
@@ -92,7 +109,7 @@ class SelectEngineTool : Tool {
     override val name = "SelectEngine"
     override val description = """
         Select the active browser engine. SYSTEM_WEBVIEW is always available.
-        GECKOVIEW requires downloading ~55MB of native libraries on first use.
+        GECKOVIEW requires downloading ~${EngineType.GECKOVIEW.estimatedSizeMb}MB of native libraries on first use.
     """.trimIndent()
     override val parametersSchema: JsonElement = jsonSchema {
         enum("engineType", listOf("SYSTEM_WEBVIEW", "GECKOVIEW"), "The engine to activate.", required = true)

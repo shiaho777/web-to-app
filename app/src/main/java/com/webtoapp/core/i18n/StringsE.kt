@@ -9284,6 +9284,30 @@ object StringsE {
         AppLanguage.JAPANESE -> "自動署名キーストアを読み込めなかったため（破損の可能性）、再生成しました。署名アイデンティティが変更されたため、以前エクスポートしたアプリは上書き更新できず、暗号化ビルドは再エクスポートが必要です。"
         AppLanguage.KOREAN -> "자동 서명 키스토어를 불러올 수 없어(손상 가능성) 재생성했습니다. 서명 신원이 변경되어 이전에 내보낸 앱은 덮어써서 업데이트할 수 없고 암호화된 빌드는 다시 내보내야 합니다."
     }
+    val signKeyCredentialUnreadable: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "签名凭据文件无法读取，已保留现有密钥库不做改动。请重试；若持续失败，请检查应用存储权限。"
+        AppLanguage.ENGLISH -> "The signing credential file could not be read; the existing keystore was left untouched. Retry, and if it keeps failing check the app's storage permissions."
+        AppLanguage.ARABIC -> "تعذّرت قراءة ملف بيانات اعتماد التوقيع؛ تُرك مخزن المفاتيح الحالي دون تغيير. أعد المحاولة، وإذا استمر الفشل فتحقق من أذونات تخزين التطبيق."
+        AppLanguage.PORTUGUESE -> "O arquivo de credencial de assinatura não pôde ser lido; o keystore existente foi preservado. Tente novamente e, se o erro persistir, verifique as permissões de armazenamento do app."
+        AppLanguage.SPANISH -> "No se pudo leer el archivo de credenciales de firma; el almacén de claves existente se conservó sin cambios. Reintenta y, si sigue fallando, revisa los permisos de almacenamiento de la app."
+        AppLanguage.FRENCH -> "Le fichier d'identifiants de signature n'a pas pu être lu ; le keystore existant a été conservé intact. Réessayez et, si l'échec persiste, vérifiez les autorisations de stockage de l'application."
+        AppLanguage.GERMAN -> "Die Signatur-Anmeldedatei konnte nicht gelesen werden; der vorhandene Keystore blieb unverändert. Erneut versuchen und bei wiederholtem Fehler die Speicherberechtigungen der App prüfen."
+        AppLanguage.RUSSIAN -> "Не удалось прочитать файл учётных данных подписи; существующее хранилище ключей оставлено без изменений. Повторите попытку, а при повторных сбоях проверьте разрешения приложения на доступ к хранилищу."
+        AppLanguage.JAPANESE -> "署名資格情報ファイルを読み込めなかったため、既存のキーストアは変更せず保持しました。再試行し、失敗が続く場合はアプリのストレージ権限を確認してください。"
+        AppLanguage.KOREAN -> "서명 자격 증명 파일을 읽을 수 없어 기존 키스토어를 변경하지 않고 보존했습니다. 다시 시도하고 계속 실패하면 앱 저장소 권한을 확인하세요."
+    }
+    val signKeyKeystoreUnreadable: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "自动签名密钥库无法用已保存的凭据加载，已保留原文件不做改动。请重试；若持续失败，可在签名设置中重新导入密钥库。"
+        AppLanguage.ENGLISH -> "The auto signing keystore could not be loaded with the saved credential; the original file was left untouched. Retry, and if it keeps failing re-import a keystore in the signing settings."
+        AppLanguage.ARABIC -> "تعذّر تحميل مخزن مفاتيح التوقيع التلقائي ببيانات الاعتماد المحفوظة؛ تُرك الملف الأصلي دون تغيير. أعد المحاولة، وإذا استمر الفشل فأعد استيراد مخزن مفاتيح من إعدادات التوقيع."
+        AppLanguage.PORTUGUESE -> "O keystore de assinatura automática não pôde ser carregado com a credencial salva; o arquivo original foi preservado. Tente novamente e, se o erro persistir, reimporte um keystore nas configurações de assinatura."
+        AppLanguage.SPANISH -> "El almacén de claves de firma automática no se pudo cargar con la credencial guardada; el archivo original se conservó sin cambios. Reintenta y, si sigue fallando, vuelve a importar un almacén de claves en los ajustes de firma."
+        AppLanguage.FRENCH -> "Le keystore de signature automatique n'a pas pu être chargé avec l'identifiant enregistré ; le fichier d'origine a été conservé intact. Réessayez et, si l'échec persiste, réimportez un keystore dans les paramètres de signature."
+        AppLanguage.GERMAN -> "Der automatische Signatur-Keystore konnte mit den gespeicherten Anmeldedaten nicht geladen werden; die Originaldatei blieb unverändert. Erneut versuchen und bei wiederholtem Fehler in den Signatureinstellungen einen Keystore neu importieren."
+        AppLanguage.RUSSIAN -> "Автоматическое хранилище ключей подписи не удалось загрузить с сохранёнными учётными данными; исходный файл оставлен без изменений. Повторите попытку, а при повторных сбоях заново импортируйте хранилище ключей в настройках подписи."
+        AppLanguage.JAPANESE -> "保存済みの資格情報で自動署名キーストアを読み込めなかったため、元のファイルは変更せず保持しました。再試行し、失敗が続く場合は署名設定でキーストアを再インポートしてください。"
+        AppLanguage.KOREAN -> "저장된 자격 증명으로 자동 서명 키스토어를 불러올 수 없어 원본 파일을 변경하지 않고 보존했습니다. 다시 시도하고 계속 실패하면 서명 설정에서 키스토어를 다시 가져오세요."
+    }
 
     val zipTooManyEntries: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "ZIP 文件包含过多条目（超过 %d）"
@@ -12178,16 +12202,16 @@ object StringsE {
         AppLanguage.KOREAN -> "일치하는 앱이 없습니다"
     }
     val playStoreHasApkHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "已找到可用 APK，导出 AAB 时会优先复用，速度更快。"
-        AppLanguage.ENGLISH -> "A built APK is available and will be reused for faster AAB export."
-        AppLanguage.ARABIC -> "يتوفر APK مبني وسيُعاد استخدامه لتصدير AAB بسرعة أكبر."
-        AppLanguage.PORTUGUESE -> "Há um APK pronto; ele será reutilizado para exportar o AAB mais rápido."
-        AppLanguage.SPANISH -> "Hay un APK listo; se reutilizará para exportar el AAB más rápido."
-        AppLanguage.FRENCH -> "Un APK existant est disponible et sera réutilisé pour un export AAB plus rapide."
-        AppLanguage.GERMAN -> "Ein fertiges APK ist vorhanden und wird für einen schnelleren AAB-Export wiederverwendet."
-        AppLanguage.RUSSIAN -> "Найден готовый APK — он будет переиспользован для более быстрого экспорта AAB."
-        AppLanguage.JAPANESE -> "利用可能な APK が見つかりました。AAB エクスポート時に再利用して高速化します。"
-        AppLanguage.KOREAN -> "사용 가능한 APK가 있어 AAB 내보내기 시 재사용되어 더 빠릅니다."
+        AppLanguage.CHINESE -> "已找到可用 APK。导出 AAB 时会先做一次增量构建以确保对应当前配置，未改动时速度很快。"
+        AppLanguage.ENGLISH -> "A built APK is available. AAB export first runs an incremental build to match the current config; it is fast when nothing changed."
+        AppLanguage.ARABIC -> "يتوفر APK مبني. يبدأ تصدير AAB ببناء تزايدي ليطابق الإعدادات الحالية، ويكون سريعًا عندما لا يتغير شيء."
+        AppLanguage.PORTUGUESE -> "Há um APK pronto. A exportação do AAB faz primeiro uma compilação incremental para corresponder à configuração atual; é rápida quando nada mudou."
+        AppLanguage.SPANISH -> "Hay un APK listo. La exportación del AAB realiza primero una compilación incremental para coincidir con la configuración actual; es rápida si no hay cambios."
+        AppLanguage.FRENCH -> "Un APK existant est disponible. L'export AAB lance d'abord une compilation incrémentielle pour correspondre à la configuration actuelle ; elle est rapide si rien n'a changé."
+        AppLanguage.GERMAN -> "Ein fertiges APK ist vorhanden. Der AAB-Export führt zuerst einen inkrementellen Build passend zur aktuellen Konfiguration aus; ohne Änderungen ist er schnell."
+        AppLanguage.RUSSIAN -> "Найден готовый APK. При экспорте AAB сначала выполняется инкрементальная сборка под текущую конфигурацию; без изменений она проходит быстро."
+        AppLanguage.JAPANESE -> "利用可能な APK が見つかりました。AAB エクスポート時は現在の設定に合わせるため先にインクリメンタルビルドを行います。変更がなければ高速です。"
+        AppLanguage.KOREAN -> "사용 가능한 APK가 있습니다. AAB 내보내기 시 현재 구성에 맞추기 위해 먼저 증분 빌드를 수행하며, 변경 사항이 없으면 빠릅니다."
     }
     val playStoreNoApkHint: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "尚未找到已构建 APK，导出时会先构建 APK 再打包 AAB。"
