@@ -58,9 +58,10 @@ fun ShellGalleryPlayer(
     val assetDecryptor = remember { com.webtoapp.core.crypto.AssetDecryptor(context) }
 
     val items = remember(galleryConfig) {
+        val sorted = sortedShellGalleryItems(galleryConfig.items, galleryConfig.sortOrder)
         when (galleryConfig.playMode) {
-            "SHUFFLE" -> galleryConfig.items.shuffled()
-            else -> galleryConfig.items
+            "SHUFFLE" -> sorted.shuffled()
+            else -> sorted
         }
     }
     var effectiveItems by remember { mutableStateOf(items) }
@@ -92,16 +93,9 @@ fun ShellGalleryPlayer(
     val currentIndex by remember { derivedStateOf { pagerState.settledPage } }
     val currentItem = effectiveItems.getOrNull(currentIndex)
 
-    // rememberPosition: a generated APK hosts a single gallery, so one fixed key
-    // suffices. Items may resolve asynchronously (derived assets fallback), hence
-    // jump-once-loaded instead of initialPage. A restored non-zero position opens
-    // the pager directly; otherwise the overview is the entry.
     val positionPrefs = remember {
         context.getSharedPreferences(SHELL_GALLERY_POSITION_PREFS, android.content.Context.MODE_PRIVATE)
     }
-    // rememberPosition: standalone galleries keep the historical fixed key;
-    // multi-web sites scope it per site so sibling galleries never restore
-    // each other's position (keys are clamped, so this was silent, not a crash).
     val positionKey = remember(positionKeySuffix) {
         if (positionKeySuffix.isNullOrBlank()) SHELL_GALLERY_POSITION_KEY
         else "${SHELL_GALLERY_POSITION_KEY}_$positionKeySuffix"
@@ -161,8 +155,6 @@ fun ShellGalleryPlayer(
     LaunchedEffect(currentIndex, isPlaying) {
         if (isPlaying && currentItem?.type == "IMAGE" && !pagerState.isScrollInProgress) {
             kotlinx.coroutines.delay(galleryConfig.imageInterval * 1000L)
-            // End detection uses the displayed list: config items may be empty with
-            // assets derived as fallback, in which case items.size is 0.
             val advance = com.webtoapp.ui.shared.galleryAutoAdvanceTarget(
                 currentIndex, effectiveItems.size, galleryConfig.loop, galleryConfig.shuffleOnLoop
             )
@@ -394,12 +386,18 @@ fun ShellGalleryPlayer(
     }
 }
 
-/**
- * An item path is either an APK asset path (exported standalone app or
- * multi-web site prefix like `multiweb_sites/<id>/gallery/...`) or — for
- * host-run preview, where no APK was built — an absolute host file path
- * mapped by buildSiteShellConfig. Absolute paths always win when readable.
- */
+internal fun sortedShellGalleryItems(
+    items: List<com.webtoapp.core.shell.GalleryShellItem>,
+    sortOrder: String
+): List<com.webtoapp.core.shell.GalleryShellItem> = when (sortOrder.uppercase()) {
+    "NAME_ASC" -> items.sortedBy { it.name.lowercase() }
+    "NAME_DESC" -> items.sortedByDescending { it.name.lowercase() }
+    "DATE_ASC" -> items.sortedBy { it.createdAt }
+    "DATE_DESC" -> items.sortedByDescending { it.createdAt }
+    "TYPE" -> items.sortedBy { if (it.type == "VIDEO") 1 else 0 }
+    else -> items.sortedBy { it.sortIndex }
+}
+
 private fun isLocalMediaAssetPath(path: String) = path.startsWith("/")
 
 private fun loadGalleryAssetBytes(
@@ -769,8 +767,6 @@ fun ShellGalleryVideoPlayer(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 8.dp)
-                        // #1075: nav-bar lift only — the window-level IME padding
-                        // already raises overlays above the keyboard.
                         .windowInsetsPadding(WindowInsets.navigationBars.exclude(WindowInsets.ime))
                 ) {
 
@@ -882,8 +878,6 @@ private fun ShellThumbnailBar(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(vertical = 8.dp)
-                // #1075: nav-bar lift only — the window-level IME padding
-                // already raises overlays above the keyboard.
                 .windowInsetsPadding(WindowInsets.navigationBars.exclude(WindowInsets.ime)),
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             contentPadding = PaddingValues(horizontal = 16.dp)
@@ -927,9 +921,6 @@ private fun ShellThumbnailCell(
     assetDecryptor: com.webtoapp.core.crypto.AssetDecryptor
 ) {
     val context = LocalContext.current
-    // Mirror host fallback: use the full image when no dedicated thumbnail was
-    // embedded. Videos without a thumbnail get a placeholder (shell ships no
-    // video-frame decoder).
     val thumbAssetPath = item.thumbnailPath
         ?: if (item.type == "IMAGE") item.assetPath else null
 
@@ -1018,8 +1009,6 @@ private fun ShellGalleryOverview(
 
         when (galleryConfig.defaultView.uppercase()) {
             "LIST" -> ShellGalleryListView(items = items, assetDecryptor = assetDecryptor, onItemClick = onItemClick)
-            // Shell items carry no timestamps, so timeline degrades to a plain
-            // list; host groups by date where available.
             "TIMELINE" -> ShellGalleryListView(items = items, assetDecryptor = assetDecryptor, onItemClick = onItemClick)
             else -> ShellGalleryGridView(
                 items = items,

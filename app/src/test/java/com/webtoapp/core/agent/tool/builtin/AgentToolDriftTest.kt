@@ -118,9 +118,10 @@ class AgentToolDriftTest {
     }
 
     @Test
-    fun `preview is read-only for snapshots but a write when a script is present`() {
+    fun `preview always asks because even a snapshot opens a task and tags the page`() {
         val tool = PreviewTool()
-        assertThat(tool.isReadOnly(JsonObject().apply { addProperty("appId", 1L) })).isTrue()
+        assertThat(tool.isReadOnly()).isFalse()
+        assertThat(tool.isReadOnly(JsonObject().apply { addProperty("appId", 1L) })).isFalse()
         assertThat(tool.isReadOnly(JsonObject().apply {
             addProperty("appId", 1L)
             addProperty("script", "return 1")
@@ -128,7 +129,7 @@ class AgentToolDriftTest {
         assertThat(tool.isReadOnly(JsonObject().apply {
             addProperty("appId", 1L)
             addProperty("script", "   ")
-        })).isTrue()
+        })).isFalse()
     }
 
     @Test

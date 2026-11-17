@@ -11,11 +11,6 @@ import com.webtoapp.ui.webview.PreviewSessions
 import com.webtoapp.ui.webview.WebViewActivity
 import kotlinx.coroutines.delay
 
-/**
- * One tool for the live preview. Opens its own recents task and, in a single
- * call, can run a page script and return a short snapshot of the controls.
- * The page is the session; this call does not keep JavaScript bindings.
- */
 class PreviewTool : Tool {
     override val name = "preview"
 
@@ -26,7 +21,7 @@ class PreviewTool : Tool {
 
         Omit script to read the page. The result lists up to 60 visible controls as {n, tag, role, name, id, type}. Each one is tagged data-wta-n, so a later script can use document.querySelector('[data-wta-n="3"]').
 
-        script is a JavaScript function body that runs in the page. Return the value you need. Use it to read getComputedStyle, change a style, or click. A non-empty script asks the user on the device before it runs. The reply includes the script result and a fresh snapshot. Call preview again to observe a navigation. Do not request the whole HTML document. Screenshot only when the visual result is the question, and say so in the script by returning what you measured.
+        script is a JavaScript function body that runs in the page. Return the value you need. Use it to read getComputedStyle, change a style, or click. Every call asks the user on the device before it runs, including snapshot-only calls, because it opens a visible task and tags page controls. The reply includes the script result and a fresh snapshot. Call preview again to observe a navigation. Do not request the whole HTML document. Screenshot only when the visual result is the question, and say so in the script by returning what you measured.
     """.trimIndent()
 
     override val parametersSchema: JsonElement = jsonSchema {
@@ -44,9 +39,6 @@ class PreviewTool : Tool {
     }
 
     override fun isReadOnly() = false
-
-    override fun isReadOnly(args: JsonObject): Boolean =
-        args.get("script")?.takeIf { !it.isJsonNull }?.asString.isNullOrBlank()
 
     override fun activityDescription(args: JsonObject): String? {
         val appId = args.get("appId")?.takeIf { !it.isJsonNull }?.asLong

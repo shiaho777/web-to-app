@@ -955,7 +955,9 @@ data class GalleryShellItemConfig(
     val type: String,
     val name: String,
     val duration: Long = 0,
-    val thumbnailPath: String? = null
+    val thumbnailPath: String? = null,
+    val sortIndex: Int = 0,
+    val createdAt: Long = 0
 )
 
 /**

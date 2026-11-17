@@ -19,40 +19,95 @@ fun BoxScope.ShellLyricsOverlay(
     config: ShellConfig,
     bgmState: BgmPlayerState
 ) {
-    if (config.bgmShowLyrics && bgmState.currentLrcData != null && bgmState.currentLrcLineIndex >= 0) {
-        val lrcTheme = config.bgmLrcTheme
-        val bgColor = try {
-            Color(android.graphics.Color.parseColor(lrcTheme?.backgroundColor ?: "#80000000"))
-        } catch (e: Exception) {
-            Color.Black.copy(alpha = 0.5f)
-        }
-        val textColor = try {
-            Color(android.graphics.Color.parseColor(lrcTheme?.highlightColor ?: "#FFD700"))
-        } catch (e: Exception) {
-            Color.Yellow
-        }
+    val lrcData = bgmState.currentLrcData ?: return
+    val line = lrcData.lines.getOrNull(bgmState.currentLrcLineIndex) ?: return
+    if (!config.bgmShowLyrics) return
+    val lrcTheme = config.bgmLrcTheme
+    val bgColor = lrcTheme?.backgroundColor.toLrcColor(Color.Black.copy(alpha = 0.5f))
+    val textColor = lrcTheme?.textColor.toLrcColor(Color.White)
+    val fontSize = (lrcTheme?.fontSize ?: 18f).sp
+    val fontFamily = lrcFontFamily(lrcTheme?.fontFamily)
+    val strokeWidth = lrcTheme?.strokeWidth ?: 0f
+    val strokeColor = lrcTheme?.strokeColor.toLrcColor(Color.Transparent)
+    val shadow = if (lrcTheme?.shadowEnabled != false) {
+        androidx.compose.ui.graphics.Shadow(Color.Black.copy(alpha = 0.8f), blurRadius = 6f)
+    } else {
+        null
+    }
+    val translation = line.translation?.takeIf { lrcTheme?.showTranslation != false && it.isNotBlank() }
 
-        Box(
-            modifier = Modifier
-                .align(
-                    when (lrcTheme?.position) {
-                        "TOP" -> Alignment.TopCenter
-                        "CENTER" -> Alignment.Center
-                        else -> Alignment.BottomCenter
-                    }
-                )
-                .padding(16.dp)
-                .background(bgColor, shape = MaterialTheme.shapes.medium)
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = bgmState.currentLrcData!!.lines[bgmState.currentLrcLineIndex].text,
-                color = textColor,
-                fontSize = (lrcTheme?.fontSize ?: 16f).sp
+    Box(
+        modifier = Modifier
+            .align(
+                when (lrcTheme?.position) {
+                    "TOP" -> Alignment.TopCenter
+                    "CENTER" -> Alignment.Center
+                    else -> Alignment.BottomCenter
+                }
             )
+            .padding(16.dp)
+            .background(bgColor, shape = MaterialTheme.shapes.medium)
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            if (strokeWidth > 0f && strokeColor != Color.Transparent) {
+                Box(contentAlignment = Alignment.Center) {
+                    Text(
+                        text = line.text,
+                        fontSize = fontSize,
+                        fontFamily = fontFamily,
+                        style = androidx.compose.ui.text.TextStyle(
+                            drawStyle = androidx.compose.ui.graphics.drawscope.Stroke(
+                                width = strokeWidth * 2f,
+                                join = androidx.compose.ui.graphics.StrokeJoin.Round
+                            ),
+                            shadow = shadow
+                        ),
+                        color = strokeColor
+                    )
+                    Text(
+                        text = line.text,
+                        color = textColor,
+                        fontSize = fontSize,
+                        fontFamily = fontFamily,
+                        style = androidx.compose.ui.text.TextStyle(shadow = shadow)
+                    )
+                }
+            } else {
+                Text(
+                    text = line.text,
+                    color = textColor,
+                    fontSize = fontSize,
+                    fontFamily = fontFamily,
+                    style = androidx.compose.ui.text.TextStyle(shadow = shadow)
+                )
+            }
+            if (translation != null) {
+                Text(
+                    text = translation,
+                    color = textColor.copy(alpha = 0.75f),
+                    fontSize = fontSize * 0.8f,
+                    fontFamily = fontFamily,
+                    style = androidx.compose.ui.text.TextStyle(shadow = shadow)
+                )
+            }
         }
     }
+}
+
+internal fun String?.toLrcColor(fallback: Color): Color = try {
+    Color(android.graphics.Color.parseColor(this ?: ""))
+} catch (e: Exception) {
+    fallback
+}
+
+internal fun lrcFontFamily(name: String?): androidx.compose.ui.text.font.FontFamily = when (name?.lowercase()) {
+    "serif" -> androidx.compose.ui.text.font.FontFamily.Serif
+    "monospace" -> androidx.compose.ui.text.font.FontFamily.Monospace
+    "cursive" -> androidx.compose.ui.text.font.FontFamily.Cursive
+    "sans-serif", "sans_serif" -> androidx.compose.ui.text.font.FontFamily.SansSerif
+    else -> androidx.compose.ui.text.font.FontFamily.Default
 }
 
 @Composable

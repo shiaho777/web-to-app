@@ -69,6 +69,27 @@ class BgmStorageLibraryTest {
     }
 
     @Test
+    fun `translated lyrics survive the sidecar round-trip`() {
+        val audio = writeAudio("translated.mp3")
+        val lrc = LrcData(
+            lines = listOf(
+                LrcLine(startTime = 1000L, endTime = 5000L, text = "hello", translation = "你好"),
+                LrcLine(startTime = 5000L, endTime = 9000L, text = "world")
+            )
+        )
+
+        assertThat(BgmStorage.saveLrc(context, audio.absolutePath, lrc)).isTrue()
+
+        val scanned = BgmStorage.scanUserBgm(context).single()
+        val lines = scanned.lrcData!!.lines
+        assertThat(lines).hasSize(2)
+        assertThat(lines[0].text).isEqualTo("hello")
+        assertThat(lines[0].translation).isEqualTo("你好")
+        assertThat(lines[1].text).isEqualTo("world")
+        assertThat(lines[1].translation).isNull()
+    }
+
+    @Test
     fun `tag overrides persist across scans`() {
         val audio = writeAudio("tagged.m4a")
         val item = BgmItem(name = "tagged", path = audio.absolutePath, isAsset = false)

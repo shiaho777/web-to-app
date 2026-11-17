@@ -702,7 +702,13 @@ data class GalleryShellItem(
     val duration: Long = 0,
 
     @SerializedName("thumbnailPath")
-    val thumbnailPath: String? = null
+    val thumbnailPath: String? = null,
+
+    @SerializedName("sortIndex")
+    val sortIndex: Int = 0,
+
+    @SerializedName("createdAt")
+    val createdAt: Long = 0
 )
 
 data class MediaShellConfig(
@@ -1752,6 +1758,9 @@ data class LrcShellTheme(
     @SerializedName("name")
     val name: String = "",
 
+    @SerializedName("fontFamily")
+    val fontFamily: String = "default",
+
     @SerializedName("fontSize")
     val fontSize: Float = 18f,
 
@@ -1764,11 +1773,23 @@ data class LrcShellTheme(
     @SerializedName("backgroundColor")
     val backgroundColor: String = "#80000000",
 
+    @SerializedName("strokeColor")
+    val strokeColor: String? = null,
+
+    @SerializedName("strokeWidth")
+    val strokeWidth: Float = 0f,
+
+    @SerializedName("shadowEnabled")
+    val shadowEnabled: Boolean = true,
+
     @SerializedName("animationType")
     val animationType: String = "FADE",
 
     @SerializedName("position")
-    val position: String = "BOTTOM"
+    val position: String = "BOTTOM",
+
+    @SerializedName("showTranslation")
+    val showTranslation: Boolean = true
 )
 
 data class AutoStartShellConfig(

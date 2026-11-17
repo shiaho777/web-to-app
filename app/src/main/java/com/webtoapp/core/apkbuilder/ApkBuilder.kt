@@ -29,6 +29,7 @@ import com.webtoapp.data.model.WebApp
 import com.webtoapp.data.model.withNotificationPolyfill
 import com.webtoapp.data.model.withRuntimePermissionsSyncedFromFeatures
 import com.webtoapp.data.model.getActivationCodeStrings
+import com.webtoapp.data.model.sortedGalleryItems
 import com.webtoapp.ui.components.announcement.toUiTemplate
 import com.webtoapp.ui.shell.buildPackagedHtmlShellEntryUrl
 import com.webtoapp.ui.theme.ThemeManager
@@ -4688,7 +4689,8 @@ private fun com.webtoapp.data.model.HtmlConfig?.toHtmlBlock(): HtmlBlock = HtmlB
 private fun WebApp.buildHtmlBlock(): HtmlBlock = htmlConfig.toHtmlBlock()
 
 private fun WebApp.buildGalleryBlock(): GalleryBlock {
-    val items = galleryConfig?.items?.mapIndexed { index, item ->
+    val config = galleryConfig
+    val items = config?.let { sortedGalleryItems(it.items, it.sortOrder) }?.mapIndexed { index, item ->
         val ext = if (item.type == com.webtoapp.data.model.GalleryItemType.VIDEO) "mp4" else "png"
         GalleryShellItemConfig(
             id = item.id,
@@ -4696,7 +4698,9 @@ private fun WebApp.buildGalleryBlock(): GalleryBlock {
             type = item.type.name,
             name = item.name,
             duration = item.duration,
-            thumbnailPath = if (item.thumbnailPath != null) "gallery/thumb_$index.jpg" else null
+            thumbnailPath = if (item.thumbnailPath != null) "gallery/thumb_$index.jpg" else null,
+            sortIndex = item.sortIndex,
+            createdAt = item.createdAt
         )
     } ?: emptyList()
     return GalleryBlock(
@@ -4720,7 +4724,7 @@ private fun WebApp.buildGalleryBlock(): GalleryBlock {
 }
 
 private fun WebApp.buildBgmBlock(): BgmBlock {
-    val playlist = bgmConfig?.playlist?.mapIndexed { index, item ->
+    val playlist = bgmConfig?.playlist?.sortedBy { it.sortOrder }?.mapIndexed { index, item ->
         val coverExt = item.coverPath?.let { path ->
             val raw = when {
                 path.startsWith("asset:///") -> path.substringAfterLast('.', "jpg")
@@ -4745,12 +4749,17 @@ private fun WebApp.buildBgmBlock(): BgmBlock {
         LrcShellTheme(
             id = it.id,
             name = it.name,
+            fontFamily = it.fontFamily,
             fontSize = it.fontSize,
             textColor = it.textColor,
             highlightColor = it.highlightColor,
             backgroundColor = it.backgroundColor,
+            strokeColor = it.strokeColor,
+            strokeWidth = it.strokeWidth,
+            shadowEnabled = it.shadowEnabled,
             animationType = it.animationType.name,
-            position = it.position.name
+            position = it.position.name,
+            showTranslation = it.showTranslation
         )
     }
     return BgmBlock(
@@ -5153,14 +5162,8 @@ internal fun buildSiteShellConfig(    sourceWebApp: WebApp,
         packageName = sitePkg,
         multiWebConfig = com.webtoapp.core.shell.MultiWebShellConfig()
     )
-    // Gallery sites render through ShellGalleryPlayer, which resolves every
-    // item through APK assets. Standalone gallery exports live at
-    // assets/gallery/, which a multi-web APK never populates for sites —
-    // without a rewrite every item 404s into a black cell (reported bug).
     if (sourceWebApp.appType == com.webtoapp.data.model.AppType.GALLERY) {
         out = if (isPreview) {
-            // Host run: point items at the source host files; the shell
-            // gallery loader prefers existing absolute paths over assets.
             out.copy(
                 galleryConfig = out.galleryConfig.copy(
                     items = previewGallerySiteItems(sourceWebApp)
@@ -5184,14 +5187,8 @@ internal fun buildSiteShellConfig(    sourceWebApp: WebApp,
     return out
 }
 
-/** Asset prefix a multi-web gallery site's media is embedded under. */
 internal fun multiWebSiteGalleryAssetPrefix(siteId: String) = "multiweb_sites/$siteId/gallery"
 
-/**
- * Rewrite gallery item paths to the per-site prefixed location used at
- * export time. Index-aligned with [addGalleryItemsToAssets], which embeds
- * source items in the same order under the same prefix.
- */
 internal fun rewriteMultiWebGallerySitePaths(
     items: List<com.webtoapp.core.shell.GalleryShellItem>,
     siteId: String
@@ -5206,23 +5203,22 @@ internal fun rewriteMultiWebGallerySitePaths(
     }
 }
 
-/**
- * Gallery items for host-run preview: absolute host files straight from the
- * source app (mirrors the fields buildGalleryBlock maps, minus asset naming).
- */
 internal fun previewGallerySiteItems(
     sourceWebApp: WebApp
 ): List<com.webtoapp.core.shell.GalleryShellItem> {
-    return sourceWebApp.galleryConfig?.items?.map { item ->
+    val config = sourceWebApp.galleryConfig ?: return emptyList()
+    return sortedGalleryItems(config.items, config.sortOrder).map { item ->
         com.webtoapp.core.shell.GalleryShellItem(
             id = item.id,
             assetPath = item.path,
             type = item.type.name,
             name = item.name,
             duration = item.duration,
-            thumbnailPath = item.thumbnailPath
+            thumbnailPath = item.thumbnailPath,
+            sortIndex = item.sortIndex,
+            createdAt = item.createdAt
         )
-    } ?: emptyList()
+    }
 }
 
 /**

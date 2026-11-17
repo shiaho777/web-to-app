@@ -129,14 +129,15 @@ internal fun ShellConfig.toRestoredWebApp(): WebApp {
         } else null,
         galleryConfig = if (type == AppType.GALLERY) {
             GalleryConfig(
-                items = gallery.items.mapIndexed { index, item ->
+                items = gallery.items.map { item ->
                     GalleryItem(
                         id = item.id,
                         path = "",
                         type = enumOrDefault(item.type, GalleryItemType.IMAGE),
                         name = item.name,
                         duration = item.duration,
-                        sortIndex = index
+                        sortIndex = item.sortIndex,
+                        createdAt = item.createdAt
                     )
                 },
                 playMode = enumOrDefault(gallery.playMode, GalleryPlayMode.SEQUENTIAL),
@@ -590,12 +591,17 @@ internal fun ShellConfig.toRestoredWebApp(): WebApp {
                 LrcTheme(
                     id = it.id,
                     name = it.name,
+                    fontFamily = it.fontFamily,
                     fontSize = it.fontSize,
                     textColor = it.textColor,
                     highlightColor = it.highlightColor,
                     backgroundColor = it.backgroundColor,
+                    strokeColor = it.strokeColor,
+                    strokeWidth = it.strokeWidth,
+                    shadowEnabled = it.shadowEnabled,
                     animationType = enumOrDefault(it.animationType, LrcAnimationType.FADE),
-                    position = enumOrDefault(it.position, LrcPosition.BOTTOM)
+                    position = enumOrDefault(it.position, LrcPosition.BOTTOM),
+                    showTranslation = it.showTranslation
                 )
             },
             showFloatingPlayer = bgmShowFloatingPlayer,

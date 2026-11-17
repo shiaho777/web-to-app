@@ -90,6 +90,44 @@ class AppChangeToolTest {
     }
 
     @Test
+    fun `UpdateApp reports only fields that actually changed`() = runTest {
+        val repo = FakeRepo(seed = WebApp(id = 9, name = "Same", url = "https://same.example", appType = AppType.WEB))
+        val tool = UpdateAppTool()
+
+        val result = tool.execute(
+            JsonObject().apply {
+                addProperty("appId", 9L)
+                addProperty("patch", """{"name":"Renamed","url":"https://same.example"}""")
+            },
+            context(repo)
+        )
+
+        assertFalse(result.isError)
+        assertEquals(listOf("name"), result.appChange!!.changedFields)
+        assertTrue(result.text.contains("url"))
+        assertEquals("Renamed", repo.updatedApp!!.name)
+        assertEquals("https://same.example", repo.updatedApp!!.url)
+    }
+
+    @Test
+    fun `UpdateApp rejects a patch where nothing applies`() = runTest {
+        val repo = FakeRepo(seed = WebApp(id = 10, name = "Keep", url = "https://keep.example", appType = AppType.WEB))
+        val tool = UpdateAppTool()
+
+        val result = tool.execute(
+            JsonObject().apply {
+                addProperty("appId", 10L)
+                addProperty("patch", """{"name":"Keep","webViewConfig":"not-an-object"}""")
+            },
+            context(repo)
+        )
+
+        assertTrue(result.isError)
+        assertEquals(null, result.appChange)
+        assertEquals(null, repo.updatedApp)
+    }
+
+    @Test
     fun `failed tool calls carry no app change`() = runTest {
         val repo = FakeRepo()
         val create = CreateAppTool().execute(

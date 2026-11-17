@@ -416,8 +416,6 @@ object BgmStorage {
                     val seconds = ((line.startTime % 60000) / 1000).toInt()
                     val millis = ((line.startTime % 1000) / 10).toInt()
                     appendLine("[%02d:%02d.%02d]%s".format(minutes, seconds, millis, line.text))
-                    // Match the export wire format (ApkBuilder.convertLrcDataToLrcString) so
-                    // translated lyrics survive the sidecar round-trip.
                     line.translation?.let { translation ->
                         appendLine("[%02d:%02d.%02d]%s".format(minutes, seconds, millis, translation))
                     }
@@ -483,7 +481,12 @@ object BgmStorage {
 
                 if (lyricText.isNotEmpty()) {
                     val startTime = minutes * 60000 + seconds * 1000 + millis
-                    lines.add(LrcLine(startTime = startTime, endTime = startTime + 5000, text = lyricText))
+                    val previous = lines.lastOrNull()
+                    if (previous != null && previous.startTime == startTime && previous.translation == null) {
+                        lines[lines.lastIndex] = previous.copy(translation = lyricText)
+                    } else {
+                        lines.add(LrcLine(startTime = startTime, endTime = startTime + 5000, text = lyricText))
+                    }
                 }
             }
         }
