@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.util.destroyForciblyCompat
+import com.webtoapp.util.waitForCompat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -18,6 +19,8 @@ object WordPressManager {
     private const val MAX_INSTALL_VERIFY_RETRIES = 10
 
     private const val INSTALL_VERIFY_INTERVAL_MS = 500L
+
+    private const val CONFIG_TIMEOUT_SECONDS = 60L
 
     data class ProjectMetadata(
         val themes: List<String> = emptyList(),
@@ -398,9 +401,6 @@ object WordPressManager {
                 appendLine("if (function_exists('flush_rewrite_rules')) { flush_rewrite_rules(false); }")
             }
             script.writeText(phpScript)
-            // Route through HostProcessLauncher (W^X hosts degrade instead of throwing)
-            // with a hard timeout: a hung PHP CLI (bad plugin script) must not park the
-            // calling coroutine forever.
             val launch = com.webtoapp.core.linux.HostProcessLauncher.start(
                 context,
                 listOf(phpBinary, script.absolutePath),
@@ -414,14 +414,26 @@ object WordPressManager {
                 AppLogger.w(TAG, "WordPress runtime config skipped: ${launch.error}")
                 return@withContext false
             }
-            val output = process.inputStream.bufferedReader().readText()
-            val finished = process.waitFor(60, java.util.concurrent.TimeUnit.SECONDS)
+            val outputBuffer = StringBuilder()
+            val outputReader = Thread {
+                try {
+                    process.inputStream.bufferedReader().forEachLine { line ->
+                        synchronized(outputBuffer) { outputBuffer.appendLine(line) }
+                    }
+                } catch (e: Exception) {
+                    AppLogger.d(TAG, "WordPress config output reader ended", e)
+                }
+            }.apply { isDaemon = true; start() }
+            val finished = process.waitForCompat(CONFIG_TIMEOUT_SECONDS * 1_000L)
             if (!finished) {
                 process.destroyForciblyCompat()
+                outputReader.interrupt()
                 script.delete()
-                AppLogger.w(TAG, "WordPress runtime config timed out (60s), killed")
+                AppLogger.w(TAG, "WordPress runtime config timed out (${CONFIG_TIMEOUT_SECONDS}s), killed")
                 return@withContext false
             }
+            outputReader.join(2_000L)
+            val output = synchronized(outputBuffer) { outputBuffer.toString() }
             val exitCode = process.exitValue()
             script.delete()
             if (exitCode == 0) {

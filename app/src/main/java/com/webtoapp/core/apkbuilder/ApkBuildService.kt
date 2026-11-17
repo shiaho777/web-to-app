@@ -137,7 +137,10 @@ class ApkBuildService : Service() {
         @Volatile private var lastNotifyAt = 0L
         @Volatile private var lastNotifyPercent = -1
 
-        fun start(context: Context, appName: String) {
+        private val activeBuilds = java.util.concurrent.atomic.AtomicInteger(0)
+
+        fun acquire(context: Context, appName: String) {
+            activeBuilds.incrementAndGet()
             try {
                 SafeNotificationChannels.ensure(
                     context = context,
@@ -180,10 +183,9 @@ class ApkBuildService : Service() {
             }
         }
 
-        fun stop(context: Context) {
+        fun release(context: Context) {
+            if (activeBuilds.decrementAndGet() > 0) return
             lastNotifyPercent = -1
-            // stopService on our own component is exempt from background-start limits —
-            // a startService(ACTION_STOP) from a backgrounded build would be rejected.
             try {
                 context.stopService(Intent(context, ApkBuildService::class.java))
             } catch (e: Exception) {

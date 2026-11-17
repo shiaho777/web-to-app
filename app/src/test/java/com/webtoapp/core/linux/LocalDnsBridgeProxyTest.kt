@@ -106,6 +106,39 @@ class LocalDnsBridgeProxyTest {
         assertThat(second).isNotEqualTo(first)
     }
 
+    @Test
+    fun `stop closes live CONNECT tunnels`() {
+        java.net.ServerSocket(0, 1, java.net.InetAddress.getByName("127.0.0.1")).use { upstream ->
+            val port = LocalDnsBridgeProxy.start()
+            val client = Socket("127.0.0.1", port)
+            client.soTimeout = 15_000
+            client.getOutputStream().apply {
+                write(
+                    (
+                        "CONNECT 127.0.0.1:${upstream.localPort} HTTP/1.1\r\n" +
+                            "Host: 127.0.0.1:${upstream.localPort}\r\n" +
+                            "Proxy-Authorization: Basic ${basic("wta:${sessionToken()}")}\r\n\r\n"
+                        ).toByteArray(StandardCharsets.US_ASCII)
+                )
+                flush()
+            }
+            val statusLine = StringBuilder()
+            val input = client.getInputStream()
+            while (true) {
+                val next = input.read()
+                if (next < 0 || next == '\n'.code) break
+                if (next != '\r'.code) statusLine.append(next.toChar())
+            }
+            assertThat(statusLine.toString()).startsWith("HTTP/1.1 200")
+            upstream.accept().use { target ->
+                target.soTimeout = 15_000
+                LocalDnsBridgeProxy.stop()
+                assertThat(target.getInputStream().read()).isEqualTo(-1)
+            }
+            client.close()
+        }
+    }
+
     private fun sessionToken(): String {
         val url = LocalDnsBridgeProxy.proxyEnvFor(LocalDnsBridgeProxy.getListenPort())
             .getValue("http_proxy")

@@ -201,9 +201,9 @@ class GoRuntime(private val context: Context) {
                     context, command, env, projDir, "Go"
                 )
                 if (lr.process == null) {
-                    _serverState.value = ServerState.Error(
-                        lr.error ?: "Go 服务器启动失败"
-                    )
+                    val launchError = lr.error ?: "Go 服务器启动失败"
+                    stopServer()
+                    _serverState.value = ServerState.Error(launchError)
                     return@withContext -1
                 }
                 lr.process
@@ -257,8 +257,13 @@ class GoRuntime(private val context: Context) {
         } catch (e: Exception) {
             AppLogger.e(TAG, "启动 Go 服务器失败", e)
             ShellLogger.e(TAG, "启动 Go 服务器失败: ${e.message}${channelNote()}")
-            // The port allocation from before the failure must be released too (the DNS
-            // proxy is stopped explicitly above because stopServer is process-oriented).
+            goProcess?.let { process ->
+                try {
+                    process.destroyGracefullyCompat(timeoutMs = 200L)
+                    if (process.isAliveCompat()) process.destroyForciblyCompat()
+                } catch (killError: Exception) { AppLogger.d(TAG, "Force kill Go process failed", killError) }
+            }
+            goProcess = null
             if (currentPort > 0) {
                 runCatching { PortManager.release(currentPort) }
                 currentPort = 0

@@ -104,6 +104,9 @@ class ApkBuildCache(private val context: Context) {
         mediaContentPath: String?,
         splashMediaPath: String?,
         bgmPlaylistPaths: List<String>,
+        bgmCoverPaths: List<String?> = emptyList(),
+        bgmLrcDataList: List<com.webtoapp.data.model.LrcData?> = emptyList(),
+        announcementIconPath: String? = null,
         htmlFiles: List<com.webtoapp.data.model.HtmlFile>,
         galleryItems: List<com.webtoapp.data.model.GalleryItem>,
         errorPageMediaPath: String?,
@@ -138,6 +141,9 @@ class ApkBuildCache(private val context: Context) {
             mediaContentPath = mediaContentPath,
             splashMediaPath = splashMediaPath,
             bgmPlaylistPaths = bgmPlaylistPaths,
+            bgmCoverPaths = bgmCoverPaths,
+            bgmLrcDataList = bgmLrcDataList,
+            announcementIconPath = announcementIconPath,
             htmlFiles = htmlFiles,
             galleryItems = galleryItems,
             errorPageMediaPath = errorPageMediaPath,
@@ -436,6 +442,9 @@ class ApkBuildCache(private val context: Context) {
         mediaContentPath: String?,
         splashMediaPath: String?,
         bgmPlaylistPaths: List<String>,
+        bgmCoverPaths: List<String?> = emptyList(),
+        bgmLrcDataList: List<com.webtoapp.data.model.LrcData?> = emptyList(),
+        announcementIconPath: String? = null,
         htmlFiles: List<com.webtoapp.data.model.HtmlFile>,
         galleryItems: List<com.webtoapp.data.model.GalleryItem>,
         errorPageMediaPath: String?,
@@ -463,6 +472,13 @@ class ApkBuildCache(private val context: Context) {
         bgmPlaylistPaths.forEachIndexed { index, path ->
             parts += "bgm[$index]=${fileFingerprint(path)}"
         }
+        bgmCoverPaths.forEachIndexed { index, path ->
+            parts += "bgmCover[$index]=${fileFingerprint(path)}"
+        }
+        bgmLrcDataList.forEachIndexed { index, lrc ->
+            parts += "bgmLrc[$index]=${lrcFingerprint(lrc)}"
+        }
+        parts += "announcementIcon=${fileFingerprint(announcementIconPath)}"
         htmlFiles.forEachIndexed { index, file ->
             parts += "html[$index]=${file.name}|${fileFingerprint(file.path)}"
         }
@@ -483,6 +499,11 @@ class ApkBuildCache(private val context: Context) {
         val file = File(path)
         if (!file.isFile) return "missing"
         return "sha256=${fileSha256(file)}"
+    }
+
+    private fun lrcFingerprint(lrc: com.webtoapp.data.model.LrcData?): String {
+        if (lrc == null || lrc.lines.isEmpty()) return "none"
+        return "sha256=${sha256(lrc.toString())}"
     }
 
     internal fun treeFingerprint(dir: File): String {

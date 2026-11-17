@@ -85,7 +85,7 @@ class NodeRuntime(private val context: Context) {
                     entryFile = entryFile,
                     portPref = port,
                     portConflictMode = portConflictMode.name,
-                    envVars = envVars
+                    envVars = effectiveEnvVars
                 )
             } else {
                 attempt1

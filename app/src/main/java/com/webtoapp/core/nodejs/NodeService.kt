@@ -24,8 +24,6 @@ class NodeService : Service() {
 
     companion object {
         private const val TAG = "NodeService"
-        private const val MAX_HEALTH_CHECK_RETRIES = 60
-        private const val HEALTH_CHECK_INTERVAL_MS = 500L
     }
 
     /**
@@ -480,12 +478,12 @@ class NodeService : Service() {
     }
 
     private fun waitForServerReady(port: Int): Boolean {
-        repeat(MAX_HEALTH_CHECK_RETRIES) { attempt ->
+        repeat(NodeServiceProtocol.MAX_HEALTH_CHECK_RETRIES) { attempt ->
             var conn: HttpURLConnection? = null
             try {
                 conn = URL("http://127.0.0.1:$port/").openConnection() as HttpURLConnection
-                conn.connectTimeout = 500
-                conn.readTimeout = 500
+                conn.connectTimeout = NodeServiceProtocol.HEALTH_PROBE_TIMEOUT_MS
+                conn.readTimeout = NodeServiceProtocol.HEALTH_PROBE_TIMEOUT_MS
                 conn.requestMethod = "GET"
                 val code = conn.responseCode
                 if (code in 200..499) {
@@ -498,7 +496,11 @@ class NodeService : Service() {
                 try { conn?.disconnect() } catch (_: Exception) {}
             }
             if (nodeThread?.isAlive != true) return false
-            try { Thread.sleep(HEALTH_CHECK_INTERVAL_MS) } catch (_: InterruptedException) { return false }
+            try {
+                Thread.sleep(NodeServiceProtocol.HEALTH_CHECK_INTERVAL_MS)
+            } catch (_: InterruptedException) {
+                return false
+            }
         }
         return false
     }

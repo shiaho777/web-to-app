@@ -8,6 +8,8 @@ import com.webtoapp.core.download.DependencyDownloadEngine
 import com.webtoapp.core.download.DependencyDownloadNotification
 import com.webtoapp.core.i18n.AppLanguage
 import com.webtoapp.core.logging.AppLogger
+import com.webtoapp.util.destroyForciblyCompat
+import com.webtoapp.util.waitForCompat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -51,6 +53,7 @@ object GoToolchainManager {
 
     private const val MAX_RETRY_PER_URL = 2
     private const val RETRY_DELAY_MS = 2_000L
+    private const val VERIFY_TIMEOUT_SECONDS = 30L
 
     sealed class DownloadState {
         object Idle : DownloadState()
@@ -344,14 +347,22 @@ object GoToolchainManager {
                 ?: return@withContext Result.failure(
                     IllegalStateException(launch.error ?: "Go 工具链未安装")
                 )
+            val finished = proc.waitForCompat(VERIFY_TIMEOUT_SECONDS * 1_000L)
+            if (!finished) {
+                proc.destroyForciblyCompat()
+                AppLogger.e(TAG, "Go verify timed out after ${VERIFY_TIMEOUT_SECONDS}s, killed")
+                return@withContext Result.failure(
+                    RuntimeException("go version timed out after ${VERIFY_TIMEOUT_SECONDS}s")
+                )
+            }
             val out = proc.inputStream.bufferedReader().readText().trim()
-            val finished = proc.waitFor()
-            if (finished == 0 && out.isNotBlank()) {
+            val exitCode = proc.exitValue()
+            if (exitCode == 0 && out.isNotBlank()) {
                 AppLogger.i(TAG, "Go verify OK: $out")
                 Result.success(out)
             } else {
-                AppLogger.e(TAG, "Go verify failed: exit=$finished, output=$out")
-                Result.failure(RuntimeException(out.ifBlank { "exit code=$finished" }))
+                AppLogger.e(TAG, "Go verify failed: exit=$exitCode, output=$out")
+                Result.failure(RuntimeException(out.ifBlank { "exit code=$exitCode" }))
             }
         } catch (e: Exception) {
             AppLogger.e(TAG, "Go verify 异常", e)

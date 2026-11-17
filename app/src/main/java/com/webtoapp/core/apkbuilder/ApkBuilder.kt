@@ -102,6 +102,9 @@ class ApkBuilder(private val context: Context) {
         internal fun injectedDeviceLibEntries(appType: String, deviceAbi: String): Set<String> =
             injectedNativeLibNames(appType).mapTo(mutableSetOf()) { "lib/$deviceAbi/$it" }
 
+        internal fun deviceInjectionAbi(deviceAbi: String, abiFilters: List<String>): String? =
+            deviceAbi.takeIf { abiFilters.isEmpty() || it in abiFilters }
+
         /**
          * Additional lib/ entries the injection step writes for selected ABIs OTHER than the
          * device ABI. The template ships the bridge/launcher libs for every ABI already (they
@@ -297,7 +300,7 @@ class ApkBuilder(private val context: Context) {
     private val axmlRebuilder = AxmlRebuilder()
     private val arscRebuilder = ArscRebuilder()
     private val featureStackGrafter = FeatureStackGrafter(axmlRebuilder, ArscPackageGrafter())
-    private val logger = BuildLogger(context)
+    private val logDirectory = BuildLogger(context)
     private val encryptedApkBuilder = EncryptedApkBuilder(context)
     private val keyManager = KeyManager.getInstance(context)
     private val buildCache = ApkBuildCache(context)
@@ -305,14 +308,7 @@ class ApkBuilder(private val context: Context) {
     private val outputDir = resolveOutputDir(context)
     private val tempDir = File(context.cacheDir, "apk_build_temp").apply { mkdirs() }
 
-    /**
-     * Working directory of the in-flight build (per package). Same-package builds are
-     * serialized by the companion [buildLocks], so the deterministic paths inside it
-     * (unsigned APK, template copy, aligned-ELF outputs) can never be touched by a
-     * concurrent build; different packages get different directories.
-     */
-    @Volatile
-    private var activeWorkDir: File? = null
+    private val activeWorkDirs = java.util.concurrent.ConcurrentHashMap<String, File>()
 
     private fun pkgWorkDir(packageName: String): File =
         File(tempDir, "pkg_" + packageName.replace(Regex("[^A-Za-z0-9_.-]"), "_")).apply { mkdirs() }
@@ -353,7 +349,7 @@ class ApkBuilder(private val context: Context) {
 
     fun cleanOldBuilds(keepCount: Int = 5) {
         try {
-            val apkFiles = outputDir.listFiles { file -> file.extension == "apk" }
+            val apkFiles = outputDir.listFiles { file -> file.extension.equals("apk", ignoreCase = true) }
                 ?.sortedByDescending { it.lastModified() }
                 ?: return
 
@@ -383,12 +379,7 @@ class ApkBuilder(private val context: Context) {
             return BuildResult.Error(Strings.advancedFeaturesOff)
         }
         return withContext(Dispatchers.IO) {
-        // Serialize builds of the same package across all entry points (export screen,
-        // home share, agent tools): the build writes deterministic temp paths keyed by
-        // package name, so two overlapping builds would corrupt each other's files.
-        // The foreground service + wake lock covers the whole section — a long build must
-        // survive the app being backgrounded, and progress updates ride the same channel.
-        ApkBuildService.start(context, webApp.name)
+        ApkBuildService.acquire(context, webApp.name)
         try {
             lockFor(resolvePackageName(webApp)).withLock {
                 val versioned = withInstallAwareVersion(context, webApp)
@@ -406,7 +397,7 @@ class ApkBuilder(private val context: Context) {
                 }
             }
         } finally {
-            ApkBuildService.stop(context)
+            ApkBuildService.release(context)
         }
         }
     }
@@ -421,6 +412,7 @@ class ApkBuilder(private val context: Context) {
         var currentUnsignedApkPath: String? = null
         var currentSignedApkPath: String? = null
         val buildStartMs = System.currentTimeMillis()
+        val logger = BuildLogger(context)
 
         logger.startNewLog(webApp.name)
 
@@ -443,6 +435,7 @@ class ApkBuilder(private val context: Context) {
                     PerAppSigningIdentity.identityFor(context, resolvePackageName(webApp))
                 } catch (e: Exception) {
                     return@withContext failBuild(
+                        logger = logger,
                         stage = BuildStage.PREPARE,
                         cause = BuildFailureCause.SIGNING_EXCEPTION,
                         message = "Per-app signing identity unavailable: ${e.message ?: "unknown error"}",
@@ -529,7 +522,7 @@ class ApkBuilder(private val context: Context) {
             val packageName = resolvePackageName(webApp)
             currentPackageName = packageName
             val workDir = pkgWorkDir(packageName)
-            activeWorkDir = workDir
+            activeWorkDirs[packageName] = workDir
 
             val customPkg = webApp.apkExportConfig?.customPackageName?.takeIf {
                 it.isNotBlank() && it.matches(PACKAGE_NAME_REGEX)
@@ -756,6 +749,7 @@ class ApkBuilder(private val context: Context) {
             val templateApk = prepared.templateApk
             if (templateApk == null) {
                 return@withContext failBuild(
+                    logger = logger,
                     stage = BuildStage.TEMPLATE,
                     cause = BuildFailureCause.TEMPLATE_UNAVAILABLE,
                     message = "Failed to get template APK",
@@ -883,6 +877,7 @@ class ApkBuilder(private val context: Context) {
             }
             if (!preflight.passed) {
                 return@withContext failBuild(
+                    logger = logger,
                     stage = BuildStage.INPUT_PRECHECK,
                     cause = BuildFailureCause.INPUT_PRECHECK_FAILED,
                     message = "Build input preflight failed: ${preflight.issues.size} issue(s)",
@@ -929,6 +924,9 @@ class ApkBuilder(private val context: Context) {
                 mediaContentPath = mediaContentPath,
                 splashMediaPath = webApp.getSplashMediaPath(),
                 bgmPlaylistPaths = bgmPlaylistPaths,
+                bgmCoverPaths = bgmCoverPaths,
+                bgmLrcDataList = bgmLrcDataList,
+                announcementIconPath = announcementIconPath,
                 htmlFiles = htmlFiles,
                 galleryItems = galleryItems,
                 errorPageMediaPath = errorPageMediaPath,
@@ -1027,7 +1025,8 @@ class ApkBuilder(private val context: Context) {
                             perfConfig = perfConfig,
                             mode = ModifyApkMode.CONTENT_OVERLAY,
                             saepEnabled = webApp.apkExportConfig?.saepEnabled == true,
-                            signingCertHash = signingCertHash
+                            signingCertHash = signingCertHash,
+                            logger = logger
                         ) { progress, stageMessage ->
                             if (stageMessage.isNotBlank()) {
                                 progressMessage.set(stageMessage)
@@ -1071,7 +1070,8 @@ class ApkBuilder(private val context: Context) {
                             perfConfig = perfConfig,
                             mode = ModifyApkMode.FULL,
                             saepEnabled = webApp.apkExportConfig?.saepEnabled == true,
-                            signingCertHash = signingCertHash
+                            signingCertHash = signingCertHash,
+                            logger = logger
                         ) { progress, stageMessage ->
                             if (stageMessage.isNotBlank()) {
                                 progressMessage.set(stageMessage)
@@ -1118,7 +1118,8 @@ class ApkBuilder(private val context: Context) {
                         perfConfig = perfConfig,
                         mode = ModifyApkMode.FULL,
                         saepEnabled = webApp.apkExportConfig?.saepEnabled == true,
-                        signingCertHash = signingCertHash
+                        signingCertHash = signingCertHash,
+                        logger = logger
                     ) { progress, stageMessage ->
                         if (stageMessage.isNotBlank()) {
                             progressMessage.set(stageMessage)
@@ -1138,6 +1139,7 @@ class ApkBuilder(private val context: Context) {
 
             if (!unsignedApk.exists() || unsignedApk.length() == 0L) {
                 return@withContext failBuild(
+                    logger = logger,
                     stage = BuildStage.MODIFY_APK,
                     cause = BuildFailureCause.UNSIGNED_OUTPUT_INVALID,
                     message = "Failed to generate unsigned APK",
@@ -1197,6 +1199,7 @@ class ApkBuilder(private val context: Context) {
             }
             if (!artifactVerification.passed) {
                 return@withContext failBuild(
+                    logger = logger,
                     stage = BuildStage.ARTIFACT_VERIFY,
                     cause = BuildFailureCause.ARTIFACT_VERIFICATION_FAILED,
                     message = "APK artifact verification failed: ${artifactVerification.issues.size} issue(s)",
@@ -1248,6 +1251,7 @@ class ApkBuilder(private val context: Context) {
                 )
             } catch (e: Exception) {
                 return@withContext failBuild(
+                    logger = logger,
                     stage = BuildStage.SIGN,
                     cause = BuildFailureCause.SIGNING_EXCEPTION,
                     message = "Signing failed: ${e.message ?: "Unknown error"}",
@@ -1263,6 +1267,7 @@ class ApkBuilder(private val context: Context) {
             if (!signedApk.exists() || signedApk.length() == 0L) {
                 if (signedApk.exists()) signedApk.delete()
                 return@withContext failBuild(
+                    logger = logger,
                     stage = BuildStage.SIGN,
                     cause = BuildFailureCause.SIGNED_OUTPUT_INVALID,
                     message = "APK signing failed: output file invalid",
@@ -1361,6 +1366,7 @@ class ApkBuilder(private val context: Context) {
 
         } catch (e: Exception) {
             failBuild(
+                logger = logger,
                 stage = currentStage,
                 cause = BuildFailureCause.UNHANDLED_EXCEPTION,
                 message = "Build failed: ${e.message ?: "Unknown error"}",
@@ -1374,16 +1380,13 @@ class ApkBuilder(private val context: Context) {
                 )
             )
         } finally {
-            // Per-build artifacts live under the package work dir; drop the unsigned APK on
-            // every exit path (failBuild returns inside try leave it behind otherwise) and
-            // clear the work-dir pointer. The cached template copy and aligned-ELF outputs
-            // stay for the next build of the same package.
             try { currentUnsignedApkPath?.let { File(it).delete() } } catch (_: Exception) {}
-            activeWorkDir = null
+            currentPackageName?.let { activeWorkDirs.remove(it) }
         }
     }
 
     private fun failBuild(
+        logger: BuildLogger,
         stage: BuildStage,
         cause: BuildFailureCause,
         message: String,
@@ -1416,9 +1419,7 @@ class ApkBuilder(private val context: Context) {
         return try {
             val sourceTemplate = templateProvider.getTemplateFor(config) ?: return null
             val sourceName = sourceTemplate.name
-            // Inside the per-package work dir: same-package builds are mutex-serialized, so
-            // the cached copy can be reused without a concurrent build truncating it.
-            val workDir = activeWorkDir ?: pkgWorkDir(config.packageName)
+            val workDir = activeWorkDirs[config.packageName] ?: pkgWorkDir(config.packageName)
             val templateFile = File(workDir, "base_template_${sourceName.substringBeforeLast('.')}.apk")
 
             val needsCopy = !templateFile.exists() ||
@@ -1470,6 +1471,7 @@ class ApkBuilder(private val context: Context) {
         mode: ModifyApkMode = ModifyApkMode.FULL,
         saepEnabled: Boolean = false,
         signingCertHash: () -> ByteArray = { signer.getCertificateSignatureHash() },
+        logger: BuildLogger = logDirectory,
         onProgress: (Int, String) -> Unit
     ) {
         logger.log(
@@ -1477,7 +1479,7 @@ class ApkBuilder(private val context: Context) {
                 "abiFilter=${abiFilters.ifEmpty { "all" }}, source=${sourceApk.name}"
         )
         val iconBitmap = iconPath?.let { template.loadBitmap(it) }
-            ?: generateDefaultIcon(config.appName, config.themeType)
+            ?: generateDefaultIcon(config.appName, config.themeType, logger)
         var hasConfigFile = false
         var strippedNativeLibSize = 0L
         val replacedIconPaths = mutableSetOf<String>()
@@ -1492,6 +1494,7 @@ class ApkBuilder(private val context: Context) {
         val deviceAbi = android.os.Build.SUPPORTED_ABIS?.firstOrNull() ?: "arm64-v8a"
         val injectedLibs = injectedDeviceLibEntries(config.appType, deviceAbi) +
             injectedMultiAbiLibEntries(config.appType, deviceAbi, abiFilters)
+        val alignDir = File(activeWorkDirs[config.packageName] ?: tempDir, "elf16k")
 
         val geckoEngineFiles = if (mode == ModifyApkMode.FULL && config.engineType == "GECKOVIEW") {
             val manager = com.webtoapp.core.engine.download.EngineFileManager(context)
@@ -1787,7 +1790,7 @@ class ApkBuilder(private val context: Context) {
                     }
                 }
 
-                ensureRequiredRuntimeAssets(zipOut, config.appType, entryNames)
+                ensureRequiredRuntimeAssets(zipOut, config.appType, entryNames, logger)
 
                 if (encryptionConfig.enabled) {
 
@@ -1891,13 +1894,14 @@ class ApkBuilder(private val context: Context) {
                     addBgmToAssets(zipOut, bgmPlaylistPaths, bgmLrcDataList, bgmCoverPaths, assetEncryptor, encryptionConfig)
                 }
 
-                addCustomCaCertsToAssets(zipOut, config.networkTrustConfig.customCaCertificates)
+                addCustomCaCertsToAssets(zipOut, config.networkTrustConfig.customCaCertificates, logger)
 
                 addChromeExtensionAssetsToApk(
                     zipOut = zipOut,
                     config = config,
                     encryptor = assetEncryptor,
-                    encryptionConfig = encryptionConfig
+                    encryptionConfig = encryptionConfig,
+                    logger = logger
                 )
 
                 val projectDir = when (config.appType) {
@@ -1921,7 +1925,7 @@ class ApkBuilder(private val context: Context) {
                 if (embedder != null) {
                     if (config.appType == "GO_APP" && projectDir != null) {
                         onProgress(90, "Verifying Go binary...")
-                        ensureGoProjectBinaryForExport(projectDir, config, onProgress)
+                        ensureGoProjectBinaryForExport(projectDir, config, onProgress, logger)
                     }
                     onProgress(94, "Embedding project files...")
                     val embedCtx = EmbedContext(
@@ -1937,12 +1941,12 @@ class ApkBuilder(private val context: Context) {
                         fnAddMediaContent = ::addMediaContentToAssets,
                         fnAddHtmlFiles = ::addHtmlFilesToAssets,
                         fnAddGalleryItems = ::addGalleryItemsToAssets,
-                        fnAddWordPressFiles = ::addWordPressFilesToAssets,
-                        fnAddNodeJsFiles = { zo, dir -> addNodeJsFilesToAssets(zo, dir, abiFilters) },
-                        fnAddFrontendFiles = ::addFrontendFilesToAssets,
-                        fnAddPhpAppFiles = ::addPhpAppFilesToAssets,
-                        fnAddPythonAppFiles = ::addPythonAppFilesToAssets,
-                        fnAddGoAppFiles = ::addGoAppFilesToAssets,
+                        fnAddWordPressFiles = { zo, dir -> addWordPressFilesToAssets(zo, dir, abiFilters, alignDir, logger) },
+                        fnAddNodeJsFiles = { zo, dir -> addNodeJsFilesToAssets(zo, dir, abiFilters, alignDir, logger) },
+                        fnAddFrontendFiles = { zo, dir, files -> addFrontendFilesToAssets(zo, dir, files, logger) },
+                        fnAddPhpAppFiles = { zo, dir -> addPhpAppFilesToAssets(zo, dir, abiFilters, alignDir, logger) },
+                        fnAddPythonAppFiles = { zo, dir -> addPythonAppFilesToAssets(zo, dir, abiFilters, alignDir, logger) },
+                        fnAddGoAppFiles = { zo, dir -> addGoAppFilesToAssets(zo, dir, abiFilters, alignDir, logger) },
                         multiWebSiteSourceDirs = multiWebSiteSourceDirs,
                         multiWebSiteGalleryItems = multiWebSiteGalleryItems,
                         multiWebSiteMediaPaths = multiWebSiteMediaPaths
@@ -1989,7 +1993,7 @@ class ApkBuilder(private val context: Context) {
                 if (mode == ModifyApkMode.FULL && config.engineType == "GECKOVIEW") {
                     onProgress(98, "Injecting native runtime...")
                     logger.section("Inject GeckoView Runtime (native libs + omni.ja)")
-                    injectGeckoViewRuntime(zipOut, abiFilters, checkNotNull(geckoEngineFiles))
+                    injectGeckoViewRuntime(zipOut, abiFilters, checkNotNull(geckoEngineFiles), logger)
                 }
 
                 // The Cronet upstream (forced HTTP/3 and/or ECH on the system engine)
@@ -1998,7 +2002,7 @@ class ApkBuilder(private val context: Context) {
                 if (mode == ModifyApkMode.FULL && cronetNeededForExport(config)) {
                     onProgress(98, "Injecting HTTP/3 runtime...")
                     logger.section("Inject Cronet Runtime (forced HTTP/3 / ECH)")
-                    injectCronetNativeLib(zipOut)
+                    injectCronetNativeLib(zipOut, abiFilters, alignDir, logger)
                 }
             }
         }
@@ -2020,7 +2024,8 @@ class ApkBuilder(private val context: Context) {
     private fun injectGeckoViewRuntime(
         zipOut: ZipOutputStream,
         abiFilters: List<String>,
-        runtimeFiles: GeckoRuntimeFiles
+        runtimeFiles: GeckoRuntimeFiles,
+        logger: BuildLogger = logDirectory
     ) {
         try {
             val nativeLibs = runtimeFiles.nativeLibs
@@ -2243,7 +2248,8 @@ class ApkBuilder(private val context: Context) {
         zipOut: ZipOutputStream,
         config: ApkConfig,
         encryptor: com.webtoapp.core.crypto.AssetEncryptor?,
-        encryptionConfig: com.webtoapp.core.crypto.EncryptionConfig
+        encryptionConfig: com.webtoapp.core.crypto.EncryptionConfig,
+        logger: BuildLogger = logDirectory
     ) {
         val extensions = config.embeddedPlugins.filter {
             it.kind == "CHROME_EXTENSION" && it.chromeExtId.isNotBlank()
@@ -2301,7 +2307,8 @@ class ApkBuilder(private val context: Context) {
      */
     private fun addCustomCaCertsToAssets(
         zipOut: ZipOutputStream,
-        certificates: List<com.webtoapp.data.model.CustomCaCertificate>
+        certificates: List<com.webtoapp.data.model.CustomCaCertificate>,
+        logger: BuildLogger = logDirectory
     ) {
         if (certificates.isEmpty()) return
         val factory = java.security.cert.CertificateFactory.getInstance("X.509")
@@ -2371,7 +2378,12 @@ class ApkBuilder(private val context: Context) {
         ZipUtils.writeEntryStoredStreaming(zipOut, name, file)
     }
 
-    private fun ensureAligned16kNativeLib(sourceFile: File, displayName: String): File {
+    private fun ensureAligned16kNativeLib(
+        sourceFile: File,
+        displayName: String,
+        alignDir: File = File(tempDir, "elf16k"),
+        logger: BuildLogger = logDirectory
+    ): File {
         val requireAligned =
             displayName == com.webtoapp.core.nodejs.NodeDependencyManager.NODE_BINARY_NAME ||
                 displayName == "libnode_bridge.so" ||
@@ -2381,9 +2393,7 @@ class ApkBuilder(private val context: Context) {
                 displayName == "libpython3.so" ||
                 displayName == "libmusl-linker.so"
         return try {
-            // Per-package work dir keeps the aligned outputs (and the in-memory cache
-            // entries pointing at them) isolated from concurrent builds of other apps.
-            val result = ElfAligner16k.ensureAligned(sourceFile, File(activeWorkDir ?: tempDir, "elf16k"))
+            val result = ElfAligner16k.ensureAligned(sourceFile, alignDir)
             when {
                 result.alreadyAligned -> logger.log("ELF 16KB already aligned: $displayName")
                 result.repacked -> logger.log(
@@ -2539,7 +2549,10 @@ class ApkBuilder(private val context: Context) {
 
     private fun addWordPressFilesToAssets(
         zipOut: ZipOutputStream,
-        projectDir: File
+        projectDir: File,
+        abiFilters: List<String> = emptyList(),
+        alignDir: File = File(tempDir, "elf16k"),
+        logger: BuildLogger = logDirectory
     ) {
         AppLogger.d("ApkBuilder", "Embedding WordPress files from: ${projectDir.absolutePath}")
 
@@ -2580,14 +2593,17 @@ class ApkBuilder(private val context: Context) {
             )
         }
         try {
-            val abi = com.webtoapp.core.wordpress.WordPressDependencyManager.getDeviceAbi()
-            val alignedPhpBinary = ensureAligned16kNativeLib(phpBinary, "libphp.so")
+            val deviceAbi = com.webtoapp.core.wordpress.WordPressDependencyManager.getDeviceAbi()
+            val abi = deviceInjectionAbi(deviceAbi, abiFilters)
+            if (abi == null) {
+                logger.warn("Device ABI $deviceAbi not in selected architectures; libphp.so not injected")
+                return
+            }
+            val alignedPhpBinary = ensureAligned16kNativeLib(phpBinary, "libphp.so", alignDir, logger)
 
             writeEntryStoredStreaming(zipOut, "lib/$abi/libphp.so", alignedPhpBinary)
             logger.log("PHP binary injected as native lib: lib/$abi/libphp.so (${alignedPhpBinary.length() / 1024} KB)")
         } catch (e: Exception) {
-            // A WordPress APK without libphp.so installs fine but crashes on launch — fail the
-            // build instead of shipping a broken app (mirrors injectNodeJsNativeLibs).
             throw IllegalStateException(
                 "Failed to embed the PHP binary as libphp.so for the WordPress app: ${e.message}", e
             )
@@ -2597,11 +2613,13 @@ class ApkBuilder(private val context: Context) {
     private fun addNodeJsFilesToAssets(
         zipOut: ZipOutputStream,
         projectDir: File,
-        abiFilters: List<String>
+        abiFilters: List<String>,
+        alignDir: File = File(tempDir, "elf16k"),
+        logger: BuildLogger = logDirectory
     ) {
 
         RuntimeAssetEmbedder.embedProjectFiles(zipOut, projectDir, RuntimeAssetEmbedder.nodeJsConfig(), logger)
-        injectNodeJsNativeLibs(zipOut, abiFilters)
+        injectNodeJsNativeLibs(zipOut, abiFilters, alignDir, logger)
     }
 
     /**
@@ -2750,8 +2768,14 @@ class ApkBuilder(private val context: Context) {
         return "sha256=$sha,size=${file.length()},aligned16k=$aligned"
     }
 
-    private fun injectNodeJsNativeLibs(zipOut: ZipOutputStream, abiFilters: List<String>) {
-        val abi = com.webtoapp.core.nodejs.NodeDependencyManager.getDeviceAbi()
+    private fun injectNodeJsNativeLibs(
+        zipOut: ZipOutputStream,
+        abiFilters: List<String>,
+        alignDir: File = File(tempDir, "elf16k"),
+        logger: BuildLogger = logDirectory
+    ) {
+        val deviceAbi = com.webtoapp.core.nodejs.NodeDependencyManager.getDeviceAbi()
+        val abi = deviceInjectionAbi(deviceAbi, abiFilters)
         val nativeDir = File(context.applicationInfo.nativeLibraryDir)
         val bridge = File(nativeDir, "libnode_bridge.so")
         if (!bridge.exists() || !bridge.canRead() || bridge.length() <= 0L) {
@@ -2779,52 +2803,52 @@ class ApkBuilder(private val context: Context) {
             throw IllegalStateException(msg)
         }
         try {
-            val alignedCxx = ensureAligned16kNativeLib(cxxShared, "libc++_shared.so")
-            writeEntryStoredStreaming(zipOut, "lib/$abi/libc++_shared.so", alignedCxx)
-            logger.log(
-                "C++ shared runtime embedded as native lib: lib/$abi/libc++_shared.so (${alignedCxx.length() / 1024} KB)"
-            )
+            if (abi != null) {
+                val alignedCxx = ensureAligned16kNativeLib(cxxShared, "libc++_shared.so", alignDir, logger)
+                writeEntryStoredStreaming(zipOut, "lib/$abi/libc++_shared.so", alignedCxx)
+                logger.log(
+                    "C++ shared runtime embedded as native lib: lib/$abi/libc++_shared.so (${alignedCxx.length() / 1024} KB)"
+                )
 
-            val alignedBridge = ensureAligned16kNativeLib(bridge, "libnode_bridge.so")
-            writeEntryStoredStreaming(zipOut, "lib/$abi/libnode_bridge.so", alignedBridge)
-            logger.log(
-                "Node bridge embedded as native lib: lib/$abi/libnode_bridge.so (${alignedBridge.length() / 1024} KB)"
-            )
+                val alignedBridge = ensureAligned16kNativeLib(bridge, "libnode_bridge.so", alignDir, logger)
+                writeEntryStoredStreaming(zipOut, "lib/$abi/libnode_bridge.so", alignedBridge)
+                logger.log(
+                    "Node bridge embedded as native lib: lib/$abi/libnode_bridge.so (${alignedBridge.length() / 1024} KB)"
+                )
 
-            val alignedNode = ensureAligned16kNativeLib(
-                nodeBinary,
-                com.webtoapp.core.nodejs.NodeDependencyManager.NODE_BINARY_NAME
-            )
-            writeEntryStoredStreaming(
-                zipOut,
-                "lib/$abi/${com.webtoapp.core.nodejs.NodeDependencyManager.NODE_BINARY_NAME}",
-                alignedNode
-            )
-            logger.log(
-                "Node.js binary embedded as native lib: lib/$abi/${com.webtoapp.core.nodejs.NodeDependencyManager.NODE_BINARY_NAME} (${alignedNode.length() / 1024} KB)"
-            )
+                val alignedNode = ensureAligned16kNativeLib(
+                    nodeBinary,
+                    com.webtoapp.core.nodejs.NodeDependencyManager.NODE_BINARY_NAME,
+                    alignDir,
+                    logger
+                )
+                writeEntryStoredStreaming(
+                    zipOut,
+                    "lib/$abi/${com.webtoapp.core.nodejs.NodeDependencyManager.NODE_BINARY_NAME}",
+                    alignedNode
+                )
+                logger.log(
+                    "Node.js binary embedded as native lib: lib/$abi/${com.webtoapp.core.nodejs.NodeDependencyManager.NODE_BINARY_NAME} (${alignedNode.length() / 1024} KB)"
+                )
+            } else {
+                logger.warn("Device ABI $deviceAbi not in selected architectures; device-ABI Node libs not injected")
+            }
 
-            // Multi-ABI export: the template already ships libnode_bridge.so /
-            // libnode_launcher.so / libc++_shared.so (16KB-aligned) for every ABI; only
-            // libnode.so is downloaded content, so it is embedded here per selected ABI.
-            // Without this the APK only ran on devices sharing the build host's ABI —
-            // x86_64 emulators without ARM translation reported "libnode.so not installed".
             val selectedAbis = if (abiFilters.isEmpty()) {
                 com.webtoapp.core.nodejs.NodeDependencyManager.NODE_EXPORT_ABIS
             } else {
                 abiFilters.toSet()
             }
-            for (extraAbi in selectedAbis - abi) {
+            for (extraAbi in selectedAbis - deviceAbi) {
                 val extraLib = com.webtoapp.core.nodejs.NodeDependencyManager
                     .nodeLibForAbi(context, extraAbi)
                 when {
                     extraLib != null -> {
-                        // displayName must stay the bare lib name: ensureAligned16kNativeLib
-                        // decides fail-vs-warn on it, and a misaligned libnode.so is exactly
-                        // the Android-15/16KB-page breakage this path exists to prevent.
                         val alignedExtra = ensureAligned16kNativeLib(
                             extraLib,
-                            com.webtoapp.core.nodejs.NodeDependencyManager.NODE_BINARY_NAME
+                            com.webtoapp.core.nodejs.NodeDependencyManager.NODE_BINARY_NAME,
+                            alignDir,
+                            logger
                         )
                         writeEntryStoredStreaming(
                             zipOut,
@@ -2857,7 +2881,10 @@ class ApkBuilder(private val context: Context) {
 
     private fun addPhpAppFilesToAssets(
         zipOut: ZipOutputStream,
-        projectDir: File
+        projectDir: File,
+        abiFilters: List<String> = emptyList(),
+        alignDir: File = File(tempDir, "elf16k"),
+        logger: BuildLogger = logDirectory
     ) {
 
         RuntimeAssetEmbedder.embedProjectFiles(zipOut, projectDir, RuntimeAssetEmbedder.phpConfig(), logger)
@@ -2870,13 +2897,17 @@ class ApkBuilder(private val context: Context) {
             )
         }
         try {
-            val abi = com.webtoapp.core.wordpress.WordPressDependencyManager.getDeviceAbi()
-            val alignedPhpBinary = ensureAligned16kNativeLib(phpBinary, "libphp.so")
+            val deviceAbi = com.webtoapp.core.wordpress.WordPressDependencyManager.getDeviceAbi()
+            val abi = deviceInjectionAbi(deviceAbi, abiFilters)
+            if (abi == null) {
+                logger.warn("Device ABI $deviceAbi not in selected architectures; libphp.so not injected")
+                return
+            }
+            val alignedPhpBinary = ensureAligned16kNativeLib(phpBinary, "libphp.so", alignDir, logger)
 
             writeEntryStoredStreaming(zipOut, "lib/$abi/libphp.so", alignedPhpBinary)
             logger.log("PHP binary injected as native lib: lib/$abi/libphp.so (${alignedPhpBinary.length() / 1024} KB)")
         } catch (e: Exception) {
-            // Swallowing this produced "successful" builds whose APKs crash on launch.
             throw IllegalStateException(
                 "Failed to embed the PHP binary as libphp.so for the PHP app: ${e.message}", e
             )
@@ -2908,7 +2939,10 @@ class ApkBuilder(private val context: Context) {
 
     private fun addPythonAppFilesToAssets(
         zipOut: ZipOutputStream,
-        projectDir: File
+        projectDir: File,
+        abiFilters: List<String> = emptyList(),
+        alignDir: File = File(tempDir, "elf16k"),
+        logger: BuildLogger = logDirectory
     ) {
 
         val reqFile = File(projectDir, "requirements.txt")
@@ -3038,7 +3072,7 @@ builtins.__import__ = _w2a_import
             }
         }
 
-        val abi = com.webtoapp.core.wordpress.WordPressDependencyManager.getDeviceAbi()
+        val deviceAbi = com.webtoapp.core.wordpress.WordPressDependencyManager.getDeviceAbi()
         if (pythonBinary == null || !pythonBinary.canRead()) {
             throw IllegalStateException(
                 "Python app export needs the Python runtime, but the interpreter is missing or unreadable " +
@@ -3046,32 +3080,35 @@ builtins.__import__ = _w2a_import
                     "Download the Python runtime in WebToApp (Linux Environment) and rebuild."
             )
         }
-        try {
-            val alignedPythonBinary = ensureAligned16kNativeLib(pythonBinary, "libpython3.so")
-            writeEntryStoredStreaming(zipOut, "lib/$abi/libpython3.so", alignedPythonBinary)
-            logger.log("Python binary embedded as native lib: lib/$abi/libpython3.so (${alignedPythonBinary.length() / 1024} KB, src=${pythonBinary.name})")
-
-            writeEntryStoredSimple(zipOut, "assets/python/$abi/python3", alignedPythonBinary.readBytes())
-        } catch (e: Exception) {
-            // A Python APK without the interpreter installs fine but cannot run — fail the
-            // build instead of shipping it (mirrors injectNodeJsNativeLibs).
-            throw IllegalStateException(
-                "Failed to embed the Python binary as libpython3.so for the Python app: ${e.message}", e
-            )
-        }
-
-        val muslLinkerName = com.webtoapp.core.python.PythonDependencyManager.getMuslLinkerName(abi)
-        val muslLinkerFile = File(pythonHome, "lib/$muslLinkerName")
-        if (muslLinkerFile.exists() && muslLinkerFile.canRead()) {
-            try {
-                val alignedMuslLinkerFile = ensureAligned16kNativeLib(muslLinkerFile, "libmusl-linker.so")
-                writeEntryStoredStreaming(zipOut, "lib/$abi/libmusl-linker.so", alignedMuslLinkerFile)
-                logger.log("musl linker embedded as native lib: lib/$abi/libmusl-linker.so (${alignedMuslLinkerFile.length() / 1024} KB)")
-            } catch (e: Exception) {
-                logger.error("Failed to embed musl linker", e)
-            }
+        val abi = deviceInjectionAbi(deviceAbi, abiFilters)
+        if (abi == null) {
+            logger.warn("Device ABI $deviceAbi not in selected architectures; Python native libs not injected")
         } else {
-            logger.warn("musl linker not found: ${muslLinkerFile.absolutePath} - Python may not execute in exported APK")
+            try {
+                val alignedPythonBinary = ensureAligned16kNativeLib(pythonBinary, "libpython3.so", alignDir, logger)
+                writeEntryStoredStreaming(zipOut, "lib/$abi/libpython3.so", alignedPythonBinary)
+                logger.log("Python binary embedded as native lib: lib/$abi/libpython3.so (${alignedPythonBinary.length() / 1024} KB, src=${pythonBinary.name})")
+
+                writeEntryStoredSimple(zipOut, "assets/python/$abi/python3", alignedPythonBinary.readBytes())
+            } catch (e: Exception) {
+                throw IllegalStateException(
+                    "Failed to embed the Python binary as libpython3.so for the Python app: ${e.message}", e
+                )
+            }
+
+            val muslLinkerName = com.webtoapp.core.python.PythonDependencyManager.getMuslLinkerName(abi)
+            val muslLinkerFile = File(pythonHome, "lib/$muslLinkerName")
+            if (muslLinkerFile.exists() && muslLinkerFile.canRead()) {
+                try {
+                    val alignedMuslLinkerFile = ensureAligned16kNativeLib(muslLinkerFile, "libmusl-linker.so", alignDir, logger)
+                    writeEntryStoredStreaming(zipOut, "lib/$abi/libmusl-linker.so", alignedMuslLinkerFile)
+                    logger.log("musl linker embedded as native lib: lib/$abi/libmusl-linker.so (${alignedMuslLinkerFile.length() / 1024} KB)")
+                } catch (e: Exception) {
+                    logger.error("Failed to embed musl linker", e)
+                }
+            } else {
+                logger.warn("musl linker not found: ${muslLinkerFile.absolutePath} - Python may not execute in exported APK")
+            }
         }
 
         val pythonLibDir = File(pythonHome, "lib")
@@ -3080,13 +3117,21 @@ builtins.__import__ = _w2a_import
 
     private fun addGoAppFilesToAssets(
         zipOut: ZipOutputStream,
-        projectDir: File
+        projectDir: File,
+        abiFilters: List<String> = emptyList(),
+        alignDir: File = File(tempDir, "elf16k"),
+        logger: BuildLogger = logDirectory
     ) {
         RuntimeAssetEmbedder.embedProjectFiles(zipOut, projectDir, RuntimeAssetEmbedder.goConfig(), logger)
-        injectGoExecLoaderNativeLib(zipOut)
+        injectGoExecLoaderNativeLib(zipOut, abiFilters, alignDir, logger)
     }
 
-    private fun injectGoExecLoaderNativeLib(zipOut: ZipOutputStream) {
+    private fun injectGoExecLoaderNativeLib(
+        zipOut: ZipOutputStream,
+        abiFilters: List<String> = emptyList(),
+        alignDir: File = File(tempDir, "elf16k"),
+        logger: BuildLogger = logDirectory
+    ) {
         val loader = File(context.applicationInfo.nativeLibraryDir, "libgo_exec_loader.so")
         if (!loader.exists() || !loader.canRead()) {
             val msg =
@@ -3095,8 +3140,13 @@ builtins.__import__ = _w2a_import
             throw IllegalStateException(msg)
         }
         try {
-            val abi = com.webtoapp.core.golang.GoDependencyManager.getDeviceAbi()
-            val aligned = ensureAligned16kNativeLib(loader, "libgo_exec_loader.so")
+            val deviceAbi = com.webtoapp.core.golang.GoDependencyManager.getDeviceAbi()
+            val abi = deviceInjectionAbi(deviceAbi, abiFilters)
+            if (abi == null) {
+                logger.warn("Device ABI $deviceAbi not in selected architectures; libgo_exec_loader.so not injected")
+                return
+            }
+            val aligned = ensureAligned16kNativeLib(loader, "libgo_exec_loader.so", alignDir, logger)
             writeEntryStoredStreaming(zipOut, "lib/$abi/libgo_exec_loader.so", aligned)
             logger.log(
                 "Go exec loader embedded as native lib: lib/$abi/libgo_exec_loader.so (${aligned.length() / 1024} KB)"
@@ -3114,7 +3164,12 @@ builtins.__import__ = _w2a_import
      * route through Chromium's own QUIC stack. A missing runtime fails the build instead
      * of shipping a silently degraded app.
      */
-    private fun injectCronetNativeLib(zipOut: ZipOutputStream) {
+    private fun injectCronetNativeLib(
+        zipOut: ZipOutputStream,
+        abiFilters: List<String> = emptyList(),
+        alignDir: File = File(tempDir, "elf16k"),
+        logger: BuildLogger = logDirectory
+    ) {
         val cronet = com.webtoapp.core.webview.CronetDependencyManager
         val lib = cronet.resolveCronetLib(context)
         if (lib == null) {
@@ -3126,8 +3181,13 @@ builtins.__import__ = _w2a_import
             throw IllegalStateException(msg)
         }
         try {
-            val abi = cronet.getDeviceAbi()
-            val aligned = ensureAligned16kNativeLib(lib, cronet.LIB_FILE_NAME)
+            val deviceAbi = cronet.getDeviceAbi()
+            val abi = deviceInjectionAbi(deviceAbi, abiFilters)
+            if (abi == null) {
+                logger.warn("Device ABI $deviceAbi not in selected architectures; ${cronet.LIB_FILE_NAME} not injected")
+                return
+            }
+            val aligned = ensureAligned16kNativeLib(lib, cronet.LIB_FILE_NAME, alignDir, logger)
             writeEntryStoredStreaming(zipOut, "lib/$abi/${cronet.LIB_FILE_NAME}", aligned)
             logger.log(
                 "Cronet runtime embedded as native lib: lib/$abi/${cronet.LIB_FILE_NAME} (${aligned.length() / 1024} KB)"
@@ -3143,7 +3203,8 @@ builtins.__import__ = _w2a_import
     private fun ensureGoProjectBinaryForExport(
         projectDir: File,
         config: ApkConfig,
-        onProgress: ((Int, String) -> Unit)? = null
+        onProgress: ((Int, String) -> Unit)? = null,
+        logger: BuildLogger = logDirectory
     ) {
         val desiredBinaryName = config.goAppBinaryName.ifBlank { projectDir.name }
         val hasCompatibleBinary = com.webtoapp.core.golang.GoDependencyManager.findBinaryPath(projectDir, desiredBinaryName) != null ||
@@ -3162,7 +3223,8 @@ builtins.__import__ = _w2a_import
     private fun addFrontendFilesToAssets(
         zipOut: ZipOutputStream,
         projectDir: File,
-        htmlFiles: List<com.webtoapp.data.model.HtmlFile>
+        htmlFiles: List<com.webtoapp.data.model.HtmlFile>,
+        logger: BuildLogger = logDirectory
     ) {
         RuntimeAssetEmbedder.embedProjectFiles(zipOut, projectDir, RuntimeAssetEmbedder.frontendConfig(), logger)
     }
@@ -3697,7 +3759,11 @@ builtins.__import__ = _w2a_import
         }
     }
 
-    private fun generateDefaultIcon(appName: String, themeType: String = "AURORA"): Bitmap {
+    private fun generateDefaultIcon(
+        appName: String,
+        themeType: String = "AURORA",
+        logger: BuildLogger = logDirectory
+    ): Bitmap {
         val size = 512
         val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
@@ -3838,7 +3904,8 @@ builtins.__import__ = _w2a_import
     private fun ensureRequiredRuntimeAssets(
         zipOut: ZipOutputStream,
         appType: String,
-        templateEntries: Set<String>
+        templateEntries: Set<String>,
+        logger: BuildLogger = logDirectory
     ) {
         val required = runtimeAssetsRequiredFor(appType)
         for (assetName in required) {
@@ -4038,7 +4105,7 @@ builtins.__import__ = _w2a_import
     fun installApk(apkFile: File): Boolean = ApkInstaller.install(context, apkFile)
 
     fun getBuiltApks(): List<File> {
-        return outputDir.listFiles()?.filter { it.extension == "apk" } ?: emptyList()
+        return outputDir.listFiles()?.filter { it.extension.equals("apk", ignoreCase = true) } ?: emptyList()
     }
 
     fun deleteApk(apkFile: File): Boolean {
@@ -4055,7 +4122,7 @@ builtins.__import__ = _w2a_import
     }
 
     fun getBuildLogs(): List<File> {
-        return logger.getAllLogFiles()
+        return logDirectory.getAllLogFiles()
     }
 
     fun getLogDirectory(): String {

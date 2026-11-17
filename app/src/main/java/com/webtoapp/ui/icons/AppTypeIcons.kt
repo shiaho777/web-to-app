@@ -7,6 +7,7 @@ import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.DynamicFeed
 import androidx.compose.material.icons.filled.Html
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Javascript
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.PhotoLibrary
@@ -32,7 +33,8 @@ fun WtaAppTypeIcon(
         AppType.HTML -> Icons.Filled.Html
         AppType.FRONTEND -> Icons.Filled.WebAsset
         AppType.GALLERY -> Icons.Filled.PhotoLibrary
-        AppType.IMAGE, AppType.VIDEO -> Icons.Filled.PlayCircle
+        AppType.IMAGE -> Icons.Filled.Image
+        AppType.VIDEO -> Icons.Filled.PlayCircle
         AppType.NODEJS_APP -> Icons.Filled.Javascript
         AppType.PHP_APP -> Icons.Filled.Terminal
         AppType.PYTHON_APP -> Icons.Filled.Code

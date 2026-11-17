@@ -45,10 +45,11 @@ class ExportSecurityRegressionTest {
         val method = ApkBuilder::class.java.getDeclaredMethod(
             "generateDefaultIcon",
             String::class.java,
-            String::class.java
+            String::class.java,
+            BuildLogger::class.java
         ).apply { isAccessible = true }
 
-        val bitmap = method.invoke(builder, "首页", "LAVENDER") as Bitmap
+        val bitmap = method.invoke(builder, "首页", "LAVENDER", BuildLogger(context)) as Bitmap
 
         assertThat(bitmap.getPixel(bitmap.width / 2, 20)).isEqualTo(0xFF000000.toInt())
         assertThat(hasWhiteIconPixel(bitmap)).isTrue()

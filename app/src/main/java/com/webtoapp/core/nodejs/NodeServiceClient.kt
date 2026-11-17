@@ -130,13 +130,30 @@ object NodeServiceClient {
             return@withContext StartResult.Failure(":nodejs 子进程发包失败: ${e.message}", v8Exhausted = false)
         }
 
-        val result = withTimeoutOrNull(60_000L) { deferred.await() }
-            ?: StartResult.Failure("等 :nodejs 子进程回包超时", v8Exhausted = false)
+        val result = withTimeoutOrNull(NodeServiceProtocol.START_REPLY_TIMEOUT_MS) { deferred.await() }
+        if (result == null) {
+            pendingStartRequests.remove(requestId)
+            cancelStartRequest()
+            return@withContext StartResult.Failure("等 :nodejs 子进程回包超时", v8Exhausted = false)
+        }
         pendingStartRequests.remove(requestId)
         if (result is StartResult.Success) {
             lastServerUrl = result.url
         }
         result
+    }
+
+    private fun cancelStartRequest() {
+        val messenger = serviceMessenger ?: return
+        try {
+            messenger.send(Message.obtain().apply {
+                what = NodeServiceProtocol.MSG_STOP_SERVER
+                replyTo = replyMessenger
+            })
+        } catch (e: RemoteException) {
+            AppLogger.w(TAG, "取消启动请求发包失败: ${e.message}")
+        }
+        lastServerUrl = null
     }
 
     suspend fun stopServer(context: Context) = withContext(Dispatchers.IO) {

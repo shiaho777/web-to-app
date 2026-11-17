@@ -9272,6 +9272,18 @@ object StringsE {
         AppLanguage.JAPANESE -> "APK の署名に失敗しました (%d スキーム): %s"
         AppLanguage.KOREAN -> "APK 서명 실패 (%d 스키마): %s"
     }
+    val signKeyRegeneratedRetry: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "自动签名密钥库无法加载（可能已损坏），已重新生成。签名身份已更换：此前导出的应用将无法覆盖更新，加密构建需重新导出。"
+        AppLanguage.ENGLISH -> "The auto signing keystore could not be loaded (possibly corrupted) and has been regenerated. The signing identity changed: previously exported apps can no longer be updated in place, and encrypted builds must be re-exported."
+        AppLanguage.ARABIC -> "تعذّر تحميل مخزن مفاتيح التوقيع التلقائي (ربما كان تالفًا) وتمت إعادة إنشائه. تغيّرت هوية التوقيع: لم يعد من الممكن تحديث التطبيقات المصدّرة سابقًا فوق نفسها، ويجب إعادة تصدير البناءات المشفّرة."
+        AppLanguage.PORTUGUESE -> "O keystore de assinatura automática não pôde ser carregado (possivelmente corrompido) e foi regenerado. A identidade de assinatura mudou: apps exportados anteriormente não podem mais ser atualizados por cima, e compilações criptografadas precisam ser reexportadas."
+        AppLanguage.SPANISH -> "El almacén de claves de firma automática no se pudo cargar (posiblemente dañado) y se ha regenerado. La identidad de firma cambió: las apps exportadas anteriormente ya no pueden actualizarse encima y las compilaciones cifradas deben reexportarse."
+        AppLanguage.FRENCH -> "Le keystore de signature automatique n'a pas pu être chargé (peut-être corrompu) et a été régénéré. L'identité de signature a changé : les applications déjà exportées ne peuvent plus être mises à jour par-dessus, et les compilations chiffrées doivent être réexportées."
+        AppLanguage.GERMAN -> "Der automatische Signatur-Keystore konnte nicht geladen werden (möglicherweise beschädigt) und wurde neu erstellt. Die Signaturidentität hat sich geändert: Zuvor exportierte Apps können nicht mehr darüber aktualisiert werden, und verschlüsselte Builds müssen neu exportiert werden."
+        AppLanguage.RUSSIAN -> "Автоматическое хранилище ключей подписи не удалось загрузить (возможно, оно повреждено); оно создано заново. Идентичность подписи изменилась: ранее экспортированные приложения больше нельзя обновить поверх, а зашифрованные сборки нужно экспортировать заново."
+        AppLanguage.JAPANESE -> "自動署名キーストアを読み込めなかったため（破損の可能性）、再生成しました。署名アイデンティティが変更されたため、以前エクスポートしたアプリは上書き更新できず、暗号化ビルドは再エクスポートが必要です。"
+        AppLanguage.KOREAN -> "자동 서명 키스토어를 불러올 수 없어(손상 가능성) 재생성했습니다. 서명 신원이 변경되어 이전에 내보낸 앱은 덮어써서 업데이트할 수 없고 암호화된 빌드는 다시 내보내야 합니다."
+    }
 
     val zipTooManyEntries: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "ZIP 文件包含过多条目（超过 %d）"

@@ -10,77 +10,107 @@ ROOT = Path(__file__).resolve().parents[1]
 PAYLOAD_FILE = ROOT / "app/src/main/java/com/webtoapp/core/apkbuilder/ApkConfigJsonFactory.kt"
 APKCONFIG_FILE = ROOT / "app/src/main/java/com/webtoapp/core/apkbuilder/ApkConfig.kt"
 SHELLCONFIG_FILE = ROOT / "app/src/main/java/com/webtoapp/core/shell/ShellModeManager.kt"
+MODEL_FILE = ROOT / "app/src/main/java/com/webtoapp/data/model/WebApp.kt"
 ALLOWLIST_FILE = ROOT / "scripts/config_field_drift_allowlist.json"
 
 OBJECT_RETURN_PAYLOAD_CLASSES = ("BackgroundRunConfig", "NotificationConfig")
 
 PAYLOAD_FUNCS = [
-    "toShellPayload",
-    "webViewConfigPayload",
-    "floatingWindowConfigPayload",
-    "errorPageConfigPayload",
-    "mediaConfigPayload",
-    "htmlConfigPayload",
-    "galleryConfigPayload",
-    "autoStartConfigPayload",
-    "isolationConfigPayload",
-    "backgroundRunConfigPayload",
-    "notificationConfigPayload",
-    "networkTrustConfigPayload",
-    "wordpressConfigPayload",
-    "nodejsConfigPayload",
-    "phpAppConfigPayload",
-    "pythonAppConfigPayload",
-    "goAppConfigPayload",
-    "multiWebConfigPayload",
+    ("ApkConfig", "toShellPayload"),
+    ("ApkConfig", "webViewConfigPayload"),
+    ("ApkConfig", "floatingWindowConfigPayload"),
+    ("ApkConfig", "errorPageConfigPayload"),
+    ("ApkConfig", "mediaConfigPayload"),
+    ("ApkConfig", "htmlConfigPayload"),
+    ("ApkConfig", "galleryConfigPayload"),
+    ("ApkConfig", "autoStartConfigPayload"),
+    ("ApkConfig", "isolationConfigPayload"),
+    ("ApkConfig", "backgroundRunConfigPayload"),
+    ("ApkConfig", "notificationConfigPayload"),
+    ("ApkConfig", "networkTrustConfigPayload"),
+    ("ApkConfig", "wordpressConfigPayload"),
+    ("ApkConfig", "nodejsConfigPayload"),
+    ("ApkConfig", "phpAppConfigPayload"),
+    ("ApkConfig", "pythonAppConfigPayload"),
+    ("ApkConfig", "goAppConfigPayload"),
+    ("ApkConfig", "multiWebConfigPayload"),
+    ("EmbeddedPlugin", "toPayload"),
 ]
 
 PAIR_KEY = re.compile(r'"([A-Za-z][A-Za-z0-9_]*)"\s+to\b')
 SERIAL_NAME = re.compile(r'@SerializedName\(\s*"([A-Za-z][A-Za-z0-9_]*)"\s*\)')
-FUN_HEADER = re.compile(r"fun\s+ApkConfig\.(\w+)\s*\(\s*\)\s*:\s*([A-Za-z<>?,\s]+)\s*[={]")
+FUN_HEADER = re.compile(r"\bfun\s+([A-Za-z_]\w*)\.(\w+)\s*\(\s*\)\s*(?::|\{)")
+ANY_FUN = re.compile(r"\bfun\s+(?:[A-Za-z_]\w*\.)?\w+\s*\(")
+SHARED_TYPE_REF = re.compile(r"\bcom\.webtoapp\.data\.model\.([A-Za-z_]\w*)")
+DATA_CLASS_VAL = re.compile(r"^\s*val\s+(\w+)\s*:", re.MULTILINE)
+DATA_CLASS_PROP_TYPE = re.compile(r"^\s*val\s+\w+\s*:\s*([^=\n]+)", re.MULTILINE)
 
 
-def extract_payload_keys(text: str) -> set[str]:
-    lines = text.splitlines()
-    func_ranges: list[tuple[str, int, int]] = []
-    headers: list[tuple[int, str, str]] = []
-    for idx, line in enumerate(lines):
-        m = FUN_HEADER.search(line)
-        if not m:
-            continue
-        name = m.group(1)
-        if not name.endswith("Payload"):
-            continue
-        headers.append((idx, name, m.group(2)))
+def extract_payload_keys(text: str, errors: list[str]) -> set[str]:
+    headers: list[tuple[int, str, str, int]] = []
+    for m in FUN_HEADER.finditer(text):
+        receiver, name = m.group(1), m.group(2)
+        if name.endswith("Payload") or name == "toPayload":
+            headers.append((m.start(), receiver, name, m.end()))
 
-    for i, (idx, name, _ret) in enumerate(headers):
-        end = headers[i + 1][0] if i + 1 < len(headers) else len(lines)
-        func_ranges.append((name, idx, end))
+    found = {(receiver, name) for _, receiver, name, _ in headers}
+    for receiver, name in PAYLOAD_FUNCS:
+        if (receiver, name) not in found:
+            errors.append(
+                f"payload function '{receiver}.{name}' is registered in PAYLOAD_FUNCS "
+                "but not found in the payload source (renamed, given parameters, or moved?)"
+            )
 
     keys: set[str] = set()
-    for name, start, end in func_ranges:
-        if name not in PAYLOAD_FUNCS:
+    for pos, receiver, name, header_end in headers:
+        if (receiver, name) not in PAYLOAD_FUNCS:
             continue
-        body = "\n".join(lines[start:end])
-        keys.update(PAIR_KEY.findall(body))
+        nxt = ANY_FUN.search(text, header_end)
+        end = nxt.start() if nxt else len(text)
+        keys.update(PAIR_KEY.findall(text[pos:end]))
     return keys
+
+
+def extract_class_keys(text: str, cls: str) -> set[str]:
+    m = re.search(rf"data class {cls}\s*\((.*?)\n\)", text, re.DOTALL)
+    if not m:
+        return set()
+    return set(DATA_CLASS_VAL.findall(m.group(1)))
 
 
 def extract_object_returned_keys(text: str) -> set[str]:
     keys: set[str] = set()
     for cls in OBJECT_RETURN_PAYLOAD_CLASSES:
-        pattern = re.compile(rf"data class {cls}\s*\((.*?)\n\)", re.DOTALL)
-        m = pattern.search(text)
-        if not m:
-            continue
-        body = m.group(1)
-        for prop in re.finditer(r"^\s*val\s+(\w+)\s*:", body, re.MULTILINE):
-            keys.add(prop.group(1))
+        keys |= extract_class_keys(text, cls)
     return keys
 
 
 def extract_shell_keys(text: str) -> set[str]:
     return set(SERIAL_NAME.findall(text))
+
+
+def extract_shared_model_keys(shell_text: str, model_text: str) -> set[str]:
+    keys: set[str] = set()
+    queue = sorted(set(SHARED_TYPE_REF.findall(shell_text)))
+    seen: set[str] = set()
+    while queue:
+        cls = queue.pop(0)
+        if cls in seen:
+            continue
+        seen.add(cls)
+        m = re.search(rf"data class {cls}\s*\((.*?)\n\)", model_text, re.DOTALL)
+        if not m:
+            continue
+        body = m.group(1)
+        keys.update(DATA_CLASS_VAL.findall(body))
+        queue.extend(t for t in SHARED_TYPE_REF.findall(body) if t not in seen)
+        for prop_type in DATA_CLASS_PROP_TYPE.findall(body):
+            queue.extend(
+                t
+                for t in re.findall(r"\b([A-Z]\w*)", prop_type)
+                if t not in seen and re.search(rf"data class {t}\s*\(", model_text)
+            )
+    return keys
 
 
 def load_allowlist() -> tuple[set[str], dict[str, str]]:
@@ -105,13 +135,14 @@ def main() -> int:
     parser.add_argument("--payload-file", type=Path, default=PAYLOAD_FILE)
     parser.add_argument("--apkconfig-file", type=Path, default=APKCONFIG_FILE)
     parser.add_argument("--shellconfig-file", type=Path, default=SHELLCONFIG_FILE)
+    parser.add_argument("--model-file", type=Path, default=MODEL_FILE)
     parser.add_argument("--allowlist-file", type=Path, default=ALLOWLIST_FILE)
     args = parser.parse_args()
 
     errors: list[str] = []
     warnings: list[str] = []
 
-    for f in (args.payload_file, args.apkconfig_file, args.shellconfig_file):
+    for f in (args.payload_file, args.apkconfig_file, args.shellconfig_file, args.model_file):
         if not f.is_file():
             errors.append(f"source file missing: {f}")
 
@@ -123,10 +154,14 @@ def main() -> int:
     payload_text = args.payload_file.read_text(encoding="utf-8")
     apkconfig_text = args.apkconfig_file.read_text(encoding="utf-8")
     shell_text = args.shellconfig_file.read_text(encoding="utf-8")
+    model_text = args.model_file.read_text(encoding="utf-8")
 
-    payload_keys = extract_payload_keys(payload_text)
+    payload_keys = extract_payload_keys(payload_text, errors)
     payload_keys |= extract_object_returned_keys(apkconfig_text)
     shell_keys = extract_shell_keys(shell_text)
+    shared_model_keys = extract_shared_model_keys(shell_text, model_text)
+    payload_keys |= shared_model_keys
+    shell_keys |= shared_model_keys
 
     allow_keys, allow_reasons = load_allowlist()
 
