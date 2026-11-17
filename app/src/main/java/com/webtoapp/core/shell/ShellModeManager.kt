@@ -1252,7 +1252,7 @@ data class WebViewShellConfig(
     val hideUrlPreview: Boolean = false,
 
     @SerializedName("decodeBase64DeepLinks")
-    val decodeBase64DeepLinks: Boolean = false,
+    val decodeBase64DeepLinks: Boolean = true,
 
     @SerializedName("decodeBase64Mode")
     val decodeBase64Mode: String = "GESTURE_ONLY",
@@ -1279,19 +1279,19 @@ data class WebViewShellConfig(
     val kernelFlavor: String = "SYSTEM_DEFAULT",
 
     @SerializedName("enableImageRepair")
-    val enableImageRepair: Boolean = false,
+    val enableImageRepair: Boolean = true,
 
     @SerializedName("enableScrollMemory")
-    val enableScrollMemory: Boolean = false,
+    val enableScrollMemory: Boolean = true,
 
     @SerializedName("enableBackStatePreservation")
-    val enableBackStatePreservation: Boolean = false,
+    val enableBackStatePreservation: Boolean = true,
 
     @SerializedName("followSystemDarkMode")
     val followSystemDarkMode: Boolean = false,
 
     @SerializedName("enableClipboardPolyfill")
-    val enableClipboardPolyfill: Boolean = false,
+    val enableClipboardPolyfill: Boolean = true,
 
     @SerializedName("enableNotificationPolyfill")
     val enableNotificationPolyfill: Boolean = false,
@@ -1300,19 +1300,19 @@ data class WebViewShellConfig(
     val geolocationEnabled: Boolean = false,
 
     @SerializedName("geolocationAccuracy")
-    val geolocationAccuracy: String = "COARSE",
+    val geolocationAccuracy: String = "FINE",
 
     @SerializedName("geolocationPolicy")
     val geolocationPolicy: String = "ALWAYS_ASK",
 
     @SerializedName("enableOrientationPolyfill")
-    val enableOrientationPolyfill: Boolean = false,
+    val enableOrientationPolyfill: Boolean = true,
 
     @SerializedName("enableCompatPolyfills")
-    val enableCompatPolyfills: Boolean = false,
+    val enableCompatPolyfills: Boolean = true,
 
     @SerializedName("enableNativeBridge")
-    val enableNativeBridge: Boolean = false,
+    val enableNativeBridge: Boolean = true,
 
     @SerializedName("nativeBridgeClipboard")
     val nativeBridgeClipboard: Boolean = true,
@@ -1327,7 +1327,7 @@ data class WebViewShellConfig(
     val nativeBridgeBrightness: Boolean = true,
 
     @SerializedName("nativeBridgeNotification")
-    val nativeBridgeNotification: Boolean = true,
+    val nativeBridgeNotification: Boolean = false,
 
     @SerializedName("nativeBridgeNotificationScheduled")
     val nativeBridgeNotificationScheduled: Boolean = true,
@@ -1384,7 +1384,7 @@ data class WebViewShellConfig(
     val nativeBridgeDirectory: Boolean = false,
 
     @SerializedName("javaScriptCanOpenWindows")
-    val javaScriptCanOpenWindows: Boolean = false,
+    val javaScriptCanOpenWindows: Boolean = true,
 
     @SerializedName("jsOpenWindowsPolicy")
     val jsOpenWindowsPolicy: String = "ALLOW",
@@ -1396,7 +1396,7 @@ data class WebViewShellConfig(
     val enableCookiePersistence: Boolean = true,
 
     @SerializedName("enablePrivateNetworkBridge")
-    val enablePrivateNetworkBridge: Boolean = false,
+    val enablePrivateNetworkBridge: Boolean = true,
 
     @SerializedName("privateNetworkScope")
     val privateNetworkScope: String = "LOCAL_ONLY",
@@ -1423,7 +1423,7 @@ data class WebViewShellConfig(
     val enablePrintBridge: Boolean = true,
 
     @SerializedName("enableMediaSession")
-    val enableMediaSession: Boolean = false,
+    val enableMediaSession: Boolean = true,
 
     @SerializedName("backgroundMediaPlayback")
     val backgroundMediaPlayback: Boolean = false,
@@ -1435,7 +1435,7 @@ data class WebViewShellConfig(
     val cloudflareCompatMode: String = "AUTO_DETECT",
 
     @SerializedName("primeUserActivation")
-    val primeUserActivation: Boolean = false,
+    val primeUserActivation: Boolean = true,
 
     @SerializedName("primeUserActivationMode")
     val primeUserActivationMode: String = "SYNTHETIC_TAP",

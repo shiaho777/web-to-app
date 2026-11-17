@@ -1992,6 +1992,18 @@ fun WebViewScreen(
         }
     }
 
+    LaunchedEffect(webApp?.id, webApp?.apkExportConfig?.isolationConfig) {
+        val isolationConfig = webApp?.apkExportConfig?.isolationConfig
+        if (isolationConfig != null) {
+            try {
+                com.webtoapp.core.privacy.IsolationManager.getInstance(context)
+                    .initialize(isolationConfig)
+            } catch (e: Exception) {
+                AppLogger.e("WebViewActivity", "Preview isolation init failed", e)
+            }
+        }
+    }
+
     LaunchedEffect(webApp) {
         webApp?.let { app ->
             onStatusBarConfigChanged?.invoke(
@@ -4269,10 +4281,17 @@ fun WebViewScreen(
 
                                 val previewEngineType = webApp?.apkExportConfig?.engineType
                                     ?: if (webApp?.webViewConfig?.dnsConfig?.echEffective == true) "GECKOVIEW" else "SYSTEM_WEBVIEW"
+                                val previewWebViewConfig = (webApp?.webViewConfig ?: com.webtoapp.data.model.WebViewConfig()).let { cfg ->
+                                    if (cfg.clearBrowsingDataOnLaunch) {
+                                        cfg.copy(cacheEnabled = false, pwaOfflineEnabled = false)
+                                    } else {
+                                        cfg
+                                    }
+                                }
                                 val surface = EngineViewFactory.create(
                                     context = ctx,
                                     engineTypeName = previewEngineType,
-                                    config = webApp?.webViewConfig ?: com.webtoapp.data.model.WebViewConfig(),
+                                    config = previewWebViewConfig,
                                     webViewManager = webViewManager,
                                     callbacks = webViewCallbacks,
                                     adBlocker = com.webtoapp.WebToAppApplication.adBlock,

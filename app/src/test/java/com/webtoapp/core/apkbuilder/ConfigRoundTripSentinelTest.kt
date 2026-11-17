@@ -571,15 +571,73 @@ class ConfigRoundTripSentinelTest {
     }
 
     @Test
-    fun `injectScripts receives build-time kernel and perf sentinels`() {
-        val app = baseApp().copy(
-            webViewConfig = WebViewConfig(enableKernelDisguise = true)
-        )
-        val shell = roundTrip(app)
-        val names = shell.webViewConfig.injectScripts.map { it.name }
+    fun `injectScripts bakes kernel only above BASIC and perf only when optimization is on`() {
+        val plain = roundTrip(baseApp())
+        val plainNames = plain.webViewConfig.injectScripts.map { it.name }
+        assertThat(plainNames).doesNotContain("__kernel__")
+        assertThat(plainNames).doesNotContain("__perf_start__")
+        assertThat(plainNames).doesNotContain("__perf_end__")
+
+        val basic = roundTrip(baseApp().copy(
+            webViewConfig = WebViewConfig(
+                enableKernelDisguise = true,
+                kernelDisguiseLevel = com.webtoapp.data.model.KernelDisguiseLevel.BASIC
+            )
+        ))
+        assertThat(basic.webViewConfig.injectScripts.map { it.name }).doesNotContain("__kernel__")
+
+        val enabled = roundTrip(baseApp().copy(
+            webViewConfig = WebViewConfig(
+                enableKernelDisguise = true,
+                performanceOptimization = true
+            )
+        ))
+        val names = enabled.webViewConfig.injectScripts.map { it.name }
         assertThat(names).contains("__kernel__")
         assertThat(names).contains("__perf_start__")
         assertThat(names).contains("__perf_end__")
+    }
+
+    @Test
+    fun `export inject script gating mirrors preview switches`() {
+        val off = buildExportInjectScripts(WebViewConfig(), null)
+        assertThat(off.map { it.name }).isEmpty()
+
+        val basicKernel = buildExportInjectScripts(
+            WebViewConfig(
+                enableKernelDisguise = true,
+                kernelDisguiseLevel = com.webtoapp.data.model.KernelDisguiseLevel.BASIC
+            ),
+            null
+        )
+        assertThat(basicKernel.map { it.name }).doesNotContain("__kernel__")
+
+        val perfOnly = buildExportInjectScripts(WebViewConfig(performanceOptimization = true), null)
+        assertThat(perfOnly.map { it.name }).containsExactly("__perf_start__", "__perf_end__").inOrder()
+
+        val userScript = com.webtoapp.data.model.UserScript(name = "mine", code = "1", enabled = true)
+        val withUser = buildExportInjectScripts(WebViewConfig(injectScripts = listOf(userScript)), null)
+        assertThat(withUser.map { it.name }).containsExactly("mine")
+    }
+
+    @Test
+    fun `ech effective derives the gecko engine for export like preview`() {
+        val app = baseApp().copy(
+            webViewConfig = WebViewConfig(
+                dnsConfig = com.webtoapp.data.model.DnsConfig(
+                    provider = "cloudflare",
+                    echEnabled = true
+                )
+            )
+        )
+        assertThat(app.webViewConfig.dnsConfig.echEffective).isTrue()
+        val shell = roundTrip(app)
+        assertThat(shell.engineType).isEqualTo("GECKOVIEW")
+
+        val explicit = app.copy(
+            apkExportConfig = ApkExportConfig(engineType = "SYSTEM_WEBVIEW")
+        )
+        assertThat(roundTrip(explicit).engineType).isEqualTo("SYSTEM_WEBVIEW")
     }
 
     @Test

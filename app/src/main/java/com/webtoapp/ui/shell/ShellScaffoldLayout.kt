@@ -302,6 +302,49 @@ fun BoxScope.ShellScaffoldLayout(
 
             ShellLyricsOverlay(config = config, bgmState = bgmState)
 
+            if (webViewConfig.showFloatingBackButton && !showToolbar && canGoBack) {
+                var fabAlpha by remember { mutableFloatStateOf(0.9f) }
+                var fadeKey by remember { mutableIntStateOf(0) }
+
+                LaunchedEffect(canGoBack, fadeKey) {
+                    fabAlpha = 0.9f
+                    kotlinx.coroutines.delay(3000L)
+                    val steps = 20
+                    val stepDelay = 30L
+                    for (i in 1..steps) {
+                        fabAlpha = 0.9f - (0.65f * i / steps)
+                        kotlinx.coroutines.delay(stepDelay)
+                    }
+                }
+
+                SmallFloatingActionButton(
+                    onClick = {
+                        fadeKey++
+                        (context as? AppCompatActivity)?.let { activity ->
+                            if (browserSurface != null) {
+                                ShellWebViewNavigation.goBackOrFinish(activity, browserSurface)
+                            } else {
+                                ShellWebViewNavigation.goBackOrFinish(activity, webViewRef)
+                            }
+                        }
+                    },
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(start = 12.dp, top = actualStatusBarPadding + 8.dp)
+                        .graphicsLayer { alpha = fabAlpha },
+                    elevation = FloatingActionButtonDefaults.elevation(
+                        defaultElevation = 0.dp,
+                        pressedElevation = 0.dp,
+                        focusedElevation = 0.dp,
+                        hoveredElevation = 0.dp
+                    ),
+                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
+                    contentColor = MaterialTheme.colorScheme.onSurface
+                ) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = Strings.cdBack)
+                }
+            }
+
             if (config.bgmEnabled &&
                 bgmControlEnabled(config.bgmShowFloatingPlayer) &&
                 config.bgmPlaylist.isNotEmpty()

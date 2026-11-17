@@ -27,15 +27,15 @@ class EmbedContext(
     val fnAddGalleryItems: (ZipOutputStream, List<com.webtoapp.data.model.GalleryItem>, AssetEncryptor?, EncryptionConfig, String) -> Unit,
     val fnAddWordPressFiles: (ZipOutputStream, File) -> Unit,
     val fnAddNodeJsFiles: (ZipOutputStream, File) -> Unit,
-    val fnAddFrontendFiles: (ZipOutputStream, File, List<com.webtoapp.data.model.HtmlFile>) -> Unit,
+    val fnAddFrontendFiles: (ZipOutputStream, File, List<com.webtoapp.data.model.HtmlFile>, AssetEncryptor?, EncryptionConfig) -> Unit,
+    val fnAddFrontendFallback: (ZipOutputStream, List<com.webtoapp.data.model.HtmlFile>, AssetEncryptor?, EncryptionConfig) -> Int,
     val fnAddPhpAppFiles: (ZipOutputStream, File) -> Unit,
     val fnAddPythonAppFiles: (ZipOutputStream, File) -> Unit,
     val fnAddGoAppFiles: (ZipOutputStream, File) -> Unit,
     val multiWebSiteSourceDirs: Map<String, File> = emptyMap(),
-    /** Multi-web GALLERY site id -> source host-path items (embedded under the site prefix). */
     val multiWebSiteGalleryItems: Map<String, List<com.webtoapp.data.model.GalleryItem>> = emptyMap(),
-    /** Multi-web IMAGE/VIDEO site id -> source host media path. */
-    val multiWebSiteMediaPaths: Map<String, String> = emptyMap()
+    val multiWebSiteMediaPaths: Map<String, String> = emptyMap(),
+    val projectFileHook: ((ZipOutputStream, String, File) -> Boolean)? = null
 )
 
 data class EmbedResult(
@@ -88,20 +88,7 @@ class HtmlContentEmbedder : AppContentEmbedder {
                     assetPrefix = "assets/html",
                     excludeDirs = setOf("node_modules", ".git", ".cache", "__pycache__", ".next", ".nuxt"),
                     runtimeType = "html",
-                    fileHook = if (ctx.encryptionConfig.enabled && ctx.encryptor != null) {
-                        { zipOut, assetPath, file ->
-                            val assetName = assetPath.removePrefix("assets/")
-                            val entry = java.util.zip.ZipEntry("${assetPath}.enc")
-                            entry.method = java.util.zip.ZipEntry.DEFLATED
-                            zipOut.putNextEntry(entry)
-                            val written = file.inputStream().buffered().use { input ->
-                                ctx.encryptor!!.encryptStreaming(input, assetName, zipOut)
-                            }
-                            zipOut.closeEntry()
-                            ctx.logger.log("File encrypted: ${assetPath}.enc ($written bytes)")
-                            true
-                        }
-                    } else null
+                    fileHook = ctx.projectFileHook
                 ),
                 logger = ctx.logger
             )
@@ -181,13 +168,13 @@ class FrontendContentEmbedder : AppContentEmbedder {
         val dir = ctx.projectDir
         if (dir != null && dir.exists()) {
             ctx.logger.section("Embed Frontend Project Files")
-            ctx.fnAddFrontendFiles(zipOut, dir, ctx.htmlFiles)
+            ctx.fnAddFrontendFiles(zipOut, dir, ctx.htmlFiles, ctx.encryptor, ctx.encryptionConfig)
             return EmbedResult(true, message = "Frontend files embedded")
         }
 
         if (ctx.htmlFiles.isNotEmpty()) {
             ctx.logger.section("Embed Frontend Files (from file list)")
-            val count = ctx.fnAddHtmlFiles(zipOut, ctx.htmlFiles, ctx.encryptor, ctx.encryptionConfig)
+            val count = ctx.fnAddFrontendFallback(zipOut, ctx.htmlFiles, ctx.encryptor, ctx.encryptionConfig)
             ctx.logger.logKeyValue("frontendFilesEmbeddedCount", count)
             return EmbedResult(count > 0, count, "$count frontend files embedded (fallback)")
         }
@@ -251,7 +238,8 @@ class MultiWebContentEmbedder : AppContentEmbedder {
                     runtimeName = "multiWebSite_${site.id}",
                     assetPrefix = "assets/multiweb_sites/${site.id}/${site.siteShellConfig?.siteAssetBase?.ifBlank { "html" } ?: "html"}",
                     excludeDirs = setOf("node_modules", ".git", ".cache", "__pycache__", ".next", ".nuxt"),
-                    runtimeType = "nodejs"
+                    runtimeType = "nodejs",
+                    fileHook = ctx.projectFileHook
                 ),
                 logger = ctx.logger
             )

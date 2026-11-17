@@ -169,9 +169,9 @@ object BrowserKernel {
 
     private fun getFallbackKernelJs(): String {
         return """(function(){'use strict';
-            // 基础反检测
+            if(window.__wta_kernel_injected)return;
+            window.__wta_kernel_injected=true;
             Object.defineProperty(navigator,'webdriver',{get:function(){return false},enumerable:true,configurable:true});
-            // window.chrome
             if(!window.chrome)window.chrome={};
             if(!window.chrome.runtime)window.chrome.runtime={
                 OnInstalledReason:{CHROME_UPDATE:'chrome_update',INSTALL:'install'},
@@ -179,14 +179,10 @@ object BrowserKernel {
             };
             if(!window.chrome.loadTimes)window.chrome.loadTimes=function(){return{commitLoadTime:Date.now()/1000,firstPaintTime:Date.now()/1000,navigationType:'Other'};};
             if(!window.chrome.csi)window.chrome.csi=function(){return{onloadT:Date.now(),pageT:performance.now(),tran:15};};
-            // plugins
             Object.defineProperty(navigator,'plugins',{get:function(){return{length:5,0:{name:'PDF Viewer'},1:{name:'Chrome PDF Plugin'},2:{name:'Chrome PDF Viewer'},3:{name:'Native Client'},4:{name:'Chromium PDF Plugin'}}},enumerable:true});
-            // vendor
             Object.defineProperty(navigator,'vendor',{get:function(){return'Google Inc.'},enumerable:true});
-            // outerWidth/outerHeight
             if(!window.outerWidth)Object.defineProperty(window,'outerWidth',{get:function(){return window.innerWidth}});
             if(!window.outerHeight)Object.defineProperty(window,'outerHeight',{get:function(){return window.innerHeight+56}});
-            // 清除自动化标志
             delete window.__selenium_unwrapped;
             delete window.__webdriver_evaluate;
             delete window.__webdriver_script_function;

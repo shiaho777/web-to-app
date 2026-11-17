@@ -15,7 +15,8 @@ object HtmlProjectHelper {
         fileName.endsWith(".html", ignoreCase = true) ||
         fileName.endsWith(".htm", ignoreCase = true) -> HtmlFileType.HTML
         fileName.endsWith(".css", ignoreCase = true) -> HtmlFileType.CSS
-        fileName.endsWith(".js", ignoreCase = true) -> HtmlFileType.JS
+        fileName.endsWith(".js", ignoreCase = true) ||
+        fileName.endsWith(".mjs", ignoreCase = true) -> HtmlFileType.JS
         else -> HtmlFileType.OTHER
     }
 
@@ -36,13 +37,20 @@ object HtmlProjectHelper {
         }
         val jsFiles = files.filter {
             it.type == HtmlFileType.JS ||
-            it.name.endsWith(".js", ignoreCase = true)
+            it.name.endsWith(".js", ignoreCase = true) ||
+            it.name.endsWith(".mjs", ignoreCase = true)
         }
         val otherFiles = files.filter { file ->
             file !in htmlFiles && file !in cssFiles && file !in jsFiles
         }
 
         AppLogger.d(TAG, "HTML file classification: HTML=${htmlFiles.size}, CSS=${cssFiles.size}, JS=${jsFiles.size}, Other=${otherFiles.size}")
+
+        val hasModuleScripts = files.any { it.name.endsWith(".mjs", ignoreCase = true) }
+        if (hasModuleScripts) {
+            AppLogger.i(TAG, "ES module scripts detected (.mjs), skipping CSS/JS inlining to preserve module loading")
+            return@withContext saveAllWithoutInlining(files, context, projectId)
+        }
 
         val maxInlineSize = 2L * 1024 * 1024
         val totalContentSize = (cssFiles + jsFiles + htmlFiles).sumOf { java.io.File(it.path).let { f -> if (f.exists()) f.length() else 0L } }

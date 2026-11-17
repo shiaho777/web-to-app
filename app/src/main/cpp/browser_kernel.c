@@ -8,6 +8,8 @@
 
 static const char KERNEL_JS[] =
 "(function(){'use strict';"
+"if(window.__wta_kernel_injected)return;"
+"window.__wta_kernel_injected=true;"
 
 "var _origToString=Function.prototype.toString;"
 "var _hookedFns=new WeakSet();"
