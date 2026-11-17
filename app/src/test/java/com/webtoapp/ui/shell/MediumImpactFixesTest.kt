@@ -16,7 +16,7 @@ class MediumImpactFixesTest {
             .that(file.isFile).isTrue()
         var s = file.readText()
         s = Regex("\"\"\".*?\"\"\"", RegexOption.DOT_MATCHES_ALL).replace(s, "\"\"")
-        s = Regex("\"(?:\\\\.|[^\"\\\\])*\"").replace(s, "\"\"")
+        s = Regex("\"(?:\\\\.|[^\"\\\\])*+\"").replace(s, "\"\"")
         s = Regex("/\\*.*?\\*/", RegexOption.DOT_MATCHES_ALL).replace(s, " ")
         s = s.lines().joinToString("\n") { it.substringBefore("//") }
         return s
