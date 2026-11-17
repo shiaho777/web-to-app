@@ -53,9 +53,12 @@ object PwaOfflineSupport {
         val excludeArray = config.excludePatterns.joinToString(",") { "'$it'" }
         val maxAgeMs = config.maxAgeHours.toLong() * 3600 * 1000
         val maxCacheBytes = config.maxCacheSizeMb.toLong() * 1024 * 1024
+        val cacheVersion = Integer.toHexString(
+            "$strategyName|$maxAgeMs|$maxCacheBytes|$extensionsArray|$excludeArray".hashCode()
+        )
 
         return """
-const CACHE_NAME = 'wta-offline-v1';
+const CACHE_NAME = 'wta-offline-${cacheVersion}';
 const CACHE_PREFIX = 'wta-offline-';
 const STRATEGY = '${strategyName}';
 const MAX_AGE_MS = ${maxAgeMs};
@@ -125,6 +128,8 @@ async function trimCache() {
     } catch (e) { }
 }
 
+let cacheWriteCount = 0;
+
 async function addToCache(request, response) {
     try {
         const cache = await caches.open(CACHE_NAME);
@@ -140,6 +145,8 @@ async function addToCache(request, response) {
             headers: headers
         });
         await cache.put(request, cachedResponse);
+        cacheWriteCount++;
+        if (cacheWriteCount % 25 === 0) trimCache();
     } catch (e) { }
 }
 
@@ -157,8 +164,19 @@ async function offlineFallback(request) {
     return new Response('Offline', { status: 503, statusText: 'Offline' });
 }
 
-async function cacheFirst(request) {
+async function freshCached(request) {
     const cached = await caches.match(request);
+    if (!cached) return null;
+    const ts = cached.headers.get('x-wta-cached-at');
+    if (ts && (Date.now() - parseInt(ts)) > MAX_AGE_MS) {
+        try { await (await caches.open(CACHE_NAME)).delete(request); } catch (e) { }
+        return null;
+    }
+    return cached;
+}
+
+async function cacheFirst(request) {
+    const cached = await freshCached(request);
     if (cached) return cached;
     try {
         const response = await fetch(request);
@@ -180,7 +198,7 @@ async function networkFirst(request) {
 }
 
 async function staleWhileRevalidate(request) {
-    const cached = await caches.match(request);
+    const cached = await freshCached(request);
     const fetchPromise = fetch(request).then(function(response) {
         if (response && response.ok && shouldCache(request)) addToCache(request, response);
         return response;

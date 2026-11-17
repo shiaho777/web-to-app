@@ -986,7 +986,7 @@ class FloatingWindowManager(private val context: Context) {
         floatingView?.scaleX = 0.1f
         floatingView?.scaleY = 0.1f
         floatingView?.alpha = 0f
-        floatingView?.animate()?.scaleX(1f)?.scaleY(1f)?.alpha(config.opacity / 100f)
+        floatingView?.animate()?.scaleX(1f)?.scaleY(1f)?.alpha(1f)
             ?.setDuration(300)?.setInterpolator(OvershootInterpolator(1.0f))
             ?.start()
 

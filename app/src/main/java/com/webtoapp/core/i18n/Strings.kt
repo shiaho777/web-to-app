@@ -4002,6 +4002,7 @@ object Strings {
     val shareImage: String get() = StringsE.shareImage
     val saveFailedCannotProcessHtml: String get() = StringsE.saveFailedCannotProcessHtml
     val phpStartFailed: String get() = StringsE.phpStartFailed
+    val wpInstallFailed: String get() = StringsE.wpInstallFailed
     val nodeRuntimeNotFound: String get() = StringsE.nodeRuntimeNotFound
     val nodeServerStartFailed: String get() = StringsE.nodeServerStartFailed
     val nodeStartFailed: String get() = StringsE.nodeStartFailed

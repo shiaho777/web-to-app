@@ -144,8 +144,7 @@ internal fun translatePageScript(targetLanguage: String, showButton: Boolean): S
 
                 while (walker.nextNode()) {
                     var text = walker.currentNode.textContent.trim();
-                    if (text && !seen.has(text)) {
-                        seen.add(text);
+                    if (text) {
                         texts.push(text);
                         elements.push(walker.currentNode);
                     }
@@ -305,12 +304,14 @@ internal fun translatePageScript(targetLanguage: String, showButton: Boolean): S
                 var uncachedTexts = [];
                 var uncachedIndices = [];
                 var cachedResults = new Array(texts.length);
+                var uniqueUncached = new Set();
 
                 for (var i = 0; i < texts.length; i++) {
                     var cacheKey = texts[i] + '|' + targetLang;
                     if (translateCache[cacheKey]) {
                         cachedResults[i] = translateCache[cacheKey];
-                    } else {
+                    } else if (!uniqueUncached.has(texts[i])) {
+                        uniqueUncached.add(texts[i]);
                         uncachedTexts.push(texts[i]);
                         uncachedIndices.push(i);
                     }
@@ -339,6 +340,13 @@ internal fun translatePageScript(targetLanguage: String, showButton: Boolean): S
                         if (batchResults[r] && batchResults[r].trim()) {
                             var ck = texts[origIdx] + '|' + targetLang;
                             translateCache[ck] = batchResults[r];
+                        }
+                    }
+
+                    for (var d = 0; d < texts.length; d++) {
+                        if (!cachedResults[d]) {
+                            var dk = texts[d] + '|' + targetLang;
+                            if (translateCache[dk]) cachedResults[d] = translateCache[dk];
                         }
                     }
 
@@ -397,13 +405,6 @@ internal fun translatePageScript(targetLanguage: String, showButton: Boolean): S
                 if (dynamicObserverTarget instanceof Node) {
                     dynamicObserver.observe(dynamicObserverTarget, { childList: true, subtree: true });
                 }
-
-                setTimeout(function() {
-                    if (dynamicObserver) {
-                        dynamicObserver.disconnect();
-                        dynamicObserver = null;
-                    }
-                }, 30000);
             }
 
             setTimeout(function() {

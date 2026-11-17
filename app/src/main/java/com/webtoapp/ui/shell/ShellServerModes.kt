@@ -98,7 +98,7 @@ fun WordPressShellMode(
                     serverUrl = "http://127.0.0.1:$port"
                     phase = "installing"
                     if (config.wordpressConfig.autoInstall) {
-                        com.webtoapp.core.wordpress.WordPressManager.autoInstallIfNeeded(
+                        val installed = com.webtoapp.core.wordpress.WordPressManager.autoInstallIfNeeded(
                             baseUrl = serverUrl!!,
                             siteTitle = config.wordpressConfig.siteTitle,
                             adminUser = config.wordpressConfig.adminUser,
@@ -106,6 +106,12 @@ fun WordPressShellMode(
                             adminEmail = config.wordpressConfig.adminEmail.ifBlank { "admin@localhost.local" },
                             siteLanguage = config.wordpressConfig.siteLanguage
                         )
+                        if (!installed) {
+                            AppLogger.e("WordPressShell", "WordPress auto-install failed; site will show the install wizard")
+                            phase = "error"
+                            errorMsg = Strings.wpInstallFailed
+                            return@withContext
+                        }
                     }
                     phase = "configuring"
                     com.webtoapp.core.wordpress.WordPressManager.applyRuntimeConfig(
