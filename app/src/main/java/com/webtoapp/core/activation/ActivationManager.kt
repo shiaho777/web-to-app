@@ -467,10 +467,13 @@ class ActivationManager(private val context: Context) {
                 preferences[longPreferencesKey("activated_time_$appId")] =
                     System.currentTimeMillis()
             }
-            // A remote grant isn't backed by a local card — drop any remembered
-            // code so relaunch checks never attribute this grant to a stale card.
             preferences.remove(stringPreferencesKey("used_code_$appId"))
+            preferences.remove(longPreferencesKey("expire_time_$appId"))
+            preferences.remove(intPreferencesKey("usage_limit_$appId"))
+            preferences.remove(intPreferencesKey("usage_count_$appId"))
+            preferences.remove(stringPreferencesKey("code_type_$appId"))
         }
+        usageConsumedThisProcess.remove(appId)
     }
 
     suspend fun incrementUsageCount(appId: Long) {

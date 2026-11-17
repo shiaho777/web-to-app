@@ -13766,6 +13766,19 @@ object StringsE {
         AppLanguage.KOREAN -> "클론 설치는 스플래시, 활성화, 공지를 지원하지 않습니다. 바로가기를 쓰거나 해당 기능을 끄세요"
     }
 
+    val appModifierCloneEncryptedUnsupported: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "该应用启用了签名绑定加密，克隆后包名与签名改变将无法解密内容。请改用快捷方式，或以内嵌密钥/不加密方式重新导出后再克隆"
+        AppLanguage.ENGLISH -> "This app uses signature-bound encryption. A clone changes the package and signature, so its content can no longer be decrypted. Use shortcut mode, or re-export with an embedded key or without encryption before cloning"
+        AppLanguage.ARABIC -> "يستخدم هذا التطبيق تشفيرًا مرتبطًا بالتوقيع. تغيير الحزمة والتوقيع في النسخة يمنع فك التشفير. استخدم الاختصار أو أعد التصدير بمفتاح مضمّن أو بدون تشفير قبل الاستنساخ"
+        AppLanguage.PORTUGUESE -> "Este app usa criptografia vinculada à assinatura. O clone altera pacote e assinatura, impedindo a descriptografia. Use atalho ou reexporte com chave embutida ou sem criptografia antes de clonar"
+        AppLanguage.SPANISH -> "Esta app usa cifrado ligado a la firma. El clon cambia paquete y firma, impidiendo el descifrado. Usa acceso directo o reexporta con clave incrustada o sin cifrado antes de clonar"
+        AppLanguage.FRENCH -> "Cette app utilise un chiffrement lié à la signature. Le clone change le paquet et la signature, empêchant le déchiffrement. Utilisez le raccourci ou réexportez avec clé intégrée ou sans chiffrement avant de cloner"
+        AppLanguage.GERMAN -> "Diese App nutzt signaturgebundene Verschlüsselung. Der Klon ändert Paket und Signatur, sodass Inhalte nicht mehr entschlüsselt werden können. Verknüpfung nutzen oder mit eingebettetem Schlüssel bzw. ohne Verschlüsselung neu exportieren"
+        AppLanguage.RUSSIAN -> "Это приложение использует шифрование, привязанное к подписи. Клон меняет пакет и подпись, расшифровка станет невозможной. Используйте ярлык или переэкспортируйте со встроенным ключом либо без шифрования"
+        AppLanguage.JAPANESE -> "このアプリは署名紐付き暗号化を使用しています。クローンでパッケージと署名が変わると復号できません。ショートカットを使うか、埋め込み鍵または暗号化なしで再エクスポートしてからクローンしてください"
+        AppLanguage.KOREAN -> "이 앱은 서명 연동 암호화를 사용합니다. 클론 시 패키지와 서명이 바뀌어 복호화할 수 없습니다. 바로가기를 쓰거나 내장 키 또는 암호화 없이 다시 내보낸 후 클론하세요"
+    }
+
     val appModifierPackageInUse: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "该包名已被安装，请换一个包名，或先卸载占用该包名的应用"
         AppLanguage.ENGLISH -> "This package is already installed. Choose another package or uninstall that app first"

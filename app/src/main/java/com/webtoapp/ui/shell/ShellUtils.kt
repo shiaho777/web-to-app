@@ -198,15 +198,52 @@ internal fun buildExtractionToken(
         @Suppress("DEPRECATION")
         (packageInfo?.versionCode ?: 0).toLong()
     }
-    val apkLastUpdate = packageInfo?.lastUpdateTime ?: 0L
 
     return listOf(
         scope,
         "cfg=$configVersionCode",
         "apkVer=$apkVersionCode",
-        "apkUpdated=$apkLastUpdate",
         "extra=$extra"
     ).joinToString("|")
+}
+
+internal fun refreshRuntimeAssetsPreservingData(
+    context: Context,
+    assetPath: String,
+    destDir: File,
+    preservedRelPaths: Set<String>,
+    extract: (Context, String, File) -> Unit = { ctx, path, dest ->
+        extractAssetsRecursive(ctx, path, dest)
+    }
+) {
+    val preserved = preservedRelPaths
+        .map { it to File(destDir, it) }
+        .filter { (_, file) -> file.exists() }
+    val stagingDir = File(context.cacheDir, "wta_preserve_${System.nanoTime()}")
+    try {
+        preserved.forEach { (rel, file) ->
+            val target = File(stagingDir, rel)
+            target.parentFile?.mkdirs()
+            if (file.isDirectory) file.copyRecursively(target, overwrite = true)
+            else file.copyTo(target, overwrite = true)
+        }
+        destDir.deleteRecursively()
+        extract(context, assetPath, destDir)
+        preserved.forEach { (rel, _) ->
+            val staged = File(stagingDir, rel)
+            if (!staged.exists()) return@forEach
+            val target = File(destDir, rel)
+            if (staged.isDirectory) {
+                target.mkdirs()
+                staged.copyRecursively(target, overwrite = true)
+            } else {
+                target.parentFile?.mkdirs()
+                staged.copyTo(target, overwrite = true)
+            }
+        }
+    } finally {
+        stagingDir.deleteRecursively()
+    }
 }
 
 internal fun extractAssetsRecursive(context: Context, assetPath: String, destDir: File) {
