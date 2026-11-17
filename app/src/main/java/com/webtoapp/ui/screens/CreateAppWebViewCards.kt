@@ -3401,18 +3401,15 @@ fun SpecialSettingsCard(
         ActivityResultContracts.OpenDocumentTree()
     ) { uri ->
         uri?.let { treeUri ->
-            val path = safTreeUriToPath(treeUri)
-            if (path != null) {
-                try {
-                    context.contentResolver.takePersistableUriPermission(
-                        treeUri,
-                        android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION or
-                            android.content.Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-                    )
-                } catch (_: Exception) {
-                }
-                onConfigChange(config.copy(customDownloadDirUri = path))
+            try {
+                context.contentResolver.takePersistableUriPermission(
+                    treeUri,
+                    android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                        android.content.Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                )
+            } catch (_: Exception) {
             }
+            onConfigChange(config.copy(customDownloadDirUri = treeUri.toString()))
         }
     }
 
@@ -4097,7 +4094,8 @@ fun SpecialSettingsCard(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text(
-                                        text = config.customDownloadDirUri.ifEmpty { Strings.downloadLocationCustomEmpty },
+                                        text = displayDownloadDir(config.customDownloadDirUri)
+                                            .ifEmpty { Strings.downloadLocationCustomEmpty },
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier.weight(1f),
@@ -4764,16 +4762,15 @@ private fun CustomMediaPickerRow(
     }
 }
 
-private fun safTreeUriToPath(uri: Uri): String? {
-    if (uri.authority != "com.android.externalstorage.documents") return null
-    val docId = uri.lastPathSegment ?: return null
-    val parts = docId.split(":")
-    if (parts.isEmpty()) return null
-    val type = parts[0]
-    val relativePath = if (parts.size > 1) parts[1] else ""
-    val basePath = when (type) {
-        "primary" -> android.os.Environment.getExternalStorageDirectory().absolutePath
-        else -> "/storage/$type"
+internal fun displayDownloadDir(raw: String): String {
+    if (raw.isBlank()) return ""
+    if (!raw.startsWith("content://")) return raw
+    return try {
+        val docId = android.provider.DocumentsContract.getTreeDocumentId(Uri.parse(raw))
+        val parts = docId.split(":")
+        val label = if (parts.size > 1) parts[1] else parts[0]
+        label.ifBlank { raw }
+    } catch (_: Exception) {
+        raw
     }
-    return if (relativePath.isNotEmpty()) "$basePath/$relativePath" else basePath
 }

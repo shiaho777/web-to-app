@@ -4357,7 +4357,9 @@ fun WebViewScreen(
                                     )
                                     val effectiveWebApp = webApp
                                     if (effectiveWebApp != null) {
-                                        if (effectiveWebApp.webViewConfig.enableNativeBridge) {
+                                        if (effectiveWebApp.webViewConfig.enableNativeBridge ||
+                                            effectiveWebApp.webViewConfig.enableNotificationPolyfill
+                                        ) {
                                             val nb = com.webtoapp.core.webview.NativeBridge(
                                                 context = context,
                                                 scope = scope,

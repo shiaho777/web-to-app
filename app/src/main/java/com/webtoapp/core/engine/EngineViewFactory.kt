@@ -77,6 +77,9 @@ object EngineViewFactory {
         )
 
         if (engineType == EngineType.GECKOVIEW) {
+            if (webProfileName != null) {
+                AppLogger.w(TAG, "GeckoView has no per-site profile support; independent sessions share cookies on this engine")
+            }
             prepareGeckoNetwork(config)
             val engine = EngineManager.getInstance(context).createEngine(EngineType.GECKOVIEW, adBlocker)
             val geckoEngine = engine as GeckoViewEngine

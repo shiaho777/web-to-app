@@ -43,6 +43,7 @@ fun AutoStartCard(
     var scheduledStartEnabled by remember(config) { mutableStateOf(config?.scheduledStartEnabled ?: false) }
     var scheduledTime by remember(config) { mutableStateOf(config?.scheduledTime ?: "08:00") }
     var scheduledDays by remember(config) { mutableStateOf(config?.scheduledDays ?: listOf(1,2,3,4,5,6,7)) }
+    var scheduledRepeat by remember(config) { mutableStateOf(config?.scheduledRepeat ?: true) }
     var bootDelay by remember(config) { mutableStateOf(config?.bootDelay ?: AutoStartManager.DEFAULT_BOOT_DELAY_MS) }
 
     var showTimePicker by remember { mutableStateOf(false) }
@@ -106,6 +107,7 @@ fun AutoStartCard(
                 scheduledStartEnabled = scheduledStartEnabled,
                 scheduledTime = scheduledTime,
                 scheduledDays = scheduledDays,
+                scheduledRepeat = scheduledRepeat,
                 bootDelay = bootDelay
             ))
         }
@@ -272,6 +274,26 @@ fun AutoStartCard(
                                         label = name
                                     )
                                 }
+                            }
+
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    Strings.scheduledRepeat,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    modifier = Modifier.weight(weight = 1f, fill = true)
+                                )
+                                WtaSwitch(
+                                    checked = scheduledRepeat,
+                                    onCheckedChange = {
+                                        scheduledRepeat = it
+                                        updateConfig()
+                                    }
+                                )
                             }
 
                             nextTriggerDisplay?.let { display ->

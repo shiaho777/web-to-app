@@ -1013,6 +1013,7 @@ object Strings {
     val saveFailed: String get() = StringsA.saveFailed
     val saveFailedWithReason: String get() = StringsA.saveFailedWithReason
     val savedTo: String get() = StringsA.savedTo
+    val downloadCustomDirFallback: String get() = StringsA.downloadCustomDirFallback
     val copiedToClipboard: String get() = StringsA.copiedToClipboard
     val downloadingVideo: String get() = StringsA.downloadingVideo
     val shareFailed: String get() = StringsA.shareFailed
@@ -2550,6 +2551,7 @@ object Strings {
     val bootAutoStartHint: String get() = StringsC.bootAutoStartHint
     val scheduledAutoStart: String get() = StringsC.scheduledAutoStart
     val scheduledAutoStartHint: String get() = StringsC.scheduledAutoStartHint
+    val scheduledRepeat: String get() = StringsC.scheduledRepeat
     val launchDate: String get() = StringsC.launchDate
     val autoStartNote: String get() = StringsC.autoStartNote
     val today: String get() = StringsC.today

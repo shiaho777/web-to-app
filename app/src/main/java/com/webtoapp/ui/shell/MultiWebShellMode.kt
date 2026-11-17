@@ -67,6 +67,25 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.net.URL
 
+@Composable
+internal fun SiteIconContent(
+    site: MultiWebSiteShellConfig,
+    iconSize: androidx.compose.ui.unit.Dp,
+    emojiSize: androidx.compose.ui.unit.TextUnit,
+    tint: Color
+) {
+    when {
+        site.iconEmoji.isNotBlank() -> Text(site.iconEmoji, fontSize = emojiSize)
+        site.faviconUrl.isNotBlank() -> coil.compose.AsyncImage(
+            model = site.faviconUrl,
+            contentDescription = null,
+            modifier = Modifier.size(iconSize).clip(CircleShape),
+            contentScale = androidx.compose.ui.layout.ContentScale.Crop
+        )
+        else -> Icon(Icons.Outlined.Language, null, tint = tint, modifier = Modifier.size(iconSize))
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MultiWebShellMode(
@@ -641,20 +660,13 @@ private fun TabsMode(
                                     horizontalAlignment = Alignment.CenterHorizontally,
                                     verticalArrangement = Arrangement.Center
                                 ) {
-                                    if (site.iconEmoji.isNotBlank()) {
-                                        Text(
-                                            site.iconEmoji,
-                                            fontSize = if (isSelected) 18.sp else 16.sp
-                                        )
-                                    } else {
-                                        Icon(
-                                            Icons.Outlined.Language,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(if (isSelected) 20.dp else 18.dp),
-                                            tint = if (isSelected) MaterialTheme.colorScheme.primary
-                                                   else MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
+                                    SiteIconContent(
+                                        site = site,
+                                        iconSize = if (isSelected) 20.dp else 18.dp,
+                                        emojiSize = if (isSelected) 18.sp else 16.sp,
+                                        tint = if (isSelected) MaterialTheme.colorScheme.primary
+                                               else MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
                                     Text(
                                         site.name.ifBlank { extractDomain(site.url) },
                                         maxLines = 1,
@@ -829,16 +841,12 @@ private fun TopTabStrip(
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             if (showIcons) {
-                                if (site.iconEmoji.isNotBlank()) {
-                                    Text(site.iconEmoji, fontSize = 16.sp)
-                                } else {
-                                    Icon(
-                                        Icons.Outlined.Language,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(16.dp),
-                                        tint = foreground.copy(alpha = if (selected) 1f else 0.62f)
-                                    )
-                                }
+                                SiteIconContent(
+                                    site = site,
+                                    iconSize = 16.dp,
+                                    emojiSize = 16.sp,
+                                    tint = foreground.copy(alpha = if (selected) 1f else 0.62f)
+                                )
                                 Spacer(Modifier.width(6.dp))
                             }
                             Text(
@@ -1161,16 +1169,12 @@ private fun SiteCard(
                             .background(Color.White.copy(alpha = 0.25f)),
                         contentAlignment = Alignment.Center
                     ) {
-                        if (site.iconEmoji.isNotBlank()) {
-                            Text(site.iconEmoji, fontSize = metrics.emojiSp.sp)
-                        } else {
-                            Icon(
-                                Icons.Outlined.Language,
-                                null,
-                                tint = Color.White,
-                                modifier = Modifier.size((metrics.iconDp * 24 / 44).dp)
-                            )
-                        }
+                        SiteIconContent(
+                            site = site,
+                            iconSize = (metrics.iconDp * 24 / 44).dp,
+                            emojiSize = metrics.emojiSp.sp,
+                            tint = Color.White
+                        )
                     }
                 }
                 Column {
@@ -1841,8 +1845,12 @@ private fun DrawerSiteItem(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(modifier = Modifier.size(40.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primaryContainer), contentAlignment = Alignment.Center) {
-            if (site.iconEmoji.isNotBlank()) Text(site.iconEmoji, fontSize = 18.sp)
-            else Icon(Icons.Outlined.Language, null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(20.dp))
+            SiteIconContent(
+                site = site,
+                iconSize = 20.dp,
+                emojiSize = 18.sp,
+                tint = MaterialTheme.colorScheme.onPrimaryContainer
+            )
         }
         Spacer(modifier = Modifier.width(14.dp))
         Column(modifier = Modifier.weight(1f)) {
@@ -1891,8 +1899,12 @@ private fun DrawerSiteTile(
             modifier = Modifier.size(36.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primaryContainer),
             contentAlignment = Alignment.Center
         ) {
-            if (site.iconEmoji.isNotBlank()) Text(site.iconEmoji, fontSize = 16.sp)
-            else Icon(Icons.Outlined.Language, null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(18.dp))
+            SiteIconContent(
+                site = site,
+                iconSize = 18.dp,
+                emojiSize = 16.sp,
+                tint = MaterialTheme.colorScheme.onPrimaryContainer
+            )
         }
         Spacer(modifier = Modifier.height(6.dp))
         Text(

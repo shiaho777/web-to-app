@@ -1175,16 +1175,16 @@ object StringsA {
     }
 
     val multiWebIndependentSessionsHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "每个站点持有独立登录态，重复网址可登录不同账号（需 Android 13+）"
-        AppLanguage.ENGLISH -> "Each site keeps its own login session, so duplicate URLs can hold different accounts (requires Android 13+)"
-        AppLanguage.ARABIC -> "يحتفظ كل موقع بجلسة تسجيل الدخول الخاصة به، لذا يمكن لعناوين URL المكررة استخدام حسابات مختلفة (يتطلب Android 13+)"
-        AppLanguage.PORTUGUESE -> "Cada site mantém sua própria sessão de login, então URLs duplicadas podem usar contas diferentes (requer Android 13+)"
-        AppLanguage.SPANISH -> "Cada sitio mantiene su propia sesión de inicio, por lo que las URL duplicadas pueden usar cuentas distintas (requiere Android 13+)"
-        AppLanguage.FRENCH -> "Chaque site garde sa propre session de connexion, ainsi les URL en double peuvent utiliser des comptes différents (nécessite Android 13+)"
-        AppLanguage.GERMAN -> "Jede Seite behält ihre eigene Anmeldesitzung, sodass doppelte URLs verschiedene Konten verwenden können (erfordert Android 13+)"
-        AppLanguage.RUSSIAN -> "Каждый сайт хранит собственную сессию входа, поэтому повторяющиеся URL могут использовать разные аккаунты (требуется Android 13+)"
-        AppLanguage.JAPANESE -> "各サイトが独自のログインセッションを保持するため、重複するURLで異なるアカウントにログインできます（Android 13+が必要）"
-        AppLanguage.KOREAN -> "각 사이트가 자체 로그인 세션을 유지하므로 중복 URL에서 다른 계정으로 로그인할 수 있습니다(Android 13+ 필요)"
+        AppLanguage.CHINESE -> "每个站点持有独立登录态，重复网址可登录不同账号（需 Android 13+ 且 WebView 支持多 Profile；GeckoView 引擎不支持，会话仍共享）"
+        AppLanguage.ENGLISH -> "Each site keeps its own login session, so duplicate URLs can hold different accounts (requires Android 13+ and a WebView with multi-profile support; not available on the GeckoView engine, where sessions stay shared)"
+        AppLanguage.ARABIC -> "يحتفظ كل موقع بجلسة تسجيل الدخول الخاصة به، لذا يمكن لعناوين URL المكررة استخدام حسابات مختلفة (يتطلب Android 13+ وWebView يدعم تعدد الملفات؛ غير متاح على محرك GeckoView حيث تبقى الجلسات مشتركة)"
+        AppLanguage.PORTUGUESE -> "Cada site mantém sua própria sessão de login, então URLs duplicadas podem usar contas diferentes (requer Android 13+ e WebView com suporte a múltiplos perfis; indisponível no motor GeckoView, onde as sessões permanecem compartilhadas)"
+        AppLanguage.SPANISH -> "Cada sitio mantiene su propia sesión de inicio, por lo que las URL duplicadas pueden usar cuentas distintas (requiere Android 13+ y un WebView con soporte multiperfil; no disponible en el motor GeckoView, donde las sesiones siguen compartidas)"
+        AppLanguage.FRENCH -> "Chaque site garde sa propre session de connexion, ainsi les URL en double peuvent utiliser des comptes différents (nécessite Android 13+ et un WebView multi-profils ; indisponible sur le moteur GeckoView, où les sessions restent partagées)"
+        AppLanguage.GERMAN -> "Jede Seite behält ihre eigene Anmeldesitzung, sodass doppelte URLs verschiedene Konten verwenden können (erfordert Android 13+ und ein WebView mit Mehrprofil-Unterstützung; auf der GeckoView-Engine nicht verfügbar, Sitzungen bleiben dort geteilt)"
+        AppLanguage.RUSSIAN -> "Каждый сайт хранит собственную сессию входа, поэтому повторяющиеся URL могут использовать разные аккаунты (требуется Android 13+ и WebView с поддержкой нескольких профилей; на движке GeckoView недоступно, сессии остаются общими)"
+        AppLanguage.JAPANESE -> "各サイトが独自のログインセッションを保持するため、重複するURLで異なるアカウントにログインできます（Android 13+とマルチプロフィール対応WebViewが必要。GeckoViewエンジンでは利用できず、セッションは共有されます）"
+        AppLanguage.KOREAN -> "각 사이트가 자체 로그인 세션을 유지하므로 중복 URL에서 다른 계정으로 로그인할 수 있습니다(Android 13+ 및 멀티 프로필 지원 WebView 필요. GeckoView 엔진에서는 지원되지 않아 세션이 공유됩니다)"
     }
 
     val multiWebStartTab: String get() = when (Strings.lang) {
@@ -13045,6 +13045,19 @@ object StringsA {
         AppLanguage.RUSSIAN -> "Сохранено в: %s"
         AppLanguage.JAPANESE -> "保存先: %s"
         AppLanguage.KOREAN -> "저장됨: %s"
+    }
+
+    val downloadCustomDirFallback: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "自定义目录不可写，已改存到应用私有目录: %s"
+        AppLanguage.ENGLISH -> "Custom folder is not writable; saved to the app private folder instead: %s"
+        AppLanguage.ARABIC -> "المجلد المخصص غير قابل للكتابة؛ تم الحفظ في المجلد الخاص للتطبيق بدلاً منه: %s"
+        AppLanguage.PORTUGUESE -> "Pasta personalizada sem permissão de escrita; salvo na pasta privada do app: %s"
+        AppLanguage.SPANISH -> "Carpeta personalizada sin permiso de escritura; guardado en la carpeta privada de la app: %s"
+        AppLanguage.FRENCH -> "Dossier personnalisé non inscriptible ; enregistré dans le dossier privé de l'app : %s"
+        AppLanguage.GERMAN -> "Benutzerdefinierter Ordner nicht beschreibbar; stattdessen im privaten App-Ordner gespeichert: %s"
+        AppLanguage.RUSSIAN -> "Пользовательская папка недоступна для записи; сохранено в приватную папку приложения: %s"
+        AppLanguage.JAPANESE -> "カスタムフォルダに書き込めないため、アプリ専用フォルダに保存しました: %s"
+        AppLanguage.KOREAN -> "사용자 지정 폴더에 쓸 수 없어 앱 전용 폴더에 저장했습니다: %s"
     }
 
     val copiedToClipboard: String get() = when (Strings.lang) {

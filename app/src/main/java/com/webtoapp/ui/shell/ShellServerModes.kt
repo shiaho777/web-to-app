@@ -91,7 +91,8 @@ fun WordPressShellMode(
                 val port = phpRuntime.startServer(
                     wpDir.absolutePath,
                     requestPort,
-                    resolveShellPortConflictMode(config.wordpressConfig.portConflictMode)
+                    resolveShellPortConflictMode(config.wordpressConfig.portConflictMode),
+                    customPhpExtensions = config.wordpressConfig.customPhpExtensions
                 )
 
                 if (port > 0) {
@@ -799,7 +800,8 @@ fun PhpAppShellMode(
                     port = config.phpAppConfig.port,
                     portConflictMode = resolveShellPortConflictMode(config.phpAppConfig.portConflictMode),
                     envVars = config.phpAppConfig.envVars,
-                    phpExtensions = config.phpAppConfig.phpExtensions
+                    phpExtensions = config.phpAppConfig.phpExtensions,
+                    customPhpExtensions = config.phpAppConfig.customPhpExtensions
                 )
 
                 if (port > 0) {
