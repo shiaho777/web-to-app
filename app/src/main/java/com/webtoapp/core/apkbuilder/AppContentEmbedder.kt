@@ -86,7 +86,7 @@ class HtmlContentEmbedder : AppContentEmbedder {
                 config = RuntimeAssetEmbedder.EmbedConfig(
                     runtimeName = "html",
                     assetPrefix = "assets/html",
-                    excludeDirs = setOf("node_modules", ".git", ".cache", "__pycache__", ".next", ".nuxt"),
+                    excludeDirs = com.webtoapp.util.ZipProjectImporter.WEB_CONTENT_EXCLUDED_DIRS,
                     runtimeType = "html",
                     fileHook = ctx.projectFileHook
                 ),
@@ -237,7 +237,7 @@ class MultiWebContentEmbedder : AppContentEmbedder {
                 config = RuntimeAssetEmbedder.EmbedConfig(
                     runtimeName = "multiWebSite_${site.id}",
                     assetPrefix = "assets/multiweb_sites/${site.id}/${site.siteShellConfig?.siteAssetBase?.ifBlank { "html" } ?: "html"}",
-                    excludeDirs = setOf("node_modules", ".git", ".cache", "__pycache__", ".next", ".nuxt"),
+                    excludeDirs = com.webtoapp.util.ZipProjectImporter.WEB_CONTENT_EXCLUDED_DIRS,
                     runtimeType = "nodejs",
                     fileHook = ctx.projectFileHook
                 ),

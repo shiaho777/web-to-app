@@ -1105,7 +1105,7 @@ private fun copyFrontendDocumentTreeToCache(context: android.content.Context, ur
     val targetRoot = File(context.cacheDir, "frontend_saf_import_${System.currentTimeMillis()}/$rootName")
     targetRoot.mkdirs()
 
-    val skipDirs = setOf(".git", ".svn", ".hg", ".idea", ".vscode", "node_modules", "__MACOSX")
+    val skipDirs = com.webtoapp.util.ZipProjectImporter.WEB_CONTENT_EXCLUDED_DIRS
     var copiedCount = 0
 
     fun copyDocTree(doc: DocumentFile, targetDir: File) {

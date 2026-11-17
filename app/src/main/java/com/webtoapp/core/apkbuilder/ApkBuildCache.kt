@@ -302,7 +302,6 @@ class ApkBuildCache(private val context: Context) {
         if (entryName == "${ApkTemplate.CONFIG_PATH}.enc") return true
         if (entryName == "assets/encryption_meta.json") return true
         if (entryName == "assets/wta_adblock_compiled.txt") return true
-        if (entryName == "assets/wta_perf_optimize.js") return true
         if (entryName == "assets/statusbar_background.png") return true
         if (entryName == "assets/statusbar_background_dark.png") return true
         if (entryName == "assets/announcement_icon.png") return true
@@ -426,8 +425,8 @@ class ApkBuildCache(private val context: Context) {
         // overlay ships a stale manifest.
         parts += "manifest=${manifestFingerprint ?: "n/a"}"
         // Export-level performance options change output bytes (resource stripping,
-        // asset re-optimization, wta_perf_optimize.js injection) without appearing in
-        // ApkConfig — key them explicitly or REUSE_UNSIGNED serves the old setting.
+        // asset re-optimization) without appearing in ApkConfig — key them explicitly
+        // or REUSE_UNSIGNED serves the old setting.
         parts += "perf=${perfFingerprint ?: "off"}"
         // The unsigned APK is not signer-agnostic: encrypted builds embed the signing cert
         // hash in the encryption metadata. Switching between global and per-app signing

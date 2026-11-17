@@ -34,6 +34,14 @@ enum class ApkExportPreflightSeverity {
     Warning
 }
 
+internal fun remoteMediaReference(source: WebApp): String? {
+    if (source.appType != AppType.IMAGE && source.appType != AppType.VIDEO) return null
+    val mediaRef = source.mediaConfig?.mediaPath?.takeIf { it.isNotBlank() }
+        ?: source.url.takeIf { it.isNotBlank() }
+        ?: return null
+    return mediaRef.takeIf { it.startsWith("http://") || it.startsWith("https://") }
+}
+
 object ApkExportPreflight {
 
     fun check(context: Context, webApp: WebApp): ApkExportPreflightReport {
@@ -60,8 +68,40 @@ object ApkExportPreflight {
 
         issues.addGeneralWarnings(webApp)
         issues.addNetworkTrustWarnings(webApp)
+        issues.addMultiWebRemoteMediaWarnings(webApp)
 
         return ApkExportPreflightReport(issues)
+    }
+
+    private fun MutableList<ApkExportPreflightIssue>.addMultiWebRemoteMediaWarnings(webApp: WebApp) {
+        if (webApp.appType != AppType.MULTI_WEB) return
+        val sites = webApp.multiWebConfig?.sites.orEmpty().filter { it.enabled && it.sourceAppId > 0 }
+        if (sites.isEmpty()) return
+        val repo = try {
+            org.koin.java.KoinJavaComponent.get<com.webtoapp.data.repository.WebAppRepository>(
+                com.webtoapp.data.repository.WebAppRepository::class.java
+            )
+        } catch (_: Exception) {
+            return
+        }
+        sites.forEachIndexed { index, site ->
+            val source = try {
+                kotlinx.coroutines.runBlocking { repo.getWebApp(site.sourceAppId) }
+            } catch (_: Exception) {
+                null
+            } ?: return@forEachIndexed
+            val mediaRef = remoteMediaReference(source) ?: return@forEachIndexed
+            add(
+                ApkExportPreflightIssue(
+                    severity = ApkExportPreflightSeverity.Warning,
+                    key = "multiWebSites[$index].remoteMedia",
+                    title = Strings.preflightRuntimeProjectIssue,
+                    message = "Multi-web site \"${site.name}\" streams its ${source.appType.name.lowercase()} from a remote URL. " +
+                        "The media is not embedded in the APK and requires a network connection at runtime.",
+                    path = mediaRef
+                )
+            )
+        }
     }
 
     fun WebApp.toBuildInputPreflightRequest(context: Context): BuildInputPreflightRequest {

@@ -29,10 +29,12 @@ object ZipProjectImporter {
     private val VIDEO_EXTENSIONS = setOf("mp4", "webm", "mkv", "avi", "mov", "flv", "m4v")
     private val DATA_EXTENSIONS = setOf("json", "xml", "csv", "txt", "md", "yaml", "yml", "toml")
 
-    private val SKIP_PATTERNS = setOf(
+    val WEB_CONTENT_EXCLUDED_DIRS = setOf(
         "__MACOSX", ".DS_Store", "Thumbs.db", ".git", ".svn", ".hg",
-        "node_modules", ".idea", ".vscode"
+        "node_modules", ".idea", ".vscode", ".cache", "__pycache__", ".next", ".nuxt"
     )
+
+    private val SKIP_PATTERNS = WEB_CONTENT_EXCLUDED_DIRS
 
     enum class ResourceType(val icon: String, val label: String) {
         HTML("globe", "HTML"),

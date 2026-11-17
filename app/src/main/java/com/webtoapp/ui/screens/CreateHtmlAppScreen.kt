@@ -2256,10 +2256,7 @@ private fun FolderImportSection(
     }
 }
 
-private val FOLDER_SKIP_PATTERNS = setOf(
-    "__MACOSX", ".DS_Store", "Thumbs.db", ".git", ".svn", ".hg",
-    "node_modules", ".idea", ".vscode"
-)
+private val FOLDER_SKIP_PATTERNS = com.webtoapp.util.ZipProjectImporter.WEB_CONTENT_EXCLUDED_DIRS
 
 private fun importFolderFromSaf(
     context: android.content.Context,
