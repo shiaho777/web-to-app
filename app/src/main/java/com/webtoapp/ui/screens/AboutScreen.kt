@@ -41,6 +41,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Book
 import androidx.compose.material.icons.rounded.ContentCopy
+import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.FilterNone
 import androidx.compose.material.icons.rounded.Forum
@@ -114,6 +115,7 @@ import com.webtoapp.ui.design.WtaCardTone
 import com.webtoapp.ui.design.WtaLoadingIndicator
 import com.webtoapp.ui.design.WtaMorphingShape
 import com.webtoapp.ui.design.WtaMotion
+import com.webtoapp.ui.design.WtaSectionDivider
 import com.webtoapp.ui.design.WtaSettingRow
 import com.webtoapp.ui.design.WtaSwitch
 import com.webtoapp.ui.design.WtaRadius
@@ -187,6 +189,7 @@ fun AboutScreen(onBack: () -> Unit) {
                     onRefresh = { repoScope.launch { repoState.load(appContext) } }
                 )
             }
+            item(key = "trust") { TrustAndLicensesCard() }
             item(key = "legal") { LegalTabContent() }
             item(key = "footer") { MadeWithLoveFooter() }
         }
@@ -942,6 +945,41 @@ private fun ContactTile(
 }
 
 @Composable
+private fun TrustAndLicensesCard() {
+    var showLicenses by remember { mutableStateOf(false) }
+    var showPrivacy by remember { mutableStateOf(false) }
+
+    WtaCard(
+        modifier = Modifier.fillMaxWidth(),
+        tone = WtaCardTone.Elevated,
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)
+    ) {
+        WtaSettingRow(
+            iconContent = { AboutTonalIcon(icon = Icons.Rounded.FilterNone, shapeIndex = 5, plateSize = 40.dp, iconSize = 20.dp) },
+            showIconPlate = false,
+            title = Strings.privacyStatement,
+            subtitle = Strings.privacyStatementDesc.ifDescriptionsShown(),
+            onClick = { showPrivacy = true }
+        )
+        WtaSectionDivider()
+        WtaSettingRow(
+            iconContent = { AboutTonalIcon(icon = Icons.Rounded.Description, shapeIndex = 4, plateSize = 40.dp, iconSize = 20.dp) },
+            showIconPlate = false,
+            title = Strings.thirdPartyLicenses,
+            subtitle = Strings.thirdPartyLicensesDesc.ifDescriptionsShown(),
+            onClick = { showLicenses = true }
+        )
+    }
+
+    if (showLicenses) {
+        ThirdPartyLicensesSheet(onDismiss = { showLicenses = false })
+    }
+    if (showPrivacy) {
+        PrivacyStatementSheet(onDismiss = { showPrivacy = false })
+    }
+}
+
+@Composable
 private fun LegalTabContent() {
     WtaSection(
         title = Strings.legalDisclaimer,
@@ -1670,7 +1708,7 @@ private fun MadeWithLoveFooter() {
 }
 
 @Composable
-private fun AboutTonalIcon(
+internal fun AboutTonalIcon(
     icon: ImageVector,
     shapeIndex: Int,
     modifier: Modifier = Modifier,
@@ -1701,7 +1739,7 @@ private fun Context.copyToClipboard(label: String, text: String) {
     cm.setPrimaryClip(ClipData.newPlainText(label, text))
 }
 
-private fun Context.openUrl(url: String) {
+internal fun Context.openUrl(url: String) {
     try {
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK

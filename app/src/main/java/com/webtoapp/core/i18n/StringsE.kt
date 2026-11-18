@@ -3416,6 +3416,240 @@ object StringsE {
         AppLanguage.KOREAN -> "본 소프트웨어는 The Unlicense(퍼블릭 도메인)로 배포됩니다. 저작권이 무조건적으로 포기되어, 저작권 고지를 유지할 의무 없이 자유롭게 사용, 수정, 배포할 수 있습니다. 본 소프트웨어를 기반으로 한 2차 개발로 발생하는 모든 법적 책임은 해당 파생물의 개발자가 전적으로 부담합니다."
     }
 
+    val thirdPartyLicenses: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "第三方许可"
+        AppLanguage.ENGLISH -> "Third-party licenses"
+        AppLanguage.ARABIC -> "تراخيص الطرف الثالث"
+        AppLanguage.PORTUGUESE -> "Licenças de terceiros"
+        AppLanguage.SPANISH -> "Licencias de terceros"
+        AppLanguage.FRENCH -> "Licences tierces"
+        AppLanguage.GERMAN -> "Drittanbieter-Lizenzen"
+        AppLanguage.RUSSIAN -> "Лицензии третьих сторон"
+        AppLanguage.JAPANESE -> "サードパーティライセンス"
+        AppLanguage.KOREAN -> "서드파티 라이선스"
+    }
+
+    val thirdPartyLicensesDesc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "本项目使用的开源组件与运行时许可"
+        AppLanguage.ENGLISH -> "Licenses of the open-source components and runtimes used by this project"
+        AppLanguage.ARABIC -> "تراخيص المكونات مفتوحة المصدر وبيئات التشغيل المستخدمة في هذا المشروع"
+        AppLanguage.PORTUGUESE -> "Licenças dos componentes de código aberto e runtimes usados por este projeto"
+        AppLanguage.SPANISH -> "Licencias de los componentes de código abierto y runtimes que usa este proyecto"
+        AppLanguage.FRENCH -> "Licences des composants open source et des environnements d'exécution utilisés par ce projet"
+        AppLanguage.GERMAN -> "Lizenzen der von diesem Projekt verwendeten Open-Source-Komponenten und Laufzeiten"
+        AppLanguage.RUSSIAN -> "Лицензии компонентов с открытым кодом и сред выполнения, используемых проектом"
+        AppLanguage.JAPANESE -> "本プロジェクトが使用するオープンソース部品とランタイムのライセンス"
+        AppLanguage.KOREAN -> "이 프로젝트가 사용하는 오픈소스 구성 요소와 런타임의 라이선스"
+    }
+
+    val licensesLoadFailed: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "许可信息加载失败"
+        AppLanguage.ENGLISH -> "Failed to load license information"
+        AppLanguage.ARABIC -> "فشل تحميل معلومات الترخيص"
+        AppLanguage.PORTUGUESE -> "Falha ao carregar as informações de licença"
+        AppLanguage.SPANISH -> "No se pudo cargar la información de licencias"
+        AppLanguage.FRENCH -> "Échec du chargement des informations de licence"
+        AppLanguage.GERMAN -> "Lizenzinformationen konnten nicht geladen werden"
+        AppLanguage.RUSSIAN -> "Не удалось загрузить сведения о лицензиях"
+        AppLanguage.JAPANESE -> "ライセンス情報の読み込みに失敗しました"
+        AppLanguage.KOREAN -> "라이선스 정보를 불러오지 못했습니다"
+    }
+
+    val projectLicenseSection: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "本项目许可"
+        AppLanguage.ENGLISH -> "Project license"
+        AppLanguage.ARABIC -> "ترخيص المشروع"
+        AppLanguage.PORTUGUESE -> "Licença do projeto"
+        AppLanguage.SPANISH -> "Licencia del proyecto"
+        AppLanguage.FRENCH -> "Licence du projet"
+        AppLanguage.GERMAN -> "Projektlizenz"
+        AppLanguage.RUSSIAN -> "Лицензия проекта"
+        AppLanguage.JAPANESE -> "本プロジェクトのライセンス"
+        AppLanguage.KOREAN -> "프로젝트 라이선스"
+    }
+
+    val bundledLibrariesSection: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "内置开源库"
+        AppLanguage.ENGLISH -> "Bundled open-source libraries"
+        AppLanguage.ARABIC -> "المكتبات مفتوحة المصدر المضمنة"
+        AppLanguage.PORTUGUESE -> "Bibliotecas de código aberto incluídas"
+        AppLanguage.SPANISH -> "Bibliotecas de código abierto incluidas"
+        AppLanguage.FRENCH -> "Bibliothèques open source intégrées"
+        AppLanguage.GERMAN -> "Mitgelieferte Open-Source-Bibliotheken"
+        AppLanguage.RUSSIAN -> "Встроенные библиотеки с открытым кодом"
+        AppLanguage.JAPANESE -> "同梱のオープンソースライブラリ"
+        AppLanguage.KOREAN -> "내장 오픈소스 라이브러리"
+    }
+
+    val runtimeLicensesSection: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "打包与下载的运行时"
+        AppLanguage.ENGLISH -> "Packaged and downloaded runtimes"
+        AppLanguage.ARABIC -> "بيئات التشغيل المضمنة والتي يتم تنزيلها"
+        AppLanguage.PORTUGUESE -> "Runtimes empacotados e baixados"
+        AppLanguage.SPANISH -> "Runtimes empaquetados y descargados"
+        AppLanguage.FRENCH -> "Environnements d'exécution intégrés et téléchargés"
+        AppLanguage.GERMAN -> "Mitgelieferte und heruntergeladene Laufzeiten"
+        AppLanguage.RUSSIAN -> "Встроенные и загружаемые среды выполнения"
+        AppLanguage.JAPANESE -> "同梱・ダウンロードされるランタイム"
+        AppLanguage.KOREAN -> "패키징 및 다운로드되는 런타임"
+    }
+
+    val licenseFullTextSection: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "许可全文"
+        AppLanguage.ENGLISH -> "Full license texts"
+        AppLanguage.ARABIC -> "نصوص التراخيص الكاملة"
+        AppLanguage.PORTUGUESE -> "Textos completos das licenças"
+        AppLanguage.SPANISH -> "Textos completos de las licencias"
+        AppLanguage.FRENCH -> "Textes intégraux des licences"
+        AppLanguage.GERMAN -> "Vollständige Lizenztexte"
+        AppLanguage.RUSSIAN -> "Полные тексты лицензий"
+        AppLanguage.JAPANESE -> "ライセンス全文"
+        AppLanguage.KOREAN -> "라이선스 전문"
+    }
+
+    val viewLicenseText: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "查看许可原文"
+        AppLanguage.ENGLISH -> "View license text"
+        AppLanguage.ARABIC -> "عرض نص الترخيص"
+        AppLanguage.PORTUGUESE -> "Ver texto da licença"
+        AppLanguage.SPANISH -> "Ver texto de la licencia"
+        AppLanguage.FRENCH -> "Voir le texte de la licence"
+        AppLanguage.GERMAN -> "Lizenztext anzeigen"
+        AppLanguage.RUSSIAN -> "Открыть текст лицензии"
+        AppLanguage.JAPANESE -> "ライセンス原文を見る"
+        AppLanguage.KOREAN -> "라이선스 원문 보기"
+    }
+
+    val runtimeLicenseNote: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "运行时按需下载或随应用打包，其内部捆绑的第三方组件遵循各自的许可。"
+        AppLanguage.ENGLISH -> "Runtimes are downloaded on demand or packaged with the app; third-party components bundled inside them keep their own licenses."
+        AppLanguage.ARABIC -> "يتم تنزيل بيئات التشغيل عند الطلب أو تضمينها مع التطبيق؛ وتحتفظ المكونات الخارجية المدمجة داخلها بتراخيصها الخاصة."
+        AppLanguage.PORTUGUESE -> "Os runtimes são baixados sob demanda ou empacotados com o app; os componentes de terceiros incluídos neles mantêm suas próprias licenças."
+        AppLanguage.SPANISH -> "Los runtimes se descargan bajo demanda o se empaquetan con la app; los componentes de terceros incluidos en ellos conservan sus propias licencias."
+        AppLanguage.FRENCH -> "Les environnements d'exécution sont téléchargés à la demande ou intégrés à l'application ; les composants tiers qu'ils contiennent conservent leurs propres licences."
+        AppLanguage.GERMAN -> "Laufzeiten werden bei Bedarf heruntergeladen oder mit der App ausgeliefert; enthaltene Drittanbieter-Komponenten behalten ihre eigenen Lizenzen."
+        AppLanguage.RUSSIAN -> "Среды выполнения загружаются по требованию или поставляются с приложением; встроенные в них сторонние компоненты сохраняют свои лицензии."
+        AppLanguage.JAPANESE -> "ランタイムは必要に応じてダウンロードされるかアプリに同梱されます。内部に含まれるサードパーティ部品はそれぞれのライセンスに従います。"
+        AppLanguage.KOREAN -> "런타임은 필요 시 다운로드되거나 앱에 패키징됩니다. 내부에 포함된 서드파티 구성 요소는 각자의 라이선스를 따릅니다."
+    }
+
+    val privacyStatement: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "隐私声明"
+        AppLanguage.ENGLISH -> "Privacy statement"
+        AppLanguage.ARABIC -> "بيان الخصوصية"
+        AppLanguage.PORTUGUESE -> "Declaração de privacidade"
+        AppLanguage.SPANISH -> "Declaración de privacidad"
+        AppLanguage.FRENCH -> "Déclaration de confidentialité"
+        AppLanguage.GERMAN -> "Datenschutzerklärung"
+        AppLanguage.RUSSIAN -> "Заявление о конфиденциальности"
+        AppLanguage.JAPANESE -> "プライバシーステートメント"
+        AppLanguage.KOREAN -> "개인정보 처리 방침"
+    }
+
+    val privacyStatementDesc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "无遥测、无广告，数据留在你的设备上"
+        AppLanguage.ENGLISH -> "No telemetry, no ads — your data stays on your device"
+        AppLanguage.ARABIC -> "بدون قياس عن بُعد وبدون إعلانات — تبقى بياناتك على جهازك"
+        AppLanguage.PORTUGUESE -> "Sem telemetria, sem anúncios — seus dados ficam no seu dispositivo"
+        AppLanguage.SPANISH -> "Sin telemetría, sin anuncios: tus datos permanecen en tu dispositivo"
+        AppLanguage.FRENCH -> "Sans télémétrie, sans publicité — vos données restent sur votre appareil"
+        AppLanguage.GERMAN -> "Keine Telemetrie, keine Werbung — deine Daten bleiben auf deinem Gerät"
+        AppLanguage.RUSSIAN -> "Без телеметрии и рекламы — данные остаются на вашем устройстве"
+        AppLanguage.JAPANESE -> "テレメトリーなし・広告なし。データは端末内に留まります"
+        AppLanguage.KOREAN -> "원격 분석 없음, 광고 없음 — 데이터는 기기에 남습니다"
+    }
+
+    val privacyNoTrackingTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "零收集"
+        AppLanguage.ENGLISH -> "Zero collection"
+        AppLanguage.ARABIC -> "عدم جمع البيانات"
+        AppLanguage.PORTUGUESE -> "Coleta zero"
+        AppLanguage.SPANISH -> "Cero recopilación"
+        AppLanguage.FRENCH -> "Zéro collecte"
+        AppLanguage.GERMAN -> "Keine Datenerfassung"
+        AppLanguage.RUSSIAN -> "Ноль сбора данных"
+        AppLanguage.JAPANESE -> "収集ゼロ"
+        AppLanguage.KOREAN -> "수집 없음"
+    }
+
+    val privacyNoTrackingBody: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "没有账号系统，没有分析或广告 SDK，也没有运营方服务器接收你的使用数据。应用内统计仅保存在本地。"
+        AppLanguage.ENGLISH -> "No account system, no analytics or advertising SDK, and no operator server receiving your usage data. In-app statistics stay local."
+        AppLanguage.ARABIC -> "لا يوجد نظام حسابات ولا حزمة تحليلات أو إعلانات ولا خادم تابع للمشغل يستقبل بيانات استخدامك. تبقى الإحصاءات داخل التطبيق على جهازك."
+        AppLanguage.PORTUGUESE -> "Sem sistema de contas, sem SDK de análise ou publicidade e sem servidor do operador recebendo seus dados de uso. As estatísticas do app ficam no dispositivo."
+        AppLanguage.SPANISH -> "Sin sistema de cuentas, sin SDK de analítica o publicidad y sin servidor del operador que reciba tus datos de uso. Las estadísticas de la app permanecen en el dispositivo."
+        AppLanguage.FRENCH -> "Pas de système de compte, pas de SDK d'analyse ou de publicité, et aucun serveur de l'éditeur ne reçoit vos données d'utilisation. Les statistiques de l'application restent locales."
+        AppLanguage.GERMAN -> "Kein Kontosystem, kein Analyse- oder Werbe-SDK und kein Server des Betreibers, der deine Nutzungsdaten empfängt. App-Statistiken bleiben lokal."
+        AppLanguage.RUSSIAN -> "Нет системы аккаунтов, аналитических или рекламных SDK и сервера оператора, принимающего данные об использовании. Статистика приложения хранится локально."
+        AppLanguage.JAPANESE -> "アカウントシステムも、解析・広告 SDK も、利用データを受け取る運営サーバーもありません。アプリ内の統計は端末内にのみ保存されます。"
+        AppLanguage.KOREAN -> "계정 시스템도, 분석·광고 SDK도, 사용 데이터를 받는 운영 서버도 없습니다. 앱 내 통계는 기기에만 저장됩니다."
+    }
+
+    val privacyLocalDataTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "留在设备上的数据"
+        AppLanguage.ENGLISH -> "Data that stays on your device"
+        AppLanguage.ARABIC -> "البيانات التي تبقى على جهازك"
+        AppLanguage.PORTUGUESE -> "Dados que permanecem no seu dispositivo"
+        AppLanguage.SPANISH -> "Datos que permanecen en tu dispositivo"
+        AppLanguage.FRENCH -> "Données qui restent sur votre appareil"
+        AppLanguage.GERMAN -> "Daten, die auf deinem Gerät bleiben"
+        AppLanguage.RUSSIAN -> "Данные, остающиеся на устройстве"
+        AppLanguage.JAPANESE -> "端末内に留まるデータ"
+        AppLanguage.KOREAN -> "기기에 남는 데이터"
+    }
+
+    val privacyLocalDataBody: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "项目文件、签名密钥及其密码、AI 服务的 API 密钥、本地备份都保存在应用私有存储中，除非你主动导出、分享或备份。"
+        AppLanguage.ENGLISH -> "Project files, signing keys and their passwords, AI provider API keys, and local backups live in the app's private storage unless you export, share, or back them up yourself."
+        AppLanguage.ARABIC -> "تُحفظ ملفات المشروع ومفاتيح التوقيع وكلمات مرورها ومفاتيح API لمزودي الذكاء الاصطناعي والنسخ الاحتياطية المحلية في التخزين الخاص للتطبيق ما لم تقم بتصديرها أو مشاركتها أو نسخها احتياطياً بنفسك."
+        AppLanguage.PORTUGUESE -> "Arquivos de projeto, chaves de assinatura e suas senhas, chaves de API de provedores de IA e backups locais ficam no armazenamento privado do app, a menos que você os exporte, compartilhe ou faça backup."
+        AppLanguage.SPANISH -> "Los archivos de proyecto, las claves de firma y sus contraseñas, las claves API de proveedores de IA y las copias locales se guardan en el almacenamiento privado de la app, salvo que tú los exportes, compartas o respaldes."
+        AppLanguage.FRENCH -> "Les fichiers de projet, les clés de signature et leurs mots de passe, les clés API des fournisseurs d'IA et les sauvegardes locales restent dans le stockage privé de l'application, sauf si vous les exportez, partagez ou sauvegardez vous-même."
+        AppLanguage.GERMAN -> "Projektdateien, Signaturschlüssel und ihre Passwörter, API-Schlüssel von KI-Anbietern und lokale Backups liegen im privaten Speicher der App, sofern du sie nicht selbst exportierst, teilst oder sicherst."
+        AppLanguage.RUSSIAN -> "Файлы проектов, ключи подписи и их пароли, API-ключи ИИ-провайдеров и локальные резервные копии хранятся в приватном хранилище приложения, пока вы сами не экспортируете, не передадите или не сохраните их."
+        AppLanguage.JAPANESE -> "プロジェクトファイル、署名キーとそのパスワード、AI プロバイダーの API キー、ローカルバックアップは、自分でエクスポート・共有・バックアップしない限り、アプリのプライベートストレージに保存されます。"
+        AppLanguage.KOREAN -> "프로젝트 파일, 서명 키와 그 비밀번호, AI 제공자 API 키, 로컬 백업은 직접 내보내거나 공유하거나 백업하지 않는 한 앱의 비공개 저장소에 보관됩니다."
+    }
+
+    val privacyNetworkTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "数据何时离开设备"
+        AppLanguage.ENGLISH -> "When data leaves your device"
+        AppLanguage.ARABIC -> "متى تغادر البيانات جهازك"
+        AppLanguage.PORTUGUESE -> "Quando os dados saem do seu dispositivo"
+        AppLanguage.SPANISH -> "Cuándo salen los datos de tu dispositivo"
+        AppLanguage.FRENCH -> "Quand les données quittent votre appareil"
+        AppLanguage.GERMAN -> "Wann Daten dein Gerät verlassen"
+        AppLanguage.RUSSIAN -> "Когда данные покидают устройство"
+        AppLanguage.JAPANESE -> "データが端末外に出るとき"
+        AppLanguage.KOREAN -> "데이터가 기기를 떠나는 경우"
+    }
+
+    val privacyNetworkBody: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "只有你使用相应功能时才会发起网络请求：更新检查访问 GitHub，预览访问你打开的网站，Agent 访问你配置的 AI 服务，运行时与模块按需下载。数据只发给对应服务，运营方不接收副本。"
+        AppLanguage.ENGLISH -> "Network requests happen only when you use the matching feature: update checks reach GitHub, preview reaches the site you open, the Agent reaches the AI endpoint you configured, and runtimes or modules download on demand. Data goes only to that service; the operator receives no copy."
+        AppLanguage.ARABIC -> "تحدث طلبات الشبكة فقط عند استخدامك للميزة المعنية: فحص التحديثات يصل إلى GitHub، والمعاينة تصل إلى الموقع الذي تفتحه، والوكيل يصل إلى خدمة الذكاء الاصطناعي التي أعددتَها، وتُنزَّل بيئات التشغيل والوحدات عند الطلب. تُرسل البيانات إلى تلك الخدمة فقط ولا يتلقى المشغل نسخة منها."
+        AppLanguage.PORTUGUESE -> "As requisições de rede só ocorrem quando você usa o recurso correspondente: a verificação de atualizações acessa o GitHub, a pré-visualização acessa o site aberto, o Agent acessa o endpoint de IA configurado e runtimes ou módulos são baixados sob demanda. Os dados vão apenas para esse serviço; o operador não recebe cópia."
+        AppLanguage.SPANISH -> "Las solicitudes de red solo ocurren cuando usas la función correspondiente: la búsqueda de actualizaciones llega a GitHub, la vista previa llega al sitio que abres, el Agent llega al endpoint de IA que configuraste y los runtimes o módulos se descargan bajo demanda. Los datos van solo a ese servicio; el operador no recibe copia."
+        AppLanguage.FRENCH -> "Les requêtes réseau n'ont lieu que lorsque vous utilisez la fonction correspondante : la vérification des mises à jour contacte GitHub, l'aperçu contacte le site ouvert, l'Agent contacte le service d'IA que vous avez configuré, et les environnements ou modules se téléchargent à la demande. Les données ne vont qu'à ce service ; l'éditeur n'en reçoit aucune copie."
+        AppLanguage.GERMAN -> "Netzwerkanfragen erfolgen nur, wenn du die jeweilige Funktion nutzt: Update-Prüfungen erreichen GitHub, die Vorschau erreicht die geöffnete Website, der Agent erreicht den von dir konfigurierten KI-Endpunkt, und Laufzeiten oder Module werden bei Bedarf heruntergeladen. Die Daten gehen nur an diesen Dienst; der Betreiber erhält keine Kopie."
+        AppLanguage.RUSSIAN -> "Сетевые запросы происходят только при использовании соответствующей функции: проверка обновлений обращается к GitHub, предпросмотр — к открытому вами сайту, Agent — к настроенному вами ИИ-сервису, а среды выполнения и модули загружаются по требованию. Данные уходят только этому сервису; оператор копию не получает."
+        AppLanguage.JAPANESE -> "ネットワークリクエストは対応する機能を使ったときのみ発生します。更新チェックは GitHub に、プレビューは開いたサイトに、Agent は設定した AI サービスに接続し、ランタイムやモジュールは必要時にダウンロードされます。データはそのサービスにのみ送られ、運営者はコピーを受け取りません。"
+        AppLanguage.KOREAN -> "네트워크 요청은 해당 기능을 사용할 때만 발생합니다. 업데이트 확인은 GitHub에, 미리보기는 연 사이트에, Agent는 설정한 AI 서비스에 접속하며, 런타임과 모듈은 필요 시 다운로드됩니다. 데이터는 해당 서비스에만 전송되고 운영자는 사본을 받지 않습니다."
+    }
+
+    val openFullPrivacyPolicy: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "查看完整隐私政策"
+        AppLanguage.ENGLISH -> "Read the full privacy policy"
+        AppLanguage.ARABIC -> "قراءة سياسة الخصوصية الكاملة"
+        AppLanguage.PORTUGUESE -> "Ler a política de privacidade completa"
+        AppLanguage.SPANISH -> "Leer la política de privacidad completa"
+        AppLanguage.FRENCH -> "Lire la politique de confidentialité complète"
+        AppLanguage.GERMAN -> "Vollständige Datenschutzerklärung lesen"
+        AppLanguage.RUSSIAN -> "Читать полную политику конфиденциальности"
+        AppLanguage.JAPANESE -> "完全なプライバシーポリシーを読む"
+        AppLanguage.KOREAN -> "전체 개인정보 처리방침 보기"
+    }
+
     val madeWithLove: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "用心制作 by Shiaho"
         AppLanguage.ENGLISH -> "Made with love by Shiaho"
