@@ -522,8 +522,7 @@ class AppCloner(private val context: Context) {
                         }
 
                         injectConfigJson != null && entry.name == "assets/clone_config.json" -> {
-                            AppLogger.d("AppCloner", "Replacing existing clone_config.json")
-                            writeEntryDeflated(zipOut, entry.name, injectConfigJson.toByteArray(Charsets.UTF_8))
+                            AppLogger.d("AppCloner", "Skipping existing clone_config.json (re-injected after the loop)")
                         }
 
                         injectSplashMediaPath != null && (
