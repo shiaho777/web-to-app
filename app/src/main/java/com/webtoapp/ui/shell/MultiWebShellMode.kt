@@ -74,10 +74,13 @@ internal fun SiteIconContent(
     emojiSize: androidx.compose.ui.unit.TextUnit,
     tint: Color
 ) {
+    val remoteFavicon = site.faviconUrl.takeIf {
+        it.startsWith("http://") || it.startsWith("https://")
+    }
     when {
         site.iconEmoji.isNotBlank() -> Text(site.iconEmoji, fontSize = emojiSize)
-        site.faviconUrl.isNotBlank() -> coil.compose.AsyncImage(
-            model = site.faviconUrl,
+        remoteFavicon != null -> coil.compose.AsyncImage(
+            model = remoteFavicon,
             contentDescription = null,
             modifier = Modifier.size(iconSize).clip(CircleShape),
             contentScale = androidx.compose.ui.layout.ContentScale.Crop
