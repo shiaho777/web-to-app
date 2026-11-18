@@ -1,0 +1,61 @@
+{
+  "projectLicense": {
+    "spdx": "Unlicense",
+    "textAsset": "legal/licenses/unlicense.txt",
+    "url": "https://github.com/shiaho777/web-to-app/blob/main/LICENSE"
+  },
+  "libraries": [
+    { "name": "AndroidX Core KTX", "version": "1.12.0", "spdx": "Apache-2.0", "url": "https://developer.android.com/jetpack/androidx/releases/core" },
+    { "name": "AndroidX AppCompat", "version": "1.6.1", "spdx": "Apache-2.0", "url": "https://developer.android.com/jetpack/androidx/releases/appcompat" },
+    { "name": "AndroidX SwipeRefreshLayout", "version": "1.1.0", "spdx": "Apache-2.0", "url": "https://developer.android.com/jetpack/androidx/releases/swiperefreshlayout" },
+    { "name": "AndroidX DocumentFile", "version": "1.0.1", "spdx": "Apache-2.0", "url": "https://developer.android.com/jetpack/androidx/releases/documentfile" },
+    { "name": "Protocol Buffers (javalite)", "version": "3.25.5", "spdx": "BSD-3-Clause", "url": "https://github.com/protocolbuffers/protobuf" },
+    { "name": "Material Components for Android", "version": "1.10.0", "spdx": "Apache-2.0", "url": "https://github.com/material-components/material-components-android" },
+    { "name": "AndroidX Activity Compose", "version": "1.8.1", "spdx": "Apache-2.0", "url": "https://developer.android.com/jetpack/androidx/releases/activity" },
+    { "name": "AndroidX Lifecycle", "version": "2.6.2", "spdx": "Apache-2.0", "url": "https://developer.android.com/jetpack/androidx/releases/lifecycle" },
+    { "name": "Jetpack Compose", "version": "BOM 2026.06.01", "spdx": "Apache-2.0", "url": "https://developer.android.com/jetpack/compose" },
+    { "name": "Jetpack Compose UI Graphics", "version": "BOM 2026.06.01", "spdx": "Apache-2.0", "url": "https://developer.android.com/jetpack/androidx/releases/compose-ui" },
+    { "name": "Material 3", "version": "1.5.0-alpha17", "spdx": "Apache-2.0", "url": "https://developer.android.com/jetpack/androidx/releases/compose-material3" },
+    { "name": "Material Icons Extended", "version": "1.7.8", "spdx": "Apache-2.0", "url": "https://developer.android.com/jetpack/androidx/releases/compose-material" },
+    { "name": "AndroidX Navigation Compose", "version": "2.7.5", "spdx": "Apache-2.0", "url": "https://developer.android.com/jetpack/androidx/releases/navigation" },
+    { "name": "AndroidX Room", "version": "2.7.2", "spdx": "Apache-2.0", "url": "https://developer.android.com/jetpack/androidx/releases/room" },
+    { "name": "kotlinx.coroutines", "version": "1.7.3", "spdx": "Apache-2.0", "url": "https://github.com/Kotlin/kotlinx.coroutines" },
+    { "name": "Coil", "version": "2.5.0", "spdx": "Apache-2.0", "url": "https://github.com/coil-kt/coil" },
+    { "name": "Gson", "version": "2.10.1", "spdx": "Apache-2.0", "url": "https://github.com/google/gson" },
+    { "name": "OkHttp (incl. DNS-over-HTTPS)", "version": "4.12.0", "spdx": "Apache-2.0", "url": "https://github.com/square/okhttp" },
+    { "name": "Firebase Cloud Messaging (standard builds only)", "version": "BOM 33.7.0", "spdx": "Apache-2.0", "spdxNote": "SDK code is Apache-2.0; the Firebase service itself is governed by Google's terms of service.", "url": "https://firebase.google.com/docs/cloud-messaging" },
+    { "name": "Bouncy Castle (bcprov / bcpkix)", "version": "1.78.1", "spdx": "MIT", "url": "https://www.bouncycastle.org/" },
+    { "name": "Koin", "version": "3.5.3", "spdx": "Apache-2.0", "url": "https://github.com/InsertKoinIO/koin" },
+    { "name": "AndroidX WebKit", "version": "1.9.0", "spdx": "Apache-2.0", "url": "https://developer.android.com/jetpack/androidx/releases/webkit" },
+    { "name": "AndroidX DataStore Preferences", "version": "1.0.0", "spdx": "Apache-2.0", "url": "https://developer.android.com/jetpack/androidx/releases/datastore" },
+    { "name": "Apache Commons Compress", "version": "1.26.0", "spdx": "Apache-2.0", "url": "https://commons.apache.org/proper/commons-compress/" },
+    { "name": "XZ for Java", "version": "1.9", "spdx": "Unlicense", "spdxNote": "Public domain dedication.", "url": "https://tukaani.org/xz/java.html" },
+    { "name": "apksig (Android APK Signing)", "version": "8.3.0", "spdx": "Apache-2.0", "url": "https://android.googlesource.com/platform/tools/apksig/" },
+    { "name": "GeckoView (Mozilla Firefox engine)", "version": "142.0", "spdx": "MPL-2.0", "url": "https://mozilla.github.io/geckoview/" },
+    { "name": "Cronet (Chromium network stack)", "version": "143.7445.0", "spdx": "BSD-3-Clause", "spdxNote": "Chromium code is BSD-3-Clause; bundled third-party components keep their own licenses.", "url": "https://developer.android.com/develop/connectivity/cronet" },
+    { "name": "AndroidX Credentials (standard builds only)", "version": "1.5.0", "spdx": "Apache-2.0", "url": "https://developer.android.com/jetpack/androidx/releases/credentials" },
+    { "name": "googleid (Google ID, standard builds only)", "version": "1.1.1", "spdx": "Apache-2.0", "spdxNote": "Client library license; Google sign-in services are governed by Google's terms of service.", "url": "https://developers.google.com/identity" },
+    { "name": "AndroidX Media", "version": "1.7.0", "spdx": "Apache-2.0", "url": "https://developer.android.com/jetpack/androidx/releases/media" },
+    { "name": "Kotlin Standard Library", "version": "2.x", "spdx": "Apache-2.0", "url": "https://kotlinlang.org/" }
+  ],
+  "runtimes": [
+    { "name": "Node.js (nodejs-mobile)", "version": "18.20", "spdx": "MIT", "spdxNote": "Node.js is MIT; bundled components (V8, OpenSSL, npm and its dependencies) keep their own licenses.", "url": "https://github.com/nodejs-mobile/nodejs-mobile" },
+    { "name": "PHP", "version": "8.4", "spdx": "PHP-3.01", "spdxNote": "The PHP License 3.01; bundled extensions and libraries keep their own licenses.", "url": "https://www.php.net/license/" },
+    { "name": "Composer", "version": "2.10", "spdx": "MIT", "url": "https://github.com/composer/composer" },
+    { "name": "Python", "version": "3.14", "spdx": "PSF-2.0", "spdxNote": "PSF License Agreement; bundled third-party modules keep their own licenses.", "url": "https://docs.python.org/3/license.html" },
+    { "name": "Go", "version": "1.26", "spdx": "BSD-3-Clause", "spdxNote": "Go is BSD-3-Clause with a patent grant; bundled dependencies keep their own licenses.", "url": "https://go.dev/LICENSE" },
+    { "name": "WordPress", "version": "7.x", "spdx": "GPL-2.0-or-later", "url": "https://wordpress.org/about/gpl/" },
+    { "name": "musl libc (patched exec bridge)", "version": "1.2.5", "spdx": "MIT", "url": "https://musl.libc.org/" },
+    { "name": "esbuild (downloaded on demand)", "version": "", "spdx": "MIT", "url": "https://github.com/evanw/esbuild" }
+  ],
+  "licenseTexts": [
+    { "spdx": "Unlicense", "asset": "legal/licenses/unlicense.txt", "url": "https://unlicense.org/" },
+    { "spdx": "Apache-2.0", "asset": "legal/licenses/apache-2.0.txt", "url": "https://www.apache.org/licenses/LICENSE-2.0" },
+    { "spdx": "MIT", "asset": "legal/licenses/mit.txt", "url": "https://opensource.org/license/mit" },
+    { "spdx": "BSD-3-Clause", "asset": "legal/licenses/bsd-3-clause.txt", "url": "https://opensource.org/license/bsd-3-clause" },
+    { "spdx": "MPL-2.0", "asset": "legal/licenses/mpl-2.0.txt", "url": "https://www.mozilla.org/en-US/MPL/2.0/" },
+    { "spdx": "GPL-2.0-or-later", "asset": "legal/licenses/gpl-2.0.txt", "url": "https://www.gnu.org/licenses/old-licenses/gpl-2.0.html" },
+    { "spdx": "PHP-3.01", "asset": null, "url": "https://www.php.net/license/3_01.txt" },
+    { "spdx": "PSF-2.0", "asset": null, "url": "https://docs.python.org/3/license.html" }
+  ]
+}
