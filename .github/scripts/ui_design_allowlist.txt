@@ -83,8 +83,6 @@ app/src/main/java/com/webtoapp/ui/screens/CreateAppWebViewCards.kt|raw_corner_sh
 app/src/main/java/com/webtoapp/ui/screens/CreateAppWebViewCards.kt|raw_surface|8
 app/src/main/java/com/webtoapp/ui/screens/CreateFrontendAppScreen.kt|raw_corner_shape|3
 app/src/main/java/com/webtoapp/ui/screens/CreateFrontendAppScreen.kt|raw_surface|2
-app/src/main/java/com/webtoapp/ui/screens/CreateGalleryAppScreen.kt|raw_corner_shape|7
-app/src/main/java/com/webtoapp/ui/screens/CreateGalleryAppScreen.kt|raw_surface|5
 app/src/main/java/com/webtoapp/ui/screens/CreateGoAppScreen.kt|raw_corner_shape|7
 app/src/main/java/com/webtoapp/ui/screens/CreateGoAppScreen.kt|raw_surface|8
 app/src/main/java/com/webtoapp/ui/screens/CreateHtmlAppScreen.kt|raw_corner_shape|6
@@ -118,4 +116,3 @@ app/src/main/java/com/webtoapp/ui/screens/PortManagerScreen.kt|raw_surface|3
 app/src/main/java/com/webtoapp/ui/screens/RuntimeDepsScreen.kt|raw_surface|1
 app/src/main/java/com/webtoapp/ui/screens/StatsScreen.kt|raw_corner_shape|4
 app/src/main/java/com/webtoapp/ui/screens/StatsScreen.kt|raw_surface|4
-app/src/main/java/com/webtoapp/ui/screens/WordPressSettingsScreen.kt|raw_corner_shape|3
