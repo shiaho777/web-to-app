@@ -3650,6 +3650,97 @@ object StringsE {
         AppLanguage.KOREAN -> "전체 개인정보 처리방침 보기"
     }
 
+    val fdroidUpdatesManaged: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "此版本由 F-Droid 分发，更新由 F-Droid 客户端管理。"
+        AppLanguage.ENGLISH -> "This build is distributed by F-Droid; updates are managed by the F-Droid client."
+        AppLanguage.ARABIC -> "يتم توزيع هذا الإصدار بواسطة F-Droid، وتُدار التحديثات عبر عميل F-Droid."
+        AppLanguage.PORTUGUESE -> "Esta versão é distribuída pelo F-Droid; as atualizações são gerenciadas pelo cliente F-Droid."
+        AppLanguage.SPANISH -> "Esta versión se distribuye a través de F-Droid; las actualizaciones las gestiona el cliente de F-Droid."
+        AppLanguage.FRENCH -> "Cette version est distribuée par F-Droid ; les mises à jour sont gérées par le client F-Droid."
+        AppLanguage.GERMAN -> "Diese Version wird über F-Droid verbreitet; Updates werden vom F-Droid-Client verwaltet."
+        AppLanguage.RUSSIAN -> "Эта сборка распространяется через F-Droid; обновлениями управляет клиент F-Droid."
+        AppLanguage.JAPANESE -> "このビルドは F-Droid で配布されており、更新は F-Droid クライアントが管理します。"
+        AppLanguage.KOREAN -> "이 빌드는 F-Droid로 배포되며, 업데이트는 F-Droid 클라이언트가 관리합니다."
+    }
+
+    val feedbackTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "意见反馈"
+        AppLanguage.ENGLISH -> "Feedback"
+        AppLanguage.ARABIC -> "الملاحظات"
+        AppLanguage.PORTUGUESE -> "Feedback"
+        AppLanguage.SPANISH -> "Comentarios"
+        AppLanguage.FRENCH -> "Retours"
+        AppLanguage.GERMAN -> "Feedback"
+        AppLanguage.RUSSIAN -> "Обратная связь"
+        AppLanguage.JAPANESE -> "フィードバック"
+        AppLanguage.KOREAN -> "피드백"
+    }
+
+    val feedbackDesc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "报告问题或提出建议（GitHub Issue）"
+        AppLanguage.ENGLISH -> "Report a bug or request a feature (GitHub issue)"
+        AppLanguage.ARABIC -> "الإبلاغ عن مشكلة أو طلب ميزة (GitHub Issue)"
+        AppLanguage.PORTUGUESE -> "Relate um bug ou solicite um recurso (issue no GitHub)"
+        AppLanguage.SPANISH -> "Informa de un error o solicita una función (issue en GitHub)"
+        AppLanguage.FRENCH -> "Signaler un bug ou demander une fonctionnalité (issue GitHub)"
+        AppLanguage.GERMAN -> "Fehler melden oder Funktion vorschlagen (GitHub-Issue)"
+        AppLanguage.RUSSIAN -> "Сообщить об ошибке или предложить функцию (issue на GitHub)"
+        AppLanguage.JAPANESE -> "不具合の報告や機能の要望（GitHub Issue）"
+        AppLanguage.KOREAN -> "버그 신고 또는 기능 요청(GitHub 이슈)"
+    }
+
+    val contributeTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "参与贡献"
+        AppLanguage.ENGLISH -> "Contribute"
+        AppLanguage.ARABIC -> "المساهمة"
+        AppLanguage.PORTUGUESE -> "Contribuir"
+        AppLanguage.SPANISH -> "Contribuir"
+        AppLanguage.FRENCH -> "Contribuer"
+        AppLanguage.GERMAN -> "Mitwirken"
+        AppLanguage.RUSSIAN -> "Внести вклад"
+        AppLanguage.JAPANESE -> "コントリビュート"
+        AppLanguage.KOREAN -> "기여하기"
+    }
+
+    val contributeDesc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "代码、文档、翻译、设计或报 bug 都欢迎（贡献指南）"
+        AppLanguage.ENGLISH -> "Code, docs, translation, design, or bug reports all welcome (contributing guide)"
+        AppLanguage.ARABIC -> "نرحب بالكود والوثائق والترجمة والتصميم وبلاغات الأخطاء (دليل المساهمة)"
+        AppLanguage.PORTUGUESE -> "Código, documentação, tradução, design ou relatos de bugs são bem-vindos (guia de contribuição)"
+        AppLanguage.SPANISH -> "Código, documentación, traducción, diseño o informes de errores son bienvenidos (guía de contribución)"
+        AppLanguage.FRENCH -> "Code, docs, traduction, design ou rapports de bugs bienvenus (guide de contribution)"
+        AppLanguage.GERMAN -> "Code, Doku, Übersetzung, Design oder Fehlerberichte willkommen (Beitragsleitfaden)"
+        AppLanguage.RUSSIAN -> "Код, документация, переводы, дизайн и сообщения об ошибках приветствуются (руководство)"
+        AppLanguage.JAPANESE -> "コード・文档・翻訳・デザイン・不具合報告を歓迎します（貢献ガイド）"
+        AppLanguage.KOREAN -> "코드, 문서, 번역, 디자인, 버그 신고 모두 환영합니다(기여 가이드)"
+    }
+
+    val contributorsTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "感谢贡献者"
+        AppLanguage.ENGLISH -> "Contributors"
+        AppLanguage.ARABIC -> "المساهمون"
+        AppLanguage.PORTUGUESE -> "Contribuidores"
+        AppLanguage.SPANISH -> "Colaboradores"
+        AppLanguage.FRENCH -> "Contributeurs"
+        AppLanguage.GERMAN -> "Mitwirkende"
+        AppLanguage.RUSSIAN -> "Участники"
+        AppLanguage.JAPANESE -> "コントリビューター"
+        AppLanguage.KOREAN -> "기여자"
+    }
+
+    val contributorsDesc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "让这个项目变得更好的每一个人"
+        AppLanguage.ENGLISH -> "Everyone who makes this project better"
+        AppLanguage.ARABIC -> "كل من يجعل هذا المشروع أفضل"
+        AppLanguage.PORTUGUESE -> "Todos que tornam este projeto melhor"
+        AppLanguage.SPANISH -> "Todos los que hacen mejor este proyecto"
+        AppLanguage.FRENCH -> "Toutes celles et ceux qui améliorent ce projet"
+        AppLanguage.GERMAN -> "Alle, die dieses Projekt besser machen"
+        AppLanguage.RUSSIAN -> "Все, кто делает этот проект лучше"
+        AppLanguage.JAPANESE -> "このプロジェクトをより良くしてくれるすべての人"
+        AppLanguage.KOREAN -> "이 프로젝트를 더 좋게 만드는 모든 분"
+    }
+
     val madeWithLove: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "用心制作 by Shiaho"
         AppLanguage.ENGLISH -> "Made with love by Shiaho"

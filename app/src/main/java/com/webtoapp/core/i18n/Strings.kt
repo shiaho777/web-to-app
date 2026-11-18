@@ -3140,6 +3140,13 @@ object Strings {
     val privacyNetworkTitle: String get() = StringsE.privacyNetworkTitle
     val privacyNetworkBody: String get() = StringsE.privacyNetworkBody
     val openFullPrivacyPolicy: String get() = StringsE.openFullPrivacyPolicy
+    val fdroidUpdatesManaged: String get() = StringsE.fdroidUpdatesManaged
+    val feedbackTitle: String get() = StringsE.feedbackTitle
+    val feedbackDesc: String get() = StringsE.feedbackDesc
+    val contributeTitle: String get() = StringsE.contributeTitle
+    val contributeDesc: String get() = StringsE.contributeDesc
+    val contributorsTitle: String get() = StringsE.contributorsTitle
+    val contributorsDesc: String get() = StringsE.contributorsDesc
     val madeWithLove: String get() = StringsE.madeWithLove
     val shortcutPermissionTitle: String get() = StringsE.shortcutPermissionTitle
     val shortcutPermissionGoToSettings: String get() = StringsE.shortcutPermissionGoToSettings

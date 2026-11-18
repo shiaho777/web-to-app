@@ -1,0 +1,28 @@
+name: Release checksums
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  checksums:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download release assets and generate SHA256SUMS.txt
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          mkdir -p dist
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --dir dist
+          cd dist
+          find . -maxdepth 1 -type f ! -name 'SHA256SUMS.txt' -printf '%P\n' | sort | xargs -d '\n' sha256sum > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+      - name: Attach checksums to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.release.tag_name }}
+        run: gh release upload "$TAG" dist/SHA256SUMS.txt --clobber --repo "$GITHUB_REPOSITORY"

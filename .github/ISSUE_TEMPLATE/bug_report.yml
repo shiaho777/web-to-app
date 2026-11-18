@@ -1,0 +1,80 @@
+name: Bug report
+description: Something in WebToApp does not work as documented.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug.
+
+        - **Security vulnerability?** Do not file it here. Use [private vulnerability reporting](https://github.com/shiaho777/web-to-app/security/advisories/new) instead (see SECURITY.md).
+        - **Question or idea?** Start a discussion or search existing issues first to avoid duplicates.
+  - type: input
+    id: version
+    attributes:
+      label: WebToApp version
+      description: "About screen, version pill — e.g. 2.8.8 (87). Long-press the pill to copy it."
+      placeholder: "2.8.8 (87)"
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Device and Android version
+      placeholder: "Pixel 8, Android 15"
+    validations:
+      required: true
+  - type: dropdown
+    id: distribution
+    attributes:
+      label: Install source
+      options:
+        - GitHub release APK
+        - F-Droid
+        - Google Play
+        - Built from source
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Where does the problem happen?
+      options:
+        - Host app (editor / preview / toolbox)
+        - Exported APK (generated app)
+        - Build / export pipeline
+        - Agent
+        - Module market / extensions
+        - Other / not sure
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Create a ... app
+        2. Enable ...
+        3. Export / preview ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Include error messages or screenshots if you have them. For build failures, the build log (Build screen) helps a lot.
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: App type (Web / HTML / Node.js / ...), engine (System WebView / GeckoView), relevant settings, whether it worked in an earlier version.
+    validations:
+      required: false

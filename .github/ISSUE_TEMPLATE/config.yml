@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/shiaho777/web-to-app/security/advisories/new
+    about: Report security issues privately — never as a public issue. See SECURITY.md.
+  - name: Question or discussion
+    url: https://github.com/shiaho777/web-to-app/discussions
+    about: Ask questions and discuss ideas before opening an issue.
+  - name: Documentation
+    url: https://shiaho777.github.io/web-to-app/
+    about: Guides, FAQ, and developer docs — your answer may already be there.

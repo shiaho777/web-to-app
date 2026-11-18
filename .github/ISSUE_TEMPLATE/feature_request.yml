@@ -1,0 +1,50 @@
+name: Feature request
+description: Suggest a capability or improvement for WebToApp.
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before filing, search existing issues and discussions — the idea may already be tracked.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Describe the use case, not just the solution. What are you trying to build or do that WebToApp currently makes hard?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: What should WebToApp do? If it affects exported APKs, say so — preview and export must both work.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Workarounds you tried, or other tools that solve this.
+    validations:
+      required: false
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Which part of the product?
+      options:
+        - Host app (editor / preview / toolbox)
+        - Exported APK runtime
+        - Build / export pipeline
+        - Agent
+        - Module market / extensions
+        - Documentation
+        - Other / not sure
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Mockups, links, related issues.
+    validations:
+      required: false
