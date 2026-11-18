@@ -604,7 +604,6 @@ dependencies {
 
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.appcompat:appcompat:1.6.1")
-    implementation("androidx.core:core-splashscreen:1.0.1")
     implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
     implementation("androidx.documentfile:documentfile:1.0.1")
 
@@ -669,8 +668,6 @@ dependencies {
     // Version must match CronetDependencyManager.CRONET_ARTIFACT_VERSION.
     implementation("org.chromium.net:cronet-embedded:143.7445.0")
 
-    implementation("com.google.zxing:core:3.5.2")
-
     // Native Google sign-in through the Jetpack Credential Manager (NativeBridge).
     // Omitted from -Pfdroid=true builds; GoogleSignInRuntime is a no-op there.
     if (!isFdroidBuild) {
@@ -678,7 +675,6 @@ dependencies {
         implementation("androidx.credentials:credentials-play-services-auth:1.5.0")
         implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
     }
-    implementation("androidx.browser:browser:1.8.0")
 
     implementation("androidx.media:media:1.7.0")
 

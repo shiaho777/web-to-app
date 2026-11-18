@@ -485,15 +485,6 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
 
     private fun extensionToMimeType(ext: String): String = mimeTypeForFileExtension(ext)
 
-    @Deprecated("Use handleFileChooser() instead")
-    var onFileChooserResult: ((Array<android.net.Uri>) -> Unit)? = null
-
-    val fileChooserLauncher = activity.registerForActivityResult(
-        ActivityResultContracts.GetMultipleContents()
-    ) { uris ->
-        onFileChooserResult?.invoke(uris.toTypedArray())
-    }
-
     private val storagePermissionLauncher = activity.registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->

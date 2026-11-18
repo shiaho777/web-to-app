@@ -224,19 +224,6 @@
 -dontwarn org.checkerframework.**
 
 # ============================================================
-# ZXing — 反射查找编码格式 (仅 core，embedded 已移除)
-# ============================================================
--keep class com.google.zxing.** { *; }
--dontwarn com.google.zxing.**
-
-# BillingClient — AIDL stub
-# ============================================================
--keep class com.android.vending.billing.** { *; }
--keep class com.android.billingclient.** { *; }
--keep class com.google.android.gms.internal.** { *; }
--dontwarn com.android.billingclient.**
-
-# ============================================================
 # Credentials API + GoogleId — 反射解析 ID Token
 # ============================================================
 -keep class androidx.credentials.** { *; }
@@ -274,18 +261,6 @@
 # Material / AppCompat — 已有 consumer rules，仅兜底
 # ============================================================
 -dontwarn com.google.android.material.**
-
-# ============================================================
-# Custom Tabs (browser)
-# ============================================================
--keep class androidx.browser.** { *; }
--dontwarn androidx.browser.**
-
-# ============================================================
-# Haze (背景模糊)
-# ============================================================
--keep class dev.chrisbanes.haze.** { *; }
--dontwarn dev.chrisbanes.haze.**
 
 # Node.js JNI output bridge (R8 may rename onOutput otherwise)
 -keep class com.webtoapp.core.nodejs.NodeBridge { *; }

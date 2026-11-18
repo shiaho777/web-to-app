@@ -5,34 +5,13 @@ import java.io.ByteArrayInputStream
 import java.security.MessageDigest
 import java.util.zip.ZipInputStream
 
-/**
- * Registry mapping export config flags to feature-stack ids (issue #1115).
- *
- * Stack bundles live in the host's assets at `stacks/<id>.zip` (synced by
- * `:app:syncStackBundles` from `feature-stacks/<id>/build/outputs/stack/`).
- * A generated APK only carries a stack's DEX/resources/manifest entries when
- * the app config enables the feature — disabled features cost zero bytes.
- */
 object FeatureStacks {
     const val ASSET_DIR = "stacks"
 
-    /** Stack ids enabled by this export config, in deterministic order. */
     fun enabledFor(config: ApkConfig): List<String> = buildList {
     }
 }
 
-/**
- * Parsed feature-stack bundle (the zip produced by a `feature-stacks/<id>`
- * module's `bundle*Stack` task):
- *
- * ```
- * dex/classes*.dex  – feature code, multidex-ordered
- * stack.arsc        – resource package compiled at a fixed id (0x80+)
- * res/…             – compiled resource files referenced by stack.arsc
- * manifest.xml      – curated <fragment> document
- * stack.json        – {"id","version","packageId","resPrefix"}
- * ```
- */
 class FeatureStackBundle private constructor(
     val id: String,
     val packageId: Int,

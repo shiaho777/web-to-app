@@ -18,7 +18,6 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.scale
@@ -28,9 +27,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.webtoapp.ui.theme.LocalAnimationSettings
-import kotlin.math.PI
-import kotlin.math.cos
-import kotlin.math.sin
 
 @Composable
 fun WtaIdleFloat(
@@ -98,40 +94,6 @@ fun WtaKawaiiCloud(
                 drawCircle(bubble, 2.4f, Offset(80f, 30f))
                 drawCircle(bubble, 3.4f, Offset(88f, 19f))
             }
-        }
-    }
-}
-
-@Composable
-fun WtaKawaiiStar(
-    modifier: Modifier = Modifier,
-    bodyColor: Color = MaterialTheme.colorScheme.tertiaryContainer,
-    faceColor: Color = MaterialTheme.colorScheme.onTertiaryContainer,
-    blushColor: Color = MaterialTheme.colorScheme.primary
-) {
-    Canvas(modifier = modifier) {
-        inDesignSpace(100f) {
-            drawPath(roundedPolygonPath(starPoints(5, 46f, 21f, Offset(50f, 52f)), 0.22f), bodyColor)
-            drawKawaiiFace(
-                center = Offset(50f, 54f),
-                spread = 8f,
-                eyeRadius = 2.2f,
-                faceColor = faceColor,
-                blushColor = blushColor,
-                sleeping = false
-            )
-        }
-    }
-}
-
-@Composable
-fun WtaKawaiiSparkle(
-    modifier: Modifier = Modifier,
-    color: Color = MaterialTheme.colorScheme.tertiary
-) {
-    Canvas(modifier = modifier) {
-        inDesignSpace(100f) {
-            drawPath(roundedPolygonPath(starPoints(4, 48f, 13f, Offset(50f, 50f)), 0.3f), color)
         }
     }
 }
@@ -235,24 +197,6 @@ internal fun DrawScope.drawKawaiiFace(
     drawOval(blush, Offset(center.x + spread + 0.5f, center.y + 1f), Size(6.5f, 3.6f))
 }
 
-internal fun starPoints(
-    points: Int,
-    outerRadius: Float,
-    innerRadius: Float,
-    center: Offset
-): List<Offset> {
-    val result = mutableListOf<Offset>()
-    for (i in 0 until points * 2) {
-        val radius = if (i % 2 == 0) outerRadius else innerRadius
-        val angle = -PI / 2 + i * PI / points
-        result += Offset(
-            center.x + (radius * cos(angle)).toFloat(),
-            center.y + (radius * sin(angle)).toFloat()
-        )
-    }
-    return result
-}
-
 internal fun roundedPolygonPath(points: List<Offset>, cornerFraction: Float): Path {
     val path = Path()
     if (points.size < 3) return path
@@ -273,5 +217,3 @@ internal fun roundedPolygonPath(points: List<Offset>, cornerFraction: Float): Pa
     path.close()
     return path
 }
-
-internal val WtaIconStroke: Stroke = Stroke(width = 3f, cap = StrokeCap.Round, join = StrokeJoin.Round)

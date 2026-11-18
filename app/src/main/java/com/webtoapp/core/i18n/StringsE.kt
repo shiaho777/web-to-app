@@ -89,18 +89,6 @@ object StringsE {
         AppLanguage.JAPANESE -> "ストア検索は利用できません。拡張機能 ID を貼り付けて直接インストール"
         AppLanguage.KOREAN -> "스토어 검색을 사용할 수 없습니다. 확장 프로그램 ID를 붙여넣어 직접 설치"
     }
-    val cwsSearchIntro: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "输入关键词搜索 Chrome 网上应用店（需要可访问 Google 的网络）"
-        AppLanguage.ENGLISH -> "Type a keyword to search the Chrome Web Store (requires a network that can reach Google)"
-        AppLanguage.ARABIC -> "اكتب كلمة رئيسية للبحث في متجر إضافات Chrome (يتطلب شبكة قادرة على الوصول إلى Google)"
-        AppLanguage.PORTUGUESE -> "Digite uma palavra-chave para pesquisar na Chrome Web Store (requer uma rede que possa acessar o Google)"
-        AppLanguage.SPANISH -> "Escribe una palabra clave para buscar en la Chrome Web Store (requiere una red que pueda acceder a Google)"
-        AppLanguage.FRENCH -> "Tapez un mot-clé pour rechercher dans la Chrome Web Store (nécessite un réseau pouvant accéder à Google)"
-        AppLanguage.GERMAN -> "Geben Sie ein Schlüsselwort ein, um den Chrome Web Store zu durchsuchen (erfordert ein Netzwerk mit Google-Zugriff)"
-        AppLanguage.RUSSIAN -> "Введите ключевое слово для поиска в Chrome Web Store (требуется сеть с доступом к Google)"
-        AppLanguage.JAPANESE -> "キーワードを入力して Chrome Web Store を検索（Google にアクセスできるネットワークが必要）"
-        AppLanguage.KOREAN -> "키워드를 입력하여 Chrome 웹 스토어를 검색 (Google에 접근 가능한 네트워크 필요)"
-    }
 
     val cwsBrowseIntro: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "浏览精选扩展，或搜索 Chrome 网上应用店（搜索需可访问 Google）"
@@ -219,19 +207,6 @@ object StringsE {
         AppLanguage.KOREAN -> "스타일"
     }
 
-    val cwsSortLabel: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "排序"
-        AppLanguage.ENGLISH -> "Sort"
-        AppLanguage.ARABIC -> "الترتيب"
-        AppLanguage.PORTUGUESE -> "Ordenar"
-        AppLanguage.SPANISH -> "Ordenar"
-        AppLanguage.FRENCH -> "Trier"
-        AppLanguage.GERMAN -> "Sortieren"
-        AppLanguage.RUSSIAN -> "Сортировка"
-        AppLanguage.JAPANESE -> "並べ替え"
-        AppLanguage.KOREAN -> "정렬"
-    }
-
     val greasyForkTab: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "GreasyFork"
         AppLanguage.ENGLISH -> "GreasyFork"
@@ -243,45 +218,6 @@ object StringsE {
         AppLanguage.RUSSIAN -> "GreasyFork"
         AppLanguage.JAPANESE -> "GreasyFork"
         AppLanguage.KOREAN -> "GreasyFork"
-    }
-
-    val noGreasyForkScripts: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "暂无 GreasyFork 脚本"
-        AppLanguage.ENGLISH -> "No GreasyFork scripts yet"
-        AppLanguage.ARABIC -> "لا توجد سكربتات GreasyFork بعد"
-        AppLanguage.PORTUGUESE -> "Ainda não há scripts do GreasyFork"
-        AppLanguage.SPANISH -> "Aún no hay scripts de GreasyFork"
-        AppLanguage.FRENCH -> "Pas encore de scripts GreasyFork"
-        AppLanguage.GERMAN -> "Noch keine GreasyFork-Skripte"
-        AppLanguage.RUSSIAN -> "Пока нет скриптов GreasyFork"
-        AppLanguage.JAPANESE -> "GreasyFork スクリプトはまだありません"
-        AppLanguage.KOREAN -> "아직 GreasyFork 스크립트가 없습니다"
-    }
-
-    val greasyForkEmptyHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "从扩展商店浏览安装，或导入 .user.js 文件"
-        AppLanguage.ENGLISH -> "Browse the store to install, or import a .user.js file"
-        AppLanguage.ARABIC -> "تصفح المتجر للتثبيت أو استورد ملف .user.js"
-        AppLanguage.PORTUGUESE -> "Navegue pela loja para instalar ou importe um arquivo .user.js"
-        AppLanguage.SPANISH -> "Explora la tienda para instalar o importa un archivo .user.js"
-        AppLanguage.FRENCH -> "Parcourez la boutique pour installer ou importez un fichier .user.js"
-        AppLanguage.GERMAN -> "Im Store stöbern oder eine .user.js-Datei importieren"
-        AppLanguage.RUSSIAN -> "Установите из магазина или импортируйте файл .user.js"
-        AppLanguage.JAPANESE -> "ストアからインストールするか、.user.js ファイルをインポート"
-        AppLanguage.KOREAN -> "스토어에서 설치하거나 .user.js 파일을 가져오세요"
-    }
-
-    val browseGreasyFork: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "逛逛 GreasyFork"
-        AppLanguage.ENGLISH -> "Browse GreasyFork"
-        AppLanguage.ARABIC -> "تصفح GreasyFork"
-        AppLanguage.PORTUGUESE -> "Explorar GreasyFork"
-        AppLanguage.SPANISH -> "Explorar GreasyFork"
-        AppLanguage.FRENCH -> "Parcourir GreasyFork"
-        AppLanguage.GERMAN -> "GreasyFork durchsuchen"
-        AppLanguage.RUSSIAN -> "Открыть GreasyFork"
-        AppLanguage.JAPANESE -> "GreasyFork を見る"
-        AppLanguage.KOREAN -> "GreasyFork 둘러보기"
     }
 
     val gfSearchHint: String get() = when (Strings.lang) {
@@ -332,18 +268,7 @@ object StringsE {
         AppLanguage.JAPANESE -> "GreasyFork の検索に失敗しました"
         AppLanguage.KOREAN -> "GreasyFork 검색 실패"
     }
-    val gfSearchIntro: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "从 GreasyFork 社区搜索并安装用户脚本。输入关键词开始搜索。"
-        AppLanguage.ENGLISH -> "Search and install user scripts from the GreasyFork community. Type a keyword to start."
-        AppLanguage.ARABIC -> "ابحث وثبّت سكربتات المستخدم من مجتمع GreasyFork. اكتب كلمة رئيسية للبدء."
-        AppLanguage.PORTUGUESE -> "Pesquise e instale scripts de usuário da comunidade GreasyFork. Digite uma palavra-chave para começar."
-        AppLanguage.SPANISH -> "Busca e instala scripts de usuario de la comunidad GreasyFork. Escribe una palabra clave para empezar."
-        AppLanguage.FRENCH -> "Recherchez et installez des scripts utilisateur depuis la communauté GreasyFork. Saisissez un mot-clé pour commencer."
-        AppLanguage.GERMAN -> "Suchen und installieren Sie User-Scripts aus der GreasyFork-Community. Geben Sie ein Schlüsselwort ein, um zu starten."
-        AppLanguage.RUSSIAN -> "Ищите и устанавливайте пользовательские скрипты из сообщества GreasyFork. Введите ключевое слово для начала."
-        AppLanguage.JAPANESE -> "GreasyFork コミュニティからユーザースクリプトを検索してインストールします。キーワードを入力してください。"
-        AppLanguage.KOREAN -> "GreasyFork 커뮤니티에서 사용자 스크립트를 검색하고 설치하세요. 키워드를 입력하세요."
-    }
+
     val gfBrowseIntro: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "浏览热门用户脚本，或搜索 GreasyFork 社区（需可访问 greasyfork.org）"
         AppLanguage.ENGLISH -> "Browse popular user scripts, or search the GreasyFork community (requires access to greasyfork.org)"
@@ -464,94 +389,6 @@ object StringsE {
         AppLanguage.JAPANESE -> "インストール失敗"
         AppLanguage.KOREAN -> "설치 실패"
     }
-    val gfEmptyTitle: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "暂无 GreasyFork 脚本"
-        AppLanguage.ENGLISH -> "No GreasyFork scripts"
-        AppLanguage.ARABIC -> "لا توجد سكربتات GreasyFork"
-        AppLanguage.PORTUGUESE -> "Sem scripts GreasyFork"
-        AppLanguage.SPANISH -> "Sin scripts GreasyFork"
-        AppLanguage.FRENCH -> "Aucun script GreasyFork"
-        AppLanguage.GERMAN -> "Keine GreasyFork-Skripte"
-        AppLanguage.RUSSIAN -> "Нет скриптов GreasyFork"
-        AppLanguage.JAPANESE -> "GreasyFork スクリプトなし"
-        AppLanguage.KOREAN -> "GreasyFork 스크립트 없음"
-    }
-    val gfFromUserScriptsTitle: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "从 GreasyFork 搜索"
-        AppLanguage.ENGLISH -> "Search GreasyFork"
-        AppLanguage.ARABIC -> "ابحث في GreasyFork"
-        AppLanguage.PORTUGUESE -> "Pesquisar GreasyFork"
-        AppLanguage.SPANISH -> "Buscar en GreasyFork"
-        AppLanguage.FRENCH -> "Rechercher GreasyFork"
-        AppLanguage.GERMAN -> "GreasyFork durchsuchen"
-        AppLanguage.RUSSIAN -> "Искать в GreasyFork"
-        AppLanguage.JAPANESE -> "GreasyFork を検索"
-        AppLanguage.KOREAN -> "GreasyFork 검색"
-    }
-    val gfFromUserScriptsDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "从社区脚本库搜索并安装用户脚本"
-        AppLanguage.ENGLISH -> "Search and install user scripts from the community"
-        AppLanguage.ARABIC -> "ابحث وثبّت سكربتات المستخدم من المجتمع"
-        AppLanguage.PORTUGUESE -> "Pesquise e instale scripts de usuário da comunidade"
-        AppLanguage.SPANISH -> "Busca e instala scripts de usuario de la comunidad"
-        AppLanguage.FRENCH -> "Recherchez et installez des scripts utilisateur depuis la communauté"
-        AppLanguage.GERMAN -> "Suchen und installieren Sie User-Scripts aus der Community"
-        AppLanguage.RUSSIAN -> "Ищите и устанавливайте пользовательские скрипты из сообщества"
-        AppLanguage.JAPANESE -> "コミュニティからユーザースクリプトを検索してインストール"
-        AppLanguage.KOREAN -> "커뮤니티에서 사용자 스크립트를 검색하고 설치하세요"
-    }
-
-    val cwsSortDefault: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "默认"
-        AppLanguage.ENGLISH -> "Default"
-        AppLanguage.ARABIC -> "افتراضي"
-        AppLanguage.PORTUGUESE -> "Padrão"
-        AppLanguage.SPANISH -> "Predeterminado"
-        AppLanguage.FRENCH -> "Par défaut"
-        AppLanguage.GERMAN -> "Standard"
-        AppLanguage.RUSSIAN -> "По умолчанию"
-        AppLanguage.JAPANESE -> "デフォルト"
-        AppLanguage.KOREAN -> "기본"
-    }
-
-    val cwsSortRating: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "评分"
-        AppLanguage.ENGLISH -> "Rating"
-        AppLanguage.ARABIC -> "التقييم"
-        AppLanguage.PORTUGUESE -> "Avaliação"
-        AppLanguage.SPANISH -> "Valoración"
-        AppLanguage.FRENCH -> "Note"
-        AppLanguage.GERMAN -> "Bewertung"
-        AppLanguage.RUSSIAN -> "Рейтинг"
-        AppLanguage.JAPANESE -> "評価"
-        AppLanguage.KOREAN -> "평점"
-    }
-
-    val cwsSortReviews: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "评论数"
-        AppLanguage.ENGLISH -> "Reviews"
-        AppLanguage.ARABIC -> "المراجعات"
-        AppLanguage.PORTUGUESE -> "Avaliações"
-        AppLanguage.SPANISH -> "Reseñas"
-        AppLanguage.FRENCH -> "Avis"
-        AppLanguage.GERMAN -> "Rezensionen"
-        AppLanguage.RUSSIAN -> "Отзывы"
-        AppLanguage.JAPANESE -> "レビュー数"
-        AppLanguage.KOREAN -> "리뷰 수"
-    }
-
-    val cwsSortDownloads: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "下载量"
-        AppLanguage.ENGLISH -> "Users"
-        AppLanguage.ARABIC -> "المستخدمون"
-        AppLanguage.PORTUGUESE -> "Utilizadores"
-        AppLanguage.SPANISH -> "Usuarios"
-        AppLanguage.FRENCH -> "Utilisateurs"
-        AppLanguage.GERMAN -> "Nutzer"
-        AppLanguage.RUSSIAN -> "Пользователи"
-        AppLanguage.JAPANESE -> "ユーザー数"
-        AppLanguage.KOREAN -> "사용자 수"
-    }
 
     val cwsDlModule: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "正在下载扩展"
@@ -565,18 +402,7 @@ object StringsE {
         AppLanguage.JAPANESE -> "拡張機能をダウンロード中"
         AppLanguage.KOREAN -> "확장 프로그램 다운로드 중"
     }
-    val cwsDlIcon: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "正在下载图标"
-        AppLanguage.ENGLISH -> "Downloading icon"
-        AppLanguage.ARABIC -> "جارٍ تنزيل الأيقونة"
-        AppLanguage.PORTUGUESE -> "Baixando ícone"
-        AppLanguage.SPANISH -> "Descargando icono"
-        AppLanguage.FRENCH -> "Téléchargement de l'icône"
-        AppLanguage.GERMAN -> "Symbol wird heruntergeladen"
-        AppLanguage.RUSSIAN -> "Загрузка значка"
-        AppLanguage.JAPANESE -> "アイコンをダウンロード中"
-        AppLanguage.KOREAN -> "아이콘 다운로드 중"
-    }
+
     val cwsDlTags: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "正在生成特征标签"
         AppLanguage.ENGLISH -> "Generating feature tags"
@@ -817,30 +643,7 @@ object StringsE {
         AppLanguage.JAPANESE -> "ショートカット"
         AppLanguage.KOREAN -> "단축키"
     }
-    val importChromeExtensionHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "支持 .crx/.zip，当前仅导入带 content_scripts 的扩展"
-        AppLanguage.ENGLISH -> "Supports .crx/.zip. Currently imports extensions with content_scripts only"
-        AppLanguage.ARABIC -> "يدعم .crx/.zip. يستورد حالياً الإضافات التي تحتوي على content_scripts فقط"
-        AppLanguage.PORTUGUESE -> "Suporta .crx/.zip. Atualmente importa apenas extensões com content_scripts"
-        AppLanguage.SPANISH -> "Soporta .crx/.zip. Actualmente importa solo extensiones con content_scripts"
-        AppLanguage.FRENCH -> "Prend en charge .crx/.zip. Actuellement importe uniquement les extensions avec content_scripts"
-        AppLanguage.GERMAN -> "Unterstützt .crx/.zip. Importiert derzeit nur Erweiterungen mit content_scripts"
-        AppLanguage.RUSSIAN -> "Поддерживает .crx/.zip. Сейчас импортирует только расширения с content_scripts"
-        AppLanguage.JAPANESE -> ".crx/.zip に対応。現在は content_scripts を含む拡張機能のみインポート"
-        AppLanguage.KOREAN -> ".crx/.zip 지원. 현재 content_scripts가 있는 확장 프로그램만 가져오기"
-    }
-    val installUserScript: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "安装油猴脚本"
-        AppLanguage.ENGLISH -> "Install Userscript"
-        AppLanguage.ARABIC -> "تثبيت سكريبت المستخدم"
-        AppLanguage.PORTUGUESE -> "Instalar Userscript"
-        AppLanguage.SPANISH -> "Instalar Userscript"
-        AppLanguage.FRENCH -> "Installer le Userscript"
-        AppLanguage.GERMAN -> "Userscript installieren"
-        AppLanguage.RUSSIAN -> "Установить userscript"
-        AppLanguage.JAPANESE -> "ユーザースクリプトをインストール"
-        AppLanguage.KOREAN -> "유저스크립트 설치"
-    }
+
     val installChromeExtension: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "安装 Chrome 扩展"
         AppLanguage.ENGLISH -> "Install Chrome Extension"
@@ -853,54 +656,7 @@ object StringsE {
         AppLanguage.JAPANESE -> "Chrome 拡張機能をインストール"
         AppLanguage.KOREAN -> "Chrome 확장 프로그램 설치"
     }
-    val importJsPackage: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "导入 JS 扩展包"
-        AppLanguage.ENGLISH -> "Import JS Package"
-        AppLanguage.ARABIC -> "استيراد حزمة JS"
-        AppLanguage.PORTUGUESE -> "Importar Pacote JS"
-        AppLanguage.SPANISH -> "Importar Paquete JS"
-        AppLanguage.FRENCH -> "Importer le Paquet JS"
-        AppLanguage.GERMAN -> "JS-Paket importieren"
-        AppLanguage.RUSSIAN -> "Импортировать JS-пакет"
-        AppLanguage.JAPANESE -> "JS パッケージをインポート"
-        AppLanguage.KOREAN -> "JS 패키지 가져오기"
-    }
-    val importJsPackageHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "支持包含多个 JS/CSS 文件的 ZIP 包"
-        AppLanguage.ENGLISH -> "Supports ZIP with multiple JS/CSS files"
-        AppLanguage.ARABIC -> "يدعم ملفات ZIP تحتوي على ملفات JS/CSS متعددة"
-        AppLanguage.PORTUGUESE -> "Suporta ZIP com vários arquivos JS/CSS"
-        AppLanguage.SPANISH -> "Soporta ZIP con múltiples archivos JS/CSS"
-        AppLanguage.FRENCH -> "Prend en charge ZIP avec plusieurs fichiers JS/CSS"
-        AppLanguage.GERMAN -> "Unterstützt ZIP mit mehreren JS/CSS-Dateien"
-        AppLanguage.RUSSIAN -> "Поддерживает ZIP с несколькими файлами JS/CSS"
-        AppLanguage.JAPANESE -> "複数の JS/CSS ファイルを含む ZIP に対応"
-        AppLanguage.KOREAN -> "여러 JS/CSS 파일이 포함된 ZIP 지원"
-    }
-    val installJsPackage: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "安装 JS 扩展包"
-        AppLanguage.ENGLISH -> "Install JS Package"
-        AppLanguage.ARABIC -> "تثبيت حزمة JS"
-        AppLanguage.PORTUGUESE -> "Instalar Pacote JS"
-        AppLanguage.SPANISH -> "Instalar Paquete JS"
-        AppLanguage.FRENCH -> "Installer le Paquet JS"
-        AppLanguage.GERMAN -> "JS-Paket installieren"
-        AppLanguage.RUSSIAN -> "Установить JS-пакет"
-        AppLanguage.JAPANESE -> "JS パッケージをインストール"
-        AppLanguage.KOREAN -> "JS 패키지 설치"
-    }
-    val filesDetected: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "个文件"
-        AppLanguage.ENGLISH -> "files detected"
-        AppLanguage.ARABIC -> "ملفات مكتشفة"
-        AppLanguage.PORTUGUESE -> "arquivos detectados"
-        AppLanguage.SPANISH -> "archivos detectados"
-        AppLanguage.FRENCH -> "fichiers détectés"
-        AppLanguage.GERMAN -> "Dateien erkannt"
-        AppLanguage.RUSSIAN -> "файлов обнаружено"
-        AppLanguage.JAPANESE -> "ファイル検出"
-        AppLanguage.KOREAN -> "파일 감지됨"
-    }
+
     val totalSize: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "总大小"
         AppLanguage.ENGLISH -> "total"
@@ -961,30 +717,7 @@ object StringsE {
         AppLanguage.JAPANESE -> "アプリを起動できません。インストール済みでランチャーアイコンがあるか確認してください。"
         AppLanguage.KOREAN -> "앱을 실행할 수 없습니다. 설치되어 있고 런처 아이콘이 있는지 확인하세요."
     }
-    val matchingSites: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "匹配网站"
-        AppLanguage.ENGLISH -> "Matching sites"
-        AppLanguage.ARABIC -> "المواقع المطابقة"
-        AppLanguage.PORTUGUESE -> "Sites correspondentes"
-        AppLanguage.SPANISH -> "Sitios coincidentes"
-        AppLanguage.FRENCH -> "Sites correspondants"
-        AppLanguage.GERMAN -> "Passende Seiten"
-        AppLanguage.RUSSIAN -> "Совпадающие сайты"
-        AppLanguage.JAPANESE -> "一致するサイト"
-        AppLanguage.KOREAN -> "일치하는 사이트"
-    }
-    val requiredApis: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "所需 API"
-        AppLanguage.ENGLISH -> "Required APIs"
-        AppLanguage.ARABIC -> "واجهات برمجة مطلوبة"
-        AppLanguage.PORTUGUESE -> "APIs necessárias"
-        AppLanguage.SPANISH -> "APIs requeridas"
-        AppLanguage.FRENCH -> "API requises"
-        AppLanguage.GERMAN -> "Erforderliche APIs"
-        AppLanguage.RUSSIAN -> "Требуемые API"
-        AppLanguage.JAPANESE -> "必要な API"
-        AppLanguage.KOREAN -> "필수 API"
-    }
+
     val contentScripts: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "内容脚本"
         AppLanguage.ENGLISH -> "content scripts"
@@ -1008,30 +741,6 @@ object StringsE {
         AppLanguage.RUSSIAN -> "Неподдерживаемые API"
         AppLanguage.JAPANESE -> "非対応 API"
         AppLanguage.KOREAN -> "지원되지 않는 API"
-    }
-    val multiFileStorageHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "多文件独立存储，保留原始文件结构"
-        AppLanguage.ENGLISH -> "Multi-file storage, preserving original structure"
-        AppLanguage.ARABIC -> "تخزين متعدد الملفات، الحفاظ على الهيكل الأصلي"
-        AppLanguage.PORTUGUESE -> "Armazenamento de múltiplos arquivos, preservando a estrutura original"
-        AppLanguage.SPANISH -> "Almacenamiento de múltiples archivos, preservando la estructura original"
-        AppLanguage.FRENCH -> "Stockage multi-fichiers, préservant la structure d'origine"
-        AppLanguage.GERMAN -> "Multi-Datei-Speicherung, erhält die Originalstruktur"
-        AppLanguage.RUSSIAN -> "Многофайловое хранилище, сохраняет исходную структуру"
-        AppLanguage.JAPANESE -> "複数ファイルストレージ、元の構造を保持"
-        AppLanguage.KOREAN -> "다중 파일 저장, 원본 구조 유지"
-    }
-    val includedFiles: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "包含的文件"
-        AppLanguage.ENGLISH -> "Included files"
-        AppLanguage.ARABIC -> "الملفات المضمنة"
-        AppLanguage.PORTUGUESE -> "Arquivos incluídos"
-        AppLanguage.SPANISH -> "Archivos incluidos"
-        AppLanguage.FRENCH -> "Fichiers inclus"
-        AppLanguage.GERMAN -> "Enthaltene Dateien"
-        AppLanguage.RUSSIAN -> "Включённые файлы"
-        AppLanguage.JAPANESE -> "含まれるファイル"
-        AppLanguage.KOREAN -> "포함된 파일"
     }
 
     val optimizeCode: String get() = when (Strings.lang) {
@@ -1603,187 +1312,6 @@ object StringsE {
         AppLanguage.JAPANESE -> "ファイル保存"
         AppLanguage.KOREAN -> "파일 저장"
     }
-    val aiPromptHtml1: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "创建一个现代个人主页，包含导航栏、英雄区、作品展示和联系方式"
-        AppLanguage.ENGLISH -> "Create a modern personal homepage with navbar, hero section, portfolio and contact info"
-        AppLanguage.ARABIC -> "إنشاء صفحة شخصية حديثة تحتوي على شريط تنقل وقسم بطل ومعرض أعمال ومعلومات اتصال"
-        AppLanguage.PORTUGUESE -> "Crie uma página pessoal moderna com barra de navegação, seção hero, portfólio e informações de contato"
-        AppLanguage.SPANISH -> "Crea una página personal moderna con barra de navegación, sección hero, portafolio e información de contacto"
-        AppLanguage.FRENCH -> "Créez une page personnelle moderne avec barre de navigation, section hero, portfolio et coordonnées"
-        AppLanguage.GERMAN -> "Erstelle eine moderne persönliche Homepage mit Navigationsleiste, Hero-Bereich, Portfolio und Kontaktinfos"
-        AppLanguage.RUSSIAN -> "Создайте современную личную страницу с панелью навигации, hero-секцией, портфолио и контактами"
-        AppLanguage.JAPANESE -> "ナビバー、ヒーローセクション、ポートフォリオ、連絡先を含むモダンな個人ホームページを作成"
-        AppLanguage.KOREAN -> "내비게이션 바, 히어로 섹션, 포트폴리오 및 연락처가 있는 현대적인 개인 홈페이지 만들기"
-    }
-    val aiPromptHtml2: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "做一个天气预报应用界面，支持搜索城市、显示当前天气和未来7天预报"
-        AppLanguage.ENGLISH -> "Build a weather forecast app UI with city search, current weather and 7-day forecast"
-        AppLanguage.ARABIC -> "بناء واجهة تطبيق توقعات الطقس مع بحث المدينة والطقس الحالي وتوقعات 7 أيام"
-        AppLanguage.PORTUGUESE -> "Construa uma interface de app de previsão do tempo com busca de cidade, clima atual e previsão de 7 dias"
-        AppLanguage.SPANISH -> "Construye una interfaz de app de pronóstico del tiempo con búsqueda de ciudad, clima actual y pronóstico de 7 días"
-        AppLanguage.FRENCH -> "Construisez une interface d'application de prévisions météo avec recherche de ville, météo actuelle et prévisions sur 7 jours"
-        AppLanguage.GERMAN -> "Erstelle eine Wettervorhersage-App-Oberfläche mit Stadtsuche, aktuellem Wetter und 7-Tage-Vorhersage"
-        AppLanguage.RUSSIAN -> "Создайте интерфейс приложения прогноза погоды с поиском города, текущей погодой и прогнозом на 7 дней"
-        AppLanguage.JAPANESE -> "都市検索、現在の天気、7日間予報に対応した天気予報アプリUIを構築"
-        AppLanguage.KOREAN -> "도시 검색, 현재 날씨 및 7일 예보가 있는 날씨 예보 앱 UI 만들기"
-    }
-    val aiPromptFrontend1: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "用 React 创建一个待办事项应用，支持添加、删除、标记完成和本地存储"
-        AppLanguage.ENGLISH -> "Create a React todo app with add, delete, mark complete and local storage support"
-        AppLanguage.ARABIC -> "إنشاء تطبيق مهام React مع إضافة وحذف وتعليم إتمام ودعم التخزين المحلي"
-        AppLanguage.PORTUGUESE -> "Crie um app de tarefas React com adicionar, excluir, marcar concluído e suporte a armazenamento local"
-        AppLanguage.SPANISH -> "Crea una app de tareas React con agregar, eliminar, marcar completado y soporte de almacenamiento local"
-        AppLanguage.FRENCH -> "Créez une application de tâches React avec ajout, suppression, marquer comme terminé et stockage local"
-        AppLanguage.GERMAN -> "Erstelle eine React-Todo-App mit Hinzufügen, Löschen, Als erledigt markieren und lokalem Speicher"
-        AppLanguage.RUSSIAN -> "Создайте React-приложение для задач с добавлением, удалением, отметкой выполнения и локальным хранилищем"
-        AppLanguage.JAPANESE -> "Reactで追加、削除、完了マーク、ローカルストレージ対応のTodoアプリを作成"
-        AppLanguage.KOREAN -> "추가, 삭제, 완료 표시 및 로컬 스토리지 지원이 포함된 React 할 일 앱 만들기"
-    }
-    val aiPromptFrontend2: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "用 Vue.js 构建一个电商产品列表页面，包含筛选、排序和购物车功能"
-        AppLanguage.ENGLISH -> "Build a Vue.js e-commerce product listing page with filtering, sorting and cart"
-        AppLanguage.ARABIC -> "بناء صفحة منتجات تجارة إلكترونية Vue.js مع تصفية وترتيب وسلة شراء"
-        AppLanguage.PORTUGUESE -> "Construa uma página de listagem de produtos e-commerce Vue.js com filtros, ordenação e carrinho"
-        AppLanguage.SPANISH -> "Construye una página de listado de productos e-commerce Vue.js con filtros, ordenamiento y carrito"
-        AppLanguage.FRENCH -> "Construisez une page de liste de produits e-commerce Vue.js avec filtrage, tri et panier"
-        AppLanguage.GERMAN -> "Erstelle eine Vue.js E-Commerce-Produktlistenseite mit Filterung, Sortierung und Warenkorb"
-        AppLanguage.RUSSIAN -> "Создайте страницу списка товаров интернет-магазина на Vue.js с фильтрацией, сортировкой и корзиной"
-        AppLanguage.JAPANESE -> "Vue.jsでフィルタリング、ソート、カート機能を備えたEC商品一覧ページを構築"
-        AppLanguage.KOREAN -> "Vue.js로 필터링, 정렬 및 장바구니가 있는 이커머스 상품 목록 페이지 만들기"
-    }
-    val aiPromptNodejs1: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "创建一个 Express REST API 服务，包含用户注册登录、JWT认证和CRUD接口"
-        AppLanguage.ENGLISH -> "Create an Express REST API with user registration, login, JWT auth and CRUD endpoints"
-        AppLanguage.ARABIC -> "إنشاء Express REST API مع تسجيل المستخدم وتسجيل الدخول ومصادقة JWT ونقاط CRUD"
-        AppLanguage.PORTUGUESE -> "Crie uma Express REST API com registro de usuário, login, autenticação JWT e endpoints CRUD"
-        AppLanguage.SPANISH -> "Crea una Express REST API con registro de usuario, login, autenticación JWT y endpoints CRUD"
-        AppLanguage.FRENCH -> "Créez une Express REST API avec inscription utilisateur, connexion, auth JWT et endpoints CRUD"
-        AppLanguage.GERMAN -> "Erstelle eine Express REST API mit Benutzerregistrierung, Login, JWT-Auth und CRUD-Endpunkten"
-        AppLanguage.RUSSIAN -> "Создайте Express REST API с регистрацией пользователей, входом, JWT-аутентификацией и CRUD-эндпоинтами"
-        AppLanguage.JAPANESE -> "ユーザー登録、ログイン、JWT認証、CRUDエンドポイントを備えたExpress REST APIを作成"
-        AppLanguage.KOREAN -> "사용자 등록, 로그인, JWT 인증 및 CRUD 엔드포인트가 있는 Express REST API 만들기"
-    }
-    val aiPromptNodejs2: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "搭建一个 WebSocket 实时聊天服务器，支持多房间和消息广播"
-        AppLanguage.ENGLISH -> "Build a WebSocket real-time chat server with multi-room support and message broadcasting"
-        AppLanguage.ARABIC -> "بناء خادم دردشة WebSocket مع دعم غرف متعددة وبث الرسائل"
-        AppLanguage.PORTUGUESE -> "Construa um servidor de chat WebSocket em tempo real com suporte a múltiplas salas e transmissão de mensagens"
-        AppLanguage.SPANISH -> "Construye un servidor de chat WebSocket en tiempo real con soporte multi-sala y transmisión de mensajes"
-        AppLanguage.FRENCH -> "Construisez un serveur de chat WebSocket en temps réel avec support multi-salles et diffusion de messages"
-        AppLanguage.GERMAN -> "Erstelle einen WebSocket-Echtzeit-Chatserver mit Multi-Room-Support und Nachrichtenübertragung"
-        AppLanguage.RUSSIAN -> "Создайте сервер чата WebSocket в реальном времени с поддержкой нескольких комнат и рассылкой сообщений"
-        AppLanguage.JAPANESE -> "マルチルームサポートとメッセージブロードキャストを備えたWebSocketリアルタイムチャットサーバーを構築"
-        AppLanguage.KOREAN -> "멀티 룸 지원 및 메시지 브로드캐스트가 있는 WebSocket 실시간 채팅 서버 만들기"
-    }
-    val aiPromptWordpress1: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "开发一个 WordPress 自定义主题，包含首页模板、文章列表和侧边栏小工具"
-        AppLanguage.ENGLISH -> "Develop a WordPress custom theme with homepage template, post listing and sidebar widgets"
-        AppLanguage.ARABIC -> "تطوير سمة WordPress مخصصة مع قالب صفحة رئيسية وقائمة مقالات وودجات الشريط الجانبي"
-        AppLanguage.PORTUGUESE -> "Desenvolva um tema WordPress personalizado com template de homepage, listagem de posts e widgets de barra lateral"
-        AppLanguage.SPANISH -> "Desarrolla un tema WordPress personalizado con plantilla de inicio, listado de entradas y widgets de barra lateral"
-        AppLanguage.FRENCH -> "Développez un thème WordPress personnalisé avec modèle de page d'accueil, liste d'articles et widgets de barre latérale"
-        AppLanguage.GERMAN -> "Entwickle ein WordPress-Custom-Theme mit Homepage-Template, Beitragsliste und Sidebar-Widgets"
-        AppLanguage.RUSSIAN -> "Разработайте кастомную тему WordPress с шаблоном главной страницы, списком записей и виджетами боковой панели"
-        AppLanguage.JAPANESE -> "ホームページテンプレート、投稿リスト、サイドバーウィジェットを含むWordPressカスタムテーマを開発"
-        AppLanguage.KOREAN -> "홈페이지 템플릿, 게시물 목록 및 사이드바 위젯이 포함된 WordPress 커스텀 테마 개발"
-    }
-    val aiPromptWordpress2: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "创建一个 WordPress 插件，添加自定义文章类型和管理后台设置页面"
-        AppLanguage.ENGLISH -> "Create a WordPress plugin that adds custom post types and an admin settings page"
-        AppLanguage.ARABIC -> "إنشاء إضافة WordPress تضيف أنواع مقالات مخصصة وصفحة إعدادات المشرف"
-        AppLanguage.PORTUGUESE -> "Crie um plugin WordPress que adiciona tipos de posts personalizados e uma página de configurações do admin"
-        AppLanguage.SPANISH -> "Crea un plugin WordPress que añada tipos de entradas personalizadas y una página de configuración de admin"
-        AppLanguage.FRENCH -> "Créez un plugin WordPress qui ajoute des types d'articles personnalisés et une page de paramètres admin"
-        AppLanguage.GERMAN -> "Erstelle ein WordPress-Plugin, das Custom-Post-Types und eine Admin-Einstellungsseite hinzufügt"
-        AppLanguage.RUSSIAN -> "Создайте плагин WordPress, добавляющий пользовательские типы записей и страницу настроек администратора"
-        AppLanguage.JAPANESE -> "カスタム投稿タイプと管理設定ページを追加するWordPressプラグインを作成"
-        AppLanguage.KOREAN -> "커스텀 게시물 유형 및 관리자 설정 페이지를 추가하는 WordPress 플러그인 만들기"
-    }
-    val aiPromptPhp1: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "用 Laravel 创建一个博客系统，包含文章管理、分类标签和评论功能"
-        AppLanguage.ENGLISH -> "Create a Laravel blog system with post management, categories, tags and comments"
-        AppLanguage.ARABIC -> "إنشاء نظام مدونة Laravel مع إدارة المقالات والفئات والعلامات والتعليقات"
-        AppLanguage.PORTUGUESE -> "Crie um sistema de blog Laravel com gestão de posts, categorias, tags e comentários"
-        AppLanguage.SPANISH -> "Crea un sistema de blog Laravel con gestión de entradas, categorías, etiquetas y comentarios"
-        AppLanguage.FRENCH -> "Créez un système de blog Laravel avec gestion d'articles, catégories, tags et commentaires"
-        AppLanguage.GERMAN -> "Erstelle ein Laravel-Blogsystem mit Beitragsverwaltung, Kategorien, Tags und Kommentaren"
-        AppLanguage.RUSSIAN -> "Создайте блог-систему на Laravel с управлением записями, категориями, тегами и комментариями"
-        AppLanguage.JAPANESE -> "投稿管理、カテゴリ、タグ、コメント機能を備えたLaravelブログシステムを作成"
-        AppLanguage.KOREAN -> "게시물 관리, 카테고리, 태그 및 댓글이 포함된 Laravel 블로그 시스템 만들기"
-    }
-    val aiPromptPhp2: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "搭建一个 PHP 用户管理系统，支持注册、登录、角色权限控制"
-        AppLanguage.ENGLISH -> "Build a PHP user management system with registration, login and role-based access control"
-        AppLanguage.ARABIC -> "بناء نظام إدارة مستخدمين PHP مع التسجيل وتسجيل الدخول والتحكم بالصلاحيات"
-        AppLanguage.PORTUGUESE -> "Construa um sistema de gestão de usuários PHP com registro, login e controle de acesso por papéis"
-        AppLanguage.SPANISH -> "Construye un sistema de gestión de usuarios PHP con registro, login y control de acceso por roles"
-        AppLanguage.FRENCH -> "Construisez un système de gestion d'utilisateurs PHP avec inscription, connexion et contrôle d'accès par rôles"
-        AppLanguage.GERMAN -> "Erstelle ein PHP-Benutzerverwaltungssystem mit Registrierung, Login und rollenbasierter Zugriffskontrolle"
-        AppLanguage.RUSSIAN -> "Создайте систему управления пользователями на PHP с регистрацией, входом и ролевым контролем доступа"
-        AppLanguage.JAPANESE -> "登録、ログイン、ロールベースのアクセス制御を備えたPHPユーザー管理システムを構築"
-        AppLanguage.KOREAN -> "등록, 로그인 및 역할 기반 액세스 제어가 있는 PHP 사용자 관리 시스템 만들기"
-    }
-    val aiPromptPython1: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "用 FastAPI 构建一个 RESTful API 服务，包含数据库模型、自动文档和认证中间件"
-        AppLanguage.ENGLISH -> "Build a FastAPI RESTful service with database models, auto-docs and auth middleware"
-        AppLanguage.ARABIC -> "بناء خدمة FastAPI RESTful مع نماذج قاعدة بيانات ووثائق تلقائية ووسيط مصادقة"
-        AppLanguage.PORTUGUESE -> "Construa um serviço FastAPI RESTful com modelos de banco de dados, docs automáticas e middleware de autenticação"
-        AppLanguage.SPANISH -> "Construye un servicio FastAPI RESTful con modelos de base de datos, docs automáticas y middleware de autenticación"
-        AppLanguage.FRENCH -> "Construisez un service FastAPI RESTful avec modèles de base de données, docs automatiques et middleware d'authentification"
-        AppLanguage.GERMAN -> "Erstelle einen FastAPI RESTful-Service mit Datenbankmodellen, Auto-Docs und Auth-Middleware"
-        AppLanguage.RUSSIAN -> "Создайте FastAPI RESTful-сервис с моделями БД, автодокументацией и middleware аутентификации"
-        AppLanguage.JAPANESE -> "データベースモデル、自動ドキュメント、認証ミドルウェアを備えたFastAPI RESTfulサービスを構築"
-        AppLanguage.KOREAN -> "데이터베이스 모델, 자동 문서 및 인증 미들웨어가 있는 FastAPI RESTful 서비스 만들기"
-    }
-    val aiPromptPython2: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "创建一个 Flask Web 应用，实现文件上传、图片处理和下载功能"
-        AppLanguage.ENGLISH -> "Create a Flask web app with file upload, image processing and download functionality"
-        AppLanguage.ARABIC -> "إنشاء تطبيق Flask مع رفع الملفات ومعالجة الصور ووظيفة التنزيل"
-        AppLanguage.PORTUGUESE -> "Crie um web app Flask com upload de arquivos, processamento de imagens e funcionalidade de download"
-        AppLanguage.SPANISH -> "Crea una web app Flask con carga de archivos, procesamiento de imágenes y funcionalidad de descarga"
-        AppLanguage.FRENCH -> "Créez une application web Flask avec téléchargement de fichiers, traitement d'images et fonctionnalité de téléchargement"
-        AppLanguage.GERMAN -> "Erstelle eine Flask-Web-App mit Datei-Upload, Bildverarbeitung und Download-Funktionalität"
-        AppLanguage.RUSSIAN -> "Создайте веб-приложение Flask с загрузкой файлов, обработкой изображений и функцией скачивания"
-        AppLanguage.JAPANESE -> "ファイルアップロード、画像処理、ダウンロード機能を備えたFlask Webアプリを作成"
-        AppLanguage.KOREAN -> "파일 업로드, 이미지 처리 및 다운로드 기능이 있는 Flask 웹 앱 만들기"
-    }
-    val aiPromptGo1: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "用 Gin 框架创建一个 RESTful API 服务，包含路由分组、中间件和数据库操作"
-        AppLanguage.ENGLISH -> "Create a Gin framework RESTful API with route groups, middleware and database operations"
-        AppLanguage.ARABIC -> "إنشاء Gin RESTful API مع مجموعات المسارات والوسيط وعمليات قاعدة البيانات"
-        AppLanguage.PORTUGUESE -> "Crie uma API RESTful com framework Gin com grupos de rotas, middleware e operações de banco de dados"
-        AppLanguage.SPANISH -> "Crea una API RESTful con framework Gin con grupos de rutas, middleware y operaciones de base de datos"
-        AppLanguage.FRENCH -> "Créez une API RESTful avec le framework Gin avec groupes de routes, middleware et opérations de base de données"
-        AppLanguage.GERMAN -> "Erstelle eine Gin-Framework RESTful API mit Routengruppen, Middleware und Datenbankoperationen"
-        AppLanguage.RUSSIAN -> "Создайте RESTful API на фреймворке Gin с группами маршрутов, middleware и операциями с БД"
-        AppLanguage.JAPANESE -> "ルートグループ、ミドルウェア、データベース操作を備えたGinフレームワークRESTful APIを作成"
-        AppLanguage.KOREAN -> "라우트 그룹, 미들웨어 및 데이터베이스 작업이 있는 Gin 프레임워크 RESTful API 만들기"
-    }
-    val aiPromptGo2: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "搭建一个 Go 微服务，实现 gRPC 接口和 HTTP 网关"
-        AppLanguage.ENGLISH -> "Build a Go microservice with gRPC endpoints and HTTP gateway"
-        AppLanguage.ARABIC -> "بناء خدمة Go مصغرة مع نقاط gRPC وبوابة HTTP"
-        AppLanguage.PORTUGUESE -> "Construa um microsserviço Go com endpoints gRPC e gateway HTTP"
-        AppLanguage.SPANISH -> "Construye un microservicio Go con endpoints gRPC y gateway HTTP"
-        AppLanguage.FRENCH -> "Construisez un microservice Go avec des endpoints gRPC et une passerelle HTTP"
-        AppLanguage.GERMAN -> "Erstelle einen Go-Microservice mit gRPC-Endpunkten und HTTP-Gateway"
-        AppLanguage.RUSSIAN -> "Создайте микросервис на Go с gRPC-эндпоинтами и HTTP-шлюзом"
-        AppLanguage.JAPANESE -> "gRPCエンドポイントとHTTPゲートウェイを備えたGoマイクロサービスを構築"
-        AppLanguage.KOREAN -> "gRPC 엔드포인트 및 HTTP 게이트웨이가 있는 Go 마이크로서비스 만들기"
-    }
-
-    val storagePermissionRequiredForExport: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "需要存储权限才能导出"
-        AppLanguage.ENGLISH -> "Storage permission required to export"
-        AppLanguage.ARABIC -> "يلزم إذن التخزين للتصدير"
-        AppLanguage.PORTUGUESE -> "Permissão de armazenamento necessária para exportar"
-        AppLanguage.SPANISH -> "Se requiere permiso de almacenamiento para exportar"
-        AppLanguage.FRENCH -> "Autorisation de stockage requise pour exporter"
-        AppLanguage.GERMAN -> "Speicherberechtigung zum Exportieren erforderlich"
-        AppLanguage.RUSSIAN -> "Для экспорта требуется разрешение на хранение"
-        AppLanguage.JAPANESE -> "エクスポートにはストレージ権限が必要です"
-        AppLanguage.KOREAN -> "내보내려면 저장소 권한이 필요합니다"
-    }
 
     val shareImage: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "分享图片"
@@ -2214,110 +1742,6 @@ object StringsE {
         AppLanguage.KOREAN -> "부여됨"
     }
 
-    val protectionBasic: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "基础防护"
-        AppLanguage.ENGLISH -> "Basic Protection"
-        AppLanguage.ARABIC -> "حماية أساسية"
-        AppLanguage.PORTUGUESE -> "Proteção Básica"
-        AppLanguage.SPANISH -> "Protección Básica"
-        AppLanguage.FRENCH -> "Protection Basique"
-        AppLanguage.GERMAN -> "Grundschutz"
-        AppLanguage.RUSSIAN -> "Базовая защита"
-        AppLanguage.JAPANESE -> "基本保護"
-        AppLanguage.KOREAN -> "기본 보호"
-    }
-
-    val protectionBasicDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "仅拦截返回键，防护效果有限"
-        AppLanguage.ENGLISH -> "Back key interception only, limited protection"
-        AppLanguage.ARABIC -> "اعتراض مفتاح الرجوع فقط، حماية محدودة"
-        AppLanguage.PORTUGUESE -> "Apenas interceptação da tecla voltar, proteção limitada"
-        AppLanguage.SPANISH -> "Solo intercepción de tecla de retroceso, protección limitada"
-        AppLanguage.FRENCH -> "Interception de la touche retour uniquement, protection limitée"
-        AppLanguage.GERMAN -> "Nur Zurück-Taste abgefangen, begrenzter Schutz"
-        AppLanguage.RUSSIAN -> "Перехват только кнопки «Назад», ограниченная защита"
-        AppLanguage.JAPANESE -> "戻るキーのインターセプトのみ、限定的な保護"
-        AppLanguage.KOREAN -> "뒤로 가기 키 차단 전용, 제한적 보호"
-    }
-
-    val protectionStandard: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "标准防护"
-        AppLanguage.ENGLISH -> "Standard Protection"
-        AppLanguage.ARABIC -> "حماية قياسية"
-        AppLanguage.PORTUGUESE -> "Proteção Padrão"
-        AppLanguage.SPANISH -> "Protección Estándar"
-        AppLanguage.FRENCH -> "Protection Standard"
-        AppLanguage.GERMAN -> "Standard-Schutz"
-        AppLanguage.RUSSIAN -> "Стандартная защита"
-        AppLanguage.JAPANESE -> "標準保護"
-        AppLanguage.KOREAN -> "표준 보호"
-    }
-
-    val protectionStandardDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "通过辅助功能监控窗口，有效阻止应用切换"
-        AppLanguage.ENGLISH -> "Window monitoring via accessibility, effectively prevents app switching"
-        AppLanguage.ARABIC -> "مراقبة النوافذ عبر إمكانية الوصول، يمنع التبديل بين التطبيقات بفعالية"
-        AppLanguage.PORTUGUESE -> "Monitoramento de janelas via acessibilidade, evita troca de apps de forma eficaz"
-        AppLanguage.SPANISH -> "Monitorización de ventanas vía accesibilidad, evita el cambio de apps eficazmente"
-        AppLanguage.FRENCH -> "Surveillance des fenêtres via l'accessibilité, empêche efficacement le changement d'app"
-        AppLanguage.GERMAN -> "Fensterüberwachung über Bedienungshilfen, verhindert App-Wechsel effektiv"
-        AppLanguage.RUSSIAN -> "Мониторинг окон через специальные возможности, эффективно предотвращает переключение приложений"
-        AppLanguage.JAPANESE -> "アクセシビリティ経由でウィンドウを監視、アプリ切り替えを効果的に防止"
-        AppLanguage.KOREAN -> "접근성을 통한 창 모니터링, 앱 전환을 효과적으로 방지"
-    }
-
-    val protectionMaximum: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "最强防护"
-        AppLanguage.ENGLISH -> "Maximum Protection"
-        AppLanguage.ARABIC -> "أقصى حماية"
-        AppLanguage.PORTUGUESE -> "Proteção Máxima"
-        AppLanguage.SPANISH -> "Protección Máxima"
-        AppLanguage.FRENCH -> "Protection Maximale"
-        AppLanguage.GERMAN -> "Maximaler Schutz"
-        AppLanguage.RUSSIAN -> "Максимальная защита"
-        AppLanguage.JAPANESE -> "最大保護"
-        AppLanguage.KOREAN -> "최대 보호"
-    }
-
-    val protectionMaximumDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "辅助功能 + 后台守护服务，双重防护确保万无一失"
-        AppLanguage.ENGLISH -> "Accessibility + background guard service, dual protection for maximum security"
-        AppLanguage.ARABIC -> "إمكانية الوصول + خدمة حراسة خلفية، حماية مزدوجة لأقصى أمان"
-        AppLanguage.PORTUGUESE -> "Acessibilidade + serviço de guarda em segundo plano, proteção dupla para segurança máxima"
-        AppLanguage.SPANISH -> "Accesibilidad + servicio de guardia en segundo plano, protección dual para seguridad máxima"
-        AppLanguage.FRENCH -> "Accessibilité + service de garde en arrière-plan, protection double pour sécurité maximale"
-        AppLanguage.GERMAN -> "Bedienungshilfen + Hintergrund-Wächterdienst, doppelter Schutz für maximale Sicherheit"
-        AppLanguage.RUSSIAN -> "Спецвозможности + фоновая служба-страж, двойная защита для максимальной безопасности"
-        AppLanguage.JAPANESE -> "アクセシビリティ + バックグラウンドガードサービス、最大限のセキュリティのための二重保護"
-        AppLanguage.KOREAN -> "접근성 + 백그라운드 가드 서비스, 최대 보안을 위한 이중 보호"
-    }
-
-    val permissionsReady: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "权限已就绪"
-        AppLanguage.ENGLISH -> "Permissions Ready"
-        AppLanguage.ARABIC -> "الأذونات جاهزة"
-        AppLanguage.PORTUGUESE -> "Permissões Prontas"
-        AppLanguage.SPANISH -> "Permisos Listos"
-        AppLanguage.FRENCH -> "Autorisations Prêtes"
-        AppLanguage.GERMAN -> "Berechtigungen bereit"
-        AppLanguage.RUSSIAN -> "Разрешения готовы"
-        AppLanguage.JAPANESE -> "権限の準備完了"
-        AppLanguage.KOREAN -> "권한 준비됨"
-    }
-
-    val permissionsNeeded: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "需要授权"
-        AppLanguage.ENGLISH -> "Permissions Needed"
-        AppLanguage.ARABIC -> "الأذونات مطلوبة"
-        AppLanguage.PORTUGUESE -> "Permissões Necessárias"
-        AppLanguage.SPANISH -> "Permisos Necesarios"
-        AppLanguage.FRENCH -> "Autorisations Requises"
-        AppLanguage.GERMAN -> "Berechtigungen erforderlich"
-        AppLanguage.RUSSIAN -> "Требуются разрешения"
-        AppLanguage.JAPANESE -> "権限が必要です"
-        AppLanguage.KOREAN -> "권한 필요"
-    }
-
     val start: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "开始"
         AppLanguage.ENGLISH -> "Start"
@@ -2329,19 +1753,6 @@ object StringsE {
         AppLanguage.RUSSIAN -> "Начать"
         AppLanguage.JAPANESE -> "開始"
         AppLanguage.KOREAN -> "시작"
-    }
-
-    val skipDegradedProtection: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "跳过（降级防护）"
-        AppLanguage.ENGLISH -> "Skip (degraded protection)"
-        AppLanguage.ARABIC -> "تخطي (حماية مخفضة)"
-        AppLanguage.PORTUGUESE -> "Pular (proteção reduzida)"
-        AppLanguage.SPANISH -> "Omitir (protección degradada)"
-        AppLanguage.FRENCH -> "Ignorer (protection dégradée)"
-        AppLanguage.GERMAN -> "Überspringen (eingeschränkter Schutz)"
-        AppLanguage.RUSSIAN -> "Пропустить (ослабленная защита)"
-        AppLanguage.JAPANESE -> "スキップ(保護レベル低下)"
-        AppLanguage.KOREAN -> "건너뛰기(보호 수준 저하)"
     }
 
     val htmlFileTooLarge: String get() = when (Strings.lang) {
@@ -3330,19 +2741,6 @@ object StringsE {
         AppLanguage.RUSSIAN -> "Закрыть"
         AppLanguage.JAPANESE -> "閉じる"
         AppLanguage.KOREAN -> "닫기"
-    }
-
-    val cdRemove: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "移除"
-        AppLanguage.ENGLISH -> "Remove"
-        AppLanguage.ARABIC -> "إزالة"
-        AppLanguage.PORTUGUESE -> "Remover"
-        AppLanguage.SPANISH -> "Quitar"
-        AppLanguage.FRENCH -> "Supprimer"
-        AppLanguage.GERMAN -> "Entfernen"
-        AppLanguage.RUSSIAN -> "Удалить"
-        AppLanguage.JAPANESE -> "削除"
-        AppLanguage.KOREAN -> "제거"
     }
 
     val verifyingFile: String get() = when (Strings.lang) {
@@ -5173,18 +4571,7 @@ object StringsE {
         AppLanguage.JAPANESE -> "デバイス偽装"
         AppLanguage.KOREAN -> "기기 위장"
     }
-    val deviceDisguiseHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "选择一个设备，自动生成对应的浏览器指纹和 User-Agent，让网站认为你正在使用该设备访问。"
-        AppLanguage.ENGLISH -> "Select a device to auto-generate matching browser fingerprint and User-Agent, making websites believe you are browsing with that device."
-        AppLanguage.ARABIC -> "اختر جهازًا لتوليد بصمة المتصفح و User-Agent المطابقة تلقائيًا، مما يجعل المواقع تعتقد أنك تتصفح من هذا الجهاز."
-        AppLanguage.PORTUGUESE -> "Selecione um dispositivo para gerar automaticamente a impressão digital do navegador e o User-Agent correspondentes, fazendo os sites acreditarem que você está navegando com esse dispositivo."
-        AppLanguage.SPANISH -> "Selecciona un dispositivo para generar automáticamente la huella digital del navegador y el User-Agent correspondientes, haciendo que los sitios crean que navegas con ese dispositivo."
-        AppLanguage.FRENCH -> "Sélectionnez un appareil pour générer automatiquement l'empreinte numérique du navigateur et le User-Agent correspondants, afin que les sites pensent que vous naviguez avec cet appareil."
-        AppLanguage.GERMAN -> "Wählen Sie ein Gerät, um automatisch den passenden Browser-Fingerabdruck und User-Agent zu erzeugen, sodass Websites glauben, Sie surfen mit diesem Gerät."
-        AppLanguage.RUSSIAN -> "Выберите устройство, чтобы автоматически сгенерировать соответствующий отпечаток браузера и User-Agent, заставляя сайты думать, что вы просматриваете с этого устройства."
-        AppLanguage.JAPANESE -> "デバイスを選択すると、一致するブラウザフィンガープリントと User-Agent が自動生成され、ウェブサイトにそのデバイスで閲覧していると認識させます。"
-        AppLanguage.KOREAN -> "기기를 선택하면 일치하는 브라우저 핑거프린트와 User-Agent가 자동 생성되어, 웹사이트가 해당 기기로 탐색하는 것으로 인식하게 됩니다."
-    }
+
     val deviceTypePhone: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "手机"
         AppLanguage.ENGLISH -> "Phone"
@@ -5269,18 +4656,7 @@ object StringsE {
         AppLanguage.JAPANESE -> "人気デバイス"
         AppLanguage.KOREAN -> "인기 기기"
     }
-    val deviceCurrentDisguise: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "当前伪装"
-        AppLanguage.ENGLISH -> "Current Disguise"
-        AppLanguage.ARABIC -> "التمويه الحالي"
-        AppLanguage.PORTUGUESE -> "Disfarce Atual"
-        AppLanguage.SPANISH -> "Disfraz Actual"
-        AppLanguage.FRENCH -> "Déguisement Actuel"
-        AppLanguage.GERMAN -> "Aktuelle Tarnung"
-        AppLanguage.RUSSIAN -> "Текущая маскировка"
-        AppLanguage.JAPANESE -> "現在の偽装"
-        AppLanguage.KOREAN -> "현재 위장"
-    }
+
     val deviceCustomUA: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "自定义 User-Agent"
         AppLanguage.ENGLISH -> "Custom User-Agent"
@@ -5305,18 +4681,7 @@ object StringsE {
         AppLanguage.JAPANESE -> "完全な User-Agent 文字列を入力（自動生成を上書き）"
         AppLanguage.KOREAN -> "전체 User-Agent 문자열을 입력하세요 (자동 생성값을 덮어씀)"
     }
-    val deviceGeneratedUA: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "自动生成的 User-Agent"
-        AppLanguage.ENGLISH -> "Auto-generated User-Agent"
-        AppLanguage.ARABIC -> "User-Agent تم إنشاؤه تلقائيًا"
-        AppLanguage.PORTUGUESE -> "User-Agent Gerado Automaticamente"
-        AppLanguage.SPANISH -> "User-Agent Generado Automáticamente"
-        AppLanguage.FRENCH -> "User-Agent Généré Automatiquement"
-        AppLanguage.GERMAN -> "Automatisch generierter User-Agent"
-        AppLanguage.RUSSIAN -> "Автогенерированный User-Agent"
-        AppLanguage.JAPANESE -> "自動生成された User-Agent"
-        AppLanguage.KOREAN -> "자동 생성된 User-Agent"
-    }
+
     val deviceDesktopViewport: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "强制桌面视口"
         AppLanguage.ENGLISH -> "Force Desktop Viewport"
@@ -5340,30 +4705,6 @@ object StringsE {
         AppLanguage.RUSSIAN -> "Загружать страницы с шириной десктопа"
         AppLanguage.JAPANESE -> "デスクトップ幅でページを読み込む"
         AppLanguage.KOREAN -> "데스크톱 너비로 페이지 로드"
-    }
-    val deviceDisguiseOff: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "关闭 · 使用真实设备"
-        AppLanguage.ENGLISH -> "Off · Using real device"
-        AppLanguage.ARABIC -> "مغلق · يستخدم الجهاز الحقيقي"
-        AppLanguage.PORTUGUESE -> "Desativado · Usando dispositivo real"
-        AppLanguage.SPANISH -> "Desactivado · Usando dispositivo real"
-        AppLanguage.FRENCH -> "Désactivé · Utilisation de l'appareil réel"
-        AppLanguage.GERMAN -> "Aus · Echtes Gerät verwenden"
-        AppLanguage.RUSSIAN -> "Выкл · Используется реальное устройство"
-        AppLanguage.JAPANESE -> "オフ · 実機を使用中"
-        AppLanguage.KOREAN -> "꺼짐 · 실제 기기 사용 중"
-    }
-    val deviceDisguiseActive: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "已伪装为"
-        AppLanguage.ENGLISH -> "Disguised as"
-        AppLanguage.ARABIC -> "متنكر كـ"
-        AppLanguage.PORTUGUESE -> "Disfarçado como"
-        AppLanguage.SPANISH -> "Disfrazado como"
-        AppLanguage.FRENCH -> "Déguisé en"
-        AppLanguage.GERMAN -> "Getarnt als"
-        AppLanguage.RUSSIAN -> "Маскировка под"
-        AppLanguage.JAPANESE -> "偽装中"
-        AppLanguage.KOREAN -> "위장됨"
     }
 
     val deviceCustomDevice: String get() = when (Strings.lang) {
@@ -5487,45 +4828,6 @@ object StringsE {
         AppLanguage.RUSSIAN -> "Защита от перехвата пакетов"
         AppLanguage.JAPANESE -> "パケットキャプチャ防止"
         AppLanguage.KOREAN -> "패킷 캡처 방지"
-    }
-
-    val vpnBlockTitle: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "检测到抓包工具"
-        AppLanguage.ENGLISH -> "Capture Tool Detected"
-        AppLanguage.ARABIC -> "تم اكتشاف أداة التقاط"
-        AppLanguage.PORTUGUESE -> "Ferramenta de Captura Detectada"
-        AppLanguage.SPANISH -> "Herramienta de Captura Detectada"
-        AppLanguage.FRENCH -> "Outil de Capture Détecté"
-        AppLanguage.GERMAN -> "Erfassungstool erkannt"
-        AppLanguage.RUSSIAN -> "Обнаружен инструмент перехвата"
-        AppLanguage.JAPANESE -> "キャプチャツールを検出"
-        AppLanguage.KOREAN -> "캡처 도구 감지됨"
-    }
-
-    val vpnBlockMessage: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "检测到 VPN 或抓包工具正在运行。请关闭 HttpCanary、ADB 等抓包/VPN 应用后重试。"
-        AppLanguage.ENGLISH -> "A VPN or packet-capture tool is active. Please disable HttpCanary, ADB capture, or similar tools and retry."
-        AppLanguage.ARABIC -> "أداة VPN أو التقاط حزم نشطة. يرجى تعطيل HttpCanary وأدوات مشابهة وإعادة المحاولة."
-        AppLanguage.PORTUGUESE -> "Uma VPN ou ferramenta de captura de pacotes está ativa. Desative HttpCanary, captura via ADB ou ferramentas similares e tente novamente."
-        AppLanguage.SPANISH -> "Hay una VPN o herramienta de captura de paquetes activa. Desactiva HttpCanary, captura por ADB o herramientas similares e inténtalo de nuevo."
-        AppLanguage.FRENCH -> "Un VPN ou un outil de capture de paquets est actif. Veuillez désactiver HttpCanary, la capture ADB ou des outils similaires et réessayer."
-        AppLanguage.GERMAN -> "Ein VPN- oder Paketerfassungstool ist aktiv. Bitte deaktivieren Sie HttpCanary, ADB-Erfassung oder ähnliche Tools und versuchen Sie es erneut."
-        AppLanguage.RUSSIAN -> "Активен VPN или инструмент перехвата пакетов. Отключите HttpCanary, перехват через ADB или аналогичные инструменты и повторите попытку."
-        AppLanguage.JAPANESE -> "VPNまたはパケットキャプチャツールがアクティブです。HttpCanary、ADBキャプチャ、または類似ツールを無効にして再試行してください。"
-        AppLanguage.KOREAN -> "VPN 또는 패킷 캡처 도구가 활성화되어 있습니다. HttpCanary, ADB 캡처 또는 유사한 도구를 비활성화한 후 다시 시도하세요."
-    }
-
-    val vpnBlockRetry: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "我已关闭，重试"
-        AppLanguage.ENGLISH -> "I've disabled it, retry"
-        AppLanguage.ARABIC -> "لقد عطلتها، أعد المحاولة"
-        AppLanguage.PORTUGUESE -> "Já desativei, tentar novamente"
-        AppLanguage.SPANISH -> "Ya lo desactivé, reintentar"
-        AppLanguage.FRENCH -> "Je l'ai désactivé, réessayer"
-        AppLanguage.GERMAN -> "Habe es deaktiviert, erneut versuchen"
-        AppLanguage.RUSSIAN -> "Я отключил, повторить"
-        AppLanguage.JAPANESE -> "無効化しました、再試行"
-        AppLanguage.KOREAN -> "비활성화했습니다, 재시도"
     }
 
     val antiCaptureDesc: String get() = when (Strings.lang) {
@@ -6419,246 +5721,6 @@ object StringsE {
         AppLanguage.JAPANESE -> "マイオフラインアプリ"
         AppLanguage.KOREAN -> "내 오프라인 앱"
     }
-    val notifClickToReturn: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "点击返回"
-        AppLanguage.ENGLISH -> "Tap to return"
-        AppLanguage.ARABIC -> "اضغط للعودة"
-        AppLanguage.PORTUGUESE -> "Toque para voltar"
-        AppLanguage.SPANISH -> "Toca para volver"
-        AppLanguage.FRENCH -> "Appuyez pour revenir"
-        AppLanguage.GERMAN -> "Tippen zum Zurückkehren"
-        AppLanguage.RUSSIAN -> "Нажмите, чтобы вернуться"
-        AppLanguage.JAPANESE -> "タップして戻る"
-        AppLanguage.KOREAN -> "탭하여 돌아가기"
-    }
-    val notifFocusModeChannelDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "专注模式守护通知"
-        AppLanguage.ENGLISH -> "Notifications for focus mode guard"
-        AppLanguage.ARABIC -> "إشعارات حراسة وضع التركيز"
-        AppLanguage.PORTUGUESE -> "Notificações de guarda do modo de foco"
-        AppLanguage.SPANISH -> "Notificaciones de guardia del modo de enfoque"
-        AppLanguage.FRENCH -> "Notifications de garde du mode concentration"
-        AppLanguage.GERMAN -> "Benachrichtigungen für Fokusmodus-Wächter"
-        AppLanguage.RUSSIAN -> "Уведомления охраны режима фокуса"
-        AppLanguage.JAPANESE -> "集中モードガードの通知"
-        AppLanguage.KOREAN -> "집중 모드 가드 알림"
-    }
-    val notifFocusModeChannelName: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "专注模式"
-        AppLanguage.ENGLISH -> "Focus Mode"
-        AppLanguage.ARABIC -> "وضع التركيز"
-        AppLanguage.PORTUGUESE -> "Modo de Foco"
-        AppLanguage.SPANISH -> "Modo de Enfoque"
-        AppLanguage.FRENCH -> "Mode Concentration"
-        AppLanguage.GERMAN -> "Fokusmodus"
-        AppLanguage.RUSSIAN -> "Режим фокуса"
-        AppLanguage.JAPANESE -> "集中モード"
-        AppLanguage.KOREAN -> "집중 모드"
-    }
-    val notifFocusModeRunning: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "专注模式运行中"
-        AppLanguage.ENGLISH -> "Focus mode running"
-        AppLanguage.ARABIC -> "وضع التركيز قيد التشغيل"
-        AppLanguage.PORTUGUESE -> "Modo de foco em execução"
-        AppLanguage.SPANISH -> "Modo de enfoque en ejecución"
-        AppLanguage.FRENCH -> "Mode concentration en cours"
-        AppLanguage.GERMAN -> "Fokusmodus läuft"
-        AppLanguage.RUSSIAN -> "Режим фокуса работает"
-        AppLanguage.JAPANESE -> "集中モード実行中"
-        AppLanguage.KOREAN -> "집중 모드 실행 중"
-    }
-    val exportPermGroupBasic: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "基础功能"
-        AppLanguage.ENGLISH -> "Basic"
-        AppLanguage.ARABIC -> "أساسي"
-        AppLanguage.PORTUGUESE -> "Básico"
-        AppLanguage.SPANISH -> "Básico"
-        AppLanguage.FRENCH -> "Basique"
-        AppLanguage.GERMAN -> "Grundlegend"
-        AppLanguage.RUSSIAN -> "Базовое"
-        AppLanguage.JAPANESE -> "基本"
-        AppLanguage.KOREAN -> "기본"
-    }
-    val exportPermGroupStorage: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "存储与媒体"
-        AppLanguage.ENGLISH -> "Storage & Media"
-        AppLanguage.ARABIC -> "التخزين والوسائط"
-        AppLanguage.PORTUGUESE -> "Armazenamento & Mídia"
-        AppLanguage.SPANISH -> "Almacenamiento & Multimedia"
-        AppLanguage.FRENCH -> "Stockage & Médias"
-        AppLanguage.GERMAN -> "Speicher & Medien"
-        AppLanguage.RUSSIAN -> "Хранилище и медиа"
-        AppLanguage.JAPANESE -> "ストレージ & メディア"
-        AppLanguage.KOREAN -> "저장소 & 미디어"
-    }
-    val exportPermGroupNetwork: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "网络与连接"
-        AppLanguage.ENGLISH -> "Network & Connectivity"
-        AppLanguage.ARABIC -> "الشبكة والاتصال"
-        AppLanguage.PORTUGUESE -> "Rede & Conectividade"
-        AppLanguage.SPANISH -> "Red & Conectividad"
-        AppLanguage.FRENCH -> "Réseau & Connectivité"
-        AppLanguage.GERMAN -> "Netzwerk & Konnektivität"
-        AppLanguage.RUSSIAN -> "Сеть и подключение"
-        AppLanguage.JAPANESE -> "ネットワーク & 接続"
-        AppLanguage.KOREAN -> "네트워크 & 연결"
-    }
-    val exportPermGroupSensors: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "传感器"
-        AppLanguage.ENGLISH -> "Sensors"
-        AppLanguage.ARABIC -> "المستشعرات"
-        AppLanguage.PORTUGUESE -> "Sensores"
-        AppLanguage.SPANISH -> "Sensores"
-        AppLanguage.FRENCH -> "Capteurs"
-        AppLanguage.GERMAN -> "Sensoren"
-        AppLanguage.RUSSIAN -> "Датчики"
-        AppLanguage.JAPANESE -> "センサー"
-        AppLanguage.KOREAN -> "센서"
-    }
-    val exportPermGroupContacts: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "通讯录与日历"
-        AppLanguage.ENGLISH -> "Contacts & Calendar"
-        AppLanguage.ARABIC -> "جهات الاتصال والتقويم"
-        AppLanguage.PORTUGUESE -> "Contatos & Calendário"
-        AppLanguage.SPANISH -> "Contactos & Calendario"
-        AppLanguage.FRENCH -> "Contacts & Calendrier"
-        AppLanguage.GERMAN -> "Kontakte & Kalender"
-        AppLanguage.RUSSIAN -> "Контакты и календарь"
-        AppLanguage.JAPANESE -> "連絡先 & カレンダー"
-        AppLanguage.KOREAN -> "연락처 & 캘린더"
-    }
-    val exportPermGroupPhone: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "电话与短信"
-        AppLanguage.ENGLISH -> "Phone & SMS"
-        AppLanguage.ARABIC -> "الهاتف والرسائل القصيرة"
-        AppLanguage.PORTUGUESE -> "Telefone & SMS"
-        AppLanguage.SPANISH -> "Teléfono & SMS"
-        AppLanguage.FRENCH -> "Téléphone & SMS"
-        AppLanguage.GERMAN -> "Telefon & SMS"
-        AppLanguage.RUSSIAN -> "Телефон и SMS"
-        AppLanguage.JAPANESE -> "電話 & SMS"
-        AppLanguage.KOREAN -> "전화 & SMS"
-    }
-    val exportPermGroupSystem: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "系统服务"
-        AppLanguage.ENGLISH -> "System Services"
-        AppLanguage.ARABIC -> "خدمات النظام"
-        AppLanguage.PORTUGUESE -> "Serviços do Sistema"
-        AppLanguage.SPANISH -> "Servicios del Sistema"
-        AppLanguage.FRENCH -> "Services Système"
-        AppLanguage.GERMAN -> "Systemdienste"
-        AppLanguage.RUSSIAN -> "Системные службы"
-        AppLanguage.JAPANESE -> "システムサービス"
-        AppLanguage.KOREAN -> "시스템 서비스"
-    }
-    val exportPermGroupAdvanced: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "高级 / Play 受限"
-        AppLanguage.ENGLISH -> "Advanced / Play-restricted"
-        AppLanguage.ARABIC -> "متقدم / مقيّد في Play"
-        AppLanguage.PORTUGUESE -> "Avançado / restrito na Play"
-        AppLanguage.SPANISH -> "Avanzado / restringido en Play"
-        AppLanguage.FRENCH -> "Avancé / restreint Play"
-        AppLanguage.GERMAN -> "Erweitert / Play-eingeschränkt"
-        AppLanguage.RUSSIAN -> "Дополнительно / ограничено Play"
-        AppLanguage.JAPANESE -> "上級 / Play 制限"
-        AppLanguage.KOREAN -> "고급 / Play 제한"
-    }
-    val permissionCamera: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "相机"
-        AppLanguage.ENGLISH -> "Camera"
-        AppLanguage.ARABIC -> "الكاميرا"
-        AppLanguage.PORTUGUESE -> "Câmera"
-        AppLanguage.SPANISH -> "Cámara"
-        AppLanguage.FRENCH -> "Caméra"
-        AppLanguage.GERMAN -> "Kamera"
-        AppLanguage.RUSSIAN -> "Камера"
-        AppLanguage.JAPANESE -> "カメラ"
-        AppLanguage.KOREAN -> "카메라"
-    }
-    val permissionCameraDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "CAMERA — 拍照和录像"
-        AppLanguage.ENGLISH -> "CAMERA — Take photos and record video"
-        AppLanguage.ARABIC -> "CAMERA — التقاط الصور وتسجيل الفيديو"
-        AppLanguage.PORTUGUESE -> "CAMERA — Tirar fotos e gravar vídeo"
-        AppLanguage.SPANISH -> "CAMERA — Tomar fotos y grabar video"
-        AppLanguage.FRENCH -> "CAMERA — Prendre des photos et enregistrer des vidéos"
-        AppLanguage.GERMAN -> "CAMERA — Fotos aufnehmen und Video aufzeichnen"
-        AppLanguage.RUSSIAN -> "CAMERA — Делать фото и записывать видео"
-        AppLanguage.JAPANESE -> "CAMERA — 写真撮影と動画録画"
-        AppLanguage.KOREAN -> "CAMERA — 사진 촬영 및 동영상 녹화"
-    }
-    val permissionLocation: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "位置"
-        AppLanguage.ENGLISH -> "Location"
-        AppLanguage.ARABIC -> "الموقع"
-        AppLanguage.PORTUGUESE -> "Localização"
-        AppLanguage.SPANISH -> "Ubicación"
-        AppLanguage.FRENCH -> "Localisation"
-        AppLanguage.GERMAN -> "Standort"
-        AppLanguage.RUSSIAN -> "Местоположение"
-        AppLanguage.JAPANESE -> "位置情報"
-        AppLanguage.KOREAN -> "위치"
-    }
-    val permissionLocationDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "ACCESS_FINE_LOCATION / ACCESS_COARSE_LOCATION — 获取设备位置"
-        AppLanguage.ENGLISH -> "ACCESS_FINE_LOCATION / ACCESS_COARSE_LOCATION — Get device location"
-        AppLanguage.ARABIC -> "ACCESS_FINE_LOCATION / ACCESS_COARSE_LOCATION — الحصول على موقع الجهاز"
-        AppLanguage.PORTUGUESE -> "ACCESS_FINE_LOCATION / ACCESS_COARSE_LOCATION — Obter a localização do dispositivo"
-        AppLanguage.SPANISH -> "ACCESS_FINE_LOCATION / ACCESS_COARSE_LOCATION — Obtener la ubicación del dispositivo"
-        AppLanguage.FRENCH -> "ACCESS_FINE_LOCATION / ACCESS_COARSE_LOCATION — Obtenir la position de l'appareil"
-        AppLanguage.GERMAN -> "ACCESS_FINE_LOCATION / ACCESS_COARSE_LOCATION — Gerätestandort abrufen"
-        AppLanguage.RUSSIAN -> "ACCESS_FINE_LOCATION / ACCESS_COARSE_LOCATION — Получить местоположение устройства"
-        AppLanguage.JAPANESE -> "ACCESS_FINE_LOCATION / ACCESS_COARSE_LOCATION — デバイスの位置情報を取得"
-        AppLanguage.KOREAN -> "ACCESS_FINE_LOCATION / ACCESS_COARSE_LOCATION — 기기 위치 가져오기"
-    }
-    val permissionMicrophone: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "麦克风"
-        AppLanguage.ENGLISH -> "Microphone"
-        AppLanguage.ARABIC -> "الميكروفون"
-        AppLanguage.PORTUGUESE -> "Microfone"
-        AppLanguage.SPANISH -> "Micrófono"
-        AppLanguage.FRENCH -> "Microphone"
-        AppLanguage.GERMAN -> "Mikrofon"
-        AppLanguage.RUSSIAN -> "Микрофон"
-        AppLanguage.JAPANESE -> "マイク"
-        AppLanguage.KOREAN -> "마이크"
-    }
-    val permissionMicrophoneDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "RECORD_AUDIO / MODIFY_AUDIO_SETTINGS — 录音和修改音频设置"
-        AppLanguage.ENGLISH -> "RECORD_AUDIO / MODIFY_AUDIO_SETTINGS — Record audio and modify audio settings"
-        AppLanguage.ARABIC -> "RECORD_AUDIO / MODIFY_AUDIO_SETTINGS — تسجيل الصوت وتعديل إعدادات الصوت"
-        AppLanguage.PORTUGUESE -> "RECORD_AUDIO / MODIFY_AUDIO_SETTINGS — Gravar áudio e modificar configurações de áudio"
-        AppLanguage.SPANISH -> "RECORD_AUDIO / MODIFY_AUDIO_SETTINGS — Grabar audio y modificar la configuración de audio"
-        AppLanguage.FRENCH -> "RECORD_AUDIO / MODIFY_AUDIO_SETTINGS — Enregistrer l'audio et modifier les paramètres audio"
-        AppLanguage.GERMAN -> "RECORD_AUDIO / MODIFY_AUDIO_SETTINGS — Audio aufnehmen und Audioeinstellungen ändern"
-        AppLanguage.RUSSIAN -> "RECORD_AUDIO / MODIFY_AUDIO_SETTINGS — Запись звука и изменение настроек звука"
-        AppLanguage.JAPANESE -> "RECORD_AUDIO / MODIFY_AUDIO_SETTINGS — 音声録音と音声設定の変更"
-        AppLanguage.KOREAN -> "RECORD_AUDIO / MODIFY_AUDIO_SETTINGS — 오디오 녹음 및 오디오 설정 수정"
-    }
-    val permissionNotifications: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "通知"
-        AppLanguage.ENGLISH -> "Notifications"
-        AppLanguage.ARABIC -> "الإشعارات"
-        AppLanguage.PORTUGUESE -> "Notificações"
-        AppLanguage.SPANISH -> "Notificaciones"
-        AppLanguage.FRENCH -> "Notifications"
-        AppLanguage.GERMAN -> "Benachrichtigungen"
-        AppLanguage.RUSSIAN -> "Уведомления"
-        AppLanguage.JAPANESE -> "通知"
-        AppLanguage.KOREAN -> "알림"
-    }
-    val permissionNotificationsDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "允许应用发送通知"
-        AppLanguage.ENGLISH -> "Allow the app to send notifications"
-        AppLanguage.ARABIC -> "السماح للتطبيق بإرسال الإشعارات"
-        AppLanguage.PORTUGUESE -> "Permitir que o app envie notificações"
-        AppLanguage.SPANISH -> "Permitir que la app envíe notificaciones"
-        AppLanguage.FRENCH -> "Autoriser l'application à envoyer des notifications"
-        AppLanguage.GERMAN -> "Der App erlauben, Benachrichtigungen zu senden"
-        AppLanguage.RUSSIAN -> "Разрешить приложению отправлять уведомления"
-        AppLanguage.JAPANESE -> "アプリに通知の送信を許可"
-        AppLanguage.KOREAN -> "앱이 알림을 보내도록 허용"
-    }
 
     val permissionConfigTitle: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "权限配置"
@@ -6744,754 +5806,6 @@ object StringsE {
         AppLanguage.JAPANESE -> "権限を設定"
         AppLanguage.KOREAN -> "권한 구성"
     }
-    val permissionReadExternalStorage: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "读取外部存储"
-        AppLanguage.ENGLISH -> "Read External Storage"
-        AppLanguage.ARABIC -> "قراءة التخزين الخارجي"
-        AppLanguage.PORTUGUESE -> "Ler Armazenamento Externo"
-        AppLanguage.SPANISH -> "Leer Almacenamiento Externo"
-        AppLanguage.FRENCH -> "Lire le Stockage Externe"
-        AppLanguage.GERMAN -> "Externen Speicher lesen"
-        AppLanguage.RUSSIAN -> "Чтение внешнего хранилища"
-        AppLanguage.JAPANESE -> "外部ストレージの読み取り"
-        AppLanguage.KOREAN -> "외부 저장소 읽기"
-    }
-    val permissionReadExternalStorageDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "READ_EXTERNAL_STORAGE — 读取设备上的文件（Android 12 及以下）"
-        AppLanguage.ENGLISH -> "READ_EXTERNAL_STORAGE — Read files on device (Android 12 and below)"
-        AppLanguage.ARABIC -> "READ_EXTERNAL_STORAGE — قراءة الملفات على الجهاز (أندرويد 12 وأدناه)"
-        AppLanguage.PORTUGUESE -> "READ_EXTERNAL_STORAGE — Ler arquivos no dispositivo (Android 12 e inferior)"
-        AppLanguage.SPANISH -> "READ_EXTERNAL_STORAGE — Leer archivos del dispositivo (Android 12 e inferior)"
-        AppLanguage.FRENCH -> "READ_EXTERNAL_STORAGE — Lire les fichiers sur l'appareil (Android 12 et inférieur)"
-        AppLanguage.GERMAN -> "READ_EXTERNAL_STORAGE — Dateien auf dem Gerät lesen (Android 12 und niedriger)"
-        AppLanguage.RUSSIAN -> "READ_EXTERNAL_STORAGE — Чтение файлов на устройстве (Android 12 и ниже)"
-        AppLanguage.JAPANESE -> "READ_EXTERNAL_STORAGE — デバイスのファイルを読み取る（Android 12 以前）"
-        AppLanguage.KOREAN -> "READ_EXTERNAL_STORAGE — 기기의 파일 읽기 (Android 12 이하)"
-    }
-    val permissionWriteExternalStorage: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "写入外部存储"
-        AppLanguage.ENGLISH -> "Write External Storage"
-        AppLanguage.ARABIC -> "كتابة التخزين الخارجي"
-        AppLanguage.PORTUGUESE -> "Gravar Armazenamento Externo"
-        AppLanguage.SPANISH -> "Escribir Almacenamiento Externo"
-        AppLanguage.FRENCH -> "Écrire le Stockage Externe"
-        AppLanguage.GERMAN -> "Externen Speicher beschreiben"
-        AppLanguage.RUSSIAN -> "Запись во внешнее хранилище"
-        AppLanguage.JAPANESE -> "外部ストレージへの書き込み"
-        AppLanguage.KOREAN -> "외부 저장소 쓰기"
-    }
-    val permissionWriteExternalStorageDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "WRITE_EXTERNAL_STORAGE — 向设备写入文件（Android 12 及以下）"
-        AppLanguage.ENGLISH -> "WRITE_EXTERNAL_STORAGE — Write files to device (Android 12 and below)"
-        AppLanguage.ARABIC -> "WRITE_EXTERNAL_STORAGE — كتابة الملفات إلى الجهاز (أندرويد 12 وأدناه)"
-        AppLanguage.PORTUGUESE -> "WRITE_EXTERNAL_STORAGE — Gravar arquivos no dispositivo (Android 12 e inferior)"
-        AppLanguage.SPANISH -> "WRITE_EXTERNAL_STORAGE — Escribir archivos en el dispositivo (Android 12 e inferior)"
-        AppLanguage.FRENCH -> "WRITE_EXTERNAL_STORAGE — Écrire des fichiers sur l'appareil (Android 12 et inférieur)"
-        AppLanguage.GERMAN -> "WRITE_EXTERNAL_STORAGE — Dateien auf das Gerät schreiben (Android 12 und niedriger)"
-        AppLanguage.RUSSIAN -> "WRITE_EXTERNAL_STORAGE — Запись файлов на устройство (Android 12 и ниже)"
-        AppLanguage.JAPANESE -> "WRITE_EXTERNAL_STORAGE — デバイスにファイルを書き込む（Android 12 以前）"
-        AppLanguage.KOREAN -> "WRITE_EXTERNAL_STORAGE — 기기에 파일 쓰기 (Android 12 이하)"
-    }
-    val permissionReadMediaImages: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "读取媒体图片"
-        AppLanguage.ENGLISH -> "Read Media Images"
-        AppLanguage.ARABIC -> "قراءة صور الوسائط"
-        AppLanguage.PORTUGUESE -> "Ler Imagens de Mídia"
-        AppLanguage.SPANISH -> "Leer Imágenes de Medios"
-        AppLanguage.FRENCH -> "Lire les Images Médias"
-        AppLanguage.GERMAN -> "Medien-Bilder lesen"
-        AppLanguage.RUSSIAN -> "Чтение медиа-изображений"
-        AppLanguage.JAPANESE -> "メディア画像の読み取り"
-        AppLanguage.KOREAN -> "미디어 이미지 읽기"
-    }
-    val permissionReadMediaImagesDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "READ_MEDIA_IMAGES — 读取图片文件（Android 13+）"
-        AppLanguage.ENGLISH -> "READ_MEDIA_IMAGES — Read image files (Android 13+)"
-        AppLanguage.ARABIC -> "READ_MEDIA_IMAGES — قراءة ملفات الصور (أندرويد 13+)"
-        AppLanguage.PORTUGUESE -> "READ_MEDIA_IMAGES — Ler arquivos de imagem (Android 13+)"
-        AppLanguage.SPANISH -> "READ_MEDIA_IMAGES — Leer archivos de imagen (Android 13+)"
-        AppLanguage.FRENCH -> "READ_MEDIA_IMAGES — Lire les fichiers image (Android 13+)"
-        AppLanguage.GERMAN -> "READ_MEDIA_IMAGES — Bilddateien lesen (Android 13+)"
-        AppLanguage.RUSSIAN -> "READ_MEDIA_IMAGES — Чтение файлов изображений (Android 13+)"
-        AppLanguage.JAPANESE -> "READ_MEDIA_IMAGES — 画像ファイルを読み取る（Android 13+）"
-        AppLanguage.KOREAN -> "READ_MEDIA_IMAGES — 이미지 파일 읽기 (Android 13+)"
-    }
-    val permissionReadMediaVideo: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "读取媒体视频"
-        AppLanguage.ENGLISH -> "Read Media Video"
-        AppLanguage.ARABIC -> "قراءة فيديو الوسائط"
-        AppLanguage.PORTUGUESE -> "Ler Vídeos de Mídia"
-        AppLanguage.SPANISH -> "Leer Videos de Medios"
-        AppLanguage.FRENCH -> "Lire les Vidéos Médias"
-        AppLanguage.GERMAN -> "Medien-Videos lesen"
-        AppLanguage.RUSSIAN -> "Чтение медиа-видео"
-        AppLanguage.JAPANESE -> "メディア動画の読み取り"
-        AppLanguage.KOREAN -> "미디어 동영상 읽기"
-    }
-    val permissionReadMediaVideoDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "READ_MEDIA_VIDEO — 读取视频文件（Android 13+）"
-        AppLanguage.ENGLISH -> "READ_MEDIA_VIDEO — Read video files (Android 13+)"
-        AppLanguage.ARABIC -> "READ_MEDIA_VIDEO — قراءة ملفات الفيديو (أندرويد 13+)"
-        AppLanguage.PORTUGUESE -> "READ_MEDIA_VIDEO — Ler arquivos de vídeo (Android 13+)"
-        AppLanguage.SPANISH -> "READ_MEDIA_VIDEO — Leer archivos de video (Android 13+)"
-        AppLanguage.FRENCH -> "READ_MEDIA_VIDEO — Lire les fichiers vidéo (Android 13+)"
-        AppLanguage.GERMAN -> "READ_MEDIA_VIDEO — Videodateien lesen (Android 13+)"
-        AppLanguage.RUSSIAN -> "READ_MEDIA_VIDEO — Чтение видеофайлов (Android 13+)"
-        AppLanguage.JAPANESE -> "READ_MEDIA_VIDEO — 動画ファイルを読み取る（Android 13+）"
-        AppLanguage.KOREAN -> "READ_MEDIA_VIDEO — 동영상 파일 읽기 (Android 13+)"
-    }
-    val permissionReadMediaAudio: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "读取媒体音频"
-        AppLanguage.ENGLISH -> "Read Media Audio"
-        AppLanguage.ARABIC -> "قراءة صوت الوسائط"
-        AppLanguage.PORTUGUESE -> "Ler Áudios de Mídia"
-        AppLanguage.SPANISH -> "Leer Audio de Medios"
-        AppLanguage.FRENCH -> "Lire l'Audio Média"
-        AppLanguage.GERMAN -> "Medien-Audio lesen"
-        AppLanguage.RUSSIAN -> "Чтение медиа-аудио"
-        AppLanguage.JAPANESE -> "メディア音声の読み取り"
-        AppLanguage.KOREAN -> "미디어 오디오 읽기"
-    }
-    val permissionReadMediaAudioDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "READ_MEDIA_AUDIO — 读取音频文件（Android 13+）"
-        AppLanguage.ENGLISH -> "READ_MEDIA_AUDIO — Read audio files (Android 13+)"
-        AppLanguage.ARABIC -> "READ_MEDIA_AUDIO — قراءة ملفات الصوت (أندرويد 13+)"
-        AppLanguage.PORTUGUESE -> "READ_MEDIA_AUDIO — Ler arquivos de áudio (Android 13+)"
-        AppLanguage.SPANISH -> "READ_MEDIA_AUDIO — Leer archivos de audio (Android 13+)"
-        AppLanguage.FRENCH -> "READ_MEDIA_AUDIO — Lire les fichiers audio (Android 13+)"
-        AppLanguage.GERMAN -> "READ_MEDIA_AUDIO — Audiodateien lesen (Android 13+)"
-        AppLanguage.RUSSIAN -> "READ_MEDIA_AUDIO — Чтение аудиофайлов (Android 13+)"
-        AppLanguage.JAPANESE -> "READ_MEDIA_AUDIO — 音声ファイルを読み取る（Android 13+）"
-        AppLanguage.KOREAN -> "READ_MEDIA_AUDIO — 오디오 파일 읽기 (Android 13+)"
-    }
-
-    val permissionBluetooth: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "蓝牙"
-        AppLanguage.ENGLISH -> "Bluetooth"
-        AppLanguage.ARABIC -> "بلوتوث"
-        AppLanguage.PORTUGUESE -> "Bluetooth"
-        AppLanguage.SPANISH -> "Bluetooth"
-        AppLanguage.FRENCH -> "Bluetooth"
-        AppLanguage.GERMAN -> "Bluetooth"
-        AppLanguage.RUSSIAN -> "Bluetooth"
-        AppLanguage.JAPANESE -> "Bluetooth"
-        AppLanguage.KOREAN -> "Bluetooth"
-    }
-    val permissionBluetoothDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "BLUETOOTH / BLUETOOTH_SCAN / BLUETOOTH_CONNECT — 蓝牙连接与扫描"
-        AppLanguage.ENGLISH -> "BLUETOOTH / BLUETOOTH_SCAN / BLUETOOTH_CONNECT — Bluetooth connection & scanning"
-        AppLanguage.ARABIC -> "BLUETOOTH / BLUETOOTH_SCAN / BLUETOOTH_CONNECT — اتصال وفحص البلوتوث"
-        AppLanguage.PORTUGUESE -> "BLUETOOTH / BLUETOOTH_SCAN / BLUETOOTH_CONNECT — Conexão e varredura Bluetooth"
-        AppLanguage.SPANISH -> "BLUETOOTH / BLUETOOTH_SCAN / BLUETOOTH_CONNECT — Conexión y escaneo Bluetooth"
-        AppLanguage.FRENCH -> "BLUETOOTH / BLUETOOTH_SCAN / BLUETOOTH_CONNECT — Connexion et scan Bluetooth"
-        AppLanguage.GERMAN -> "BLUETOOTH / BLUETOOTH_SCAN / BLUETOOTH_CONNECT — Bluetooth-Verbindung & -Scan"
-        AppLanguage.RUSSIAN -> "BLUETOOTH / BLUETOOTH_SCAN / BLUETOOTH_CONNECT — Подключение и сканирование Bluetooth"
-        AppLanguage.JAPANESE -> "BLUETOOTH / BLUETOOTH_SCAN / BLUETOOTH_CONNECT — Bluetooth 接続とスキャン"
-        AppLanguage.KOREAN -> "BLUETOOTH / BLUETOOTH_SCAN / BLUETOOTH_CONNECT — Bluetooth 연결 및 스캔"
-    }
-    val permissionNfc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "NFC"
-        AppLanguage.ENGLISH -> "NFC"
-        AppLanguage.ARABIC -> "NFC"
-        AppLanguage.PORTUGUESE -> "NFC"
-        AppLanguage.SPANISH -> "NFC"
-        AppLanguage.FRENCH -> "NFC"
-        AppLanguage.GERMAN -> "NFC"
-        AppLanguage.RUSSIAN -> "NFC"
-        AppLanguage.JAPANESE -> "NFC"
-        AppLanguage.KOREAN -> "NFC"
-    }
-    val permissionNfcDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "NFC — 近场通信"
-        AppLanguage.ENGLISH -> "NFC — Near Field Communication"
-        AppLanguage.ARABIC -> "NFC — الاتصال قريب المدى"
-        AppLanguage.PORTUGUESE -> "NFC — Comunicação de Campo Próximo"
-        AppLanguage.SPANISH -> "NFC — Comunicación de Campo Cercano"
-        AppLanguage.FRENCH -> "NFC — Communication en Champ Proche"
-        AppLanguage.GERMAN -> "NFC — Nahfeldkommunikation"
-        AppLanguage.RUSSIAN -> "NFC — Связь ближнего поля"
-        AppLanguage.JAPANESE -> "NFC — 近距離無線通信"
-        AppLanguage.KOREAN -> "NFC — 근거리 통신"
-    }
-    val permissionWifiState: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "Wi-Fi 状态"
-        AppLanguage.ENGLISH -> "Wi-Fi State"
-        AppLanguage.ARABIC -> "حالة Wi-Fi"
-        AppLanguage.PORTUGUESE -> "Estado do Wi-Fi"
-        AppLanguage.SPANISH -> "Estado del Wi-Fi"
-        AppLanguage.FRENCH -> "État du Wi-Fi"
-        AppLanguage.GERMAN -> "Wi-Fi-Status"
-        AppLanguage.RUSSIAN -> "Состояние Wi-Fi"
-        AppLanguage.JAPANESE -> "Wi-Fi 状態"
-        AppLanguage.KOREAN -> "Wi-Fi 상태"
-    }
-    val permissionWifiStateDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "ACCESS_WIFI_STATE / CHANGE_WIFI_STATE — 查看和更改 Wi-Fi 连接"
-        AppLanguage.ENGLISH -> "ACCESS_WIFI_STATE / CHANGE_WIFI_STATE — View and change Wi-Fi connection"
-        AppLanguage.ARABIC -> "ACCESS_WIFI_STATE / CHANGE_WIFI_STATE — عرض وتغيير اتصال Wi-Fi"
-        AppLanguage.PORTUGUESE -> "ACCESS_WIFI_STATE / CHANGE_WIFI_STATE — Ver e alterar a conexão Wi-Fi"
-        AppLanguage.SPANISH -> "ACCESS_WIFI_STATE / CHANGE_WIFI_STATE — Ver y cambiar la conexión Wi-Fi"
-        AppLanguage.FRENCH -> "ACCESS_WIFI_STATE / CHANGE_WIFI_STATE — Voir et modifier la connexion Wi-Fi"
-        AppLanguage.GERMAN -> "ACCESS_WIFI_STATE / CHANGE_WIFI_STATE — Wi-Fi-Verbindung anzeigen und ändern"
-        AppLanguage.RUSSIAN -> "ACCESS_WIFI_STATE / CHANGE_WIFI_STATE — Просмотр и изменение подключения Wi-Fi"
-        AppLanguage.JAPANESE -> "ACCESS_WIFI_STATE / CHANGE_WIFI_STATE — Wi-Fi 接続の表示と変更"
-        AppLanguage.KOREAN -> "ACCESS_WIFI_STATE / CHANGE_WIFI_STATE — Wi-Fi 연결 보기 및 변경"
-    }
-    val permissionNearbyWifiDevices: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "附近的 Wi-Fi 设备"
-        AppLanguage.ENGLISH -> "Nearby Wi-Fi devices"
-        AppLanguage.ARABIC -> "أجهزة Wi-Fi القريبة"
-        AppLanguage.PORTUGUESE -> "Dispositivos Wi-Fi próximos"
-        AppLanguage.SPANISH -> "Dispositivos Wi-Fi cercanos"
-        AppLanguage.FRENCH -> "Appareils Wi-Fi à proximité"
-        AppLanguage.GERMAN -> "Wi-Fi-Geräte in der Nähe"
-        AppLanguage.RUSSIAN -> "Ближайшие Wi-Fi устройства"
-        AppLanguage.JAPANESE -> "近くの Wi-Fi デバイス"
-        AppLanguage.KOREAN -> "주변 Wi-Fi 기기"
-    }
-    val permissionNearbyWifiDevicesDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "NEARBY_WIFI_DEVICES — Android 13+ 扫描附近 Wi-Fi 设备，与蓝牙分开"
-        AppLanguage.ENGLISH -> "NEARBY_WIFI_DEVICES — Android 13+ scan for nearby Wi-Fi devices, separate from Bluetooth"
-        AppLanguage.ARABIC -> "NEARBY_WIFI_DEVICES — أندرويد 13+ لمسح أجهزة Wi-Fi القريبة، منفصل عن البلوتوث"
-        AppLanguage.PORTUGUESE -> "NEARBY_WIFI_DEVICES — Android 13+ para procurar Wi-Fi próximos, separado do Bluetooth"
-        AppLanguage.SPANISH -> "NEARBY_WIFI_DEVICES — Android 13+ para escanear Wi-Fi cercanos, aparte de Bluetooth"
-        AppLanguage.FRENCH -> "NEARBY_WIFI_DEVICES — Android 13+ pour scanner le Wi-Fi proche, distinct du Bluetooth"
-        AppLanguage.GERMAN -> "NEARBY_WIFI_DEVICES — Android 13+ Scan naher Wi-Fi-Geräte, getrennt von Bluetooth"
-        AppLanguage.RUSSIAN -> "NEARBY_WIFI_DEVICES — Android 13+ поиск ближайших Wi-Fi, отдельно от Bluetooth"
-        AppLanguage.JAPANESE -> "NEARBY_WIFI_DEVICES — Android 13+ 付近の Wi-Fi をスキャン。Bluetooth とは別"
-        AppLanguage.KOREAN -> "NEARBY_WIFI_DEVICES — Android 13+ 주변 Wi-Fi 검색, Bluetooth와 별개"
-    }
-
-    val permissionBodySensors: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "身体传感器"
-        AppLanguage.ENGLISH -> "Body Sensors"
-        AppLanguage.ARABIC -> "مستشعرات الجسم"
-        AppLanguage.PORTUGUESE -> "Sensores Corporais"
-        AppLanguage.SPANISH -> "Sensores Corporales"
-        AppLanguage.FRENCH -> "Capteurs Corporels"
-        AppLanguage.GERMAN -> "Körpersensoren"
-        AppLanguage.RUSSIAN -> "Датчики тела"
-        AppLanguage.JAPANESE -> "体センサー"
-        AppLanguage.KOREAN -> "신체 센서"
-    }
-    val permissionBodySensorsDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "BODY_SENSORS — 访问心率、步数等身体传感器数据"
-        AppLanguage.ENGLISH -> "BODY_SENSORS — Access body sensor data like heart rate, step count"
-        AppLanguage.ARABIC -> "BODY_SENSORS — الوصول إلى بيانات مستشعرات الجسم مثل معدل ضربات القلب"
-        AppLanguage.PORTUGUESE -> "BODY_SENSORS — Acessar dados de sensores corporais como frequência cardíaca, contagem de passos"
-        AppLanguage.SPANISH -> "BODY_SENSORS — Acceder a datos de sensores corporales como frecuencia cardíaca, conteo de pasos"
-        AppLanguage.FRENCH -> "BODY_SENSORS — Accéder aux données des capteurs corporels comme le rythme cardiaque, le comptage de pas"
-        AppLanguage.GERMAN -> "BODY_SENSORS — Auf Körpersensordaten wie Herzfrequenz, Schrittzahl zugreifen"
-        AppLanguage.RUSSIAN -> "BODY_SENSORS — Доступ к данным датчиков тела, таким как пульс, количество шагов"
-        AppLanguage.JAPANESE -> "BODY_SENSORS — 心拍数や歩数などの体センサーデータにアクセス"
-        AppLanguage.KOREAN -> "BODY_SENSORS — 심박수, 걸음 수 등 신체 센서 데이터에 액세스"
-    }
-    val permissionActivityRecognition: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "活动识别"
-        AppLanguage.ENGLISH -> "Activity Recognition"
-        AppLanguage.ARABIC -> "التعرف على النشاط"
-        AppLanguage.PORTUGUESE -> "Reconhecimento de Atividade"
-        AppLanguage.SPANISH -> "Reconocimiento de Actividad"
-        AppLanguage.FRENCH -> "Reconnaissance d'Activité"
-        AppLanguage.GERMAN -> "Aktivitätserkennung"
-        AppLanguage.RUSSIAN -> "Распознавание активности"
-        AppLanguage.JAPANESE -> "アクティビティ認識"
-        AppLanguage.KOREAN -> "활동 인식"
-    }
-    val permissionActivityRecognitionDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "ACTIVITY_RECOGNITION — 检测用户活动状态（步行、跑步、骑车等）"
-        AppLanguage.ENGLISH -> "ACTIVITY_RECOGNITION — Detect user activity like walking, running, cycling"
-        AppLanguage.ARABIC -> "ACTIVITY_RECOGNITION — اكتشاف نشاط المستخدم مثل المشي والجري وركوب الدراجة"
-        AppLanguage.PORTUGUESE -> "ACTIVITY_RECOGNITION — Detectar atividade do usuário como caminhada, corrida, ciclismo"
-        AppLanguage.SPANISH -> "ACTIVITY_RECOGNITION — Detectar actividad del usuario como caminar, correr, andar en bicicleta"
-        AppLanguage.FRENCH -> "ACTIVITY_RECOGNITION — Détecter l'activité de l'utilisateur comme la marche, la course, le cyclisme"
-        AppLanguage.GERMAN -> "ACTIVITY_RECOGNITION — Benutzeraktivität erkennen wie Gehen, Laufen, Radfahren"
-        AppLanguage.RUSSIAN -> "ACTIVITY_RECOGNITION — Определять активность пользователя, такую как ходьба, бег, езда на велосипеде"
-        AppLanguage.JAPANESE -> "ACTIVITY_RECOGNITION — 歩行、ランニング、サイクリングなどのユーザーアクティビティを検出"
-        AppLanguage.KOREAN -> "ACTIVITY_RECOGNITION — 걷기, 달리기, 자전거 타기 등 사용자 활동 감지"
-    }
-
-    val permissionReadPhoneState: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "读取手机状态"
-        AppLanguage.ENGLISH -> "Read Phone State"
-        AppLanguage.ARABIC -> "قراءة حالة الهاتف"
-        AppLanguage.PORTUGUESE -> "Ler Estado do Telefone"
-        AppLanguage.SPANISH -> "Leer Estado del Teléfono"
-        AppLanguage.FRENCH -> "Lire l'État du Téléphone"
-        AppLanguage.GERMAN -> "Telefonstatus lesen"
-        AppLanguage.RUSSIAN -> "Чтение состояния телефона"
-        AppLanguage.JAPANESE -> "電話状態の読み取り"
-        AppLanguage.KOREAN -> "전화 상태 읽기"
-    }
-    val permissionReadPhoneStateDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "READ_PHONE_STATE — 读取设备标识和通话状态"
-        AppLanguage.ENGLISH -> "READ_PHONE_STATE — Read device identity and call state"
-        AppLanguage.ARABIC -> "READ_PHONE_STATE — قراءة هوية الجهاز وحالة المكالمة"
-        AppLanguage.PORTUGUESE -> "READ_PHONE_STATE — Ler identidade do dispositivo e estado da chamada"
-        AppLanguage.SPANISH -> "READ_PHONE_STATE — Leer identidad del dispositivo y estado de llamada"
-        AppLanguage.FRENCH -> "READ_PHONE_STATE — Lire l'identité de l'appareil et l'état d'appel"
-        AppLanguage.GERMAN -> "READ_PHONE_STATE — Geräteidentität und Anrufstatus lesen"
-        AppLanguage.RUSSIAN -> "READ_PHONE_STATE — Чтение идентичности устройства и состояния вызова"
-        AppLanguage.JAPANESE -> "READ_PHONE_STATE — デバイスの識別情報と通話状態を読み取る"
-        AppLanguage.KOREAN -> "READ_PHONE_STATE — 기기 식별 정보 및 통화 상태 읽기"
-    }
-    val permissionCallPhone: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "拨打电话"
-        AppLanguage.ENGLISH -> "Call Phone"
-        AppLanguage.ARABIC -> "الاتصال الهاتفي"
-        AppLanguage.PORTUGUESE -> "Ligar"
-        AppLanguage.SPANISH -> "Llamar"
-        AppLanguage.FRENCH -> "Appeler"
-        AppLanguage.GERMAN -> "Anrufen"
-        AppLanguage.RUSSIAN -> "Звонить"
-        AppLanguage.JAPANESE -> "電話をかける"
-        AppLanguage.KOREAN -> "전화 걸기"
-    }
-    val permissionCallPhoneDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "CALL_PHONE — 直接拨打电话"
-        AppLanguage.ENGLISH -> "CALL_PHONE — Directly initiate phone calls"
-        AppLanguage.ARABIC -> "CALL_PHONE — بدء مكالمات هاتفية مباشرة"
-        AppLanguage.PORTUGUESE -> "CALL_PHONE — Iniciar chamadas telefônicas diretamente"
-        AppLanguage.SPANISH -> "CALL_PHONE — Iniciar llamadas telefónicas directamente"
-        AppLanguage.FRENCH -> "CALL_PHONE — Lancer directement des appels téléphoniques"
-        AppLanguage.GERMAN -> "CALL_PHONE — Telefonanrufe direkt initiieren"
-        AppLanguage.RUSSIAN -> "CALL_PHONE — Непосредственно инициировать телефонные звонки"
-        AppLanguage.JAPANESE -> "CALL_PHONE — 直接電話をかける"
-        AppLanguage.KOREAN -> "CALL_PHONE — 직접 전화 걸기"
-    }
-    val permissionReadContacts: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "读取联系人"
-        AppLanguage.ENGLISH -> "Read Contacts"
-        AppLanguage.ARABIC -> "قراءة جهات الاتصال"
-        AppLanguage.PORTUGUESE -> "Ler Contatos"
-        AppLanguage.SPANISH -> "Leer Contactos"
-        AppLanguage.FRENCH -> "Lire les Contacts"
-        AppLanguage.GERMAN -> "Kontakte lesen"
-        AppLanguage.RUSSIAN -> "Чтение контактов"
-        AppLanguage.JAPANESE -> "連絡先の読み取り"
-        AppLanguage.KOREAN -> "연락처 읽기"
-    }
-    val permissionReadContactsDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "READ_CONTACTS — 读取通讯录联系人"
-        AppLanguage.ENGLISH -> "READ_CONTACTS — Read contacts from address book"
-        AppLanguage.ARABIC -> "READ_CONTACTS — قراءة جهات الاتصال من دفتر العناوين"
-        AppLanguage.PORTUGUESE -> "READ_CONTACTS — Ler contatos do catálogo de endereços"
-        AppLanguage.SPANISH -> "READ_CONTACTS — Leer contactos de la libreta de direcciones"
-        AppLanguage.FRENCH -> "READ_CONTACTS — Lire les contacts du carnet d'adresses"
-        AppLanguage.GERMAN -> "READ_CONTACTS — Kontakte aus dem Adressbuch lesen"
-        AppLanguage.RUSSIAN -> "READ_CONTACTS — Чтение контактов из адресной книги"
-        AppLanguage.JAPANESE -> "READ_CONTACTS — アドレス帳から連絡先を読み取る"
-        AppLanguage.KOREAN -> "READ_CONTACTS — 주소록에서 연락처 읽기"
-    }
-    val permissionWriteContacts: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "写入联系人"
-        AppLanguage.ENGLISH -> "Write Contacts"
-        AppLanguage.ARABIC -> "كتابة جهات الاتصال"
-        AppLanguage.PORTUGUESE -> "Gravar Contatos"
-        AppLanguage.SPANISH -> "Escribir Contactos"
-        AppLanguage.FRENCH -> "Écrire les Contacts"
-        AppLanguage.GERMAN -> "Kontakte schreiben"
-        AppLanguage.RUSSIAN -> "Запись контактов"
-        AppLanguage.JAPANESE -> "連絡先への書き込み"
-        AppLanguage.KOREAN -> "연락처 쓰기"
-    }
-    val permissionWriteContactsDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "WRITE_CONTACTS — 修改通讯录联系人"
-        AppLanguage.ENGLISH -> "WRITE_CONTACTS — Modify contacts in address book"
-        AppLanguage.ARABIC -> "WRITE_CONTACTS — تعديل جهات الاتصال في دفتر العناوين"
-        AppLanguage.PORTUGUESE -> "WRITE_CONTACTS — Modificar contatos no catálogo de endereços"
-        AppLanguage.SPANISH -> "WRITE_CONTACTS — Modificar contactos en la libreta de direcciones"
-        AppLanguage.FRENCH -> "WRITE_CONTACTS — Modifier les contacts dans le carnet d'adresses"
-        AppLanguage.GERMAN -> "WRITE_CONTACTS — Kontakte im Adressbuch ändern"
-        AppLanguage.RUSSIAN -> "WRITE_CONTACTS — Изменение контактов в адресной книге"
-        AppLanguage.JAPANESE -> "WRITE_CONTACTS — アドレス帳の連絡先を変更"
-        AppLanguage.KOREAN -> "WRITE_CONTACTS — 주소록의 연락처 수정"
-    }
-    val permissionReadCalendar: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "读取日历"
-        AppLanguage.ENGLISH -> "Read Calendar"
-        AppLanguage.ARABIC -> "قراءة التقويم"
-        AppLanguage.PORTUGUESE -> "Ler Calendário"
-        AppLanguage.SPANISH -> "Leer Calendario"
-        AppLanguage.FRENCH -> "Lire le Calendrier"
-        AppLanguage.GERMAN -> "Kalender lesen"
-        AppLanguage.RUSSIAN -> "Чтение календаря"
-        AppLanguage.JAPANESE -> "カレンダーの読み取り"
-        AppLanguage.KOREAN -> "캘린더 읽기"
-    }
-    val permissionReadCalendarDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "READ_CALENDAR — 读取日历事件"
-        AppLanguage.ENGLISH -> "READ_CALENDAR — Read calendar events"
-        AppLanguage.ARABIC -> "READ_CALENDAR — قراءة أحداث التقويم"
-        AppLanguage.PORTUGUESE -> "READ_CALENDAR — Ler eventos do calendário"
-        AppLanguage.SPANISH -> "READ_CALENDAR — Leer eventos del calendario"
-        AppLanguage.FRENCH -> "READ_CALENDAR — Lire les événements du calendrier"
-        AppLanguage.GERMAN -> "READ_CALENDAR — Kalenderereignisse lesen"
-        AppLanguage.RUSSIAN -> "READ_CALENDAR — Чтение событий календаря"
-        AppLanguage.JAPANESE -> "READ_CALENDAR — カレンダーの予定を読み取る"
-        AppLanguage.KOREAN -> "READ_CALENDAR — 캘린더 일정 읽기"
-    }
-    val permissionWriteCalendar: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "写入日历"
-        AppLanguage.ENGLISH -> "Write Calendar"
-        AppLanguage.ARABIC -> "كتابة التقويم"
-        AppLanguage.PORTUGUESE -> "Gravar Calendário"
-        AppLanguage.SPANISH -> "Escribir Calendario"
-        AppLanguage.FRENCH -> "Écrire le Calendrier"
-        AppLanguage.GERMAN -> "Kalender schreiben"
-        AppLanguage.RUSSIAN -> "Запись в календарь"
-        AppLanguage.JAPANESE -> "カレンダーへの書き込み"
-        AppLanguage.KOREAN -> "캘린더 쓰기"
-    }
-    val permissionWriteCalendarDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "WRITE_CALENDAR — 创建和修改日历事件"
-        AppLanguage.ENGLISH -> "WRITE_CALENDAR — Create and modify calendar events"
-        AppLanguage.ARABIC -> "WRITE_CALENDAR — إنشاء وتعديل أحداث التقويم"
-        AppLanguage.PORTUGUESE -> "WRITE_CALENDAR — Criar e modificar eventos do calendário"
-        AppLanguage.SPANISH -> "WRITE_CALENDAR — Crear y modificar eventos del calendario"
-        AppLanguage.FRENCH -> "WRITE_CALENDAR — Créer et modifier des événements du calendrier"
-        AppLanguage.GERMAN -> "WRITE_CALENDAR — Kalenderereignisse erstellen und ändern"
-        AppLanguage.RUSSIAN -> "WRITE_CALENDAR — Создание и изменение событий календаря"
-        AppLanguage.JAPANESE -> "WRITE_CALENDAR — カレンダーの予定を作成・変更"
-        AppLanguage.KOREAN -> "WRITE_CALENDAR — 캘린더 일정 생성 및 수정"
-    }
-    val permissionReadSms: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "读取短信"
-        AppLanguage.ENGLISH -> "Read SMS"
-        AppLanguage.ARABIC -> "قراءة الرسائل القصيرة"
-        AppLanguage.PORTUGUESE -> "Ler SMS"
-        AppLanguage.SPANISH -> "Leer SMS"
-        AppLanguage.FRENCH -> "Lire les SMS"
-        AppLanguage.GERMAN -> "SMS lesen"
-        AppLanguage.RUSSIAN -> "Чтение SMS"
-        AppLanguage.JAPANESE -> "SMSの読み取り"
-        AppLanguage.KOREAN -> "SMS 읽기"
-    }
-    val permissionReadSmsDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "READ_SMS — 读取短信内容"
-        AppLanguage.ENGLISH -> "READ_SMS — Read SMS messages"
-        AppLanguage.ARABIC -> "READ_SMS — قراءة رسائل SMS"
-        AppLanguage.PORTUGUESE -> "READ_SMS — Ler mensagens SMS"
-        AppLanguage.SPANISH -> "READ_SMS — Leer mensajes SMS"
-        AppLanguage.FRENCH -> "READ_SMS — Lire les messages SMS"
-        AppLanguage.GERMAN -> "READ_SMS — SMS-Nachrichten lesen"
-        AppLanguage.RUSSIAN -> "READ_SMS — Чтение SMS-сообщений"
-        AppLanguage.JAPANESE -> "READ_SMS — SMSメッセージを読み取る"
-        AppLanguage.KOREAN -> "READ_SMS — SMS 메시지 읽기"
-    }
-    val permissionSendSms: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "发送短信"
-        AppLanguage.ENGLISH -> "Send SMS"
-        AppLanguage.ARABIC -> "إرسال الرسائل القصيرة"
-        AppLanguage.PORTUGUESE -> "Enviar SMS"
-        AppLanguage.SPANISH -> "Enviar SMS"
-        AppLanguage.FRENCH -> "Envoyer des SMS"
-        AppLanguage.GERMAN -> "SMS senden"
-        AppLanguage.RUSSIAN -> "Отправка SMS"
-        AppLanguage.JAPANESE -> "SMSの送信"
-        AppLanguage.KOREAN -> "SMS 보내기"
-    }
-    val permissionSendSmsDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "SEND_SMS — 直接发送短信"
-        AppLanguage.ENGLISH -> "SEND_SMS — Directly send SMS messages"
-        AppLanguage.ARABIC -> "SEND_SMS — إرسال رسائل SMS مباشرة"
-        AppLanguage.PORTUGUESE -> "SEND_SMS — Enviar mensagens SMS diretamente"
-        AppLanguage.SPANISH -> "SEND_SMS — Enviar mensajes SMS directamente"
-        AppLanguage.FRENCH -> "SEND_SMS — Envoyer directement des messages SMS"
-        AppLanguage.GERMAN -> "SEND_SMS — SMS-Nachrichten direkt senden"
-        AppLanguage.RUSSIAN -> "SEND_SMS — Непосредственно отправлять SMS-сообщения"
-        AppLanguage.JAPANESE -> "SEND_SMS — 直接SMSメッセージを送信"
-        AppLanguage.KOREAN -> "SEND_SMS — 직접 SMS 메시지 보내기"
-    }
-    val permissionReceiveSms: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "接收短信"
-        AppLanguage.ENGLISH -> "Receive SMS"
-        AppLanguage.ARABIC -> "استقبال الرسائل القصيرة"
-        AppLanguage.PORTUGUESE -> "Receber SMS"
-        AppLanguage.SPANISH -> "Recibir SMS"
-        AppLanguage.FRENCH -> "Recevoir des SMS"
-        AppLanguage.GERMAN -> "SMS empfangen"
-        AppLanguage.RUSSIAN -> "Приём SMS"
-        AppLanguage.JAPANESE -> "SMSの受信"
-        AppLanguage.KOREAN -> "SMS 수신"
-    }
-    val permissionReceiveSmsDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "RECEIVE_SMS — 接收短信广播"
-        AppLanguage.ENGLISH -> "RECEIVE_SMS — Receive SMS broadcast"
-        AppLanguage.ARABIC -> "RECEIVE_SMS — استقبال بث SMS"
-        AppLanguage.PORTUGUESE -> "RECEIVE_SMS — Receber broadcast de SMS"
-        AppLanguage.SPANISH -> "RECEIVE_SMS — Recibir broadcast de SMS"
-        AppLanguage.FRENCH -> "RECEIVE_SMS — Recevoir les diffusions SMS"
-        AppLanguage.GERMAN -> "RECEIVE_SMS — SMS-Broadcast empfangen"
-        AppLanguage.RUSSIAN -> "RECEIVE_SMS — Приём SMS-рассылки"
-        AppLanguage.JAPANESE -> "RECEIVE_SMS — SMSブロードキャストを受信"
-        AppLanguage.KOREAN -> "RECEIVE_SMS — SMS 브로드캐스트 수신"
-    }
-    val permissionReadCallLog: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "读取通话记录"
-        AppLanguage.ENGLISH -> "Read Call Log"
-        AppLanguage.ARABIC -> "قراءة سجل المكالمات"
-        AppLanguage.PORTUGUESE -> "Ler Registro de Chamadas"
-        AppLanguage.SPANISH -> "Leer Registro de Llamadas"
-        AppLanguage.FRENCH -> "Lire l'Historique d'Appels"
-        AppLanguage.GERMAN -> "Anrufprotokoll lesen"
-        AppLanguage.RUSSIAN -> "Чтение журнала вызовов"
-        AppLanguage.JAPANESE -> "通話履歴の読み取り"
-        AppLanguage.KOREAN -> "통화 기록 읽기"
-    }
-    val permissionReadCallLogDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "READ_CALL_LOG — 读取通话历史记录"
-        AppLanguage.ENGLISH -> "READ_CALL_LOG — Read call history"
-        AppLanguage.ARABIC -> "READ_CALL_LOG — قراءة سجل المكالمات"
-        AppLanguage.PORTUGUESE -> "READ_CALL_LOG — Ler histórico de chamadas"
-        AppLanguage.SPANISH -> "READ_CALL_LOG — Leer historial de llamadas"
-        AppLanguage.FRENCH -> "READ_CALL_LOG — Lire l'historique des appels"
-        AppLanguage.GERMAN -> "READ_CALL_LOG — Anrufverlauf lesen"
-        AppLanguage.RUSSIAN -> "READ_CALL_LOG — Чтение истории вызовов"
-        AppLanguage.JAPANESE -> "READ_CALL_LOG — 通話履歴を読み取る"
-        AppLanguage.KOREAN -> "READ_CALL_LOG — 통화 기록 읽기"
-    }
-    val permissionWriteCallLog: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "写入通话记录"
-        AppLanguage.ENGLISH -> "Write Call Log"
-        AppLanguage.ARABIC -> "كتابة سجل المكالمات"
-        AppLanguage.PORTUGUESE -> "Gravar Registro de Chamadas"
-        AppLanguage.SPANISH -> "Escribir Registro de Llamadas"
-        AppLanguage.FRENCH -> "Écrire l'Historique d'Appels"
-        AppLanguage.GERMAN -> "Anrufprotokoll schreiben"
-        AppLanguage.RUSSIAN -> "Запись журнала вызовов"
-        AppLanguage.JAPANESE -> "通話履歴への書き込み"
-        AppLanguage.KOREAN -> "통화 기록 쓰기"
-    }
-    val permissionWriteCallLogDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "WRITE_CALL_LOG — 修改通话历史记录"
-        AppLanguage.ENGLISH -> "WRITE_CALL_LOG — Modify call history"
-        AppLanguage.ARABIC -> "WRITE_CALL_LOG — تعديل سجل المكالمات"
-        AppLanguage.PORTUGUESE -> "WRITE_CALL_LOG — Modificar histórico de chamadas"
-        AppLanguage.SPANISH -> "WRITE_CALL_LOG — Modificar historial de llamadas"
-        AppLanguage.FRENCH -> "WRITE_CALL_LOG — Modifier l'historique des appels"
-        AppLanguage.GERMAN -> "WRITE_CALL_LOG — Anrufverlauf ändern"
-        AppLanguage.RUSSIAN -> "WRITE_CALL_LOG — Изменение истории вызовов"
-        AppLanguage.JAPANESE -> "WRITE_CALL_LOG — 通話履歴を変更"
-        AppLanguage.KOREAN -> "WRITE_CALL_LOG — 통화 기록 수정"
-    }
-    val permissionProcessOutgoingCalls: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "处理外拨电话"
-        AppLanguage.ENGLISH -> "Process Outgoing Calls"
-        AppLanguage.ARABIC -> "معالجة المكالمات الصادرة"
-        AppLanguage.PORTUGUESE -> "Processar Chamadas Realizadas"
-        AppLanguage.SPANISH -> "Procesar Llamadas Salientes"
-        AppLanguage.FRENCH -> "Traiter les Appels Sortants"
-        AppLanguage.GERMAN -> "Ausgehende Anrufe verarbeiten"
-        AppLanguage.RUSSIAN -> "Обработка исходящих вызовов"
-        AppLanguage.JAPANESE -> "発信通話の処理"
-        AppLanguage.KOREAN -> "발신 통화 처리"
-    }
-    val permissionProcessOutgoingCallsDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "PROCESS_OUTGOING_CALLS — 监听和处理拨出的电话"
-        AppLanguage.ENGLISH -> "PROCESS_OUTGOING_CALLS — Monitor and process outgoing calls"
-        AppLanguage.ARABIC -> "PROCESS_OUTGOING_CALLS — مراقبة ومعالجة المكالمات الصادرة"
-        AppLanguage.PORTUGUESE -> "PROCESS_OUTGOING_CALLS — Monitorar e processar chamadas realizadas"
-        AppLanguage.SPANISH -> "PROCESS_OUTGOING_CALLS — Monitorear y procesar llamadas salientes"
-        AppLanguage.FRENCH -> "PROCESS_OUTGOING_CALLS — Surveiller et traiter les appels sortants"
-        AppLanguage.GERMAN -> "PROCESS_OUTGOING_CALLS — Ausgehende Anrufe überwachen und verarbeiten"
-        AppLanguage.RUSSIAN -> "PROCESS_OUTGOING_CALLS — Отслеживать и обрабатывать исходящие вызовы"
-        AppLanguage.JAPANESE -> "PROCESS_OUTGOING_CALLS — 発信通話を監視・処理"
-        AppLanguage.KOREAN -> "PROCESS_OUTGOING_CALLS — 발신 통화 모니터링 및 처리"
-    }
-
-    val permissionForegroundService: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "前台服务"
-        AppLanguage.ENGLISH -> "Foreground Service"
-        AppLanguage.ARABIC -> "خدمة أمامية"
-        AppLanguage.PORTUGUESE -> "Serviço em Primeiro Plano"
-        AppLanguage.SPANISH -> "Servicio en Primer Plano"
-        AppLanguage.FRENCH -> "Service de Premier Plan"
-        AppLanguage.GERMAN -> "Vordergrunddienst"
-        AppLanguage.RUSSIAN -> "Служба переднего плана"
-        AppLanguage.JAPANESE -> "フォアグラウンドサービス"
-        AppLanguage.KOREAN -> "포그라운드 서비스"
-    }
-    val permissionForegroundServiceDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "FOREGROUND_SERVICE — 在后台运行前台服务"
-        AppLanguage.ENGLISH -> "FOREGROUND_SERVICE — Run foreground service in background"
-        AppLanguage.ARABIC -> "FOREGROUND_SERVICE — تشغيل الخدمة الأمامية في الخلفية"
-        AppLanguage.PORTUGUESE -> "FOREGROUND_SERVICE — Executar serviço em primeiro plano em segundo plano"
-        AppLanguage.SPANISH -> "FOREGROUND_SERVICE — Ejecutar servicio en primer plano en segundo plano"
-        AppLanguage.FRENCH -> "FOREGROUND_SERVICE — Exécuter le service de premier plan en arrière-plan"
-        AppLanguage.GERMAN -> "FOREGROUND_SERVICE — Vordergrunddienst im Hintergrund ausführen"
-        AppLanguage.RUSSIAN -> "FOREGROUND_SERVICE — Запуск службы переднего плана в фоновом режиме"
-        AppLanguage.JAPANESE -> "FOREGROUND_SERVICE — フォアグラウンドサービスをバックグラウンドで実行"
-        AppLanguage.KOREAN -> "FOREGROUND_SERVICE — 백그라운드에서 포그라운드 서비스 실행"
-    }
-    val permissionWakeLock: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "唤醒锁"
-        AppLanguage.ENGLISH -> "Wake Lock"
-        AppLanguage.ARABIC -> "قفل الاستيقاظ"
-        AppLanguage.PORTUGUESE -> "Manter ativo"
-        AppLanguage.SPANISH -> "Bloqueo de suspensión"
-        AppLanguage.FRENCH -> "Verrouillage d'éveil"
-        AppLanguage.GERMAN -> "Ruhezustandssperre"
-        AppLanguage.RUSSIAN -> "Блокировка сна"
-        AppLanguage.JAPANESE -> "起動ロック"
-        AppLanguage.KOREAN -> "절전 방지"
-    }
-    val permissionWakeLockDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "WAKE_LOCK — 防止设备进入休眠"
-        AppLanguage.ENGLISH -> "WAKE_LOCK — Prevent device from sleeping"
-        AppLanguage.ARABIC -> "WAKE_LOCK — منع الجهاز من الدخول في السكون"
-        AppLanguage.PORTUGUESE -> "WAKE_LOCK — Impedir que o dispositivo durma"
-        AppLanguage.SPANISH -> "WAKE_LOCK — Evitar que el dispositivo entre en suspensión"
-        AppLanguage.FRENCH -> "WAKE_LOCK — Empêcher l'appareil de se mettre en veille"
-        AppLanguage.GERMAN -> "WAKE_LOCK — Verhindern, dass das Gerät in den Ruhezustand wechselt"
-        AppLanguage.RUSSIAN -> "WAKE_LOCK — Предотвращать переход устройства в спящий режим"
-        AppLanguage.JAPANESE -> "WAKE_LOCK — デバイスのスリープを防止"
-        AppLanguage.KOREAN -> "WAKE_LOCK — 기기가 절전 모드로 전환되지 않도록 방지"
-    }
-    val permissionRequestIgnoreBatteryOptimizations: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "忽略电池优化"
-        AppLanguage.ENGLISH -> "Ignore Battery Optimizations"
-        AppLanguage.ARABIC -> "تجاهل تحسين البطارية"
-        AppLanguage.PORTUGUESE -> "Ignorar Otimizações de Bateria"
-        AppLanguage.SPANISH -> "Ignorar Optimizaciones de Batería"
-        AppLanguage.FRENCH -> "Ignorer les Optimisations de Batterie"
-        AppLanguage.GERMAN -> "Batterieoptimierung ignorieren"
-        AppLanguage.RUSSIAN -> "Игнорировать оптимизацию батареи"
-        AppLanguage.JAPANESE -> "バッテリー最適化を無視"
-        AppLanguage.KOREAN -> "배터리 최적화 무시"
-    }
-    val permissionRequestIgnoreBatteryOptimizationsDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "REQUEST_IGNORE_BATTERY_OPTIMIZATIONS — 请求不受电池优化限制"
-        AppLanguage.ENGLISH -> "REQUEST_IGNORE_BATTERY_OPTIMIZATIONS — Request exemption from battery optimization"
-        AppLanguage.ARABIC -> "REQUEST_IGNORE_BATTERY_OPTIMIZATIONS — طلب إعفاء من تحسين البطارية"
-        AppLanguage.PORTUGUESE -> "REQUEST_IGNORE_BATTERY_OPTIMIZATIONS — Solicitar isenção da otimização de bateria"
-        AppLanguage.SPANISH -> "REQUEST_IGNORE_BATTERY_OPTIMIZATIONS — Solicitar exención de la optimización de batería"
-        AppLanguage.FRENCH -> "REQUEST_IGNORE_BATTERY_OPTIMIZATIONS — Demander une exemption de l'optimisation de batterie"
-        AppLanguage.GERMAN -> "REQUEST_IGNORE_BATTERY_OPTIMIZATIONS — Befreiung von der Batterieoptimierung anfordern"
-        AppLanguage.RUSSIAN -> "REQUEST_IGNORE_BATTERY_OPTIMIZATIONS — Запросить освобождение от оптимизации батареи"
-        AppLanguage.JAPANESE -> "REQUEST_IGNORE_BATTERY_OPTIMIZATIONS — バッテリー最適化の除外を要求"
-        AppLanguage.KOREAN -> "REQUEST_IGNORE_BATTERY_OPTIMIZATIONS — 배터리 최적화 면제 요청"
-    }
-    val permissionBootCompleted: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "开机自启"
-        AppLanguage.ENGLISH -> "Boot Completed"
-        AppLanguage.ARABIC -> "اكتمال التشغيل"
-        AppLanguage.PORTUGUESE -> "Inicialização Concluída"
-        AppLanguage.SPANISH -> "Inicio Completado"
-        AppLanguage.FRENCH -> "Démarrage Terminé"
-        AppLanguage.GERMAN -> "Start abgeschlossen"
-        AppLanguage.RUSSIAN -> "Загрузка завершена"
-        AppLanguage.JAPANESE -> "起動完了"
-        AppLanguage.KOREAN -> "부팅 완료"
-    }
-    val permissionBootCompletedDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "RECEIVE_BOOT_COMPLETED — 设备启动后自动运行"
-        AppLanguage.ENGLISH -> "RECEIVE_BOOT_COMPLETED — Auto-start after device boot"
-        AppLanguage.ARABIC -> "RECEIVE_BOOT_COMPLETED — بدء تلقائي بعد تشغيل الجهاز"
-        AppLanguage.PORTUGUESE -> "RECEIVE_BOOT_COMPLETED — Início automático após a inicialização do dispositivo"
-        AppLanguage.SPANISH -> "RECEIVE_BOOT_COMPLETED — Inicio automático tras el arranque del dispositivo"
-        AppLanguage.FRENCH -> "RECEIVE_BOOT_COMPLETED — Démarrage automatique après le boot de l'appareil"
-        AppLanguage.GERMAN -> "RECEIVE_BOOT_COMPLETED — Automatischer Start nach dem Geräte-Boot"
-        AppLanguage.RUSSIAN -> "RECEIVE_BOOT_COMPLETED — Автозапуск после загрузки устройства"
-        AppLanguage.JAPANESE -> "RECEIVE_BOOT_COMPLETED — デバイス起動後に自動開始"
-        AppLanguage.KOREAN -> "RECEIVE_BOOT_COMPLETED — 기기 부팅 후 자동 시작"
-    }
-    val permissionVibration: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "振动"
-        AppLanguage.ENGLISH -> "Vibration"
-        AppLanguage.ARABIC -> "الاهتزاز"
-        AppLanguage.PORTUGUESE -> "Vibração"
-        AppLanguage.SPANISH -> "Vibración"
-        AppLanguage.FRENCH -> "Vibration"
-        AppLanguage.GERMAN -> "Vibration"
-        AppLanguage.RUSSIAN -> "Вибрация"
-        AppLanguage.JAPANESE -> "バイブレーション"
-        AppLanguage.KOREAN -> "진동"
-    }
-    val permissionVibrationDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "VIBRATE — 控制设备振动"
-        AppLanguage.ENGLISH -> "VIBRATE — Control device vibration"
-        AppLanguage.ARABIC -> "VIBRATE — التحكم في اهتزاز الجهاز"
-        AppLanguage.PORTUGUESE -> "VIBRATE — Controlar a vibração do dispositivo"
-        AppLanguage.SPANISH -> "VIBRATE — Controlar la vibración del dispositivo"
-        AppLanguage.FRENCH -> "VIBRATE — Contrôler la vibration de l'appareil"
-        AppLanguage.GERMAN -> "VIBRATE — Gerät vibration steuern"
-        AppLanguage.RUSSIAN -> "VIBRATE — Управление вибрацией устройства"
-        AppLanguage.JAPANESE -> "VIBRATE — デバイスのバイブレーションを制御"
-        AppLanguage.KOREAN -> "VIBRATE — 기기 진동 제어"
-    }
-    val permissionInstallPackages: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "安装应用"
-        AppLanguage.ENGLISH -> "Install Packages"
-        AppLanguage.ARABIC -> "تثبيت الحزم"
-        AppLanguage.PORTUGUESE -> "Instalar Pacotes"
-        AppLanguage.SPANISH -> "Instalar Paquetes"
-        AppLanguage.FRENCH -> "Installer des Paquets"
-        AppLanguage.GERMAN -> "Pakete installieren"
-        AppLanguage.RUSSIAN -> "Установка пакетов"
-        AppLanguage.JAPANESE -> "パッケージのインストール"
-        AppLanguage.KOREAN -> "패키지 설치"
-    }
-    val permissionInstallPackagesDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "REQUEST_INSTALL_PACKAGES — 请求安装其他应用"
-        AppLanguage.ENGLISH -> "REQUEST_INSTALL_PACKAGES — Request to install other apps"
-        AppLanguage.ARABIC -> "REQUEST_INSTALL_PACKAGES — طلب تثبيت تطبيقات أخرى"
-        AppLanguage.PORTUGUESE -> "REQUEST_INSTALL_PACKAGES — Solicitar instalação de outros apps"
-        AppLanguage.SPANISH -> "REQUEST_INSTALL_PACKAGES — Solicitar instalación de otras apps"
-        AppLanguage.FRENCH -> "REQUEST_INSTALL_PACKAGES — Demander l'installation d'autres applications"
-        AppLanguage.GERMAN -> "REQUEST_INSTALL_PACKAGES — Installation anderer Apps anfordern"
-        AppLanguage.RUSSIAN -> "REQUEST_INSTALL_PACKAGES — Запрос на установку других приложений"
-        AppLanguage.JAPANESE -> "REQUEST_INSTALL_PACKAGES — 他のアプリのインストールを要求"
-        AppLanguage.KOREAN -> "REQUEST_INSTALL_PACKAGES — 다른 앱 설치 요청"
-    }
-    val permissionRequestDeletePackages: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "卸载应用"
-        AppLanguage.ENGLISH -> "Delete Packages"
-        AppLanguage.ARABIC -> "حذف الحزم"
-        AppLanguage.PORTUGUESE -> "Excluir Pacotes"
-        AppLanguage.SPANISH -> "Eliminar Paquetes"
-        AppLanguage.FRENCH -> "Supprimer des Paquets"
-        AppLanguage.GERMAN -> "Pakete löschen"
-        AppLanguage.RUSSIAN -> "Удаление пакетов"
-        AppLanguage.JAPANESE -> "パッケージの削除"
-        AppLanguage.KOREAN -> "패키지 삭제"
-    }
-    val permissionRequestDeletePackagesDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "REQUEST_DELETE_PACKAGES — 请求卸载应用"
-        AppLanguage.ENGLISH -> "REQUEST_DELETE_PACKAGES — Request to uninstall apps"
-        AppLanguage.ARABIC -> "REQUEST_DELETE_PACKAGES — طلب إلغاء تثبيت التطبيقات"
-        AppLanguage.PORTUGUESE -> "REQUEST_DELETE_PACKAGES — Solicitar desinstalação de apps"
-        AppLanguage.SPANISH -> "REQUEST_DELETE_PACKAGES — Solicitar desinstalación de apps"
-        AppLanguage.FRENCH -> "REQUEST_DELETE_PACKAGES — Demander la désinstallation d'applications"
-        AppLanguage.GERMAN -> "REQUEST_DELETE_PACKAGES — Deinstallation von Apps anfordern"
-        AppLanguage.RUSSIAN -> "REQUEST_DELETE_PACKAGES — Запрос на удаление приложений"
-        AppLanguage.JAPANESE -> "REQUEST_DELETE_PACKAGES — アプリのアンインストールを要求"
-        AppLanguage.KOREAN -> "REQUEST_DELETE_PACKAGES — 앱 제거 요청"
-    }
-    val permissionSystemAlertWindow: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "悬浮窗"
-        AppLanguage.ENGLISH -> "System Alert Window"
-        AppLanguage.ARABIC -> "نافذة تنبيه النظام"
-        AppLanguage.PORTUGUESE -> "Janela de Alerta do Sistema"
-        AppLanguage.SPANISH -> "Ventana de Alerta del Sistema"
-        AppLanguage.FRENCH -> "Fenêtre d'Alerte Système"
-        AppLanguage.GERMAN -> "System-Warnfenster"
-        AppLanguage.RUSSIAN -> "Системное окно-предупреждение"
-        AppLanguage.JAPANESE -> "システム警告ウィンドウ"
-        AppLanguage.KOREAN -> "시스템 경고 창"
-    }
-    val permissionSystemAlertWindowDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "SYSTEM_ALERT_WINDOW — 在其他应用上方显示悬浮窗"
-        AppLanguage.ENGLISH -> "SYSTEM_ALERT_WINDOW — Display overlay window above other apps"
-        AppLanguage.ARABIC -> "SYSTEM_ALERT_WINDOW — عرض نافذة تراكب فوق التطبيقات الأخرى"
-        AppLanguage.PORTUGUESE -> "SYSTEM_ALERT_WINDOW — Exibir janela flutuante sobre outros apps"
-        AppLanguage.SPANISH -> "SYSTEM_ALERT_WINDOW — Mostrar ventana flotante sobre otras apps"
-        AppLanguage.FRENCH -> "SYSTEM_ALERT_WINDOW — Afficher une fenêtre superposée au-dessus des autres applications"
-        AppLanguage.GERMAN -> "SYSTEM_ALERT_WINDOW — Overlay-Fenster über anderen Apps anzeigen"
-        AppLanguage.RUSSIAN -> "SYSTEM_ALERT_WINDOW — Отображать плавающее окно поверх других приложений"
-        AppLanguage.JAPANESE -> "SYSTEM_ALERT_WINDOW — 他のアプリの上にオーバーレイウィンドウを表示"
-        AppLanguage.KOREAN -> "SYSTEM_ALERT_WINDOW — 다른 앱 위에 오버레이 창 표시"
-    }
 
     val permissionPresetNone: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "无"
@@ -7540,31 +5854,6 @@ object StringsE {
         AppLanguage.RUSSIAN -> "Полный"
         AppLanguage.JAPANESE -> "完全"
         AppLanguage.KOREAN -> "전체"
-    }
-
-    val permissionDangerTag: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "高敏感权限 — Play Store 审核可能需要提供使用声明"
-        AppLanguage.ENGLISH -> "Highly sensitive — Play Store may require usage declaration"
-        AppLanguage.ARABIC -> "حساس للغاية — قد يتطلب Play Store إعلان الاستخدام"
-        AppLanguage.PORTUGUESE -> "Altamente sensível — Play Store pode exigir declaração de uso"
-        AppLanguage.SPANISH -> "Altamente sensible — Play Store puede requerir declaración de uso"
-        AppLanguage.FRENCH -> "Hautement sensible — Play Store peut exiger une déclaration d'usage"
-        AppLanguage.GERMAN -> "Hochsensibel — Play Store kann eine Nutzungserklärung verlangen"
-        AppLanguage.RUSSIAN -> "Высокочувствительное — Play Store может потребовать декларацию использования"
-        AppLanguage.JAPANESE -> "高度に機密 — Play Store は使用宣言を要求する場合があります"
-        AppLanguage.KOREAN -> "고도로 민감 — Play Store에서 사용 선언이 필요할 수 있습니다"
-    }
-    val permissionDangerWarning: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "此权限属于高敏感权限，Google Play 可能要求你填写权限使用声明才能通过审核"
-        AppLanguage.ENGLISH -> "This is a highly sensitive permission. Google Play may require a usage declaration to pass review"
-        AppLanguage.ARABIC -> "هذا إذن حساس للغاية. قد يتطلب Google Play إعلان استخدام لاجتياز المراجعة"
-        AppLanguage.PORTUGUESE -> "Esta é uma permissão altamente sensível. O Google Play pode exigir uma declaração de uso para aprovar a revisão"
-        AppLanguage.SPANISH -> "Este es un permiso altamente sensible. Google Play puede requerir una declaración de uso para aprobar la revisión"
-        AppLanguage.FRENCH -> "Ceci est une permission hautement sensible. Google Play peut exiger une déclaration d'usage pour passer la révision"
-        AppLanguage.GERMAN -> "Dies ist eine hochsensible Berechtigung. Google Play kann eine Nutzungserklärung verlangen, um die Prüfung zu bestehen"
-        AppLanguage.RUSSIAN -> "Это высокочувствительное разрешение. Google Play может потребовать декларацию использования для прохождения проверки"
-        AppLanguage.JAPANESE -> "これは高度に機密性の高い権限です。Google Play は審査を通過するために使用宣言を要求する場合があります"
-        AppLanguage.KOREAN -> "고도로 민감한 권한입니다. Google Play에서 심사 통과를 위해 사용 선언을 요구할 수 있습니다"
     }
 
     val permissionConflictTitle: String get() = when (Strings.lang) {
@@ -7627,18 +5916,7 @@ object StringsE {
         AppLanguage.JAPANESE -> "QUERY_ALL_PACKAGES（インストール済みアプリ一覧）は Play 制限で申告が必要。サイドロードでは通常付与されます"
         AppLanguage.KOREAN -> "QUERY_ALL_PACKAGES(설치 앱 목록)는 Play 제한 권한이라 신고가 필요합니다. 사이드로드는 보통 부여됩니다"
     }
-    val permissionPlayRestrictedTag: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "Play 受限权限 — 上架通常会被拒，除非你是默认短信/电话应用或已申报"
-        AppLanguage.ENGLISH -> "Play-restricted — listing is usually rejected unless you are the default SMS/phone app or filed a declaration"
-        AppLanguage.ARABIC -> "مقيّد في Play — يُرفض النشر عادة إلا إذا كنت تطبيق الرسائل/الهاتف الافتراضي أو قدّمت إعلاناً"
-        AppLanguage.PORTUGUESE -> "Restrito na Play — a listagem costuma ser recusada salvo app padrão de SMS/telefone ou declaração"
-        AppLanguage.SPANISH -> "Restringido en Play — suelen rechazar la ficha salvo app SMS/teléfono predeterminada o declaración"
-        AppLanguage.FRENCH -> "Restreint Play — la fiche est souvent refusée sauf app SMS/téléphone par défaut ou déclaration"
-        AppLanguage.GERMAN -> "Play-eingeschränkt — Listung wird meist abgelehnt, außer Standard-SMS/Telefon-App oder Erklärung"
-        AppLanguage.RUSSIAN -> "Ограничено Play — публикацию обычно отклоняют, кроме приложения SMS/телефона по умолчанию или декларации"
-        AppLanguage.JAPANESE -> "Play 制限 — デフォルトの SMS/電話アプリか申告済みでないと公開はほぼ却下"
-        AppLanguage.KOREAN -> "Play 제한 — 기본 SMS/전화 앱이거나 신고하지 않으면 등록이 거절되는 경우가 많습니다"
-    }
+
     val permissionPlayRestrictedWarning: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "这条权限网页套壳很少真正用到。打开只会写进清单并可能弹系统框；页面 JS 没有对应 API。Play 审核很容易拒绝。"
         AppLanguage.ENGLISH -> "Wrapper pages rarely use this. Enabling it only declares it and may show a system prompt; page JS has no matching API. Play review often rejects it."
@@ -7650,54 +5928,6 @@ object StringsE {
         AppLanguage.RUSSIAN -> "Страницы-обёртки почти не используют это. Включение только объявляет разрешение и может показать запрос; в JS нет API. Play часто отклоняет."
         AppLanguage.JAPANESE -> "ラッパーページが使うことはほぼありません。有効化は宣言とシステム確認のみで、JS に対応 API はありません。Play 審査で却下されやすいです。"
         AppLanguage.KOREAN -> "래퍼 페이지는 거의 쓰지 않습니다. 켜면 선언과 시스템 프롬프트만 있고 JS API는 없습니다. Play 심사에서 거절되기 쉽습니다."
-    }
-    val permissionQueryAllPackages: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "读取应用列表"
-        AppLanguage.ENGLISH -> "Installed app list"
-        AppLanguage.ARABIC -> "قائمة التطبيقات المثبتة"
-        AppLanguage.PORTUGUESE -> "Lista de apps instalados"
-        AppLanguage.SPANISH -> "Lista de apps instaladas"
-        AppLanguage.FRENCH -> "Liste des applications installées"
-        AppLanguage.GERMAN -> "Liste installierter Apps"
-        AppLanguage.RUSSIAN -> "Список установленных приложений"
-        AppLanguage.JAPANESE -> "インストール済みアプリ一覧"
-        AppLanguage.KOREAN -> "설치된 앱 목록"
-    }
-    val permissionQueryAllPackagesDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "QUERY_ALL_PACKAGES — 枚举设备上已安装的应用。Play 受限；侧载一般会授予"
-        AppLanguage.ENGLISH -> "QUERY_ALL_PACKAGES — Enumerate installed apps. Play-restricted; sideload usually grants it"
-        AppLanguage.ARABIC -> "QUERY_ALL_PACKAGES — تعداد التطبيقات المثبتة. مقيّد في Play؛ التثبيت الجانبي يمنحه عادة"
-        AppLanguage.PORTUGUESE -> "QUERY_ALL_PACKAGES — Listar apps instalados. Restrito na Play; sideload costuma conceder"
-        AppLanguage.SPANISH -> "QUERY_ALL_PACKAGES — Enumerar apps instaladas. Restringido en Play; sideload suele concederlo"
-        AppLanguage.FRENCH -> "QUERY_ALL_PACKAGES — Énumérer les apps installées. Restreint Play ; le sideload l’accorde souvent"
-        AppLanguage.GERMAN -> "QUERY_ALL_PACKAGES — Installierte Apps auflisten. Play-eingeschränkt; Sideload gewährt meist"
-        AppLanguage.RUSSIAN -> "QUERY_ALL_PACKAGES — Перечисление установленных приложений. Ограничено Play; sideload обычно выдаёт"
-        AppLanguage.JAPANESE -> "QUERY_ALL_PACKAGES — インストール済みアプリを列挙。Play 制限。サイドロードでは通常付与"
-        AppLanguage.KOREAN -> "QUERY_ALL_PACKAGES — 설치된 앱 열거. Play 제한. 사이드로드는 보통 부여"
-    }
-    val permissionBackgroundLocation: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "后台位置"
-        AppLanguage.ENGLISH -> "Background location"
-        AppLanguage.ARABIC -> "الموقع في الخلفية"
-        AppLanguage.PORTUGUESE -> "Localização em segundo plano"
-        AppLanguage.SPANISH -> "Ubicación en segundo plano"
-        AppLanguage.FRENCH -> "Localisation en arrière-plan"
-        AppLanguage.GERMAN -> "Standort im Hintergrund"
-        AppLanguage.RUSSIAN -> "Фоновая геолокация"
-        AppLanguage.JAPANESE -> "バックグラウンド位置情報"
-        AppLanguage.KOREAN -> "백그라운드 위치"
-    }
-    val permissionBackgroundLocationDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "ACCESS_BACKGROUND_LOCATION — 应用不在前台时仍可定位。会同时打开「位置」"
-        AppLanguage.ENGLISH -> "ACCESS_BACKGROUND_LOCATION — Location while the app is not in the foreground. Also turns on Location"
-        AppLanguage.ARABIC -> "ACCESS_BACKGROUND_LOCATION — الموقع والتطبيق في الخلفية. يشغّل أيضاً الموقع"
-        AppLanguage.PORTUGUESE -> "ACCESS_BACKGROUND_LOCATION — Localização com o app em segundo plano. Também liga Localização"
-        AppLanguage.SPANISH -> "ACCESS_BACKGROUND_LOCATION — Ubicación con la app en segundo plano. También activa Ubicación"
-        AppLanguage.FRENCH -> "ACCESS_BACKGROUND_LOCATION — Position hors premier plan. Active aussi Localisation"
-        AppLanguage.GERMAN -> "ACCESS_BACKGROUND_LOCATION — Standort im Hintergrund. Schaltet auch Standort ein"
-        AppLanguage.RUSSIAN -> "ACCESS_BACKGROUND_LOCATION — Геолокация не на переднем плане. Также включает «Местоположение»"
-        AppLanguage.JAPANESE -> "ACCESS_BACKGROUND_LOCATION — フォアグラウンド以外でも位置情報。「位置情報」もオンになります"
-        AppLanguage.KOREAN -> "ACCESS_BACKGROUND_LOCATION — 포그라운드가 아닐 때도 위치. 위치 권한도 켭니다"
     }
 
     val projectSyncFailed: String get() = when (Strings.lang) {
@@ -7712,42 +5942,7 @@ object StringsE {
         AppLanguage.JAPANESE -> "プロジェクトの同期に失敗しました"
         AppLanguage.KOREAN -> "프로젝트 동기화 실패"
     }
-    val r2CdnAccelerate: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "r2 cdn accelerate"
-        AppLanguage.ENGLISH -> "R2 cdn accelerate"
-        AppLanguage.ARABIC -> "r2 cdn accelerate"
-        AppLanguage.PORTUGUESE -> "Aceleração CDN R2"
-        AppLanguage.SPANISH -> "Aceleración CDN R2"
-        AppLanguage.FRENCH -> "Accélération CDN R2"
-        AppLanguage.GERMAN -> "R2-CDN-Beschleunigung"
-        AppLanguage.RUSSIAN -> "Ускорение CDN R2"
-        AppLanguage.JAPANESE -> "R2 CDN 加速"
-        AppLanguage.KOREAN -> "R2 CDN 가속"
-    }
-    val r2CdnDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "r2 cdn"
-        AppLanguage.ENGLISH -> "R2 cdn"
-        AppLanguage.ARABIC -> "r2 cdn"
-        AppLanguage.PORTUGUESE -> "CDN R2"
-        AppLanguage.SPANISH -> "CDN R2"
-        AppLanguage.FRENCH -> "CDN R2"
-        AppLanguage.GERMAN -> "R2-CDN"
-        AppLanguage.RUSSIAN -> "CDN R2"
-        AppLanguage.JAPANESE -> "R2 CDN"
-        AppLanguage.KOREAN -> "R2 CDN"
-    }
-    val r2StorageDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "r2 storage"
-        AppLanguage.ENGLISH -> "R2 storage"
-        AppLanguage.ARABIC -> "r2 storage"
-        AppLanguage.PORTUGUESE -> "Armazenamento R2"
-        AppLanguage.SPANISH -> "Almacenamiento R2"
-        AppLanguage.FRENCH -> "Stockage R2"
-        AppLanguage.GERMAN -> "R2-Speicher"
-        AppLanguage.RUSSIAN -> "Хранилище R2"
-        AppLanguage.JAPANESE -> "R2 ストレージ"
-        AppLanguage.KOREAN -> "R2 스토리지"
-    }
+
     val readBuildLogFailed: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "read build log失败"
         AppLanguage.ENGLISH -> "Read build log failed"
@@ -7760,18 +5955,7 @@ object StringsE {
         AppLanguage.JAPANESE -> "ビルドログの読み込みに失敗しました"
         AppLanguage.KOREAN -> "빌드 로그 읽기 실패"
     }
-    val reinstallEsbuild: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "重新安装"
-        AppLanguage.ENGLISH -> "Reinstall"
-        AppLanguage.ARABIC -> "إعادة التثبيت"
-        AppLanguage.PORTUGUESE -> "Reinstalar"
-        AppLanguage.SPANISH -> "Reinstalar"
-        AppLanguage.FRENCH -> "Réinstaller"
-        AppLanguage.GERMAN -> "Neu installieren"
-        AppLanguage.RUSSIAN -> "Переустановить"
-        AppLanguage.JAPANESE -> "再インストール"
-        AppLanguage.KOREAN -> "재설치"
-    }
+
     val scraperLongDesc: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "自动抓取网站前端文件并保存到本地，支持 HTML/CSS/JS/图片/字体等资源，离线浏览无需网络。"
         AppLanguage.ENGLISH -> "Automatically scrape website frontend files and save locally. Supports HTML/CSS/JS/images/fonts for offline browsing."
@@ -7904,18 +6088,7 @@ object StringsE {
         AppLanguage.JAPANESE -> "名称未設定"
         AppLanguage.KOREAN -> "이름 없음"
     }
-    val uploadingApkToR2: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "uploading apk to r2"
-        AppLanguage.ENGLISH -> "Uploading apk to r2"
-        AppLanguage.ARABIC -> "uploading apk to r2"
-        AppLanguage.PORTUGUESE -> "Enviando APK para o R2"
-        AppLanguage.SPANISH -> "Subiendo APK a R2"
-        AppLanguage.FRENCH -> "Envoi de l'APK vers R2"
-        AppLanguage.GERMAN -> "APK wird zu R2 hochgeladen"
-        AppLanguage.RUSSIAN -> "Загрузка APK в R2"
-        AppLanguage.JAPANESE -> "APK を R2 にアップロード中"
-        AppLanguage.KOREAN -> "APK를 R2에 업로드 중"
-    }
+
     val verifying: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "verifying"
         AppLanguage.ENGLISH -> "Verifying"
@@ -9041,42 +7214,7 @@ object StringsE {
         AppLanguage.JAPANESE -> "PHP プロジェクトディレクトリが見つかりません"
         AppLanguage.KOREAN -> "PHP 프로젝트 디렉터리를 찾을 수 없습니다"
     }
-    val importDirNotFound: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "目录不存在"
-        AppLanguage.ENGLISH -> "Directory not found"
-        AppLanguage.ARABIC -> "الدليل غير موجود"
-        AppLanguage.PORTUGUESE -> "Diretório não encontrado"
-        AppLanguage.SPANISH -> "Directorio no encontrado"
-        AppLanguage.FRENCH -> "Répertoire introuvable"
-        AppLanguage.GERMAN -> "Verzeichnis nicht gefunden"
-        AppLanguage.RUSSIAN -> "Каталог не найден"
-        AppLanguage.JAPANESE -> "ディレクトリが見つかりません"
-        AppLanguage.KOREAN -> "디렉터리를 찾을 수 없습니다"
-    }
-    val importZipExtractFailed: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "ZIP 解压失败"
-        AppLanguage.ENGLISH -> "ZIP extraction failed"
-        AppLanguage.ARABIC -> "فشل استخراج ZIP"
-        AppLanguage.PORTUGUESE -> "Falha na extração do ZIP"
-        AppLanguage.SPANISH -> "Error al extraer el ZIP"
-        AppLanguage.FRENCH -> "Échec de l'extraction du ZIP"
-        AppLanguage.GERMAN -> "ZIP-Extraktion fehlgeschlagen"
-        AppLanguage.RUSSIAN -> "Ошибка распаковки ZIP"
-        AppLanguage.JAPANESE -> "ZIP の展開に失敗しました"
-        AppLanguage.KOREAN -> "ZIP 압축 해제 실패"
-    }
-    val importZipNoPhpFound: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "ZIP 中未找到 PHP 文件"
-        AppLanguage.ENGLISH -> "No PHP files found in ZIP"
-        AppLanguage.ARABIC -> "لم يتم العثور على ملفات PHP في ZIP"
-        AppLanguage.PORTUGUESE -> "Nenhum arquivo PHP encontrado no ZIP"
-        AppLanguage.SPANISH -> "No se encontraron archivos PHP en el ZIP"
-        AppLanguage.FRENCH -> "Aucun fichier PHP trouvé dans le ZIP"
-        AppLanguage.GERMAN -> "Keine PHP-Dateien im ZIP gefunden"
-        AppLanguage.RUSSIAN -> "В ZIP не найдены PHP-файлы"
-        AppLanguage.JAPANESE -> "ZIP 内に PHP ファイルが見つかりません"
-        AppLanguage.KOREAN -> "ZIP에서 PHP 파일을 찾을 수 없습니다"
-    }
+
     val importPythonDirNotFound: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "Python 项目目录不存在"
         AppLanguage.ENGLISH -> "Python project directory not found"
@@ -11209,30 +9347,7 @@ object StringsE {
         AppLanguage.JAPANESE -> "横画面固定"
         AppLanguage.KOREAN -> "강제 가로 모드"
     }
-    val specialAdvancedSectionTitle: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "高级配置"
-        AppLanguage.ENGLISH -> "Advanced"
-        AppLanguage.ARABIC -> "إعدادات متقدمة"
-        AppLanguage.PORTUGUESE -> "Avançado"
-        AppLanguage.SPANISH -> "Avanzado"
-        AppLanguage.FRENCH -> "Avancé"
-        AppLanguage.GERMAN -> "Erweitert"
-        AppLanguage.RUSSIAN -> "Дополнительно"
-        AppLanguage.JAPANESE -> "高度設定"
-        AppLanguage.KOREAN -> "고급"
-    }
-    val specialBasicSectionTitle: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "基础开关"
-        AppLanguage.ENGLISH -> "Basic Toggles"
-        AppLanguage.ARABIC -> "تبديلات أساسية"
-        AppLanguage.PORTUGUESE -> "Alternadores Básicos"
-        AppLanguage.SPANISH -> "Interruptores Básicos"
-        AppLanguage.FRENCH -> "Bascules de base"
-        AppLanguage.GERMAN -> "Grundschalter"
-        AppLanguage.RUSSIAN -> "Базовые переключатели"
-        AppLanguage.JAPANESE -> "基本スイッチ"
-        AppLanguage.KOREAN -> "기본 토글"
-    }
+
     val specialBrowsingSectionTitle: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "浏览体验"
         AppLanguage.ENGLISH -> "Browsing"
@@ -11303,32 +9418,10 @@ object StringsE {
     val jsOpenPolicyBlock: String get() = when (Strings.lang) { AppLanguage.CHINESE -> "拦截"; AppLanguage.ENGLISH -> "Block"; AppLanguage.ARABIC -> "حظر"; AppLanguage.PORTUGUESE -> "Bloquear"; AppLanguage.SPANISH -> "Bloquear"; AppLanguage.FRENCH -> "Bloquer"; AppLanguage.GERMAN -> "Blockieren"; AppLanguage.RUSSIAN -> "Блокировать"; AppLanguage.JAPANESE -> "ブロック"; AppLanguage.KOREAN -> "차단"; }
     val jsOpenPolicyPrompt: String get() = when (Strings.lang) { AppLanguage.CHINESE -> "弹窗询问"; AppLanguage.ENGLISH -> "Prompt"; AppLanguage.ARABIC -> "اسألني"; AppLanguage.PORTUGUESE -> "Perguntar"; AppLanguage.SPANISH -> "Preguntar"; AppLanguage.FRENCH -> "Demander"; AppLanguage.GERMAN -> "Fragen"; AppLanguage.RUSSIAN -> "Спрашивать"; AppLanguage.JAPANESE -> "確認"; AppLanguage.KOREAN -> "묻기"; }
 
-
-
     val kernelDisguiseLevelLabel: String get() = when (Strings.lang) { AppLanguage.CHINESE -> "伪装强度"; AppLanguage.ENGLISH -> "Disguise Level"; AppLanguage.ARABIC -> "مستوى التمويه"; AppLanguage.PORTUGUESE -> "Nível de Disfarce"; AppLanguage.SPANISH -> "Nivel de Disfraz"; AppLanguage.FRENCH -> "Niveau de déguisement"; AppLanguage.GERMAN -> "Tarnstufe"; AppLanguage.RUSSIAN -> "Уровень маскировки"; AppLanguage.JAPANESE -> "偽装レベル"; AppLanguage.KOREAN -> "위장 수준"; }
     val kernelDisguiseLevelBasic: String get() = when (Strings.lang) { AppLanguage.CHINESE -> "基础"; AppLanguage.ENGLISH -> "Basic"; AppLanguage.ARABIC -> "أساسي"; AppLanguage.PORTUGUESE -> "Básico"; AppLanguage.SPANISH -> "Básico"; AppLanguage.FRENCH -> "Basique"; AppLanguage.GERMAN -> "Basis"; AppLanguage.RUSSIAN -> "Базовый"; AppLanguage.JAPANESE -> "基本"; AppLanguage.KOREAN -> "기본"; }
     val kernelDisguiseLevelStandard: String get() = when (Strings.lang) { AppLanguage.CHINESE -> "标准"; AppLanguage.ENGLISH -> "Standard"; AppLanguage.ARABIC -> "قياسي"; AppLanguage.PORTUGUESE -> "Padrão"; AppLanguage.SPANISH -> "Estándar"; AppLanguage.FRENCH -> "Standard"; AppLanguage.GERMAN -> "Standard"; AppLanguage.RUSSIAN -> "Стандартный"; AppLanguage.JAPANESE -> "標準"; AppLanguage.KOREAN -> "표준"; }
     val kernelDisguiseLevelDeep: String get() = when (Strings.lang) { AppLanguage.CHINESE -> "深度"; AppLanguage.ENGLISH -> "Deep"; AppLanguage.ARABIC -> "عميق"; AppLanguage.PORTUGUESE -> "Profundo"; AppLanguage.SPANISH -> "Profundo"; AppLanguage.FRENCH -> "Profond"; AppLanguage.GERMAN -> "Tief"; AppLanguage.RUSSIAN -> "Глубокий"; AppLanguage.JAPANESE -> "高度"; AppLanguage.KOREAN -> "심화"; }
-
-    val kernelFlavorTitle: String get() = when (Strings.lang) { AppLanguage.CHINESE -> "内核风味伪装"; AppLanguage.ENGLISH -> "Kernel Flavor Disguise"; AppLanguage.ARABIC -> "تمويه نكهة النواة"; AppLanguage.PORTUGUESE -> "Disfarce de Sabor do Kernel"; AppLanguage.SPANISH -> "Disfraz de Sabor del Kernel"; AppLanguage.FRENCH -> "Déguisement de la saveur du noyau"; AppLanguage.GERMAN -> "Kernel-Flavor-Tarnung"; AppLanguage.RUSSIAN -> "Маскировка аромата ядра"; AppLanguage.JAPANESE -> "カーネル風味偽装"; AppLanguage.KOREAN -> "커널 플레이버 위장"; }
-    val kernelFlavorDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "让页面识别为所选浏览器内核（UA + Sec-CH-UA + userAgentData 一致伪装）。客户端提示请求头经官方 WebView API 下发，不更换真实引擎。"
-        AppLanguage.ENGLISH -> "Make pages detect the selected browser kernel (UA + Sec-CH-UA + userAgentData spoofed consistently). Client-hint request headers are driven through the official WebView API; the real engine is unchanged."
-        AppLanguage.ARABIC -> "اجعل الصفحات تتعرف على نواة المتصفح المختارة (تمويه متسق لـ UA و Sec-CH-UA و userAgentData). يتم إرسال ترويسات تلميحات العميل عبر واجهة WebView الرسمية؛ لا يتغير المحرك الحقيقي."
-        AppLanguage.PORTUGUESE -> "Fazer com que as páginas detectem o kernel do navegador selecionado (UA + Sec-CH-UA + userAgentData falsificados de forma consistente). Os cabeçalhos de client-hint são enviados pela API oficial do WebView; o engine real não é alterado."
-        AppLanguage.SPANISH -> "Hacer que las páginas detecten el kernel del navegador seleccionado (UA + Sec-CH-UA + userAgentData falsificados de forma consistente). Las cabeceras de client-hint se envían a través de la API oficial de WebView; el motor real no cambia."
-        AppLanguage.FRENCH -> "Faire détecter aux pages le noyau de navigateur sélectionné (UA + Sec-CH-UA + userAgentData usurpés de manière cohérente). Les en-têtes client-hint sont envoyés via l'API officielle WebView ; le moteur réel reste inchangé."
-        AppLanguage.GERMAN -> "Seiten den ausgewählten Browser-Kernel erkennen lassen (UA + Sec-CH-UA + userAgentData konsistent getäuscht). Client-Hint-Anfrage-Header werden über die offizielle WebView-API gesendet; die echte Engine bleibt unverändert."
-        AppLanguage.RUSSIAN -> "Заставить страницы определять выбранное ядро браузера (UA + Sec-CH-UA + userAgentData подделаны согласованно). Заголовки client-hint отправляются через официальный API WebView; реальный движок не меняется."
-        AppLanguage.JAPANESE -> "選択したブラウザカーネルをページに検出させます（UA + Sec-CH-UA + userAgentData を一貫して偽装）。Client-hint リクエストヘッダーは公式 WebView API 経由で送信され、実際のエンジンは変更されません。"
-        AppLanguage.KOREAN -> "페이지가 선택한 브라우저 커널을 감지하도록 합니다 (UA + Sec-CH-UA + userAgentData 일관되게 위장). Client-hint 요청 헤더는 공식 WebView API를 통해 전송되며, 실제 엔진은 변경되지 않습니다."
-    }
-    val kernelFlavorLabel: String get() = when (Strings.lang) { AppLanguage.CHINESE -> "目标内核"; AppLanguage.ENGLISH -> "Target Kernel"; AppLanguage.ARABIC -> "النواة المستهدفة"; AppLanguage.PORTUGUESE -> "Kernel de Destino"; AppLanguage.SPANISH -> "Kernel Objetivo"; AppLanguage.FRENCH -> "Noyau cible"; AppLanguage.GERMAN -> "Ziel-Kernel"; AppLanguage.RUSSIAN -> "Целевое ядро"; AppLanguage.JAPANESE -> "ターゲットカーネル"; AppLanguage.KOREAN -> "대상 커널"; }
-    val kernelFlavorChrome: String get() = when (Strings.lang) { AppLanguage.CHINESE -> "Chrome (Blink)"; AppLanguage.ENGLISH -> "Chrome (Blink)"; AppLanguage.ARABIC -> "Chrome (Blink)"; AppLanguage.PORTUGUESE -> "Chrome (Blink)"; AppLanguage.SPANISH -> "Chrome (Blink)"; AppLanguage.FRENCH -> "Chrome (Blink)"; AppLanguage.GERMAN -> "Chrome (Blink)"; AppLanguage.RUSSIAN -> "Chrome (Blink)"; AppLanguage.JAPANESE -> "Chrome (Blink)"; AppLanguage.KOREAN -> "Chrome (Blink)"; }
-    val kernelFlavorEdge: String get() = when (Strings.lang) { AppLanguage.CHINESE -> "Edge (Blink)"; AppLanguage.ENGLISH -> "Edge (Blink)"; AppLanguage.ARABIC -> "Edge (Blink)"; AppLanguage.PORTUGUESE -> "Edge (Blink)"; AppLanguage.SPANISH -> "Edge (Blink)"; AppLanguage.FRENCH -> "Edge (Blink)"; AppLanguage.GERMAN -> "Edge (Blink)"; AppLanguage.RUSSIAN -> "Edge (Blink)"; AppLanguage.JAPANESE -> "Edge (Blink)"; AppLanguage.KOREAN -> "Edge (Blink)"; }
-    val kernelFlavorSamsung: String get() = when (Strings.lang) { AppLanguage.CHINESE -> "三星浏览器 (Blink)"; AppLanguage.ENGLISH -> "Samsung Internet (Blink)"; AppLanguage.ARABIC -> "Samsung Internet (Blink)"; AppLanguage.PORTUGUESE -> "Samsung Internet (Blink)"; AppLanguage.SPANISH -> "Samsung Internet (Blink)"; AppLanguage.FRENCH -> "Samsung Internet (Blink)"; AppLanguage.GERMAN -> "Samsung Internet (Blink)"; AppLanguage.RUSSIAN -> "Samsung Internet (Blink)"; AppLanguage.JAPANESE -> "Samsung Internet (Blink)"; AppLanguage.KOREAN -> "Samsung Internet (Blink)"; }
-    val kernelFlavorFirefox: String get() = when (Strings.lang) { AppLanguage.CHINESE -> "Firefox (Gecko)"; AppLanguage.ENGLISH -> "Firefox (Gecko)"; AppLanguage.ARABIC -> "Firefox (Gecko)"; AppLanguage.PORTUGUESE -> "Firefox (Gecko)"; AppLanguage.SPANISH -> "Firefox (Gecko)"; AppLanguage.FRENCH -> "Firefox (Gecko)"; AppLanguage.GERMAN -> "Firefox (Gecko)"; AppLanguage.RUSSIAN -> "Firefox (Gecko)"; AppLanguage.JAPANESE -> "Firefox (Gecko)"; AppLanguage.KOREAN -> "Firefox (Gecko)"; }
-    val kernelFlavorSafari: String get() = when (Strings.lang) { AppLanguage.CHINESE -> "Safari (WebKit)"; AppLanguage.ENGLISH -> "Safari (WebKit)"; AppLanguage.ARABIC -> "Safari (WebKit)"; AppLanguage.PORTUGUESE -> "Safari (WebKit)"; AppLanguage.SPANISH -> "Safari (WebKit)"; AppLanguage.FRENCH -> "Safari (WebKit)"; AppLanguage.GERMAN -> "Safari (WebKit)"; AppLanguage.RUSSIAN -> "Safari (WebKit)"; AppLanguage.JAPANESE -> "Safari (WebKit)"; AppLanguage.KOREAN -> "Safari (WebKit)"; }
 
     val cloudflareCompatModeLabel: String get() = when (Strings.lang) { AppLanguage.CHINESE -> "兼容模式"; AppLanguage.ENGLISH -> "Compat Mode"; AppLanguage.ARABIC -> "وضع التوافق"; AppLanguage.PORTUGUESE -> "Modo de Compat."; AppLanguage.SPANISH -> "Modo Compat."; AppLanguage.FRENCH -> "Mode compat."; AppLanguage.GERMAN -> "Kompat.-Modus"; AppLanguage.RUSSIAN -> "Режим совместимости"; AppLanguage.JAPANESE -> "互換モード"; AppLanguage.KOREAN -> "호환 모드"; }
     val cloudflareCompatModeAuto: String get() = when (Strings.lang) { AppLanguage.CHINESE -> "自动检测"; AppLanguage.ENGLISH -> "Auto Detect"; AppLanguage.ARABIC -> "كشف تلقائي"; AppLanguage.PORTUGUESE -> "Detecção Automática"; AppLanguage.SPANISH -> "Detección Automática"; AppLanguage.FRENCH -> "Détection auto"; AppLanguage.GERMAN -> "Auto-Erkennung"; AppLanguage.RUSSIAN -> "Авто-обнаружение"; AppLanguage.JAPANESE -> "自動検出"; AppLanguage.KOREAN -> "자동 감지"; }
@@ -11397,7 +9490,6 @@ object StringsE {
     val downloadLocationAskHint: String get() = when (Strings.lang) { AppLanguage.CHINESE -> "每次下载都弹出系统保存对话框，由你选择文件夹。"; AppLanguage.ENGLISH -> "Every download opens the system save dialog so you can pick the folder."; AppLanguage.ARABIC -> "يفتح كل تنزيل مربع حفظ النظام لتختار المجلد."; AppLanguage.PORTUGUESE -> "Cada download abre a caixa de salvamento do sistema para você escolher a pasta."; AppLanguage.SPANISH -> "Cada descarga abre el diálogo de guardado del sistema para que elijas la carpeta."; AppLanguage.FRENCH -> "Chaque téléchargement ouvre la boîte d'enregistrement du système pour choisir le dossier."; AppLanguage.GERMAN -> "Jeder Download öffnet den Systemdialog, damit du den Ordner wählen kannst."; AppLanguage.RUSSIAN -> "Каждая загрузка открывает системный диалог сохранения, чтобы вы выбрали папку."; AppLanguage.JAPANESE -> "ダウンロードのたびにシステムの保存ダイアログが開き、フォルダを選べます。"; AppLanguage.KOREAN -> "다운로드할 때마다 시스템 저장 대화상자가 열려 폴더를 고릅니다."; }
     val downloadLocationCustomPick: String get() = when (Strings.lang) { AppLanguage.CHINESE -> "选择文件夹"; AppLanguage.ENGLISH -> "Pick Folder"; AppLanguage.ARABIC -> "اختر مجلدًا"; AppLanguage.PORTUGUESE -> "Escolher Pasta"; AppLanguage.SPANISH -> "Elegir Carpeta"; AppLanguage.FRENCH -> "Choisir un dossier"; AppLanguage.GERMAN -> "Ordner wählen"; AppLanguage.RUSSIAN -> "Выбрать папку"; AppLanguage.JAPANESE -> "フォルダを選択"; AppLanguage.KOREAN -> "폴더 선택"; }
     val downloadLocationCustomEmpty: String get() = when (Strings.lang) { AppLanguage.CHINESE -> "未选择自定义文件夹"; AppLanguage.ENGLISH -> "No custom folder selected"; AppLanguage.ARABIC -> "لم يتم اختيار مجلد مخصص"; AppLanguage.PORTUGUESE -> "Nenhuma pasta personalizada selecionada"; AppLanguage.SPANISH -> "Ninguna carpeta personalizada seleccionada"; AppLanguage.FRENCH -> "Aucun dossier personnalisé sélectionné"; AppLanguage.GERMAN -> "Kein benutzerdefinierter Ordner gewählt"; AppLanguage.RUSSIAN -> "Своя папка не выбрана"; AppLanguage.JAPANESE -> "カスタムフォルダが未選択"; AppLanguage.KOREAN -> "선택된 사용자 지정 폴더 없음"; }
-    val downloadLocationCustomHint: String get() = when (Strings.lang) { AppLanguage.CHINESE -> "选择一个文件夹作为下载目录"; AppLanguage.ENGLISH -> "Pick a folder as the download directory"; AppLanguage.ARABIC -> "اختر مجلدًا كدليل التنزيل"; AppLanguage.PORTUGUESE -> "Escolha uma pasta como diretório de download"; AppLanguage.SPANISH -> "Elige una carpeta como directorio de descarga"; AppLanguage.FRENCH -> "Choisissez un dossier comme répertoire de téléchargement"; AppLanguage.GERMAN -> "Wählen Sie einen Ordner als Download-Verzeichnis"; AppLanguage.RUSSIAN -> "Выберите папку для загрузок"; AppLanguage.JAPANESE -> "ダウンロード先としてフォルダを選択"; AppLanguage.KOREAN -> "다운로드 디렉터리로 폴더를 선택하세요"; }
 
     val primeActivationModeLabel: String get() = when (Strings.lang) { AppLanguage.CHINESE -> "注入方式"; AppLanguage.ENGLISH -> "Injection Mode"; AppLanguage.ARABIC -> "وضع الحقن"; AppLanguage.PORTUGUESE -> "Modo de Injeção"; AppLanguage.SPANISH -> "Modo de Inyección"; AppLanguage.FRENCH -> "Mode d'injection"; AppLanguage.GERMAN -> "Injektionsmodus"; AppLanguage.RUSSIAN -> "Режим внедрения"; AppLanguage.JAPANESE -> "注入モード"; AppLanguage.KOREAN -> "주입 모드"; }
     val primeActivationModeTap: String get() = when (Strings.lang) { AppLanguage.CHINESE -> "合成触摸"; AppLanguage.ENGLISH -> "Synthetic Tap"; AppLanguage.ARABIC -> "نقرة اصطناعية"; AppLanguage.PORTUGUESE -> "Toque Sintético"; AppLanguage.SPANISH -> "Toque Sintético"; AppLanguage.FRENCH -> "Appui synthétique"; AppLanguage.GERMAN -> "Synthetischer Tap"; AppLanguage.RUSSIAN -> "Синтетическое касание"; AppLanguage.JAPANESE -> "合成タップ"; AppLanguage.KOREAN -> "합성 탭"; }
@@ -12106,30 +10198,7 @@ object StringsE {
         AppLanguage.JAPANESE -> "ローカル設定監査に合格しました。注意: Google Play はコンテンツ（アイコン、URL、注入スクリプト）も審査します。このツールはそれを代替しません。"
         AppLanguage.KOREAN -> "로컬 구성 감사를 통과했습니다. 참고: Google Play는 콘텐츠(아이콘, URL, 주입 스크립트)도 심사하며, 이 도구가 이를 대체하지 않습니다."
     }
-    val playStoreReportBlocked: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "检测到 %d 项严重违规"
-        AppLanguage.ENGLISH -> "%d critical violation(s) detected"
-        AppLanguage.ARABIC -> "تم اكتشاف %d مخالفة خطيرة"
-        AppLanguage.PORTUGUESE -> "%d violação(ões) crítica(s) detectada(s)"
-        AppLanguage.SPANISH -> "%d infracción(es) crítica(s) detectada(s)"
-        AppLanguage.FRENCH -> "%d violation(s) critique(s) détectée(s)"
-        AppLanguage.GERMAN -> "%d kritische(r) Verstoß/Verstöße erkannt"
-        AppLanguage.RUSSIAN -> "%d критических нарушений"
-        AppLanguage.JAPANESE -> "%d 件の重大な違反を検出"
-        AppLanguage.KOREAN -> "%d개의 치명적 위반 감지"
-    }
-    val playStoreReportWarning: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "检测到 %d 项需要注意的配置"
-        AppLanguage.ENGLISH -> "%d configuration(s) need attention"
-        AppLanguage.ARABIC -> "%d تكوين يحتاج إلى انتباه"
-        AppLanguage.PORTUGUESE -> "%d configuração(ões) precisam de atenção"
-        AppLanguage.SPANISH -> "%d configuración(es) necesitan atención"
-        AppLanguage.FRENCH -> "%d configuration(s) nécessitent une attention"
-        AppLanguage.GERMAN -> "%d Konfiguration(en) erfordern Aufmerksamkeit"
-        AppLanguage.RUSSIAN -> "%d конфигураций требуют внимания"
-        AppLanguage.JAPANESE -> "%d 件の設定に注意が必要です"
-        AppLanguage.KOREAN -> "%d개 구성에 주의가 필요합니다"
-    }
+
     val playStoreSeverityBlocker: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "严重"
         AppLanguage.ENGLISH -> "BLOCKER"
@@ -12566,18 +10635,7 @@ object StringsE {
         AppLanguage.JAPANESE -> "ページ構造を分析中..."
         AppLanguage.KOREAN -> "페이지 구조 분석 중..."
     }
-    val scrapeEntryDownloadFailed: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "无法下载入口页面: %s"
-        AppLanguage.ENGLISH -> "Couldn't download the entry page: %s"
-        AppLanguage.ARABIC -> "تعذّر تنزيل صفحة الدخول: %s"
-        AppLanguage.PORTUGUESE -> "Não foi possível baixar a página de entrada: %s"
-        AppLanguage.SPANISH -> "No se pudo descargar la página de entrada: %s"
-        AppLanguage.FRENCH -> "Impossible de télécharger la page d'entrée : %s"
-        AppLanguage.GERMAN -> "Einstiegsseite konnte nicht heruntergeladen werden: %s"
-        AppLanguage.RUSSIAN -> "Не удалось загрузить входную страницу: %s"
-        AppLanguage.JAPANESE -> "エントリページをダウンロードできませんでした: %s"
-        AppLanguage.KOREAN -> "진입 페이지를 다운로드할 수 없습니다: %s"
-    }
+
     val scrapeDownloadingProgress: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "下载中: %d 个文件..."
         AppLanguage.ENGLISH -> "Downloading: %d file(s)..."
@@ -13112,10 +11170,6 @@ object StringsE {
         AppLanguage.KOREAN -> "시작 실패"
     }
 
-
-
-
-
     val rulePathApkEncryption: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "应用编辑 → APK 导出 → APK 加密"
         AppLanguage.ENGLISH -> "App Editor → APK Export → APK Encryption"
@@ -13194,7 +11248,6 @@ object StringsE {
         AppLanguage.KOREAN -> "Play에 게시하기 전에 SSL 인증서 오류 무시를 비활성화하세요. 인증서 검증 실패(만료, 불일치, 신뢰 불가)를 모두 통과시키는 것은 Play 정책이 명시하는 안전하지 않은 구현이며 심사 거절 가능성이 높습니다. 사이드로드 전용 배포에는 영향이 없습니다."
     }
 
-
     val rulePathBrowserDisguise: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "应用编辑 → 浏览器指纹伪装"
         AppLanguage.ENGLISH -> "App Editor → Browser Fingerprint Disguise"
@@ -13233,7 +11286,6 @@ object StringsE {
         AppLanguage.JAPANESE -> "ブラウザフィンガープリント偽装の無効化を検討してください。サイトアクセスのために正当に必要な場合は残しても構いませんが、Play 審査で理由を説明できるように準備してください。"
         AppLanguage.KOREAN -> "브라우저 핑거프린트 위장 비활성화를 고려하세요. 사이트 접근을 위해 정당하게 필요하다면 유지하되, Play 심사 중에 이를 정당화할 준비를 하세요."
     }
-
 
     val rulePathDeviceDisguise: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "应用编辑 → 设备伪装"
@@ -13274,7 +11326,6 @@ object StringsE {
         AppLanguage.KOREAN -> "기기 위장을 비활성화하세요. Android 기기를 iPhone/데스크톱 브라우저로 위장하는 것은 일반적으로 Play에서 허위 표현으로 간주됩니다."
     }
 
-
     val rulePathExtensions: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "应用编辑 → 扩展模块"
         AppLanguage.ENGLISH -> "App Editor → Extension Modules"
@@ -13313,7 +11364,6 @@ object StringsE {
         AppLanguage.JAPANESE -> "すべての外部拡張モジュールを削除してください。Play ポリシー 6.1 は、Play 経由で配信されていないコード（モジュールマーケットのモジュールを含む）の実行を禁止しています。"
         AppLanguage.KOREAN -> "모든 외부 확장 모듈을 제거하세요. Play 정책 6.1은 모듈 마켓 모듈을 포함하여 Play가 제공하지 않은 코드의 실행을 금지합니다."
     }
-
 
     val rulePathAutostart: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "应用编辑 → 自启动 + 后台运行"
@@ -13354,7 +11404,6 @@ object StringsE {
         AppLanguage.KOREAN -> "자동 시작 또는 백그라운드 실행 중 하나를 비활성화하세요. 부팅 시 시작 + 지속적 백그라운드 조합은 Play에서 명확한 기능적 정당성이 필요합니다."
     }
 
-
     val rulePathUserScripts: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "应用编辑 → 注入脚本"
         AppLanguage.ENGLISH -> "App Editor → Injected Scripts"
@@ -13393,7 +11442,6 @@ object StringsE {
         AppLanguage.JAPANESE -> "注入した JS/CSS に悪意ある振る舞い（トラッキング、キーロギング、資格情報の盗難）が含まれていないことを確認してください。Play 審査でこれらのスクリプトがスキャンされます。"
         AppLanguage.KOREAN -> "주입한 JS/CSS에 악의적 행동(추적, 키로깅, 자격증명 탈취)이 없는지 확인하세요. Play 심사에서 이 스크립트들을 스캔합니다."
     }
-
 
     val rulePathPackageName: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "APK 导出 → 自定义包名"
@@ -13434,7 +11482,6 @@ object StringsE {
         AppLanguage.KOREAN -> "패키지 이름에 주요 브랜드 키워드가 포함된 것으로 보입니다. 자신의 역방향 도메인 이름(예: com.yourname.appname)으로 변경하세요."
     }
 
-
     val rulePathActivation: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "应用编辑 → 激活码门控"
         AppLanguage.ENGLISH -> "App Editor → Activation Code Gating"
@@ -13473,7 +11520,6 @@ object StringsE {
         AppLanguage.JAPANESE -> "Play のペイウォールは Play Billing を使用する必要があります。アクティベーションコードで有料コンテンツをアンロックしている場合、Play アプリ内課金に切り替えてください。そうしないと支払いポリシーに違反する可能性があります。"
         AppLanguage.KOREAN -> "Play의 페이월은 Play 결제를 사용해야 합니다. 활성화 코드가 유료 콘텐츠를 잠금 해제한다면 Play 인앱 구매로 전환하세요. 그렇지 않으면 결제 정책을 위반할 수 있습니다."
     }
-
 
     val rulePathServerRuntime: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "应用类型 → PHP / Node.js / Python / Go / WordPress"
@@ -13514,11 +11560,6 @@ object StringsE {
         AppLanguage.KOREAN -> "이 앱 유형은 앱 데이터 디렉터리 내 ELF 바이너리의 fork+exec에 의존합니다 (PHP/Node/Python/Go 인터프리터, WordPress에 포함된 PHP). Play는 targetSdk ≥ 36를 요구하지만 Android 10+ SELinux가 이 exec를 차단하여 설치된 앱이 시작되지 않습니다. Play를 겨냥하기 전에 앱 유형을 순수 프론트엔드(Website / HTML / React / Vue / Image / Video / Gallery / Multi-Web)로 전환하세요."
     }
 
-
-
-
-
-
     val appModifierSubtitle: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "选择应用，重塑名称、图标与启动体验"
         AppLanguage.ENGLISH -> "Pick an app, then reshape its name, icon, and launch experience"
@@ -13530,45 +11571,6 @@ object StringsE {
         AppLanguage.RUSSIAN -> "Выберите приложение и измените имя, иконку и запуск"
         AppLanguage.JAPANESE -> "アプリを選び、名前・アイコン・起動体験を再構成"
         AppLanguage.KOREAN -> "앱을 고른 뒤 이름, 아이콘, 실행 경험을 재구성"
-    }
-
-    val appModifierLibraryTitle: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "设备应用库"
-        AppLanguage.ENGLISH -> "Device app library"
-        AppLanguage.ARABIC -> "مكتبة تطبيقات الجهاز"
-        AppLanguage.PORTUGUESE -> "Biblioteca de apps do dispositivo"
-        AppLanguage.SPANISH -> "Biblioteca de apps del dispositivo"
-        AppLanguage.FRENCH -> "Bibliothèque d'apps de l'appareil"
-        AppLanguage.GERMAN -> "Geräte-App-Bibliothek"
-        AppLanguage.RUSSIAN -> "Библиотека приложений устройства"
-        AppLanguage.JAPANESE -> "端末アプライブラリ"
-        AppLanguage.KOREAN -> "기기 앱 라이브러리"
-    }
-
-    val appModifierLibraryHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "一次扫描，本地筛选与排序，进入身份改造"
-        AppLanguage.ENGLISH -> "Scan once, filter locally, then reshape identity"
-        AppLanguage.ARABIC -> "امسح مرة واحدة، صفِّ محليًا، ثم أعد تشكيل الهوية"
-        AppLanguage.PORTUGUESE -> "Escaneie uma vez, filtre localmente e redefina a identidade"
-        AppLanguage.SPANISH -> "Escanea una vez, filtra en local y redefine la identidad"
-        AppLanguage.FRENCH -> "Scannez une fois, filtrez localement, puis refaçonnez l'identité"
-        AppLanguage.GERMAN -> "Einmal scannen, lokal filtern, Identität umgestalten"
-        AppLanguage.RUSSIAN -> "Одно сканирование, локальные фильтры и смена идентичности"
-        AppLanguage.JAPANESE -> "一度スキャンし、端末内で絞り込み、アイデンティティを再構成"
-        AppLanguage.KOREAN -> "한 번 스캔 후 로컬에서 필터링하고 정체성을 재구성"
-    }
-
-    val appModifierMetricTotal: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "全部"
-        AppLanguage.ENGLISH -> "Total"
-        AppLanguage.ARABIC -> "الإجمالي"
-        AppLanguage.PORTUGUESE -> "Total"
-        AppLanguage.SPANISH -> "Total"
-        AppLanguage.FRENCH -> "Total"
-        AppLanguage.GERMAN -> "Gesamt"
-        AppLanguage.RUSSIAN -> "Всего"
-        AppLanguage.JAPANESE -> "合計"
-        AppLanguage.KOREAN -> "전체"
     }
 
     val appModifierLoading: String get() = when (Strings.lang) {
@@ -13699,19 +11701,6 @@ object StringsE {
         AppLanguage.RUSSIAN -> "Новая идентичность"
         AppLanguage.JAPANESE -> "新しいアイデンティティ"
         AppLanguage.KOREAN -> "새 정체성"
-    }
-
-    val appModifierCustomIcon: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "自定义图标"
-        AppLanguage.ENGLISH -> "Custom icon"
-        AppLanguage.ARABIC -> "أيقونة مخصصة"
-        AppLanguage.PORTUGUESE -> "Ícone personalizado"
-        AppLanguage.SPANISH -> "Icono personalizado"
-        AppLanguage.FRENCH -> "Icône personnalisée"
-        AppLanguage.GERMAN -> "Benutzerdefiniertes Symbol"
-        AppLanguage.RUSSIAN -> "Своя иконка"
-        AppLanguage.JAPANESE -> "カスタムアイコン"
-        AppLanguage.KOREAN -> "사용자 지정 아이콘"
     }
 
     val appModifierOutputMode: String get() = when (Strings.lang) {
@@ -13946,19 +11935,6 @@ object StringsE {
         AppLanguage.RUSSIAN -> "Ставьте только нужное. Composer требует PHP"
         AppLanguage.JAPANESE -> "必要なものだけ。Composer は PHP が前提"
         AppLanguage.KOREAN -> "프로젝트에 필요한 것만 설치. Composer는 PHP 필요"
-    }
-
-    val linuxEnvOptionalShort: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "可选"
-        AppLanguage.ENGLISH -> "Optional"
-        AppLanguage.ARABIC -> "اختياري"
-        AppLanguage.PORTUGUESE -> "Opcional"
-        AppLanguage.SPANISH -> "Opcional"
-        AppLanguage.FRENCH -> "Optionnel"
-        AppLanguage.GERMAN -> "Optional"
-        AppLanguage.RUSSIAN -> "Опционально"
-        AppLanguage.JAPANESE -> "オプション"
-        AppLanguage.KOREAN -> "선택"
     }
 
     val linuxEnvMaintenance: String get() = when (Strings.lang) {
@@ -14338,45 +12314,6 @@ object StringsE {
         AppLanguage.KOREAN -> "패키징에 필요한 런타임을 설치·업데이트·관리"
     }
 
-    val depSearchHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "搜索运行时或依赖…"
-        AppLanguage.ENGLISH -> "Search runtimes or dependencies…"
-        AppLanguage.ARABIC -> "ابحث عن أوقات التشغيل أو التبعيات…"
-        AppLanguage.PORTUGUESE -> "Pesquisar runtimes ou dependências…"
-        AppLanguage.SPANISH -> "Buscar runtimes o dependencias…"
-        AppLanguage.FRENCH -> "Rechercher des runtimes ou dépendances…"
-        AppLanguage.GERMAN -> "Runtimes oder Abhängigkeiten suchen…"
-        AppLanguage.RUSSIAN -> "Поиск сред или зависимостей…"
-        AppLanguage.JAPANESE -> "ランタイムや依存関係を検索…"
-        AppLanguage.KOREAN -> "런타임 또는 종속성 검색…"
-    }
-
-    val depFilterReady: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "已就绪"
-        AppLanguage.ENGLISH -> "Ready"
-        AppLanguage.ARABIC -> "جاهز"
-        AppLanguage.PORTUGUESE -> "Pronto"
-        AppLanguage.SPANISH -> "Listo"
-        AppLanguage.FRENCH -> "Prêt"
-        AppLanguage.GERMAN -> "Bereit"
-        AppLanguage.RUSSIAN -> "Готово"
-        AppLanguage.JAPANESE -> "準備完了"
-        AppLanguage.KOREAN -> "준비됨"
-    }
-
-    val depFilterMissing: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "未安装"
-        AppLanguage.ENGLISH -> "Missing"
-        AppLanguage.ARABIC -> "غير مثبت"
-        AppLanguage.PORTUGUESE -> "Ausente"
-        AppLanguage.SPANISH -> "Faltante"
-        AppLanguage.FRENCH -> "Manquant"
-        AppLanguage.GERMAN -> "Fehlt"
-        AppLanguage.RUSSIAN -> "Не установлено"
-        AppLanguage.JAPANESE -> "未インストール"
-        AppLanguage.KOREAN -> "미설치"
-    }
-
     val depReinstall: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "重新安装"
         AppLanguage.ENGLISH -> "Reinstall"
@@ -14427,19 +12364,6 @@ object StringsE {
         AppLanguage.RUSSIAN -> "Ошибка установки. Проверьте сеть и повторите"
         AppLanguage.JAPANESE -> "インストールに失敗しました。ネットワークを確認して再試行"
         AppLanguage.KOREAN -> "설치 실패. 네트워크를 확인한 뒤 다시 시도하세요"
-    }
-
-    val depNoMatch: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "没有匹配的运行时"
-        AppLanguage.ENGLISH -> "No matching runtimes"
-        AppLanguage.ARABIC -> "لا توجد أوقات تشغيل مطابقة"
-        AppLanguage.PORTUGUESE -> "Nenhum runtime correspondente"
-        AppLanguage.SPANISH -> "No hay runtimes coincidentes"
-        AppLanguage.FRENCH -> "Aucun runtime correspondant"
-        AppLanguage.GERMAN -> "Keine passenden Runtimes"
-        AppLanguage.RUSSIAN -> "Нет подходящих сред"
-        AppLanguage.JAPANESE -> "一致するランタイムがありません"
-        AppLanguage.KOREAN -> "일치하는 런타임 없음"
     }
 
     val depStorageEmpty: String get() = when (Strings.lang) {
@@ -14914,7 +12838,6 @@ object StringsE {
         AppLanguage.KOREAN -> "WordPress 프로젝트 디렉터리가 예기치 않게 사라졌습니다: $path"
     }
 
-
     val translateEngineAuto: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "自动选择"
         AppLanguage.ENGLISH -> "Auto"
@@ -14953,7 +12876,6 @@ object StringsE {
         AppLanguage.JAPANESE -> "Blob 動画はページからダウンロードしてください"
         AppLanguage.KOREAN -> "Blob 동영상은 페이지에서 다운로드해야 합니다"
     }
-
 
     // ---- AI API error messages (#945) ----
 
@@ -15609,7 +13531,6 @@ object StringsE {
         AppLanguage.KOREAN -> "SQLite 플러그인 압축 해제 실패: $detail"
     }
 
-
     fun downloadTooSmall(label: String, size: Long): String = when (Strings.lang) {
         AppLanguage.CHINESE -> "$label 下载内容过小（${size} bytes），可能是错误页"
         AppLanguage.ENGLISH -> "$label download too small (${size} bytes) — possibly an error page"
@@ -16139,45 +14060,6 @@ object StringsE {
         AppLanguage.KOREAN -> "플러그인 검색…"
     }
 
-    val pluginKindHcj: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "网页插件"
-        AppLanguage.ENGLISH -> "Web plugin"
-        AppLanguage.ARABIC -> "إضافة ويب"
-        AppLanguage.PORTUGUESE -> "Plugin web"
-        AppLanguage.SPANISH -> "Plugin web"
-        AppLanguage.FRENCH -> "Plugin web"
-        AppLanguage.GERMAN -> "Web-Plugin"
-        AppLanguage.RUSSIAN -> "Веб-плагин"
-        AppLanguage.JAPANESE -> "Webプラグイン"
-        AppLanguage.KOREAN -> "웹 플러그인"
-    }
-
-    val pluginKindUserscript: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "用户脚本"
-        AppLanguage.ENGLISH -> "Userscript"
-        AppLanguage.ARABIC -> "نص مستخدم"
-        AppLanguage.PORTUGUESE -> "Userscript"
-        AppLanguage.SPANISH -> "Userscript"
-        AppLanguage.FRENCH -> "Userscript"
-        AppLanguage.GERMAN -> "Benutzerskript"
-        AppLanguage.RUSSIAN -> "Юзерскрипт"
-        AppLanguage.JAPANESE -> "ユーザースクリプト"
-        AppLanguage.KOREAN -> "유저스크립트"
-    }
-
-    val pluginKindChrome: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "Chrome 扩展"
-        AppLanguage.ENGLISH -> "Chrome ext."
-        AppLanguage.ARABIC -> "إضافة Chrome"
-        AppLanguage.PORTUGUESE -> "Ext. Chrome"
-        AppLanguage.SPANISH -> "Ext. Chrome"
-        AppLanguage.FRENCH -> "Ext. Chrome"
-        AppLanguage.GERMAN -> "Chrome-Erw."
-        AppLanguage.RUSSIAN -> "Расш. Chrome"
-        AppLanguage.JAPANESE -> "Chrome拡張"
-        AppLanguage.KOREAN -> "Chrome 확장"
-    }
-
     val pluginSectionInstalled: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "已安装"
         AppLanguage.ENGLISH -> "Installed"
@@ -16373,8 +14255,6 @@ object StringsE {
         AppLanguage.KOREAN -> "전체 화면 대화상자"
     }
 
-
-
     val pluginRestoreBuiltIns: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "恢复内置插件"
         AppLanguage.ENGLISH -> "Restore built-in plugins"
@@ -16490,19 +14370,6 @@ object StringsE {
         AppLanguage.RUSSIAN -> "Один шаблон совпадения в строке; * соответствует всем страницам"
         AppLanguage.JAPANESE -> "1 行に 1 つのマッチパターン。* はすべてのページに一致"
         AppLanguage.KOREAN -> "한 줄에 하나의 일치 패턴; *는 모든 페이지와 일치"
-    }
-
-    val pluginFieldId: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "插件 ID"
-        AppLanguage.ENGLISH -> "Plugin ID"
-        AppLanguage.ARABIC -> "معرّف الإضافة"
-        AppLanguage.PORTUGUESE -> "ID do plugin"
-        AppLanguage.SPANISH -> "ID del plugin"
-        AppLanguage.FRENCH -> "ID du plugin"
-        AppLanguage.GERMAN -> "Plugin-ID"
-        AppLanguage.RUSSIAN -> "ID плагина"
-        AppLanguage.JAPANESE -> "プラグイン ID"
-        AppLanguage.KOREAN -> "플러그인 ID"
     }
 
     val pluginFieldVersion: String get() = when (Strings.lang) {
@@ -16804,7 +14671,6 @@ object StringsE {
         AppLanguage.KOREAN -> "${count}개 선택됨"
     }
 
-
     val buildHistoryTitle: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "构建历史"
         AppLanguage.ENGLISH -> "Build History"
@@ -16973,7 +14839,6 @@ object StringsE {
         AppLanguage.JAPANESE -> "グリッド"
         AppLanguage.KOREAN -> "그리드"
     }
-
 
     val typeDescWeb: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "把任意网站包装成原生应用"

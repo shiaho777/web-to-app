@@ -92,8 +92,6 @@ no bitmap assets.
 - `WtaKawaiiCloud(bodyColor, faceColor, blushColor, sleeping)` — soft cloud
   with dot eyes, smile, and blush; `sleeping = true` closes the eyes and adds
   dream bubbles.
-- `WtaKawaiiStar(...)` — rounded five-point star with a face.
-- `WtaKawaiiSparkle(color)` — four-point sparkle accent (no face).
 - `WtaKawaiiBox(...)` — open box with a face, for "nothing here yet" moments.
 - `WtaIdleFloat(amplitudeDp, tiltDegrees) { ... }` — gentle idle bob + tilt
   wrapper; static when the user disables animations. Wrap illustration heroes
@@ -202,7 +200,7 @@ rather than assigning each screen its own polygon family.
   Compose tree mirrors live on language switch without activity recreation.
   Screens must not hard-code left/right assumptions; use start/end semantics.
 - `WtaTransitions.kt` is the shared transition vocabulary: `WtaFadeIn/Out`,
-  `WtaExpandIn/ShrinkOut`, `WtaPopIn/Out`, `WtaSlideUpIn/DownOut`, and
+  `WtaExpandIn/ShrinkOut`, `WtaPopIn/Out`, and
   `wtaTabEnter/ExitTransition(direction)`. Never use bare `fadeIn()` /
   `fadeOut()` / `expandVertically()` / `shrinkVertically()` — they fall back to
   default bezier curves instead of the expressive motion scheme.

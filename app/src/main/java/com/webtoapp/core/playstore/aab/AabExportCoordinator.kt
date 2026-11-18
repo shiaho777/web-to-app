@@ -170,11 +170,5 @@ class AabExportCoordinator(private val context: Context) {
         private const val BUILD_METADATA_SUFFIX = ".build.json"
 
         private const val DEFAULT_VERSION_NAME = "1.0.0"
-
-        @Deprecated(
-            "Use AppType.requiresProcessExec / AppType.REQUIRES_PROCESS_EXEC",
-            replaceWith = ReplaceWith("AppType.REQUIRES_PROCESS_EXEC")
-        )
-        val PROCESS_EXEC_APP_TYPES: Set<AppType> get() = AppType.REQUIRES_PROCESS_EXEC
     }
 }

@@ -90,20 +90,18 @@ class BackgroundRunService : Service() {
 
         fun requestIgnoreBatteryOptimizations(context: Context) {
             try {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    val powerManager = context.getSystemService(Context.POWER_SERVICE) as? PowerManager
-                    if (powerManager?.isIgnoringBatteryOptimizations(context.packageName) == false) {
-                        val intent = Intent(
-                            android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS
-                        ).apply {
-                            data = android.net.Uri.parse("package:${context.packageName}")
-                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        }
-                        context.startActivity(intent)
-                        AppLogger.i(TAG, "已请求忽略电池优化")
-                    } else {
-                        AppLogger.i(TAG, "已在电池优化白名单中")
+                val powerManager = context.getSystemService(Context.POWER_SERVICE) as? PowerManager
+                if (powerManager?.isIgnoringBatteryOptimizations(context.packageName) == false) {
+                    val intent = Intent(
+                        android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS
+                    ).apply {
+                        data = android.net.Uri.parse("package:${context.packageName}")
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     }
+                    context.startActivity(intent)
+                    AppLogger.i(TAG, "已请求忽略电池优化")
+                } else {
+                    AppLogger.i(TAG, "已在电池优化白名单中")
                 }
             } catch (e: Exception) {
                 AppLogger.e(TAG, "请求忽略电池优化失败", e)
@@ -116,7 +114,6 @@ class BackgroundRunService : Service() {
          */
         fun maybeRequestBatteryExemption(context: Context) {
             try {
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return
                 val powerManager = context.getSystemService(Context.POWER_SERVICE) as? PowerManager
                     ?: return
                 if (powerManager.isIgnoringBatteryOptimizations(context.packageName)) return
