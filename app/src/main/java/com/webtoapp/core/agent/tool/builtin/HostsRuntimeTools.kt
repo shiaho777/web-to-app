@@ -66,7 +66,7 @@ class ManageHostsRulesTool : Tool {
         string("url", "URL for import_url action.")
         string("displayName", "For import_url: optional friendly name for the imported source.")
         string("sourceKey", "Source key for toggle/remove (use GetAdBlockStatus to find keys).")
-        boolean("enabled", "For toggle: true to enable, false to disable.")
+        boolean("enabled", "For toggle (required): true to enable, false to disable.")
     }
     override fun isReadOnly() = false
     override fun activityDescription(args: JsonObject): String? =
@@ -84,7 +84,8 @@ class ManageHostsRulesTool : Tool {
             }
             "toggle" -> {
                 val key = args.get("sourceKey")?.asString ?: return ToolResult.error("ManageHostsRules: missing `sourceKey`.")
-                val enabled = args.get("enabled")?.asBoolean ?: true
+                val enabled = args.get("enabled")?.asBoolean
+                    ?: return ToolResult.error("ManageHostsRules: toggle requires `enabled` (true to enable, false to disable).")
                 val result = blocker.setHostsSourceEnabled(ctx.androidContext, key, enabled)
                 if (result.isSuccess) ToolResult.ok("Source $key ${if (enabled) "enabled" else "disabled"}.")
                 else ToolResult.error("Toggle failed: ${result.exceptionOrNull()?.message}")
@@ -185,10 +186,11 @@ class ClearRuntimeCacheTool : Tool {
     override val name = "ClearRuntimeCache"
     override val description = """
         Uninstall one or all server runtimes (PHP/WordPress, Node.js, Python, Go) to free disk
-        space. This deletes the installed runtime binaries, not just a temporary download cache:
+        space. This deletes the downloaded runtime binaries, not just a temporary download cache:
         afterwards GetRuntimeStatus reports them not ready, and preview/export for those app
-        types fails until InstallRuntime downloads them again. Only call this when the user
-        explicitly wants to remove a runtime or reclaim its disk space.
+        types fails until InstallRuntime downloads them again. Exception: Node.js bundled in
+        the APK's native libs stays ready after clearing the download cache. Only call this
+        when the user explicitly wants to remove a runtime or reclaim its disk space.
     """.trimIndent()
     override val parametersSchema: JsonElement = jsonSchema {
         enum("runtime", listOf("php", "node", "python", "go"), "Uninstall a specific runtime only (default: all).")
@@ -206,8 +208,13 @@ class ClearRuntimeCacheTool : Tool {
         if (target == null || target == "node") NodeDependencyManager.clearCache(c)
         if (target == null || target == "python") PythonDependencyManager.clearCache(c)
         if (target == null || target == "go") GoToolchainManager.clearCache(c)
-        return ToolResult.ok(
-            "Uninstalled ${target ?: "all"} runtime(s). They must be re-downloaded via InstallRuntime before preview/export works again."
-        )
+        val stillReady = mutableListOf<String>()
+        if ((target == null || target == "php") && WordPressDependencyManager.isPhpReady(c)) stillReady.add("php")
+        if ((target == null || target == "node") && NodeDependencyManager.isNodeReady(c)) stillReady.add("node")
+        if ((target == null || target == "python") && PythonDependencyManager.isPythonReady(c)) stillReady.add("python")
+        if ((target == null || target == "go") && GoToolchainManager.isGoReady(c)) stillReady.add("go")
+        val base = "Cleared ${target ?: "all"} runtime download(s); re-download via InstallRuntime before preview/export needs them."
+        return if (stillReady.isEmpty()) ToolResult.ok(base)
+        else ToolResult.ok("$base Still ready (bundled or residual): ${stillReady.joinToString(", ")}.")
     }
 }

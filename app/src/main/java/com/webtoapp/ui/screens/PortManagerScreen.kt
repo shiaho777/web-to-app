@@ -186,7 +186,7 @@ fun PortManagerScreen(onBack: () -> Unit) {
 
     fun killAllServices() {
         scope.launch {
-            val count = ProcessPortScanner.killAllProcesses(context)
+            val (count, _) = ProcessPortScanner.killAllProcesses(context)
             snackbarHostState.showSnackbar(Strings.portManagerAllKilled.format(count))
             delay(300)
             doScan()

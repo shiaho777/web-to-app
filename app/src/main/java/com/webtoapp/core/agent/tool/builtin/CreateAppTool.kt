@@ -62,11 +62,14 @@ class CreateAppTool : Tool {
         val manifest = args.get("manifest")?.asString
         val sourceDir = ctx.resolveSafePath(args.get("sourceDir")?.asString)
 
-        val iconPath = iconRef?.let { ref ->
-            ctx.fileManager.readBytes(ctx.sessionId, ref)?.let { bytes ->
-                IconStorage.saveIconFromBytes(ctx.androidContext, bytes)
-            }
-        }
+        val iconPath = if (iconRef != null) {
+            val bytes = ctx.fileManager.readBytes(ctx.sessionId, iconRef)
+                ?: return ToolResult.error(
+                    "CreateApp: iconRef '$iconRef' could not be read from the session sandbox. " +
+                        "Upload the icon first or omit iconRef."
+                )
+            IconStorage.saveIconFromBytes(ctx.androidContext, bytes)
+        } else null
 
         return when {
             appType == AppType.WORDPRESS -> createWordPress(ctx, name, iconPath, manifest)

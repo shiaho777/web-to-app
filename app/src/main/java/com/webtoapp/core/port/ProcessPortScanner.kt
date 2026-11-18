@@ -134,22 +134,26 @@ object ProcessPortScanner {
 
     suspend fun killProcess(port: Int): Boolean = withContext(Dispatchers.IO) {
         try {
-            PortManager.release(port)
-            AppLogger.i(TAG, "已释放端口 $port")
-            true
+            val stopped = PortManager.release(port)
+            if (stopped) {
+                AppLogger.i(TAG, "已释放端口 $port")
+            } else {
+                AppLogger.w(TAG, "端口 $port 已释放，但 stop handler 失败，运行时可能仍在运行")
+            }
+            stopped
         } catch (e: Exception) {
             AppLogger.e(TAG, "终止端口 $port 的进程失败", e)
             false
         }
     }
 
-    suspend fun killAllProcesses(context: Context): Int = withContext(Dispatchers.IO) {
+    suspend fun killAllProcesses(context: Context): Pair<Int, List<Int>> = withContext(Dispatchers.IO) {
         val allocations = PortManager.getAllAllocations()
         val count = allocations.size
 
-        PortManager.releaseAll()
+        val failed = PortManager.releaseAll()
 
-        AppLogger.i(TAG, "已终止 $count 个服务")
-        count
+        AppLogger.i(TAG, "已终止 $count 个服务 (stop handler 失败: ${failed.size})")
+        count to failed
     }
 }

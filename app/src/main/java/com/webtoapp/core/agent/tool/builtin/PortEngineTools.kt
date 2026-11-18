@@ -67,9 +67,15 @@ class KillAllPortsTool : Tool {
     override val parametersSchema: JsonElement = jsonSchema {}
     override fun isReadOnly() = false
     override suspend fun execute(args: JsonObject, ctx: ToolContext): ToolResult {
-        val count = ProcessPortScanner.killAllProcesses(ctx.androidContext)
-        return if (count == 0) ToolResult.ok("No WebToApp-managed services were running; nothing was released.")
-        else ToolResult.ok("Stopped $count managed service(s) and released their port allocations.")
+        val (count, failed) = ProcessPortScanner.killAllProcesses(ctx.androidContext)
+        return when {
+            count == 0 -> ToolResult.ok("No WebToApp-managed services were running; nothing was released.")
+            failed.isEmpty() -> ToolResult.ok("Stopped $count managed service(s) and released their port allocations.")
+            else -> ToolResult.ok(
+                "Released $count port allocation(s), but ${failed.size} stop handler(s) failed " +
+                    "(ports ${failed.joinToString(", ")}); those runtimes may still be running."
+            )
+        }
     }
 }
 
