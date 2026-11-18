@@ -1180,14 +1180,16 @@ open class WebViewActivity : AppCompatActivity() {
                     // Download location config follows the same preview/intent-vs-appid
                     // sourcing as the bridges below.
                     val effectiveDownloadConfig = previewApp?.webViewConfig ?: loadedApp?.webViewConfig
-                    val downloadBridge = com.webtoapp.core.webview.DownloadBridge(
-                        this@WebViewActivity,
-                        lifecycleScope,
-                        effectiveDownloadConfig?.downloadLocationMode ?: com.webtoapp.data.model.DownloadLocationMode.SYSTEM_DOWNLOAD,
-                        effectiveDownloadConfig?.customDownloadDirUri ?: "",
-                        effectiveDownloadConfig?.mediaAlbumName ?: ""
-                    )
-                    wv.addJavascriptInterface(downloadBridge, com.webtoapp.core.webview.DownloadBridge.JS_INTERFACE_NAME)
+                    if (effectiveDownloadConfig?.downloadEnabled != false) {
+                        val downloadBridge = com.webtoapp.core.webview.DownloadBridge(
+                            this@WebViewActivity,
+                            lifecycleScope,
+                            effectiveDownloadConfig?.downloadLocationMode ?: com.webtoapp.data.model.DownloadLocationMode.SYSTEM_DOWNLOAD,
+                            effectiveDownloadConfig?.customDownloadDirUri ?: "",
+                            effectiveDownloadConfig?.mediaAlbumName ?: ""
+                        )
+                        wv.addJavascriptInterface(downloadBridge, com.webtoapp.core.webview.DownloadBridge.JS_INTERFACE_NAME)
+                    }
 
                     val previewWvConfig = previewApp?.webViewConfig
                     if (previewWvConfig?.enablePrintBridge != false) {
@@ -4364,10 +4366,14 @@ fun WebViewScreen(
                                                 context = context,
                                                 scope = scope,
                                                 webViewProvider = { this },
-                                                capabilities = effectiveWebApp.webViewConfig.nativeBridgeCapabilities
-                                                    .withNotificationPolyfill(
-                                                        effectiveWebApp.webViewConfig.enableNotificationPolyfill
-                                                    ),
+                                                capabilities = if (effectiveWebApp.webViewConfig.enableNativeBridge) {
+                                                    effectiveWebApp.webViewConfig.nativeBridgeCapabilities
+                                                        .withNotificationPolyfill(
+                                                            effectiveWebApp.webViewConfig.enableNotificationPolyfill
+                                                        )
+                                                } else {
+                                                    com.webtoapp.data.model.notificationPolyfillOnlyCapabilities()
+                                                },
                                                 corsBypass = effectiveWebApp.webViewConfig.enableCorsBypass,
                                                 downloadLocationMode = effectiveWebApp.webViewConfig.downloadLocationMode,
                                                 customDownloadDirUri = effectiveWebApp.webViewConfig.customDownloadDirUri,
@@ -4410,9 +4416,9 @@ fun WebViewScreen(
                                             allowFileAccess = true
                                             allowContentAccess = true
                                             @Suppress("DEPRECATION")
-                                            allowFileAccessFromFileURLs = true
+                                            allowFileAccessFromFileURLs = currentApp.webViewConfig.allowFileAccessFromFileURLs
                                             @Suppress("DEPRECATION")
-                                            allowUniversalAccessFromFileURLs = true
+                                            allowUniversalAccessFromFileURLs = currentApp.webViewConfig.allowUniversalAccessFromFileURLs
                                             javaScriptEnabled = currentApp.htmlConfig?.enableJavaScript ?: true
                                             domStorageEnabled = currentApp.htmlConfig?.enableLocalStorage ?: true
                                             mediaPlaybackRequiresUserGesture = false

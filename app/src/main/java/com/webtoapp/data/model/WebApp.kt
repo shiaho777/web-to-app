@@ -1923,6 +1923,32 @@ data class NativeBridgeCapabilities(
 fun NativeBridgeCapabilities.withNotificationPolyfill(polyfillEnabled: Boolean): NativeBridgeCapabilities =
     if (polyfillEnabled) copy(notification = true) else this
 
+fun notificationPolyfillOnlyCapabilities(): NativeBridgeCapabilities = NativeBridgeCapabilities(
+    clipboard = false,
+    vibration = false,
+    geolocation = false,
+    brightness = false,
+    notification = true,
+    notificationScheduled = false,
+    notificationPersistent = false,
+    download = false,
+    privateNetwork = false,
+    screenWake = false,
+    openExternal = false,
+    deviceInfo = false,
+    securityInfo = false,
+    networkInfo = false,
+    toast = false,
+    logging = false,
+    findInPage = false,
+    orientation = false,
+    fullscreen = false,
+    print = false,
+    googleSignIn = false,
+    googleSignInClientId = "",
+    directory = false,
+)
+
 enum class GeolocationAccuracy {
 
     COARSE,

@@ -148,10 +148,12 @@ class FloatingWindowService : Service() {
                 val customDownloadDirUri = shellConfig?.webViewConfig?.customDownloadDirUri ?: ""
                 val mediaAlbumName = shellConfig?.webViewConfig?.mediaAlbumName ?: ""
                 val downloadBridgeFactory: (WebView) -> Unit = { webView ->
-                    val downloadBridge = DownloadBridge(
-                        this, serviceScope, downloadLocationMode, customDownloadDirUri, mediaAlbumName
-                    )
-                    webView.addJavascriptInterface(downloadBridge, DownloadBridge.JS_INTERFACE_NAME)
+                    if (shellConfig?.webViewConfig?.downloadEnabled != false) {
+                        val downloadBridge = DownloadBridge(
+                            this, serviceScope, downloadLocationMode, customDownloadDirUri, mediaAlbumName
+                        )
+                        webView.addJavascriptInterface(downloadBridge, DownloadBridge.JS_INTERFACE_NAME)
+                    }
                 }
 
                 val webViewConfigurator = shellConfig?.let { sc ->
@@ -280,8 +282,10 @@ class FloatingWindowService : Service() {
                     translateBridgeFactory?.invoke(webView)
                     downloadBridgeFactory(webView)
 
-                    if (shellConfig.webViewConfig.enableNativeBridge) {
-                        val capabilities = com.webtoapp.data.model.NativeBridgeCapabilities(
+                    if (shellConfig.webViewConfig.enableNativeBridge || shellConfig.webViewConfig.enableNotificationPolyfill) {
+                        val capabilities = if (!shellConfig.webViewConfig.enableNativeBridge) {
+                            com.webtoapp.data.model.notificationPolyfillOnlyCapabilities()
+                        } else com.webtoapp.data.model.NativeBridgeCapabilities(
                             clipboard = shellConfig.webViewConfig.nativeBridgeClipboard,
                             vibration = shellConfig.webViewConfig.nativeBridgeVibration,
                             geolocation = shellConfig.webViewConfig.nativeBridgeGeolocation,
