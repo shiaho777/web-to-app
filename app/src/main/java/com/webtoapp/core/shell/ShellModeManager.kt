@@ -1192,9 +1192,6 @@ data class WebViewShellConfig(
     @SerializedName("popupBlockerEnabled")
     val popupBlockerEnabled: Boolean = false,
 
-    @SerializedName("popupBlockerToggleEnabled")
-    val popupBlockerToggleEnabled: Boolean = false,
-
     @SerializedName("openExternalLinks")
     val openExternalLinks: Boolean = false,
 

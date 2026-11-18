@@ -87,7 +87,6 @@ fun buildWebViewConfig(config: ShellConfig): WebViewConfig {
         longPressHapticOnActionOnly = config.webViewConfig.longPressHapticOnActionOnly,
 
         popupBlockerEnabled = config.webViewConfig.popupBlockerEnabled,
-        popupBlockerToggleEnabled = config.webViewConfig.popupBlockerToggleEnabled,
 
         initialScale = config.webViewConfig.initialScale,
         pageZoomPercent = config.webViewConfig.pageZoomPercent,

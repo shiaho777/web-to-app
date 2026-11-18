@@ -125,7 +125,6 @@ data class ApkConfig(
     val longPressHapticOnActionOnly: Boolean get() = webView.longPressHapticOnActionOnly
 
     val popupBlockerEnabled: Boolean get() = webView.popupBlockerEnabled
-    val popupBlockerToggleEnabled: Boolean get() = webView.popupBlockerToggleEnabled
     val openExternalLinks: Boolean get() = webView.openExternalLinks
     val showFloatingBackButton: Boolean get() = webView.showFloatingBackButton
     val swipeRefreshEnabled: Boolean get() = webView.swipeRefreshEnabled
@@ -503,7 +502,6 @@ data class WebViewBlock(
     val longPressHapticOnActionOnly: Boolean = false,
 
     val popupBlockerEnabled: Boolean = false,
-    val popupBlockerToggleEnabled: Boolean = false,
     val openExternalLinks: Boolean = false,
     val showFloatingBackButton: Boolean = false,
     val backButtonBehavior: String = "GO_BACK",

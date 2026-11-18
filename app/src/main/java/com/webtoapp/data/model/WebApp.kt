@@ -391,7 +391,6 @@ data class WebViewConfig(
     val longPressHapticOnActionOnly: Boolean = false,
 
     val popupBlockerEnabled: Boolean = false,
-    val popupBlockerToggleEnabled: Boolean = false,
 
     val initialScale: Int = 0,
     // Build-time per-app page zoom in percent (100 = default). A document-start
@@ -1560,14 +1559,7 @@ data class PerformanceOptimizationConfig(
     val convertToWebP: Boolean = true,
     val minifyCode: Boolean = true,
     val minifySvg: Boolean = true,
-    val removeUnusedResources: Boolean = true,
-    val parallelProcessing: Boolean = true,
-    val enableCache: Boolean = true,
-    val injectPreloadHints: Boolean = true,
-    val injectLazyLoading: Boolean = true,
-    val optimizeScripts: Boolean = true,
-    val injectDnsPrefetch: Boolean = true,
-    val injectPerformanceScript: Boolean = true
+    val removeUnusedResources: Boolean = true
 ) {
     fun toOptimizerConfig(): com.webtoapp.core.linux.PerformanceOptimizer.OptimizeConfig {
         return com.webtoapp.core.linux.PerformanceOptimizer.OptimizeConfig(
@@ -1576,14 +1568,7 @@ data class PerformanceOptimizationConfig(
             convertToWebP = convertToWebP,
             minifyCode = minifyCode,
             minifySvg = minifySvg,
-            removeUnusedResources = removeUnusedResources,
-            parallelProcessing = parallelProcessing,
-            enableCache = enableCache,
-            injectPreloadHints = injectPreloadHints,
-            injectLazyLoading = injectLazyLoading,
-            optimizeScripts = optimizeScripts,
-            injectDnsPrefetch = injectDnsPrefetch,
-            injectPerformanceScript = injectPerformanceScript
+            removeUnusedResources = removeUnusedResources
         )
     }
 }

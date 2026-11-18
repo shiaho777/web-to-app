@@ -4467,7 +4467,6 @@ private fun com.webtoapp.data.model.WebViewConfig.toWebViewBlock(context: androi
         longPressHapticOnActionOnly = longPressHapticOnActionOnly,
 
         popupBlockerEnabled = popupBlockerEnabled,
-        popupBlockerToggleEnabled = popupBlockerToggleEnabled,
         openExternalLinks = openExternalLinks,
         showFloatingBackButton = showFloatingBackButton,
         backButtonBehavior = backButtonBehavior,

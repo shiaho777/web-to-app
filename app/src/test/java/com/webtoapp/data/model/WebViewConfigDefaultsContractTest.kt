@@ -22,7 +22,6 @@ class WebViewConfigDefaultsContractTest {
     // input to be meaningful, or exist to restrict behavior.
     private val defaultOff = setOf(
         "popupBlockerEnabled",           // suppressing popups can hide wanted windows
-        "popupBlockerToggleEnabled",
         "mediaAutoplayEnabled",          // audible autoplay is intrusive by default
         "enableKernelDisguise",          // anti-bot systems may reject disguised kernels
         "allowMixedContent",             // weakens HTTPS transport security

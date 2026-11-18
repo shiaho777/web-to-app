@@ -217,7 +217,6 @@ internal object ApkConfigJsonFactory {
         "longPressHapticOnActionOnly" to webView.longPressHapticOnActionOnly,
 
         "popupBlockerEnabled" to webView.popupBlockerEnabled,
-        "popupBlockerToggleEnabled" to webView.popupBlockerToggleEnabled,
         "openExternalLinks" to webView.openExternalLinks,
         "initialScale" to webViewBehavior.initialScale,
         "pageZoomPercent" to webViewBehavior.pageZoomPercent,
