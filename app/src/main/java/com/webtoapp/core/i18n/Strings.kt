@@ -4012,6 +4012,7 @@ object Strings {
     val startingNodeServer: String get() = StringsE.startingNodeServer
     val pythonRuntimeNotFound: String get() = StringsE.pythonRuntimeNotFound
     val pythonServerStartFailed: String get() = StringsE.pythonServerStartFailed
+    fun pythonProcessExited(exitCode: Int): String = StringsE.pythonProcessExited(exitCode)
     val pythonStartFailed: String get() = StringsE.pythonStartFailed
     val preparingPythonEnv: String get() = StringsE.preparingPythonEnv
     val startingPythonServer: String get() = StringsE.startingPythonServer

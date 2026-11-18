@@ -1928,6 +1928,19 @@ object StringsE {
         AppLanguage.KOREAN -> "Python 서버 시작에 실패했습니다"
     }
 
+    fun pythonProcessExited(exitCode: Int): String = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Python 进程已退出 (exitCode=$exitCode)，请查看日志后重新启动"
+        AppLanguage.ENGLISH -> "Python process exited (exitCode=$exitCode). Check the logs and start again"
+        AppLanguage.ARABIC -> "خرجت عملية Python (exitCode=$exitCode). راجع السجلات ثم أعد التشغيل"
+        AppLanguage.PORTUGUESE -> "O processo Python saiu (exitCode=$exitCode). Verifique os logs e inicie novamente"
+        AppLanguage.SPANISH -> "El proceso Python salió (exitCode=$exitCode). Revisa los registros y vuelve a iniciar"
+        AppLanguage.FRENCH -> "Le processus Python s'est terminé (exitCode=$exitCode). Consultez les journaux puis relancez"
+        AppLanguage.GERMAN -> "Python-Prozess beendet (exitCode=$exitCode). Protokolle prüfen und neu starten"
+        AppLanguage.RUSSIAN -> "Процесс Python завершился (exitCode=$exitCode). Проверьте журналы и запустите снова"
+        AppLanguage.JAPANESE -> "Pythonプロセスが終了しました (exitCode=$exitCode)。ログを確認して再起動してください"
+        AppLanguage.KOREAN -> "Python 프로세스가 종료되었습니다 (exitCode=$exitCode). 로그를 확인한 후 다시 시작하세요"
+    }
+
     val pythonStartFailed: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "Python 启动失败"
         AppLanguage.ENGLISH -> "Python failed to start"

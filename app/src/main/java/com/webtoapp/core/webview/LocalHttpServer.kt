@@ -141,6 +141,7 @@ class LocalHttpServer(
         this.memorySite = memorySite
         crossOriginIsolationEnabled = enableCrossOriginIsolation
 
+        var claimedPort = 0
         try {
 
             val effectiveOwner = owner.ifBlank { rootDir.name }
@@ -158,6 +159,9 @@ class LocalHttpServer(
 
             if (allocatedPort == PortManager.PORT_CONFLICT) {
                 throw PortConflictException(preferred)
+            }
+            if (allocatedPort in 1..65535) {
+                claimedPort = allocatedPort
             }
 
             val bindPort = if (allocatedPort in 1..65535) allocatedPort else 0
@@ -220,7 +224,7 @@ class LocalHttpServer(
 
             return buildLoopbackBaseUrl(actualPort)
         } catch (e: Exception) {
-            val portToRelease = actualPort
+            val portToRelease = if (actualPort > 0) actualPort else claimedPort
             stopResourcesOnly()
             if (portToRelease > 0) {
                 try { PortManager.release(portToRelease) } catch (_: Exception) {}

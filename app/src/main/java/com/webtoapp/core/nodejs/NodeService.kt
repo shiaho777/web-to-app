@@ -227,7 +227,8 @@ class NodeService : Service() {
                 replyFailed(
                     replyTo,
                     requestId,
-                    Strings.nodeV8AlreadyInit
+                    Strings.nodeV8AlreadyInit,
+                    v8Exhausted = true
                 )
                 return
             }
@@ -380,7 +381,7 @@ class NodeService : Service() {
                 // would misreport every timeout as "进程已退出".
                 val wasAlive = nodeThread?.isAlive == true
                 val entryFailed = recentOutput.contains("[wta-bootstrap] entry failed")
-                stopServerInternal()
+                val threadStuck = stopServerInternal()
                 val headline = when {
                     !wasAlive ->
                         Strings.nodeProcessExited(lastExitCode?.let { " (exitCode=$it)" } ?: "")
@@ -388,6 +389,9 @@ class NodeService : Service() {
                     else -> Strings.nodeServerStartTimeout
                 }
                 replyFailed(replyTo, requestId, failureMessage(headline))
+                if (threadStuck) {
+                    Process.killProcess(Process.myPid())
+                }
             }
         } catch (e: Exception) {
             AppLogger.e(TAG, "handleStartServer 异常", e)
@@ -518,7 +522,7 @@ class NodeService : Service() {
         return false
     }
 
-    private fun replyFailed(replyTo: Messenger?, requestId: String, message: String) {
+    private fun replyFailed(replyTo: Messenger?, requestId: String, message: String, v8Exhausted: Boolean = false) {
         AppLogger.w(TAG, "回送 SERVER_FAILED: $message")
         ShellLogger.w(TAG, "回送 SERVER_FAILED: $message")
         sendBackBlocking(
@@ -527,6 +531,7 @@ class NodeService : Service() {
             Bundle().apply {
                 putString(NodeServiceProtocol.Keys.REQUEST_ID, requestId)
                 putString(NodeServiceProtocol.Keys.ERROR_MESSAGE, message)
+                putBoolean(NodeServiceProtocol.Keys.V8_EXHAUSTED, v8Exhausted)
             }
         )
     }

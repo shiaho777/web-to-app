@@ -41,6 +41,16 @@ object NodeServiceClient {
 
     @Volatile private var lastServerUrl: String? = null
 
+    private val serviceDeathListeners = java.util.concurrent.CopyOnWriteArrayList<() -> Unit>()
+
+    fun addServiceDeathListener(listener: () -> Unit) {
+        serviceDeathListeners.add(listener)
+    }
+
+    fun removeServiceDeathListener(listener: () -> Unit) {
+        serviceDeathListeners.remove(listener)
+    }
+
     sealed class StartResult {
         data class Success(val url: String, val port: Int) : StartResult()
         data class Failure(val message: String, val v8Exhausted: Boolean) : StartResult()
@@ -71,6 +81,11 @@ object NodeServiceClient {
                 }
             }
             pendingStartRequests.clear()
+
+            serviceDeathListeners.forEach { listener ->
+                runCatching { listener() }
+                    .onFailure { AppLogger.w(TAG, "NodeService 死亡监听回调失败: ${it.message}") }
+            }
         }
     }
 
@@ -240,7 +255,7 @@ object NodeServiceClient {
                 }
                 NodeServiceProtocol.MSG_SERVER_FAILED -> {
                     val message = data.getString(NodeServiceProtocol.Keys.ERROR_MESSAGE).orEmpty()
-                    val v8Exhausted = message.contains("V8 已 init 过且 server 不在跑")
+                    val v8Exhausted = data.getBoolean(NodeServiceProtocol.Keys.V8_EXHAUSTED, false)
                     val def = pendingStartRequests.remove(requestId)
                     def?.complete(StartResult.Failure(message, v8Exhausted))
                 }

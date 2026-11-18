@@ -217,6 +217,10 @@ class NotificationPollingService : Service() {
     private var appName: String = ""
     private var allowAutoRestart: Boolean = false
 
+    private val seenNotificationFingerprints = object : LinkedHashMap<String, Boolean>(64, 0.75f, false) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Boolean>?): Boolean = size > 256
+    }
+
     private val handler = Handler(Looper.getMainLooper())
     private val pollRunnable = object : Runnable {
         override fun run() {
@@ -420,6 +424,11 @@ class NotificationPollingService : Service() {
 
     private fun showPollNotification(notif: PollNotification, baseId: Int) {
         try {
+            val fingerprint = "${notif.title}|${notif.body}|${notif.url}"
+            synchronized(seenNotificationFingerprints) {
+                if (seenNotificationFingerprints.containsKey(fingerprint)) return
+                seenNotificationFingerprints[fingerprint] = true
+            }
             val notificationManager = NotificationManagerCompat.from(this)
             if (!notificationManager.areNotificationsEnabled()) return
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
@@ -458,7 +467,7 @@ class NotificationPollingService : Service() {
                 .build()
 
             try {
-                notificationManager.notify(Math.abs(("poll_${System.currentTimeMillis()}_$baseId").hashCode()), notification)
+                notificationManager.notify(Math.abs("poll_$fingerprint".hashCode()), notification)
             } catch (e: SecurityException) {
                 AppLogger.e(TAG, "通知权限不可用", e)
                 return
