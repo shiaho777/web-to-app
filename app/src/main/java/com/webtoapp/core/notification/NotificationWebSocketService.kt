@@ -65,6 +65,9 @@ class NotificationWebSocketService : Service() {
         @Volatile
         private var isRunning = false
 
+        @Volatile
+        private var stopRequested = false
+
         fun start(
             context: Context,
             appName: String = "",
@@ -79,6 +82,7 @@ class NotificationWebSocketService : Service() {
                 AppLogger.w(TAG, "WebSocket notification service already running")
                 return
             }
+            stopRequested = false
             if (wsUrl.isBlank()) {
                 AppLogger.w(TAG, "WebSocket URL is blank, skip start")
                 return
@@ -108,6 +112,7 @@ class NotificationWebSocketService : Service() {
 
         fun stop(context: Context) {
             try {
+                stopRequested = true
                 clearPersistedConfig(context)
                 cancelRestart(context)
                 context.stopService(Intent(context, NotificationWebSocketService::class.java))
@@ -422,7 +427,7 @@ class NotificationWebSocketService : Service() {
         mainHandler.removeCallbacks(pingRunnable)
         closeWebSocket()
         releaseWakeLock()
-        if (shouldReconnect.get() && wsUrl.isNotBlank()) {
+        if (!stopRequested && shouldReconnect.get() && wsUrl.isNotBlank()) {
             scheduleRestart(this)
         }
         super.onDestroy()
@@ -430,7 +435,7 @@ class NotificationWebSocketService : Service() {
 
     override fun onTaskRemoved(rootIntent: Intent?) {
         super.onTaskRemoved(rootIntent)
-        if (shouldReconnect.get() && wsUrl.isNotBlank()) {
+        if (!stopRequested && shouldReconnect.get() && wsUrl.isNotBlank()) {
             scheduleRestart(this)
         }
     }

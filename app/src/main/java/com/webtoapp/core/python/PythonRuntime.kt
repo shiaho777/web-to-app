@@ -925,6 +925,17 @@ else:
                 "Python 进程在服务启动后退出: framework=$framework, port=$port, exitCode=$exitCode\nstdout: $stdout\nstderr: $stderr"
             AppLogger.e(TAG, message)
             ShellLogger.e(TAG, message)
+
+            pythonProcess = null
+            if (currentPort == port) {
+                currentPort = 0
+                runCatching { PortManager.release(port) }
+            }
+            if (dnsProxyStarted) {
+                runCatching { com.webtoapp.core.linux.LocalDnsBridgeProxy.stop() }
+                dnsProxyStarted = false
+            }
+            _serverState.value = ServerState.Error(Strings.pythonProcessExited(exitCode))
         }.apply {
             name = "PythonRuntime-ExitWatcher-$port"
             isDaemon = true

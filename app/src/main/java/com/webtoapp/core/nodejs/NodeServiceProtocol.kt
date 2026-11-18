@@ -42,5 +42,6 @@ object NodeServiceProtocol {
         const val V8_STARTED = "v8Started"
         const val SERVER_RUNNING = "serverRunning"
         const val STOP_APPLIED = "stopApplied"
+        const val V8_EXHAUSTED = "v8Exhausted"
     }
 }

@@ -36,6 +36,24 @@ class NodeRuntime(private val context: Context) {
     @Volatile private var currentPort: Int = 0
     @Volatile private var isRunning = false
 
+    private val serviceDeathListener: () -> Unit = {
+        if (isRunning) {
+            AppLogger.w(TAG, ":nodejs 子进程已死亡，重置 Node 运行状态")
+            ShellLogger.w(TAG, ":nodejs 子进程已死亡，重置 Node 运行状态")
+            val port = currentPort
+            currentPort = 0
+            isRunning = false
+            _serverState.value = ServerState.Stopped
+            if (port > 0) {
+                runCatching { PortManager.release(port) }
+            }
+        }
+    }
+
+    init {
+        NodeServiceClient.addServiceDeathListener(serviceDeathListener)
+    }
+
     fun isNodeAvailable(): Boolean = NodeDependencyManager.isNodeReady(context)
 
     suspend fun startServer(
@@ -53,6 +71,7 @@ class NodeRuntime(private val context: Context) {
             }
 
             _serverState.value = ServerState.Starting
+            NodeServiceClient.addServiceDeathListener(serviceDeathListener)
 
             val customExtDir = prepareCustomNodeExtensionsDir(projectDir, customNodeExtensions)
             val effectiveEnvVars = if (customExtDir != null) {
@@ -164,6 +183,7 @@ class NodeRuntime(private val context: Context) {
         } catch (e: Exception) {
             AppLogger.w(TAG, "停止 Node.js 服务器异常: ${e.message}")
         } finally {
+            NodeServiceClient.removeServiceDeathListener(serviceDeathListener)
             currentPort = 0
             isRunning = false
             _serverState.value = ServerState.Stopped
