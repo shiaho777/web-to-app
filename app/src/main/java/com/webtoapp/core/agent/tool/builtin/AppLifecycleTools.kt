@@ -97,7 +97,7 @@ class ExportAppTool : Tool {
     override val description = """
         Export an app as a source zip or a config JSON.
         - format "template": writes an Android Studio project zip (Gradle files, WebView activity, manifest, app_config.json, and local content) and returns its path. It does not include the signing keystore or the WebToApp shell runtime.
-        - format "config": exports the app's configuration as a JSON string.
+        - format "config": writes the app's configuration as a JSON file to the export directory and returns its path (not inline JSON).
     """.trimIndent()
     override val parametersSchema: JsonElement = jsonSchema {
         integer("appId", "The app id.", required = true)

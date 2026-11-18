@@ -193,8 +193,8 @@ object PortManager {
         true
     }
 
-    fun release(port: Int) {
-        if (port <= 0) return
+    fun release(port: Int): Boolean {
+        if (port <= 0) return true
 
         val handler: StopHandler?
         val process: Process?
@@ -209,15 +209,18 @@ object PortManager {
             AppLogger.i(TAG, "释放端口 $port (原使用者: $owner)")
         }
 
+        var handlerFailed = false
         try {
             handler?.onStop(port)
         } catch (e: Exception) {
+            handlerFailed = true
             AppLogger.w(TAG, "端口 $port stop handler 失败: ${e.message}")
         }
 
         if (process != null) {
             terminateProcess(port, process)
         }
+        return !handlerFailed
     }
 
     fun releaseByOwner(owner: String) {
@@ -228,18 +231,19 @@ object PortManager {
         toRelease.forEach { port -> release(port) }
     }
 
-    fun releaseAll() {
+    fun releaseAll(): List<Int> {
         val ports: List<Int>
         lock.read {
             ports = allocatedPorts.keys.toList()
         }
-        ports.forEach { port -> release(port) }
+        val failed = ports.filter { port -> !release(port) }
 
         lock.write {
             portStopHandlers.clear()
             portProcesses.clear()
             allocatedPorts.clear()
         }
+        return failed
     }
 
     fun isAllocated(port: Int): Boolean = allocatedPorts.containsKey(port)

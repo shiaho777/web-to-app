@@ -12,7 +12,7 @@ class GlobTool : Tool {
         Find files in the project whose path matches a glob pattern.
         - Patterns are matched against project-relative paths.
         - `*` matches characters inside a segment, `**` matches across segments, `?` is one char.
-        - Examples: `**/*.html`, `assets/*.png`, `src/**/*.{js,ts}` (alternation is NOT supported — call twice instead).
+        - Examples: `**/*.html`, `assets/*.png`, `src/**/*.js`. Brace alternation is NOT supported — call once per extension instead.
         - Results are sorted by modification time, newest first.
     """.trimIndent()
 

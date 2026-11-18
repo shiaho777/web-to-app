@@ -96,9 +96,10 @@ class ProcessPortScannerTest {
         assertThat(first).isGreaterThan(0)
         assertThat(second).isGreaterThan(0)
 
-        val killed = ProcessPortScanner.killAllProcesses(context)
+        val (killed, failed) = ProcessPortScanner.killAllProcesses(context)
 
         assertThat(killed).isEqualTo(2)
+        assertThat(failed).isEmpty()
         assertThat(PortManager.getAllAllocations()).isEmpty()
     }
 }

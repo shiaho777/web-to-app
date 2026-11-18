@@ -100,6 +100,12 @@ class ReadAppFileTool : Tool {
 
     private fun readImage(file: File, displayPath: String): ToolResult {
         return try {
+            if (file.length() > MAX_IMAGE_BYTES) {
+                return ToolResult.error(
+                    "ReadAppFile: image $displayPath is too large (${formatSize(file.length())}); " +
+                        "the cap is ${formatSize(MAX_IMAGE_BYTES)}."
+                )
+            }
             val bytes = file.readBytes()
             val mime = when (displayPath.substringAfterLast('.', "").lowercase()) {
                 "png" -> "image/png"
@@ -109,7 +115,7 @@ class ReadAppFileTool : Tool {
                 else -> "image/png"
             }
             ToolResult.multimodal(
-                text = "Image at $displayPath (${formatSize(bytes.size)})",
+                text = "Image at $displayPath (${formatSize(bytes.size.toLong())})",
                 images = listOf(ImageAttachment(bytes, mime, displayPath))
             )
         } catch (e: Exception) {
@@ -125,21 +131,32 @@ class ReadAppFileTool : Tool {
         ctx: ToolContext
     ): ToolResult {
         return try {
-            val content = file.readText()
-            val lines = content.lines()
-            if (offset >= lines.size) {
-                return ToolResult.ok(
-                    "(empty range — $displayPath has ${lines.size} lines, offset=$offset)"
+            if (file.length() > MAX_TEXT_BYTES) {
+                return ToolResult.error(
+                    "ReadAppFile: $displayPath is too large (${formatSize(file.length())}); " +
+                        "the text cap is ${formatSize(MAX_TEXT_BYTES)}. Inspect it with a shell command instead."
                 )
             }
-            val window = lines.drop(offset).take(limit)
+            val window = mutableListOf<String>()
+            var totalLines = 0
+            file.bufferedReader().useLines { seq ->
+                for (line in seq) {
+                    if (totalLines >= offset && window.size < limit) window.add(line)
+                    totalLines++
+                }
+            }
+            if (offset >= totalLines) {
+                return ToolResult.ok(
+                    "(empty range — $displayPath has $totalLines lines, offset=$offset)"
+                )
+            }
             val sb = StringBuilder()
             for ((i, line) in window.withIndex()) {
                 if (sb.isNotEmpty()) sb.append('\n')
                 sb.append(offset + i + 1).append('\t').append(line)
             }
-            val tail = if (offset + limit < lines.size) {
-                "\n… (${lines.size - offset - limit} more lines, raise `limit` or set `offset`)"
+            val tail = if (offset + limit < totalLines) {
+                "\n… (${totalLines - offset - limit} more lines, raise `limit` or set `offset`)"
             } else ""
             ToolResult.ok(sb.toString() + tail)
         } catch (e: Exception) {
@@ -164,13 +181,16 @@ class ReadAppFileTool : Tool {
         }
     }
 
-    private fun formatSize(bytes: Int): String = when {
+    private fun formatSize(bytes: Long): String = when {
         bytes < 1024 -> "${bytes}B"
         bytes < 1024 * 1024 -> "${bytes / 1024}KB"
         else -> "${bytes / (1024 * 1024)}MB"
     }
 
     companion object {
+        private const val MAX_TEXT_BYTES = 8L * 1024 * 1024
+        private const val MAX_IMAGE_BYTES = 20L * 1024 * 1024
+
         private val IMAGE_EXTENSIONS = setOf("png", "jpg", "jpeg", "gif", "webp")
 
         private val WHITELIST = listOf(

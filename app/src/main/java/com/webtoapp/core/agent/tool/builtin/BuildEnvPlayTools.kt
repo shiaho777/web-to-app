@@ -45,10 +45,12 @@ class InitializeBuildEnvTool : Tool {
     override val name = "InitializeBuildEnv"
     override val description = """
         Initialize or install components of the local build environment.
-        - component "core" (default): install Node.js + npm (needed for frontend builds).
+        - component "core": install Node.js + npm (needed for frontend builds).
         - component "php": install PHP runtime.
         - component "composer": install Composer (requires PHP first).
         - component "python": install Python runtime.
+        The result states whether the component is ready now or still installing —
+        verify with GetBuildEnvStatus before building.
         Note: on host builds with targetSdk >= 29 the environment cannot be exec'd at all,
         so installs "succeed" but the components stay not-ready — do not retry.
     """.trimIndent()
@@ -68,8 +70,21 @@ class InitializeBuildEnvTool : Tool {
             "python" -> mgr.installPythonRuntime { _, _ -> }
             else -> return ToolResult.error("InitializeBuildEnv: unknown component `$component`.")
         }
-        return if (result.isSuccess) ToolResult.ok("Installed $component successfully.")
-        else ToolResult.error("InitializeBuildEnv failed: ${result.exceptionOrNull()?.message}")
+        if (result.isFailure) {
+            return ToolResult.error("InitializeBuildEnv failed: ${result.exceptionOrNull()?.message}")
+        }
+        val ready = when (component) {
+            "core" -> mgr.isInstalled()
+            "php" -> com.webtoapp.core.linux.LocalBuildEnvironment.isPhpReady(ctx.androidContext)
+            "composer" -> com.webtoapp.core.linux.LocalBuildEnvironment.isComposerReady(ctx.androidContext)
+            "python" -> com.webtoapp.core.linux.LocalBuildEnvironment.isPythonReady(ctx.androidContext)
+            else -> false
+        }
+        return if (ready) ToolResult.ok("Installed $component successfully; it is ready now.")
+        else ToolResult.ok(
+            "$component install was requested but it is NOT ready yet (still installing, or an " +
+                "install is already in progress). Check GetBuildEnvStatus before building; do not assume success."
+        )
     }
 }
 

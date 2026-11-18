@@ -52,7 +52,7 @@ class UpdateAppTool : Tool {
         val existingObj = existingTree.asJsonObject
         val requestedKeys = patch.takeIf { it.isJsonObject }?.asJsonObject?.keySet()?.toList().orEmpty()
         val changedFields = requestedKeys.filter { key ->
-            mergedObj.get(key) != existingObj.get(key)
+            existingObj.has(key) && mergedObj.get(key) != existingObj.get(key)
         }
         val droppedFields = requestedKeys - changedFields.toSet()
         if (changedFields.isEmpty()) {
