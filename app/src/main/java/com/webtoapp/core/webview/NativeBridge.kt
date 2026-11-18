@@ -1214,7 +1214,6 @@ await WtaDirectory.write('exports/image.png', pngBytes);
     fun isDozeMode(): Boolean {
         if (!capabilities.networkInfo) return false
         return try {
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return false
             val powerManager = context.getSystemService(Context.POWER_SERVICE) as? PowerManager
             powerManager?.isDeviceIdleMode ?: false
         } catch (e: Exception) {
@@ -1227,7 +1226,6 @@ await WtaDirectory.write('exports/image.png', pngBytes);
     fun isIgnoringBatteryOptimizations(): Boolean {
         if (!capabilities.networkInfo) return false
         return try {
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return true
             val powerManager = context.getSystemService(Context.POWER_SERVICE) as? PowerManager
             powerManager?.isIgnoringBatteryOptimizations(context.packageName) ?: false
         } catch (e: Exception) {
@@ -1241,11 +1239,7 @@ await WtaDirectory.write('exports/image.png', pngBytes);
         if (!capabilities.networkInfo) return false
         return try {
             val intent = Intent().apply {
-                action = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS
-                } else {
-                    Settings.ACTION_SETTINGS
-                }
+                action = Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
             context.startActivity(intent)
@@ -1315,15 +1309,10 @@ await WtaDirectory.write('exports/image.png', pngBytes);
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) {
-
-                    alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, safeTriggerAt, pendingIntent)
-                } else {
-                    alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, safeTriggerAt, pendingIntent)
-                }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) {
+                alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, safeTriggerAt, pendingIntent)
             } else {
-                alarmManager.setExact(AlarmManager.RTC_WAKEUP, safeTriggerAt, pendingIntent)
+                alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, safeTriggerAt, pendingIntent)
             }
             AppLogger.d("NativeBridge", "Scheduled alarm: tag=$tag, triggerAt=$safeTriggerAt")
             true

@@ -2,7 +2,6 @@ package com.webtoapp.ui.design
 
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.Easing
-import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.SpringSpec
 import androidx.compose.animation.core.TweenSpec
@@ -99,5 +98,3 @@ object WtaMotion {
         easing = ExitEasing
     )
 }
-
-fun <T> wtaDefaultAnimation(): FiniteAnimationSpec<T> = WtaMotion.standardTween()

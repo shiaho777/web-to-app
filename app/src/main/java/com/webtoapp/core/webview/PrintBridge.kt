@@ -149,11 +149,6 @@ class PrintBridge(
                     return@launch
                 }
 
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
-                    Toast.makeText(context, Strings.printNotAvailable, Toast.LENGTH_SHORT).show()
-                    return@launch
-                }
-
                 val printManager = context.getSystemService(Context.PRINT_SERVICE) as? PrintManager
                 if (printManager == null) {
                     Toast.makeText(context, Strings.printNotAvailable, Toast.LENGTH_SHORT).show()
@@ -164,12 +159,7 @@ class PrintBridge(
                     ?: webView.url?.substringAfterLast('/')?.takeIf { it.isNotBlank() }
                     ?: Strings.printDocument
 
-                val printAdapter = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                    webView.createPrintDocumentAdapter(jobName)
-                } else {
-                    @Suppress("DEPRECATION")
-                    webView.createPrintDocumentAdapter()
-                }
+                val printAdapter = webView.createPrintDocumentAdapter(jobName)
 
                 val printAttrs = PrintAttributes.Builder()
                     .setMediaSize(PrintAttributes.MediaSize.UNKNOWN_LANDSCAPE)
@@ -273,13 +263,6 @@ class PrintBridge(
         scope.launch(Dispatchers.IO) {
             var tempFile: File? = null
             try {
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
-                    withContext(Dispatchers.Main) {
-                        Toast.makeText(context, Strings.printNotAvailable, Toast.LENGTH_SHORT).show()
-                    }
-                    return@launch
-                }
-
                 val decodedBytes = Base64.decode(base64Data, Base64.DEFAULT)
                 tempFile = File(context.cacheDir, "print_${System.currentTimeMillis()}.pdf")
 

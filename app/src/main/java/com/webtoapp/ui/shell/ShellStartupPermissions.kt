@@ -130,7 +130,6 @@ class ShellStartupPermissions(private val activity: AppCompatActivity) {
         val packageUri = Uri.parse("package:${activity.packageName}")
 
         if (has(declared, "REQUEST_IGNORE_BATTERY_OPTIMIZATIONS") &&
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
             !isIgnoringBatteryOptimizations()
         ) {
             specialQueue += Intent(
@@ -141,7 +140,6 @@ class ShellStartupPermissions(private val activity: AppCompatActivity) {
 
         if (!floatingWindowHandlesOverlay &&
             has(declared, "SYSTEM_ALERT_WINDOW") &&
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
             !Settings.canDrawOverlays(activity)
         ) {
             specialQueue += Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, packageUri)
@@ -162,7 +160,6 @@ class ShellStartupPermissions(private val activity: AppCompatActivity) {
         }
 
         if (has(declared, "WRITE_SETTINGS") &&
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
             !Settings.System.canWrite(activity)
         ) {
             specialQueue += Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS, packageUri)

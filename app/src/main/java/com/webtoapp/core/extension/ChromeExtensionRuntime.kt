@@ -62,9 +62,7 @@ class ChromeExtensionRuntime(
                 javaScriptEnabled = true
                 domStorageEnabled = true
                 databaseEnabled = true
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                    mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
-                }
+                mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
             }
 
             CookieManager.getInstance().setAcceptThirdPartyCookies(this, true)

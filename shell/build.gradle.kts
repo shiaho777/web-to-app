@@ -249,7 +249,6 @@ val syncShellRuntimeSources by tasks.registering(Sync::class) {
         "**/core/notification/**",
         "**/core/bgm/**",
         "**/core/engine/**",
-        "**/core/scraper/**",
         "**/core/script/**",
         "**/core/network/**",
         "**/core/errorpage/**",
@@ -262,8 +261,6 @@ val syncShellRuntimeSources by tasks.registering(Sync::class) {
         "**/core/background/**",
         "**/core/linux/**",
         "**/core/download/**",
-        "**/core/sample/**",
-        "**/core/frontend/**",
         "**/core/kernel/**",
         "**/core/share/**",
 
@@ -302,12 +299,6 @@ val syncShellRuntimeSources by tasks.registering(Sync::class) {
         "**/util/OfflineManager.kt",
 
         "**/core/frontend/GitHubRepoFetcher.kt",
-
-        "**/core/extension/QrCodeUtils.kt",
-        "**/core/extension/CodeSnippets.kt",
-        "**/core/extension/ModuleTemplates.kt",
-        "**/core/extension/DebugTestPages.kt",
-        "**/core/extension/ModulePreset.kt",
 
         // Host-side plugin management: packages, import and legacy migration
         // only exist where the store exists. Generated APKs run embedded
@@ -585,7 +576,6 @@ dependencies {
 
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.appcompat:appcompat:1.6.1")
-    implementation("androidx.core:core-splashscreen:1.0.1")
     implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
     implementation("androidx.documentfile:documentfile:1.0.1")
 
@@ -608,10 +598,8 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3:1.5.0-alpha17")
     implementation("androidx.compose.material:material-icons-extended:1.7.8")
-    implementation("androidx.navigation:navigation-compose:2.7.5")
 
     implementation("androidx.room:room-runtime:2.7.2")
-    implementation("androidx.room:room-ktx:2.7.2")
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 

@@ -8,7 +8,7 @@ At its core, WebToApp manages a list of **app definitions**. Each definition is 
 
 - **Identity** — `name`, `url`, `iconPath`, `packageName`, and an `appType`.
 - **A type-specific config** — one of `mediaConfig`, `galleryConfig`, `htmlConfig`, `wordpressConfig`, `nodejsConfig`, `phpAppConfig`, `pythonAppConfig`, `goAppConfig`, or `multiWebConfig`, depending on the type.
-- **Feature flags + configs** — activation, ads, announcement, ad blocking, WebView settings, splash, background music, translation, extensions, auto-start, disguise, and an `apkExportConfig` for packaging.
+- **Feature flags + configs** — activation, announcement, ad blocking, WebView settings, splash, background music, translation, extensions, auto-start, disguise, and an `apkExportConfig` for packaging.
 
 When you "build" an app, the builder takes the shell template APK, patches its identity and resources, embeds your `WebApp` configuration as an assets JSON, and signs the result. The output is a standalone APK you can install or share.
 

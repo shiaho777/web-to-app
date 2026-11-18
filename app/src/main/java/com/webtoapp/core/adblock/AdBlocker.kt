@@ -324,9 +324,6 @@ class AdBlocker {
             ),
         )
 
-        @Deprecated("Use getPopularHostsSources() instead for i18n support")
-        val POPULAR_HOSTS_SOURCES get() = getPopularHostsSources()
-
         private val DEFAULT_AD_HOSTS = setOf(
 
             "googleadservices.com", "googlesyndication.com", "doubleclick.net",
