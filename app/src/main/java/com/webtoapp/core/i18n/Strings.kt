@@ -2929,21 +2929,7 @@ object Strings {
     val perfConvertWebPHint: String get() = StringsE.perfConvertWebPHint
     val perfRemoveUnused: String get() = StringsE.perfRemoveUnused
     val perfRemoveUnusedHint: String get() = StringsE.perfRemoveUnusedHint
-    val perfBuildOptimize: String get() = StringsE.perfBuildOptimize
-    val perfParallelProcessing: String get() = StringsE.perfParallelProcessing
-    val perfParallelProcessingHint: String get() = StringsE.perfParallelProcessingHint
-    val perfEnableCache: String get() = StringsE.perfEnableCache
-    val perfEnableCacheHint: String get() = StringsE.perfEnableCacheHint
-    val perfLoadOptimize: String get() = StringsE.perfLoadOptimize
-    val perfPreloadHints: String get() = StringsE.perfPreloadHints
-    val perfPreloadHintsHint: String get() = StringsE.perfPreloadHintsHint
-    val perfLazyLoading: String get() = StringsE.perfLazyLoading
-    val perfLazyLoadingHint: String get() = StringsE.perfLazyLoadingHint
-    val perfOptimizeScripts: String get() = StringsE.perfOptimizeScripts
-    val perfOptimizeScriptsHint: String get() = StringsE.perfOptimizeScriptsHint
-    val perfRuntimeOptimize: String get() = StringsE.perfRuntimeOptimize
-    val perfRuntimeScript: String get() = StringsE.perfRuntimeScript
-    val perfRuntimeScriptHint: String get() = StringsE.perfRuntimeScriptHint
+
     val threatResponse: String get() = StringsE.threatResponse
     val threatResponseLogOnly: String get() = StringsE.threatResponseLogOnly
     val threatResponseSilentExit: String get() = StringsE.threatResponseSilentExit

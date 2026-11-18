@@ -3,24 +3,12 @@ package com.webtoapp.core.linux
 object PerformanceOptimizer {
 
     data class OptimizeConfig(
-
-
         val compressImages: Boolean = true,
         val imageQuality: Int = 80,
         val convertToWebP: Boolean = true,
         val minifyCode: Boolean = true,
         val minifySvg: Boolean = true,
-        val removeUnusedResources: Boolean = true,
-
-        val parallelProcessing: Boolean = true,
-        val enableCache: Boolean = true,
-
-        val injectPreloadHints: Boolean = true,
-        val injectLazyLoading: Boolean = true,
-        val optimizeScripts: Boolean = true,
-        val injectDnsPrefetch: Boolean = true,
-
-        val injectPerformanceScript: Boolean = true
+        val removeUnusedResources: Boolean = true
     )
 
     fun generatePerformanceScript(): String {

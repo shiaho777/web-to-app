@@ -388,7 +388,6 @@ internal fun ShellConfig.toRestoredWebApp(): WebApp {
             longPressMenuStyle = enumOrDefault(wv.longPressMenuStyle, LongPressMenuStyle.DISABLED),
             longPressHapticOnActionOnly = wv.longPressHapticOnActionOnly,
             popupBlockerEnabled = wv.popupBlockerEnabled,
-            popupBlockerToggleEnabled = wv.popupBlockerToggleEnabled,
             initialScale = wv.initialScale,
             pageZoomPercent = wv.pageZoomPercent,
             viewportMode = enumOrDefault(wv.viewportMode, ViewportMode.DEFAULT),
