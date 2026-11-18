@@ -190,6 +190,7 @@ fun AboutScreen(onBack: () -> Unit) {
                 )
             }
             item(key = "trust") { TrustAndLicensesCard() }
+            item(key = "community") { CommunityCard() }
             item(key = "legal") { LegalTabContent() }
             item(key = "footer") { MadeWithLoveFooter() }
         }
@@ -450,7 +451,7 @@ private fun AuthorHeroCard(
         androidx.compose.runtime.mutableStateMapOf<String, com.webtoapp.core.update.UpdateDownloadState>()
     }
 
-    if (showUpdateDialog) {
+    if (showUpdateDialog && !com.webtoapp.BuildConfig.FDROID) {
         UpdateCheckDialog(
             isChecking = isCheckingUpdate,
             result = updateResult,
@@ -588,6 +589,7 @@ private fun AuthorHeroCard(
             VersionPill(
                 versionName = versionName,
                 versionCode = versionCode,
+                updateCheckEnabled = !com.webtoapp.BuildConfig.FDROID,
                 onClick = {
                     showUpdateDialog = true
                     if (!isCheckingUpdate) {
@@ -635,6 +637,7 @@ private fun AuthorHeroCard(
 private fun VersionPill(
     versionName: String,
     versionCode: Long,
+    updateCheckEnabled: Boolean,
     onClick: () -> Unit,
     onCopy: () -> Unit,
     onHistory: () -> Unit
@@ -648,10 +651,16 @@ private fun VersionPill(
         modifier = Modifier
             .clip(RoundedCornerShape(999.dp))
             .background(MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.8f))
-            .clickable(
-                interactionSource = interactionSource,
-                indication = null,
-                onClick = hapticClick
+            .then(
+                if (updateCheckEnabled) {
+                    Modifier.clickable(
+                        interactionSource = interactionSource,
+                        indication = null,
+                        onClick = hapticClick
+                    )
+                } else {
+                    Modifier
+                }
             )
             .wtaPressScale(interactionSource, pressedScale = 0.95f)
             .padding(horizontal = 14.dp, vertical = 6.dp),
@@ -674,13 +683,15 @@ private fun VersionPill(
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        Spacer(Modifier.width(8.dp))
-        Icon(
-            Icons.Outlined.Sync,
-            contentDescription = Strings.updateCheckTitle,
-            modifier = Modifier.size(14.dp),
-            tint = MaterialTheme.colorScheme.primary
-        )
+        if (updateCheckEnabled) {
+            Spacer(Modifier.width(8.dp))
+            Icon(
+                Icons.Outlined.Sync,
+                contentDescription = Strings.updateCheckTitle,
+                modifier = Modifier.size(14.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
+        }
         Spacer(Modifier.width(10.dp))
         Icon(
             Icons.Outlined.History,
@@ -976,6 +987,41 @@ private fun TrustAndLicensesCard() {
     }
     if (showPrivacy) {
         PrivacyStatementSheet(onDismiss = { showPrivacy = false })
+    }
+}
+
+@Composable
+private fun CommunityCard() {
+    val context = LocalContext.current
+
+    WtaCard(
+        modifier = Modifier.fillMaxWidth(),
+        tone = WtaCardTone.Elevated,
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)
+    ) {
+        WtaSettingRow(
+            iconContent = { AboutTonalIcon(icon = Icons.Rounded.Forum, shapeIndex = 2, plateSize = 40.dp, iconSize = 20.dp) },
+            showIconPlate = false,
+            title = Strings.feedbackTitle,
+            subtitle = Strings.feedbackDesc.ifDescriptionsShown(),
+            onClick = { context.openUrl("https://github.com/shiaho777/web-to-app/issues/new/choose") }
+        )
+        WtaSectionDivider()
+        WtaSettingRow(
+            iconContent = { AboutTonalIcon(icon = Icons.Outlined.ForkRight, shapeIndex = 0, plateSize = 40.dp, iconSize = 20.dp) },
+            showIconPlate = false,
+            title = Strings.contributeTitle,
+            subtitle = Strings.contributeDesc.ifDescriptionsShown(),
+            onClick = { context.openUrl("https://github.com/shiaho777/web-to-app/blob/main/.github/CONTRIBUTING.md") }
+        )
+        WtaSectionDivider()
+        WtaSettingRow(
+            iconContent = { AboutTonalIcon(icon = Icons.Rounded.Groups, shapeIndex = 1, plateSize = 40.dp, iconSize = 20.dp) },
+            showIconPlate = false,
+            title = Strings.contributorsTitle,
+            subtitle = Strings.contributorsDesc.ifDescriptionsShown(),
+            onClick = { context.openUrl("https://github.com/shiaho777/web-to-app/graphs/contributors") }
+        )
     }
 }
 
@@ -1430,14 +1476,22 @@ private fun VersionHistoryItem(
                     ReleaseNotesMarkdown(text = release.body)
                 }
                 Spacer(Modifier.height(10.dp))
-                VersionHistoryDownloadRow(
-                    release = release,
-                    isCurrent = isCurrent,
-                    downloadState = downloadState,
-                    onDownload = onDownload,
-                    onCancelDownload = onCancelDownload,
-                    onInstall = onInstall
-                )
+                if (com.webtoapp.BuildConfig.FDROID) {
+                    Text(
+                        Strings.fdroidUpdatesManaged,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } else {
+                    VersionHistoryDownloadRow(
+                        release = release,
+                        isCurrent = isCurrent,
+                        downloadState = downloadState,
+                        onDownload = onDownload,
+                        onCancelDownload = onCancelDownload,
+                        onInstall = onInstall
+                    )
+                }
                 Spacer(Modifier.height(12.dp))
             }
         }
