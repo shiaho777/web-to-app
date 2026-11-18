@@ -31,7 +31,7 @@ GeckoView is a complete second engine independent of the system WebView, not a W
 - JS dialogs (alert / confirm / prompt)
 - Page-load error UI, back / forward history navigation, auto-refresh, find-in-page, console script execution
 - Media session / lock-screen playback controls (native Gecko implementation)
-- Page zoom — CSS `zoom` on the document root, the same script as the system WebView. Pinch zoom stays the engine's own
+- Page zoom — a viewport-meta rewrite on the document root; the system WebView kernel instead embeds the page in a scaled iframe host. Pinch zoom stays the engine's own
 - Remote `fetch` and XHR stay on the engine, so a Cloudflare challenge can finish. The native bridge wraps those calls only on local pages
 - Script-opened windows stay real child windows, so popup sign-in can post to `window.opener` and then close
 
