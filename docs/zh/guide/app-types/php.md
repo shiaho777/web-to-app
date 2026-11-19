@@ -8,7 +8,7 @@
 
 ## 运行时
 
-- **版本** —— PHP 8.4(来自 `pmmp/PHP-Binaries`),首次使用下载一次。
+- **版本** —— PHP 8.4(基于 `pmmp/PHP-Binaries` 构建,去除 `pmmpthread`),首次使用下载一次。
 - **Composer** —— 提供 2.10.x 用于依赖管理。
 - **扩展** —— 支持自定义原生扩展(`zend_extension`、`.so`)。
 - 在 [Linux 环境](/zh/guide/more-features/linux-environment)和[运行时管理](/zh/guide/more-features/runtime-management)界面管理。

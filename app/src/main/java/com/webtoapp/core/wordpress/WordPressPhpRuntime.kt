@@ -46,7 +46,6 @@ class WordPressPhpRuntime(private val context: Context) {
 
     private val phpOutputBuffer = StringBuffer()
 
-    private var routerScriptPath: String? = null
 
     fun getPhpBinaryPath(): String {
         return WordPressDependencyManager.getPhpExecutablePath(context)
@@ -98,7 +97,7 @@ class WordPressPhpRuntime(private val context: Context) {
             currentPort = serverPort
 
             val phpBinary = getPhpBinaryPath()
-            val routerScript = extractRouterScript()
+            val routerScript = com.webtoapp.core.php.PhpServerLaunch.extractRouterScript(context)
             val customExtDir = prepareCustomExtensionsDir(documentRoot, customPhpExtensions)
             val command = buildPhpCommand(
                 WordPressDependencyManager.buildPhpExecPrefix(context),
@@ -112,6 +111,7 @@ class WordPressPhpRuntime(private val context: Context) {
                 "TMPDIR" to context.cacheDir.absolutePath,
                 "PHP_INI_SCAN_DIR" to ""
             )
+            env.putAll(com.webtoapp.core.php.PhpServerLaunch.serverEnv(com.webtoapp.core.php.PhpServerLaunch.DEFAULT_ENTRY_FILE))
 
             val proxyPort = LocalDnsBridgeProxy.start()
             if (proxyPort > 0) {
@@ -172,8 +172,6 @@ class WordPressPhpRuntime(private val context: Context) {
             }
         } catch (e: Exception) {
             AppLogger.e(TAG, "启动 PHP 服务器失败", e)
-            // Release the port allocation and DNS-bridge refcount taken before the failure;
-            // this runtime instance dies with the failed start, so nobody else would.
             runCatching { stopServer() }
             _serverState.value = ServerState.Error(Strings.runtimeStartFailed(e.message ?: ""))
             -1
@@ -225,24 +223,6 @@ class WordPressPhpRuntime(private val context: Context) {
         } else null
     }
 
-    private fun extractRouterScript(): String {
-        routerScriptPath?.let { if (File(it).exists()) return it }
-
-        val scriptFile = File(context.cacheDir, "php_router_server.php")
-        try {
-            context.assets.open("php_router_server.php").use { input ->
-                scriptFile.outputStream().use { output ->
-                    input.copyTo(output)
-                }
-            }
-            routerScriptPath = scriptFile.absolutePath
-            AppLogger.d(TAG, "路由服务器脚本已提取: ${scriptFile.absolutePath}")
-        } catch (e: Exception) {
-            AppLogger.e(TAG, "提取路由服务器脚本失败", e)
-        }
-        return scriptFile.absolutePath
-    }
-
     private fun buildPhpCommand(execPrefix: List<String>, serverPort: Int, documentRoot: String, routerScript: String, customPhpExtensions: List<com.webtoapp.data.model.CustomPhpExtension> = emptyList(), customExtDir: File? = null): List<String> {
         val tmpDir = context.cacheDir.absolutePath
         val sessionDir = File(context.filesDir, "wordpress_deps/php/sessions")
@@ -258,7 +238,6 @@ class WordPressPhpRuntime(private val context: Context) {
             "display_errors" to "Off",
             "log_errors" to "On",
             "error_log" to "/dev/stderr",
-            "disable_functions" to "header,headers_list,headers_sent,header_remove,setcookie,setrawcookie",
             "memory_limit" to "256M",
             "max_execution_time" to "86400",
             "max_input_time" to "60",
@@ -279,7 +258,6 @@ class WordPressPhpRuntime(private val context: Context) {
             "opcache.interned_strings_buffer" to "8",
             "opcache.max_accelerated_files" to "4000",
             "opcache.validate_timestamps" to "0",
-
             "opcache.jit" to "disable",
             "opcache.jit_buffer_size" to "0"
         )
@@ -305,10 +283,7 @@ class WordPressPhpRuntime(private val context: Context) {
                 phpArgs.add("$directive=${ext.effectiveSoName()}")
             }
 
-        phpArgs.add(routerScript)
-        phpArgs.add(serverPort.toString())
-        phpArgs.add(documentRoot)
-        phpArgs.add("index.php")
+        phpArgs.addAll(com.webtoapp.core.php.PhpServerLaunch.serverArgs(serverPort, documentRoot, routerScript))
 
         return phpArgs
     }
