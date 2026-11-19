@@ -2,25 +2,25 @@
   {
     "name": "WebToApp",
     "description": "Turn any website into an installable app across iOS, Android, Windows, macOS and Linux, and generate a sharing link.",
-    "stargazers_count": 162,
-    "forks_count": 36,
+    "stargazers_count": 199,
+    "forks_count": 44,
     "language": "Python",
-    "pushed_at": "2026-10-22T03:34:28Z",
+    "pushed_at": "2026-11-18T09:04:31Z",
     "html_url": "https://github.com/shiaho777/WebToApp"
   },
   {
     "name": "jseek",
     "description": "The fastest way to pull values out of JSON in Go — zero allocations, no structs, no full parse",
-    "stargazers_count": 40,
+    "stargazers_count": 41,
     "forks_count": 2,
     "language": "Go",
-    "pushed_at": "2026-07-16T13:18:14Z",
+    "pushed_at": "2026-11-18T13:19:17Z",
     "html_url": "https://github.com/shiaho777/jseek"
   },
   {
     "name": "turn-mcp",
     "description": "Achieve infinite conversation turns in a single API request via turn-mcp.             Self-hosted MCP server with browser console for human-in-the-loop AI agents.",
-    "stargazers_count": 39,
+    "stargazers_count": 40,
     "forks_count": 9,
     "language": "TypeScript",
     "pushed_at": "2026-10-13T13:29:04Z",
@@ -29,106 +29,97 @@
   {
     "name": "LogSleuth",
     "description": "Root-free Android logcat viewer & embeddable zero-permission logging SDK",
-    "stargazers_count": 29,
-    "forks_count": 2,
+    "stargazers_count": 38,
+    "forks_count": 5,
     "language": "Kotlin",
-    "pushed_at": "2026-10-22T13:48:05Z",
+    "pushed_at": "2026-11-18T10:54:52Z",
     "html_url": "https://github.com/shiaho777/LogSleuth"
   },
   {
     "name": "qsyy",
     "description": "汽水音乐第三方 Web 播放器 · 全端可用 · 本地缓存直读 / 在线播放 / 逐字歌词 / 音效 / 下载",
-    "stargazers_count": 21,
+    "stargazers_count": 29,
     "forks_count": 0,
     "language": "JavaScript",
-    "pushed_at": "2026-10-21T03:42:10Z",
+    "pushed_at": "2026-11-18T13:19:19Z",
     "html_url": "https://github.com/shiaho777/qsyy"
-  },
-  {
-    "name": "LuaXIDE",
-    "description": "Android Lua IDE with built-in interpreter, visual UI designer, debugger, and APK builder — all on-device, no root required.",
-    "stargazers_count": 21,
-    "forks_count": 0,
-    "language": "Kotlin",
-    "pushed_at": "2026-10-16T01:24:54Z",
-    "html_url": "https://github.com/shiaho777/LuaXIDE"
   },
   {
     "name": "andmx",
     "description": "Android-native AI coding agent (AndMX)",
-    "stargazers_count": 20,
-    "forks_count": 4,
+    "stargazers_count": 23,
+    "forks_count": 8,
     "language": "Kotlin",
-    "pushed_at": "2026-09-27T13:43:57Z",
+    "pushed_at": "2026-11-18T14:47:40Z",
     "html_url": "https://github.com/shiaho777/andmx"
+  },
+  {
+    "name": "WebViewIDE",
+    "description": "On-device IDE for HTML, CSS, and JavaScript. Preview in the system WebView and package a signed APK. No root.",
+    "stargazers_count": 22,
+    "forks_count": 2,
+    "language": "Kotlin",
+    "pushed_at": "2026-11-18T14:37:28Z",
+    "html_url": "https://github.com/shiaho777/WebViewIDE"
   },
   {
     "name": "revx",
     "description": "Rust reverse-engineering toolkit with CLI and local MCP server.",
-    "stargazers_count": 19,
+    "stargazers_count": 18,
     "forks_count": 0,
     "language": "Rust",
-    "pushed_at": "2026-10-21T02:44:22Z",
+    "pushed_at": "2026-11-18T13:07:54Z",
     "html_url": "https://github.com/shiaho777/revx"
+  },
+  {
+    "name": "An-Harness",
+    "description": "Android-first on-device AI agent harness — exploring everything possible on Android",
+    "stargazers_count": 17,
+    "forks_count": 4,
+    "language": "Kotlin",
+    "pushed_at": "2026-11-18T08:26:20Z",
+    "html_url": "https://github.com/shiaho777/An-Harness"
   },
   {
     "name": "zv-codec",
     "description": "Tiny video/audio codec optimized for screen recordings. 24% smaller than x265 lossless RGB at the same speed, ~1100 lines of C, no NN, no external deps.",
-    "stargazers_count": 18,
-    "forks_count": 0,
+    "stargazers_count": 17,
+    "forks_count": 1,
     "language": "C",
-    "pushed_at": "2026-10-17T09:25:24Z",
+    "pushed_at": "2026-11-17T09:11:56Z",
     "html_url": "https://github.com/shiaho777/zv-codec"
   },
   {
-    "name": "NexFiles",
-    "description": "An open source Material Design file manager, for Android 5.0+.",
-    "stargazers_count": 18,
-    "forks_count": 0,
-    "language": "Kotlin",
-    "pushed_at": "2026-10-15T08:24:28Z",
-    "html_url": "https://github.com/shiaho777/NexFiles"
+    "name": "pneuma-android",
+    "description": "Pneuma · 一部会呼吸的 AI 虚拟手机：拟真桌面、聊天、朋友圈、查手机、地图定位、语音/视频通话、日记日历。AI 角色有作息、日程、位置和长期记忆，会主动发消息、发帖互动。数据全在设备本地，联网只调你自己配置的 LLM/生图/语音 API。",
+    "stargazers_count": 16,
+    "forks_count": 13,
+    "language": "TypeScript",
+    "pushed_at": "2026-11-12T10:06:27Z",
+    "html_url": "https://github.com/shiaho777/pneuma-android"
   },
   {
     "name": "wgsql",
     "description": "GPU-accelerated columnar OLAP via WebGPU. One WGSL kernel, four backends.",
-    "stargazers_count": 17,
+    "stargazers_count": 16,
     "forks_count": 0,
     "language": "Rust",
     "pushed_at": "2026-09-17T06:30:59Z",
     "html_url": "https://github.com/shiaho777/wgsql"
   },
   {
-    "name": "An-Harness",
-    "description": "Android-first on-device AI agent harness — exploring everything possible on Android",
-    "stargazers_count": 16,
-    "forks_count": 2,
-    "language": "Kotlin",
-    "pushed_at": "2026-09-08T10:15:19Z",
-    "html_url": "https://github.com/shiaho777/An-Harness"
-  },
-  {
-    "name": "float-android",
-    "description": "一部装在 Android 里的 AI 虚拟手机：拟真桌面、聊天、朋友圈、查手机、地图定位、语音/视频通话、日记日历。AI 角色有作息、日程、位置和长期记忆，会主动发消息、发帖互动。数据全在设备本地，联网只调你自己配置的 LLM/生图/语音 API。",
-    "stargazers_count": 15,
-    "forks_count": 11,
-    "language": "TypeScript",
-    "pushed_at": "2026-10-10T07:06:10Z",
-    "html_url": "https://github.com/shiaho777/float-android"
-  },
-  {
     "name": "MacBottle",
     "description": null,
-    "stargazers_count": 14,
+    "stargazers_count": 13,
     "forks_count": 0,
     "language": "Swift",
-    "pushed_at": "2026-10-07T08:15:41Z",
+    "pushed_at": "2026-11-18T09:21:15Z",
     "html_url": "https://github.com/shiaho777/MacBottle"
   },
   {
     "name": "echomind",
     "description": "A non-attention LM recipe with proven small-scale ICL and Chinchilla-style scaling law (R²=0.995). Reproducible in 25 minutes on a MacBook.",
-    "stargazers_count": 14,
+    "stargazers_count": 13,
     "forks_count": 0,
     "language": "Python",
     "pushed_at": "2026-05-28T10:56:43Z",
@@ -137,7 +128,7 @@
   {
     "name": "anthropic-ui-skill",
     "description": "A Skill that allows AI to generate the UI design style of Anthropic Company. Its aesthetics are very good.",
-    "stargazers_count": 14,
+    "stargazers_count": 13,
     "forks_count": 1,
     "language": null,
     "pushed_at": "2026-05-28T08:50:31Z",
@@ -146,61 +137,61 @@
   {
     "name": "memx",
     "description": "MemX — ~100× lower LLM memory on Apple, original precision. Stable planes: ~9× phys · ~100× engine · ~300× vessel capability (bitexact).",
-    "stargazers_count": 13,
+    "stargazers_count": 12,
     "forks_count": 0,
     "language": "Objective-C",
-    "pushed_at": "2026-09-17T05:57:19Z",
+    "pushed_at": "2026-11-18T11:42:06Z",
     "html_url": "https://github.com/shiaho777/memx"
   },
   {
     "name": "clipshelf",
     "description": "macOS menu bar clipboard history — rules on copy, app-aware paste, local search.",
-    "stargazers_count": 13,
+    "stargazers_count": 12,
     "forks_count": 0,
     "language": "Swift",
-    "pushed_at": "2026-09-14T12:39:27Z",
+    "pushed_at": "2026-11-16T14:33:09Z",
     "html_url": "https://github.com/shiaho777/clipshelf"
   },
   {
     "name": "stratum",
     "description": "Pure-C transformer inference engine for Apple Silicon — wired memory independent of model size (mmap streaming, NEON/Metal)",
-    "stargazers_count": 12,
+    "stargazers_count": 11,
     "forks_count": 0,
     "language": "C",
-    "pushed_at": "2026-10-22T13:47:22Z",
+    "pushed_at": "2026-11-05T09:25:33Z",
     "html_url": "https://github.com/shiaho777/stratum"
+  },
+  {
+    "name": "vaultx",
+    "description": "VaultX — local-only encrypted vault for Android (Argon2id + Tink Streaming AEAD + Compose)",
+    "stargazers_count": 10,
+    "forks_count": 1,
+    "language": "Kotlin",
+    "pushed_at": "2026-11-18T14:30:59Z",
+    "html_url": "https://github.com/shiaho777/vaultx"
   },
   {
     "name": "pyj-j",
     "description": "J as a tensor engine inside Python — zero-copy numpy bridge, reverse-mode autodiff written in J, tape-to-J compiler",
-    "stargazers_count": 11,
+    "stargazers_count": 10,
     "forks_count": 0,
     "language": "Python",
-    "pushed_at": "2026-10-22T22:08:34Z",
+    "pushed_at": "2026-11-18T01:48:48Z",
     "html_url": "https://github.com/shiaho777/pyj-j"
   },
   {
     "name": "browser-engine-shia",
     "description": "A from-scratch, read-it-front-to-back browser engine. North star: highest compat-per-LOC.",
-    "stargazers_count": 11,
+    "stargazers_count": 10,
     "forks_count": 1,
     "language": "TypeScript",
     "pushed_at": "2026-10-22T14:58:39Z",
     "html_url": "https://github.com/shiaho777/browser-engine-shia"
   },
   {
-    "name": "vaultx",
-    "description": "VaultX — local-only encrypted vault for Android (Argon2id + Tink Streaming AEAD + Compose)",
-    "stargazers_count": 11,
-    "forks_count": 1,
-    "language": "Kotlin",
-    "pushed_at": "2026-09-22T04:31:43Z",
-    "html_url": "https://github.com/shiaho777/vaultx"
-  },
-  {
     "name": "zcode-exports",
     "description": "Export ZCode session data to Markdown as a skill",
-    "stargazers_count": 11,
+    "stargazers_count": 10,
     "forks_count": 0,
     "language": null,
     "pushed_at": "2026-08-19T02:15:54Z",
@@ -209,25 +200,16 @@
   {
     "name": "hard-metric-bench",
     "description": "Five hard-metric AI benchmarks (vector DB, language, inference, training, web-to-app) with a public measured-results leaderboard.",
-    "stargazers_count": 10,
+    "stargazers_count": 9,
     "forks_count": 0,
     "language": "Python",
     "pushed_at": "2026-09-03T14:06:28Z",
     "html_url": "https://github.com/shiaho777/hard-metric-bench"
   },
   {
-    "name": "esp-overlay",
-    "description": "Unity il2cpp MOBA ESP overlay —免 root 内存读取 + 悬浮窗渲染工具链(revx 姊妹项目)",
-    "stargazers_count": 10,
-    "forks_count": 0,
-    "language": "C++",
-    "pushed_at": "2026-08-31T13:01:37Z",
-    "html_url": "https://github.com/shiaho777/esp-overlay"
-  },
-  {
     "name": "issue-pr-ci-delivery",
     "description": "Bootstrap & run an Issue → PR → CI → merge delivery loop for any GitHub repo",
-    "stargazers_count": 10,
+    "stargazers_count": 9,
     "forks_count": 0,
     "language": null,
     "pushed_at": "2026-07-31T07:26:23Z",
@@ -236,7 +218,7 @@
   {
     "name": "pocket-linux-images",
     "description": "Public prebuilt Linux rootfs images for the PocketLinux Android app (Ubuntu/Debian x XFCE/LXQt)",
-    "stargazers_count": 9,
+    "stargazers_count": 8,
     "forks_count": 0,
     "language": null,
     "pushed_at": "2026-09-17T06:21:35Z",
@@ -245,29 +227,56 @@
   {
     "name": "charter",
     "description": "Charter — agent-native Android framework: Compose design system, enforceable AGENTS.md contracts, and a one-command acceptance harness",
-    "stargazers_count": 9,
+    "stargazers_count": 8,
     "forks_count": 1,
     "language": "Kotlin",
     "pushed_at": "2026-09-10T05:36:50Z",
     "html_url": "https://github.com/shiaho777/charter"
   },
   {
-    "name": "BiliDesk",
-    "description": "哔哩哔哩第三方客户端 · Compose Multiplatform · Android / Windows / macOS / Linux",
-    "stargazers_count": 2,
+    "name": "ailiaili",
+    "description": "ailiaili · 哔哩哔哩第三方客户端 · Compose Multiplatform · Android / Windows / macOS / Linux",
+    "stargazers_count": 4,
     "forks_count": 0,
     "language": "Kotlin",
-    "pushed_at": "2026-10-17T09:08:28Z",
-    "html_url": "https://github.com/shiaho777/BiliDesk"
+    "pushed_at": "2026-11-18T15:14:31Z",
+    "html_url": "https://github.com/shiaho777/ailiaili"
   },
   {
     "name": "repo-maintenance",
     "description": "Agent skill for maintaining living App and AI repos. One claim per chat, so concurrent harnesses do not work the same project.",
-    "stargazers_count": 0,
-    "forks_count": 0,
+    "stargazers_count": 1,
+    "forks_count": 1,
     "language": "Shell",
     "pushed_at": "2026-10-22T14:38:07Z",
     "html_url": "https://github.com/shiaho777/repo-maintenance"
+  },
+  {
+    "name": "Liora",
+    "description": "An open-source browser framework: the shell is the core, the kernel is swappable.",
+    "stargazers_count": 0,
+    "forks_count": 0,
+    "language": "Svelte",
+    "pushed_at": "2026-11-18T14:43:06Z",
+    "html_url": "https://github.com/shiaho777/Liora"
+  },
+  {
+    "name": "pneuma",
+    "description": "Pneuma · 感情优先的 AI 角色世界：酒馆的深度，消费级的体验。本地优先，零遥测。",
+    "stargazers_count": 0,
+    "forks_count": 0,
+    "language": "TypeScript",
+    "pushed_at": "2026-11-18T12:48:02Z",
+    "html_url": "https://github.com/shiaho777/pneuma"
+  },
+  {
+    "name": "dogsc-compose",
+    "description": "Unofficial Android port of DogSC — clean-room Compose recorder + editor",
+    "stargazers_count": 0,
+    "forks_count": 0,
+    "language": "Kotlin",
+    "pushed_at": "2026-11-18T11:43:01Z",
+    "html_url": "https://github.com/shiaho777/dogsc-compose"
   },
   {
     "name": "nixiang",
