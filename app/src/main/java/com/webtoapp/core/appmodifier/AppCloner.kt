@@ -10,7 +10,6 @@ import android.graphics.Canvas
 import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Build
-import androidx.core.content.FileProvider
 import androidx.core.content.pm.ShortcutInfoCompat
 import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.graphics.drawable.IconCompat
@@ -363,7 +362,7 @@ class AppCloner(private val context: Context) {
             unsignedApk.delete()
 
             withContext(Dispatchers.Main) {
-                installApk(signedApk)
+                com.webtoapp.core.apkbuilder.ApkInstaller.install(context, signedApk)
             }
 
             safeProgress(100, "Done")
@@ -800,29 +799,4 @@ class AppCloner(private val context: Context) {
         }
     }
 
-    private fun installApk(apkFile: File): Boolean {
-        return try {
-            val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                FileProvider.getUriForFile(
-                    context,
-                    "${context.packageName}.fileprovider",
-                    apkFile
-                )
-            } else {
-                Uri.fromFile(apkFile)
-            }
-
-            val intent = Intent(Intent.ACTION_VIEW).apply {
-                setDataAndType(uri, "application/vnd.android.package-archive")
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            }
-
-            context.startActivity(intent)
-            true
-        } catch (e: Exception) {
-            AppLogger.e("AppCloner", "Operation failed", e)
-            false
-        }
-    }
 }

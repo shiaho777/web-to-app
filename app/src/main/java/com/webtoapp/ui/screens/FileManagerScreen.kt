@@ -144,6 +144,13 @@ fun FileManagerScreen(onBack: () -> Unit) {
     val context = LocalContext.current
     val scope = androidx.compose.runtime.rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+    var showInstallPermissionDialog by remember { mutableStateOf(false) }
+
+    if (showInstallPermissionDialog) {
+        com.webtoapp.ui.components.InstallPermissionDialog(
+            onDismiss = { showInstallPermissionDialog = false }
+        )
+    }
 
     var snapshots by remember { mutableStateOf<List<SectionSnapshot>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
@@ -474,11 +481,15 @@ fun FileManagerScreen(onBack: () -> Unit) {
                                     shareFile(context, entry.file, snackbarHostState, scope)
                                 },
                                 onInstall = { entry ->
-                                    val started = com.webtoapp.core.apkbuilder.ApkInstaller.install(context.applicationContext, entry.file)
-                                    scope.launch {
-                                        snackbarHostState.showSnackbar(
-                                            if (started) Strings.fileManagerInstallStarted else Strings.fileManagerInstallFailed
-                                        )
+                                    if (!com.webtoapp.core.apkbuilder.ApkInstaller.canInstallFromThisApp(context)) {
+                                        showInstallPermissionDialog = true
+                                    } else {
+                                        val started = com.webtoapp.core.apkbuilder.ApkInstaller.install(context.applicationContext, entry.file)
+                                        scope.launch {
+                                            snackbarHostState.showSnackbar(
+                                                if (started) Strings.fileManagerInstallStarted else Strings.fileManagerInstallFailed
+                                            )
+                                        }
                                     }
                                 },
                                 onOpen = { entry ->

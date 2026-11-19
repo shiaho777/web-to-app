@@ -159,6 +159,10 @@ fun AppNavigation() {
     val context = LocalContext.current
     val previewScope = rememberCoroutineScope()
 
+    com.webtoapp.ui.components.StartupUpdateCheck(
+        onOpenAbout = { navController.navigate(Routes.ABOUT) }
+    )
+
     Box(modifier = Modifier.fillMaxSize()) {
         NavHost(
             navController = navController,
@@ -176,6 +180,7 @@ fun AppNavigation() {
                         viewModel.createNewApp()
                         navController.navigate(Routes.CREATE_APP)
                     },
+                    onCreateSampleApp = { viewModel.createSampleApp() },
                     onCreateMediaApp = { navController.navigate(Routes.CREATE_MEDIA_APP) },
                     onCreateGalleryApp = { navController.navigate(Routes.CREATE_GALLERY_APP) },
                     onCreateHtmlApp = { navController.navigate(Routes.CREATE_HTML_APP) },

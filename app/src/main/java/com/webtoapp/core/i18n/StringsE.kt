@@ -3741,6 +3741,383 @@ object StringsE {
         AppLanguage.KOREAN -> "이 프로젝트를 더 좋게 만드는 모든 분"
     }
 
+    val autoCheckUpdates: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "自动检查更新"
+        AppLanguage.ENGLISH -> "Auto-check for updates"
+        AppLanguage.ARABIC -> "فحص التحديثات تلقائياً"
+        AppLanguage.PORTUGUESE -> "Verificar atualizações automaticamente"
+        AppLanguage.SPANISH -> "Buscar actualizaciones automáticamente"
+        AppLanguage.FRENCH -> "Vérification automatique des mises à jour"
+        AppLanguage.GERMAN -> "Automatisch nach Updates suchen"
+        AppLanguage.RUSSIAN -> "Автопроверка обновлений"
+        AppLanguage.JAPANESE -> "更新の自動チェック"
+        AppLanguage.KOREAN -> "업데이트 자동 확인"
+    }
+
+    val autoCheckUpdatesDesc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "启动时静默检查新版本，有更新才提醒"
+        AppLanguage.ENGLISH -> "Silently check for new versions at startup; only notify when an update exists"
+        AppLanguage.ARABIC -> "فحص صامت للإصدارات الجديدة عند بدء التشغيل، مع التنبيه فقط عند وجود تحديث"
+        AppLanguage.PORTUGUESE -> "Verifica novas versões silenciosamente ao iniciar; avisa apenas quando há atualização"
+        AppLanguage.SPANISH -> "Busca nuevas versiones en silencio al iniciar; solo avisa cuando hay una actualización"
+        AppLanguage.FRENCH -> "Vérifie silencieusement les nouvelles versions au démarrage ; n'alerte que si une mise à jour existe"
+        AppLanguage.GERMAN -> "Prüft beim Start still auf neue Versionen; meldet sich nur, wenn ein Update verfügbar ist"
+        AppLanguage.RUSSIAN -> "Тихо проверяет новые версии при запуске; уведомляет только при наличии обновления"
+        AppLanguage.JAPANESE -> "起動時に新バージョンをサイレントに確認し、更新がある場合のみ通知します"
+        AppLanguage.KOREAN -> "시작 시 새 버전을 조용히 확인하고, 업데이트가 있을 때만 알립니다"
+    }
+
+    val updateSkipVersion: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "跳过此版本"
+        AppLanguage.ENGLISH -> "Skip this version"
+        AppLanguage.ARABIC -> "تخطي هذا الإصدار"
+        AppLanguage.PORTUGUESE -> "Pular esta versão"
+        AppLanguage.SPANISH -> "Omitir esta versión"
+        AppLanguage.FRENCH -> "Ignorer cette version"
+        AppLanguage.GERMAN -> "Diese Version überspringen"
+        AppLanguage.RUSSIAN -> "Пропустить эту версию"
+        AppLanguage.JAPANESE -> "このバージョンをスキップ"
+        AppLanguage.KOREAN -> "이 버전 건너뛰기"
+    }
+
+    val updateViewDetails: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "查看详情"
+        AppLanguage.ENGLISH -> "View details"
+        AppLanguage.ARABIC -> "عرض التفاصيل"
+        AppLanguage.PORTUGUESE -> "Ver detalhes"
+        AppLanguage.SPANISH -> "Ver detalles"
+        AppLanguage.FRENCH -> "Voir les détails"
+        AppLanguage.GERMAN -> "Details ansehen"
+        AppLanguage.RUSSIAN -> "Подробнее"
+        AppLanguage.JAPANESE -> "詳細を見る"
+        AppLanguage.KOREAN -> "자세히 보기"
+    }
+
+    fun whatsNewTitle(version: String): String = when (Strings.lang) {
+        AppLanguage.CHINESE -> "v$version 新功能"
+        AppLanguage.ENGLISH -> "What's new in v$version"
+        AppLanguage.ARABIC -> "الجديد في v$version"
+        AppLanguage.PORTUGUESE -> "Novidades da v$version"
+        AppLanguage.SPANISH -> "Novedades de v$version"
+        AppLanguage.FRENCH -> "Nouveautés de la v$version"
+        AppLanguage.GERMAN -> "Neuerungen in v$version"
+        AppLanguage.RUSSIAN -> "Что нового в v$version"
+        AppLanguage.JAPANESE -> "v$version の新機能"
+        AppLanguage.KOREAN -> "v${version}의 새로운 기능"
+    }
+
+    val whatsNewNoNotes: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "此版本暂无更新说明。"
+        AppLanguage.ENGLISH -> "No release notes are available for this version."
+        AppLanguage.ARABIC -> "لا تتوفر ملاحظات إصدار لهذا الإصدار."
+        AppLanguage.PORTUGUESE -> "Não há notas de lançamento para esta versão."
+        AppLanguage.SPANISH -> "No hay notas de la versión para esta versión."
+        AppLanguage.FRENCH -> "Aucune note de version n'est disponible pour cette version."
+        AppLanguage.GERMAN -> "Für diese Version sind keine Versionshinweise verfügbar."
+        AppLanguage.RUSSIAN -> "Для этой версии нет примечаний к выпуску."
+        AppLanguage.JAPANESE -> "このバージョンのリリースノートはありません。"
+        AppLanguage.KOREAN -> "이 버전에는 릴리스 노트가 없습니다."
+    }
+
+    val installPermissionTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "需要安装权限"
+        AppLanguage.ENGLISH -> "Install permission needed"
+        AppLanguage.ARABIC -> "يلزم إذن التثبيت"
+        AppLanguage.PORTUGUESE -> "Permissão de instalação necessária"
+        AppLanguage.SPANISH -> "Se necesita permiso de instalación"
+        AppLanguage.FRENCH -> "Autorisation d'installation requise"
+        AppLanguage.GERMAN -> "Installationsberechtigung erforderlich"
+        AppLanguage.RUSSIAN -> "Требуется разрешение на установку"
+        AppLanguage.JAPANESE -> "インストール権限が必要です"
+        AppLanguage.KOREAN -> "설치 권한이 필요합니다"
+    }
+
+    val installPermissionMessage: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Android 要求先允许本应用安装未知应用。请在设置中开启后，回来重新点击安装。"
+        AppLanguage.ENGLISH -> "Android requires you to allow this app to install unknown apps first. Enable it in settings, then come back and tap install again."
+        AppLanguage.ARABIC -> "يشترط Android السماح لهذا التطبيق بتثبيت التطبيقات غير المعروفة أولاً. فعّل ذلك في الإعدادات ثم عد واضغط تثبيت مرة أخرى."
+        AppLanguage.PORTUGUESE -> "O Android exige que você permita que este app instale apps desconhecidos primeiro. Ative nas configurações e volte para tocar em instalar novamente."
+        AppLanguage.SPANISH -> "Android requiere que primero permitas que esta app instale apps desconocidas. Actívalo en ajustes y vuelve a tocar instalar."
+        AppLanguage.FRENCH -> "Android exige d'abord d'autoriser cette application à installer des applications inconnues. Activez-le dans les réglages, puis revenez appuyer sur installer."
+        AppLanguage.GERMAN -> "Android verlangt, dass du dieser App zuerst erlaubst, unbekannte Apps zu installieren. Aktiviere es in den Einstellungen und tippe dann erneut auf Installieren."
+        AppLanguage.RUSSIAN -> "Android требует сначала разрешить этому приложению установку неизвестных приложений. Включите это в настройках, затем вернитесь и снова нажмите «Установить»."
+        AppLanguage.JAPANESE -> "Android では、まずこのアプリによる提供元不明アプリのインストールを許可する必要があります。設定で有効にしてから、戻って再度インストールを押してください。"
+        AppLanguage.KOREAN -> "Android에서는 먼저 이 앱이 알 수 없는 앱을 설치하도록 허용해야 합니다. 설정에서 활성화한 후 돌아와 다시 설치를 누르세요."
+    }
+
+    val startupPermissionTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "权限说明"
+        AppLanguage.ENGLISH -> "About these permissions"
+        AppLanguage.ARABIC -> "حول هذه الأذونات"
+        AppLanguage.PORTUGUESE -> "Sobre estas permissões"
+        AppLanguage.SPANISH -> "Sobre estos permisos"
+        AppLanguage.FRENCH -> "À propos de ces autorisations"
+        AppLanguage.GERMAN -> "Zu diesen Berechtigungen"
+        AppLanguage.RUSSIAN -> "Об этих разрешениях"
+        AppLanguage.JAPANESE -> "権限について"
+        AppLanguage.KOREAN -> "권한 안내"
+    }
+
+    val startupPermissionNotificationsMessage: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "通知用于显示构建进度和运行时下载状态。不授权也不影响任何功能，只是看不到进度通知。"
+        AppLanguage.ENGLISH -> "Notifications show build progress and runtime download status. Declining breaks nothing — you just won't see progress notifications."
+        AppLanguage.ARABIC -> "تعرض الإشعارات تقدم البناء وحالة تنزيل بيئات التشغيل. الرفض لا يعطل أي وظيفة، لكنك لن ترى إشعارات التقدم."
+        AppLanguage.PORTUGUESE -> "As notificações mostram o progresso da compilação e o status dos downloads de runtime. Recusar não quebra nada — você apenas não verá notificações de progresso."
+        AppLanguage.SPANISH -> "Las notificaciones muestran el progreso de compilación y el estado de las descargas de runtimes. Rechazar no rompe nada: solo no verás notificaciones de progreso."
+        AppLanguage.FRENCH -> "Les notifications affichent la progression des builds et l'état des téléchargements de runtimes. Refuser ne casse rien — vous ne verrez simplement pas les notifications de progression."
+        AppLanguage.GERMAN -> "Benachrichtigungen zeigen Build-Fortschritt und Download-Status von Laufzeiten. Eine Ablehnung schränkt keine Funktion ein — du siehst nur keine Fortschrittsbenachrichtigungen."
+        AppLanguage.RUSSIAN -> "Уведомления показывают ход сборки и статус загрузки сред выполнения. Отказ ничего не ломает — просто не будет уведомлений о прогрессе."
+        AppLanguage.JAPANESE -> "通知はビルドの進捗とランタイムのダウンロード状況を表示します。拒否しても機能は損なわれず、進捗通知が見えなくなるだけです。"
+        AppLanguage.KOREAN -> "알림은 빌드 진행 상황과 런타임 다운로드 상태를 표시합니다. 거부해도 기능에는 영향이 없으며, 진행 알림만 보이지 않습니다."
+    }
+
+    val startupPermissionStorageMessage: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "存储权限用于在旧版 Android 上把导出的 APK 和下载的文件保存到公共目录。不授权时，应用内功能仍可正常使用。"
+        AppLanguage.ENGLISH -> "Storage permission lets older Android versions save exported APKs and downloaded files to public folders. Without it, in-app features still work."
+        AppLanguage.ARABIC -> "يتيح إذن التخزين لإصدارات Android القديمة حفظ ملفات APK المصدّرة والملفات المنزّلة في المجلدات العامة. بدونه تظل ميزات التطبيق تعمل."
+        AppLanguage.PORTUGUESE -> "A permissão de armazenamento permite que versões antigas do Android salvem APKs exportados e arquivos baixados em pastas públicas. Sem ela, os recursos do app continuam funcionando."
+        AppLanguage.SPANISH -> "El permiso de almacenamiento permite que versiones antiguas de Android guarden APKs exportados y archivos descargados en carpetas públicas. Sin él, las funciones de la app siguen funcionando."
+        AppLanguage.FRENCH -> "L'autorisation de stockage permet aux anciennes versions d'Android d'enregistrer les APK exportés et les fichiers téléchargés dans des dossiers publics. Sans elle, les fonctions de l'application restent opérationnelles."
+        AppLanguage.GERMAN -> "Die Speicherberechtigung erlaubt älteren Android-Versionen, exportierte APKs und heruntergeladene Dateien in öffentlichen Ordnern zu speichern. Ohne sie funktionieren die App-Funktionen weiterhin."
+        AppLanguage.RUSSIAN -> "Разрешение на хранилище позволяет старым версиям Android сохранять экспортированные APK и загруженные файлы в общие папки. Без него функции приложения продолжают работать."
+        AppLanguage.JAPANESE -> "ストレージ権限は、古い Android でエクスポートした APK やダウンロードファイルを公開フォルダに保存するために使います。拒否してもアプリ内機能は使えます。"
+        AppLanguage.KOREAN -> "저장소 권한은 이전 Android 버전에서 내보낸 APK와 다운로드 파일을 공용 폴더에 저장하는 데 사용됩니다. 거부해도 앱 내 기능은 계속 사용할 수 있습니다."
+    }
+
+    val startupPermissionContinue: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "继续"
+        AppLanguage.ENGLISH -> "Continue"
+        AppLanguage.ARABIC -> "متابعة"
+        AppLanguage.PORTUGUESE -> "Continuar"
+        AppLanguage.SPANISH -> "Continuar"
+        AppLanguage.FRENCH -> "Continuer"
+        AppLanguage.GERMAN -> "Weiter"
+        AppLanguage.RUSSIAN -> "Продолжить"
+        AppLanguage.JAPANESE -> "続行"
+        AppLanguage.KOREAN -> "계속"
+    }
+
+    val permissionDeniedTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "权限未授予"
+        AppLanguage.ENGLISH -> "Permission not granted"
+        AppLanguage.ARABIC -> "لم يُمنح الإذن"
+        AppLanguage.PORTUGUESE -> "Permissão não concedida"
+        AppLanguage.SPANISH -> "Permiso no concedido"
+        AppLanguage.FRENCH -> "Autorisation non accordée"
+        AppLanguage.GERMAN -> "Berechtigung nicht erteilt"
+        AppLanguage.RUSSIAN -> "Разрешение не предоставлено"
+        AppLanguage.JAPANESE -> "権限が許可されていません"
+        AppLanguage.KOREAN -> "권한이 허용되지 않았습니다"
+    }
+
+    val permissionDeniedMessage: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "没关系，所有功能仍可正常使用，只是少了进度通知或公共目录保存。随时可以在系统设置中重新授权。"
+        AppLanguage.ENGLISH -> "That's fine — everything still works, just without progress notifications or saving to public folders. You can grant the permission anytime in system settings."
+        AppLanguage.ARABIC -> "لا بأس — كل شيء يعمل، فقط بدون إشعارات التقدم أو الحفظ في المجلدات العامة. يمكنك منح الإذن في أي وقت من إعدادات النظام."
+        AppLanguage.PORTUGUESE -> "Tudo bem — tudo continua funcionando, apenas sem notificações de progresso ou salvamento em pastas públicas. Você pode conceder a permissão a qualquer momento nas configurações do sistema."
+        AppLanguage.SPANISH -> "No pasa nada: todo sigue funcionando, solo sin notificaciones de progreso ni guardado en carpetas públicas. Puedes conceder el permiso en cualquier momento en los ajustes del sistema."
+        AppLanguage.FRENCH -> "Pas de souci — tout fonctionne toujours, simplement sans notifications de progression ni enregistrement dans les dossiers publics. Vous pouvez accorder l'autorisation à tout moment dans les réglages système."
+        AppLanguage.GERMAN -> "Kein Problem — alles funktioniert weiter, nur ohne Fortschrittsbenachrichtigungen oder Speichern in öffentlichen Ordnern. Du kannst die Berechtigung jederzeit in den Systemeinstellungen erteilen."
+        AppLanguage.RUSSIAN -> "Ничего страшного — всё продолжает работать, просто без уведомлений о прогрессе и сохранения в общие папки. Разрешение можно выдать в любой момент в системных настройках."
+        AppLanguage.JAPANESE -> "問題ありません。進捗通知や公開フォルダへの保存が使えないだけで、すべての機能はそのまま使えます。システム設定からいつでも許可できます。"
+        AppLanguage.KOREAN -> "괜찮습니다. 진행 알림이나 공용 폴더 저장만 없을 뿐 모든 기능은 그대로 사용할 수 있습니다. 시스템 설정에서 언제든지 권한을 허용할 수 있습니다."
+    }
+
+    val emptyStateHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "把网页、前端项目或本地服务器打包成真正的 Android 应用，全程在手机上完成。"
+        AppLanguage.ENGLISH -> "Turn websites, frontend projects, or local servers into real Android apps — entirely on your phone."
+        AppLanguage.ARABIC -> "حوّل المواقع أو مشاريع الواجهة الأمامية أو الخوادم المحلية إلى تطبيقات Android حقيقية — بالكامل على هاتفك."
+        AppLanguage.PORTUGUESE -> "Transforme sites, projetos frontend ou servidores locais em apps Android reais — tudo no seu celular."
+        AppLanguage.SPANISH -> "Convierte sitios web, proyectos frontend o servidores locales en apps Android reales, todo desde tu teléfono."
+        AppLanguage.FRENCH -> "Transformez des sites web, des projets frontend ou des serveurs locaux en véritables applications Android — entièrement sur votre téléphone."
+        AppLanguage.GERMAN -> "Verwandle Websites, Frontend-Projekte oder lokale Server in echte Android-Apps — komplett auf deinem Handy."
+        AppLanguage.RUSSIAN -> "Превращайте сайты, фронтенд-проекты или локальные серверы в настоящие Android-приложения — целиком на телефоне."
+        AppLanguage.JAPANESE -> "ウェブサイトやフロントエンドプロジェクト、ローカルサーバーを本物の Android アプリに。すべてスマホ上で完結します。"
+        AppLanguage.KOREAN -> "웹사이트, 프론트엔드 프로젝트, 로컬 서버를 진짜 Android 앱으로 만드세요. 모든 과정이 휴대폰에서 이루어집니다."
+    }
+
+    val emptyStateSampleApp: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "先创建一个示例应用"
+        AppLanguage.ENGLISH -> "Start with a sample app"
+        AppLanguage.ARABIC -> "ابدأ بتطبيق تجريبي"
+        AppLanguage.PORTUGUESE -> "Comece com um app de exemplo"
+        AppLanguage.SPANISH -> "Empieza con una app de ejemplo"
+        AppLanguage.FRENCH -> "Commencer avec une application d'exemple"
+        AppLanguage.GERMAN -> "Mit einer Beispiel-App starten"
+        AppLanguage.RUSSIAN -> "Начать с примера приложения"
+        AppLanguage.JAPANESE -> "サンプルアプリから始める"
+        AppLanguage.KOREAN -> "샘플 앱으로 시작하기"
+    }
+
+    val sampleAppName: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "示例 · WebToApp 文档"
+        AppLanguage.ENGLISH -> "Sample · WebToApp Docs"
+        AppLanguage.ARABIC -> "مثال · وثائق WebToApp"
+        AppLanguage.PORTUGUESE -> "Exemplo · Docs do WebToApp"
+        AppLanguage.SPANISH -> "Ejemplo · Docs de WebToApp"
+        AppLanguage.FRENCH -> "Exemple · Docs WebToApp"
+        AppLanguage.GERMAN -> "Beispiel · WebToApp-Doku"
+        AppLanguage.RUSSIAN -> "Пример · Документация WebToApp"
+        AppLanguage.JAPANESE -> "サンプル · WebToApp ドキュメント"
+        AppLanguage.KOREAN -> "샘플 · WebToApp 문서"
+    }
+
+    val sampleAppCreated: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "示例应用已创建，点击即可预览"
+        AppLanguage.ENGLISH -> "Sample app created — tap it to preview"
+        AppLanguage.ARABIC -> "تم إنشاء التطبيق التجريبي — اضغط عليه للمعاينة"
+        AppLanguage.PORTUGUESE -> "App de exemplo criado — toque para pré-visualizar"
+        AppLanguage.SPANISH -> "App de ejemplo creada: tócala para previsualizar"
+        AppLanguage.FRENCH -> "Application d'exemple créée — appuyez pour prévisualiser"
+        AppLanguage.GERMAN -> "Beispiel-App erstellt — zum Ansehen antippen"
+        AppLanguage.RUSSIAN -> "Пример приложения создан — нажмите для предпросмотра"
+        AppLanguage.JAPANESE -> "サンプルアプリを作成しました。タップしてプレビューできます"
+        AppLanguage.KOREAN -> "샘플 앱이 생성되었습니다. 탭하여 미리 보세요"
+    }
+
+    val onboardingSkip: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "跳过"
+        AppLanguage.ENGLISH -> "Skip"
+        AppLanguage.ARABIC -> "تخطي"
+        AppLanguage.PORTUGUESE -> "Pular"
+        AppLanguage.SPANISH -> "Omitir"
+        AppLanguage.FRENCH -> "Passer"
+        AppLanguage.GERMAN -> "Überspringen"
+        AppLanguage.RUSSIAN -> "Пропустить"
+        AppLanguage.JAPANESE -> "スキップ"
+        AppLanguage.KOREAN -> "건너뛰기"
+    }
+
+    val onboardingNext: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "下一步"
+        AppLanguage.ENGLISH -> "Next"
+        AppLanguage.ARABIC -> "التالي"
+        AppLanguage.PORTUGUESE -> "Próximo"
+        AppLanguage.SPANISH -> "Siguiente"
+        AppLanguage.FRENCH -> "Suivant"
+        AppLanguage.GERMAN -> "Weiter"
+        AppLanguage.RUSSIAN -> "Далее"
+        AppLanguage.JAPANESE -> "次へ"
+        AppLanguage.KOREAN -> "다음"
+    }
+
+    val onboardingStart: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "开始使用"
+        AppLanguage.ENGLISH -> "Get started"
+        AppLanguage.ARABIC -> "ابدأ الآن"
+        AppLanguage.PORTUGUESE -> "Começar"
+        AppLanguage.SPANISH -> "Empezar"
+        AppLanguage.FRENCH -> "Commencer"
+        AppLanguage.GERMAN -> "Loslegen"
+        AppLanguage.RUSSIAN -> "Начать"
+        AppLanguage.JAPANESE -> "はじめる"
+        AppLanguage.KOREAN -> "시작하기"
+    }
+
+    val onboardingPage1Title: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "手机上的 APK 工坊"
+        AppLanguage.ENGLISH -> "An APK workshop on your phone"
+        AppLanguage.ARABIC -> "ورشة APK على هاتفك"
+        AppLanguage.PORTUGUESE -> "Uma oficina de APK no seu celular"
+        AppLanguage.SPANISH -> "Un taller de APK en tu teléfono"
+        AppLanguage.FRENCH -> "Un atelier d'APK sur votre téléphone"
+        AppLanguage.GERMAN -> "Eine APK-Werkstatt auf deinem Handy"
+        AppLanguage.RUSSIAN -> "Мастерская APK на вашем телефоне"
+        AppLanguage.JAPANESE -> "スマホ上の APK 工房"
+        AppLanguage.KOREAN -> "휴대폰 위의 APK 공방"
+    }
+
+    val onboardingPage1Body: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "把网页、HTML、前端项目打包成可安装的 Android 应用。无需电脑，构建、签名、导出全部在设备上完成。"
+        AppLanguage.ENGLISH -> "Package websites, HTML, and frontend projects into installable Android apps. No computer needed — building, signing, and exporting all happen on your device."
+        AppLanguage.ARABIC -> "حوّل المواقع وHTML ومشاريع الواجهة الأمامية إلى تطبيقات Android قابلة للتثبيت. لا حاجة لحاسوب — البناء والتوقيع والتصدير تتم على جهازك."
+        AppLanguage.PORTUGUESE -> "Empacote sites, HTML e projetos frontend em apps Android instaláveis. Sem computador — compilação, assinatura e exportação acontecem no seu dispositivo."
+        AppLanguage.SPANISH -> "Empaqueta sitios web, HTML y proyectos frontend en apps Android instalables. Sin ordenador: compilar, firmar y exportar ocurre en tu dispositivo."
+        AppLanguage.FRENCH -> "Empaquetez des sites web, du HTML et des projets frontend en applications Android installables. Sans ordinateur — compilation, signature et export se font sur votre appareil."
+        AppLanguage.GERMAN -> "Verpacke Websites, HTML und Frontend-Projekte in installierbare Android-Apps. Kein Computer nötig — Bauen, Signieren und Exportieren passieren auf deinem Gerät."
+        AppLanguage.RUSSIAN -> "Упаковывайте сайты, HTML и фронтенд-проекты в устанавливаемые Android-приложения. Без компьютера — сборка, подпись и экспорт происходят на устройстве."
+        AppLanguage.JAPANESE -> "ウェブサイトや HTML、フロントエンドプロジェクトをインストール可能な Android アプリに。パソコン不要で、ビルド・署名・エクスポートまですべて端末上で完了します。"
+        AppLanguage.KOREAN -> "웹사이트, HTML, 프론트엔드 프로젝트를 설치 가능한 Android 앱으로 패키징하세요. 컴퓨터 없이 빌드, 서명, 내보내기까지 모두 기기에서 이루어집니다."
+    }
+
+    val onboardingPage2Title: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "不只是套壳浏览器"
+        AppLanguage.ENGLISH -> "More than a WebView wrapper"
+        AppLanguage.ARABIC -> "أكثر من مجرد غلاف WebView"
+        AppLanguage.PORTUGUESE -> "Mais que um wrapper de WebView"
+        AppLanguage.SPANISH -> "Más que un envoltorio de WebView"
+        AppLanguage.FRENCH -> "Plus qu'un simple wrapper WebView"
+        AppLanguage.GERMAN -> "Mehr als eine WebView-Hülle"
+        AppLanguage.RUSSIAN -> "Больше, чем обёртка WebView"
+        AppLanguage.JAPANESE -> "ただの WebView ラッパーではありません"
+        AppLanguage.KOREAN -> "단순한 WebView 래퍼가 아닙니다"
+    }
+
+    val onboardingPage2Body: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Node.js、PHP、Python、Go、WordPress 都能在手机上真实运行。内置油猴脚本、Chrome 扩展和模块市场，应用功能随你扩展。"
+        AppLanguage.ENGLISH -> "Node.js, PHP, Python, Go, and WordPress really run on your phone. Built-in userscripts, Chrome extensions, and a module market let you extend any app."
+        AppLanguage.ARABIC -> "تعمل Node.js وPHP وPython وGo وWordPress فعلياً على هاتفك. سكربتات المستخدم وإضافات Chrome وسوق الوحدات تتيح لك توسيع أي تطبيق."
+        AppLanguage.PORTUGUESE -> "Node.js, PHP, Python, Go e WordPress rodam de verdade no seu celular. Userscripts, extensões do Chrome e um mercado de módulos integrados para estender qualquer app."
+        AppLanguage.SPANISH -> "Node.js, PHP, Python, Go y WordPress se ejecutan de verdad en tu teléfono. Userscripts, extensiones de Chrome y un mercado de módulos integrados para ampliar cualquier app."
+        AppLanguage.FRENCH -> "Node.js, PHP, Python, Go et WordPress s'exécutent vraiment sur votre téléphone. Userscripts, extensions Chrome et marché de modules intégrés pour étendre chaque application."
+        AppLanguage.GERMAN -> "Node.js, PHP, Python, Go und WordPress laufen wirklich auf deinem Handy. Userscripts, Chrome-Erweiterungen und ein Modul-Markt erweitern jede App."
+        AppLanguage.RUSSIAN -> "Node.js, PHP, Python, Go и WordPress действительно работают на телефоне. Встроенные юзерскрипты, расширения Chrome и рынок модулей расширяют любое приложение."
+        AppLanguage.JAPANESE -> "Node.js・PHP・Python・Go・WordPress がスマホ上で実際に動きます。ユーザースクリプト、Chrome 拡張、モジュールマーケットでアプリを自由に拡張できます。"
+        AppLanguage.KOREAN -> "Node.js, PHP, Python, Go, WordPress가 휴대폰에서 실제로 실행됩니다. 내장 유저스크립트, Chrome 확장, 모듈 마켓으로 어떤 앱이든 확장할 수 있습니다."
+    }
+
+    val onboardingPage3Title: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "你的数据留在设备上"
+        AppLanguage.ENGLISH -> "Your data stays on your device"
+        AppLanguage.ARABIC -> "تبقى بياناتك على جهازك"
+        AppLanguage.PORTUGUESE -> "Seus dados ficam no seu dispositivo"
+        AppLanguage.SPANISH -> "Tus datos permanecen en tu dispositivo"
+        AppLanguage.FRENCH -> "Vos données restent sur votre appareil"
+        AppLanguage.GERMAN -> "Deine Daten bleiben auf deinem Gerät"
+        AppLanguage.RUSSIAN -> "Ваши данные остаются на устройстве"
+        AppLanguage.JAPANESE -> "データは端末内に留まります"
+        AppLanguage.KOREAN -> "데이터는 기기에 남습니다"
+    }
+
+    val onboardingPage3Body: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "无账号、无遥测、无广告。项目和密钥保存在应用私有存储，随时可以整体备份导出。"
+        AppLanguage.ENGLISH -> "No accounts, no telemetry, no ads. Projects and keys live in private app storage, and everything can be backed up and exported anytime."
+        AppLanguage.ARABIC -> "بدون حسابات ولا قياس عن بُعد ولا إعلانات. تُحفظ المشاريع والمفاتيح في تخزين خاص، ويمكن نسخ كل شيء احتياطياً وتصديره في أي وقت."
+        AppLanguage.PORTUGUESE -> "Sem contas, sem telemetria, sem anúncios. Projetos e chaves ficam no armazenamento privado do app, e tudo pode ser copiado e exportado a qualquer momento."
+        AppLanguage.SPANISH -> "Sin cuentas, sin telemetría, sin anuncios. Los proyectos y las claves se guardan en el almacenamiento privado de la app, y todo se puede respaldar y exportar en cualquier momento."
+        AppLanguage.FRENCH -> "Pas de compte, pas de télémétrie, pas de publicité. Projets et clés restent dans le stockage privé de l'application, et tout peut être sauvegardé et exporté à tout moment."
+        AppLanguage.GERMAN -> "Keine Konten, keine Telemetrie, keine Werbung. Projekte und Schlüssel liegen im privaten App-Speicher und lassen sich jederzeit sichern und exportieren."
+        AppLanguage.RUSSIAN -> "Без аккаунтов, телеметрии и рекламы. Проекты и ключи хранятся в приватном хранилище приложения, всё можно сохранить и экспортировать в любой момент."
+        AppLanguage.JAPANESE -> "アカウントなし・テレメトリーなし・広告なし。プロジェクトと鍵はアプリのプライベートストレージに保存され、いつでもまとめてバックアップ・エクスポートできます。"
+        AppLanguage.KOREAN -> "계정 없음, 원격 분석 없음, 광고 없음. 프로젝트와 키는 앱의 비공개 저장소에 보관되며, 언제든지 전체 백업하고 내보낼 수 있습니다."
+    }
+
+    val featureTourTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "功能导览"
+        AppLanguage.ENGLISH -> "Feature tour"
+        AppLanguage.ARABIC -> "جولة الميزات"
+        AppLanguage.PORTUGUESE -> "Tour de recursos"
+        AppLanguage.SPANISH -> "Recorrido de funciones"
+        AppLanguage.FRENCH -> "Visite des fonctionnalités"
+        AppLanguage.GERMAN -> "Funktionsübersicht"
+        AppLanguage.RUSSIAN -> "Обзор возможностей"
+        AppLanguage.JAPANESE -> "機能ツアー"
+        AppLanguage.KOREAN -> "기능 둘러보기"
+    }
+
+    val featureTourDesc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "重新查看首次启动时的功能介绍"
+        AppLanguage.ENGLISH -> "Revisit the introduction shown on first launch"
+        AppLanguage.ARABIC -> "أعد مشاهدة مقدمة الميزات التي ظهرت عند أول تشغيل"
+        AppLanguage.PORTUGUESE -> "Reveja a apresentação mostrada no primeiro início"
+        AppLanguage.SPANISH -> "Vuelve a ver la introducción del primer inicio"
+        AppLanguage.FRENCH -> "Revoir la présentation affichée au premier lancement"
+        AppLanguage.GERMAN -> "Die Einführung vom ersten Start erneut ansehen"
+        AppLanguage.RUSSIAN -> "Снова посмотреть введение с первого запуска"
+        AppLanguage.JAPANESE -> "初回起動時の機能紹介をもう一度見る"
+        AppLanguage.KOREAN -> "첫 실행 시 표시된 기능 소개를 다시 보기"
+    }
+
     val madeWithLove: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "用心制作 by Shiaho"
         AppLanguage.ENGLISH -> "Made with love by Shiaho"
