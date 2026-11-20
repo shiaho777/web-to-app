@@ -59,7 +59,7 @@
     "stargazers_count": 22,
     "forks_count": 2,
     "language": "Kotlin",
-    "pushed_at": "2026-11-18T14:37:28Z",
+    "pushed_at": "2026-11-20T01:24:57Z",
     "html_url": "https://github.com/shiaho777/WebViewIDE"
   },
   {
@@ -93,7 +93,7 @@
     "name": "pneuma-android",
     "description": "Pneuma · 一部会呼吸的 AI 虚拟手机：拟真桌面、聊天、朋友圈、查手机、地图定位、语音/视频通话、日记日历。AI 角色有作息、日程、位置和长期记忆，会主动发消息、发帖互动。数据全在设备本地，联网只调你自己配置的 LLM/生图/语音 API。",
     "stargazers_count": 16,
-    "forks_count": 13,
+    "forks_count": 14,
     "language": "TypeScript",
     "pushed_at": "2026-11-12T10:06:27Z",
     "html_url": "https://github.com/shiaho777/pneuma-android"
