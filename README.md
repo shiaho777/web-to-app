@@ -159,7 +159,7 @@ WebToApp has a large number of switches. The sections below group them by use ca
 - **Dual engine** — System WebView by default, or an optional GeckoView (Firefox) runtime downloaded on first use.
 - **Kernel flavor disguise** — present as Chrome, Edge, Samsung Internet, Firefox, or Safari-style while keeping the real engine.
 - **Desktop mode**, custom User-Agent, and JS/CSS injection at document-start / end / idle.
-- **Page zoom** — a per-app percent applied with CSS zoom on the document root, so text, layout, images, and canvas scale together on the system WebView and on GeckoView. A page that restores its own viewport meta does not reload.
+- **Page zoom** — set a per-app starting scale for the whole page. System WebView applies it before loading the site. GeckoView applies it through the page's viewport.
 - **Popup handling** — same window, external browser, popup window, or block. A script-opened window stays a real child, so popup sign-in can reach `window.opener`.
 - **Proxies** — static HTTP/HTTPS/SOCKS5, PAC, authentication, bypass rules, and a local HTTP-to-SOCKS bridge.
 - **DNS-over-HTTPS** — Cloudflare, Google, AdGuard, NextDNS, CleanBrowsing, Quad9, Mullvad, plus custom endpoints; strict or automatic modes.
