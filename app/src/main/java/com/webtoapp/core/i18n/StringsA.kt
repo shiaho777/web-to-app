@@ -11179,6 +11179,331 @@ object StringsA {
         AppLanguage.KOREAN -> "여기에 공개 키를 붙여넣으세요. 개인 키는 서버에만 보관하여 응답 서명에 사용합니다. 비어 있거나 일치하지 않는 키는 검증에 실패합니다."
     }
 
+    val remoteActivationTrustTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "服务器证书信任"
+        AppLanguage.ENGLISH -> "Server certificate trust"
+        AppLanguage.ARABIC -> "الثقة بشهادة الخادم"
+        AppLanguage.PORTUGUESE -> "Confiança no certificado do servidor"
+        AppLanguage.SPANISH -> "Confianza en el certificado del servidor"
+        AppLanguage.FRENCH -> "Confiance du certificat serveur"
+        AppLanguage.GERMAN -> "Vertrauen in das Serverzertifikat"
+        AppLanguage.RUSSIAN -> "Доверие к сертификату сервера"
+        AppLanguage.JAPANESE -> "サーバー証明書の信頼"
+        AppLanguage.KOREAN -> "서버 인증서 신뢰"
+    }
+
+    val remoteActivationTrustSystem: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "系统 CA"
+        AppLanguage.ENGLISH -> "System CA"
+        AppLanguage.ARABIC -> "CA النظام"
+        AppLanguage.PORTUGUESE -> "CA do sistema"
+        AppLanguage.SPANISH -> "CA del sistema"
+        AppLanguage.FRENCH -> "AC système"
+        AppLanguage.GERMAN -> "System-CA"
+        AppLanguage.RUSSIAN -> "Системный CA"
+        AppLanguage.JAPANESE -> "システム CA"
+        AppLanguage.KOREAN -> "시스템 CA"
+    }
+
+    val remoteActivationTrustPinned: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "固定证书"
+        AppLanguage.ENGLISH -> "Pinned certificate"
+        AppLanguage.ARABIC -> "شهادة مثبتة"
+        AppLanguage.PORTUGUESE -> "Certificado fixado"
+        AppLanguage.SPANISH -> "Certificado fijado"
+        AppLanguage.FRENCH -> "Certificat épinglé"
+        AppLanguage.GERMAN -> "Angeheftetes Zertifikat"
+        AppLanguage.RUSSIAN -> "Закреплённый сертификат"
+        AppLanguage.JAPANESE -> "固定証明書"
+        AppLanguage.KOREAN -> "고정 인증서"
+    }
+
+    val remoteActivationTrustSystemHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "使用 Android 系统信任的公共 CA 证书，适用于 Let's Encrypt 等公开证书。"
+        AppLanguage.ENGLISH -> "Use public CA certificates trusted by Android. Works with Let's Encrypt and other public certificates."
+        AppLanguage.ARABIC -> "استخدم شهادات CA العامة الموثوقة في Android. تناسب Let's Encrypt والشهادات العامة الأخرى."
+        AppLanguage.PORTUGUESE -> "Use certificados de CA públicos confiáveis pelo Android. Funciona com Let's Encrypt e outros certificados públicos."
+        AppLanguage.SPANISH -> "Use certificados de CA públicos de confianza de Android. Funciona con Let's Encrypt y otros certificados públicos."
+        AppLanguage.FRENCH -> "Utilisez des certificats d'AC publics approuvés par Android. Compatible avec Let's Encrypt et les autres certificats publics."
+        AppLanguage.GERMAN -> "Verwenden Sie von Android vertrauenswürdige öffentliche CA-Zertifikate. Funktioniert mit Let's Encrypt und anderen öffentlichen Zertifikaten."
+        AppLanguage.RUSSIAN -> "Используйте публичные сертификаты CA, которым доверяет Android. Подходит для Let's Encrypt и других публичных сертификатов."
+        AppLanguage.JAPANESE -> "Android が信頼する公共 CA 証明書を使用します。Let's Encrypt などの公開証明書に対応します。"
+        AppLanguage.KOREAN -> "Android가 신뢰하는 공인 CA 인증서를 사용합니다. Let's Encrypt 등 공개 인증서에 적합합니다."
+    }
+
+    val remoteActivationTrustPinnedHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "只信任指定指纹的服务器证书，适用于自签证书。证书更换后需要重新导出应用。"
+        AppLanguage.ENGLISH -> "Trust only the server certificate with the pinned fingerprint. For self-signed certificates. Re-export the app after the certificate changes."
+        AppLanguage.ARABIC -> "ثق فقط بشهادة الخادم المطابقة للبصمة المثبتة. مناسبة للشهادات ذاتية التوقيع. أعد تصدير التطبيق بعد تغيير الشهادة."
+        AppLanguage.PORTUGUESE -> "Confie apenas no certificado do servidor com a impressão digital fixada. Para certificados autoassinados. Exporte o app novamente após alterar o certificado."
+        AppLanguage.SPANISH -> "Confíe solo en el certificado del servidor con la huella fijada. Para certificados autofirmados. Vuelva a exportar la app tras cambiar el certificado."
+        AppLanguage.FRENCH -> "Ne faites confiance qu'au certificat serveur correspondant à l'empreinte épinglée. Pour les certificats auto-signés. Réexportez l'application après tout changement de certificat."
+        AppLanguage.GERMAN -> "Vertrauen Sie nur dem Serverzertifikat mit dem angehefteten Fingerabdruck. Für selbstsignierte Zertifikate. Exportieren Sie die App nach einem Zertifikatswechsel erneut."
+        AppLanguage.RUSSIAN -> "Доверять только сертификату сервера с закреплённым отпечатком. Для самоподписанных сертификатов. После смены сертификата экспортируйте приложение заново."
+        AppLanguage.JAPANESE -> "固定した指紋のサーバー証明書のみを信頼します。自己署名証明書向けです。証明書を変更したらアプリを再エクスポートしてください。"
+        AppLanguage.KOREAN -> "고정된 지문의 서버 인증서만 신뢰합니다. 자체 서명 인증서에 적합합니다. 인증서가 변경되면 앱을 다시 내보내야 합니다."
+    }
+
+    val remoteActivationPinnedCertLabel: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "证书 SHA-256 指纹或 PEM"
+        AppLanguage.ENGLISH -> "Certificate SHA-256 fingerprint or PEM"
+        AppLanguage.ARABIC -> "بصمة SHA-256 للشهادة أو PEM"
+        AppLanguage.PORTUGUESE -> "Impressão digital SHA-256 do certificado ou PEM"
+        AppLanguage.SPANISH -> "Huella SHA-256 del certificado o PEM"
+        AppLanguage.FRENCH -> "Empreinte SHA-256 du certificat ou PEM"
+        AppLanguage.GERMAN -> "SHA-256-Fingerabdruck des Zertifikats oder PEM"
+        AppLanguage.RUSSIAN -> "Отпечаток SHA-256 сертификата или PEM"
+        AppLanguage.JAPANESE -> "証明書の SHA-256 指紋または PEM"
+        AppLanguage.KOREAN -> "인증서 SHA-256 지문 또는 PEM"
+    }
+
+    val remoteActivationPinnedCertPlaceholder: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "AA:BB:… 或 -----BEGIN CERTIFICATE-----"
+        AppLanguage.ENGLISH -> "AA:BB:… or -----BEGIN CERTIFICATE-----"
+        AppLanguage.ARABIC -> "AA:BB:… أو -----BEGIN CERTIFICATE-----"
+        AppLanguage.PORTUGUESE -> "AA:BB:… ou -----BEGIN CERTIFICATE-----"
+        AppLanguage.SPANISH -> "AA:BB:… o -----BEGIN CERTIFICATE-----"
+        AppLanguage.FRENCH -> "AA:BB:… ou -----BEGIN CERTIFICATE-----"
+        AppLanguage.GERMAN -> "AA:BB:… oder -----BEGIN CERTIFICATE-----"
+        AppLanguage.RUSSIAN -> "AA:BB:… или -----BEGIN CERTIFICATE-----"
+        AppLanguage.JAPANESE -> "AA:BB:… または -----BEGIN CERTIFICATE-----"
+        AppLanguage.KOREAN -> "AA:BB:… 또는 -----BEGIN CERTIFICATE-----"
+    }
+
+    val remoteActivationPinnedCertInvalid: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "无法识别该证书或指纹，请填写 64 位十六进制 SHA-256 或 PEM 证书"
+        AppLanguage.ENGLISH -> "Unrecognized certificate or fingerprint. Enter a 64-character hex SHA-256 or a PEM certificate."
+        AppLanguage.ARABIC -> "تعذّر التعرف على الشهادة أو البصمة. أدخل SHA-256 ست عشريًا من 64 حرفًا أو شهادة PEM."
+        AppLanguage.PORTUGUESE -> "Certificado ou impressão digital não reconhecido. Informe um SHA-256 hexadecimal de 64 caracteres ou um certificado PEM."
+        AppLanguage.SPANISH -> "Certificado o huella no reconocidos. Introduzca un SHA-256 hexadecimal de 64 caracteres o un certificado PEM."
+        AppLanguage.FRENCH -> "Certificat ou empreinte non reconnu. Saisissez un SHA-256 hexadécimal de 64 caractères ou un certificat PEM."
+        AppLanguage.GERMAN -> "Zertifikat oder Fingerabdruck nicht erkannt. Geben Sie einen 64-stelligen hexadezimalen SHA-256 oder ein PEM-Zertifikat ein."
+        AppLanguage.RUSSIAN -> "Сертификат или отпечаток не распознан. Укажите 64-символьный шестнадцатеричный SHA-256 или сертификат PEM."
+        AppLanguage.JAPANESE -> "証明書または指紋を認識できません。64 文字の16進数 SHA-256 または PEM 証明書を入力してください。"
+        AppLanguage.KOREAN -> "인증서 또는 지문을 인식할 수 없습니다. 64자리 16진수 SHA-256 또는 PEM 인증서를 입력하세요."
+    }
+
+    fun remoteActivationPinnedCertHost(host: String): String = when (Strings.lang) {
+        AppLanguage.CHINESE -> "仅对 $host 生效"
+        AppLanguage.ENGLISH -> "Applies only to $host"
+        AppLanguage.ARABIC -> "ينطبق فقط على $host"
+        AppLanguage.PORTUGUESE -> "Aplica-se apenas a $host"
+        AppLanguage.SPANISH -> "Se aplica solo a $host"
+        AppLanguage.FRENCH -> "S'applique uniquement à $host"
+        AppLanguage.GERMAN -> "Gilt nur für $host"
+        AppLanguage.RUSSIAN -> "Действует только для $host"
+        AppLanguage.JAPANESE -> "$host にのみ適用"
+        AppLanguage.KOREAN -> "${host}에만 적용"
+    }
+
+    val remoteActivationPinnedCertHostMismatch: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "验证地址已变更，请重新导入证书指纹"
+        AppLanguage.ENGLISH -> "The verification URL changed. Re-import the certificate fingerprint."
+        AppLanguage.ARABIC -> "تغيّر رابط التحقق. أعد استيراد بصمة الشهادة."
+        AppLanguage.PORTUGUESE -> "A URL de verificação mudou. Importe novamente a impressão digital do certificado."
+        AppLanguage.SPANISH -> "La URL de verificación cambió. Vuelva a importar la huella del certificado."
+        AppLanguage.FRENCH -> "L'URL de vérification a changé. Réimportez l'empreinte du certificat."
+        AppLanguage.GERMAN -> "Die Verifizierungs-URL wurde geändert. Importieren Sie den Zertifikatsfingerabdruck erneut."
+        AppLanguage.RUSSIAN -> "URL проверки изменился. Импортируйте отпечаток сертификата заново."
+        AppLanguage.JAPANESE -> "検証URLが変更されました。証明書の指紋を再インポートしてください。"
+        AppLanguage.KOREAN -> "검증 URL이 변경되었습니다. 인증서 지문을 다시 가져오세요."
+    }
+
+    val remoteActivationFetchCert: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "从验证地址获取"
+        AppLanguage.ENGLISH -> "Fetch from verification URL"
+        AppLanguage.ARABIC -> "جلب من رابط التحقق"
+        AppLanguage.PORTUGUESE -> "Obter da URL de verificação"
+        AppLanguage.SPANISH -> "Obtener de la URL de verificación"
+        AppLanguage.FRENCH -> "Récupérer depuis l'URL de vérification"
+        AppLanguage.GERMAN -> "Von Verifizierungs-URL abrufen"
+        AppLanguage.RUSSIAN -> "Получить с URL проверки"
+        AppLanguage.JAPANESE -> "検証URLから取得"
+        AppLanguage.KOREAN -> "검증 URL에서 가져오기"
+    }
+
+    fun remoteActivationFetchCertFailed(message: String): String = when (Strings.lang) {
+        AppLanguage.CHINESE -> "获取证书失败：$message"
+        AppLanguage.ENGLISH -> "Failed to fetch the certificate: $message"
+        AppLanguage.ARABIC -> "فشل جلب الشهادة: $message"
+        AppLanguage.PORTUGUESE -> "Falha ao obter o certificado: $message"
+        AppLanguage.SPANISH -> "Error al obtener el certificado: $message"
+        AppLanguage.FRENCH -> "Échec de la récupération du certificat : $message"
+        AppLanguage.GERMAN -> "Zertifikat konnte nicht abgerufen werden: $message"
+        AppLanguage.RUSSIAN -> "Не удалось получить сертификат: $message"
+        AppLanguage.JAPANESE -> "証明書の取得に失敗しました: $message"
+        AppLanguage.KOREAN -> "인증서를 가져오지 못했습니다: $message"
+    }
+
+    val remoteActivationFetchCertConfirmTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "确认服务器证书"
+        AppLanguage.ENGLISH -> "Confirm server certificate"
+        AppLanguage.ARABIC -> "تأكيد شهادة الخادم"
+        AppLanguage.PORTUGUESE -> "Confirmar certificado do servidor"
+        AppLanguage.SPANISH -> "Confirmar certificado del servidor"
+        AppLanguage.FRENCH -> "Confirmer le certificat du serveur"
+        AppLanguage.GERMAN -> "Serverzertifikat bestätigen"
+        AppLanguage.RUSSIAN -> "Подтвердите сертификат сервера"
+        AppLanguage.JAPANESE -> "サーバー証明書の確認"
+        AppLanguage.KOREAN -> "서버 인증서 확인"
+    }
+
+    val remoteActivationFetchCertConfirmBody: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "请通过其他渠道核对下面的 SHA-256 指纹，确认无误后再保存。"
+        AppLanguage.ENGLISH -> "Verify the SHA-256 fingerprint below through another channel before saving."
+        AppLanguage.ARABIC -> "تحقق من بصمة SHA-256 أدناه عبر قناة أخرى قبل الحفظ."
+        AppLanguage.PORTUGUESE -> "Verifique a impressão digital SHA-256 abaixo por outro canal antes de salvar."
+        AppLanguage.SPANISH -> "Verifique la huella SHA-256 a continuación por otro canal antes de guardar."
+        AppLanguage.FRENCH -> "Vérifiez l'empreinte SHA-256 ci-dessous par un autre canal avant d'enregistrer."
+        AppLanguage.GERMAN -> "Überprüfen Sie den SHA-256-Fingerabdruck unten über einen anderen Kanal, bevor Sie speichern."
+        AppLanguage.RUSSIAN -> "Сверьте отпечаток SHA-256 ниже по другому каналу, прежде чем сохранять."
+        AppLanguage.JAPANESE -> "保存する前に、下の SHA-256 指紋を別の経路で確認してください。"
+        AppLanguage.KOREAN -> "저장하기 전에 아래 SHA-256 지문을 다른 경로로 확인하세요."
+    }
+
+    val remoteActivationCertSha256: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "SHA-256 指纹"
+        AppLanguage.ENGLISH -> "SHA-256 fingerprint"
+        AppLanguage.ARABIC -> "بصمة SHA-256"
+        AppLanguage.PORTUGUESE -> "Impressão digital SHA-256"
+        AppLanguage.SPANISH -> "Huella SHA-256"
+        AppLanguage.FRENCH -> "Empreinte SHA-256"
+        AppLanguage.GERMAN -> "SHA-256-Fingerabdruck"
+        AppLanguage.RUSSIAN -> "Отпечаток SHA-256"
+        AppLanguage.JAPANESE -> "SHA-256 指紋"
+        AppLanguage.KOREAN -> "SHA-256 지문"
+    }
+
+    val remoteActivationCertSubject: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "主题"
+        AppLanguage.ENGLISH -> "Subject"
+        AppLanguage.ARABIC -> "الموضوع"
+        AppLanguage.PORTUGUESE -> "Assunto"
+        AppLanguage.SPANISH -> "Asunto"
+        AppLanguage.FRENCH -> "Sujet"
+        AppLanguage.GERMAN -> "Betreff"
+        AppLanguage.RUSSIAN -> "Субъект"
+        AppLanguage.JAPANESE -> "サブジェクト"
+        AppLanguage.KOREAN -> "주체"
+    }
+
+    val remoteActivationCertIssuer: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "签发者"
+        AppLanguage.ENGLISH -> "Issuer"
+        AppLanguage.ARABIC -> "المُصدر"
+        AppLanguage.PORTUGUESE -> "Emissor"
+        AppLanguage.SPANISH -> "Emisor"
+        AppLanguage.FRENCH -> "Émetteur"
+        AppLanguage.GERMAN -> "Aussteller"
+        AppLanguage.RUSSIAN -> "Издатель"
+        AppLanguage.JAPANESE -> "発行者"
+        AppLanguage.KOREAN -> "발급자"
+    }
+
+    val remoteActivationCertValidity: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "有效期"
+        AppLanguage.ENGLISH -> "Validity"
+        AppLanguage.ARABIC -> "الصلاحية"
+        AppLanguage.PORTUGUESE -> "Validade"
+        AppLanguage.SPANISH -> "Validez"
+        AppLanguage.FRENCH -> "Validité"
+        AppLanguage.GERMAN -> "Gültigkeit"
+        AppLanguage.RUSSIAN -> "Срок действия"
+        AppLanguage.JAPANESE -> "有効期間"
+        AppLanguage.KOREAN -> "유효 기간"
+    }
+
+    val remoteActivationCertSan: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "备用名称"
+        AppLanguage.ENGLISH -> "Subject alternative names"
+        AppLanguage.ARABIC -> "الأسماء البديلة"
+        AppLanguage.PORTUGUESE -> "Nomes alternativos"
+        AppLanguage.SPANISH -> "Nombres alternativos"
+        AppLanguage.FRENCH -> "Noms alternatifs"
+        AppLanguage.GERMAN -> "Alternative Namen"
+        AppLanguage.RUSSIAN -> "Альтернативные имена"
+        AppLanguage.JAPANESE -> "代替名"
+        AppLanguage.KOREAN -> "대체 이름"
+    }
+
+    val remoteActivationPinInvalid: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "固定证书指纹配置无效"
+        AppLanguage.ENGLISH -> "Pinned certificate configuration is invalid"
+        AppLanguage.ARABIC -> "تكوين الشهادة المثبتة غير صالح"
+        AppLanguage.PORTUGUESE -> "A configuração do certificado fixado é inválida"
+        AppLanguage.SPANISH -> "La configuración del certificado fijado no es válida"
+        AppLanguage.FRENCH -> "La configuration du certificat épinglé est invalide"
+        AppLanguage.GERMAN -> "Die Konfiguration des angehefteten Zertifikats ist ungültig"
+        AppLanguage.RUSSIAN -> "Конфигурация закреплённого сертификата недействительна"
+        AppLanguage.JAPANESE -> "固定証明書の設定が無効です"
+        AppLanguage.KOREAN -> "고정 인증서 구성이 올바르지 않습니다"
+    }
+
+    val remoteActivationPinMismatch: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "服务器证书与固定指纹不一致"
+        AppLanguage.ENGLISH -> "Server certificate does not match the pinned fingerprint"
+        AppLanguage.ARABIC -> "شهادة الخادم لا تطابق البصمة المثبتة"
+        AppLanguage.PORTUGUESE -> "O certificado do servidor não corresponde à impressão digital fixada"
+        AppLanguage.SPANISH -> "El certificado del servidor no coincide con la huella fijada"
+        AppLanguage.FRENCH -> "Le certificat du serveur ne correspond pas à l'empreinte épinglée"
+        AppLanguage.GERMAN -> "Das Serverzertifikat stimmt nicht mit dem angehefteten Fingerabdruck überein"
+        AppLanguage.RUSSIAN -> "Сертификат сервера не совпадает с закреплённым отпечатком"
+        AppLanguage.JAPANESE -> "サーバー証明書が固定指紋と一致しません"
+        AppLanguage.KOREAN -> "서버 인증서가 고정 지문과 일치하지 않습니다"
+    }
+
+    val remoteActivationPinHostMismatch: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "固定证书只对配置时的验证地址生效"
+        AppLanguage.ENGLISH -> "The pinned certificate only applies to the verification host it was configured for"
+        AppLanguage.ARABIC -> "تنطبق الشهادة المثبتة فقط على مضيف التحقق الذي تم تكوينها له"
+        AppLanguage.PORTUGUESE -> "O certificado fixado só se aplica ao host de verificação para o qual foi configurado"
+        AppLanguage.SPANISH -> "El certificado fijado solo se aplica al host de verificación para el que se configuró"
+        AppLanguage.FRENCH -> "Le certificat épinglé ne s'applique qu'à l'hôte de vérification configuré"
+        AppLanguage.GERMAN -> "Das angeheftete Zertifikat gilt nur für den konfigurierten Verifizierungs-Host"
+        AppLanguage.RUSSIAN -> "Закреплённый сертификат действует только для настроенного хоста проверки"
+        AppLanguage.JAPANESE -> "固定証明書は設定時の検証ホストにのみ適用されます"
+        AppLanguage.KOREAN -> "고정 인증서는 구성된 검증 호스트에만 적용됩니다"
+    }
+
+    val remoteActivationTlsFailed: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "无法建立安全连接，请检查服务器证书"
+        AppLanguage.ENGLISH -> "Cannot establish a secure connection, please check the server certificate"
+        AppLanguage.ARABIC -> "تعذّر إنشاء اتصال آمن، يرجى التحقق من شهادة الخادم"
+        AppLanguage.PORTUGUESE -> "Não foi possível estabelecer uma conexão segura, verifique o certificado do servidor"
+        AppLanguage.SPANISH -> "No se pudo establecer una conexión segura, compruebe el certificado del servidor"
+        AppLanguage.FRENCH -> "Impossible d'établir une connexion sécurisée, vérifiez le certificat du serveur"
+        AppLanguage.GERMAN -> "Sichere Verbindung nicht möglich, bitte das Serverzertifikat prüfen"
+        AppLanguage.RUSSIAN -> "Не удалось установить защищённое соединение, проверьте сертификат сервера"
+        AppLanguage.JAPANESE -> "安全な接続を確立できません。サーバー証明書を確認してください"
+        AppLanguage.KOREAN -> "보안 연결을 설정할 수 없습니다. 서버 인증서를 확인하세요"
+    }
+
+    val remoteActivationGuideTrustTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "自签证书"
+        AppLanguage.ENGLISH -> "Self-signed certificates"
+        AppLanguage.ARABIC -> "الشهادات ذاتية التوقيع"
+        AppLanguage.PORTUGUESE -> "Certificados autoassinados"
+        AppLanguage.SPANISH -> "Certificados autofirmados"
+        AppLanguage.FRENCH -> "Certificats auto-signés"
+        AppLanguage.GERMAN -> "Selbstsignierte Zertifikate"
+        AppLanguage.RUSSIAN -> "Самоподписанные сертификаты"
+        AppLanguage.JAPANESE -> "自己署名証明書"
+        AppLanguage.KOREAN -> "자체 서명 인증서"
+    }
+
+    val remoteActivationGuideTrustBody: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "服务器使用自签证书时，系统 CA 校验会失败。切换到“固定证书”，填入服务器证书的 SHA-256 指纹，或点击“从验证地址获取”读取后核对。指纹只对当前验证地址的 host 生效；证书更换后需要重新导出应用。获取指纹：openssl s_client -connect HOST:PORT </dev/null | openssl x509 -fingerprint -sha256 -noout"
+        AppLanguage.ENGLISH -> "A self-signed server certificate fails system CA validation. Switch to \"Pinned certificate\", then paste the server certificate's SHA-256 fingerprint or use \"Fetch from verification URL\" and verify it. The pin only applies to the verification host; re-export the app after the certificate changes. Get the fingerprint with: openssl s_client -connect HOST:PORT </dev/null | openssl x509 -fingerprint -sha256 -noout"
+        AppLanguage.ARABIC -> "تفشل شهادة الخادم ذاتية التوقيع في التحقق عبر CA النظام. بدّل إلى \"شهادة مثبتة\"، ثم الصق بصمة SHA-256 لشهادة الخادم أو استخدم \"جلب من رابط التحقق\" وتحقق منها. تنطبق البصمة على مضيف التحقق فقط؛ أعد تصدير التطبيق بعد تغيير الشهادة. للحصول على البصمة: openssl s_client -connect HOST:PORT </dev/null | openssl x509 -fingerprint -sha256 -noout"
+        AppLanguage.PORTUGUESE -> "Um certificado de servidor autoassinado falha na validação do CA do sistema. Mude para \"Certificado fixado\", cole a impressão digital SHA-256 do certificado ou use \"Obter da URL de verificação\" e confirme. A fixação se aplica apenas ao host de verificação; exporte o app novamente após alterar o certificado. Obtenha a impressão digital com: openssl s_client -connect HOST:PORT </dev/null | openssl x509 -fingerprint -sha256 -noout"
+        AppLanguage.SPANISH -> "Un certificado de servidor autofirmado falla la validación de la CA del sistema. Cambie a \"Certificado fijado\", pegue la huella SHA-256 del certificado o use \"Obtener de la URL de verificación\" y compruébela. La fijación solo se aplica al host de verificación; vuelva a exportar la app tras cambiar el certificado. Obtenga la huella con: openssl s_client -connect HOST:PORT </dev/null | openssl x509 -fingerprint -sha256 -noout"
+        AppLanguage.FRENCH -> "Un certificat serveur auto-signé échoue à la validation de l'AC système. Passez à « Certificat épinglé », collez l'empreinte SHA-256 du certificat ou utilisez « Récupérer depuis l'URL de vérification » et vérifiez-la. L'épinglage ne s'applique qu'à l'hôte de vérification ; réexportez l'application après tout changement de certificat. Obtenez l'empreinte avec : openssl s_client -connect HOST:PORT </dev/null | openssl x509 -fingerprint -sha256 -noout"
+        AppLanguage.GERMAN -> "Ein selbstsigniertes Serverzertifikat besteht die System-CA-Prüfung nicht. Wechseln Sie zu „Angeheftetes Zertifikat“, fügen Sie den SHA-256-Fingerabdruck des Zertifikats ein oder verwenden Sie „Von Verifizierungs-URL abrufen“ und prüfen Sie ihn. Die Anheftung gilt nur für den Verifizierungs-Host; exportieren Sie die App nach einem Zertifikatswechsel erneut. Fingerabdruck ermitteln: openssl s_client -connect HOST:PORT </dev/null | openssl x509 -fingerprint -sha256 -noout"
+        AppLanguage.RUSSIAN -> "Самоподписанный сертификат сервера не проходит проверку системного CA. Переключитесь на «Закреплённый сертификат», вставьте отпечаток SHA-256 сертификата или нажмите «Получить с URL проверки» и сверьте его. Закрепление действует только для хоста проверки; после смены сертификата экспортируйте приложение заново. Получить отпечаток: openssl s_client -connect HOST:PORT </dev/null | openssl x509 -fingerprint -sha256 -noout"
+        AppLanguage.JAPANESE -> "自己署名のサーバー証明書はシステム CA の検証に失敗します。「固定証明書」に切り替え、証明書の SHA-256 指紋を貼り付けるか、「検証URLから取得」で読み取って確認してください。固定は検証ホストにのみ適用されます。証明書を変更したらアプリを再エクスポートしてください。指紋の取得: openssl s_client -connect HOST:PORT </dev/null | openssl x509 -fingerprint -sha256 -noout"
+        AppLanguage.KOREAN -> "자체 서명 서버 인증서는 시스템 CA 검증에 실패합니다. \"고정 인증서\"로 전환한 뒤 인증서의 SHA-256 지문을 붙여넣거나 \"검증 URL에서 가져오기\"로 읽어 확인하세요. 고정은 검증 호스트에만 적용되며, 인증서가 변경되면 앱을 다시 내보내야 합니다. 지문 확인: openssl s_client -connect HOST:PORT </dev/null | openssl x509 -fingerprint -sha256 -noout"
+    }
+
     val remoteActivationGuideTitle: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "在线验证接口教程"
         AppLanguage.ENGLISH -> "Online Verification Guide"

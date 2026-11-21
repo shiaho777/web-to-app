@@ -172,6 +172,33 @@ test("a device-bound code rejects a second device", async () => {
   assert.ok(verifyLikeClient(publicKeyFromSpki(spki), second.body, "n-b", false));
 });
 
+test("a code without deviceBound does not claim a seat", async () => {
+  const { pkcs8, spki } = await generateSigningKey();
+  const env = {
+    SIGNING_KEY: pkcs8,
+    ACTIVATION_CODES: mockKv({
+      "code:OPEN": JSON.stringify({ maxDevices: 1, devices: [] }),
+    }),
+  };
+
+  const first = await post(
+    { code: "OPEN", deviceId: "device-a", nonce: "n-open-a", ts: Date.now() },
+    env
+  );
+  assert.equal(first.body.ok, true);
+  assert.equal(first.body.remainingUses, null);
+
+  const second = await post(
+    { code: "OPEN", deviceId: "device-b", nonce: "n-open-b", ts: Date.now() },
+    env
+  );
+  assert.equal(second.body.ok, true, "a code without deviceBound must not claim a seat");
+  assert.equal(second.body.remainingUses, null);
+
+  const record = JSON.parse(env.ACTIVATION_CODES.store.get("code:OPEN"));
+  assert.deepEqual(record.devices ?? [], []);
+});
+
 test("a delivered url is inside the signed payload", async () => {
   const { pkcs8, spki } = await generateSigningKey();
   const env = {

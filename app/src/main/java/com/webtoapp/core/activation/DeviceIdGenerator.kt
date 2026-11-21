@@ -13,6 +13,7 @@ object DeviceIdGenerator {
 
     private const val TAG = "DeviceIdGenerator"
     private const val PREFS_NAME = "device_id_prefs"
+    private const val PREVIEW_PREFS_NAME = "preview_device_id_prefs"
     private const val KEY_DEVICE_ID = "device_id"
     private const val KEY_DEVICE_ID_HMAC = "device_id_hmac"
     private const val KEY_DEVICE_ID_PACKAGE = "device_id_package"
@@ -77,6 +78,25 @@ object DeviceIdGenerator {
 
         AppLogger.i(TAG, "Device ID generated and persisted for package=$safePackage")
         return deviceId
+    }
+
+    @SuppressLint("HardwareIds")
+    fun previewDeviceId(context: Context, packageName: String): String {
+        val safePackage = packageName.trim()
+        val androidId = Settings.Secure.getString(
+            context.contentResolver,
+            Settings.Secure.ANDROID_ID
+        )
+        val seed = if (!androidId.isNullOrBlank() && androidId != "9774d56d682e549c") {
+            androidId
+        } else {
+            val prefs = context.getSharedPreferences(PREVIEW_PREFS_NAME, Context.MODE_PRIVATE)
+            val key = "fallback_$safePackage"
+            prefs.getString(key, null) ?: UUID.randomUUID().toString().replace("-", "").also {
+                prefs.edit().putString(key, it).apply()
+            }
+        }
+        return computeDeviceId(seed, safePackage)
     }
 
     fun computeDeviceId(androidId: String, packageName: String): String {
