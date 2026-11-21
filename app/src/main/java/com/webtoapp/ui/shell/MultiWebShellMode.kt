@@ -27,6 +27,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.onSizeChanged
 
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -52,6 +53,8 @@ import com.webtoapp.core.shell.ShellConfig
 import com.webtoapp.core.webview.WebViewCallbacks
 import com.webtoapp.data.model.WebViewConfig
 import com.webtoapp.ui.design.WtaExpandIn
+import com.webtoapp.ui.design.WtaFadeIn
+import com.webtoapp.ui.design.WtaFadeOut
 import com.webtoapp.ui.design.WtaLoadingIndicator
 import com.webtoapp.ui.design.WtaMotion
 import com.webtoapp.ui.design.WtaRadius
@@ -125,29 +128,6 @@ fun MultiWebShellMode(
         return
     }
 
-    val darkTheme = androidx.compose.foundation.isSystemInDarkTheme()
-    val barType = if (darkTheme) config.webViewConfig.statusBarBackgroundTypeDark else config.webViewConfig.statusBarBackgroundType
-    val barMode = if (darkTheme) config.webViewConfig.statusBarColorModeDark else config.webViewConfig.statusBarColorMode
-    val barColor = if (darkTheme) config.webViewConfig.statusBarColorDark else config.webViewConfig.statusBarColor
-    val barImage = if (darkTheme) config.webViewConfig.statusBarBackgroundImageDark else config.webViewConfig.statusBarBackgroundImage
-    val barAlpha = if (darkTheme) config.webViewConfig.statusBarBackgroundAlphaDark else config.webViewConfig.statusBarBackgroundAlpha
-    val explicitIcons = if (darkTheme) config.webViewConfig.statusBarDarkIconsDark else config.webViewConfig.statusBarDarkIcons
-    val paintsBand = barType != "COLOR" || barMode != com.webtoapp.data.model.StatusBarColorMode.TRANSPARENT.name
-    val lightStatusIcons = explicitIcons ?: when (barType) {
-        "COLOR" -> {
-            val hex = barColor
-            if (hex.isNullOrBlank()) {
-                !darkTheme
-            } else {
-                runCatching {
-                    com.webtoapp.ui.shared.WindowHelper.isColorLight(android.graphics.Color.parseColor(hex))
-                }.getOrDefault(!darkTheme)
-            }
-        }
-        else -> !darkTheme
-    }
-
-    Box(modifier = Modifier.fillMaxSize()) {
     when (multiWebConfig.displayMode.uppercase()) {
         "TABS" -> TabsMode(config, multiWebConfig, sites, webViewConfig, webViewCallbacks, webViewManager, onWebViewCreated, swipeRefreshEnabled, isRefreshing, onRefresh, onBrowserSurfaceCreated, TabBarPlacement.BOTTOM, onTopTabColor)
         "TOP_TABS" -> TabsMode(config, multiWebConfig, sites, webViewConfig, webViewCallbacks, webViewManager, onWebViewCreated, swipeRefreshEnabled, isRefreshing, onRefresh, onBrowserSurfaceCreated, TabBarPlacement.TOP, onTopTabColor)
@@ -155,25 +135,6 @@ fun MultiWebShellMode(
         "FEED" -> FeedMode(config, multiWebConfig, sites, webViewConfig, webViewCallbacks, webViewManager, onWebViewCreated, swipeRefreshEnabled, isRefreshing, onRefresh, onBrowserSurfaceCreated)
         "DRAWER" -> DrawerMode(config, multiWebConfig, sites, webViewConfig, webViewCallbacks, webViewManager, onWebViewCreated, swipeRefreshEnabled, isRefreshing, onRefresh, onBrowserSurfaceCreated)
         else -> TabsMode(config, multiWebConfig, sites, webViewConfig, webViewCallbacks, webViewManager, onWebViewCreated, swipeRefreshEnabled, isRefreshing, onRefresh, onBrowserSurfaceCreated)
-    }
-
-    if (paintsBand) {
-        com.webtoapp.ui.components.StatusBarOverlay(
-            show = true,
-            backgroundType = barType,
-            backgroundColor = barColor ?: if (darkTheme) "#1C1B1F" else "#FFFBFE",
-            backgroundImagePath = barImage,
-            alpha = barAlpha,
-            heightDp = config.webViewConfig.statusBarHeightDp
-        )
-        val view = androidx.compose.ui.platform.LocalView.current
-        androidx.compose.runtime.SideEffect {
-            val window = (view.context as? android.app.Activity)?.window ?: return@SideEffect
-            val controller = androidx.core.view.WindowInsetsControllerCompat(window, window.decorView)
-            controller.isAppearanceLightStatusBars = lightStatusIcons
-            controller.isAppearanceLightNavigationBars = lightStatusIcons
-        }
-    }
     }
 }
 
@@ -183,11 +144,6 @@ internal data class MergedSitePlugins(
     val embeddedPlugins: List<EmbeddedShellPlugin>,
 )
 
-/**
- * Parent plugins apply to every site. A site's own baked plugins merge
- * underneath only when [sitesUseOwnConfig] is true, and the site wins an id
- * collision. With the flag off, site plugins are discarded.
- */
 internal fun mergeSitePlugins(
     sitesUseOwnConfig: Boolean,
     parentEnabled: Boolean,
@@ -222,16 +178,10 @@ private fun SiteContent(
     onBrowserSurfaceCreated: (com.webtoapp.core.engine.BrowserSurface) -> Unit = {}
 ) {
     val siteCfg = site.siteShellConfig
-    // App-level inject scripts apply to every site; a site's own script wins on
-    // a name collision so a more specific override is possible per site.
     val parentScripts = config.webViewConfig.injectScripts
     val siteScripts = siteCfg?.webViewConfig?.injectScripts.orEmpty()
     val mergedScripts = siteScripts +
         parentScripts.filter { parent -> siteScripts.none { it.name == parent.name } }
-    // Plugins are an app-level selection the same way: the multi-web editor's
-    // picks live on the parent config's embeddedPlugins/pluginIds, and without
-    // inheriting them every site session starts empty — the floating handle
-    // renders (gated on the parent) but the sheet reports "no enabled plugins".
     val sitesUseOwn = config.multiWebConfig?.sitesUseOwnConfig == true
     val merged = mergeSitePlugins(
         sitesUseOwnConfig = sitesUseOwn,
@@ -242,10 +192,6 @@ private fun SiteContent(
         siteIds = siteCfg?.pluginIds.orEmpty(),
         sitePlugins = siteCfg?.embeddedPlugins.orEmpty(),
     )
-    // Sites contribute content (URL, HTML project, media, module assets), not
-    // settings: by default the parent's WebView config governs every site, so
-    // app-level fields baked into siteShellConfig can't fight the parent.
-    // `sitesUseOwnConfig` opts back into each site keeping its baked config.
     val baseWvConfig = if (sitesUseOwn) {
         siteCfg?.webViewConfig
     } else {
@@ -273,8 +219,6 @@ private fun SiteContent(
         embeddedPlugins = merged.embeddedPlugins,
         pluginEntryStyle = config.pluginEntryStyle,
         pluginPanelStyle = config.pluginPanelStyle,
-        // A site without baked config (custom URL site, deleted source) still
-        // inherits the parent WebView config — same rule as sitesUseOwnConfig.
         webViewConfig = config.webViewConfig.copy(
             injectScripts = mergedScripts
         )
@@ -325,9 +269,6 @@ private fun SiteContent(
         },
         onWebViewRefUpdated = { },
         onActivityFinish = { },
-        // Without this the activity never sees per-site surfaces: on a Gecko site the
-        // media-session adapter is never attached and back/forward/find stay dead (#593
-        // parity for MULTI_WEB).
         onBrowserSurfaceCreated = onBrowserSurfaceCreated,
         webProfileName = if (config.multiWebConfig?.independentSessions == true) {
             com.webtoapp.core.webview.SiteWebProfiles.profileNameFor(site.id)
@@ -337,11 +278,6 @@ private fun SiteContent(
     )
 }
 
-/**
- * Tracks each site's live WebView / engine surface. Creation callbacks only fire
- * once per site, so switching back to a visited tab must re-push the handle to
- * the activity — otherwise the back button and toolbar act on the WRONG site.
- */
 private class SiteRuntimeRegistry {
     val webViews = mutableMapOf<String, WebView>()
     val surfaces = mutableMapOf<String, com.webtoapp.core.engine.BrowserSurface>()
@@ -356,12 +292,6 @@ private class SiteRuntimeRegistry {
     }
 }
 
-/**
- * Shared selected-site store for the three display modes. Keyed by the app's
- * package/name pair — the record is only a site id, and callers always
- * validate it against the current site list, so a stale entry from a renamed
- * or re-edited app simply falls back to the default selection (#1036).
- */
 @Composable
 private fun rememberResumeStore(
     config: ShellConfig
@@ -394,9 +324,6 @@ private fun TabsMode(
     onTopTabColor: (String?) -> Unit = {}
 ) {
     val (resumeStore, resumeKey) = rememberResumeStore(config)
-    // Selected site persists by id: rememberSaveable covers config-change and
-    // process-death recreation, the store covers cold relaunch — the recorded
-    // id is validated against the current site list before use (#1036).
     var selectedTab by rememberSaveable {
         mutableIntStateOf(
             resolveMultiWebStartSiteId(
@@ -422,9 +349,6 @@ private fun TabsMode(
     val hapticView = LocalView.current
     val hapticsEnabled = LocalAnimationSettings.current.hapticsEnabled
     val maxPage = (sites.size - 1).coerceAtLeast(0)
-    // Fractional position only invalidates when the on-screen page set, or the
-    // tab the bar should highlight, actually changes. The pixel offset is read
-    // later, from placement.
     val visibleRange by remember(paging, maxPage) {
         derivedStateOf {
             if (!paging) selectedTab..selectedTab
@@ -439,8 +363,6 @@ private fun TabsMode(
     }
     var sampledTop by remember { mutableStateOf<String?>(null) }
     var sampleGeneration by remember { mutableIntStateOf(0) }
-    // The highlighted page's tracker. Page-commit and page-finish bump a
-    // settled resample; the slot is read at callback time, not at remember.
     val tabColorTracker = remember {
         object {
             var current: com.webtoapp.core.webview.StatusBarPageColorTracker? = null
@@ -515,8 +437,6 @@ private fun TabsMode(
                         WtaMotion.settleSpring(),
                         initialVelocity = velocityPages.coerceIn(-12f, 12f)
                     ) {
-                        // A new finger owns the position. Keep running only
-                        // until the job is cancelled; don't write over the drag.
                         if (ticket == pager.epoch && !pager.holding) {
                             pager.position = value
                         }
@@ -530,7 +450,6 @@ private fun TabsMode(
                         if (selectedTab != page) selectedTab = page
                     }
                 } catch (_: CancellationException) {
-                    // A newer drag or tap took the animatable's mutex.
                 }
             }
         }
@@ -556,14 +475,6 @@ private fun TabsMode(
                 add(site.id)
                 visibleRange.forEach { index -> sites.getOrNull(index)?.id?.let(::add) }
             }
-            // Visited tabs stay composed for session restore, but a hidden
-            // WebView has no reason to keep running layout/JS/media at full
-            // speed — per-view onPause keeps the page, sheds the work (#1033).
-            // Cover anything that just left before showing anything new. A
-            // Gecko SurfaceView ignores Compose alpha, so it must be GONE while
-            // off-screen (#1161, #1192). Resume waits one frame so the offset
-            // layout lands first — showing it in the same turn would flash the
-            // neighbor at the old, stacked position.
             registry.webViews.forEach { (id, wv) ->
                 if (id !in alive) runCatching { wv.onPause() }
             }
@@ -579,28 +490,15 @@ private fun TabsMode(
             }
             registry.pushCurrent(site.id, onWebViewCreated, onBrowserSurfaceCreated)
             webViewCallbacks.onTitleChanged(site.name.ifBlank { extractDomain(site.url) })
-            // onUrlChanged (not onPageStarted): the tab's page is already loaded;
-            // onPageStarted would leave isLoading stuck on a phantom navigation.
             webViewCallbacks.onUrlChanged(registry.webViews[site.id], registry.webViews[site.id]?.url ?: site.url)
         }
     }
 
-    // 选中项变化时把它滚动到可见区域，避免被挤出屏幕（站点多时可横向滚动）。
     LaunchedEffect(highlight) {
         if (sites.size > 1) {
             tabsListState.animateScrollToItem(highlight)
         }
     }
-
-    val tabDark = androidx.compose.foundation.isSystemInDarkTheme()
-    val tabBgType = if (tabDark) webViewConfig.statusBarBackgroundTypeDark else webViewConfig.statusBarBackgroundType
-    val tabMode = if (tabDark) webViewConfig.statusBarColorModeDark else webViewConfig.statusBarColorMode
-    val tabOverlaysStatus = tabBgType == com.webtoapp.data.model.StatusBarBackgroundType.IMAGE ||
-        tabMode == com.webtoapp.data.model.StatusBarColorMode.TRANSPARENT
-    // The parent scaffold already reserves a solid status bar. A transparent
-    // bar (or a hidden one) lets this strip draw behind the status icons.
-    val drawUnderStatusBar = adaptive && webViewConfig.hideToolbar &&
-        !(webViewConfig.showStatusBarInFullscreen && !tabOverlaysStatus)
 
     Scaffold(
         containerColor = Color.Transparent,
@@ -613,8 +511,7 @@ private fun TabsMode(
                     onSelect = { pager.jumpTo(it) },
                     listState = tabsListState,
                     showIcons = multiWebConfig.showSiteIcons,
-                    barHex = barHex,
-                    drawUnderStatusBar = drawUnderStatusBar
+                    barHex = barHex
                 )
             }
         },
@@ -686,14 +583,11 @@ private fun TabsMode(
             }
         }
     ) { padding ->
-        // Fullscreen content padding is already applied by the parent scaffold
-        // (ShellScaffoldLayout, and the same box in the host preview). TabsMode
-        // sits inside that box, so padding again here doubles every edge —
-        // a bottom value of 48 becomes 96 under the page (#1220).
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .consumeWindowInsets(padding)
                 .then(
                     if (paging) {
                         Modifier
@@ -708,9 +602,6 @@ private fun TabsMode(
             visitedTabs[selectedTab] = true
             visibleRange.forEach { visitedTabs[it] = true }
 
-            // Under kill-list pressure (TRIM_MEMORY_COMPLETE) drop every hidden
-            // tab's composable — AndroidView.onRelease destroys each surface,
-            // and the tab simply reloads from its site URL on next select (#1033).
             val trimContext = androidx.compose.ui.platform.LocalContext.current
             DisposableEffect(Unit) {
                 val componentCallbacks = object : android.content.ComponentCallbacks2 {
@@ -795,18 +686,16 @@ private fun TopTabBar(
     onSelect: (Int) -> Unit,
     listState: androidx.compose.foundation.lazy.LazyListState,
     showIcons: Boolean,
-    barHex: String,
-    drawUnderStatusBar: Boolean
+    barHex: String
 ) {
     val background = parseBandColor(barHex) ?: MaterialTheme.colorScheme.surface
     val lightText = TopTabChrome.textIsLightOn(barHex)
     val foreground = if (lightText) Color.White else Color(0xFF1C1B1F)
-    TopTabStrip(drawUnderStatusBar, background, foreground, sites, selectedTab, onSelect, listState, showIcons)
+    TopTabStrip(background, foreground, sites, selectedTab, onSelect, listState, showIcons)
 }
 
 @Composable
 private fun TopTabStrip(
-    drawUnderStatusBar: Boolean,
     background: Color,
     foreground: Color,
     sites: List<MultiWebSiteShellConfig>,
@@ -817,11 +706,9 @@ private fun TopTabStrip(
 ) {
     Surface(color = background, modifier = Modifier.fillMaxWidth()) {
         Column(
-            modifier = if (drawUnderStatusBar) {
-                Modifier.windowInsetsPadding(WindowInsets.statusBars)
-            } else {
-                Modifier
-            }
+            modifier = Modifier.windowInsetsPadding(
+                WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)
+            )
         ) {
             LazyRow(
                 state = listState,
@@ -891,8 +778,6 @@ private fun CardsMode(
     onBrowserSurfaceCreated: (com.webtoapp.core.engine.BrowserSurface) -> Unit = {}
 ) {
     val (resumeStore, resumeKey) = rememberResumeStore(config)
-    // Persist the open site by id; null = the user is on the card grid and a
-    // cold start must reopen the grid, not a site they already left (#1036).
     var openSiteId by rememberSaveable {
         mutableStateOf(
             resolveMultiWebStartSiteId(
@@ -914,8 +799,6 @@ private fun CardsMode(
         webViewCallbacks.onTitleChanged(config.appName)
     }
 
-    // Drill-in back semantics: walk the site's own history first, then return to
-    // the card grid. Without this the activity's finish() path exits the app.
     BackHandler(enabled = openSite != null) {
         val site = openSite
         val wv = site?.let { registry.webViews[it.id] }
@@ -941,85 +824,23 @@ private fun CardsMode(
         LaunchedEffect(site.id) {
             webViewCallbacks.onTitleChanged(site.name.ifBlank { extractDomain(site.url) })
         }
-        val density = androidx.compose.ui.platform.LocalDensity.current
-        val statusTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-        val toolbarHeight = 64.dp + statusTop
-        val toolbarHeightPx = with(density) { toolbarHeight.toPx() }
-        var toolbarVisible by remember { mutableStateOf(true) }
-        var toolbarOffset by remember { mutableFloatStateOf(0f) }
-        var contentTop by remember { mutableStateOf(toolbarHeight) }
-        val pageScrollTracker = LocalPageScrollTracker.current
-
-        LaunchedEffect(site.id) {
-            toolbarVisible = true
-            contentTop = toolbarHeight
-            toolbarOffset = 0f
-        }
-        LaunchedEffect(toolbarVisible) {
-            if (toolbarVisible) {
-                androidx.compose.animation.core.animate(
-                    initialValue = toolbarOffset,
-                    targetValue = 0f,
-                    animationSpec = androidx.compose.animation.core.tween(220)
-                ) { value, _ -> toolbarOffset = value }
-                contentTop = toolbarHeight
-            } else {
-                contentTop = 0.dp
-                androidx.compose.animation.core.animate(
-                    initialValue = toolbarOffset,
-                    targetValue = -toolbarHeightPx,
-                    animationSpec = androidx.compose.animation.core.tween(220)
-                ) { value, _ -> toolbarOffset = value }
-            }
-        }
-        val reveal = remember(site.id) { ToolbarReveal() }
-        DisposableEffect(pageScrollTracker, site.id) {
-            if (pageScrollTracker == null) return@DisposableEffect onDispose {}
-            val listener: (Int) -> Unit = { y ->
-                if (reveal.onScroll(y)) toolbarVisible = reveal.visible
-            }
-            pageScrollTracker.addScrollListener(listener)
-            onDispose { pageScrollTracker.removeScrollListener(listener) }
-        }
-
-        Box(modifier = Modifier.fillMaxSize()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(top = contentTop)
-            ) {
-                key(site.id) {
-                    SiteContent(
-                        site, config, webViewConfig, webViewCallbacks, webViewManager,
-                        onWebViewCreated = { wv ->
-                            registry.webViews[site.id] = wv
-                            onWebViewCreated(wv)
-                        },
-                        swipeRefreshEnabled = swipeRefreshEnabled,
-                        isRefreshing = isRefreshing,
-                        onRefresh = onRefresh,
-                        onBrowserSurfaceCreated = { surface ->
-                            registry.surfaces[site.id] = surface
-                            onBrowserSurfaceCreated(surface)
-                        }
-                    )
-                }
-            }
-            TopAppBar(
-                title = { Text(site.name.ifBlank { extractDomain(site.url) }) },
-                navigationIcon = {
-                    IconButton(onClick = { closeSite() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = Strings.close)
+        key(site.id) {
+            MultiWebDetail(onClose = ::closeSite) {
+                SiteContent(
+                    site, config, webViewConfig, webViewCallbacks, webViewManager,
+                    onWebViewCreated = { wv ->
+                        registry.webViews[site.id] = wv
+                        onWebViewCreated(wv)
+                    },
+                    swipeRefreshEnabled = swipeRefreshEnabled,
+                    isRefreshing = isRefreshing,
+                    onRefresh = onRefresh,
+                    onBrowserSurfaceCreated = { surface ->
+                        registry.surfaces[site.id] = surface
+                        onBrowserSurfaceCreated(surface)
                     }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .align(Alignment.TopCenter)
-                    .offset { IntOffset(0, toolbarOffset.roundToInt()) },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
                 )
-            )
+            }
         }
     } else {
         CardsHomeGrid(
@@ -1030,6 +851,70 @@ private fun CardsMode(
             cardAspect = multiWebConfig.cardAspectRatio,
             onSiteClicked = { openSiteId = it.id }
         )
+    }
+}
+
+@Composable
+private fun MultiWebDetail(
+    onClose: () -> Unit,
+    content: @Composable () -> Unit
+) {
+    val chromeHost = LocalBrowserChromeHost.current
+    val backIcon = Icons.AutoMirrored.Filled.ArrowBack
+    PublishMultiWebToolbarAction(chromeHost, backIcon, Strings.close, onClose)
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        content()
+        if (chromeHost == null) {
+            val pageScrollTracker = LocalPageScrollTracker.current
+            val reveal = remember { ToolbarReveal() }
+            var backVisible by remember { mutableStateOf(true) }
+            DisposableEffect(pageScrollTracker) {
+                val tracker = pageScrollTracker ?: return@DisposableEffect onDispose {}
+                val listener: (Int) -> Unit = { scrollY ->
+                    if (reveal.onScroll(scrollY)) backVisible = reveal.visible
+                }
+                tracker.addScrollListener(listener)
+                onDispose { tracker.removeScrollListener(listener) }
+            }
+            AnimatedVisibility(
+                visible = backVisible,
+                modifier = Modifier.align(Alignment.BottomStart)
+                    .windowInsetsPadding(
+                        WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal)
+                    )
+                    .padding(start = 12.dp, bottom = 12.dp),
+                enter = WtaFadeIn,
+                exit = WtaFadeOut
+            ) {
+                SmallFloatingActionButton(
+                    onClick = onClose,
+                    modifier = Modifier.size(48.dp),
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    contentColor = MaterialTheme.colorScheme.onSurface
+                ) {
+                    Icon(backIcon, contentDescription = Strings.close)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PublishMultiWebToolbarAction(
+    host: BrowserChromeHost?,
+    icon: ImageVector,
+    contentDescription: String,
+    onClick: () -> Unit
+) {
+    val latestClick by rememberUpdatedState(onClick)
+    DisposableEffect(host, icon, contentDescription) {
+        if (host == null) return@DisposableEffect onDispose {}
+        val action = BrowserChromeAction(contentDescription, { latestClick() }, icon)
+        host.leadingAction = action
+        onDispose {
+            if (host.leadingAction === action) host.leadingAction = null
+        }
     }
 }
 
@@ -1063,30 +948,26 @@ private fun CardsHomeGrid(
         )
     }
 
+    val showHeader = LocalBrowserChromeHost.current == null
     LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        modifier = Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing.exclude(WindowInsets.ime)),
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        item {
-            Column(modifier = Modifier.padding(vertical = 8.dp)) {
-                Icon(
-                    Icons.Outlined.Language,
-                    contentDescription = null,
-                    modifier = Modifier.size(40.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    appName.ifBlank { Strings.multiWebSiteList },
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    Strings.multiWebSiteCount.replace("%d", sites.size.toString()),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+        if (showHeader) {
+            item {
+                Column {
+                    Text(
+                        appName.ifBlank { Strings.multiWebSiteList },
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        Strings.multiWebSiteCount.replace("%d", sites.size.toString()),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
         }
 
@@ -1098,7 +979,7 @@ private fun CardsHomeGrid(
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
+                        modifier = Modifier.padding(top = 4.dp)
                     )
                 }
             }
@@ -1107,7 +988,7 @@ private fun CardsHomeGrid(
             items(chunked) { pair ->
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     pair.forEach { site ->
                         val colorIndex = (sites.indexOf(site)) % cardColors.size
@@ -1130,7 +1011,6 @@ private fun CardsHomeGrid(
             }
         }
 
-        item { Spacer(modifier = Modifier.height(16.dp)) }
     }
 }
 
@@ -1228,9 +1108,6 @@ private fun FeedMode(
     val scope = rememberCoroutineScope()
     var feedItems by remember { mutableStateOf<List<FeedItem>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
-    // Article overlay state is saveable so config-change/process-death
-    // recreation reopens the article instead of dropping to the feed (#1036).
-    // The feed list itself is refetched anyway, so it stays plain remember.
     var openUrl by rememberSaveable { mutableStateOf<String?>(null) }
     var openTitle by rememberSaveable { mutableStateOf("") }
     var articleWebView by remember { mutableStateOf<WebView?>(null) }
@@ -1245,8 +1122,6 @@ private fun FeedMode(
         isLoading = true
         refreshFeed()
         isLoading = false
-        // refreshInterval (minutes, editor default 30) drives a silent periodic
-        // re-fetch; the visible list is only swapped when new items exist.
         val intervalMin = multiWebConfig.refreshInterval.coerceIn(1, 24 * 60)
         while (true) {
             kotlinx.coroutines.delay(intervalMin * 60_000L)
@@ -1261,7 +1136,6 @@ private fun FeedMode(
         webViewCallbacks.onTitleChanged(config.appName)
     }
 
-    // Same drill-in back rule as card mode: article history first, then the feed.
     BackHandler(enabled = openUrl != null) {
         val wv = articleWebView
         val surface = articleSurface
@@ -1288,78 +1162,76 @@ private fun FeedMode(
                 appType = "WEB",
                 targetUrl = openUrl ?: "",
                 packageName = config.packageName,
-                // Honor the app's engine pick (e.g. Gecko) for opened articles
-                // instead of silently falling back to the system WebView.
                 engineType = config.engineType
             )
         }
         LaunchedEffect(openUrl) {
             webViewCallbacks.onTitleChanged(openTitle)
         }
-        Scaffold(
-            containerColor = Color.Transparent,
-            contentWindowInsets = WindowInsets(0),
-            topBar = {
-                TopAppBar(
-                    title = { Text(openTitle, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                    navigationIcon = {
-                        IconButton(onClick = { closeArticle() }) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = Strings.close)
-                        }
+        key(openUrl) {
+            MultiWebDetail(onClose = ::closeArticle) {
+                ShellContentRouter(
+                    appType = "WEB",
+                    config = urlCfg,
+                    webViewRecreationKey = (openUrl ?: "").hashCode(),
+                    webViewConfig = webViewConfig,
+                    webViewCallbacks = webViewCallbacks,
+                    webViewManager = webViewManager,
+                    deepLinkUrl = openUrl,
+                    swipeRefreshEnabled = swipeRefreshEnabled,
+                    isRefreshing = isRefreshing,
+                    onRefresh = onRefresh,
+                    onWebViewCreated = { wv ->
+                        articleWebView = wv
+                        onWebViewCreated(wv)
+                    },
+                    onWebViewRefUpdated = { },
+                    onActivityFinish = { },
+                    onBrowserSurfaceCreated = { surface ->
+                        articleSurface = surface
+                        onBrowserSurfaceCreated(surface)
                     }
                 )
             }
-        ) { padding ->
-            Box(modifier = Modifier.fillMaxSize().padding(padding)) {
-                key(openUrl) {
-                    ShellContentRouter(
-                        appType = "WEB",
-                        config = urlCfg,
-                        webViewRecreationKey = (openUrl ?: "").hashCode(),
-                        webViewConfig = webViewConfig,
-                        webViewCallbacks = webViewCallbacks,
-                        webViewManager = webViewManager,
-                        deepLinkUrl = openUrl,
-                        swipeRefreshEnabled = swipeRefreshEnabled,
-                        isRefreshing = isRefreshing,
-                        onRefresh = onRefresh,
-                        onWebViewCreated = { wv ->
-                            articleWebView = wv
-                            onWebViewCreated(wv)
-                        },
-                        onWebViewRefUpdated = { },
-                        onActivityFinish = { },
-                        onBrowserSurfaceCreated = { surface ->
-                            articleSurface = surface
-                            onBrowserSurfaceCreated(surface)
+        }
+    } else {
+        val chromeHost = LocalBrowserChromeHost.current
+        val reload: () -> Unit = {
+            scope.launch {
+                isLoading = true
+                refreshFeed()
+                isLoading = false
+            }
+        }
+        val latestReload by rememberUpdatedState(reload)
+        DisposableEffect(chromeHost) {
+            if (chromeHost == null) return@DisposableEffect onDispose {}
+            val action = { latestReload() }
+            chromeHost.refreshAction = action
+            onDispose {
+                if (chromeHost.refreshAction === action) chromeHost.refreshAction = null
+            }
+        }
+        Scaffold(
+            containerColor = Color.Transparent,
+            contentWindowInsets = WindowInsets.safeDrawing.exclude(WindowInsets.ime),
+            topBar = {
+                if (chromeHost == null) {
+                    TopAppBar(
+                        title = { Text(Strings.multiWebModeFeed, fontWeight = FontWeight.Bold) },
+                        expandedHeight = 48.dp,
+                        actions = {
+                            IconButton(onClick = reload) {
+                                Icon(Icons.Default.Refresh, contentDescription = Strings.refresh)
+                            }
                         }
                     )
                 }
             }
-        }
-    } else {
-        Scaffold(
-            containerColor = Color.Transparent,
-            contentWindowInsets = WindowInsets(0),
-            topBar = {
-                TopAppBar(
-                    title = { Text(Strings.multiWebModeFeed, fontWeight = FontWeight.Bold) },
-                    actions = {
-                        IconButton(onClick = {
-                            scope.launch {
-                                isLoading = true
-                                refreshFeed()
-                                isLoading = false
-                            }
-                        }) {
-                            Icon(Icons.Default.Refresh, contentDescription = Strings.refresh)
-                        }
-                    }
-                )
-            }
         ) { padding ->
+            val feedModifier = Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding)
             if (isLoading && feedItems.isEmpty()) {
-                Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                Box(modifier = feedModifier, contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         WtaLoadingIndicator()
                         Spacer(modifier = Modifier.height(16.dp))
@@ -1367,7 +1239,7 @@ private fun FeedMode(
                     }
                 }
             } else if (feedItems.isEmpty()) {
-                Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                Box(modifier = feedModifier, contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(Icons.Outlined.RssFeed, null, modifier = Modifier.size(64.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
                         Spacer(modifier = Modifier.height(16.dp))
@@ -1378,22 +1250,20 @@ private fun FeedMode(
                 }
             } else {
                 LazyColumn(
-                    modifier = Modifier.fillMaxSize().padding(padding),
-                    contentPadding = PaddingValues(16.dp),
+                    modifier = feedModifier,
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     item {
                         Text(
                             Strings.multiWebFeedStats.format(feedItems.size, sites.size),
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(bottom = 8.dp)
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                     items(feedItems) { item ->
                         FeedItemCard(item = item, onClick = { openUrl = item.url; openTitle = item.title })
                     }
-                    item { Spacer(modifier = Modifier.height(16.dp)) }
                 }
             }
         }
@@ -1408,7 +1278,7 @@ private fun FeedItemCard(item: FeedItem, onClick: () -> Unit) {
         color = MaterialTheme.colorScheme.surfaceContainerLow,
         tonalElevation = 1.dp
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 if (item.siteEmoji.isNotBlank()) {
                     Text(item.siteEmoji, fontSize = 14.sp)
@@ -1440,9 +1310,6 @@ private fun DrawerMode(
     onBrowserSurfaceCreated: (com.webtoapp.core.engine.BrowserSurface) -> Unit = {}
 ) {
     val (resumeStore, resumeKey) = rememberResumeStore(config)
-    // Selected site persists by id (same store contract as TabsMode) —
-    // falling back to the first enabled site when nothing valid was
-    // recorded (#1036).
     var selectedSiteId by rememberSaveable {
         mutableStateOf(
             resolveMultiWebStartSiteId(
@@ -1503,28 +1370,17 @@ private fun DrawerMode(
         else if (drawerVisible && drawerState.currentValue == DrawerValue.Closed) drawerVisible = false
     }
 
-    // The browser toolbar, when visible, hosts the drawer button. A second
-    // TopAppBar here used to stack under it and re-apply the status-bar inset.
     val chromeHost = LocalBrowserChromeHost.current
     val showOwnSiteBar = drawerSiteBarVisible(chromeHost != null)
     val floatingEntry = multiWebConfig.drawerEntry.equals("FLOATING", ignoreCase = true)
     val showFab = floatingEntry && chromeHost == null
     val drawerWindowInsets = DrawerDefaults.windowInsets.exclude(WindowInsets.ime).only(WindowInsetsSides.Horizontal)
-    val toggleDrawer = rememberUpdatedState { drawerVisible = !drawerVisible }
-    DisposableEffect(chromeHost) {
-        val host = chromeHost ?: return@DisposableEffect onDispose {}
-        host.leadingAction = BrowserChromeAction(
-            contentDescription = Strings.more,
-            onClick = { toggleDrawer.value.invoke() }
-        )
-        onDispose { host.leadingAction = null }
-    }
+    val toggleDrawer = { drawerVisible = !drawerVisible }
+    PublishMultiWebToolbarAction(chromeHost, Icons.Filled.Menu, Strings.more, toggleDrawer)
 
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
-            // #1075: the IME padding at window level already lifts the sheet
-            // above the keyboard — keep the nav inset from double-stacking.
             ModalDrawerSheet(
                 modifier = Modifier.width(drawerSheetWidthDp(drawerColumns).dp),
                 windowInsets = drawerWindowInsets
@@ -1533,13 +1389,13 @@ private fun DrawerMode(
                     modifier = Modifier
                         .fillMaxWidth()
                         .statusBarsPadding()
-                        .padding(start = 24.dp, top = 12.dp, end = 12.dp, bottom = 16.dp)
+                        .padding(start = 16.dp, top = 4.dp, end = 8.dp, bottom = 4.dp)
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 Strings.multiWebSiteList,
-                                style = MaterialTheme.typography.titleLarge,
+                                style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
@@ -1590,7 +1446,7 @@ private fun DrawerMode(
                     modifier = Modifier
                         .weight(1f)
                         .navigationBarsPadding(),
-                    contentPadding = PaddingValues(top = 8.dp, bottom = 8.dp)
+                    contentPadding = PaddingValues(vertical = 4.dp)
                 ) {
                     if (searchQuery.isNotBlank() && visibleSites.isEmpty()) {
                         item(key = "search-empty") {
@@ -1634,22 +1490,12 @@ private fun DrawerMode(
                 }
             }
         },
-        // Edge-swipe-to-open fights the WebView's own horizontal gestures (page
-        // carousels, image swipes, diagonal scrolls all intercepted as drawer
-        // opens). Open via the toolbar menu button only; once open the drawer
-        // still accepts swipe-to-close.
         gesturesEnabled = drawerState.isOpen
     ) {
         val currentSite = selectedSite ?: sites.firstOrNull()
 
-        // Sync activity state (title/url/webview handle) with the selected site,
-        // same contract TabsMode keeps.
         LaunchedEffect(currentSite?.id) {
             currentSite?.let { site ->
-                // Same hidden-tab handling as TabsMode: WebViews pause so they
-                // shed layout/JS work (#1033). Covered GeckoViews are set to
-                // GONE — releaseSession alone leaves the SurfaceView, and its
-                // last frame, composited above the selected site (#1161, #1192).
                 registry.webViews.forEach { (id, wv) ->
                     if (id != site.id) runCatching { wv.onPause() }
                 }
@@ -1676,15 +1522,15 @@ private fun DrawerMode(
                         showUrl = false,
                         leadingAction = BrowserChromeAction(
                             contentDescription = Strings.more,
-                            onClick = { drawerVisible = !drawerVisible }
+                            onClick = toggleDrawer
                         )
                     )
                 }
             }
         ) { padding ->
-            Box(modifier = Modifier.fillMaxSize().padding(padding)) {
-                // Keep visited sites composed (hidden) like TabsMode — switching
-                // sites must not destroy the page and force a full reload.
+            Box(
+                modifier = Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding)
+            ) {
                 val visitedSites = remember { mutableStateMapOf<String, Boolean>() }
                 currentSite?.let { visitedSites[it.id] = true }
                 var anySite = false
@@ -1734,7 +1580,12 @@ private fun DrawerMode(
                         modifier = Modifier
                             .align(if (topEnd) Alignment.TopEnd else Alignment.BottomStart)
                             .zIndex(2f)
-                            .then(if (topEnd) Modifier.statusBarsPadding() else Modifier.navigationBarsPadding())
+                            .windowInsetsPadding(
+                                WindowInsets.safeDrawing.only(
+                                    WindowInsetsSides.Horizontal +
+                                        if (topEnd) WindowInsetsSides.Top else WindowInsetsSides.Bottom
+                                )
+                            )
                             .padding(12.dp),
                         site = currentSite,
                         contentDescription = Strings.multiWebSiteList,
@@ -1935,8 +1786,6 @@ private fun fetchFeedItems(
     webViewConfig: WebViewConfig
 ): List<FeedItem> {
     val allItems = mutableListOf<FeedItem>()
-    // Feed fetch must honor the app's own proxy — a blocked site loads fine in
-    // the WebView (through the proxy) but its feed fetch dies on a direct route.
     val proxy = if (webViewConfig.proxyMode == "STATIC" &&
         webViewConfig.proxyHost.isNotBlank() &&
         webViewConfig.proxyPort in 1..65535

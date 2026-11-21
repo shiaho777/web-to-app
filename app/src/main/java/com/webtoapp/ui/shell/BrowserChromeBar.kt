@@ -27,33 +27,26 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.data.model.shortenForBrowserChrome
 import com.webtoapp.ui.design.WtaIconButton
 
-/**
- * One leading control the browser toolbar can host for a child screen, such as
- * the multi-web drawer menu. Published only while the toolbar itself is visible,
- * so the child keeps its own bar when the toolbar is off.
- */
 class BrowserChromeHost {
     var leadingAction by mutableStateOf<BrowserChromeAction?>(null)
+    var refreshAction by mutableStateOf<(() -> Unit)?>(null)
 }
 
 class BrowserChromeAction(
     val contentDescription: String,
-    val onClick: () -> Unit
+    val onClick: () -> Unit,
+    val icon: ImageVector = Icons.Filled.Menu
 )
 
 val LocalBrowserChromeHost = staticCompositionLocalOf<BrowserChromeHost?> { null }
 
-/**
- * Single-row browser chrome. Title and address share one line, and the row is
- * one icon tall instead of a two-line [androidx.compose.material3.TopAppBar].
- * Status-bar insets stay inside the bar, the same way the old app bar did.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BrowserChromeBar(
@@ -93,7 +86,7 @@ fun BrowserChromeBar(
             if (leadingAction != null) {
                 WtaIconButton(
                     onClick = leadingAction.onClick,
-                    icon = Icons.Filled.Menu,
+                    icon = leadingAction.icon,
                     contentDescription = leadingAction.contentDescription
                 )
             }
