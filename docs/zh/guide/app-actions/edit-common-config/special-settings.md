@@ -19,6 +19,7 @@
 
 ## 媒体与内容
 
+- **与其他应用同时播放** —— 让预览和导出使用 GeckoView，网页声音可以与其他应用同时播放。确认后会切换内核，未安装 GeckoView 时可前往「浏览器内核」下载。关闭选项会切回系统 WebView。GeckoView 会增加导出 APK 的体积，使用 ECH 时需要保留 GeckoView。音量由网页播放器和设备控制。
 - **媒体自动播放** —— 带范围(`mediaAutoplayEnabled`、`mediaAutoplayScope`:仅视频……)。
 - **图片修复** —— 修复损坏的图片(`enableImageRepair`)。
 - **滚动记忆** —— 记住滚动位置(`enableScrollMemory`)。

@@ -11418,6 +11418,71 @@ object StringsE {
         AppLanguage.JAPANESE -> "バックグラウンドで再生を続ける"
         AppLanguage.KOREAN -> "백그라운드에서 계속 재생"
     }
+    val audioMixingTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "与其他应用同时播放"
+        AppLanguage.ENGLISH -> "Play alongside other apps"
+        AppLanguage.ARABIC -> "التشغيل بالتزامن مع التطبيقات الأخرى"
+        AppLanguage.PORTUGUESE -> "Reproduzir junto com outros apps"
+        AppLanguage.SPANISH -> "Reproducir junto con otras apps"
+        AppLanguage.FRENCH -> "Lire en même temps que les autres applis"
+        AppLanguage.GERMAN -> "Parallel zu anderen Apps abspielen"
+        AppLanguage.RUSSIAN -> "Воспроизводить вместе с другими приложениями"
+        AppLanguage.JAPANESE -> "他のアプリと同時に再生"
+        AppLanguage.KOREAN -> "다른 앱과 동시에 재생"
+    }
+
+    val audioMixingDesc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "通过 GeckoView 播放网页声音，让其他应用也能同时播放"
+        AppLanguage.ENGLISH -> "Use GeckoView to play web audio alongside other apps"
+        AppLanguage.ARABIC -> "استخدم GeckoView لتشغيل صوت الويب بالتزامن مع التطبيقات الأخرى"
+        AppLanguage.PORTUGUESE -> "Use o GeckoView para reproduzir áudio da web junto com outros apps"
+        AppLanguage.SPANISH -> "Usa GeckoView para reproducir audio web junto con otras apps"
+        AppLanguage.FRENCH -> "Utilisez GeckoView pour lire le son du Web en même temps que les autres applis"
+        AppLanguage.GERMAN -> "Web-Audio mit GeckoView parallel zu anderen Apps abspielen"
+        AppLanguage.RUSSIAN -> "Использовать GeckoView для одновременного воспроизведения веб-аудио с другими приложениями"
+        AppLanguage.JAPANESE -> "GeckoView を使用して他のアプリと同時にウェブ音声を再生します"
+        AppLanguage.KOREAN -> "GeckoView로 다른 앱과 동시에 웹 오디오를 재생합니다"
+    }
+
+    val audioMixingEnableDesc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "此应用的预览和导出将使用 GeckoView。网页声音可以和其他应用同时播放。"
+        AppLanguage.ENGLISH -> "This app will use GeckoView for preview and export. Web audio can play alongside other apps."
+        AppLanguage.ARABIC -> "سيستخدم هذا التطبيق GeckoView للمعاينة والتصدير. يمكن تشغيل صوت الويب بالتزامن مع التطبيقات الأخرى."
+        AppLanguage.PORTUGUESE -> "Este app usará GeckoView na prévia e na exportação. O áudio da web poderá tocar junto com outros apps."
+        AppLanguage.SPANISH -> "Esta app usará GeckoView en la vista previa y al exportar. El audio web podrá sonar junto con otras apps."
+        AppLanguage.FRENCH -> "Cette application utilisera GeckoView pour l’aperçu et l’export. Le son du Web pourra être lu en même temps que les autres applis."
+        AppLanguage.GERMAN -> "Diese App verwendet GeckoView für Vorschau und Export. Web-Audio kann parallel zu anderen Apps abgespielt werden."
+        AppLanguage.RUSSIAN -> "Приложение будет использовать GeckoView при предпросмотре и экспорте. Веб-аудио сможет воспроизводиться вместе с другими приложениями."
+        AppLanguage.JAPANESE -> "このアプリのプレビューとエクスポートでは GeckoView を使用します。ウェブ音声を他のアプリと同時に再生できます。"
+        AppLanguage.KOREAN -> "이 앱의 미리보기와 내보내기에 GeckoView를 사용합니다. 다른 앱과 동시에 웹 오디오를 재생할 수 있습니다."
+    }
+
+    val audioMixingDisableDesc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "此应用的预览和导出将切换到系统 WebView，并使用其音频焦点策略。"
+        AppLanguage.ENGLISH -> "This app will switch to System WebView for preview and export and use its audio focus policy."
+        AppLanguage.ARABIC -> "سينتقل هذا التطبيق إلى WebView الخاص بالنظام للمعاينة والتصدير وسيستخدم سياسة التركيز الصوتي الخاصة به."
+        AppLanguage.PORTUGUESE -> "Este app passará a usar o WebView do sistema na prévia e na exportação, com a política de foco de áudio correspondente."
+        AppLanguage.SPANISH -> "Esta app pasará al WebView del sistema para la vista previa y la exportación, y usará su política de foco de audio."
+        AppLanguage.FRENCH -> "Cette application passera au WebView système pour l’aperçu et l’export, avec sa politique de priorité audio."
+        AppLanguage.GERMAN -> "Diese App wechselt für Vorschau und Export zum System-WebView und verwendet dessen Audiofokus-Regeln."
+        AppLanguage.RUSSIAN -> "Приложение перейдёт на системный WebView при предпросмотре и экспорте и будет использовать его правила аудиофокуса."
+        AppLanguage.JAPANESE -> "このアプリのプレビューとエクスポートをシステム WebView に切り替え、そのオーディオフォーカスの動作を使用します。"
+        AppLanguage.KOREAN -> "미리보기와 내보내기를 시스템 WebView로 전환하고 해당 오디오 포커스 정책을 사용합니다."
+    }
+
+    val audioMixingEchRequired: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "当前 ECH 需要 GeckoView。关闭 ECH 后即可切换到系统 WebView。"
+        AppLanguage.ENGLISH -> "ECH currently requires GeckoView. Turn off ECH to switch to System WebView."
+        AppLanguage.ARABIC -> "تتطلب ميزة ECH حاليًا GeckoView. أوقف ECH للانتقال إلى WebView الخاص بالنظام."
+        AppLanguage.PORTUGUESE -> "O ECH requer GeckoView. Desative o ECH para mudar para o WebView do sistema."
+        AppLanguage.SPANISH -> "ECH requiere GeckoView. Desactiva ECH para cambiar al WebView del sistema."
+        AppLanguage.FRENCH -> "ECH nécessite actuellement GeckoView. Désactivez ECH pour passer au WebView système."
+        AppLanguage.GERMAN -> "ECH benötigt derzeit GeckoView. Deaktivieren Sie ECH, um zum System-WebView zu wechseln."
+        AppLanguage.RUSSIAN -> "Для ECH сейчас требуется GeckoView. Отключите ECH, чтобы перейти на системный WebView."
+        AppLanguage.JAPANESE -> "現在の ECH 設定には GeckoView が必要です。システム WebView に切り替えるには ECH をオフにします。"
+        AppLanguage.KOREAN -> "현재 ECH에는 GeckoView가 필요합니다. 시스템 WebView로 전환하려면 ECH를 끄세요."
+    }
+
     val backgroundMediaPlaybackDesc: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "离开应用后，正在播放的声音会继续。通知栏可以暂停。画面会停，回到应用后从刚才的进度接着播"
         AppLanguage.ENGLISH -> "Audio that is already playing continues after you leave. Pause it from the notification. The picture stops until you come back, then picks up where it left off"
@@ -13094,7 +13159,6 @@ object StringsE {
         AppLanguage.KOREAN -> "APK 준비됨 (%s)"
     }
 
-    // Agent UI rework: tool viewer, copy header, session/file actions
 
     val agentToolViewFull: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "查看完整内容"
@@ -13226,7 +13290,6 @@ object StringsE {
         AppLanguage.KOREAN -> "파일 %s이(가) 영구적으로 삭제되며 되돌릴 수 없습니다."
     }
 
-    // ---- Misc UI leaks fixed in #945 ----
 
     val aiIconFallbackName: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "AI图标"
@@ -13397,7 +13460,6 @@ object StringsE {
         AppLanguage.KOREAN -> "Blob 동영상은 페이지에서 다운로드해야 합니다"
     }
 
-    // ---- AI API error messages (#945) ----
 
     fun aiErrBadRequest(detail: String): String = when (Strings.lang) {
         AppLanguage.CHINESE -> "请求参数错误: $detail"
@@ -13659,7 +13721,6 @@ object StringsE {
         AppLanguage.KOREAN -> "개발자 도구"
     }
 
-    // ---- Runtime error messages (#945) ----
 
     val runtimeNotReadyDownloadDeps: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "运行时未就绪，请先下载依赖"
@@ -14103,7 +14164,6 @@ object StringsE {
         AppLanguage.KOREAN -> "package.json을 찾을 수 없습니다"
     }
 
-    // ── Outbound Web Share ──────────────────────────────────────────────────────
 
     val outboundShareTitle: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "网页分享"
@@ -14131,7 +14191,6 @@ object StringsE {
         AppLanguage.KOREAN -> "페이지가 글과 파일을 시스템 공유 시트로 넘깁니다. WhatsApp, Telegram 또는 다른 앱을 고르면 됩니다"
     }
 
-    // ── Inbound share sheet (issue #943) ────────────────────────────────────────
 
     val receiveShare: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "接收分享内容"
@@ -14536,9 +14595,6 @@ object StringsE {
         AppLanguage.KOREAN -> "패키지 이름별 전용 인증서; 업데이트 간 서명 ID가 유지됩니다"
     }
 
-    // ------------------------------------------------------------------
-    // Plugins (HCJ / userscript / Chrome extension unified surface)
-    // ------------------------------------------------------------------
 
     val pluginsTitle: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "插件"
@@ -14553,7 +14609,6 @@ object StringsE {
         AppLanguage.KOREAN -> "플러그인"
     }
 
-    /** ⋮ menu + PluginManagerScreen title. Distinct from [pluginsTitle] on the editor card. */
     val pluginsManageTitle: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "管理插件"
         AppLanguage.ENGLISH -> "Manage Plugins"
