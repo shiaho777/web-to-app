@@ -180,15 +180,6 @@ object SampleProjectExtractor {
         }
     }
 
-    /**
-     * Shared dependency packs (python `.pypackages`, go `vendor`) are too heavy
-     * to ship inside the APK (~30MB raw). Bundled assets still win when present
-     * — a fork can re-embed `sample_projects/<pack>/` and skip downloads
-     * entirely — otherwise they are fetched on first use via
-     * [SampleSharedPackManager]. When the pack is unavailable the sample is
-     * extracted without it and the runtime falls back to online dependency
-     * installation (pip), matching the previous fail-soft behavior.
-     */
     private suspend fun ensureSharedSampleAssets(
         context: Context,
         projectId: String,
@@ -208,24 +199,22 @@ object SampleProjectExtractor {
 
         if (bundledPackExists(context, packName)) {
             copyShared(context, "$SAMPLES_DIR/$packName/$subDir", target)
-            return
+        } else {
+            val packDir = SampleSharedPackManager.ensurePack(context, packName)
+            val src = packDir?.let { File(it, subDir) }
+            if (src != null && src.isDirectory) {
+                AppLogger.i(TAG, "复制已下载共享依赖: ${src.absolutePath} -> ${target.absolutePath}")
+                copyDirectory(src, target)
+            }
         }
-
-        val packDir = SampleSharedPackManager.ensurePack(context, packName)
-        val src = packDir?.let { File(it, subDir) }
-        if (src != null && src.isDirectory) {
-            AppLogger.i(TAG, "复制已下载共享依赖: ${src.absolutePath} -> ${target.absolutePath}")
-            copyDirectory(src, target)
+        if (subDir == ".pypackages") {
+            com.webtoapp.core.python.PythonDependencyManager.markBundledDependencies(outputDir)
         }
         if (!target.walkTopDown().any { it.isFile }) {
             AppLogger.w(TAG, "共享 sample 依赖不可用: $packName（运行时回退到在线依赖安装）")
         }
     }
 
-    /**
-     * AssetManager.list() never reports dot-children like `.pypackages`, so a
-     * bundled pack is detected by scanning the host APK entries directly.
-     */
     private fun bundledPackExists(context: Context, packName: String): Boolean {
         val sourceApk = context.applicationInfo?.sourceDir?.takeIf { it.isNotBlank() }
             ?.let { File(it) } ?: return false

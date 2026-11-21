@@ -1,7 +1,9 @@
 package com.webtoapp.core.shell
 
 import android.content.Context
+import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.logging.AppLogger
+import com.webtoapp.core.python.PythonDependencyManager
 import com.webtoapp.ui.shell.buildExtractionToken
 import com.webtoapp.ui.shell.extractAssetsRecursive
 import com.webtoapp.ui.shell.shouldReextractAssets
@@ -15,7 +17,6 @@ object ShellServerLauncher {
 
     private const val TAG = "ShellServerLauncher"
 
-    /** Safely parse a stored port-conflict-mode string (from ShellConfig JSON) into the enum. */
     private fun resolvePortConflictMode(name: String?): com.webtoapp.data.model.PortConflictMode {
         return runCatching {
             com.webtoapp.data.model.PortConflictMode.valueOf(name ?: "AUTO_KILL")
@@ -93,9 +94,40 @@ object ShellServerLauncher {
         }
     }
 
+    @Synchronized
+    internal fun prepareEmbeddedPythonRuntime(context: Context, versionCode: Int) {
+        val home = PythonDependencyManager.getPythonDir(context)
+        val scope = "python_runtime"
+        if (context.assets.list(scope).orEmpty().isNotEmpty()) {
+            val marker = File(home, ".runtime_extracted")
+            val token = buildExtractionToken(context, scope, versionCode)
+            if (shouldReextractAssets(marker, token)) {
+                check(File(home, "lib").deleteRecursively()) { Strings.pyRuntimeDownloadIncomplete }
+                extractAssetsRecursive(context, scope, home)
+                check(File(home, "lib/python${PythonDependencyManager.PYTHON_VERSION}/encodings/__init__.py").isFile) {
+                    Strings.pyRuntimeDownloadIncomplete
+                }
+                writeExtractionMarker(marker, token)
+            }
+        } else if (!PythonDependencyManager.isPythonReady(context)) {
+            val abi = PythonDependencyManager.getDeviceAbi()
+            if ("python3" in context.assets.list("python/$abi").orEmpty()) {
+                val bin = File(home, "bin/python3")
+                if (!bin.isFile) {
+                    bin.parentFile?.mkdirs()
+                    context.assets.open("python/$abi/python3").use { input ->
+                        bin.outputStream().use { output -> input.copyTo(output) }
+                    }
+                    bin.setExecutable(true)
+                }
+            }
+        }
+    }
+
     private suspend fun launchPython(context: Context, config: ShellConfig): LaunchResult {
         return try {
             val pyConfig = config.pythonAppConfig
+            prepareEmbeddedPythonRuntime(context, config.versionCode)
 
             val projectDir = File(context.filesDir, "python_app_site")
             val marker = File(projectDir, ".python_extracted")
@@ -129,6 +161,7 @@ object ShellServerLauncher {
                 port = pyConfig.port,
                 portConflictMode = resolvePortConflictMode(pyConfig.portConflictMode),
                 envVars = pyConfig.envVars,
+                entryModule = pyConfig.entryModule,
                 installDeps = true,
                 customPythonExtensions = pyConfig.customPythonExtensions
             )
@@ -234,10 +267,6 @@ object ShellServerLauncher {
                 writeExtractionMarker(marker, token)
             }
 
-            // Note: do NOT inject PORT into envVars here. NodeService is the single source of
-            // truth for PORT — it sets process.env.PORT to the actually-allocated port AFTER
-            // PortManager may have reassigned it. Injecting the *requested* port here would be
-            // overridden anyway, and previously defeated reassignment (app bound the taken port).
             val envVars = config.nodejsConfig.envVars.toMutableMap()
 
             val runtime = com.webtoapp.core.nodejs.NodeRuntime(context)

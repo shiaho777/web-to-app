@@ -143,7 +143,7 @@ object BuildInputPreflight {
                         label = "build-time musl linker (executable)",
                         path = request.builderMuslLinkerPath,
                         minSize = 1024L,
-                        hint = "This Python project still needs requirements pre-bundling; the current builder app cannot execute pip safely. Pre-populate .pypackages or use a build with bundled Python runtime."
+                        hint = com.webtoapp.core.i18n.Strings.pyDepsBuilderMissingMusl
                     )
                 }
             }
@@ -217,8 +217,6 @@ object BuildInputPreflight {
         }
 
         htmlFiles.forEachIndexed { index, file ->
-            // Skip internal change-tracking markers (Agent's ".changes/" dir) — they
-            // are not real project files and would spuriously fail the empty-file check.
             val name = file.name
             if (name.startsWith(".changes/") || name.contains("/.changes/") ||
                 name.endsWith(".__deleted__")) return@forEachIndexed
@@ -418,7 +416,7 @@ object BuildInputPreflight {
         if (this == null || !exists() || !isDirectory) return false
         val requirements = File(this, "requirements.txt")
         if (!com.webtoapp.core.python.PythonDependencyManager.hasInstallableRequirements(requirements)) return false
-        return !com.webtoapp.core.python.PythonDependencyManager.hasInstalledPackages(File(this, ".pypackages"))
+        return !com.webtoapp.core.python.PythonDependencyManager.hasCurrentDependencies(this)
     }
 
     private fun detectGoBinaryName(projectDir: File): String? {
