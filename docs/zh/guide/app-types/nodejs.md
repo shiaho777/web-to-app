@@ -11,6 +11,9 @@ Express/Fastify/Koa 应用、API 和服务端演示。
 - **版本** —— Node.js 18.20.x，Android 构建带完整 ICU。`\p{ID_Start}` 这类 Unicode 属性转义（当前 `path-to-regexp` / Express 5 会用到）可以编译。精简 ICU 的构建会在启动时直接拒绝。
 - **进程模型** —— 通过加载 `libnode.so` 的原生 `node_launcher` 包装器,在独立的 `:nodejs` 操作系统进程中运行,使 V8 生命周期与宿主隔离。设备上的 `npm` 会在 `libnode.so` 旁边放上 `libc++_shared.so` 再加载。
 - **插件** —— 支持自定义原生 `.node` 扩展。
+- **入口模块** —— CommonJS 与 ESM 入口均可运行：`.mjs` 文件以及 `"type": "module"` 的 `package.json` 下的 `.js` 通过动态 `import()` 加载。入口执行前工作目录会设为项目根目录，相对路径的 `fs` 读取与 `dotenv` 默认路径都按项目解析。
+- **端口** —— 应用必须监听 `process.env.PORT`（通过 `HOST` 绑定 `127.0.0.1`）。硬编码端口会脱离端口管理器，就绪探测将超时。
+- **上游限制** —— 内嵌引擎为 nodejs-mobile：不支持 `child_process` 与 `cluster`，也没有 stdin。需要派生子进程或 fork worker 的应用请改用进程内逻辑或服务器运行时类型。
 - 在 [Linux 环境](/zh/guide/more-features/linux-environment)和[运行时管理](/zh/guide/more-features/runtime-management)界面管理。
 
 ## 导出要求

@@ -11,6 +11,9 @@ Express/Fastify/Koa apps, APIs, and server-side demos.
 - **Version** — Node.js 18.20.x, Android build with full ICU. Unicode property escapes such as `\p{ID_Start}` (used by current `path-to-regexp` / Express 5) compile. A small-ICU build rejects them at startup.
 - **Process model** — runs in a dedicated `:nodejs` OS process via a native `node_launcher` wrapper loading `libnode.so`, so the V8 lifecycle is isolated from the host. On-device `npm` loads that library with `libc++_shared.so` staged beside it.
 - **Addons** — custom native `.node` extensions supported.
+- **Entry modules** — CommonJS and ESM entries both work: `.mjs` files and `.js` under a `"type": "module"` `package.json` load through dynamic `import()`. The working directory is set to the project root before the entry runs, so relative `fs` reads and `dotenv` defaults resolve against the project.
+- **Port** — the app must listen on `process.env.PORT` (bound to `127.0.0.1` via `HOST`). Hardcoded ports escape the Port Manager and the readiness probe will time out.
+- **Upstream limits** — the embedded engine is nodejs-mobile: `child_process` and `cluster` are not supported, and there is no stdin. Apps that spawn subprocesses or fork workers need a different design (in-process logic or a server-runtime app type).
 - Managed in the [Linux Environment](/guide/more-features/linux-environment) and [Runtime Management](/guide/more-features/runtime-management) screens.
 
 ## Export requirements
