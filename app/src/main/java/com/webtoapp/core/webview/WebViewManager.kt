@@ -65,7 +65,6 @@ class WebViewManager(
     private val safeAreaScriptHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
     private val safeAreaInstalledWebViews = java.util.WeakHashMap<WebView, Boolean>()
     private var safeAreaUnsubscribe: (() -> Unit)? = null
-    private val pageZoomScriptHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
     private val videoFitScriptHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
     private val wasmStreamScriptHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
     private val kernelFlavorScriptHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
@@ -1674,14 +1673,8 @@ class WebViewManager(
             com.webtoapp.core.perf.NativePerfEngine.optimizeWebViewSettings(this)
 
             if (zoomPlan.zoomActive) {
-                settings.textZoom = 100
-                settings.loadWithOverviewMode = false
-                if (config.javaScriptEnabled) {
-                    setInitialScale(0)
-                } else {
-                    setInitialScale(zoomPlan.initialScalePercent)
-                }
-                AppLogger.d("WebViewManager", "Applied page zoom: ${zoomPlan.initialScalePercent}% via viewport (overview off)")
+                applySystemPageZoom(zoomPlan.initialScalePercent)
+                AppLogger.d("WebViewManager", "Set system page zoom: ${zoomPlan.initialScalePercent}%")
             } else if (config.initialScale > 0) {
                 setInitialScale(config.initialScale)
                 AppLogger.d("WebViewManager", "Set initial scale: ${config.initialScale}%")
@@ -1702,11 +1695,10 @@ class WebViewManager(
                 config.newWindowBehavior != NewWindowBehavior.BLOCK
             settings.setSupportMultipleWindows(scriptWindowsAllowed)
 
-            webViewClient = createWebViewClient(config, callbacks)
+            webViewClient = createWebViewClient(config, callbacks, applyViewportMode = !zoomPlan.zoomActive)
 
             webChromeClient = createWebChromeClient(config, callbacks)
 
-            installPageZoomDocumentStart(this, config)
             installVideoFitDocumentStart(this, config)
             installWasmStreamDocumentStart(this, config)
             installKernelFlavorDocumentStart(this)
@@ -2035,9 +2027,9 @@ class WebViewManager(
 
     private fun createWebViewClient(
         config: WebViewConfig,
-        callbacks: WebViewCallbacks
+        callbacks: WebViewCallbacks,
+        applyViewportMode: Boolean
     ): WebViewClient {
-
         var diagPageStartTime = 0L
         var diagRequestCount = 0
         var diagBlockedCount = 0
@@ -2396,12 +2388,9 @@ class WebViewManager(
                     startBatch.append("try{").append(WasmStreamCompat.SCRIPT).append("}catch(e){};\n")
                 }
 
-                val pageZoomJs = pageZoomScriptFor(config)
-                if (pageZoomJs != null) {
-                    startBatch.append("try{").append(pageZoomJs).append("}catch(e){};\n")
-                } else if (config.viewportMode == com.webtoapp.data.model.ViewportMode.FIT_SCREEN) {
+                if (applyViewportMode && config.viewportMode == com.webtoapp.data.model.ViewportMode.FIT_SCREEN) {
                     startBatch.append("try{").append(VIEWPORT_FIT_SCREEN_JS).append("}catch(e){};\n")
-                } else if (config.viewportMode == com.webtoapp.data.model.ViewportMode.CUSTOM) {
+                } else if (applyViewportMode && config.viewportMode == com.webtoapp.data.model.ViewportMode.CUSTOM) {
                     val customWidth = config.customViewportWidth.coerceIn(320, 3840)
                     val customJs = VIEWPORT_CUSTOM_JS.replace("CUSTOM_WIDTH_PLACEHOLDER", customWidth.toString())
                     startBatch.append("try{").append(customJs).append("}catch(e){};\n")
@@ -2472,13 +2461,10 @@ class WebViewManager(
 
                 view?.let { injectScripts(it, config.injectScripts, ScriptRunTime.DOCUMENT_END, url) }
 
-                val pageZoomJs = pageZoomScriptFor(config)
-                if (pageZoomJs != null) {
-                    view?.evaluateJavascript(pageZoomJs, null)
-                } else if (config.viewportMode == com.webtoapp.data.model.ViewportMode.FIT_SCREEN) {
+                if (applyViewportMode && config.viewportMode == com.webtoapp.data.model.ViewportMode.FIT_SCREEN) {
 
                     view?.evaluateJavascript("window.__wtaViewportFitApplied=false;\n$VIEWPORT_FIT_SCREEN_JS", null)
-                } else if (config.viewportMode == com.webtoapp.data.model.ViewportMode.CUSTOM) {
+                } else if (applyViewportMode && config.viewportMode == com.webtoapp.data.model.ViewportMode.CUSTOM) {
                     val customWidth = config.customViewportWidth.coerceIn(320, 3840)
                     val customJs = VIEWPORT_CUSTOM_JS.replace("CUSTOM_WIDTH_PLACEHOLDER", customWidth.toString())
                     view?.evaluateJavascript("window.__wtaViewportCustomApplied=false;\n$customJs", null)
@@ -4139,10 +4125,6 @@ class WebViewManager(
             runCatching { handler.remove() }
         }
         cosmeticFilterScriptHandlers.clear()
-        pageZoomScriptHandlers.values.toList().forEach { handler ->
-            runCatching { handler.remove() }
-        }
-        pageZoomScriptHandlers.clear()
         videoFitScriptHandlers.values.toList().forEach { handler ->
             runCatching { handler.remove() }
         }
@@ -4213,10 +4195,6 @@ class WebViewManager(
         }
     }
 
-    private fun pageZoomScriptFor(config: WebViewConfig): String? {
-        return pageZoomDocumentScript(config.pageZoomPercent)
-    }
-
     @Suppress("UNUSED_PARAMETER")
     private fun addDocumentStartExceptChallenges(
         webView: WebView,
@@ -4247,28 +4225,6 @@ class WebViewManager(
             AppLogger.d("WebViewManager", "Kernel flavor JS installed at document start")
         } catch (e: Exception) {
             AppLogger.w("WebViewManager", "Document-start kernel flavor JS install failed", e)
-        }
-    }
-
-    private fun installPageZoomDocumentStart(webView: WebView, config: WebViewConfig) {
-        pageZoomScriptHandlers.remove(webView)?.let { handler ->
-            runCatching { handler.remove() }
-        }
-        val script = pageZoomDocumentScript(config.pageZoomPercent) ?: return
-        if (!config.javaScriptEnabled) return
-        if (!WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
-            AppLogger.d("WebViewManager", "Document-start unsupported; page zoom will use onPageStarted")
-            return
-        }
-        try {
-            pageZoomScriptHandlers[webView] = addDocumentStartExceptChallenges(
-                webView,
-                script,
-                setOf("*")
-            )
-            AppLogger.d("WebViewManager", "Page zoom installed at document start: ${config.pageZoomPercent}%")
-        } catch (e: Exception) {
-            AppLogger.w("WebViewManager", "Document-start page zoom install failed", e)
         }
     }
 
@@ -5320,7 +5276,7 @@ class WebViewManager(
                                     var urlObj = new URL(url, window.location.href);
                                     isSameOrigin = urlObj.origin === window.location.origin;
                                 }
-                            } catch(e) { /* URL parse failed, treat as cross-origin */ }
+                            } catch(e) { }
 
                             var shouldBlock = false;
                             if (isSameOrigin) {
@@ -5448,8 +5404,6 @@ class WebViewManager(
                                 if (window.__wta_cosmetic_filters__) return;
                                 window.__wta_cosmetic_filters__ = true;
                                 try {
-                                    // The document-start script may already have
-                                    // installed the stylesheet for this page (#998).
                                     if (!document.querySelector('style[data-wta="cosmetic"]')) {
                                         var style = document.createElement('style');
                                         style.setAttribute('type', 'text/css');
@@ -5751,7 +5705,6 @@ class WebViewManager(
                 .replace("`", "\\`")
                 .replace("\$", "\\\$")
             builder.appendLine("""
-                // ===== CSS: ${module.name} =====
                 (function() {
                     try {
                         var style = document.createElement('style');
@@ -5777,7 +5730,6 @@ class WebViewManager(
             if (module.world == "MAIN") {
 
                 builder.appendLine("""
-                    // ===== MAIN world: ${module.name} =====
                     (function() {
                         if (typeof __INTLIFY_PROD_DEVTOOLS__ === 'undefined') { try { Object.defineProperty(window, '__INTLIFY_PROD_DEVTOOLS__', { value: false, writable: true, configurable: true }); } catch(e){/* expected */} }
                         if (typeof __VUE_PROD_DEVTOOLS__ === 'undefined') { try { Object.defineProperty(window, '__VUE_PROD_DEVTOOLS__', { value: false, writable: true, configurable: true }); } catch(e){/* expected */} }
@@ -5793,7 +5745,6 @@ class WebViewManager(
             } else {
 
                 builder.appendLine("""
-                    // ===== ISOLATED world: ${module.name} =====
                     (function() {
                         if (typeof __INTLIFY_PROD_DEVTOOLS__ === 'undefined') { try { Object.defineProperty(window, '__INTLIFY_PROD_DEVTOOLS__', { value: false, writable: true, configurable: true }); } catch(e){/* expected */} }
                         if (typeof __VUE_PROD_DEVTOOLS__ === 'undefined') { try { Object.defineProperty(window, '__VUE_PROD_DEVTOOLS__', { value: false, writable: true, configurable: true }); } catch(e){/* expected */} }
@@ -6227,10 +6178,6 @@ class WebViewManager(
                     }).catch(function(){});
                 }
 
-                // WebView never delivers ServiceWorkerRegistration.showNotification.
-                // A page that posts to the worker and asks it to show a local
-                // notification only reaches the shade if the worker script itself
-                // calls back into the bridge.
                 if (navigator.serviceWorker && navigator.serviceWorker.register &&
                         !navigator.serviceWorker.__wtaRegisterPatched) {
                     var originalRegister = navigator.serviceWorker.register.bind(navigator.serviceWorker);

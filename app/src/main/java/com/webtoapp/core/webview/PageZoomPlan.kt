@@ -1,5 +1,8 @@
 package com.webtoapp.core.webview
 
+import android.webkit.WebView
+import kotlin.math.roundToInt
+
 internal data class PageZoomPlan(
     val zoomActive: Boolean,
     val initialScalePercent: Int
@@ -9,6 +12,13 @@ internal fun planPageZoom(pageZoomPercent: Int, initialScaleField: Int): PageZoo
     val zoom = if (pageZoomPercent > 0) pageZoomPercent else 100
     if (zoom != 100) return PageZoomPlan(zoomActive = true, initialScalePercent = zoom)
     return PageZoomPlan(zoomActive = false, initialScalePercent = if (initialScaleField > 0) initialScaleField else 0)
+}
+
+internal fun WebView.applySystemPageZoom(zoomPercent: Int) {
+    settings.useWideViewPort = false
+    settings.loadWithOverviewMode = false
+    settings.textZoom = 100
+    setInitialScale((zoomPercent * resources.displayMetrics.density).roundToInt().coerceAtLeast(1))
 }
 
 internal fun pageZoomDocumentScript(pageZoomPercent: Int): String? {
