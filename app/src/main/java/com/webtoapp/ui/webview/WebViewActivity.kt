@@ -2225,7 +2225,12 @@ fun WebViewScreen(
                                 deliverUrl = remote.deliverUrl,
                                 encryptUrl = remote.encryptUrl,
                                 aesKeyBase64 = remote.aesKeyBase64,
-                                deviceBound = remote.deviceBound
+                                deviceBound = remote.deviceBound,
+                                trustMode = remote.trustMode,
+                                pinnedCertificate = remote.pinnedCertificate,
+                                pinnedCertHost = remote.pinnedCertHost,
+                                packageName =
+                                    com.webtoapp.core.apkbuilder.ApkBuilder.resolvePackageName(app)
                             ),
                             reverifyEveryLaunch = app.activationRequireEveryTime
                         )
@@ -4857,7 +4862,13 @@ fun WebViewScreen(
                             deliverUrl = remote.deliverUrl,
                             encryptUrl = remote.encryptUrl,
                             aesKeyBase64 = remote.aesKeyBase64,
-                            deviceBound = remote.deviceBound
+                            deviceBound = remote.deviceBound,
+                            trustMode = remote.trustMode,
+                            pinnedCertificate = remote.pinnedCertificate,
+                            pinnedCertHost = remote.pinnedCertHost,
+                            packageName = webApp?.let {
+                                com.webtoapp.core.apkbuilder.ApkBuilder.resolvePackageName(it)
+                            }
                         )
                     )
                     if (result is com.webtoapp.core.activation.ActivationResult.Success && remote.deliverUrl) {

@@ -279,7 +279,10 @@ internal fun ShellConfig.toRestoredWebApp(): WebApp {
                 deliverUrl = activationRemoteDeliverUrl,
                 encryptUrl = activationRemoteEncryptUrl,
                 aesKeyBase64 = activationRemoteAesKey,
-                deviceBound = activationRemoteDeviceBound
+                deviceBound = activationRemoteDeviceBound,
+                trustMode = com.webtoapp.data.model.parseRemoteActivationTrustMode(activationRemoteTrustMode),
+                pinnedCertificate = activationRemotePinnedCertificate,
+                pinnedCertHost = activationRemotePinnedCertHost
             )
         } else null,
         activationDialogConfig = if (

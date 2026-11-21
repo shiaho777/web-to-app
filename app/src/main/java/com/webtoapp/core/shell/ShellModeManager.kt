@@ -193,6 +193,15 @@ data class ShellConfig(
     @SerializedName("activationRemoteDeviceBound")
     val activationRemoteDeviceBound: Boolean = false,
 
+    @SerializedName("activationRemoteTrustMode")
+    val activationRemoteTrustMode: String = "SYSTEM",
+
+    @SerializedName("activationRemotePinnedCertificate")
+    val activationRemotePinnedCertificate: String = "",
+
+    @SerializedName("activationRemotePinnedCertHost")
+    val activationRemotePinnedCertHost: String = "",
+
     @SerializedName("adBlockEnabled")
     val adBlockEnabled: Boolean = false,
 

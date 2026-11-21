@@ -45,6 +45,9 @@ internal object ApkConfigJsonFactory {
         "activationRemoteEncryptUrl" to activation.remoteEncryptUrl,
         "activationRemoteAesKey" to activation.remoteAesKey,
         "activationRemoteDeviceBound" to activation.remoteDeviceBound,
+        "activationRemoteTrustMode" to activation.remoteTrustMode,
+        "activationRemotePinnedCertificate" to activation.remotePinnedCertificate,
+        "activationRemotePinnedCertHost" to activation.remotePinnedCertHost,
         "adBlockEnabled" to adBlock.enabled,
         "adBlockRules" to adBlock.rules,
         "adBlockSubscriptions" to adBlock.subscriptions,
@@ -628,6 +631,19 @@ internal object ApkConfigValidator {
 
         require(error == null) {
             "Invalid APK shell config for ${config.meta.packageName}: $error"
+        }
+
+        if (config.activation.remoteEnabled &&
+            config.activation.remoteTrustMode.equals("PINNED", ignoreCase = true)
+        ) {
+            val pinError = com.webtoapp.core.activation.ActivationCertPin.validatePinnedConfig(
+                verifyUrl = config.activation.remoteVerifyUrl,
+                pinnedCertificate = config.activation.remotePinnedCertificate,
+                pinnedCertHost = config.activation.remotePinnedCertHost
+            )
+            require(pinError == null) {
+                "Invalid pinned activation certificate for ${config.meta.packageName}: $pinError"
+            }
         }
     }
 

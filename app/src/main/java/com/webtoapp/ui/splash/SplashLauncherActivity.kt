@@ -155,7 +155,11 @@ fun SplashLauncherScreen(
                         deliverUrl = remoteConfig.deliverUrl,
                         encryptUrl = remoteConfig.encryptUrl,
                         aesKeyBase64 = remoteConfig.aesKeyBase64,
-                        deviceBound = remoteConfig.deviceBound
+                        deviceBound = remoteConfig.deviceBound,
+                        trustMode = remoteConfig.trustMode,
+                        pinnedCertificate = remoteConfig.pinnedCertificate,
+                        pinnedCertHost = remoteConfig.pinnedCertHost,
+                        packageName = payload.targetPackage
                     ),
                     reverifyEveryLaunch = activationRequireEveryTime
                 )
@@ -308,7 +312,11 @@ fun SplashLauncherScreen(
                             deliverUrl = remoteConfig.deliverUrl,
                             encryptUrl = remoteConfig.encryptUrl,
                             aesKeyBase64 = remoteConfig.aesKeyBase64,
-                            deviceBound = remoteConfig.deviceBound
+                            deviceBound = remoteConfig.deviceBound,
+                            trustMode = remoteConfig.trustMode,
+                            pinnedCertificate = remoteConfig.pinnedCertificate,
+                            pinnedCertHost = remoteConfig.pinnedCertHost,
+                            packageName = payload.targetPackage
                         )
                     )
                 } else {

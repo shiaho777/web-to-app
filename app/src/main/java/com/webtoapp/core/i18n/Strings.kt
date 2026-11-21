@@ -896,6 +896,35 @@ object Strings {
 
     val remoteActivationUrlSupporting: String get() = StringsA.remoteActivationUrlSupporting
     val remoteActivationPublicKeySupporting: String get() = StringsA.remoteActivationPublicKeySupporting
+    val remoteActivationTrustTitle: String get() = StringsA.remoteActivationTrustTitle
+    val remoteActivationTrustSystem: String get() = StringsA.remoteActivationTrustSystem
+    val remoteActivationTrustPinned: String get() = StringsA.remoteActivationTrustPinned
+    val remoteActivationTrustSystemHint: String get() = StringsA.remoteActivationTrustSystemHint
+    val remoteActivationTrustPinnedHint: String get() = StringsA.remoteActivationTrustPinnedHint
+    val remoteActivationPinnedCertLabel: String get() = StringsA.remoteActivationPinnedCertLabel
+    val remoteActivationPinnedCertPlaceholder: String get() = StringsA.remoteActivationPinnedCertPlaceholder
+    val remoteActivationPinnedCertInvalid: String get() = StringsA.remoteActivationPinnedCertInvalid
+    val remoteActivationPinnedCertHostMismatch: String get() = StringsA.remoteActivationPinnedCertHostMismatch
+    val remoteActivationFetchCert: String get() = StringsA.remoteActivationFetchCert
+    val remoteActivationFetchCertConfirmTitle: String get() = StringsA.remoteActivationFetchCertConfirmTitle
+    val remoteActivationFetchCertConfirmBody: String get() = StringsA.remoteActivationFetchCertConfirmBody
+    val remoteActivationCertSha256: String get() = StringsA.remoteActivationCertSha256
+    val remoteActivationCertSubject: String get() = StringsA.remoteActivationCertSubject
+    val remoteActivationCertIssuer: String get() = StringsA.remoteActivationCertIssuer
+    val remoteActivationCertValidity: String get() = StringsA.remoteActivationCertValidity
+    val remoteActivationCertSan: String get() = StringsA.remoteActivationCertSan
+    val remoteActivationPinInvalid: String get() = StringsA.remoteActivationPinInvalid
+    val remoteActivationPinMismatch: String get() = StringsA.remoteActivationPinMismatch
+    val remoteActivationPinHostMismatch: String get() = StringsA.remoteActivationPinHostMismatch
+    val remoteActivationTlsFailed: String get() = StringsA.remoteActivationTlsFailed
+    val remoteActivationGuideTrustTitle: String get() = StringsA.remoteActivationGuideTrustTitle
+    val remoteActivationGuideTrustBody: String get() = StringsA.remoteActivationGuideTrustBody
+
+    fun remoteActivationPinnedCertHost(host: String): String =
+        StringsA.remoteActivationPinnedCertHost(host)
+
+    fun remoteActivationFetchCertFailed(message: String): String =
+        StringsA.remoteActivationFetchCertFailed(message)
     val remoteActivationGuideTitle: String get() = StringsA.remoteActivationGuideTitle
     val remoteActivationGuideIntro: String get() = StringsA.remoteActivationGuideIntro
     val remoteActivationGuideRequestTitle: String get() = StringsA.remoteActivationGuideRequestTitle

@@ -296,7 +296,10 @@ class Converters {
     fun fromRemoteActivationConfig(value: com.webtoapp.data.model.RemoteActivationConfig?): String = toJson(value)
 
     @TypeConverter
-    fun toRemoteActivationConfig(value: String): com.webtoapp.data.model.RemoteActivationConfig? = fromJson(value)
+    fun toRemoteActivationConfig(value: String): com.webtoapp.data.model.RemoteActivationConfig? {
+        if (value.isBlank() || value.trim() == "null") return null
+        return fromJsonOrDefault(value, com.webtoapp.data.model.RemoteActivationConfig())
+    }
 
     @TypeConverter
     fun fromAutoStartConfig(value: AutoStartConfig?): String = toJson(value)

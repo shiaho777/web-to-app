@@ -4343,7 +4343,10 @@ private fun WebApp.buildActivationBlock(): ActivationBlock = ActivationBlock(
     remoteDeliverUrl = activationRemoteConfig?.deliverUrl ?: false,
     remoteEncryptUrl = activationRemoteConfig?.encryptUrl ?: false,
     remoteAesKey = activationRemoteConfig?.aesKeyBase64 ?: "",
-    remoteDeviceBound = activationRemoteConfig?.deviceBound ?: false
+    remoteDeviceBound = activationRemoteConfig?.deviceBound ?: false,
+    remoteTrustMode = activationRemoteConfig?.trustMode?.name ?: "SYSTEM",
+    remotePinnedCertificate = activationRemoteConfig?.pinnedCertificate ?: "",
+    remotePinnedCertHost = activationRemoteConfig?.pinnedCertHost ?: ""
 )
 
 private fun WebApp.buildAdBlockBlock(): AdBlockBlock = AdBlockBlock(
