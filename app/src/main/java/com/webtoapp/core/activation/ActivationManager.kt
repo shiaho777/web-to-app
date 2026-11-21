@@ -98,19 +98,33 @@ class ActivationManager(private val context: Context) {
         deliverUrl: Boolean = false,
         encryptUrl: Boolean = false,
         aesKeyBase64: String = "",
-        deviceBound: Boolean = false
+        deviceBound: Boolean = false,
+        trustMode: com.webtoapp.data.model.RemoteActivationTrustMode =
+            com.webtoapp.data.model.RemoteActivationTrustMode.SYSTEM,
+        pinnedCertificate: String = "",
+        pinnedCertHost: String = "",
+        packageName: String? = null
     ): RemoteActivationVerifier.RemoteRequest {
+        val requestPackage = packageName?.takeIf { it.isNotBlank() } ?: context.packageName
+        val requestDeviceId = if (requestPackage == context.packageName) {
+            DeviceIdGenerator.getDeviceId(context)
+        } else {
+            DeviceIdGenerator.previewDeviceId(context, requestPackage)
+        }
         return RemoteActivationVerifier.RemoteRequest(
             verifyUrl = verifyUrl,
             publicKeyBase64 = publicKeyBase64,
             offlinePolicy = offlinePolicy,
             code = "",
-            deviceId = DeviceIdGenerator.getDeviceId(context),
-            packageName = context.packageName,
+            deviceId = requestDeviceId,
+            packageName = requestPackage,
             deliverUrl = deliverUrl,
             encryptUrl = encryptUrl,
             aesKeyBase64 = aesKeyBase64,
-            deviceBound = deviceBound
+            deviceBound = deviceBound,
+            trustMode = trustMode,
+            pinnedCertificate = pinnedCertificate,
+            pinnedCertHost = pinnedCertHost
         )
     }
 

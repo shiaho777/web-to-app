@@ -235,6 +235,21 @@ class MainViewModel(
         _pwaAnalysisState.value = PwaAnalysisState.Idle
     }
 
+    fun createSampleApp() {
+        viewModelScope.launch {
+            try {
+                val app = WebApp(
+                    name = Strings.sampleAppName,
+                    url = "https://shiaho777.github.io/web-to-app/"
+                )
+                withContext(Dispatchers.IO) { repository.createWebApp(app) }
+                _uiState.value = UiState.Success(Strings.sampleAppCreated)
+            } catch (e: Exception) {
+                _uiState.value = UiState.Error(e.message ?: Strings.saveFailed)
+            }
+        }
+    }
+
     fun editApp(webApp: WebApp) {
         _currentApp.value = webApp
         _uiState.value = UiState.Idle

@@ -1688,6 +1688,15 @@ enum class RemoteActivationOfflinePolicy {
     ALLOW
 }
 
+enum class RemoteActivationTrustMode {
+    SYSTEM,
+    PINNED
+}
+
+fun parseRemoteActivationTrustMode(name: String?): RemoteActivationTrustMode =
+    RemoteActivationTrustMode.entries.firstOrNull { it.name.equals(name?.trim(), ignoreCase = true) }
+        ?: RemoteActivationTrustMode.SYSTEM
+
 data class RemoteActivationConfig(
     val enabled: Boolean = false,
     val verifyUrl: String = "",
@@ -1700,7 +1709,10 @@ data class RemoteActivationConfig(
     // enforce per-device seats (maxDevices, default 1 = one-time / single-device code).
     // Requires a remote verifier; purely local activation cannot bind devices because
     // there is no shared state between devices.
-    val deviceBound: Boolean = false
+    val deviceBound: Boolean = false,
+    val trustMode: RemoteActivationTrustMode = RemoteActivationTrustMode.SYSTEM,
+    val pinnedCertificate: String = "",
+    val pinnedCertHost: String = ""
 )
 
 data class AutoStartConfig(

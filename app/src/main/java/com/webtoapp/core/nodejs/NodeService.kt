@@ -49,6 +49,8 @@ class NodeService : Service() {
     @Volatile private var dnsProxyStarted = false
     @Volatile private var lastExitCode: Int? = null
     @Volatile private var currentRequestId: String = ""
+    @Volatile private var currentProjectDir: String = ""
+    @Volatile private var currentEntryFile: String = ""
 
     /**
      * Tail of the Node process's stdout/stderr for the current start attempt. On failure
@@ -185,13 +187,23 @@ class NodeService : Service() {
             }
 
             if (isServerRunningInternal() && currentPort > 0) {
-                AppLogger.i(TAG, "Node server 已经在跑，复用 port=$currentPort")
-                val out = Bundle().apply {
-                    putString(NodeServiceProtocol.Keys.REQUEST_ID, requestId)
-                    putInt(NodeServiceProtocol.Keys.ACTUAL_PORT, currentPort)
-                    putString(NodeServiceProtocol.Keys.SERVER_URL, "http://127.0.0.1:$currentPort")
+                val requestedDir = File(projectDir).absolutePath
+                if (requestedDir == currentProjectDir && entryFile == currentEntryFile) {
+                    AppLogger.i(TAG, "Node server 已经在跑，复用 port=$currentPort")
+                    val out = Bundle().apply {
+                        putString(NodeServiceProtocol.Keys.REQUEST_ID, requestId)
+                        putInt(NodeServiceProtocol.Keys.ACTUAL_PORT, currentPort)
+                        putString(NodeServiceProtocol.Keys.SERVER_URL, "http://127.0.0.1:$currentPort")
+                    }
+                    sendBackBlocking(replyTo, NodeServiceProtocol.MSG_SERVER_STARTED, out)
+                    return
                 }
-                sendBackBlocking(replyTo, NodeServiceProtocol.MSG_SERVER_STARTED, out)
+                AppLogger.i(
+                    TAG,
+                    "Node server 正在运行其他项目 ($currentProjectDir/$currentEntryFile)，回收引擎以启动 $requestedDir/$entryFile"
+                )
+                stopServerInternal()
+                replyFailed(replyTo, requestId, Strings.nodeV8AlreadyInit, v8Exhausted = true)
                 return
             }
 
@@ -259,41 +271,16 @@ class NodeService : Service() {
                 return
             }
             currentPort = serverPort
+            currentProjectDir = File(projectDir).absolutePath
+            currentEntryFile = entryFile
 
-            val bootstrapPath = File(projectDir, ".webtoapp_bootstrap.cjs")
-            val entryEscaped = entryFilePath.replace("\\", "\\\\").replace("\"", "\\\"")
+            val bootstrapPath = File(projectDir, NodeBootstrap.BOOTSTRAP_FILE_NAME)
             bootstrapPath.writeText(
-                """
-                'use strict';
-                (function () {
-                    try {
-                        var proxyUrl = process.env.HTTPS_PROXY || process.env.HTTP_PROXY || process.env.https_proxy || process.env.http_proxy;
-                        if (proxyUrl) {
-                            var undici = require('undici');
-                            if (undici && undici.ProxyAgent && undici.setGlobalDispatcher) {
-                                undici.setGlobalDispatcher(new undici.ProxyAgent(proxyUrl));
-                            }
-                        }
-                    } catch (e) {
-                        console.error('[wta-bootstrap] proxy dispatcher setup skipped:', (e && e.message) || e);
-                    }
-                })();
-                process.on('uncaughtException', function (err) {
-                    console.error('[wta-bootstrap] uncaughtException:', (err && (err.stack || err.message)) || err);
-                });
-                process.on('unhandledRejection', function (reason) {
-                    console.error('[wta-bootstrap] unhandledRejection:', (reason && (reason.stack || reason.message)) || reason);
-                });
-                process.exit = function (code) {
-                    console.error('[wta-bootstrap] process.exit(' + code + ') intercepted; keeping :nodejs process alive.');
-                };
-                setInterval(function () {}, 60000);
-                try {
-                    require("$entryEscaped");
-                } catch (e) {
-                    console.error('[wta-bootstrap] entry failed:', (e && (e.stack || e.message)) || e);
-                }
-                """.trimIndent()
+                NodeBootstrap.generate(
+                    projectDir = File(projectDir).absolutePath,
+                    entryFilePath = entryFilePath,
+                    esm = NodeBootstrap.isEsmEntry(File(entryFilePath))
+                )
             )
 
             val proxyPort = LocalDnsBridgeProxy.start()
@@ -441,6 +428,8 @@ class NodeService : Service() {
             currentPort = 0
             isRunning = false
             currentRequestId = ""
+            currentProjectDir = ""
+            currentEntryFile = ""
         }
         if (threadStuck) {
             AppLogger.w(TAG, "Node 线程在 interrupt+join 后仍在运行，升级为 KILL_ENGINE 重建 :nodejs 进程")
@@ -503,8 +492,8 @@ class NodeService : Service() {
                 conn.readTimeout = NodeServiceProtocol.HEALTH_PROBE_TIMEOUT_MS
                 conn.requestMethod = "GET"
                 val code = conn.responseCode
-                if (code in 200..499) {
-                    AppLogger.i(TAG, "Node.js 服务器就绪 (尝试 ${attempt + 1})")
+                if (code > 0) {
+                    AppLogger.i(TAG, "Node.js 服务器就绪 (尝试 ${attempt + 1}, HTTP $code)")
                     return true
                 }
             } catch (e: Exception) {

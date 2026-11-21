@@ -896,6 +896,35 @@ object Strings {
 
     val remoteActivationUrlSupporting: String get() = StringsA.remoteActivationUrlSupporting
     val remoteActivationPublicKeySupporting: String get() = StringsA.remoteActivationPublicKeySupporting
+    val remoteActivationTrustTitle: String get() = StringsA.remoteActivationTrustTitle
+    val remoteActivationTrustSystem: String get() = StringsA.remoteActivationTrustSystem
+    val remoteActivationTrustPinned: String get() = StringsA.remoteActivationTrustPinned
+    val remoteActivationTrustSystemHint: String get() = StringsA.remoteActivationTrustSystemHint
+    val remoteActivationTrustPinnedHint: String get() = StringsA.remoteActivationTrustPinnedHint
+    val remoteActivationPinnedCertLabel: String get() = StringsA.remoteActivationPinnedCertLabel
+    val remoteActivationPinnedCertPlaceholder: String get() = StringsA.remoteActivationPinnedCertPlaceholder
+    val remoteActivationPinnedCertInvalid: String get() = StringsA.remoteActivationPinnedCertInvalid
+    val remoteActivationPinnedCertHostMismatch: String get() = StringsA.remoteActivationPinnedCertHostMismatch
+    val remoteActivationFetchCert: String get() = StringsA.remoteActivationFetchCert
+    val remoteActivationFetchCertConfirmTitle: String get() = StringsA.remoteActivationFetchCertConfirmTitle
+    val remoteActivationFetchCertConfirmBody: String get() = StringsA.remoteActivationFetchCertConfirmBody
+    val remoteActivationCertSha256: String get() = StringsA.remoteActivationCertSha256
+    val remoteActivationCertSubject: String get() = StringsA.remoteActivationCertSubject
+    val remoteActivationCertIssuer: String get() = StringsA.remoteActivationCertIssuer
+    val remoteActivationCertValidity: String get() = StringsA.remoteActivationCertValidity
+    val remoteActivationCertSan: String get() = StringsA.remoteActivationCertSan
+    val remoteActivationPinInvalid: String get() = StringsA.remoteActivationPinInvalid
+    val remoteActivationPinMismatch: String get() = StringsA.remoteActivationPinMismatch
+    val remoteActivationPinHostMismatch: String get() = StringsA.remoteActivationPinHostMismatch
+    val remoteActivationTlsFailed: String get() = StringsA.remoteActivationTlsFailed
+    val remoteActivationGuideTrustTitle: String get() = StringsA.remoteActivationGuideTrustTitle
+    val remoteActivationGuideTrustBody: String get() = StringsA.remoteActivationGuideTrustBody
+
+    fun remoteActivationPinnedCertHost(host: String): String =
+        StringsA.remoteActivationPinnedCertHost(host)
+
+    fun remoteActivationFetchCertFailed(message: String): String =
+        StringsA.remoteActivationFetchCertFailed(message)
     val remoteActivationGuideTitle: String get() = StringsA.remoteActivationGuideTitle
     val remoteActivationGuideIntro: String get() = StringsA.remoteActivationGuideIntro
     val remoteActivationGuideRequestTitle: String get() = StringsA.remoteActivationGuideRequestTitle
@@ -3147,6 +3176,35 @@ object Strings {
     val contributeDesc: String get() = StringsE.contributeDesc
     val contributorsTitle: String get() = StringsE.contributorsTitle
     val contributorsDesc: String get() = StringsE.contributorsDesc
+    val autoCheckUpdates: String get() = StringsE.autoCheckUpdates
+    val autoCheckUpdatesDesc: String get() = StringsE.autoCheckUpdatesDesc
+    val updateSkipVersion: String get() = StringsE.updateSkipVersion
+    val updateViewDetails: String get() = StringsE.updateViewDetails
+    fun whatsNewTitle(version: String): String = StringsE.whatsNewTitle(version)
+    val whatsNewNoNotes: String get() = StringsE.whatsNewNoNotes
+    val installPermissionTitle: String get() = StringsE.installPermissionTitle
+    val installPermissionMessage: String get() = StringsE.installPermissionMessage
+    val startupPermissionTitle: String get() = StringsE.startupPermissionTitle
+    val startupPermissionNotificationsMessage: String get() = StringsE.startupPermissionNotificationsMessage
+    val startupPermissionStorageMessage: String get() = StringsE.startupPermissionStorageMessage
+    val startupPermissionContinue: String get() = StringsE.startupPermissionContinue
+    val permissionDeniedTitle: String get() = StringsE.permissionDeniedTitle
+    val permissionDeniedMessage: String get() = StringsE.permissionDeniedMessage
+    val emptyStateHint: String get() = StringsE.emptyStateHint
+    val emptyStateSampleApp: String get() = StringsE.emptyStateSampleApp
+    val sampleAppName: String get() = StringsE.sampleAppName
+    val sampleAppCreated: String get() = StringsE.sampleAppCreated
+    val onboardingSkip: String get() = StringsE.onboardingSkip
+    val onboardingNext: String get() = StringsE.onboardingNext
+    val onboardingStart: String get() = StringsE.onboardingStart
+    val onboardingPage1Title: String get() = StringsE.onboardingPage1Title
+    val onboardingPage1Body: String get() = StringsE.onboardingPage1Body
+    val onboardingPage2Title: String get() = StringsE.onboardingPage2Title
+    val onboardingPage2Body: String get() = StringsE.onboardingPage2Body
+    val onboardingPage3Title: String get() = StringsE.onboardingPage3Title
+    val onboardingPage3Body: String get() = StringsE.onboardingPage3Body
+    val featureTourTitle: String get() = StringsE.featureTourTitle
+    val featureTourDesc: String get() = StringsE.featureTourDesc
     val madeWithLove: String get() = StringsE.madeWithLove
     val shortcutPermissionTitle: String get() = StringsE.shortcutPermissionTitle
     val shortcutPermissionGoToSettings: String get() = StringsE.shortcutPermissionGoToSettings

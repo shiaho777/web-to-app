@@ -35,6 +35,7 @@ import com.webtoapp.data.model.NotificationType
 import com.webtoapp.data.model.OrientationMode
 import com.webtoapp.data.model.PortConflictMode
 import com.webtoapp.data.model.RemoteActivationConfig
+import com.webtoapp.data.model.RemoteActivationTrustMode
 import com.webtoapp.data.model.ScriptRunTime
 import com.webtoapp.data.model.ShareDeliveryMode
 import com.webtoapp.data.model.SplashConfig
@@ -241,7 +242,15 @@ class ShellConfigRestoreTest {
             activationEnabled = true,
             activationCodeList = listOf(ActivationCode(code = "ABC", type = ActivationCodeType.PERMANENT)),
             activationRequireEveryTime = true,
-            activationRemoteConfig = RemoteActivationConfig(enabled = true, verifyUrl = "https://verify.example.com", deviceBound = true),
+            activationRemoteConfig = RemoteActivationConfig(
+                enabled = true,
+                verifyUrl = "https://verify.example.com",
+                publicKeyBase64 = "PUBKEY",
+                deviceBound = true,
+                trustMode = RemoteActivationTrustMode.PINNED,
+                pinnedCertificate = "AB".repeat(32),
+                pinnedCertHost = "verify.example.com"
+            ),
             announcementEnabled = true,
             announcement = Announcement(
                 title = "Hello",
@@ -262,6 +271,10 @@ class ShellConfigRestoreTest {
         assertThat(restored.activationRequireEveryTime).isTrue()
         assertThat(restored.activationRemoteConfig?.verifyUrl).isEqualTo("https://verify.example.com")
         assertThat(restored.activationRemoteConfig?.deviceBound).isTrue()
+        assertThat(restored.activationRemoteConfig?.trustMode)
+            .isEqualTo(RemoteActivationTrustMode.PINNED)
+        assertThat(restored.activationRemoteConfig?.pinnedCertificate).isEqualTo("AB".repeat(32))
+        assertThat(restored.activationRemoteConfig?.pinnedCertHost).isEqualTo("verify.example.com")
         assertThat(restored.announcementEnabled).isTrue()
         assertThat(restored.announcement?.title).isEqualTo("Hello")
         assertThat(restored.announcement?.contentIsHtml).isTrue()

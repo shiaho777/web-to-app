@@ -168,6 +168,7 @@ private fun BuildApkContent(
     }
 
     var showExportAabConfirm by remember { mutableStateOf(false) }
+    var showInstallPermissionDialog by remember { mutableStateOf(false) }
 
     var isBuilding by remember(webApp.id) { mutableStateOf(false) }
     var progress by remember(webApp.id) { mutableIntStateOf(0) }
@@ -551,6 +552,12 @@ private fun BuildApkContent(
         }
     }
 
+    if (showInstallPermissionDialog) {
+        com.webtoapp.ui.components.InstallPermissionDialog(
+            onDismiss = { showInstallPermissionDialog = false }
+        )
+    }
+
     WtaScreen(
         title = Strings.buildDialogTitle,
         subtitle = webApp.name,
@@ -604,13 +611,17 @@ private fun BuildApkContent(
                         PremiumButton(
                             onClick = {
                                 if (builtApk != null) {
-                                    val installStarted = apkBuilderState?.installApk(builtApk) ?: false
-                                    android.widget.Toast.makeText(
-                                        context,
-                                        if (installStarted) Strings.fileManagerInstallStarted
-                                        else Strings.fileManagerInstallFailed,
-                                        android.widget.Toast.LENGTH_SHORT
-                                    ).show()
+                                    if (!com.webtoapp.core.apkbuilder.ApkInstaller.canInstallFromThisApp(context)) {
+                                        showInstallPermissionDialog = true
+                                    } else {
+                                        val installStarted = apkBuilderState?.installApk(builtApk) ?: false
+                                        android.widget.Toast.makeText(
+                                            context,
+                                            if (installStarted) Strings.fileManagerInstallStarted
+                                            else Strings.fileManagerInstallFailed,
+                                            android.widget.Toast.LENGTH_SHORT
+                                        ).show()
+                                    }
                                 } else {
                                     launchBuild()
                                 }
@@ -977,13 +988,17 @@ private fun BuildApkContent(
                             onInstall = { entry ->
                                 val file = entry.apkPath?.let { java.io.File(it) }
                                 if (file != null && file.exists()) {
-                                    val started = apkBuilderState?.installApk(file) ?: false
-                                    android.widget.Toast.makeText(
-                                        context,
-                                        if (started) Strings.fileManagerInstallStarted
-                                        else Strings.fileManagerInstallFailed,
-                                        android.widget.Toast.LENGTH_SHORT
-                                    ).show()
+                                    if (!com.webtoapp.core.apkbuilder.ApkInstaller.canInstallFromThisApp(context)) {
+                                        showInstallPermissionDialog = true
+                                    } else {
+                                        val started = apkBuilderState?.installApk(file) ?: false
+                                        android.widget.Toast.makeText(
+                                            context,
+                                            if (started) Strings.fileManagerInstallStarted
+                                            else Strings.fileManagerInstallFailed,
+                                            android.widget.Toast.LENGTH_SHORT
+                                        ).show()
+                                    }
                                 }
                             },
                             onShare = { entry ->

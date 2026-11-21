@@ -28,11 +28,6 @@ class PythonRuntime(private val context: Context) {
     companion object {
         private const val TAG = "PythonRuntime"
 
-        // Progress-driven startup budget (#534): the base window resets on every
-        // progress signal (process output line, bound socket, probe response) so
-        // slow-but-alive servers keep waiting, while the hard cap bounds the
-        // total wait. Replaces the old fixed 30s cutoff that killed Flask
-        // servers which bound just after the deadline.
         internal const val HEALTH_CHECK_BASE_BUDGET_MS = 90_000L
         internal const val HEALTH_CHECK_HARD_CAP_MS = 300_000L
         private const val HEALTH_CHECK_INTERVAL_MS = 500L
@@ -40,9 +35,6 @@ class PythonRuntime(private val context: Context) {
         private const val REQUIRED_HEALTHY_RESPONSES = 2
         private const val BINARY_VERIFY_TIMEOUT_SECONDS = 30L
 
-        // Consecutive bound-socket polls (without an HTTP probe success) that
-        // alone count as ready — covers apps whose probe paths never answer
-        // 2xx-499 (e.g. a user handler returning 500 on /).
         private const val REQUIRED_BOUND_SOCKET_SUCCESSES = 6
     }
 
@@ -82,7 +74,8 @@ class PythonRuntime(private val context: Context) {
         portConflictMode: com.webtoapp.data.model.PortConflictMode = com.webtoapp.data.model.PortConflictMode.AUTO_KILL,
         envVars: Map<String, String> = emptyMap(),
         installDeps: Boolean = true,
-        customPythonExtensions: List<com.webtoapp.data.model.CustomPythonExtension> = emptyList()
+        customPythonExtensions: List<com.webtoapp.data.model.CustomPythonExtension> = emptyList(),
+        entryModule: String = ""
     ): Int = withContext(Dispatchers.IO) {
         try {
             if (!com.webtoapp.core.linux.RuntimeExecPolicy.canExecAppDataBinaries(context) &&
@@ -153,19 +146,11 @@ class PythonRuntime(private val context: Context) {
                     ShellLogger.d(TAG, "[pip] $line")
                 }
                 if (!depsInstalled) {
-
-                    val sitePackages = File(projDir, ".pypackages")
-                    if (PythonDependencyManager.hasInstalledPackages(sitePackages)) {
-                        val existingPackages = sitePackages.listFiles()?.size ?: 0
-                        AppLogger.w(TAG, "pip install failed but .pypackages already carries ${existingPackages} packages; continuing startup")
-                        ShellLogger.w(TAG, "依赖安装失败，使用预打包依赖继续")
-                    } else {
-                        val errMsg = "Python 依赖安装失败。可能原因：1) 无网络连接 2) requirements.txt 中包含不兼容的包 3) Android 环境不支持该包的安装方式"
-                        AppLogger.e(TAG, errMsg)
-                        ShellLogger.e(TAG, errMsg)
-                        _serverState.value = ServerState.Error(errMsg)
-                        return@withContext -1
-                    }
+                    val errMsg = "Python 依赖安装失败。可能原因：1) 无网络连接 2) requirements.txt 中包含不兼容的包 3) Android 环境不支持该包的安装方式"
+                    AppLogger.e(TAG, errMsg)
+                    ShellLogger.e(TAG, errMsg)
+                    _serverState.value = ServerState.Error(errMsg)
+                    return@withContext -1
                 }
             }
 
@@ -190,11 +175,11 @@ class PythonRuntime(private val context: Context) {
                 return@withContext -1
             }
 
-            createBootstrapScript(projDir, serverPort)
+            if (framework != "django" && framework != "fastapi") createBootstrapScript(projDir, serverPort)
 
             val customExtDir = prepareCustomExtensionsDir(projDir.absolutePath, customPythonExtensions)
 
-            val command = buildPythonCommand(pythonBin, framework, entryFile, serverPort, muslLinker, pythonHome)
+            val command = buildPythonCommand(pythonBin, framework, entryFile, serverPort, muslLinker, pythonHome, projDir, entryModule)
 
             AppLogger.i(TAG, "Starting Python server: ${command.joinToString(" ")}")
             AppLogger.i(TAG, "Working directory: $projectDir, port: $serverPort, framework: $framework")
@@ -207,10 +192,10 @@ class PythonRuntime(private val context: Context) {
             env["PYTHONHOME"] = pythonHome
             env["HOME"] = context.filesDir.absolutePath
             env["TMPDIR"] = context.cacheDir.absolutePath
-            env["PORT"] = serverPort.toString()
-            env["HOST"] = "127.0.0.1"
             env["FLASK_ENV"] = "production"
-            env["DJANGO_SETTINGS_MODULE"] = detectDjangoSettings(projDir)
+            if (framework == "django" && PythonLaunchTarget.djangoSettingsFromManagePy(projDir) == null) {
+                PythonLaunchTarget.detectDjangoSettings(projDir)?.let { env["DJANGO_SETTINGS_MODULE"] = it }
+            }
 
             val sitePackages = File(projDir, ".pypackages")
             val pythonPath = buildList {
@@ -239,21 +224,15 @@ class PythonRuntime(private val context: Context) {
 
             env["PATH"] = "${File(pythonHome, "bin").absolutePath}:${env["PATH"] ?: "/usr/bin"}"
             if (muslLinker != null) {
-                // Activate the sitecustomize subprocess rewrite for server-lifetime
-                // children: under host W^X (targetSdk>=29) the PT_INTERP baked into
-                // the python binaries lives in app storage and cannot be kernel
-                // exec'd, so children must be routed through the native (patched)
-                // linker instead. resolveMuslLinker already prefers the native copy.
                 env["_WTA_MUSL_LINKER"] = muslLinker
                 env["_WTA_MUSL_LIB_PATH"] = "$pythonHome/lib"
                 env["_WTA_PYTHON_BIN"] = pythonBin
             }
 
             envVars.forEach { (k, v) -> env[k] = v }
+            env["PORT"] = serverPort.toString()
+            env["HOST"] = "127.0.0.1"
 
-            // The bundled Python is musl-linked and its resolver reads /etc/resolv.conf,
-            // which does not exist on Android — same situation as the Go runtime. Route
-            // its HTTP(S) through the JVM DNS bridge so on-device DNS works.
             val proxyPort = com.webtoapp.core.linux.LocalDnsBridgeProxy.start()
             if (proxyPort > 0) {
                 com.webtoapp.core.linux.LocalDnsBridgeProxy.proxyEnvFor(proxyPort).forEach { (k, v) -> env[k] = v }
@@ -329,9 +308,6 @@ class PythonRuntime(private val context: Context) {
         } catch (e: Exception) {
             AppLogger.e(TAG, "Starting Python serverfailed", e)
             ShellLogger.e(TAG, "启动 Python 服务器失败: ${e.message}")
-            // stopServer's finally releases the allocated port and process state; without
-            // this the port lingers until the 120s stale sweep because the runtime instance
-            // dies together with the failed start.
             runCatching { stopServer() }
             _serverState.value = ServerState.Error(Strings.runtimeStartFailed(e.message ?: ""))
             -1
@@ -373,15 +349,19 @@ class PythonRuntime(private val context: Context) {
     }
 
     fun detectFramework(projectDir: File): String {
-        val candidates = listOf("app.py", "main.py", "wsgi.py", "application.py", "run.py")
+        val candidates = listOf("app.py", "main.py", "wsgi.py", "application.py", "run.py", "api.py", "server.py")
         for (candidate in candidates) {
             val file = File(projectDir, candidate)
             if (file.exists()) {
                 try {
                     val content = file.readText()
                     if (content.contains("from flask") || content.contains("import flask")) return "flask"
-                    if (content.contains("from fastapi") || content.contains("import fastapi")) return "fastapi"
+                    if (PythonLaunchTarget.hasAsgiImport(content)) return "fastapi"
                     if (content.contains("from tornado") || content.contains("import tornado")) return "tornado"
+                    if (content.contains("from aiohttp") || content.contains("import aiohttp")) return "aiohttp"
+                    if (content.contains("from sanic") || content.contains("import sanic")) return "sanic"
+                    if (content.contains("from bottle") || content.contains("import bottle")) return "bottle"
+                    if (content.contains("from waitress") || content.contains("import waitress")) return "waitress"
                 } catch (e: Exception) { AppLogger.w(TAG, "Failed to read $candidate for framework detection", e) }
             }
         }
@@ -392,8 +372,12 @@ class PythonRuntime(private val context: Context) {
                 val content = requirements.readText().lowercase()
                 if (content.contains("flask")) return "flask"
                 if (content.contains("django")) return "django"
-                if (content.contains("fastapi")) return "fastapi"
+                if (PythonLaunchTarget.hasAsgiDependency(content)) return "fastapi"
                 if (content.contains("tornado")) return "tornado"
+                if (content.contains("aiohttp")) return "aiohttp"
+                if (content.contains("sanic")) return "sanic"
+                if (content.contains("bottle")) return "bottle"
+                if (content.contains("waitress")) return "waitress"
             } catch (e: Exception) { AppLogger.w(TAG, "Failed to read requirements.txt", e) }
         }
         val pyproject = File(projectDir, "pyproject.toml")
@@ -402,8 +386,12 @@ class PythonRuntime(private val context: Context) {
                 val content = pyproject.readText().lowercase()
                 if (content.contains("flask")) return "flask"
                 if (content.contains("django")) return "django"
-                if (content.contains("fastapi")) return "fastapi"
+                if (PythonLaunchTarget.hasAsgiDependency(content)) return "fastapi"
                 if (content.contains("tornado")) return "tornado"
+                if (content.contains("aiohttp")) return "aiohttp"
+                if (content.contains("sanic")) return "sanic"
+                if (content.contains("bottle")) return "bottle"
+                if (content.contains("waitress")) return "waitress"
             } catch (e: Exception) { AppLogger.w(TAG, "Failed to read pyproject.toml", e) }
         }
         return "raw"
@@ -641,9 +629,11 @@ ${if (escapedReqs.isNotBlank()) """<div class="section"><div class="section-titl
         }
     }
 
-    private fun buildPythonCommand(
+    internal fun buildPythonCommand(
         pythonBin: String, framework: String, entryFile: String, port: Int,
-        muslLinker: String? = null, pythonHome: String? = null
+        muslLinker: String? = null, pythonHome: String? = null,
+        projectDir: File? = null,
+        entryModule: String = ""
     ): List<String> {
 
         val linkerPrefix = if (muslLinker != null && pythonHome != null) {
@@ -656,11 +646,25 @@ ${if (escapedReqs.isNotBlank()) """<div class="section"><div class="section-titl
                 listOf(pythonBin, "_w2a_bootstrap.py", entryFile, port.toString())
             }
             "django" -> {
-                listOf(pythonBin, "manage.py", "runserver", "127.0.0.1:$port", "--noreload")
+                listOf(pythonBin, entryFile, "runserver", "127.0.0.1:$port", "--noreload")
             }
             "fastapi" -> {
-                val appModule = entryFile.removeSuffix(".py")
-                listOf(pythonBin, "-m", "uvicorn", "$appModule:app", "--host", "127.0.0.1", "--port", port.toString())
+                val target = if (projectDir != null) {
+                    PythonLaunchTarget.detectAsgiTarget(projectDir, entryFile, entryModule)
+                } else {
+                    PythonLaunchTarget.AsgiTarget(PythonLaunchTarget.moduleNameFor(entryFile), "app", false)
+                }
+                buildList {
+                    add(pythonBin)
+                    add("-m")
+                    add("uvicorn")
+                    add(target.spec)
+                    if (target.factory) add("--factory")
+                    add("--host")
+                    add("127.0.0.1")
+                    add("--port")
+                    add(port.toString())
+                }
             }
             "tornado" -> {
                 listOf(pythonBin, "_w2a_bootstrap.py", entryFile, port.toString())
@@ -676,13 +680,8 @@ ${if (escapedReqs.isNotBlank()) """<div class="section"><div class="section-titl
     internal fun createBootstrapScript(projectDir: File, port: Int) {
         val bootstrapFile = File(projectDir, "_w2a_bootstrap.py")
         bootstrapFile.writeText("""#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-# WebToApp Python Bootstrap - fixes Android runtime issues
 import os, sys
 
-# === 1. Patch importlib.metadata for --target installed packages ===
-# When packages are installed via 'pip install --target .pypackages',
-# the .dist-info directories may be missing, causing PackageNotFoundError.
 try:
     import importlib.metadata
     _orig_version = importlib.metadata.version
@@ -692,7 +691,6 @@ try:
         try:
             return _orig_version(name)
         except importlib.metadata.PackageNotFoundError:
-            # Try to find __version__ from the package module directly
             try:
                 mod = __import__(name.replace('-', '_'))
                 version_value = getattr(mod, '__dict__', {}).get('__version__')
@@ -706,8 +704,6 @@ try:
 except Exception:
     pass
 
-# === 2. Fix port for Flask/Werkzeug ===
-# WebToApp allocates a dynamic port, but app.py may hardcode a different one.
 _w2a_port = int(sys.argv[2]) if len(sys.argv) > 2 else int(os.environ.get('PORT', '5000'))
 os.environ['PORT'] = str(_w2a_port)
 os.environ['FLASK_ENV'] = 'production'
@@ -732,36 +728,86 @@ try:
 except ImportError:
     pass
 
-# === 2b. Force the allocated port for raw / http.server apps ===
-# Apps built on http.server / socketserver (raw framework) hardcode their own
-# port and never read PORT; rewrite TCPServer.__init__ so the bound port always
-# matches the one the WebView was loaded from and the health probe checks.
 try:
+    import http.server as _w2a_http_server
+    import socket as _w2a_socket
     import socketserver as _w2a_socketserver
-    _w2a_orig_tcp_init = _w2a_socketserver.TCPServer.__init__
-    def _w2a_patched_tcp_init(self, server_address, *args, **kwargs):
-        if isinstance(server_address, tuple) and len(server_address) == 2:
-            host, port = server_address
-            if isinstance(port, int) and port != _w2a_port:
-                server_address = (host, _w2a_port)
-        _w2a_orig_tcp_init(self, server_address, *args, **kwargs)
-    _w2a_socketserver.TCPServer.__init__ = _w2a_patched_tcp_init
+    _w2a_orig_tcp_bind = _w2a_socketserver.TCPServer.server_bind
+    _w2a_tcp_taken = [False]
+    def _w2a_patched_tcp_bind(self):
+        address = self.server_address
+        use_allocated_port = (not _w2a_tcp_taken[0] and self.socket_type == _w2a_socket.SOCK_STREAM
+                              and isinstance(self.RequestHandlerClass, type)
+                              and issubclass(self.RequestHandlerClass, _w2a_http_server.BaseHTTPRequestHandler)
+                              and isinstance(address, tuple) and len(address) >= 2 and address[1] > 0)
+        if use_allocated_port:
+            self.server_address = (address[0], _w2a_port) + address[2:]
+        _w2a_orig_tcp_bind(self)
+        if use_allocated_port:
+            _w2a_tcp_taken[0] = True
+    _w2a_socketserver.TCPServer.server_bind = _w2a_patched_tcp_bind
 except Exception:
     pass
 
-# tornado listens through HTTPServer.listen(port), outside socketserver
 try:
     import tornado.httpserver as _w2a_tornado_hs
     _w2a_orig_t_listen = _w2a_tornado_hs.HTTPServer.listen
+    _w2a_t_listen_taken = [False]
     def _w2a_patched_t_listen(self, port, *args, **kwargs):
-        _w2a_orig_t_listen(self, _w2a_port, *args, **kwargs)
+        if not _w2a_t_listen_taken[0] and isinstance(port, int) and port > 0:
+            _w2a_t_listen_taken[0] = True
+            port = _w2a_port
+        _w2a_orig_t_listen(self, port, *args, **kwargs)
     _w2a_tornado_hs.HTTPServer.listen = _w2a_patched_t_listen
 except Exception:
     pass
 
-# === 3. Execute the actual entry file ===
+try:
+    import aiohttp.web as _w2a_aiohttp_web
+    _w2a_orig_run_app = _w2a_aiohttp_web.run_app
+    def _w2a_patched_run_app(app, *args, **kwargs):
+        kwargs['host'] = '127.0.0.1'
+        kwargs['port'] = _w2a_port
+        _w2a_orig_run_app(app, *args, **kwargs)
+    _w2a_aiohttp_web.run_app = _w2a_patched_run_app
+except Exception:
+    pass
+
+try:
+    import waitress as _w2a_waitress
+    _w2a_orig_serve = _w2a_waitress.serve
+    def _w2a_patched_serve(app, *args, **kwargs):
+        kwargs['host'] = '127.0.0.1'
+        kwargs['port'] = _w2a_port
+        _w2a_orig_serve(app, *args, **kwargs)
+    _w2a_waitress.serve = _w2a_patched_serve
+except Exception:
+    pass
+
+try:
+    import bottle as _w2a_bottle
+    _w2a_orig_bottle_run = _w2a_bottle.run
+    def _w2a_patched_bottle_run(*args, **kwargs):
+        kwargs['host'] = '127.0.0.1'
+        kwargs['port'] = _w2a_port
+        _w2a_orig_bottle_run(*args, **kwargs)
+    _w2a_bottle.run = _w2a_patched_bottle_run
+except Exception:
+    pass
+
+try:
+    import sanic
+    _w2a_orig_sanic_run = sanic.Sanic.run
+    def _w2a_patched_sanic_run(self, host=None, port=None, *args, **kwargs):
+        kwargs.pop('auto_reload', None)
+        kwargs.pop('workers', None)
+        _w2a_orig_sanic_run(self, host='127.0.0.1', port=_w2a_port, *args, **kwargs)
+    sanic.Sanic.run = _w2a_patched_sanic_run
+except Exception:
+    pass
+
 entry_file = sys.argv[1] if len(sys.argv) > 1 else 'app.py'
-sys.argv = [entry_file]  # Reset argv so the app sees clean arguments
+sys.argv = [entry_file]
 
 if os.path.exists(entry_file):
     with open(entry_file) as f:
@@ -774,22 +820,6 @@ else:
         AppLogger.d(TAG, "Created bootstrap script: ${bootstrapFile.absolutePath}")
     }
 
-    private fun detectDjangoSettings(projectDir: File): String {
-
-        projectDir.listFiles()?.forEach { dir ->
-            if (dir.isDirectory && File(dir, "settings.py").exists()) {
-                return "${dir.name}.settings"
-            }
-        }
-        return "config.settings"
-    }
-
-    /**
-     * True when something is listening on the loopback port. A bound socket is
-     * both a progress signal (imports finished, server loop starting) and —
-     * when stable — readiness on its own, covering apps whose HTTP handlers
-     * never answer 2xx-499 on the probe paths.
-     */
     internal fun isPortBound(port: Int): Boolean {
         if (port <= 0) return false
         return try {

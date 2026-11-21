@@ -25,6 +25,7 @@ the activation-code section and fill in:
 | Deliver target URL | When on, the target URL is delivered by the server at activation time (not packaged in the APK). See [Dynamic URL delivery](#dynamic-url-delivery). |
 | Encrypt target URL | When on (requires Deliver URL), the server must encrypt the URL with AES-256-GCM before signing. See [URL Encryption](#url-encryption-aes-256-gcm). |
 | AES-256 key | 32-byte Base64 key shared with the server. Required when encryption is enabled. |
+| Server certificate trust | `System CA` (default) or `Pinned certificate`. Pin a self-signed endpoint's leaf certificate by SHA-256 fingerprint or PEM. The pin is host-scoped; re-export after the certificate changes. |
 
 ## Request (app → your server)
 
@@ -67,6 +68,13 @@ Accept: application/json
   `ANDROID_ID`, stable per signing key), so a seat is only released when you edit
   the KV record. To free a seat manually, remove the `deviceId` entry from
   `record.devices` (or delete `code:<CODE>`).
+
+  **Servers must gate any device binding on this flag.** Recording or rejecting
+  device IDs unconditionally binds a seat during a preview build and then rejects
+  the exported app: preview and export run under different Android signing keys,
+  and Android scopes `ANDROID_ID` to the signing key, so the two device IDs are
+  different by design. Test device-bound codes against the exported APK, not the
+  in-app preview.
 
 ## Response (your server → app)
 
@@ -203,6 +211,38 @@ openssl ecparam -name prime256v1 -genkey -noout -out ec_private.pem
 # public key (paste into the app's "Signature public key" field, header lines optional)
 openssl ec -in ec_private.pem -pubout -out ec_public.pem
 ```
+
+## Self-signed activation endpoints
+
+Android's system trust store does not trust a self-signed certificate, so the
+default `System CA` mode fails the TLS handshake with `Trust anchor for
+certification path not found`. For an activation server you control, switch
+**Server certificate trust** to **Pinned certificate** and pin the leaf
+certificate:
+
+- Paste the certificate's **SHA-256 fingerprint** (64 hex characters, colons
+  optional) or the full PEM certificate. The editor can also fetch the
+  certificate from the verification URL once; verify the displayed fingerprint
+  out of band before saving.
+- The pin is the SHA-256 of the DER-encoded leaf certificate, not the SPKI
+  `sha256/...` pin used by OkHttp's `CertificatePinner`. Extract it with:
+
+  ```bash
+  openssl s_client -connect HOST:PORT </dev/null \
+    | openssl x509 -fingerprint -sha256 -noout
+  ```
+
+- The pin only applies to the host in the verification URL. The app also
+  checks certificate validity and hostname, so the certificate's SAN must
+  contain the IP address or domain you connect to.
+- A certificate change breaks every exported app until you import the new
+  fingerprint and re-export. This mode suits long-lived self-signed
+  certificates; do not pin a short-lived Let's Encrypt certificate — use
+  `System CA` for those.
+- A pin mismatch is reported as a hard failure and does not fall back to the
+  offline cache. The response signature still protects activation authenticity;
+  the pin protects the transport and stops an unrelated certificate from being
+  accepted for the endpoint.
 
 ## Ready-to-deploy option (Cloudflare Worker)
 

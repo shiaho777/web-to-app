@@ -131,6 +131,7 @@ import com.webtoapp.ui.theme.LocalShowDescriptions
 fun HomeScreen(
     viewModel: MainViewModel,
     onCreateApp: () -> Unit,
+    onCreateSampleApp: () -> Unit = {},
     onCreateMediaApp: () -> Unit = {},
     onCreateGalleryApp: () -> Unit = {},
     onCreateHtmlApp: () -> Unit = {},
@@ -514,7 +515,9 @@ fun HomeScreen(
                 if (apps.isEmpty()) {
 
                     EmptyState(
-                        modifier = Modifier.align(Alignment.Center)
+                        modifier = Modifier.align(Alignment.Center),
+                        onCreateApp = onCreateApp,
+                        onCreateSampleApp = onCreateSampleApp
                     )
                 } else {
 
@@ -1775,7 +1778,9 @@ fun AppTypeChip(appType: com.webtoapp.data.model.AppType) {
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun EmptyState(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onCreateApp: () -> Unit = {},
+    onCreateSampleApp: () -> Unit = {}
 ) {
     val colors = MaterialTheme.colorScheme
     Column(
@@ -1806,6 +1811,32 @@ fun EmptyState(
             color = colors.onSurface,
             textAlign = TextAlign.Center
         )
+        if (LocalShowDescriptions.current) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = Strings.emptyStateHint,
+                style = MaterialTheme.typography.bodyMedium,
+                color = colors.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
+        }
+        Spacer(modifier = Modifier.height(24.dp))
+        PremiumButton(
+            onClick = onCreateApp,
+            modifier = Modifier.widthIn(min = 220.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Rounded.Add,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(Strings.createApp)
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        TextButton(onClick = onCreateSampleApp) {
+            Text(Strings.emptyStateSampleApp)
+        }
     }
 }
 

@@ -1,6 +1,8 @@
 package com.webtoapp.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
+import com.webtoapp.core.activation.ActivationCertPin
+import com.webtoapp.ui.design.WtaAlertDialog
 import com.webtoapp.ui.design.WtaChoiceRow
 import com.webtoapp.ui.design.WtaChip
 import com.webtoapp.ui.design.WtaButton
@@ -44,6 +46,7 @@ import com.webtoapp.core.activation.ActivationCode
 import com.webtoapp.core.activation.ActivationCodeType
 import com.webtoapp.core.activation.offersRemainingDays
 import com.webtoapp.core.i18n.Strings
+import kotlinx.coroutines.launch
 import com.webtoapp.ui.theme.LocalShowDescriptions
 import com.webtoapp.ui.theme.ifDescriptionsShown
 import java.util.concurrent.TimeUnit
@@ -423,6 +426,11 @@ private fun RemoteActivationSection(
     onRemoteConfigChange: (com.webtoapp.data.model.RemoteActivationConfig) -> Unit,
     onShowGuide: () -> Unit
 ) {
+    val scope = rememberCoroutineScope()
+    var fetchedCertificate by remember { mutableStateOf<FetchedServerCertificate?>(null) }
+    var certificateFetchError by remember { mutableStateOf<String?>(null) }
+    var fetchingCertificate by remember { mutableStateOf(false) }
+
     Column(
         modifier = Modifier.padding(
             horizontal = WtaSpacing.RowHorizontal,
@@ -432,7 +440,10 @@ private fun RemoteActivationSection(
     ) {
         PremiumTextField(
             value = remoteConfig.verifyUrl,
-            onValueChange = { onRemoteConfigChange(remoteConfig.copy(verifyUrl = it.trim())) },
+            onValueChange = {
+                certificateFetchError = null
+                onRemoteConfigChange(remoteConfig.copy(verifyUrl = it.trim()))
+            },
             label = { Text(Strings.remoteActivationUrlLabel) },
             placeholder = { Text("https://") },
             supportingText = { Text(Strings.remoteActivationUrlSupporting) },
@@ -448,6 +459,145 @@ private fun RemoteActivationSection(
             supportingText = { Text(Strings.remoteActivationPublicKeySupporting) },
             modifier = Modifier.fillMaxWidth()
         )
+
+        Text(
+            text = Strings.remoteActivationTrustTitle,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.primary
+        )
+        WtaSegmentedRow(
+            options = listOf(
+                Strings.remoteActivationTrustSystem,
+                Strings.remoteActivationTrustPinned
+            ),
+            selectedIndex = if (remoteConfig.trustMode ==
+                com.webtoapp.data.model.RemoteActivationTrustMode.PINNED
+            ) 1 else 0,
+            onSelect = { index ->
+                val pinned = index == 1
+                certificateFetchError = null
+                onRemoteConfigChange(
+                    remoteConfig.copy(
+                        trustMode = if (pinned) {
+                            com.webtoapp.data.model.RemoteActivationTrustMode.PINNED
+                        } else {
+                            com.webtoapp.data.model.RemoteActivationTrustMode.SYSTEM
+                        },
+                        pinnedCertificate = if (pinned) remoteConfig.pinnedCertificate else "",
+                        pinnedCertHost = if (pinned) {
+                            ActivationCertPin.hostOf(remoteConfig.verifyUrl).orEmpty()
+                        } else {
+                            ""
+                        }
+                    )
+                )
+            }
+        )
+        if (LocalShowDescriptions.current) {
+            Text(
+                text = if (remoteConfig.trustMode ==
+                    com.webtoapp.data.model.RemoteActivationTrustMode.PINNED
+                ) {
+                    Strings.remoteActivationTrustPinnedHint
+                } else {
+                    Strings.remoteActivationTrustSystemHint
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        AnimatedVisibility(
+            visible = remoteConfig.trustMode ==
+                com.webtoapp.data.model.RemoteActivationTrustMode.PINNED,
+            enter = CardExpandTransition,
+            exit = CardCollapseTransition
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(WtaSpacing.ContentGap)) {
+                val currentHost = ActivationCertPin.hostOf(remoteConfig.verifyUrl)
+                val pinValid = remoteConfig.pinnedCertificate.isBlank() ||
+                    ActivationCertPin.resolveFingerprint(remoteConfig.pinnedCertificate) != null
+                val hostMatches = currentHost != null &&
+                    remoteConfig.pinnedCertHost.equals(currentHost, ignoreCase = true)
+                PremiumTextField(
+                    value = remoteConfig.pinnedCertificate,
+                    onValueChange = {
+                        onRemoteConfigChange(
+                            remoteConfig.copy(
+                                pinnedCertificate = it,
+                                pinnedCertHost = currentHost.orEmpty()
+                            )
+                        )
+                    },
+                    label = { Text(Strings.remoteActivationPinnedCertLabel) },
+                    placeholder = { Text(Strings.remoteActivationPinnedCertPlaceholder) },
+                    supportingText = if (!pinValid) {
+                        { Text(Strings.remoteActivationPinnedCertInvalid) }
+                    } else {
+                        null
+                    },
+                    isError = !pinValid,
+                    minLines = 1,
+                    maxLines = 3,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                if (currentHost != null) {
+                    Text(
+                        text = Strings.remoteActivationPinnedCertHost(currentHost),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                if (!hostMatches && remoteConfig.pinnedCertificate.isNotBlank()) {
+                    Text(
+                        text = Strings.remoteActivationPinnedCertHostMismatch,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+                PremiumOutlinedButton(
+                    onClick = {
+                        certificateFetchError = null
+                        fetchingCertificate = true
+                        scope.launch {
+                            fetchServerCertificate(remoteConfig.verifyUrl)
+                                .onSuccess { fetchedCertificate = it }
+                                .onFailure {
+                                    certificateFetchError = Strings.remoteActivationFetchCertFailed(
+                                        it.message.orEmpty()
+                                    )
+                                }
+                            fetchingCertificate = false
+                        }
+                    },
+                    enabled = !fetchingCertificate &&
+                        remoteConfig.verifyUrl.startsWith("https://", ignoreCase = true),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    if (fetchingCertificate) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Icon(Icons.Outlined.Download, null, modifier = Modifier.size(18.dp))
+                    }
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        Strings.remoteActivationFetchCert,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                certificateFetchError?.let { error ->
+                    Text(
+                        text = error,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+            }
+        }
 
         Text(
             text = Strings.remoteActivationOfflineLabel,
@@ -533,7 +683,79 @@ private fun RemoteActivationSection(
             color = com.webtoapp.ui.design.WtaColors.semantic.warning
         )
     }
+
+    fetchedCertificate?.let { certificate ->
+        WtaAlertDialog(
+            onDismissRequest = { fetchedCertificate = null },
+            icon = Icons.Outlined.VerifiedUser,
+            title = Strings.remoteActivationFetchCertConfirmTitle,
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onRemoteConfigChange(
+                            remoteConfig.copy(
+                                trustMode = com.webtoapp.data.model.RemoteActivationTrustMode.PINNED,
+                                pinnedCertificate = certificate.sha256,
+                                pinnedCertHost = certificate.host
+                            )
+                        )
+                        fetchedCertificate = null
+                    }
+                ) {
+                    Text(Strings.btnConfirm)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { fetchedCertificate = null }) {
+                    Text(Strings.btnCancel)
+                }
+            },
+            content = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = Strings.remoteActivationFetchCertConfirmBody,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    CertificateDetailRow(Strings.remoteActivationCertSha256, certificate.sha256)
+                    CertificateDetailRow(Strings.remoteActivationCertSubject, certificate.subject)
+                    CertificateDetailRow(Strings.remoteActivationCertIssuer, certificate.issuer)
+                    CertificateDetailRow(
+                        Strings.remoteActivationCertValidity,
+                        "${formatCertificateDate(certificate.notBefore)} → " +
+                            formatCertificateDate(certificate.notAfter)
+                    )
+                    if (certificate.subjectAltNames.isNotEmpty()) {
+                        CertificateDetailRow(
+                            Strings.remoteActivationCertSan,
+                            certificate.subjectAltNames.joinToString(", ")
+                        )
+                    }
+                }
+            }
+        )
+    }
 }
+
+@Composable
+private fun CertificateDetailRow(label: String, value: String) {
+    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.primary
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodySmall,
+            fontFamily = FontFamily.Monospace
+        )
+    }
+}
+
+private fun formatCertificateDate(epochMillis: Long): String =
+    java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.getDefault())
+        .format(java.util.Date(epochMillis))
 
 @Composable
 private fun RemoteActivationGuideDialog(
@@ -645,6 +867,10 @@ private fun RemoteActivationGuideDialog(
                     title = Strings.remoteActivationGuideDeployTitle,
                     body = Strings.remoteActivationGuideDeployBody
                 )
+                RemoteActivationGuideSection(
+                    title = Strings.remoteActivationGuideTrustTitle,
+                    body = Strings.remoteActivationGuideTrustBody
+                )
             }
         }
     )
@@ -690,6 +916,9 @@ private fun buildRemoteGuideMarkdown(): String = buildString {
     appendLine()
     appendLine("## ${Strings.remoteActivationGuideDeployTitle}")
     appendLine(Strings.remoteActivationGuideDeployBody)
+    appendLine()
+    appendLine("## ${Strings.remoteActivationGuideTrustTitle}")
+    appendLine(Strings.remoteActivationGuideTrustBody)
 }.trimEnd() + "\n"
 
 @Composable

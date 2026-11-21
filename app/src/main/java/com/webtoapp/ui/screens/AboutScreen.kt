@@ -83,6 +83,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -180,6 +181,9 @@ fun AboutScreen(onBack: () -> Unit) {
             }
             item(key = "contact") { ContactGrid() }
             item(key = "descriptions") { DescriptionsToggleCard() }
+            if (!com.webtoapp.BuildConfig.FDROID) {
+                item(key = "auto_update") { AutoUpdateCheckCard() }
+            }
             item(key = "separate_tasks") { SeparateTasksCard() }
             item(key = "advanced_features") { AdvancedFeaturesCard() }
             item(key = "local_mcp") { LocalMcpCard() }
@@ -191,6 +195,7 @@ fun AboutScreen(onBack: () -> Unit) {
             }
             item(key = "trust") { TrustAndLicensesCard() }
             item(key = "community") { CommunityCard() }
+            item(key = "onboarding") { FeatureTourCard() }
             item(key = "legal") { LegalTabContent() }
             item(key = "footer") { MadeWithLoveFooter() }
         }
@@ -221,6 +226,34 @@ private fun DescriptionsToggleCard() {
                     onCheckedChange = {
                         scope.launch { themeManager.setShowDescriptions(it) }
                     }
+                )
+            }
+        )
+    }
+}
+
+@Composable
+private fun AutoUpdateCheckCard() {
+    val context = LocalContext.current
+    val updatePrefs = remember { com.webtoapp.core.update.UpdatePrefs.getInstance(context) }
+    val autoCheck by updatePrefs.autoCheckFlow.collectAsState(initial = true)
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+
+    WtaCard(
+        modifier = Modifier.fillMaxWidth(),
+        tone = WtaCardTone.Elevated,
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)
+    ) {
+        WtaSettingRow(
+            iconContent = { AboutTonalIcon(icon = Icons.Outlined.Sync, shapeIndex = 4, plateSize = 40.dp, iconSize = 20.dp) },
+            showIconPlate = false,
+            title = Strings.autoCheckUpdates,
+            subtitle = Strings.autoCheckUpdatesDesc.ifDescriptionsShown(),
+            onClick = { scope.launch { updatePrefs.setAutoCheckEnabled(!autoCheck) } },
+            trailing = {
+                WtaSwitch(
+                    checked = autoCheck,
+                    onCheckedChange = { scope.launch { updatePrefs.setAutoCheckEnabled(it) } }
                 )
             }
         )
@@ -438,6 +471,13 @@ private fun AuthorHeroCard(
             com.webtoapp.core.update.UpdateDownloadState.Idle
         )
     }
+    var showInstallPermissionDialog by remember { mutableStateOf(false) }
+
+    if (showInstallPermissionDialog) {
+        com.webtoapp.ui.components.InstallPermissionDialog(
+            onDismiss = { showInstallPermissionDialog = false }
+        )
+    }
 
     // Version history state
     var showHistorySheet by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
@@ -471,15 +511,25 @@ private fun AuthorHeroCard(
                 downloadState = com.webtoapp.core.update.UpdateDownloadState.Idle
             },
             onInstall = { file ->
-                val started = com.webtoapp.core.apkbuilder.ApkInstaller.install(context.applicationContext, file)
-                if (!started) {
-                    Toast.makeText(context, Strings.fileManagerInstallFailed, Toast.LENGTH_SHORT).show()
+                if (!com.webtoapp.core.apkbuilder.ApkInstaller.canInstallFromThisApp(context)) {
+                    showInstallPermissionDialog = true
+                } else {
+                    val started = com.webtoapp.core.apkbuilder.ApkInstaller.install(context.applicationContext, file)
+                    if (!started) {
+                        Toast.makeText(context, Strings.fileManagerInstallFailed, Toast.LENGTH_SHORT).show()
+                    }
                 }
             },
             onDismiss = {
                 com.webtoapp.core.update.ApkUpdateInstaller.cancel()
                 showUpdateDialog = false
                 downloadState = com.webtoapp.core.update.UpdateDownloadState.Idle
+            },
+            onSkipVersion = { version ->
+                scope.launch {
+                    com.webtoapp.core.update.UpdatePrefs.getInstance(context).setSkippedVersion(version)
+                }
+                showUpdateDialog = false
             }
         )
     }
@@ -506,9 +556,13 @@ private fun AuthorHeroCard(
                 historyDownloadStates.remove(tag)
             },
             onInstall = { file ->
-                val started = com.webtoapp.core.apkbuilder.ApkInstaller.install(context.applicationContext, file)
-                if (!started) {
-                    Toast.makeText(context, Strings.fileManagerInstallFailed, Toast.LENGTH_SHORT).show()
+                if (!com.webtoapp.core.apkbuilder.ApkInstaller.canInstallFromThisApp(context)) {
+                    showInstallPermissionDialog = true
+                } else {
+                    val started = com.webtoapp.core.apkbuilder.ApkInstaller.install(context.applicationContext, file)
+                    if (!started) {
+                        Toast.makeText(context, Strings.fileManagerInstallFailed, Toast.LENGTH_SHORT).show()
+                    }
                 }
             },
             onDismiss = {
@@ -991,6 +1045,34 @@ private fun TrustAndLicensesCard() {
 }
 
 @Composable
+private fun FeatureTourCard() {
+    var showTour by remember { mutableStateOf(false) }
+
+    WtaCard(
+        modifier = Modifier.fillMaxWidth(),
+        tone = WtaCardTone.Elevated,
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)
+    ) {
+        WtaSettingRow(
+            iconContent = { AboutTonalIcon(icon = Icons.Rounded.MenuBook, shapeIndex = 3, plateSize = 40.dp, iconSize = 20.dp) },
+            showIconPlate = false,
+            title = Strings.featureTourTitle,
+            subtitle = Strings.featureTourDesc.ifDescriptionsShown(),
+            onClick = { showTour = true }
+        )
+    }
+
+    if (showTour) {
+        androidx.compose.ui.window.Dialog(
+            onDismissRequest = { showTour = false },
+            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            com.webtoapp.ui.components.OnboardingScreen(onFinished = { showTour = false })
+        }
+    }
+}
+
+@Composable
 private fun CommunityCard() {
     val context = LocalContext.current
 
@@ -1087,7 +1169,8 @@ private fun UpdateCheckDialog(
     onDownload: (com.webtoapp.core.update.UpdateChecker.ReleaseInfo) -> Unit,
     onCancelDownload: () -> Unit,
     onInstall: (java.io.File) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onSkipVersion: ((String) -> Unit)? = null
 ) {
     val available = result as? com.webtoapp.core.update.UpdateChecker.Result.UpdateAvailable
     val downloading = downloadState is com.webtoapp.core.update.UpdateDownloadState.Downloading ||
@@ -1121,6 +1204,14 @@ private fun UpdateCheckDialog(
                             currentVersion = available.currentVersion,
                             downloadState = downloadState
                         )
+                        if (onSkipVersion != null &&
+                            downloadState is com.webtoapp.core.update.UpdateDownloadState.Idle
+                        ) {
+                            Spacer(Modifier.height(8.dp))
+                            androidx.compose.material3.TextButton(onClick = { onSkipVersion(available.info.version) }) {
+                                Text(Strings.updateSkipVersion)
+                            }
+                        }
                     }
                     result is com.webtoapp.core.update.UpdateChecker.Result.UpToDate -> {
                         Text(Strings.updateUpToDate, style = MaterialTheme.typography.bodyMedium)
@@ -1265,7 +1356,7 @@ private fun UpdateAvailableContent(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(Modifier.height(6.dp))
-                ReleaseNotesMarkdown(text = info.releaseNotes)
+                com.webtoapp.ui.components.ReleaseNotesMarkdown(text = info.releaseNotes)
             }
         }
     }
@@ -1473,7 +1564,7 @@ private fun VersionHistoryItem(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(Modifier.height(6.dp))
-                    ReleaseNotesMarkdown(text = release.body)
+                    com.webtoapp.ui.components.ReleaseNotesMarkdown(text = release.body)
                 }
                 Spacer(Modifier.height(10.dp))
                 if (com.webtoapp.BuildConfig.FDROID) {
@@ -1597,74 +1688,6 @@ private fun VersionHistoryDownloadRow(
                     )
                     Spacer(Modifier.width(6.dp))
                     Text(Strings.versionHistoryDownload)
-                }
-            }
-        }
-    }
-}
-
-/**
- * Lightweight Markdown renderer for GitHub release notes, tuned for the
- * "## Added / ## Improved / ## Fixed" + "- item" changelog format.
- *
- * It only handles what release notes actually contain — second-level headings
- * (`##`), unordered list items (`-`/`*`), and plain paragraphs — so it stays
- * dependency-free. Anything else is shown as plain text.
- */
-@Composable
-private fun ReleaseNotesMarkdown(text: String) {
-    val titleColor = MaterialTheme.colorScheme.primary
-    val textColor = MaterialTheme.colorScheme.onSurface
-    val mutedColor = MaterialTheme.colorScheme.onSurfaceVariant
-
-    val lines = remember(text) { text.lines() }
-    var inList = false
-    Column {
-        lines.forEachIndexed { index, rawLine ->
-            val line = rawLine.trimEnd()
-            when {
-                // Second-level heading: the Added / Improved / Fixed sections.
-                line.startsWith("## ") -> {
-                    if (inList) Spacer(Modifier.height(4.dp))
-                    inList = false
-                    if (index > 0) Spacer(Modifier.height(6.dp))
-                    Text(
-                        line.removePrefix("## ").trim(),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = titleColor
-                    )
-                }
-                // Unordered list item.
-                line.startsWith("- ") || line.startsWith("* ") -> {
-                    if (!inList && index > 0) Spacer(Modifier.height(2.dp))
-                    inList = true
-                    Row(modifier = Modifier.padding(start = 4.dp, top = 1.dp)) {
-                        Text(
-                            "•",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = mutedColor,
-                            modifier = Modifier.width(12.dp)
-                        )
-                        Text(
-                            line.removePrefix("- ").removePrefix("* ").trim(),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = textColor
-                        )
-                    }
-                }
-                // Blank line: just spacing, closes any open list.
-                line.isBlank() -> {
-                    inList = false
-                }
-                // Fallback: plain paragraph text.
-                else -> {
-                    if (inList) Spacer(Modifier.height(4.dp))
-                    inList = false
-                    Text(
-                        line,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = textColor
-                    )
                 }
             }
         }

@@ -21,7 +21,6 @@ class PythonRuntimeTest {
 
     private val context: Context = RuntimeEnvironment.getApplication()
 
-    /** Minimal HTTP responder: answers 404 to every request, like an app with no matching route. */
     private fun startHttp404Server(): Pair<ServerSocket, Thread> {
         val server = ServerSocket(0, 50, InetAddress.getByName("127.0.0.1"))
         val acceptor = thread(isDaemon = true) {
@@ -60,8 +59,6 @@ class PythonRuntimeTest {
 
     @Test
     fun `waitForServerReady passes against a plain HTTP server`() {
-        // Every path answers 404, which counts as healthy (2xx-499) just like
-        // an unhandled /__w2a_health would.
         val (server, acceptor) = startHttp404Server()
         try {
             val runtime = PythonRuntime(context)
@@ -76,9 +73,6 @@ class PythonRuntimeTest {
 
     @Test
     fun `waitForServerReady treats a stable bound socket as ready`() {
-        // A listening socket that accepts and immediately closes connections:
-        // HTTP probes fail fast (connection reset), but the port is bound, so
-        // consecutive bound-socket polls alone must declare readiness.
         val server = ServerSocket(0, 50, InetAddress.getByName("127.0.0.1"))
         val acceptor = thread(isDaemon = true) {
             while (!server.isClosed) {
@@ -120,20 +114,15 @@ class PythonRuntimeTest {
             runtime.createBootstrapScript(dir, 19527)
             val script = File(dir, "_w2a_bootstrap.py").readText()
 
-            // Flask patch (health endpoint + forced port) stays in place
             assertThat(script).contains("flask.Flask.run")
             assertThat(script).contains("__w2a_health")
 
-            // raw / http.server apps hardcode their port and never read PORT;
-            // TCPServer.__init__ must rewrite it to the allocated one
-            assertThat(script).contains("TCPServer.__init__")
+            assertThat(script).contains("TCPServer.server_bind")
             assertThat(script).contains("_w2a_port")
             assertThat(script).contains("os.environ['PORT'] = str(_w2a_port)")
 
-            // tornado listens through HTTPServer.listen, outside socketserver
             assertThat(script).contains("HTTPServer.listen")
 
-            // the entry file still runs as __main__ with clean argv
             assertThat(script).contains("'__name__': '__main__'")
         } finally {
             dir.deleteRecursively()

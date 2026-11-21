@@ -1,5 +1,7 @@
 package com.webtoapp.ui.screens.create.runtime
 
+import com.webtoapp.core.python.PythonLaunchTarget
+
 import com.webtoapp.ui.screens.create.common.ProjectImportAnalysis
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.ui.screens.create.common.ProjectImportException
@@ -43,7 +45,7 @@ class PythonProjectImportAnalyzer {
         val djangoSettingsModule = if (framework == "django") detectDjangoSettingsModule(projectDir) else ""
         val entryModule = when (framework) {
             "django" -> detectDjangoEntryModule(projectDir, djangoSettingsModule)
-            "fastapi" -> detectFastApiEntryModule(projectDir, entryFile)
+            "fastapi" -> PythonLaunchTarget.detectAsgiTarget(projectDir, entryFile).configValue
             else -> ""
         }
 
@@ -71,13 +73,13 @@ class PythonProjectImportAnalyzer {
     }
 
     private fun detectFramework(projectDir: File): String {
-        listOf("app.py", "main.py", "wsgi.py", "application.py", "run.py").forEach { name ->
+        listOf("app.py", "main.py", "wsgi.py", "application.py", "run.py", "api.py", "server.py").forEach { name ->
             val file = File(projectDir, name)
             if (!file.exists()) return@forEach
             val content = file.readText()
             when {
                 content.contains("from flask") || content.contains("import flask") -> return "flask"
-                content.contains("from fastapi") || content.contains("import fastapi") -> return "fastapi"
+                PythonLaunchTarget.hasAsgiImport(content) -> return "fastapi"
                 content.contains("from tornado") || content.contains("import tornado") -> return "tornado"
             }
         }
@@ -86,7 +88,8 @@ class PythonProjectImportAnalyzer {
         val pyprojectContent = File(projectDir, "pyproject.toml").takeIf(File::exists)?.readText()?.lowercase()
         return when {
             requirementsContent?.contains("django") == true || pyprojectContent?.contains("django") == true -> "django"
-            requirementsContent?.contains("fastapi") == true || pyprojectContent?.contains("fastapi") == true -> "fastapi"
+            PythonLaunchTarget.hasAsgiDependency(requirementsContent.orEmpty()) ||
+                PythonLaunchTarget.hasAsgiDependency(pyprojectContent.orEmpty()) -> "fastapi"
             requirementsContent?.contains("flask") == true || pyprojectContent?.contains("flask") == true -> "flask"
             requirementsContent?.contains("tornado") == true || pyprojectContent?.contains("tornado") == true -> "tornado"
             else -> "raw"
@@ -172,17 +175,6 @@ class PythonProjectImportAnalyzer {
             ?.replace(File.separator, ".")
             ?.let { return "$it:application" }
         return ""
-    }
-
-    private fun detectFastApiEntryModule(projectDir: File, entryFile: String): String {
-        val entry = File(projectDir, entryFile)
-        if (!entry.exists()) return "main:app"
-        val appVar = Regex("""(\w+)\s*=\s*FastAPI\(""")
-            .find(entry.readText())
-            ?.groupValues
-            ?.getOrNull(1)
-            ?: "app"
-        return "${entryFile.removeSuffix(".py")}:$appVar"
     }
 
     private fun parseRequirements(projectDir: File): PythonRequirementsInfo {

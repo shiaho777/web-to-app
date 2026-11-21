@@ -8,22 +8,28 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.core.network.NetworkModule
 import com.webtoapp.data.model.RemoteActivationOfflinePolicy
+import com.webtoapp.data.model.RemoteActivationTrustMode
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.security.KeyFactory
 import java.security.SecureRandom
 import java.security.Signature
+import java.security.cert.CertificateException
 import java.security.spec.X509EncodedKeySpec
 import java.util.concurrent.TimeUnit
 import javax.crypto.Cipher
 import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
+import javax.net.ssl.SSLContext
+import javax.net.ssl.SSLException
+import javax.net.ssl.TrustManager
 
 class RemoteActivationVerifier(private val context: Context) {
 
@@ -52,7 +58,10 @@ class RemoteActivationVerifier(private val context: Context) {
         // endpoint this activation must be enforced per deviceId (the server
         // rejects the same code from any other device). Pure-local mode cannot
         // enforce cross-device binding because there is no shared state.
-        val deviceBound: Boolean = false
+        val deviceBound: Boolean = false,
+        val trustMode: RemoteActivationTrustMode = RemoteActivationTrustMode.SYSTEM,
+        val pinnedCertificate: String = "",
+        val pinnedCertHost: String = ""
     )
 
     private val secureRandom = SecureRandom()
@@ -76,15 +85,40 @@ class RemoteActivationVerifier(private val context: Context) {
         val publicKey = parsePublicKey(request.publicKeyBase64)
             ?: return ActivationResult.Invalid(remoteMisconfiguredMessage())
 
+        val pinnedFingerprint = if (request.trustMode == RemoteActivationTrustMode.PINNED) {
+            val fingerprint = ActivationCertPin.resolveFingerprint(request.pinnedCertificate)
+                ?: return ActivationResult.Invalid(remotePinInvalidMessage())
+            val urlHost = ActivationCertPin.hostOf(request.verifyUrl)
+                ?: return ActivationResult.Invalid(remoteMisconfiguredMessage())
+            if (request.pinnedCertHost.isBlank() ||
+                !request.pinnedCertHost.equals(urlHost, ignoreCase = true)
+            ) {
+                return ActivationResult.Invalid(remotePinHostMismatchMessage())
+            }
+            fingerprint
+        } else {
+            null
+        }
+
+        val client = if (pinnedFingerprint != null) pinnedClient(pinnedFingerprint) else httpClient
+
         val nonce = generateNonce()
         val timestamp = System.currentTimeMillis()
         val bodyJson = buildRequestBody(request, nonce, timestamp)
 
         val response = try {
             withContext(Dispatchers.IO) {
-                executeRequest(request.verifyUrl, bodyJson)
+                executeRequest(request.verifyUrl, bodyJson, client)
             }
         } catch (e: Exception) {
+            if (e is PinnedCertificateMismatchException || e.hasCause<PinnedCertificateMismatchException>()) {
+                AppLogger.w(TAG, "Remote verification certificate pin mismatch: app=$appId")
+                return ActivationResult.Invalid(remotePinMismatchMessage())
+            }
+            if (e.isTlsFailure()) {
+                AppLogger.w(TAG, "Remote verification TLS failure: ${e.message}")
+                return ActivationResult.Invalid(remoteTlsFailedMessage())
+            }
             AppLogger.w(TAG, "Remote verification network failure: ${e.message}")
             return handleOffline(appId, request)
         }
@@ -182,7 +216,7 @@ class RemoteActivationVerifier(private val context: Context) {
         return obj.toString()
     }
 
-    private fun executeRequest(url: String, bodyJson: String): String? {
+    private fun executeRequest(url: String, bodyJson: String, client: OkHttpClient): String? {
         val mediaType = "application/json; charset=utf-8".toMediaType()
         val httpRequest = Request.Builder()
             .url(url.trim())
@@ -190,13 +224,46 @@ class RemoteActivationVerifier(private val context: Context) {
             .header("Accept", "application/json")
             .build()
 
-        httpClient.newCall(httpRequest).execute().use { resp ->
+        client.newCall(httpRequest).execute().use { resp ->
             if (!resp.isSuccessful) {
                 AppLogger.w(TAG, "Remote verify HTTP ${resp.code}")
                 return null
             }
             return resp.body?.string()
         }
+    }
+
+    private fun pinnedClient(fingerprint: String): OkHttpClient {
+        val trustManager = PinnedCertificateTrustManager(fingerprint)
+        val sslContext = SSLContext.getInstance("TLS")
+        sslContext.init(null, arrayOf<TrustManager>(trustManager), secureRandom)
+        return NetworkModule.customClient {
+            connectTimeout(10, TimeUnit.SECONDS)
+            readTimeout(15, TimeUnit.SECONDS)
+            writeTimeout(10, TimeUnit.SECONDS)
+            followRedirects(false)
+        }.newBuilder()
+            .connectionPool(okhttp3.ConnectionPool(1, 5, TimeUnit.SECONDS))
+            .sslSocketFactory(sslContext.socketFactory, trustManager)
+            .build()
+    }
+
+    private fun Throwable.isTlsFailure(): Boolean {
+        var current: Throwable? = this
+        while (current != null) {
+            if (current is SSLException || current is CertificateException) return true
+            current = current.cause
+        }
+        return false
+    }
+
+    private inline fun <reified T : Throwable> Throwable.hasCause(): Boolean {
+        var current: Throwable? = this
+        while (current != null) {
+            if (current is T) return true
+            current = current.cause
+        }
+        return false
     }
 
     internal data class RemoteResponse(
@@ -403,4 +470,16 @@ class RemoteActivationVerifier(private val context: Context) {
 
     private fun remoteDecryptFailedMessage(): String =
         com.webtoapp.core.i18n.Strings.remoteActivationDecryptFailed
+
+    private fun remotePinInvalidMessage(): String =
+        com.webtoapp.core.i18n.Strings.remoteActivationPinInvalid
+
+    private fun remotePinMismatchMessage(): String =
+        com.webtoapp.core.i18n.Strings.remoteActivationPinMismatch
+
+    private fun remotePinHostMismatchMessage(): String =
+        com.webtoapp.core.i18n.Strings.remoteActivationPinHostMismatch
+
+    private fun remoteTlsFailedMessage(): String =
+        com.webtoapp.core.i18n.Strings.remoteActivationTlsFailed
 }

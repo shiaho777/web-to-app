@@ -48,8 +48,6 @@ class PhpAppRuntime(private val context: Context) {
     private val phpOutputBuffer = StringBuffer()
     private val phpStderrBuffer = StringBuffer()
 
-    private var routerScriptPath: String? = null
-
     fun getPhpBinaryPath(): String {
         return WordPressDependencyManager.getPhpExecutablePath(context)
     }
@@ -135,13 +133,13 @@ class PhpAppRuntime(private val context: Context) {
 
             val phpBinary = getPhpBinaryPath()
 
-            val routerScript = extractRouterScript()
+            val routerScript = PhpServerLaunch.extractRouterScript(context)
 
             val customExtDir = prepareCustomExtensionsDir(projectDir, customPhpExtensions)
 
             val command = buildPhpCommand(
                 com.webtoapp.core.wordpress.WordPressDependencyManager.buildPhpExecPrefix(context),
-                serverPort, actualDocRoot, routerScript, entryFile, phpExtensions, customPhpExtensions, customExtDir
+                serverPort, actualDocRoot, routerScript, phpExtensions, customPhpExtensions, customExtDir
             )
 
             AppLogger.i(TAG, "PHP 二进制: $phpBinary")
@@ -157,6 +155,7 @@ class PhpAppRuntime(private val context: Context) {
                 "APP_DEBUG" to "false"
             )
             envVars.forEach { (k, v) -> env[k] = v }
+            env.putAll(PhpServerLaunch.serverEnv(entryFile))
 
             val proxyPort = LocalDnsBridgeProxy.start()
             if (proxyPort > 0) {
@@ -218,10 +217,6 @@ class PhpAppRuntime(private val context: Context) {
             }
         } catch (e: Exception) {
             AppLogger.e(TAG, "启动 PHP 服务器失败", e)
-            // The port allocation and the DNS-bridge refcount taken above this catch must
-            // not outlive the failed start (the runtime instance dies with the composable,
-            // so nothing else would release them: port purges only after the 120s stale
-            // sweep, and the proxy refcount never).
             runCatching { stopServer() }
             _serverState.value = ServerState.Error(Strings.runtimeStartFailed(e.message ?: ""))
             -1
@@ -358,30 +353,11 @@ class PhpAppRuntime(private val context: Context) {
         return File(projectDir, "composer.json").exists()
     }
 
-    private fun extractRouterScript(): String {
-        routerScriptPath?.let { if (File(it).exists()) return it }
-
-        val scriptFile = File(context.cacheDir, "php_router_server.php")
-        try {
-            context.assets.open("php_router_server.php").use { input ->
-                scriptFile.outputStream().use { output ->
-                    input.copyTo(output)
-                }
-            }
-            routerScriptPath = scriptFile.absolutePath
-            AppLogger.d(TAG, "路由服务器脚本已提取: ${scriptFile.absolutePath}")
-        } catch (e: Exception) {
-            AppLogger.e(TAG, "提取路由服务器脚本失败", e)
-        }
-        return scriptFile.absolutePath
-    }
-
     private fun buildPhpCommand(
         execPrefix: List<String>,
         serverPort: Int,
         documentRoot: String,
         routerScript: String,
-        entryFile: String,
         phpExtensions: Map<String, Boolean> = emptyMap(),
         customPhpExtensions: List<com.webtoapp.data.model.CustomPhpExtension> = emptyList(),
         customExtDir: File? = null
@@ -420,11 +396,8 @@ class PhpAppRuntime(private val context: Context) {
             "opcache.interned_strings_buffer" to "8",
             "opcache.max_accelerated_files" to "4000",
             "opcache.validate_timestamps" to "0",
-
             "opcache.jit" to "disable",
-            "opcache.jit_buffer_size" to "0",
-
-            "disable_functions" to "header,headers_list,headers_sent,header_remove,setcookie,setrawcookie"
+            "opcache.jit_buffer_size" to "0"
         )
 
         customExtDir?.let {
@@ -455,10 +428,7 @@ class PhpAppRuntime(private val context: Context) {
                 phpArgs.add("$directive=${ext.effectiveSoName()}")
             }
 
-        phpArgs.add(routerScript)
-        phpArgs.add(serverPort.toString())
-        phpArgs.add(documentRoot)
-        phpArgs.add(entryFile.ifBlank { "index.php" })
+        phpArgs.addAll(PhpServerLaunch.serverArgs(serverPort, documentRoot, routerScript))
 
         return phpArgs
     }

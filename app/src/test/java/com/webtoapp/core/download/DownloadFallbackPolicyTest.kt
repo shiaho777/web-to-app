@@ -9,6 +9,9 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import java.io.File
+import java.net.InetAddress
+import java.net.ServerSocket
+import kotlin.concurrent.thread
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33])
@@ -39,7 +42,6 @@ class DownloadFallbackPolicyTest {
             fetch = { url, _ ->
                 calls.add(url)
                 if (url.endsWith("slow/proxied")) {
-                    // Partial bytes must survive the slow switch.
                     assertThat(tmpFile.exists()).isTrue()
                     DependencyDownloadEngine.Outcome.SLOW
                 } else {
@@ -67,8 +69,6 @@ class DownloadFallbackPolicyTest {
                 if (url.endsWith("bad/proxied")) {
                     DependencyDownloadEngine.Outcome.FAILED
                 } else {
-                    // Retries exhausted on the previous source: the partial
-                    // tmp must be gone so this source starts clean.
                     assertThat(tmpFile.exists()).isFalse()
                     DependencyDownloadEngine.Outcome.SUCCESS
                 }
@@ -101,6 +101,43 @@ class DownloadFallbackPolicyTest {
     }
 
     @Test
+    fun `the only source can finish while steadily sending below the switch threshold`() = runBlocking {
+        val (destFile, _) = dest()
+        val total = 2 * 1024 * 1024
+        val chunk = ByteArray(4096)
+        ServerSocket(0, 1, InetAddress.getByName("127.0.0.1")).use { server ->
+            val sender = thread(isDaemon = true) {
+                runCatching {
+                    server.accept().use { socket ->
+                        socket.soTimeout = 2_000
+                        val input = socket.getInputStream().bufferedReader()
+                        while (!input.readLine().isNullOrEmpty()) Unit
+                        val output = socket.getOutputStream()
+                        output.write("HTTP/1.1 200 OK\r\nContent-Length: $total\r\nConnection: close\r\n\r\n".toByteArray())
+                        repeat(36) {
+                            output.write(chunk)
+                            output.flush()
+                            Thread.sleep(500)
+                        }
+                        output.write(ByteArray(total - 36 * chunk.size))
+                    }
+                }
+            }
+            try {
+                assertThat(engine().downloadFileWithFallback(
+                    listOf("http://127.0.0.1:${server.localPort}/pkg.zip"),
+                    destFile, "Unit", maxRetryPerUrl = 1
+                )).isTrue()
+                assertThat(destFile.length()).isEqualTo(total.toLong())
+            } finally {
+                server.close()
+                sender.join(2_000)
+                engine().reset()
+            }
+        }
+    }
+
+    @Test
     fun `corrupt source drops tmp and switches without retrying the same url`() = runBlocking {
         val (destFile, tmpFile) = dest()
         tmpFile.writeBytes(ByteArray(64))
@@ -115,9 +152,6 @@ class DownloadFallbackPolicyTest {
                 if (url.endsWith("poisoned/proxied")) {
                     DependencyDownloadEngine.Outcome.CORRUPT
                 } else {
-                    // Wrong bytes cannot be fixed by re-requesting them: the
-                    // poisoned source's fully-downloaded tmp must be discarded
-                    // before this source starts (single-call is asserted below).
                     assertThat(tmpFile.exists()).isFalse()
                     DependencyDownloadEngine.Outcome.SUCCESS
                 }

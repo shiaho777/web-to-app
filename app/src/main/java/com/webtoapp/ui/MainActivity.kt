@@ -54,14 +54,23 @@ import kotlinx.coroutines.launch
 class MainActivity : ComponentActivity() {
 
     private var showLanguageSelection by mutableStateOf(true)
+    private var showOnboarding by mutableStateOf(true)
 
     private var showShortcutPermissionDialog by mutableStateOf(false)
     private var shortcutPermissionMessage by mutableStateOf("")
 
+    private var showStartupPermissionRationale by mutableStateOf(false)
+    private var showPermissionDeniedDialog by mutableStateOf(false)
+    private var pendingStartupPermissions: List<String> = emptyList()
+
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
-    ) { _ ->
-
+    ) { results ->
+        val denied = results.filterValues { !it }.keys
+        if (denied.isNotEmpty()) {
+            AppLogger.i("MainActivity", "Startup permissions denied: ${denied.joinToString()}")
+            showPermissionDeniedDialog = true
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -112,25 +121,6 @@ class MainActivity : ComponentActivity() {
 
         AppLogger.i("MainActivity", "Normal mode, showing main UI")
 
-        // targetSdk 33+: notifications (build progress, runtime downloads) are
-        // runtime-gated and silently off unless requested once up front.
-        if (android.os.Build.VERSION.SDK_INT >= 33) {
-            try {
-                if (androidx.core.content.ContextCompat.checkSelfPermission(
-                        this, android.Manifest.permission.POST_NOTIFICATIONS
-                    ) != android.content.pm.PackageManager.PERMISSION_GRANTED
-                ) {
-                    androidx.core.app.ActivityCompat.requestPermissions(
-                        this,
-                        arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
-                        4356
-                    )
-                }
-            } catch (e: Exception) {
-                AppLogger.w("MainActivity", "POST_NOTIFICATIONS request failed", e)
-            }
-        }
-
         try {
             enableEdgeToEdge()
         } catch (e: Exception) {
@@ -177,6 +167,11 @@ class MainActivity : ComponentActivity() {
                 val hasSelectedLanguage by remember {
                     languageManager.hasSelectedLanguageFlow.map<Boolean, Boolean?> { it }
                 }.collectAsState(initial = null)
+                val onboardingPrefs = remember { com.webtoapp.core.onboarding.OnboardingPrefs.getInstance(context) }
+                val onboardingCompleted by remember {
+                    onboardingPrefs.completedFlow.map<Boolean, Boolean?> { it }
+                }.collectAsState(initial = null)
+                val onboardingScope = rememberCoroutineScope()
 
                 CompositionLocalProvider(
                     LocalThemeRevealState provides themeRevealState
@@ -193,7 +188,17 @@ class MainActivity : ComponentActivity() {
                                         showLanguageSelection = false
                                     }
                                 )
-                            } else if (hasSelectedLanguage != null) {
+                            } else if (hasSelectedLanguage == true &&
+                                onboardingCompleted == false &&
+                                showOnboarding
+                            ) {
+                                com.webtoapp.ui.components.OnboardingScreen(
+                                    onFinished = {
+                                        showOnboarding = false
+                                        onboardingScope.launch { onboardingPrefs.setCompleted(true) }
+                                    }
+                                )
+                            } else if (hasSelectedLanguage != null && onboardingCompleted != null) {
                                 AppNavigation()
                             }
                         }
@@ -223,6 +228,52 @@ class MainActivity : ComponentActivity() {
                         mcpChoice = null
                         HostMcpController.prompter.respondChoice(req.id, response)
                     }
+                }
+
+                if (showStartupPermissionRationale) {
+                    WtaAlertDialog(
+                        onDismissRequest = { showStartupPermissionRationale = false },
+                        title = Strings.startupPermissionTitle,
+                        text = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            Strings.startupPermissionNotificationsMessage
+                        } else {
+                            Strings.startupPermissionStorageMessage
+                        },
+                        confirmButton = {
+                            TextButton(onClick = {
+                                showStartupPermissionRationale = false
+                                launchPendingStartupPermissions()
+                            }) {
+                                Text(Strings.startupPermissionContinue)
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { showStartupPermissionRationale = false }) {
+                                Text(Strings.shortcutPermissionLater)
+                            }
+                        }
+                    )
+                }
+
+                if (showPermissionDeniedDialog) {
+                    WtaAlertDialog(
+                        onDismissRequest = { showPermissionDeniedDialog = false },
+                        title = Strings.permissionDeniedTitle,
+                        text = Strings.permissionDeniedMessage,
+                        confirmButton = {
+                            TextButton(onClick = {
+                                showPermissionDeniedDialog = false
+                                openAppSettings()
+                            }) {
+                                Text(Strings.shortcutPermissionGoToSettings)
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { showPermissionDeniedDialog = false }) {
+                                Text(Strings.close)
+                            }
+                        }
+                    )
                 }
 
                 if (showShortcutPermissionDialog) {
@@ -314,7 +365,6 @@ class MainActivity : ComponentActivity() {
         val permissions = mutableListOf<String>()
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            permissions.add(Manifest.permission.READ_MEDIA_IMAGES)
             permissions.add(Manifest.permission.POST_NOTIFICATIONS)
         } else {
             permissions.add(Manifest.permission.READ_EXTERNAL_STORAGE)
@@ -327,6 +377,16 @@ class MainActivity : ComponentActivity() {
             ContextCompat.checkSelfPermission(this, perm) != PackageManager.PERMISSION_GRANTED
         }
 
+        if (needRequest.isNotEmpty()) {
+            pendingStartupPermissions = needRequest
+            showStartupPermissionRationale = true
+        }
+    }
+
+    private fun launchPendingStartupPermissions() {
+        val needRequest = pendingStartupPermissions.filter { perm ->
+            ContextCompat.checkSelfPermission(this, perm) != PackageManager.PERMISSION_GRANTED
+        }
         if (needRequest.isNotEmpty()) {
             AppLogger.d("MainActivity", "Requesting permissions: ${needRequest.joinToString()}")
             permissionLauncher.launch(needRequest.toTypedArray())

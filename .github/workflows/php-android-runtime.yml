@@ -1,0 +1,285 @@
+name: Build Android PHP runtime
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish the verified tarball as a GitHub release
+        required: true
+        default: false
+        type: boolean
+      reuse_run_id:
+        description: Verify and publish the tarball built by this earlier run instead of compiling again
+        required: false
+        default: ""
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+env:
+  PHP_BINARIES_COMMIT: 3296ff36d9957b97733d71d2774fd6747d04c994
+  MUSL_CROSS_MAKE_VERSION: 43fcb1e63786b96add78f89d7454709ae0159fa0
+  PHP_VERSION_BASE: "8.4"
+  PHP_VERSION_FULL: "8.4.16"
+  RUNTIME_TAG: php-8.4.16-android-arm64-wta1
+  RUNTIMES_REPO: shiaho777/web-to-app-runtimes
+  TARBALL: PHP-8.4-Android-arm64-WebToApp.tar.gz
+  GRADLE_CI_JVMARGS: -Xmx4g -XX:MaxMetaspaceSize=1g -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8
+
+jobs:
+  build:
+    name: Cross-compile PHP for Android arm64 without pmmpthread, with sessions
+    if: ${{ inputs.reuse_run_id == '' }}
+    runs-on: ubuntu-22.04
+    timeout-minutes: 240
+
+    steps:
+      - name: Download pmmp PHP-Binaries build script
+        uses: actions/checkout@v6
+        with:
+          repository: pmmp/PHP-Binaries
+          ref: ${{ env.PHP_BINARIES_COMMIT }}
+          path: php-binaries
+
+      - name: Install tools and dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y make autoconf automake libtool libtool-bin m4 wget libc-bin gzip bzip2 bison g++ git re2c
+
+      - name: Fetch compiler cache
+        id: compiler-cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/compiler
+          key: musl-cross-make-aarch64-${{ env.MUSL_CROSS_MAKE_VERSION }}
+
+      - name: Download musl-cross-make
+        if: steps.compiler-cache.outputs.cache-hit != 'true'
+        uses: actions/checkout@v6
+        with:
+          repository: pmmp/musl-cross-make
+          ref: ${{ env.MUSL_CROSS_MAKE_VERSION }}
+          path: musl-cross-make
+
+      - name: Build aarch64-linux-musl compiler
+        if: steps.compiler-cache.outputs.cache-hit != 'true'
+        working-directory: musl-cross-make
+        run: |
+          echo "TARGET = aarch64-linux-musl" > config.mak
+          make -j"$(nproc)"
+          make install
+          mv ./output "${{ github.workspace }}/compiler"
+
+      - name: Remove pmmpthread and enable sessions in the configure flags
+        working-directory: php-binaries
+        run: |
+          for flag in --enable-pmmpthread --disable-session; do
+            grep -qx -- "$flag \\\\" compile.sh
+            sed -i "/^$flag \\\\\$/d" compile.sh
+            if grep -q -- "$flag" compile.sh; then
+              echo "::error::$flag is still in compile.sh"
+              exit 1
+            fi
+          done
+          grep -q '"'"$PHP_VERSION_FULL"'"' compile.sh
+
+      - name: Compile PHP
+        working-directory: php-binaries
+        run: |
+          export PATH="${{ github.workspace }}/compiler/bin:$PATH"
+          set -ex
+          trap "exit 1" ERR
+          ./compile.sh -t android-aarch64 -x -j 4 -g -P 5 -c ./download_cache -D -z "$PHP_VERSION_BASE"
+
+      - name: Create tarball
+        working-directory: php-binaries
+        run: |
+          file bin/php7/bin/php
+          tar -czf "../$TARBALL" bin
+          cd ..
+          sha256sum "$TARBALL" | tee "$TARBALL.sha256"
+
+      - name: Upload tarball
+        uses: actions/upload-artifact@v4
+        with:
+          name: php-android-runtime
+          path: |
+            ${{ env.TARBALL }}
+            ${{ env.TARBALL }}.sha256
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: php-android-runtime-install-log
+          path: php-binaries/install.log
+          if-no-files-found: ignore
+          retention-days: 14
+
+  verify:
+    name: Verify uploads on the new runtime
+    needs: build
+    if: ${{ always() && (needs.build.result == 'success' || needs.build.result == 'skipped') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Free disk and add swap space
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup /usr/local/share/boost \
+            /opt/hostedtoolcache/CodeQL /usr/local/share/powershell /usr/share/swift
+          sudo fallocate -l 6G /swapfile.ci
+          sudo chmod 600 /swapfile.ci
+          sudo mkswap /swapfile.ci
+          sudo swapon /swapfile.ci
+          free -h
+          df -h /
+
+      - name: Download code
+        uses: actions/checkout@v6
+
+      - name: Download tarball
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REUSE_RUN_ID: ${{ inputs.reuse_run_id }}
+        run: |
+          run_id="${REUSE_RUN_ID:-$GITHUB_RUN_ID}"
+          echo "Using php-android-runtime from run $run_id"
+          gh run download "$run_id" --repo "$GITHUB_REPOSITORY" --name php-android-runtime --dir "runtime"
+          ls -l "runtime"
+
+      - name: Install qemu
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu-user
+
+      - name: Check the runtime under qemu
+        run: |
+          cd runtime
+          sha256sum -c "$TARBALL.sha256"
+          mkdir -p "$RUNNER_TEMP/android-php"
+          tar -xzf "$TARBALL" -C "$RUNNER_TEMP/android-php"
+          qemu=$(command -v qemu-aarch64-static || command -v qemu-aarch64)
+          wrapper="$RUNNER_TEMP/android-php/php"
+          printf '#!/bin/sh\nexec "%s" "%s" "$@"\n' "$qemu" "$RUNNER_TEMP/android-php/bin/php7/bin/php" > "$wrapper"
+          chmod +x "$wrapper"
+          "$wrapper" -n -v
+          "$wrapper" -n -m | tee modules.txt
+          if grep -qi '^pmmpthread$' modules.txt; then
+            echo "::error::pmmpthread is still compiled in"
+            exit 1
+          fi
+          for ext in pdo_sqlite sqlite3 openssl curl mbstring json zlib session; do
+            grep -qi "^$ext$" modules.txt || { echo "::error::missing extension $ext"; exit 1; }
+          done
+          test "$("$wrapper" -n -r 'echo PHP_VERSION;')" = "$PHP_VERSION_FULL"
+          www="$RUNNER_TEMP/php-smoke"
+          mkdir -p "$www"
+          echo '<?php echo PHP_SAPI;' > "$www/index.php"
+          PHP_CLI_SERVER_WORKERS=6 "$wrapper" -n -S 127.0.0.1:18089 -t "$www" > "$www/server.log" 2>&1 &
+          pid=$!
+          for i in $(seq 1 30); do
+            body=$(curl -sS -m 3 http://127.0.0.1:18089/ 2>/dev/null) && break
+            sleep 1
+          done
+          kill "$pid" || true
+          cat "$www/server.log"
+          test "$body" = "cli-server"
+          echo "PHP_BINARY=$wrapper" >> "$GITHUB_ENV"
+
+      - name: Prepare Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Prepare Android tools
+        uses: android-actions/setup-android@v3
+        with:
+          packages: ""
+
+      - name: Prepare Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: basic
+
+      - name: Install SDK packages
+        run: sdkmanager --install "platform-tools" "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Run PHP runtime tests against the new runtime
+        timeout-minutes: 25
+        run: |
+          ./gradlew --no-daemon --no-configuration-cache \
+            -Dkotlin.compiler.execution.strategy=in-process \
+            -Dorg.gradle.jvmargs="$GRADLE_CI_JVMARGS" \
+            --max-workers=2 \
+            -PskipShellTemplateSync=true \
+            -PallowDebugSignedRelease=true \
+            :app:testStandardDebugUnitTest \
+            --tests 'com.webtoapp.core.php.*' \
+            --tests 'com.webtoapp.core.wordpress.WordPressPhpRuntimeTest'
+
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: php-android-runtime-test-report
+          path: app/build/reports/tests/testStandardDebugUnitTest/
+          if-no-files-found: ignore
+          retention-days: 14
+
+  publish:
+    name: Publish runtime release
+    needs: verify
+    if: ${{ always() && needs.verify.result == 'success' && inputs.publish }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: read
+
+    steps:
+      - name: Download tarball
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REUSE_RUN_ID: ${{ inputs.reuse_run_id }}
+        run: |
+          run_id="${REUSE_RUN_ID:-$GITHUB_RUN_ID}"
+          echo "Using php-android-runtime from run $run_id"
+          gh run download "$run_id" --repo "$GITHUB_REPOSITORY" --name php-android-runtime --dir "."
+          ls -l "."
+
+      - name: Download code
+        uses: actions/checkout@v6
+        with:
+          path: source
+
+      - name: Check the app pins this tarball
+        run: |
+          sha256sum -c "$TARBALL.sha256"
+          sha=$(cut -d' ' -f1 "$TARBALL.sha256")
+          deps=source/app/src/main/java/com/webtoapp/core/wordpress/WordPressDependencyManager.kt
+          pinned=$(grep -A1 'PHP_TARBALL_SHA256 =' "$deps" | grep -oP '"\K[0-9a-f]{64}')
+          release=$(grep -oP 'const val PHP_RUNTIME_RELEASE = "\K[^"]+' "$deps")
+          if [ "$sha" != "$pinned" ] || [ "$release" != "$RUNTIME_TAG" ]; then
+            echo "::error::app pins $release / $pinned but this run would publish $RUNTIME_TAG / $sha"
+            exit 1
+          fi
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ secrets.RUNTIMES_REPO_TOKEN }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::error::RUNTIMES_REPO_TOKEN secret is not set; it must allow release creation on $RUNTIMES_REPO"
+            exit 1
+          fi
+          sha=$(cut -d' ' -f1 "$TARBALL.sha256")
+          notes="PHP $PHP_VERSION_FULL for Android arm64, built with pmmp/PHP-Binaries@$PHP_BINARIES_COMMIT and musl-cross-make@$MUSL_CROSS_MAKE_VERSION, configured without pmmpthread so the cli-server SAPI starts, and with the session extension. SHA-256: $sha. Built from $GITHUB_REPOSITORY@$GITHUB_SHA."
+          gh release create "$RUNTIME_TAG" "$TARBALL" "$TARBALL.sha256" \
+            --repo "$RUNTIMES_REPO" \
+            --title "Android PHP runtime $PHP_VERSION_FULL (wta1)" \
+            --notes "$notes"

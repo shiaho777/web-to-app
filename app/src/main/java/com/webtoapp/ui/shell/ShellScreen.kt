@@ -247,7 +247,12 @@ fun ShellScreen(
                         deliverUrl = config.activationRemoteDeliverUrl,
                         encryptUrl = config.activationRemoteEncryptUrl,
                         aesKeyBase64 = config.activationRemoteAesKey,
-                        deviceBound = config.activationRemoteDeviceBound
+                        deviceBound = config.activationRemoteDeviceBound,
+                        trustMode = com.webtoapp.data.model.parseRemoteActivationTrustMode(
+                            config.activationRemoteTrustMode
+                        ),
+                        pinnedCertificate = config.activationRemotePinnedCertificate,
+                        pinnedCertHost = config.activationRemotePinnedCertHost
                     ),
                     reverifyEveryLaunch = config.activationRequireEveryTime
                 )
