@@ -3,7 +3,6 @@ package com.webtoapp.ui.shell
 import android.webkit.WebView
 import androidx.appcompat.app.AppCompatActivity
 import com.webtoapp.core.engine.BrowserSurface
-import com.webtoapp.core.webview.WtaWebView
 
 object ShellWebViewNavigation {
 
@@ -83,16 +82,6 @@ object ShellWebViewNavigation {
     ) {
         val wv = webView ?: run {
             activity.finish()
-            return
-        }
-
-        if (wv is WtaWebView && wv.isPageZoomHostActive) {
-            if (wv.canGoBack()) {
-                noteHistoryStep()
-                wv.goBack()
-            } else {
-                confirmExitThenFinish(activity, confirmExit)
-            }
             return
         }
 

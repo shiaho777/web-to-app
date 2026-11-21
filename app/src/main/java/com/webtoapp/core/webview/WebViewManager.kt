@@ -32,6 +32,7 @@ import com.webtoapp.util.normalizeExternalIntentUrl
 import com.webtoapp.core.errorpage.ErrorPageManager
 import com.webtoapp.core.errorpage.ErrorPageMode
 import java.io.ByteArrayInputStream
+import kotlin.math.roundToInt
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -64,6 +65,7 @@ class WebViewManager(
     private val safeAreaScriptHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
     private val safeAreaInstalledWebViews = java.util.WeakHashMap<WebView, Boolean>()
     private var safeAreaUnsubscribe: (() -> Unit)? = null
+    private val pageZoomScriptHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
     private val videoFitScriptHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
     private val wasmStreamScriptHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
     private val kernelFlavorScriptHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
@@ -1637,7 +1639,7 @@ class WebViewManager(
 
         val preferLandscapeEmbeddedViewport = config.landscapeMode && !isDesktopModeRequested
 
-        val pageZoomActive = config.pageZoomPercent in 1..99 || config.pageZoomPercent > 100
+        val zoomPlan = planPageZoom(config.pageZoomPercent, config.initialScale)
 
         webView.apply {
             settings.apply {
@@ -1667,14 +1669,14 @@ class WebViewManager(
                 displayZoomControls = false
 
                 useWideViewPort = true
-                loadWithOverviewMode = if (pageZoomActive) {
+                loadWithOverviewMode = if (zoomPlan.zoomActive) {
                     false
                 } else {
                     !preferLandscapeEmbeddedViewport
                 }
 
-                if (pageZoomActive) {
-                    AppLogger.d("WebViewManager", "Page zoom active: iframe host owns the viewport (${config.pageZoomPercent}%)")
+                if (zoomPlan.zoomActive) {
+                    AppLogger.d("WebViewManager", "Page zoom active: viewport modes deferred (${config.pageZoomPercent}%)")
                 } else if (config.viewportMode == com.webtoapp.data.model.ViewportMode.FIT_SCREEN) {
                     useWideViewPort = true
                     loadWithOverviewMode = true
@@ -1759,7 +1761,7 @@ class WebViewManager(
 
                 if (isDesktopModeRequested) {
                     useWideViewPort = true
-                    if (!pageZoomActive) {
+                    if (!zoomPlan.zoomActive) {
                         loadWithOverviewMode = true
                     }
                     textZoom = 100
@@ -1828,11 +1830,15 @@ class WebViewManager(
 
             com.webtoapp.core.perf.NativePerfEngine.optimizeWebViewSettings(this)
 
-            if (pageZoomActive) {
+            if (zoomPlan.zoomActive) {
                 settings.textZoom = 100
                 settings.loadWithOverviewMode = false
-                setInitialScale(if (config.javaScriptEnabled) 0 else config.pageZoomPercent)
-                AppLogger.d("WebViewManager", "Page zoom: ${config.pageZoomPercent}% (${if (config.javaScriptEnabled) "iframe host" else "initial scale fallback"})")
+                if (config.javaScriptEnabled) {
+                    setInitialScale(0)
+                } else {
+                    setInitialScale(zoomPlan.initialScalePercent)
+                }
+                AppLogger.d("WebViewManager", "Applied page zoom: ${zoomPlan.initialScalePercent}% via viewport (overview off)")
             } else if (config.initialScale > 0) {
                 setInitialScale(config.initialScale)
                 AppLogger.d("WebViewManager", "Set initial scale: ${config.initialScale}%")
@@ -1861,42 +1867,7 @@ class WebViewManager(
 
             webChromeClient = createWebChromeClient(config, callbacks)
 
-            val iframeHost = this as? WtaWebView
-            if (pageZoomActive && config.javaScriptEnabled && iframeHost != null) {
-                iframeHost.setPageZoomHost(PageZoomHost(config.pageZoomPercent, object : PageZoomHost.Callbacks {
-                    override fun onStarted(url: String) {
-                        currentMainFrameUrl = url
-                        callbacks.onUrlChanged(webView, url)
-                        callbacks.onPageStarted(url)
-                        callbacks.onProgressChanged(10)
-                    }
-
-                    override fun onFinished(url: String, title: String) {
-                        val changed = url != currentMainFrameUrl
-                        currentMainFrameUrl = url
-                        cancelFailoverTimeout(webView)
-                        if (changed) callbacks.onUrlChanged(webView, url)
-                        callbacks.onTitleChanged(title)
-                        callbacks.onPageFinished(url)
-                        callbacks.onProgressChanged(100)
-                    }
-
-                    override fun onNavigation(url: String, title: String, canGoBack: Boolean, canGoForward: Boolean) {
-                        val changed = url != currentMainFrameUrl
-                        currentMainFrameUrl = url
-                        if (changed) callbacks.onUrlChanged(webView, url)
-                        callbacks.onTitleChanged(title)
-                        callbacks.onNavigationStateChanged(canGoBack, canGoForward)
-                    }
-
-                    override fun onError(url: String) {
-                        AppLogger.w("WebViewManager", "Iframe page zoom load failed: $url")
-                    }
-                }))
-            } else if (iframeHost != null) {
-                iframeHost.setPageZoomHost(null)
-            }
-
+            installPageZoomDocumentStart(this, config)
             installVideoFitDocumentStart(this, config)
             installWasmStreamDocumentStart(this, config)
             installKernelFlavorDocumentStart(this)
@@ -1910,7 +1881,7 @@ class WebViewManager(
                 installCloudflareCompatDocumentStart(this)
             }
 
-            if (config.enableBackStatePreservation && !pageZoomActive) {
+            if (config.enableBackStatePreservation) {
                 installBackStateGuardDocumentStart(this)
             }
 
@@ -2436,15 +2407,6 @@ class WebViewManager(
                     return true
                 }
 
-                if (request.isForMainFrame &&
-                    view is WtaWebView &&
-                    view.isPageZoomHostActive &&
-                    (url.startsWith("http://") || url.startsWith("https://"))
-                ) {
-                    view.pageZoomNavigateTo(url)
-                    return true
-                }
-
                 if (currentConfig?.decodeBase64DeepLinks == true) {
                     val mode = currentConfig?.decodeBase64Mode
                         ?: com.webtoapp.data.model.Base64DeepLinkMode.GESTURE_ONLY
@@ -2503,7 +2465,6 @@ class WebViewManager(
 
             override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
                 super.onPageStarted(view, url, favicon)
-                if (view is WtaWebView && view.isPageZoomHostActive) return
                 if (!url.isNullOrBlank() && url != "about:blank" && url != currentMainFrameUrl) {
                     rememberMainFrameReferer(currentMainFrameUrl)
                 }
@@ -2670,7 +2631,10 @@ class WebViewManager(
                     startBatch.append("try{").append(WasmStreamCompat.SCRIPT).append("}catch(e){};\n")
                 }
 
-                if (config.viewportMode == com.webtoapp.data.model.ViewportMode.FIT_SCREEN) {
+                val pageZoomJs = pageZoomScriptFor(config)
+                if (pageZoomJs != null) {
+                    startBatch.append("try{").append(pageZoomJs).append("}catch(e){};\n")
+                } else if (config.viewportMode == com.webtoapp.data.model.ViewportMode.FIT_SCREEN) {
                     startBatch.append("try{").append(VIEWPORT_FIT_SCREEN_JS).append("}catch(e){};\n")
                 } else if (config.viewportMode == com.webtoapp.data.model.ViewportMode.CUSTOM) {
                     val customWidth = config.customViewportWidth.coerceIn(320, 3840)
@@ -2687,7 +2651,6 @@ class WebViewManager(
 
             override fun onPageCommitVisible(view: WebView?, url: String?) {
                 super.onPageCommitVisible(view, url)
-                if (view is WtaWebView && view.isPageZoomHostActive) return
                 currentMainFrameUrl = url ?: currentMainFrameUrl
 
                 val elapsed = System.currentTimeMillis() - diagPageStartTime
@@ -2710,14 +2673,12 @@ class WebViewManager(
 
             override fun doUpdateVisitedHistory(view: WebView?, url: String?, isReload: Boolean) {
                 super.doUpdateVisitedHistory(view, url, isReload)
-                if (view is WtaWebView && view.isPageZoomHostActive) return
 
                 callbacks.onUrlChanged(view, url)
             }
 
             override fun onPageFinished(view: WebView?, url: String?) {
                 super.onPageFinished(view, url)
-                if (view is WtaWebView && view.isPageZoomHostActive) return
                 currentMainFrameUrl = url ?: currentMainFrameUrl
                 val elapsed = System.currentTimeMillis() - diagPageStartTime
                 AppLogger.d("WebViewManager", "Page finished: +${elapsed}ms blocked=$diagBlockedCount errors=$diagErrorCount")
@@ -2746,7 +2707,10 @@ class WebViewManager(
 
                 view?.let { injectScripts(it, config.injectScripts, ScriptRunTime.DOCUMENT_END, url) }
 
-                if (config.viewportMode == com.webtoapp.data.model.ViewportMode.FIT_SCREEN) {
+                val pageZoomJs = pageZoomScriptFor(config)
+                if (pageZoomJs != null) {
+                    view?.evaluateJavascript(pageZoomJs, null)
+                } else if (config.viewportMode == com.webtoapp.data.model.ViewportMode.FIT_SCREEN) {
 
                     view?.evaluateJavascript("window.__wtaViewportFitApplied=false;\n$VIEWPORT_FIT_SCREEN_JS", null)
                 } else if (config.viewportMode == com.webtoapp.data.model.ViewportMode.CUSTOM) {
@@ -3988,13 +3952,11 @@ class WebViewManager(
         return object : WebChromeClient() {
             override fun onProgressChanged(view: WebView?, newProgress: Int) {
                 super.onProgressChanged(view, newProgress)
-                if (view is WtaWebView && view.isPageZoomHostActive) return
                 callbacks.onProgressChanged(newProgress)
             }
 
             override fun onReceivedTitle(view: WebView?, title: String?) {
                 super.onReceivedTitle(view, title)
-                if (view is WtaWebView && view.isPageZoomHostActive) return
                 callbacks.onTitleChanged(title)
             }
 
@@ -4498,6 +4460,10 @@ class WebViewManager(
             runCatching { handler.remove() }
         }
         cosmeticFilterScriptHandlers.clear()
+        pageZoomScriptHandlers.values.toList().forEach { handler ->
+            runCatching { handler.remove() }
+        }
+        pageZoomScriptHandlers.clear()
         videoFitScriptHandlers.values.toList().forEach { handler ->
             runCatching { handler.remove() }
         }
@@ -4568,6 +4534,9 @@ class WebViewManager(
         }
     }
 
+    private fun pageZoomScriptFor(config: WebViewConfig): String? {
+        return pageZoomDocumentScript(config.pageZoomPercent)
+    }
 
     /**
      * Other document-start scripts must not run inside a Turnstile / hCaptcha
@@ -4613,6 +4582,27 @@ class WebViewManager(
         }
     }
 
+    private fun installPageZoomDocumentStart(webView: WebView, config: WebViewConfig) {
+        pageZoomScriptHandlers.remove(webView)?.let { handler ->
+            runCatching { handler.remove() }
+        }
+        val script = pageZoomDocumentScript(config.pageZoomPercent) ?: return
+        if (!config.javaScriptEnabled) return
+        if (!WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
+            AppLogger.d("WebViewManager", "Document-start unsupported; page zoom will use onPageStarted")
+            return
+        }
+        try {
+            pageZoomScriptHandlers[webView] = addDocumentStartExceptChallenges(
+                webView,
+                script,
+                setOf("*")
+            )
+            AppLogger.d("WebViewManager", "Page zoom installed at document start: ${config.pageZoomPercent}%")
+        } catch (e: Exception) {
+            AppLogger.w("WebViewManager", "Document-start page zoom install failed", e)
+        }
+    }
 
     /**
      * Keep a `<video>` inside the CSS box the page asked for. System WebView

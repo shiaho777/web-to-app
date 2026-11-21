@@ -159,7 +159,7 @@ WebToApp 的开关非常多。下面按使用场景分组,并用可折叠区段�
 - **双引擎** —— 默认系统 WebView,可选 GeckoView(Firefox)运行时(首次使用时下载)。
 - **内核风味伪装** —— 对外表现为 Chrome、Edge、Samsung Internet、Firefox 或 Safari 风格,但真实引擎不变。
 - **桌面模式**、自定义 User-Agent,以及 document-start / end / idle 三种时机的 JS/CSS 注入。
-- **页面缩放** —— 按应用设置的百分比。系统 WebView 加载一个宿主文档,用 CSS `transform` 缩放铺满视口的 iframe,文字、布局、图片和画布一起缩放,页面按放大后的宽度重排;GeckoView 仍用 viewport meta 改写。站点在嵌入下出问题就关掉它。
+- **页面缩放** —— 按应用设置的百分比用文档根上的 CSS zoom 应用,文字、布局、图片和画布在系统 WebView 和 GeckoView 上一起缩放。页面写回自己的 viewport meta 时不会刷新。
 - **弹窗处理** —— 当前窗口、外部浏览器、弹窗窗口或直接拦截。脚本打开的窗口保持为真正的子窗口,弹窗登录可以把结果交给 `window.opener`。
 - **代理** —— 静态 HTTP/HTTPS/SOCKS5、PAC、身份验证、绕过规则和本地 HTTP-to-SOCKS 桥。
 - **DNS-over-HTTPS** —— Cloudflare、Google、AdGuard、NextDNS、CleanBrowsing、Quad9、Mullvad,以及自定义 endpoint;支持 strict / automatic 模式。

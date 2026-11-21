@@ -31,7 +31,7 @@ GeckoView 是独立于系统 WebView 的完整第二引擎,而不是 WebView 的
 - JS 对话框(alert / confirm / prompt)
 - 页面加载错误提示、前进 / 后退历史导航、自动刷新、页内查找、控制台脚本执行
 - 媒体会话 / 锁屏播放控制(Gecko 原生实现)
-- 页面缩放 —— 改写文档根上的 viewport meta;系统 WebView 内核则改为把页面放进铺满视口的 iframe 里缩放。双指缩放仍用引擎自己的
+- 页面缩放 —— 文档根上的 CSS `zoom`,与系统 WebView 同一段脚本。双指缩放仍用引擎自己的
 - 远程页面的 `fetch` 和 XHR 留在引擎上,Cloudflare 验证可以完成。原生桥只在本地页面接管这些请求
 - 脚本打开的窗口保持为真正的子窗口,弹窗登录可以把结果交给 `window.opener` 然后关闭
 

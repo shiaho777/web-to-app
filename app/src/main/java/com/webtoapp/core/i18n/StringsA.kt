@@ -12707,16 +12707,16 @@ object StringsA {
     }
 
     val pageZoomSettingHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "将把整个页面嵌入 iframe 并进行缩放，如遇兼容性问题请关闭此功能"
-        AppLanguage.ENGLISH -> "Embeds the entire page in an iframe and scales it; turn it off if a site breaks"
-        AppLanguage.ARABIC -> "سيتم تضمين الصفحة بأكملها في iframe وتكبيرها، أوقف هذا الخيار عند حدوث مشكلات في التوافق"
-        AppLanguage.PORTUGUESE -> "Incorporará a página inteira em um iframe e a dimensionará; desative se houver problemas de compatibilidade"
-        AppLanguage.SPANISH -> "Incrustará toda la página en un iframe y la escalará; desactívelo si hay problemas de compatibilidad"
-        AppLanguage.FRENCH -> "Intégrera toute la page dans un iframe et la mettra à l'échelle ; désactivez-le en cas de problème de compatibilité"
-        AppLanguage.GERMAN -> "Bettet die gesamte Seite in ein iframe ein und skaliert sie; deaktivieren, wenn Probleme mit der Kompatibilität auftreten"
-        AppLanguage.RUSSIAN -> "Встроит всю страницу в iframe и масштабирует её; отключите при проблемах совместимости"
-        AppLanguage.JAPANESE -> "ページ全体を iframe に埋め込み、拡大縮小します。互換性の問題が起きたらオフにしてください"
-        AppLanguage.KOREAN -> "전체 페이지를 iframe에 포함하고 크기를 조정합니다. 호환성 문제가 생기면 꺼 주세요"
+        AppLanguage.CHINESE -> "应用启动时应用的页面缩放比例，无需退出全屏使用工具栏"
+        AppLanguage.ENGLISH -> "Page zoom applied at app start — no need to leave fullscreen for the toolbar"
+        AppLanguage.ARABIC -> "تكبير الصفحة المطبق عند بدء التطبيق — لا حاجة لمغادرة ملء الشاشة لاستخدام شريط الأدوات"
+        AppLanguage.PORTUGUESE -> "Zoom de página aplicado ao iniciar o aplicativo — sem precisar sair da tela cheia para usar a barra de ferramentas"
+        AppLanguage.SPANISH -> "Zoom de página aplicado al iniciar la aplicación; no hace falta salir de pantalla completa para usar la barra de herramientas"
+        AppLanguage.FRENCH -> "Zoom de page appliqué au démarrage de l'application — inutile de quitter le plein écran pour utiliser la barre d'outils"
+        AppLanguage.GERMAN -> "Beim App-Start angewandter Seitenzoom — ohne die Symbolleiste im Vollbildmodus verlassen zu müssen"
+        AppLanguage.RUSSIAN -> "Масштаб страницы при запуске приложения — не нужно выходить из полноэкранного режима ради панели инструментов"
+        AppLanguage.JAPANESE -> "アプリ起動時に適用されるページズーム。フルスクリーンを解除してツールバーを使う必要はありません"
+        AppLanguage.KOREAN -> "앱 시작 시 적용되는 페이지 확대/축소 — 전체 화면을 나가 도구 모음을 사용할 필요가 없습니다"
     }
 
     val noConsoleMessages: String get() = when (Strings.lang) {
