@@ -24,6 +24,7 @@ env:
   PHP_VERSION_BASE: "8.4"
   PHP_VERSION_FULL: "8.4.16"
   RUNTIME_TAG: php-8.4.16-android-arm64-wta1
+  RUNTIMES_REPO: shiaho777/web-to-app-runtimes
   TARBALL: PHP-8.4-Android-arm64-WebToApp.tar.gz
   GRADLE_CI_JVMARGS: -Xmx4g -XX:MaxMetaspaceSize=1g -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8
 
@@ -270,12 +271,15 @@ jobs:
 
       - name: Create release
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.RUNTIMES_REPO_TOKEN }}
         run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::error::RUNTIMES_REPO_TOKEN secret is not set; it must allow release creation on $RUNTIMES_REPO"
+            exit 1
+          fi
           sha=$(cut -d' ' -f1 "$TARBALL.sha256")
-          notes="PHP $PHP_VERSION_FULL for Android arm64, built with pmmp/PHP-Binaries@$PHP_BINARIES_COMMIT and musl-cross-make@$MUSL_CROSS_MAKE_VERSION, configured without pmmpthread so the cli-server SAPI starts, and with the session extension. SHA-256: $sha"
+          notes="PHP $PHP_VERSION_FULL for Android arm64, built with pmmp/PHP-Binaries@$PHP_BINARIES_COMMIT and musl-cross-make@$MUSL_CROSS_MAKE_VERSION, configured without pmmpthread so the cli-server SAPI starts, and with the session extension. SHA-256: $sha. Built from $GITHUB_REPOSITORY@$GITHUB_SHA."
           gh release create "$RUNTIME_TAG" "$TARBALL" "$TARBALL.sha256" \
-            --repo "$GITHUB_REPOSITORY" \
-            --target "$GITHUB_SHA" \
+            --repo "$RUNTIMES_REPO" \
             --title "Android PHP runtime $PHP_VERSION_FULL (wta1)" \
             --notes "$notes"
