@@ -148,7 +148,8 @@ fun CreateAppScreen(
     viewModel: MainViewModel,
     isEdit: Boolean,
     onBack: () -> Unit,
-    onSaved: () -> Unit
+    onSaved: () -> Unit,
+    onOpenBrowserKernel: () -> Unit
 ) {
     val context = LocalContext.current
     val editState by viewModel.editState.collectAsStateWithLifecycle()
@@ -179,7 +180,7 @@ fun CreateAppScreen(
     val deviceDisguiseKeywords = listOf(Strings.deviceDisguiseTitle, "device", "spoof")
     val autoStartKeywords = listOf(Strings.autoStartSettings, "autostart", "boot")
     val browserAdvancedKeywords = listOf(Strings.advancedSettings, "advanced")
-    val specialSettingsKeywords = listOf(Strings.specialSettingsTitle, "special", "permission")
+    val specialSettingsKeywords = listOf(Strings.specialSettingsTitle, Strings.audioMixingTitle, "special", "permission", "audio focus", "音频焦点")
     val exportKeywords = listOf(Strings.apkExportConfig, "export", "permission")
     val searchKeywordGroups = buildList {
         add(basicInfoKeywords)
@@ -698,7 +699,17 @@ fun CreateAppScreen(
                         onConfigChange = { viewModel.updateEditState { copy(webViewConfig = it) } },
                         runtimePermissions = editState.apkExportConfig?.runtimePermissions
                             ?: com.webtoapp.data.model.ApkRuntimePermissions(),
-                        onRuntimePermissionsTransform = viewModel::updateRuntimePermissions
+                        onRuntimePermissionsTransform = viewModel::updateRuntimePermissions,
+                        audioMixingEngine = when (editState.appType) {
+                            AppType.IMAGE, AppType.VIDEO, AppType.GALLERY -> null
+                            else -> com.webtoapp.core.engine.EngineType.fromString(editState.apkExportConfig.engineType)
+                        },
+                        onAudioMixingEngineSelected = { engine ->
+                            viewModel.updateEditState {
+                                copy(apkExportConfig = apkExportConfig.copy(engineType = engine.name))
+                            }
+                        },
+                        onOpenBrowserKernel = onOpenBrowserKernel
                     )
                 }
             }
@@ -824,9 +835,6 @@ private fun ExportAndPermissionDrawer(
                 onClick = { expanded = !expanded }
             )
 
-            // Persistent container (#1095): AnimatedVisibility would dispose the whole
-            // export-config subtree on collapse and pay full recomposition on every
-            // cold open; keeping it composed makes each open a pure layout animation.
             WtaPersistentExpandedContent(expanded = expanded) {
                 Column(
                     modifier = Modifier.padding(

@@ -19,6 +19,7 @@ Compatibility polyfills, bridges, and other specialized toggles. This card colle
 
 ## Media & content
 
+- **Play alongside other apps** — uses GeckoView for preview and export so web audio can play alongside other apps. Confirm the engine change and download GeckoView from Browser Kernel if needed. Turning the setting off switches to System WebView. GeckoView adds to the exported APK size, and ECH requires GeckoView. Playback volume is controlled by the page and the device.
 - **Media autoplay** — with scope (`mediaAutoplayEnabled`, `mediaAutoplayScope`: video-only, …).
 - **Image repair** — fix broken images (`enableImageRepair`).
 - **Scroll memory** — remember scroll position (`enableScrollMemory`).
