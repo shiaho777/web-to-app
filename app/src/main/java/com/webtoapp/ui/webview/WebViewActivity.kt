@@ -3281,7 +3281,6 @@ fun WebViewScreen(
                                             window.AndroidDownload.saveBase64File(base64Data, filename, mimeType);
                                         }
                                     } else if (blobUrl.startsWith('blob:')) {
-                                        // 优先从 DownloadBridge 的缓存里拿 Blob（页面可能已同步 revoke URL）
                                         const cachedBlob = window.__wtaBlobMap && window.__wtaBlobMap.get(blobUrl);
                                         function dispatch(blob) {
                                             if (blob.size > LARGE_FILE_THRESHOLD) {
@@ -3299,7 +3298,6 @@ fun WebViewScreen(
                                         if (cachedBlob) {
                                             dispatch(cachedBlob);
                                         } else if (window.__wtaResolveBlob) {
-                                            // 跨上下文解析（sandboxed iframe / worker 里创建的 blob:null 等）
                                             window.__wtaResolveBlob(blobUrl)
                                                 .then(function(blob) {
                                                     if (blob) dispatch(blob);
@@ -3675,6 +3673,7 @@ fun WebViewScreen(
         onFullscreenModeChanged(hideToolbar)
     }
 
+    val isMultiWeb = webApp?.appType == com.webtoapp.data.model.AppType.MULTI_WEB
     Box(modifier = Modifier.fillMaxSize()) {
     CompositionLocalProvider(LocalBrowserChromeHost provides if (shouldShowTopBar) chromeHost else null) {
     Scaffold(
@@ -3699,7 +3698,8 @@ fun WebViewScreen(
                     showUrl = testSubtitle.isNotEmpty() || (isTestMode || browserToolbarVisibility?.showUrl == true),
                     showBack = isTestMode || browserToolbarVisibility?.showBack == true,
                     showForward = isTestMode || browserToolbarVisibility?.showForward == true,
-                    showRefresh = isTestMode || browserToolbarVisibility?.showRefresh == true,
+                    showRefresh = isTestMode || browserToolbarVisibility?.showRefresh == true ||
+                        chromeHost.refreshAction != null,
                     canGoBack = canGoBack,
                     canGoForward = canGoForward,
                     onBack = {
@@ -3712,7 +3712,7 @@ fun WebViewScreen(
                         }
                     },
                     onForward = { browserSurfaceRef?.goForward() ?: webViewRef?.goForward() },
-                    onRefresh = { reloadBrowser() },
+                    onRefresh = chromeHost.refreshAction ?: { reloadBrowser() },
                     showConsoleButton = isTestMode || browserToolbarVisibility?.showConsoleButton == true,
                     consoleExpanded = showConsole,
                     onToggleConsole = { showConsole = !showConsole },
@@ -3763,34 +3763,24 @@ fun WebViewScreen(
         val bottomBandPx = with(density) { padBottom.toPx() }
         val bands = Modifier.pageEdgeBands(topBand, bottomBand, bottomBandPx)
 
-        val contentModifier = when {
-            hideToolbar && shouldShowTopBar -> {
-
-                Modifier.fillMaxSize().padding(padding)
-            }
-            hideToolbar && webApp?.webViewConfig?.showStatusBarInFullscreen == true -> {
-
-                bands.fillMaxSize().padding(
+        val contentPadding = when {
+            !hideToolbar || shouldShowTopBar -> padding
+            webApp?.webViewConfig?.showStatusBarInFullscreen == true -> {
+                PaddingValues(
                     top = (if (barOverlaysContent) 0.dp else actualStatusBarPadding) + padTop,
                     start = padStart,
                     end = padEnd,
                     bottom = padBottom
                 )
             }
-            hideToolbar -> {
-
-                bands.fillMaxSize().padding(
-                    top = padTop,
-                    start = padStart,
-                    end = padEnd,
-                    bottom = padBottom
-                )
-            }
-            else -> {
-
-                Modifier.fillMaxSize().padding(padding)
-            }
+            else -> PaddingValues(top = padTop, start = padStart, end = padEnd, bottom = padBottom)
         }
+        val bandModifier = if (hideToolbar && !shouldShowTopBar) bands else Modifier
+        val contentModifier = bandModifier.fillMaxSize().padding(contentPadding).then(
+            if (isMultiWeb) {
+                Modifier.consumeWindowInsets(contentPadding)
+            } else Modifier
+        )
 
         Box(modifier = contentModifier) {
 
@@ -4571,21 +4561,23 @@ fun WebViewScreen(
     }
     }
 
-    val previewStatusMode = if (com.webtoapp.ui.theme.LocalIsDarkTheme.current) {
+    val overlayIsDark = com.webtoapp.ui.theme.LocalIsDarkTheme.current
+    val previewStatusMode = if (overlayIsDark) {
         webApp?.webViewConfig?.statusBarColorModeDark
     } else {
         webApp?.webViewConfig?.statusBarColorMode
     }
+    val previewStatusBackgroundType = if (overlayIsDark) statusBarBackgroundTypeDarkLocal else statusBarBackgroundType
     val previewPaintsBand = previewStatusMode != null &&
-        previewStatusMode != com.webtoapp.data.model.StatusBarColorMode.TRANSPARENT
+        (previewStatusMode != com.webtoapp.data.model.StatusBarColorMode.TRANSPARENT ||
+            (isMultiWeb && previewStatusBackgroundType == "IMAGE"))
     if (!com.webtoapp.ui.shared.WindowHelper.isClassicSystemBarsWindow(activity) &&
         previewPaintsBand &&
         (hideToolbar && webApp?.webViewConfig?.showStatusBarInFullscreen == true || !hideToolbar)
     ) {
-        val overlayIsDark = com.webtoapp.ui.theme.LocalIsDarkTheme.current
         com.webtoapp.ui.components.StatusBarOverlay(
             show = true,
-            backgroundType = if (overlayIsDark) statusBarBackgroundTypeDarkLocal else statusBarBackgroundType,
+            backgroundType = previewStatusBackgroundType,
             backgroundColor = resolveStatusBarOverlayColor(overlayIsDark),
             backgroundImagePath = if (overlayIsDark) statusBarBackgroundImageDark else statusBarBackgroundImage,
             alpha = if (overlayIsDark) statusBarBackgroundAlphaDark else statusBarBackgroundAlpha,

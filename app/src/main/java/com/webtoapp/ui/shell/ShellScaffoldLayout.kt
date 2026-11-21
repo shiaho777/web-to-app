@@ -102,8 +102,6 @@ fun BoxScope.ShellScaffoldLayout(
         val controller = com.webtoapp.core.webview.AutoRefreshController(
             intervalSec = webViewConfig.autoRefreshIntervalSec.coerceAtLeast(1),
             showCountdown = webViewConfig.autoRefreshShowCountdown,
-            // Surface-first: webViewRef stays null on the GeckoView kernel, where the
-            // countdown used to run against a reload that never happened.
             onReload = { browserSurface?.reload() ?: webViewRef?.reload() }
         )
         autoRefreshController = controller
@@ -117,8 +115,6 @@ fun BoxScope.ShellScaffoldLayout(
     }
 
     val toolbarCfg = config.webViewConfig
-    // Find-in-page runs on both kernels: WebView findAllAsync on the system engine,
-    // GeckoView's native SessionFinder on the Gecko engine (BrowserSurface.findInPage).
     val toolbarEnabled = toolbarCfg.browserToolbarEnabled
     val hasAnyItem = hasAnyToolbarItem(
         toolbarShowTitle = toolbarCfg.toolbarShowTitle,
@@ -129,11 +125,9 @@ fun BoxScope.ShellScaffoldLayout(
         toolbarShowConsole = toolbarCfg.toolbarShowConsole,
         toolbarShowFind = toolbarCfg.toolbarShowFind
     )
-    // Fullscreen hides the system bars only. The toolbar stays when its own switch is on.
     val showToolbar = isBrowserToolbarVisible(toolbarEnabled, hasAnyItem)
     val chromeHost = remember { BrowserChromeHost() }
 
-    // Every button requires both the master switch and its own flag.
     val toolbarVisibility = resolveToolbarButtons(
         toolbarEnabled = toolbarEnabled,
         toolbarShowTitle = toolbarCfg.toolbarShowTitle,
@@ -170,7 +164,8 @@ fun BoxScope.ShellScaffoldLayout(
                     showUrl = toolbarVisibility.showUrl,
                     showBack = toolbarVisibility.showBack,
                     showForward = toolbarVisibility.showForward,
-                    showRefresh = toolbarVisibility.showRefresh,
+                    showRefresh = toolbarVisibility.showRefresh || chromeHost.refreshAction != null,
+                    onRefresh = { chromeHost.refreshAction?.invoke() ?: browserSurface?.reload() ?: webViewRef?.reload() },
                     canGoBack = canGoBack,
                     canGoForward = canGoForward,
                     webViewRef = webViewRef,
@@ -191,10 +186,6 @@ fun BoxScope.ShellScaffoldLayout(
 
         val density = LocalDensity.current
 
-        // On the classic pre-API-30 resize path the decor fits system windows: the status-bar
-        // inset is 0 whether or not a bar is drawn, and nothing renders behind the bar area
-        // (issue #683). Never pad the content by a guessed status-bar band there — only the
-        // user's explicit statusBarHeightDp override may reserve space.
         val classicSystemBars = LocalContext.current.let { ctx ->
             (ctx as? android.app.Activity)?.let { com.webtoapp.ui.shared.WindowHelper.isClassicSystemBarsWindow(it) } ?: false
         }
@@ -212,53 +203,32 @@ fun BoxScope.ShellScaffoldLayout(
 
         val actualStatusBarPadding = if (statusBarHeightDp >= 0) statusBarHeightDp.dp else systemStatusBarHeightDp
 
-        // 全屏模式下可选的内容内边距：把网页交互区从屏幕边缘内移，让角落按钮易于点按，
-        // 同时缓解与系统返回手势边缘带的冲突。默认 0 → 向后兼容旧行为。
-        // #916: each side may override the uniform value; null follows the base.
         val padTop = config.webViewConfig.fullscreenPadTop.dp
         val padStart = config.webViewConfig.fullscreenPadStart.dp
         val padEnd = config.webViewConfig.fullscreenPadEnd.dp
-        // #1172: the bottom band is anchored to the screen edge. The keyboard
-        // already covers it, so it must not ride up as a second gap.
         val padBottom = effectiveBottomContentPadding(config.webViewConfig.fullscreenPadBottom.dp)
 
-        // Issue #771: transparent/image bars overlay the content (persistent
-        // WeChat-style bar) instead of reserving a strip; solid bars keep the
-        // reservation so page controls stay clear of the status icons.
         val shellDark = androidx.compose.foundation.isSystemInDarkTheme()
         val shellBgType = if (shellDark) config.webViewConfig.statusBarBackgroundTypeDark else config.webViewConfig.statusBarBackgroundType
         val shellMode = if (shellDark) config.webViewConfig.statusBarColorModeDark else config.webViewConfig.statusBarColorMode
         val shellOverlaysContent = shellBgType == "IMAGE" ||
             shellMode == com.webtoapp.data.model.StatusBarColorMode.TRANSPARENT.name
 
-        val contentModifier = when {
-            hideToolbar && showToolbar -> {
-
-                Modifier.fillMaxSize().padding(padding)
-            }
-            hideToolbar && config.webViewConfig.showStatusBarInFullscreen -> {
-
-                Modifier.fillMaxSize().padding(
+        val contentPadding = when {
+            !hideToolbar || showToolbar -> padding
+            config.webViewConfig.showStatusBarInFullscreen -> {
+                PaddingValues(
                     top = (if (shellOverlaysContent) 0.dp else actualStatusBarPadding) + padTop,
                     start = padStart,
                     end = padEnd,
                     bottom = padBottom
                 )
             }
-            hideToolbar -> {
-
-                Modifier.fillMaxSize().padding(
-                    top = padTop,
-                    start = padStart,
-                    end = padEnd,
-                    bottom = padBottom
-                )
-            }
-            else -> {
-
-                Modifier.fillMaxSize().padding(padding)
-            }
+            else -> PaddingValues(top = padTop, start = padStart, end = padEnd, bottom = padBottom)
         }
+        val contentModifier = Modifier.fillMaxSize().padding(contentPadding).then(
+            if (appType == "MULTI_WEB") Modifier.consumeWindowInsets(contentPadding) else Modifier
+        )
 
         val customBand = if (shellDark) config.webViewConfig.statusBarColorDark else config.webViewConfig.statusBarColor
         val topBand = parseBandColor(PageEdgeChrome.topBandHex(shellMode, pageTopColor, customBand, shellDark))
@@ -374,7 +344,6 @@ fun BoxScope.ShellScaffoldLayout(
                 onDismiss = onErrorDismiss
             )
 
-            // Console panel (slides up from bottom when toggled)
             AnimatedVisibility(
                 visible = showConsole,
                 enter = androidx.compose.animation.slideInVertically(initialOffsetY = { it }) + WtaFadeIn,
@@ -391,7 +360,6 @@ fun BoxScope.ShellScaffoldLayout(
                 )
             }
 
-            // Find-in-page bar (native engine search; slides up like the console)
             AnimatedVisibility(
                 visible = showFindBar,
                 enter = androidx.compose.animation.slideInVertically(initialOffsetY = { it }) + WtaFadeIn,
@@ -404,8 +372,6 @@ fun BoxScope.ShellScaffoldLayout(
                 )
             }
 
-            // Unified plugin surface: sheet, panel host and the floating handle
-            // (entry style TOOLBAR mounts inside ShellTopAppBar instead).
             if (config.pluginsEnabled) {
                 val pluginContext = LocalContext.current
                 val pluginsUnsupported = remember(config.engineType, webViewConfig.dnsConfig.echEffective) {
@@ -439,6 +405,7 @@ private fun ShellTopAppBar(
     showBack: Boolean,
     showForward: Boolean,
     showRefresh: Boolean,
+    onRefresh: () -> Unit,
     canGoBack: Boolean,
     canGoForward: Boolean,
     webViewRef: WebView?,
@@ -466,8 +433,6 @@ private fun ShellTopAppBar(
         canGoForward = canGoForward,
         onBack = {
             (context as? AppCompatActivity)?.let { activity ->
-                // Surface-first: on the GeckoView kernel webViewRef is null and
-                // the engine's own history must drive back navigation.
                 if (browserSurface != null) {
                     ShellWebViewNavigation.goBackOrFinish(activity, browserSurface)
                 } else {
@@ -476,7 +441,7 @@ private fun ShellTopAppBar(
             }
         },
         onForward = { browserSurface?.goForward() ?: webViewRef?.goForward() },
-        onRefresh = { browserSurface?.reload() ?: webViewRef?.reload() },
+        onRefresh = onRefresh,
         showConsoleButton = showConsoleButton,
         consoleExpanded = showConsole,
         onToggleConsole = onToggleConsole,
