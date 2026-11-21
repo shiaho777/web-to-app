@@ -47,7 +47,9 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.TlsVersion
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
+import okio.BufferedSink
 import java.io.ByteArrayOutputStream
 import java.net.URI
 import java.util.Locale
@@ -66,10 +68,6 @@ class NativeBridge(
 
     private val corsBypass: Boolean = false,
 
-    /**
-     * Used when [corsBypass] is off. CORS bypass forces `CORS_BYPASS`.
-     * `LOCAL_ONLY` bridges private hosts only; `ALL` bridges every other host.
-     */
     private val networkScope: String = "LOCAL_ONLY",
 
     private val downloadLocationMode: com.webtoapp.data.model.DownloadLocationMode =
@@ -77,26 +75,12 @@ class NativeBridge(
 
     private val customDownloadDirUri: String = "",
 
-    /** The app's configured origin (target URL / local base) for CORS-bypass caller checks. */
     private val appOriginUrl: String = "",
 
-    /**
-     * Page-URL source for engines without a WebView (GeckoView). Caller gates read the current
-     * page URL from [webViewProvider] on the System WebView path; GeckoView has no WebView
-     * instance, so its engine supplies the live navigation URL here — without it every caller
-     * check sees an empty URL and rejects, killing the CORS-bypass / private-network bridge on
-     * the Gecko engine.
-     */
     private val callerPageUrlProvider: (() -> String?)? = null,
 
-    /**
-     * Isolates persisted folder grants. The host preview passes the app id so
-     * two projects do not share a folder; a generated APK passes its package
-     * name, which is already unique.
-     */
     private val directoryGrantKey: String = ""
 ) {
-    /** Scope the Gecko content script should apply. CORS bypass wins. */
     fun networkBridgeScope(): String =
         if (corsBypass) "CORS_BYPASS" else networkScope
 
@@ -107,11 +91,6 @@ class NativeBridge(
         )
     }
 
-    /**
-     * Installs [WtaDirectory] for pages that opt into the folder capability.
-     * Document-start covers later navigations; the immediate evaluation covers
-     * the page that is already open.
-     */
     fun installDirectoryHelper(webView: WebView) {
         if (!capabilities.directory) return
         val script = LocalDirectoryScript.SOURCE
@@ -127,13 +106,8 @@ class NativeBridge(
         }
     }
 
-    /** The URL of the page currently calling into the bridge, across both engines. */
     private fun resolveCallerPageUrl(): String {
         val webView = webViewProvider() ?: return callerPageUrlProvider?.invoke().orEmpty()
-        // @JavascriptInterface entry points run on the JavaBridge thread, where
-        // any WebView method — getUrl() included — throws a Throwable. Read the
-        // URL on the view's own thread and block briefly; a timeout just
-        // degrades to the Gecko-side provider result.
         if (Looper.myLooper() == Looper.getMainLooper()) {
             return webView.url ?: callerPageUrlProvider?.invoke().orEmpty()
         }
@@ -545,20 +519,15 @@ await WtaDirectory.write('exports/image.png', pngBytes);
             if (normalized == "localhost" || normalized == "127.0.0.1" || normalized == "10.0.2.2") {
                 return true
             }
-            // 0.0.0.0 routes to the loopback interface on Linux/Android.
             if (normalized == "0.0.0.0") return true
             if (normalized == "::1" || normalized == "0:0:0:0:0:0:0:1") return true
             if (normalized.endsWith(".local")) return true
 
             if (normalized.contains(":")) {
-                // IPv6 literal (HttpUrl yields bracketed IPv6 hosts without brackets).
-                // Cover ULA fc00::/7 (fd00::/8 in practice) and link-local fe80::/10;
-                // the first hextet decides both. A colon only occurs in IPv6 literals,
-                // so a hostname like "a:b" never reaches this branch.
                 val hextet = normalized.substringBefore(":").toIntOrNull(16)
                 return hextet != null && (
-                    hextet in 0xfc00..0xfdff ||   // fc00::/7 unique-local
-                        hextet in 0xfe80..0xfebf    // fe80::/10 link-local
+                    hextet in 0xfc00..0xfdff ||
+                        hextet in 0xfe80..0xfebf
                     )
             }
 
@@ -572,7 +541,6 @@ await WtaDirectory.write('exports/image.png', pngBytes);
                 octets[0] == 172 && octets[1] in 16..31 -> true
                 octets[0] == 192 && octets[1] == 168 -> true
                 octets[0] == 127 -> true
-                // Link-local: cloud metadata endpoints (169.254.169.254 et al.).
                 octets[0] == 169 && octets[1] == 254 -> true
                 else -> false
             }
@@ -590,28 +558,15 @@ await WtaDirectory.write('exports/image.png', pngBytes);
             return scheme == "http" || scheme == "https"
         }
 
-        /**
-         * Whether a resolved [InetAddress] lands in private/loopback/link-local
-         * territory — the DNS-rebinding counterpart to [isPrivateNetworkUrl],
-         * which can only classify the hostname string. `InetAddress` covers
-         * loopback/any-local/link-local/site-local/multicast; [isPrivateNetworkHost]
-         * adds the IPv6 ULA range (fc00::/7) that `isSiteLocalAddress` misses.
-         */
         internal fun isRebindingBlockedAddress(addr: java.net.InetAddress): Boolean {
             if (addr.isAnyLocalAddress || addr.isLoopbackAddress || addr.isLinkLocalAddress ||
                 addr.isSiteLocalAddress || addr.isMulticastAddress
             ) {
                 return true
             }
-            // Scoped literal suffix ("fe80::1%eth0") must not reach the classifier.
             return isPrivateNetworkHost(addr.hostAddress?.substringBefore('%'))
         }
 
-        /**
-         * Whether [pageUrl] belongs to the app's configured origin ([appOriginUrl] — the
-         * target URL, or the local server base for packaged/server app types). Same host
-         * or a subdomain counts; anything else is a foreign page riding the WebView.
-         */
         internal fun isSameSiteOrSubdomain(pageHost: String, originHost: String): Boolean {
             if (originHost.isBlank() || pageHost.isBlank()) return false
             val p = pageHost.trim('[', ']').lowercase(Locale.ROOT).trimEnd('.')
@@ -638,12 +593,10 @@ await WtaDirectory.write('exports/image.png', pngBytes);
             .build()
     }
 
-    /**
-     * Fail-closed DNS for remote-page callers: a hostname that resolves to a
-     * private/loopback/link-local address is refused before any byte leaves the
-     * device — the URL-string gate cannot see resolutions (DNS rebinding would
-     * otherwise launder a public-looking name into a local target).
-     */
+    private val privateNetworkWriteClient by lazy {
+        privateNetworkHttpClient.newBuilder().retryOnConnectionFailure(false).build()
+    }
+
     private val publicOnlyDns = object : okhttp3.Dns {
         override fun lookup(hostname: String): List<java.net.InetAddress> {
             val resolved = okhttp3.Dns.SYSTEM.lookup(hostname)
@@ -1399,30 +1352,14 @@ await WtaDirectory.write('exports/image.png', pngBytes);
         return try {
             val request = org.json.JSONObject(requestJson)
             val url = request.optString("url").trim()
-            // Redirect policy: set by the caller/target gates below, applied to every
-            // follow-up request by a network interceptor so a redirect chain cannot
-            // cross the private/public boundary the initial URL was classified against.
             var redirectGate: ((okhttp3.HttpUrl) -> Boolean)? = null
-            // DNS-rebinding guard for remote-page callers: the URL gate classifies
-            // the hostname string, but a public-looking name can resolve to a
-            // private address (127.0.0.1, LAN, cloud metadata). When set, the
-            // request's Dns rejects any resolution landing on a private address.
             var requirePublicResolution = false
             if (corsBypass) {
                 if (!isHttpUrl(url)) {
                     AppLogger.w("NativeBridge", "Blocked CORS-bypass request to non-HTTP(S) URL: $url")
                     return privateNetworkBridgeError("URL_NOT_ALLOWED", "Only HTTP(S) URLs are allowed")
                 }
-                // The CORS-bypass bridge is a full cross-origin reader — gate it on the
-                // calling page. Local pages (packaged files, local server apps) may reach
-                // anything; the app's own remote origin may bypass CORS for internet APIs
-                // but must not probe the phone's local services; anything else (random
-                // iframes / navigations) is rejected outright.
                 val pageUrl = resolveCallerPageUrl()
-                // about:blank counts as local only for packaged/local-origin apps: a
-                // remote app's window.open("about:blank") popup inherits the opener's
-                // remote origin, so granting it the blank-page classification would hand
-                // the opener private-network reach it was just denied above.
                 val appOriginIsLocal = appOriginUrl.isNotBlank() && (
                     isPrivateNetworkUrl(appOriginUrl) ||
                         appOriginUrl.startsWith("file:") ||
@@ -1447,10 +1384,6 @@ await WtaDirectory.write('exports/image.png', pngBytes);
                         "CORS-bypass requests to local network addresses require a local page"
                     )
                 }
-                // The gate above classifies the initial URL only; OkHttp follows redirects
-                // silently, and a public URL 302-ing into 127.0.0.1 (or a private URL
-                // redirecting out) would bypass it. The network interceptor re-applies
-                // the same rule to every follow-up request.
                 if (!pageIsLocal) {
                     redirectGate = { target -> !isPrivateNetworkUrl(target.toString()) }
                     requirePublicResolution = true
@@ -1465,9 +1398,6 @@ await WtaDirectory.write('exports/image.png', pngBytes);
                     AppLogger.w("NativeBridge", "Blocked private-network bridge request from non-local page: $pageUrl -> $url")
                     return privateNetworkBridgeError("CALLER_NOT_ALLOWED", "Only packaged local pages can use the private network bridge")
                 }
-                // Every hop must stay inside the private network: the bridge exists to
-                // let local server pages reach other local services, never to launder a
-                // private URL into an arbitrary public read.
                 redirectGate = { target -> isPrivateNetworkUrl(target.toString()) }
             }
 
@@ -1475,6 +1405,7 @@ await WtaDirectory.write('exports/image.png', pngBytes);
             if (method !in setOf("GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS")) {
                 return privateNetworkBridgeError("METHOD_NOT_ALLOWED", "Unsupported HTTP method: $method")
             }
+            val isWrite = method != "GET" && method != "HEAD" && method != "OPTIONS"
 
             val bodyBase64 = request.optString("bodyBase64", "")
             val bodyBytes = if (bodyBase64.isBlank()) {
@@ -1484,14 +1415,21 @@ await WtaDirectory.write('exports/image.png', pngBytes);
             }
 
             val headers = request.optJSONObject("headers")
-            val contentType = headers?.optString("content-type")
+            val contentType = (headers?.optString("content-type")
                 ?.takeIf { it.isNotBlank() }
                 ?: headers?.optString("Content-Type")?.takeIf { it.isNotBlank() }
-                ?: "application/octet-stream"
-            val requestBody = if (method in setOf("POST", "PUT", "PATCH") || bodyBytes.isNotEmpty()) {
-                bodyBytes.toRequestBody(contentType.toMediaTypeOrNull())
-            } else {
-                null
+                ?: "application/octet-stream".takeUnless { method == "DELETE" && bodyBytes.isEmpty() })?.toMediaTypeOrNull()
+            val requestBody = when {
+                isWrite -> object : RequestBody() {
+                    override fun contentType() = contentType
+                    override fun contentLength() = bodyBytes.size.toLong()
+                    override fun isOneShot() = true
+                    override fun writeTo(sink: BufferedSink) {
+                        sink.write(bodyBytes)
+                    }
+                }
+                bodyBytes.isNotEmpty() -> bodyBytes.toRequestBody(contentType)
+                else -> null
             }
 
             val builder = Request.Builder().url(url)
@@ -1505,8 +1443,9 @@ await WtaDirectory.write('exports/image.png', pngBytes);
             builder.header("X-WebToApp-Private-Network-Bridge", "1")
             builder.method(method, requestBody)
 
+            val baseClient = if (isWrite) privateNetworkWriteClient else privateNetworkHttpClient
             val client = if (redirectGate != null || requirePublicResolution) {
-                privateNetworkHttpClient.newBuilder().apply {
+                baseClient.newBuilder().apply {
                     if (requirePublicResolution) dns(publicOnlyDns)
                     redirectGate?.let { gate ->
                         addNetworkInterceptor { chain ->
@@ -1521,7 +1460,7 @@ await WtaDirectory.write('exports/image.png', pngBytes);
                     }
                 }.build()
             } else {
-                privateNetworkHttpClient
+                baseClient
             }
 
             client.newCall(builder.build()).execute().use { response ->
@@ -1568,13 +1507,6 @@ await WtaDirectory.write('exports/image.png', pngBytes);
         }
     }
 
-    /**
-     * Async variant of [httpRequest]: identical semantics, but the network call runs on
-     * the IO dispatcher and the result is delivered back into the page through
-     * `window.__wtaNativeHttpResponse(callbackId, json)`. The synchronous variant blocks
-     * the calling JS thread for the entire HTTP round-trip — pages polling APIs through
-     * the bridge froze for the duration of every request.
-     */
     @JavascriptInterface
     fun httpRequestAsync(requestJson: String, callbackId: String) {
         scope.launch(Dispatchers.IO) {
@@ -1594,7 +1526,6 @@ await WtaDirectory.write('exports/image.png', pngBytes);
         }
     }
 
-    /** Raised by the per-call redirect gate interceptor: a redirect tried to cross the private/public boundary. */
     private class RedirectBlockedByGateException(message: String) : java.io.IOException(message)
 
     private fun privateNetworkBridgeError(code: String, message: String): String {
@@ -1605,18 +1536,6 @@ await WtaDirectory.write('exports/image.png', pngBytes);
         }.toString()
     }
 
-    /**
-     * Native Google sign-in via the Jetpack Credential Manager: shows the system account
-     * picker with the device's Google accounts and returns a Google-signed ID token.
-     * The page receives the result asynchronously through
-     * `window.NativeBridgeGoogleSignInResult(requestId, payload)`; the ID token must be
-     * validated by the site's backend (audience = the configured Web client ID).
-     *
-     * Fail-soft on every path the feature cannot work on: disabled capability, missing
-     * client ID, non-Activity context (floating window / Gecko bridge), devices without
-     * Google Play Services, F-Droid builds that omit the Play Services client, and user
-     * cancellation — the page always gets a JSON reply.
-     */
     @JavascriptInterface
     fun googleSignIn(requestId: String) {
         if (!capabilities.googleSignIn) {
@@ -1636,9 +1555,6 @@ await WtaDirectory.write('exports/image.png', pngBytes);
             return
         }
 
-        // Same caller-page gate as httpRequest: only the app's own pages (or a
-        // packaged/local origin) may drive the Credential Manager flow — a foreign
-        // iframe embedded in the page must not be able to trigger it.
         val callerPageUrl = resolveCallerPageUrl()
         val callerIsLocal = isPrivateNetworkUrl(callerPageUrl) ||
             callerPageUrl.startsWith("file:") ||
@@ -1651,9 +1567,6 @@ await WtaDirectory.write('exports/image.png', pngBytes);
             )
             return
         }
-        // The account picker is async: by the time it returns, the WebView may have
-        // navigated elsewhere. Only deliver into the origin that started the flow
-        // (or another local packaged page).
         val callerOrigin = runCatching {
             URI(callerPageUrl).let { u ->
                 "${u.scheme}://${u.host}${if (u.port > 0) ":${u.port}" else ""}"
@@ -1696,8 +1609,6 @@ await WtaDirectory.write('exports/image.png', pngBytes);
         callerOrigin: String? = null
     ) {
         val quotedRequestId = com.webtoapp.util.JsStrings.quote(requestId)
-        // JSONObject.toString() is a valid JS object literal; the requestId is quoted
-        // so a crafted id cannot break out of the call expression.
         val js = "window.NativeBridgeGoogleSignInResult && window.NativeBridgeGoogleSignInResult($quotedRequestId, $payload);"
         scope.launch(Dispatchers.Main) {
             try {
@@ -1708,13 +1619,6 @@ await WtaDirectory.write('exports/image.png', pngBytes);
         }
     }
 
-    /**
-     * True while the host has paused the WebView for the account picker.
-     * [android.webkit.WebView.getUrl] is often blank until resume, and
-     * [android.webkit.WebView.evaluateJavascript] during the pause is dropped.
-     * Hold the result and deliver it from [onWebViewResume]. A local page whose
-     * URL never comes back is still delivered once the WebView is running.
-     */
     @Volatile
     private var webViewPaused = false
 
@@ -1726,12 +1630,10 @@ await WtaDirectory.write('exports/image.png', pngBytes);
         val callerOrigin: String?,
     )
 
-    /** Call only when this bridge's WebView was actually paused. */
     fun onWebViewPause() {
         webViewPaused = true
     }
 
-    /** Call after [android.webkit.WebView.onResume], from the main thread. */
     fun onWebViewResume() {
         webViewPaused = false
         val held = heldSignIn ?: return
@@ -2232,11 +2134,6 @@ await WtaDirectory.write('exports/image.png', pngBytes);
         return directoryStore.info()
     }
 
-    /**
-     * Opens the system folder picker. The picker itself is asynchronous; a
-     * synchronous JSON reply reports whether it started. The chosen grant
-     * arrives through `window.NativeBridgeDirectoryResult(requestId, payload)`.
-     */
     @JavascriptInterface
     fun pickDirectory(requestId: String): String {
         if (!capabilities.directory) return directoryError("DISABLED", "The folder capability is off")

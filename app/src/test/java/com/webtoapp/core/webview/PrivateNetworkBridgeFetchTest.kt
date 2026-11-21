@@ -2,31 +2,41 @@ package com.webtoapp.core.webview
 
 import com.google.common.truth.Truth.assertWithMessage
 import java.io.File
+import java.util.concurrent.TimeUnit
+import org.junit.Assume.assumeTrue
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 
 class PrivateNetworkBridgeFetchTest {
+    @get:Rule
+    val tmp = TemporaryFolder()
 
     @Test
-    fun `cors bypass scope tries the native fetch before falling back to the bridge`() {
-        val script = readSource()
+    fun `fetch routes writes once and preserves browser reads and request data`() {
+        val node = System.getenv("NODE_BINARY")?.takeIf { it.isNotBlank() }
+            ?: System.getenv("PATH").orEmpty().split(File.pathSeparator)
+                .map { File(it, "node") }.firstOrNull { it.isFile && it.canExecute() }?.absolutePath
+        assumeTrue("Node.js is required to execute the Fetch bridge script", node != null)
 
-        assertWithMessage(
-            "The CORS bypass branch must attempt the native fetch and only bridge after it rejects"
-        ).that(script).contains("return nativeFetch(input, init).catch(viaBridge);")
-
-        val unconditionalBridge = Regex("if \\(isCorsBypass\\) \\{\\s*return nativeHttpRequest\\(payload\\)")
-        assertWithMessage(
-            "The CORS bypass branch must not route every cross-origin request through the bridge, " +
-                "which buffers the whole body and Base64-encodes it across the JS bridge"
-        ).that(unconditionalBridge.findAll(script).count()).isEqualTo(0)
-    }
-
-    private fun readSource(): String {
-        val javaRoot = listOf("app/src/main/java", "src/main/java").asSequence()
-            .map(::File).firstOrNull(File::exists)
-            ?: error("Cannot locate java directory")
-        val file = File(javaRoot, "com/webtoapp/core/webview/WebViewManager.kt")
-        assertWithMessage("Test harness cannot find source file").that(file.isFile).isTrue()
-        return file.readText()
+        val script = tmp.newFile("bridge.js").apply {
+            writeText(WebViewManager.PrivateNetworkApiBridgeScriptHolder.SCRIPT)
+        }
+        val cases = tmp.newFile("fetch-cases.cjs").apply {
+            requireNotNull(PrivateNetworkBridgeFetchTest::class.java.getResourceAsStream("/private-network-fetch-cases.cjs"))
+                .use { input -> outputStream().use { input.copyTo(it) } }
+        }
+        val output = tmp.newFile("node.log")
+        val process = ProcessBuilder(node!!, cases.absolutePath, script.absolutePath)
+            .redirectErrorStream(true)
+            .redirectOutput(output)
+            .start()
+        try {
+            assertWithMessage("Bridge execution timed out: ${output.readText()}")
+                .that(process.waitFor(20, TimeUnit.SECONDS)).isTrue()
+            assertWithMessage(output.readText()).that(process.exitValue()).isEqualTo(0)
+        } finally {
+            if (process.isAlive) process.destroyForcibly()
+        }
     }
 }
