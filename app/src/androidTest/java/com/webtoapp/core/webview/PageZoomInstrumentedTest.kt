@@ -47,9 +47,7 @@ class PageZoomInstrumentedTest {
         assertSettledScale(1.5)
 
         val nextUrl = LANDING_URL.replace("/start", "/next")
-        instrumentation.runOnMainSync {
-            webView.evaluateJavascript("location.assign('$nextUrl')", null)
-        }
+        instrumentation.runOnMainSync { webView.loadUrl(nextUrl) }
         awaitPage(nextUrl)
         assertSettledScale(1.5)
 
@@ -58,7 +56,7 @@ class PageZoomInstrumentedTest {
         assertSettledScale(1.5)
 
         instrumentation.runOnMainSync {
-            assertTrue(webView.canGoBack())
+            assertTrue("The first top-level URL should remain in WebView history", webView.canGoBack())
             webView.goBack()
         }
         awaitPage(LANDING_URL)
