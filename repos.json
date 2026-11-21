@@ -38,7 +38,7 @@
   {
     "name": "qsyy",
     "description": "汽水音乐第三方 Web 播放器 · 全端可用 · 本地缓存直读 / 在线播放 / 逐字歌词 / 音效 / 下载",
-    "stargazers_count": 29,
+    "stargazers_count": 30,
     "forks_count": 0,
     "language": "JavaScript",
     "pushed_at": "2026-11-18T13:19:19Z",
@@ -57,7 +57,7 @@
     "name": "WebViewIDE",
     "description": "On-device IDE for HTML, CSS, and JavaScript. Preview in the system WebView and package a signed APK. No root.",
     "stargazers_count": 22,
-    "forks_count": 2,
+    "forks_count": 3,
     "language": "Kotlin",
     "pushed_at": "2026-11-20T01:24:57Z",
     "html_url": "https://github.com/shiaho777/WebViewIDE"
@@ -92,7 +92,7 @@
   {
     "name": "pneuma-android",
     "description": "Pneuma · 一部会呼吸的 AI 虚拟手机：拟真桌面、聊天、朋友圈、查手机、地图定位、语音/视频通话、日记日历。AI 角色有作息、日程、位置和长期记忆，会主动发消息、发帖互动。数据全在设备本地，联网只调你自己配置的 LLM/生图/语音 API。",
-    "stargazers_count": 16,
+    "stargazers_count": 17,
     "forks_count": 14,
     "language": "TypeScript",
     "pushed_at": "2026-11-12T10:06:27Z",
@@ -167,7 +167,7 @@
     "stargazers_count": 10,
     "forks_count": 0,
     "language": "Python",
-    "pushed_at": "2026-11-19T21:17:15Z",
+    "pushed_at": "2026-11-21T08:03:40Z",
     "html_url": "https://github.com/shiaho777/pyj-j"
   },
   {
@@ -250,6 +250,15 @@
     "language": "Shell",
     "pushed_at": "2026-10-22T14:38:07Z",
     "html_url": "https://github.com/shiaho777/repo-maintenance"
+  },
+  {
+    "name": "web-to-app-runtimes",
+    "description": "Android runtime binaries for WebToApp (PHP, and future runtimes). Versioned releases with sha256 pins; consumed by https://github.com/shiaho777/web-to-app",
+    "stargazers_count": 0,
+    "forks_count": 0,
+    "language": null,
+    "pushed_at": "2026-11-21T06:14:13Z",
+    "html_url": "https://github.com/shiaho777/web-to-app-runtimes"
   },
   {
     "name": "Liora",
