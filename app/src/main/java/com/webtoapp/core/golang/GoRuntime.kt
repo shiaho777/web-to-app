@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.net.HttpURLConnection
+import java.net.Proxy
 import java.net.URL
 
 class GoRuntime(private val context: Context) {
@@ -29,11 +30,6 @@ class GoRuntime(private val context: Context) {
         private const val HEALTH_CHECK_INTERVAL_MS = 500L
     }
 
-    /**
-     * Failure-note fallback for OEM-specific policies that deny even the memfd
-     * exec-map bridge; the startServer precheck handles the standard W^X case.
-     * Runtime-layer string (shell-synced); intentionally not routed through Strings i18n.
-     */
     private fun channelNote(): String =
         if (!com.webtoapp.core.linux.RuntimeExecPolicy.canExecAppDataBinaries(context) &&
             !com.webtoapp.core.linux.RuntimeExecPolicy.hasStaticExecBridge(context)
@@ -98,13 +94,6 @@ class GoRuntime(private val context: Context) {
         envVars: Map<String, String> = emptyMap()
     ): Int = withContext(Dispatchers.IO) {
         try {
-            // W^X hosts (targetSdk 29+) cannot execve anything: neither the
-            // app-data binary, nor the musl bridge linker in nativeLibraryDir
-            // (entrypoint denied, verified by kernel audit), nor memfd
-            // execveat. The only working launch primitive there is the
-            // user-mode static exec loader (fork + memfd map + entry jump,
-            // zero execve), which boots static ET_EXEC as well as
-            // self-contained static-PIE (what `go build` emits for android).
             val wxRestricted = !com.webtoapp.core.linux.RuntimeExecPolicy.canExecAppDataBinaries(context)
             if (wxRestricted && !com.webtoapp.core.linux.RuntimeExecPolicy.hasStaticExecBridge(context)) {
                 _serverState.value = ServerState.Error(
@@ -144,7 +133,6 @@ class GoRuntime(private val context: Context) {
 
             if (!wxRestricted && !GoDependencyManager.isGoExecLoaderReady(context)) {
                 val path = GoDependencyManager.getGoExecLoaderPath(context)
-                // The allocation taken two lines up must go back before bailing out.
                 PortManager.release(serverPort)
                 currentPort = 0
                 _serverState.value = ServerState.Error(
@@ -155,8 +143,6 @@ class GoRuntime(private val context: Context) {
 
             val useStaticExec = wxRestricted
             val command = if (useStaticExec) {
-                // User-mode load the server binary itself (static ET_EXEC or
-                // self-contained static-PIE): no kernel exec anywhere.
                 listOf(binaryPath)
             } else {
                 GoDependencyManager.buildBinaryCommand(context, binaryPath, emptyList())
@@ -172,22 +158,15 @@ class GoRuntime(private val context: Context) {
                 processEnv = env,
                 additionalPathEntries = listOf(File(context.filesDir, "go_bins").absolutePath)
             )
-            env["PORT"] = serverPort.toString()
-            env["HOST"] = "127.0.0.1"
-            env["ADDR"] = "127.0.0.1:$serverPort"
             env["GIN_MODE"] = "release"
 
             envVars.forEach { (k, v) -> env[k] = v }
+            env["PORT"] = serverPort.toString()
+            env["HOST"] = "127.0.0.1"
+            env["ADDR"] = "127.0.0.1:$serverPort"
 
             val proxyPort = LocalDnsBridgeProxy.start()
             if (proxyPort > 0) {
-                // NOTE: this proxy env is what gives the server usable
-                // networking: stock Go binaries only consult /etc/resolv.conf
-                // (absent on Android), so plain non-HTTP dials that need raw
-                // DNS still fail on-device. HTTP(S) — including module-style
-                // fetches — flows through the JVM bridge, which resolves via
-                // Android APIs. There is no patchable resolv.conf path: the
-                // slot fits no app-controlled location.
                 LocalDnsBridgeProxy.proxyEnvFor(proxyPort).forEach { (k, v) -> env[k] = v }
                 dnsProxyStarted = true
                 AppLogger.i(TAG, "已启用 DNS 桥接代理 (port=$proxyPort) 供 Go 进程解析外部域名")
@@ -211,7 +190,6 @@ class GoRuntime(private val context: Context) {
                 val processBuilder = ProcessBuilder(command)
                 processBuilder.directory(projDir)
                 val processEnv = processBuilder.environment()
-                // ProcessBuilder seeds the parent environment; overlay ours.
                 env.forEach { (k, v) -> processEnv[k] = v }
                 processBuilder.start()
             }
@@ -439,17 +417,18 @@ class GoRuntime(private val context: Context) {
 </body></html>"""
     }
 
-    private suspend fun waitForServerReady(port: Int): Boolean {
+    internal suspend fun waitForServerReady(port: Int): Boolean {
         repeat(MAX_HEALTH_CHECK_RETRIES) { attempt ->
             var conn: HttpURLConnection? = null
             try {
                 val url = URL("http://127.0.0.1:$port/")
-                conn = url.openConnection() as HttpURLConnection
+                conn = url.openConnection(Proxy.NO_PROXY) as HttpURLConnection
                 conn.connectTimeout = 500
                 conn.readTimeout = 500
+                conn.instanceFollowRedirects = false
                 conn.requestMethod = "GET"
                 val code = conn.responseCode
-                if (code in 200..499) {
+                if (code in 100..599 && goProcess?.isAliveCompat() != false) {
                     AppLogger.i(TAG, "Go 服务器就绪 (尝试 ${attempt + 1})")
                     return true
                 }

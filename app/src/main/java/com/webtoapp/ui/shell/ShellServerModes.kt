@@ -258,9 +258,6 @@ fun HtmlFrontendShellMode(
                 )
 
                 val assetBase = config.siteAssetBase.ifBlank { "html" }
-                // Multi-web per-site projects are embedded under assets/multiweb_sites/<siteId>/<assetBase>
-                // (AppContentEmbedder.MultiWebContentEmbedder); plain HTML/FRONTEND shells embed at
-                // the top-level assets/<assetBase>.
                 val embeddedAssetRoot = if (config.siteId.isNotBlank()) "multiweb_sites/${config.siteId}/$assetBase" else assetBase
                 val catalog = catalogAssetTree(embeddedAssetRoot) { path ->
                     try {
@@ -270,7 +267,6 @@ fun HtmlFrontendShellMode(
                     }
                 }
                 if (catalog.encrypted) {
-                    // A previous build may have left the decrypted tree here.
                     siteDir.deleteRecursively()
                     encryptedSite = true
                     val decryptor = com.webtoapp.core.crypto.AssetDecryptor(context)
@@ -896,41 +892,7 @@ fun PythonAppShellMode(
             try {
                 val pyConfig = config.pythonAppConfig
 
-                val pythonHome = com.webtoapp.core.python.PythonDependencyManager.getPythonDir(context)
-                val runtimeMarker = File(pythonHome, ".runtime_extracted")
-                if (!runtimeMarker.exists()) {
-                    AppLogger.i("PythonShell", "First run, extracting Python stdlib to ${pythonHome.absolutePath}")
-                    try {
-                        val assetChildren = context.assets.list("python_runtime")
-                        if (assetChildren != null && assetChildren.isNotEmpty()) {
-                            extractAssetsRecursive(context, "python_runtime", pythonHome)
-                            runtimeMarker.writeText("extracted")
-                            AppLogger.i("PythonShell", "Python stdlib extraction complete")
-                        } else {
-                            AppLogger.w("PythonShell", "assets/python_runtime missing or empty, trying legacy assets/python/ path")
-
-                            val abi = com.webtoapp.core.python.PythonDependencyManager.getDeviceAbi()
-                            try {
-                                val binDir = File(pythonHome, "bin")
-                                binDir.mkdirs()
-                                val pythonBin = File(binDir, "python3")
-                                if (!pythonBin.exists()) {
-                                    context.assets.open("python/$abi/python3").use { input ->
-                                        pythonBin.outputStream().use { output -> input.copyTo(output) }
-                                    }
-                                    pythonBin.setExecutable(true)
-                                    AppLogger.i("PythonShell", "Legacy: Python binary extracted to ${pythonBin.absolutePath}")
-                                }
-                            } catch (e: Exception) {
-                                AppLogger.w("PythonShell", "Legacy Python binary extraction failed: ${e.message}")
-                            }
-                        }
-                    } catch (e: Exception) {
-                        AppLogger.e("PythonShell", "Failed to extract Python stdlib", e)
-                    }
-                } else {
-                    AppLogger.i("PythonShell", "Python stdlib already extracted, skipping")
-                }
+                com.webtoapp.core.shell.ShellServerLauncher.prepareEmbeddedPythonRuntime(context, config.versionCode)
 
                 if (!pythonRuntime.isPythonAvailable()) {
                     AppLogger.w("PythonShell", "Python runtime unavailable, falling back to preview mode")
@@ -979,6 +941,7 @@ fun PythonAppShellMode(
                     port = pyConfig.port,
                     portConflictMode = resolveShellPortConflictMode(pyConfig.portConflictMode),
                     envVars = pyConfig.envVars,
+                    entryModule = pyConfig.entryModule,
                     installDeps = true
                 )
 

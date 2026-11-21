@@ -66,14 +66,6 @@ class ApkBuilder(private val context: Context) {
         private val CHARSET_REGEX = AppConstants.CHARSET_REGEX
         private const val FLOATING_WINDOW_MINIMIZED_ICON_ASSET = "floating_window_minimized_icon.png"
 
-        /**
-         * Per-package build locks, shared by every [ApkBuilder] instance. Multiple entry
-         * points (export screen, home share button, agent tools, batch export) can start
-         * builds concurrently, and a build writes to deterministic temp paths keyed by
-         * package name — without serialization two builds of the same package interleave
-         * (one build's cleanup deletes the other's in-flight template copy / aligned ELF /
-         * unsigned APK mid-sign).
-         */
         private val buildLocks = java.util.concurrent.ConcurrentHashMap<String, Mutex>()
 
         private fun lockFor(packageName: String): Mutex =
@@ -81,7 +73,6 @@ class ApkBuilder(private val context: Context) {
                 Mutex()
             }
 
-        /** Adaptive icon canvas size (108dp @ xxxhdpi) used for foreground/background layers. */
         private const val ADAPTIVE_ICON_PX = 432
         private val GECKOVIEW_RUNTIME_COMPONENTS = (0..39)
             .map { "org.mozilla.gecko.process.GeckoChildProcessServices\$tab$it" }
@@ -94,25 +85,12 @@ class ApkBuilder(private val context: Context) {
             "org.mozilla.gecko.process.GeckoChildProcessServices\$ipdlunittest"
         )
 
-        /**
-         * Zip entry names (lib/<deviceAbi>/<lib>.so) that the per-app-type native-lib injection
-         * step writes for the device ABI. The template-copy phase skips these so the injection
-         * (16KB-aligned) is the single source and no duplicate entry is emitted — fixes the
-         * GO_APP / NODEJS_APP "duplicate entry: lib/<abi>/<lib>.so" build failure.
-         */
         internal fun injectedDeviceLibEntries(appType: String, deviceAbi: String): Set<String> =
             injectedNativeLibNames(appType).mapTo(mutableSetOf()) { "lib/$deviceAbi/$it" }
 
         internal fun deviceInjectionAbi(deviceAbi: String, abiFilters: List<String>): String? =
             deviceAbi.takeIf { abiFilters.isEmpty() || it in abiFilters }
 
-        /**
-         * Additional lib/ entries the injection step writes for selected ABIs OTHER than the
-         * device ABI. The template ships the bridge/launcher libs for every ABI already (they
-         * are 16KB-aligned), so only libnode.so — never in the template, downloaded on demand —
-         * is injected per extra ABI. Skipping these during the copy pass keeps CONTENT_OVERLAY
-         * builds from duplicating entries already present in the cached base APK.
-         */
         internal fun injectedMultiAbiLibEntries(
             appType: String,
             deviceAbi: String,
@@ -137,11 +115,6 @@ class ApkBuilder(private val context: Context) {
             add("assets/omni.ja")
         }
 
-        /**
-         * Whether the exported APK needs the Cronet native lib: the h3 toggle or ECH on
-         * the system engine activates the Cronet upstream. Mirrors
-         * TlsMitmBridge.Config.cronetActive (SOCKS upstream wins and disables both).
-         */
         internal fun cronetNeededForExport(config: ApkConfig): Boolean {
             if (!(config.tlsFingerprint.forceHttp3 || config.dns.config.echEffective)) return false
             val socksUpstream = config.proxyMode == "STATIC" &&
@@ -159,15 +132,6 @@ class ApkBuilder(private val context: Context) {
 
         private const val DEFAULT_VERSION_NAME = "1.0.0"
 
-        /**
-         * The package name this app will actually ship with: an explicit custom
-         * package when it is set and well-formed, otherwise the name-derived one.
-         *
-         * This rule used to be copy-pasted in three places (here, the build
-         * pipeline and the export screen). That drift is the root cause of
-         * issue #672: the screen could not reproduce a derived package name, so
-         * it never found the already-installed app and never bumped the version.
-         */
         fun resolvePackageName(webApp: WebApp): String {
             val custom = webApp.apkExportConfig?.customPackageName?.takeIf {
                 it.isNotBlank() && it.matches(PACKAGE_NAME_REGEX)
@@ -199,7 +163,6 @@ class ApkBuilder(private val context: Context) {
             return String(chars)
         }
 
-        /** Installed versionCode for [packageName], or null when not installed. */
         fun findInstalledVersionCode(context: Context, packageName: String): Long? {
             if (packageName.isBlank()) return null
             return try {
@@ -223,10 +186,6 @@ class ApkBuilder(private val context: Context) {
             }
         }
 
-        /**
-         * Opens the installed app for [packageName]. Returns false when the
-         * package is missing, has no launcher activity, or the start fails.
-         */
         fun launchInstalledPackage(context: Context, packageName: String): Boolean {
             if (packageName.isBlank()) return false
             val launch = context.packageManager.getLaunchIntentForPackage(packageName)
@@ -241,14 +200,6 @@ class ApkBuilder(private val context: Context) {
             }
         }
 
-        /**
-         * Android refuses to install over an existing package when versionCode
-         * is lower, so rebuilds that would land as a downgrade get their
-         * version bumped. Equal-or-higher versions set by the user are left
-         * alone — reinstalling the same versionCode is a valid update — and
-         * [ApkExportConfig.autoVersionBump] = false pins the configured
-         * version exactly, downgrade or not.
-         */
         internal fun withInstallAwareVersion(context: Context, webApp: WebApp): WebApp {
             val (code, name) = suggestedVersionForInstall(context, webApp) ?: return webApp
             val config = webApp.apkExportConfig
@@ -261,13 +212,6 @@ class ApkBuilder(private val context: Context) {
             )
         }
 
-        /**
-         * The version this build should ship with when the target package is
-         * already installed, or null when nothing has to change. Shared by the
-         * export screen (so the suggested version matches what the build will
-         * actually use) and by the build itself (so agent tools and batch export
-         * bump identically).
-         */
         fun suggestedVersionForInstall(context: Context, webApp: WebApp): Pair<Int, String>? {
             val config = webApp.apkExportConfig
             if (config?.autoVersionBump == false) return null
@@ -282,11 +226,6 @@ class ApkBuilder(private val context: Context) {
             return bumpedCode to bumpVersionName(currentName)
         }
 
-        /**
-         * Bumps the last numeric segment ("1.0.0" -> "1.0.1", "v2.1" -> "v2.2").
-         * Anything not ending in digits (for example "1.0.0-beta") is returned
-         * untouched rather than mangled into a version nobody asked for.
-         */
         internal fun bumpVersionName(current: String): String {
             val match = Regex("""^(.*?)(\d+)$""").find(current.trim()) ?: return current
             val (prefix, number) = match.destructured
@@ -365,12 +304,6 @@ class ApkBuilder(private val context: Context) {
         }
     }
 
-    /**
-     * Every build goes through here, so version bumping lives here too. Doing it
-     * at the entry point means the agent tools and batch export get the same
-     * behaviour as the export screen, and the incremental cache fingerprints the
-     * final version rather than the pre-bump one.
-     */
     suspend fun buildApk(
         webApp: WebApp,
         forceFullRebuild: Boolean = false,
@@ -426,11 +359,6 @@ class ApkBuilder(private val context: Context) {
             val encryptionExportConfig = webApp.apkExportConfig?.encryptionConfig
                 ?: com.webtoapp.data.model.ApkEncryptionConfig()
 
-            // Per-app signing (opt-in). Resolved before the encryption-key derivation
-            // below: password-less encrypted builds mix the signing certificate hash into
-            // the key, so the hash must be the identity that will actually sign the APK.
-            // Failing to produce it fails the build — silently falling back to the global
-            // key would mint an APK the per-app identity can never update.
             val perAppIdentity = if (webApp.apkExportConfig?.perAppSigningEnabled == true) {
                 try {
                     PerAppSigningIdentity.identityFor(context, resolvePackageName(webApp))
@@ -587,16 +515,10 @@ class ApkBuilder(private val context: Context) {
                 val encKeyDeferred = async {
                     if (encryptionConfig.enabled) {
                         if (encryptionConfig.keyMode == "EMBEDDED") {
-                            // #917: random key baked into the APK — the signing
-                            // cert is never consulted, so Play App Signing /
-                            // re-signing cannot break decryption.
                             javax.crypto.spec.SecretKeySpec(
                                 com.webtoapp.core.crypto.EmbeddedKey.generate(), "AES"
                             )
                         } else {
-                            // Password mode derives from the password alone — the
-                            // cert must not be mixed in or every re-signed copy
-                            // (incl. Play App Signing) would fail to decrypt.
                             val signatureHash = if (encryptionConfig.customPassword.isNullOrBlank()) {
                                 signingCertHash()
                             } else {
@@ -657,10 +579,6 @@ class ApkBuilder(private val context: Context) {
                     } else null
                 }
 
-                // Build-time Static Asset Pack: for a WEB app with the feature enabled, scrape
-                // static frontend assets (CSS/JS/fonts/icons) from the live target URL and stage
-                // them (plus a URL->path manifest) for embedding. Fail-soft: any error yields null
-                // and the build proceeds as a normal online WEB app.
                 val staticPackDeferred = async {
                     if (webApp.appType == com.webtoapp.data.model.AppType.WEB &&
                         config.webView.staticAssetPackEnabled
@@ -841,7 +759,7 @@ class ApkBuilder(private val context: Context) {
                 com.webtoapp.core.python.PythonDependencyManager.getPythonExecutablePath(context)
             } else null
             val muslLinkerPath = if (config.appType == "PYTHON_APP") {
-                com.webtoapp.core.python.PythonDependencyManager.getMuslLinkerPath(context)
+                resolvePythonExportMuslLinker()?.absolutePath
             } else null
             val builderMuslLinkerPath = if (config.appType == "PYTHON_APP") {
                 com.webtoapp.core.python.PythonDependencyManager.getBuilderMuslLinkerPath(context)
@@ -900,9 +818,6 @@ class ApkBuilder(private val context: Context) {
 
             logger.section("Incremental Build Plan")
             val hostVersionCode = rememberHostVersionCode()
-            // Media files of multi-web GALLERY/IMAGE/VIDEO sites are embedded
-            // under per-site prefixes; without their bytes in the key, editing
-            // a source gallery would keep serving a stale cached APK.
             val mwSiteMedia = resolveMultiWebSiteMediaInputs(webApp)
             val incrementalPlan = buildCache.plan(
                 webApp = webApp,
@@ -945,19 +860,12 @@ class ApkBuilder(private val context: Context) {
                 ),
                 hostVersionCode = hostVersionCode,
                 forceFullRebuild = forceFullRebuild,
-                // The derived permission/component set is the exact manifest content:
-                // keying it keeps CONTENT_OVERLAY from reusing a cached AndroidManifest
-                // after a change that adds/removes permissions or components.
                 manifestFingerprint = buildRequiredPermissions(config).sorted().joinToString(",") +
                     "|" + buildRequiredComponents(config).sorted().joinToString(",") +
                     "|stacks=" + featureStackFingerprint(config),
-                // Export-level performance options are not part of ApkConfig but change
-                // output bytes (resource stripping / perf script injection).
                 perfFingerprint = webApp.apkExportConfig?.let { ec ->
                     "opt=${ec.performanceOptimization}|cfg=${ec.performanceConfig}"
                 },
-                // Encrypted builds embed the signing cert hash in the metadata, so the
-                // unsigned bytes depend on which identity signs. Key it explicitly.
                 signingFingerprint = runCatching {
                     signingCertHash().joinToString("") { "%02x".format(it) }
                 }.getOrNull(),
@@ -1215,8 +1123,6 @@ class ApkBuilder(private val context: Context) {
                 )
             }
 
-            // REUSE_UNSIGNED just copied the cached file — re-saving it is a pure
-            // 50-150MB disk copy with no benefit. Only cache FULL/OVERLAY outputs.
             if (!encryptionConfig.enabled && incrementalPlan.mode != IncrementalBuildMode.REUSE_UNSIGNED &&
                 unsignedApk.isFile && unsignedApk.length() > 0L
             ) {
@@ -1241,8 +1147,6 @@ class ApkBuilder(private val context: Context) {
                 logger.logKeyValue("perAppKeystore", it.storeFile.name)
             }
 
-            // JarSigner.sign either returns true or throws; output validity is checked
-            // right below, which is the real failure path.
             try {
                 signer.sign(
                     unsignedApk, signedApk,
@@ -1336,8 +1240,6 @@ class ApkBuilder(private val context: Context) {
                 "fallbackFull:" + incrementalPlan.reason
             }
 
-            // Machine-readable release metadata next to the APK: which host version, which
-            // signing certificate, and the output's own SHA-256. Best-effort sidecar.
             val certSha256Hex = runCatching {
                 (perAppIdentity?.certSha256() ?: signer.getCertificateSignatureHash())
                     .joinToString(":") { "%02X".format(it) }
@@ -1487,11 +1389,6 @@ class ApkBuilder(private val context: Context) {
         var discoveredOldIconPaths = emptySet<String>()
         var discoveredIconSpecs = emptyList<ArscRebuilder.DiscoveredIconPath>()
 
-        // Native libs the per-app-type injection step writes (16KB-aligned): the device-ABI
-        // set plus, for NODEJS_APP, libnode.so for every other selected ABI. The template also
-        // ships the device-ABI ones; skip the template's copies in the loop below so the
-        // injection is the single source and we don't emit a duplicate zip entry
-        // ("duplicate entry: lib/<abi>/<lib>.so").
         val deviceAbi = android.os.Build.SUPPORTED_ABIS?.firstOrNull() ?: "arm64-v8a"
         val injectedLibs = injectedDeviceLibEntries(config.appType, deviceAbi) +
             injectedMultiAbiLibEntries(config.appType, deviceAbi, abiFilters)
@@ -1516,11 +1413,6 @@ class ApkBuilder(private val context: Context) {
             AssetEncryptor(encryptionKey)
         } else null
 
-        // Policy changes are structural cache identities: overlays preserve the same
-        // already-written policy. Encrypted exports always take the FULL path.
-        // Disabled exports resolve the marker too (best effort) so its inert
-        // placeholder file can be dropped; templates predating it have nothing
-        // to remove and must not fail.
         val saepResource = when {
             mode != ModifyApkMode.FULL -> null
             saepEnabled -> SaepPolicy.resolveTemplate(context, sourceApk)
@@ -1534,10 +1426,6 @@ class ApkBuilder(private val context: Context) {
             )
         }
 
-        // Feature stacks (issue #1115): graft DEX + resource package + manifest
-        // fragment only for features the config enables; disabled features add
-        // zero bytes to the output. CONTENT_OVERLAY reuses the cached base, so
-        // stack state lives in the identity fingerprint (stacks=).
         val stackBundles = if (mode == ModifyApkMode.FULL) {
             FeatureStacks.enabledFor(config).mapNotNull { id ->
                 runCatching {
@@ -1568,7 +1456,6 @@ class ApkBuilder(private val context: Context) {
                     } else {
                         "Repacking base template..."
                     }
-                    // Throttle: report on >=2% delta, 200ms elapsed, or last entry.
                     val progress = (processedCount * 100) / entries.size
                     val nowMs = System.currentTimeMillis()
                     if (progress != lastReportedProgress &&
@@ -1589,10 +1476,6 @@ class ApkBuilder(private val context: Context) {
                             }
                             buildCache.isContentReplaceableEntry(entry.name) -> {
                             }
-                            // The injection phase below re-embeds the runtime native libs for the
-                            // device ABI on every build regardless of mode; copying the cached
-                            // copies here too would emit each lib twice (near-2x bloat and
-                            // undefined duplicate-entry behavior).
                             entry.name in injectedLibs -> {
                                 AppLogger.d("ApkBuilder", "Skipping cached native lib (re-injected this build): ${entry.name}")
                             }
@@ -1617,8 +1500,6 @@ class ApkBuilder(private val context: Context) {
 
                         entry.name == "AndroidManifest.xml" -> {
                             val originalData = zipIn.getInputStream(entry).readBytes()
-                            // Resolve the template marker before package rewriting: its
-                            // com.webtoapp prefix is otherwise renamed with the app ID.
                             val policyAdjustedData = axmlRebuilder.rewriteSaepPolicyMetadata(
                                 originalData, saepBytes?.let { saepResource?.id }
                             )
@@ -1647,9 +1528,6 @@ class ApkBuilder(private val context: Context) {
                             writeEntryDeflated(zipOut, entry.name, modifiedData)
                         }
 
-                        // Enabled: replace the resolved raw resource before any generic
-                        // optimizer — the platform reads this policy without the app's
-                        // decryption key. Disabled: drop the inert placeholder entirely.
                         saepResource != null && entry.name == saepResource.path -> {
                             saepBytes?.let { writeEntryDeflated(zipOut, entry.name, it) }
                         }
@@ -1680,9 +1558,6 @@ class ApkBuilder(private val context: Context) {
 
                         iconBitmap != null && (isIconEntry(entry.name) || discoveredOldIconPaths.contains(entry.name)) -> {
 
-                            // Template icon entries carry obfuscated names, so the ARSC scan is
-                            // what tells a legacy mipmap from the adaptive foreground — write
-                            // layer-appropriate, density-appropriate bitmaps per entry.
                             val spec = discoveredIconSpecs.firstOrNull { it.path == entry.name }
                             val iconBytes = when (spec?.kind) {
                                 ArscRebuilder.LauncherIconKind.FOREGROUND ->
@@ -1770,9 +1645,6 @@ class ApkBuilder(private val context: Context) {
                 if (config.adBlock.enabled) {
                     val globalAdBlock = WebToAppApplication.adBlock
                     try {
-                        // The zip loop above already reported 100, which the caller
-                        // maps to overall 70% "Repacking base template...". Name this
-                        // step or a large subscription list looks like a frozen repack.
                         onProgress(100, "Compiling ad-block rules...")
                         val compiledRules = globalAdBlock.compileRulesText(
                             context = context,
@@ -1798,8 +1670,6 @@ class ApkBuilder(private val context: Context) {
                     val signatureHash = signingCertHash()
                     encryptedApkBuilder.writeEncryptionMetadata(
                         zipOut, encryptionConfig, config.packageName, signatureHash,
-                        // Embedded mode: the encryption key IS the random baked key,
-                        // so SecretKeySpec.encoded carries the raw bytes to store.
                         embeddedKey = if (encryptionConfig.keyMode == "EMBEDDED") {
                             encryptionKey?.encoded
                         } else null
@@ -1833,8 +1703,6 @@ class ApkBuilder(private val context: Context) {
                     if (iconBitmap != null) {
                         addAdaptiveIconPngs(zipOut, iconBitmap, entryNames)
 
-                        // Solid backing color — never the user image itself, or launchers
-                        // composite the picture twice (background + safe-zone foreground).
                         val bgColor = ApkTemplate.parseIconBackgroundColor(iconBackgroundColor)
                         val bgBytes = ApkTemplate.createSolidBackgroundIcon(
                             iconBitmap, ADAPTIVE_ICON_PX, bgColor
@@ -1867,9 +1735,6 @@ class ApkBuilder(private val context: Context) {
                     addStatusBarBackgroundToAssets(zipOut, config.statusBarBackgroundImage!!)
                 }
 
-                // The config JSON promises assets/statusbar_background_dark.png whenever the
-                // dark variant is an image (ApkConfigJsonFactory). Without this embed the
-                // generated app fails to open the asset and silently falls back to a color.
                 if (config.statusBarBackgroundTypeDark == "IMAGE" && !config.statusBarBackgroundImageDark.isNullOrEmpty()) {
                     addStatusBarBackgroundToAssets(zipOut, config.statusBarBackgroundImageDark!!, "assets/statusbar_background_dark.png")
                 }
@@ -1946,11 +1811,6 @@ class ApkBuilder(private val context: Context) {
                     logger.log("Content embedding [${config.appType}]: ${result.message}")
                 }
 
-                // Build-time Static Asset Pack: embed the scraped static assets + manifest
-                // under assets/static_pack/. Independent of the per-appType embedder, which
-                // returns null for WEB apps. Encrypted builds encrypt each entry (manifest
-                // included) exactly like HtmlContentEmbedder so the runtime AssetDecryptor
-                // transparently reads them back.
                 if (staticPackDir != null && staticPackDir.exists() && staticPackDir.isDirectory) {
                     onProgress(95, "Embedding static asset pack...")
                     logger.section("Embed Static Asset Pack")
@@ -1987,9 +1847,6 @@ class ApkBuilder(private val context: Context) {
                     injectGeckoViewRuntime(zipOut, abiFilters, checkNotNull(geckoEngineFiles), logger)
                 }
 
-                // The Cronet upstream (forced HTTP/3 and/or ECH on the system engine)
-                // needs the native lib inside the APK; cronetNeededForExport mirrors the
-                // runtime activation condition (SOCKS wins and disables both).
                 if (mode == ModifyApkMode.FULL && cronetNeededForExport(config)) {
                     onProgress(98, "Injecting HTTP/3 runtime...")
                     logger.section("Inject Cronet Runtime (forced HTTP/3 / ECH)")
@@ -2290,12 +2147,6 @@ class ApkBuilder(private val context: Context) {
         logger.log("Chrome extension assets embedded: $fileCount files, ${totalBytes / 1024} KB")
     }
 
-    /**
-     * Embed each imported custom CA as canonical DER under assets/wta_custom_ca/. The generated
-     * APK's runtime (CustomCaTrustStore) scans this directory and trusts leaves that validate
-     * against these anchors. CA certificates are public, so they are stored as plain (unencrypted)
-     * assets even for encrypted builds — nothing sensitive is leaked.
-     */
     private fun addCustomCaCertsToAssets(
         zipOut: ZipOutputStream,
         certificates: List<com.webtoapp.data.model.CustomCaCertificate>,
@@ -2311,8 +2162,6 @@ class ApkBuilder(private val context: Context) {
                 return@forEachIndexed
             }
             runCatching {
-                // Re-parse and re-encode to canonical DER so the stored format is robust to the
-                // original import source (PEM/DER/PKCS#7/base64).
                 val parsed = NetworkTrustStorage.parseCertificates(file.readBytes())
                 if (parsed.isEmpty()) {
                     AppLogger.w("ApkBuilder", "Custom CA unparsable at build time, skipping: ${cert.filePath}")
@@ -2613,12 +2462,6 @@ class ApkBuilder(private val context: Context) {
         injectNodeJsNativeLibs(zipOut, abiFilters, alignDir, logger)
     }
 
-    /**
-     * Maps each multi-web site to its referenced source project directory
-     * (html_projects/<sourceProjectId>) when it exists. Shared between
-     * [MultiWebContentEmbedder] and [ApkArtifactVerifier] so the verifier
-     * checks the exact location the embedder wrote to.
-     */
     private fun resolveMultiWebSiteSourceDirs(config: ApkConfig): Map<String, File> {
         if (config.appType != "MULTI_WEB") return emptyMap()
         return config.multiWeb.sites.mapNotNull { site ->
@@ -2651,12 +2494,6 @@ class ApkBuilder(private val context: Context) {
     @Volatile
     private var cachedHostVersionCode: Int? = null
 
-    /**
-     * The host app's own versionCode, cached after first lookup. Fed into the incremental
-     * build cache's identity fingerprint so a host upgrade invalidates every cached unsigned
-     * APK (forcing FULL rebuild + re-alignment), even when the source libs and app config are
-     * unchanged.
-     */
     private fun rememberHostVersionCode(): Int {
         cachedHostVersionCode?.let { return it }
         val code = try {
@@ -2674,12 +2511,6 @@ class ApkBuilder(private val context: Context) {
         return code
     }
 
-    /**
-     * Fingerprint of every host-shipped or downloaded runtime binary the output embeds.
-     * Previously only the Node.js libs were keyed: after a PHP/Python/Gecko runtime
-     * re-download an unchanged app config kept hitting REUSE_UNSIGNED and served the
-     * stale interpreter — exactly the staleness class the Node key was added to prevent.
-     */
     private fun runtimeAssetsFingerprint(
         appType: com.webtoapp.data.model.AppType,
         engineType: String?,
@@ -2693,9 +2524,6 @@ class ApkBuilder(private val context: Context) {
             parts += "bridge=${libFingerprint(File(nativeDir, "libnode_bridge.so"))}"
             parts += "cxx=${libFingerprint(File(nativeDir, "libc++_shared.so"))}"
             parts += "node=${libFingerprint(node)}"
-            // Per-ABI libnode fingerprints: a Node runtime re-download that fills in
-            // previously missing ABIs must invalidate REUSE_UNSIGNED so the cached
-            // unsigned APK is rebuilt with lib/<abi>/libnode.so for every selected ABI.
             val deviceAbi = com.webtoapp.core.nodejs.NodeDependencyManager.getDeviceAbi()
             com.webtoapp.core.nodejs.NodeDependencyManager.NODE_EXPORT_ABIS
                 .filter { it != deviceAbi && (abiFilters.isEmpty() || it in abiFilters) }
@@ -2719,13 +2547,8 @@ class ApkBuilder(private val context: Context) {
                 File(pythonHome, "bin/python3")
             ).firstOrNull { it.isFile && it.length() > 1024 * 1024 }
             if (bin != null) {
-                val abi = com.webtoapp.core.wordpress.WordPressDependencyManager.getDeviceAbi()
-                val musl = File(
-                    pythonHome,
-                    "lib/${com.webtoapp.core.python.PythonDependencyManager.getMuslLinkerName(abi)}"
-                )
                 parts += "python=${libFingerprint(bin)}"
-                parts += "musl=${libFingerprint(musl)}"
+                resolvePythonExportMuslLinker()?.let { parts += "musl=${libFingerprint(it)}" }
                 parts += "stdlib=${buildCache.treeFingerprint(File(pythonHome, "lib"))}"
             }
         }
@@ -2928,6 +2751,14 @@ class ApkBuilder(private val context: Context) {
         return null
     }
 
+    private fun resolvePythonExportMuslLinker(): File? {
+        val manager = com.webtoapp.core.python.PythonDependencyManager
+        val linkerName = manager.getMuslLinkerName(manager.getDeviceAbi())
+        return File(manager.getPythonDir(context), "lib/$linkerName")
+            .takeIf { it.isFile && it.canRead() && it.length() > 1024 }
+            ?: manager.getMuslLinkerPath(context)?.let(::File)?.takeIf { it.canRead() }
+    }
+
     private fun addPythonAppFilesToAssets(
         zipOut: ZipOutputStream,
         projectDir: File,
@@ -2938,8 +2769,9 @@ class ApkBuilder(private val context: Context) {
 
         val reqFile = File(projectDir, "requirements.txt")
         val sitePackages = File(projectDir, ".pypackages")
+        val depsFresh = com.webtoapp.core.python.PythonDependencyManager.hasCurrentDependencies(projectDir)
         val needsPrebundle = com.webtoapp.core.python.PythonDependencyManager.hasInstallableRequirements(reqFile) &&
-            !com.webtoapp.core.python.PythonDependencyManager.hasInstalledPackages(sitePackages)
+            !depsFresh
         if (needsPrebundle) {
             val pythonBin = com.webtoapp.core.python.PythonDependencyManager.getPythonExecutablePath(context)
             val muslLinker = com.webtoapp.core.python.PythonDependencyManager.getMuslLinkerPath(context)
@@ -2969,8 +2801,8 @@ class ApkBuilder(private val context: Context) {
                         "Download Python runtime first, then re-export."
                 )
             }
-        } else if (com.webtoapp.core.python.PythonDependencyManager.hasInstalledPackages(sitePackages)) {
-            logger.log("Python .pypackages already exists (${sitePackages.listFiles()?.size ?: 0} packages), skipping pre-install")
+        } else if (depsFresh) {
+            logger.log("Python .pypackages matches requirements (${sitePackages.listFiles()?.size ?: 0} packages), skipping pre-install")
         } else if (reqFile.isFile) {
             logger.log("requirements.txt has no installable dependencies; embedding it with the project files")
         }
@@ -2980,7 +2812,6 @@ class ApkBuilder(private val context: Context) {
         val sitecustomizeContent = """
 import os, sys, builtins
 
-# === 1. Patch importlib.metadata for --target installed packages ===
 try:
     import importlib.metadata
     _orig_version = importlib.metadata.version
@@ -3000,7 +2831,6 @@ try:
 except Exception:
     pass
 
-# === 2. Patch Flask to use PORT env var ===
 _w2a_port = int(os.environ.get('PORT', '5000'))
 _orig_builtins_import = builtins.__import__
 _flask_patched = False
@@ -3087,19 +2917,11 @@ builtins.__import__ = _w2a_import
                 )
             }
 
-            val muslLinkerName = com.webtoapp.core.python.PythonDependencyManager.getMuslLinkerName(abi)
-            val muslLinkerFile = File(pythonHome, "lib/$muslLinkerName")
-            if (muslLinkerFile.exists() && muslLinkerFile.canRead()) {
-                try {
-                    val alignedMuslLinkerFile = ensureAligned16kNativeLib(muslLinkerFile, "libmusl-linker.so", alignDir, logger)
-                    writeEntryStoredStreaming(zipOut, "lib/$abi/libmusl-linker.so", alignedMuslLinkerFile)
-                    logger.log("musl linker embedded as native lib: lib/$abi/libmusl-linker.so (${alignedMuslLinkerFile.length() / 1024} KB)")
-                } catch (e: Exception) {
-                    logger.error("Failed to embed musl linker", e)
-                }
-            } else {
-                logger.warn("musl linker not found: ${muslLinkerFile.absolutePath} - Python may not execute in exported APK")
-            }
+            val muslLinkerFile = resolvePythonExportMuslLinker()
+                ?: throw IllegalStateException(Strings.pyRuntimeDownloadIncomplete)
+            val alignedMuslLinkerFile = ensureAligned16kNativeLib(muslLinkerFile, "libmusl-linker.so", alignDir, logger)
+            writeEntryStoredStreaming(zipOut, "lib/$abi/libmusl-linker.so", alignedMuslLinkerFile)
+            logger.log("musl linker embedded as native lib: lib/$abi/libmusl-linker.so (${alignedMuslLinkerFile.length() / 1024} KB)")
         }
 
         val pythonLibDir = File(pythonHome, "lib")
@@ -3150,11 +2972,6 @@ builtins.__import__ = _w2a_import
         }
     }
 
-    /**
-     * Forced HTTP/3 embeds the Cronet native library so the generated app's bridge can
-     * route through Chromium's own QUIC stack. A missing runtime fails the build instead
-     * of shipping a silently degraded app.
-     */
     private fun injectCronetNativeLib(
         zipOut: ZipOutputStream,
         abiFilters: List<String> = emptyList(),
@@ -3281,13 +3098,6 @@ builtins.__import__ = _w2a_import
         return count
     }
 
-    /**
-     * Encrypts [file] straight into a deflated zip entry, header and GCM tag
-     * included. The previous whole-buffer helper allocated roughly four times
-     * the file size (bytes, header copy, IV-stripped copy, ciphertext), so a
-     * 200 MB video export could OOM the builder. This streams through a 64 KB
-     * window instead.
-     */
     private fun writeEncryptedFileEntry(
         zipOut: ZipOutputStream,
         entryName: String,
@@ -3303,7 +3113,6 @@ builtins.__import__ = _w2a_import
                 encryptor.encryptStreaming(input, assetName, zipOut)
             }
         } finally {
-            // Never let a close failure mask the real encryption error.
             runCatching { zipOut.closeEntry() }
         }
         return written
@@ -3559,8 +3368,6 @@ builtins.__import__ = _w2a_import
                     val assetName = "html/${otherFile.name}"
 
                     if (encryptionConfig.enabled && encryptor != null) {
-                        // "Other files" are images, fonts and models — they can be
-                        // arbitrarily large, so never buffer them whole.
                         val written = writeEncryptedFileEntry(
                             zipOut, "${assetPath}.enc", sourceFile, assetName, encryptor
                         )
@@ -3741,8 +3548,6 @@ builtins.__import__ = _w2a_import
 
     private fun detectFileEncoding(file: File): String {
         return try {
-            // Sniff only the first KB: BOM + <meta charset> always live at the
-            // top. The old code read the entire file to inspect 1000 bytes.
             val bytes = ByteArray(1024)
             val read = file.inputStream().buffered().use { it.read(bytes) }.let { if (it < 0) 0 else it }
             val head = bytes.copyOf(read)
@@ -3937,10 +3742,6 @@ builtins.__import__ = _w2a_import
         }
     }
 
-    /**
-     * AssetManager will not open a deflated entry whose uncompressed size
-     * exceeds 1 MiB, and plugin bodies live in this JSON.
-     */
     private fun writeConfigBytes(zipOut: ZipOutputStream, name: String, data: ByteArray) {
         if (ZipUtils.configBytesShouldBeStored(data.size)) {
             ZipUtils.writeEntryStoredSimple(zipOut, name, data)
@@ -4026,11 +3827,6 @@ builtins.__import__ = _w2a_import
         return name.replace(SANITIZE_FILENAME_REGEX, "_").take(50)
     }
 
-    /**
-     * `id:sha256` of every enabled feature-stack bundle (or `missing` when the
-     * asset is absent). Goes into the incremental identity fingerprint so a
-     * stack toggle — or a rebuilt bundle — busts the cached base APK.
-     */
     private fun featureStackFingerprint(config: ApkConfig): String =
         FeatureStacks.enabledFor(config).joinToString(",") { id ->
             val sha = runCatching {
@@ -4041,21 +3837,10 @@ builtins.__import__ = _w2a_import
             "$id:$sha"
         }.ifEmpty { "none" }
 
-    /**
-     * Same permission list the APK manifest gets. Kept separate from
-     * [buildRequiredPermissions] so that method stays private: unit tests
-     * look it up by its unmangled JVM name.
-     */
     internal fun permissionsForExport(config: ApkConfig): List<String> =
         buildRequiredPermissions(config)
 
     private fun buildRequiredPermissions(config: ApkConfig): List<String> {
-        // One row in ExportPermissionCatalog is one manifest permission.
-        // Legacy booleans still expand to the bundles older configs saved
-        // (camera still implies the camera foreground-service type). An
-        // explicit grant false drops that one row. Local network follows
-        // INTERNET unless that row is off. File HTML with no network omits
-        // INTERNET, ACCESS_NETWORK_STATE, and ACCESS_LOCAL_NETWORK.
         return ExportPermissionCatalog.manifestPermissions(
             packageName = config.packageName,
             permissions = config.runtimePermissions,
@@ -4136,8 +3921,6 @@ builtins.__import__ = _w2a_import
     private fun ApkConfig.requiresNetworkPermissions(): Boolean {
         if (appType != "HTML" && appType != "FRONTEND") return true
         if (!htmlUsesFileScheme) return true
-        // File-scheme packages still record the loopback shell entry as
-        // targetUrl. That URL is not loaded, so it is not a network use (#1254).
         if ((targetUrl.startsWith("http://", ignoreCase = true) ||
                 targetUrl.startsWith("https://", ignoreCase = true)) &&
             !targetUrl.isLoopbackHttpUrl()) return true
@@ -4152,9 +3935,6 @@ builtins.__import__ = _w2a_import
         if (dnsMode != "SYSTEM") return true
         if (tlsFingerprintEnabled || tlsFingerprintForceHttp3) return true
         if (pwaOfflineEnabled) return true
-        // The private-network bridge defaults on. It only opens a socket when a
-        // page asks for a remote or LAN URL, so it must not force INTERNET onto
-        // a file:// package (#1254).
         if (enableCloudflareCompat && webViewBehavior.cloudflareCompatMode == "ALWAYS_ON") return true
         if (failoverEnabled && failoverUrls.isNotEmpty()) return true
         return false
@@ -4167,9 +3947,6 @@ builtins.__import__ = _w2a_import
     }
 
     fun deleteApk(apkFile: File): Boolean {
-        // Drop the release-metadata sidecar with the APK: an explicit delete removes
-        // both file and build record. Retention pruning (cleanOldBuilds) keeps the
-        // sidecar so the history row survives as a "file removed" record.
         File(apkFile.parentFile, apkFile.nameWithoutExtension + ".build.json").delete()
         return apkFile.delete()
     }
@@ -4197,9 +3974,6 @@ builtins.__import__ = _w2a_import
 }
 
 fun WebApp.toApkConfig(packageName: String, context: android.content.Context? = null): ApkConfig {
-    // Encrypted HTML is served from the loopback server, one decrypted request
-    // at a time. Marking that package file:// drops INTERNET, and the socket
-    // then fails with EPERM.
     val htmlUsesFileScheme = computeHtmlUsesFileScheme(context) &&
         apkExportConfig?.encryptionConfig?.enabled != true
     val effectiveTargetUrl = computeEffectiveTargetUrl(packageName)
@@ -4298,9 +4072,6 @@ private fun WebApp.buildEffectiveRuntimePermissions(): ApkRuntimePermissions {
 }
 
 private fun WebApp.buildMetaBlock(packageName: String, effectiveTargetUrl: String, htmlUsesFileScheme: Boolean, darkMode: String): MetaBlock {
-    // Server runtimes exec binaries from app storage. targetSdk >= 29 turns on
-    // W^X and blocks that. The shell template stays 35; these exports pin 28.
-    // minSdk is raise-only from the template's 23. See GeneratedSdkLevels.
     val sdk = GeneratedSdkLevels.resolve(
         requiresProcessExec = appType.requiresProcessExec,
         minSdkOverride = apkExportConfig?.minSdk,
@@ -4938,14 +4709,6 @@ private fun WebApp.buildDeepLinkBlock(packageName: String): DeepLinkBlock = Deep
     )
 )
 
-/**
- * Resolve the inbound share sheet registration (issue #943).
- *
- * The two toggles collapse into one resolved mime list: an app that receives neither images
- * nor text gets `enabled = false`, which makes `AxmlRebuilder` skip the intent-filter
- * injection entirely and leaves the exported manifest identical to a build made before this
- * feature existed.
- */
 private fun WebApp.buildShareReceiveBlock(): ShareReceiveBlock {
     val images = webViewConfig.receiveShareImages
     val text = webViewConfig.receiveShareText
@@ -4964,11 +4727,6 @@ private fun WebApp.buildShareReceiveBlock(): ShareReceiveBlock {
     )
 }
 
-/**
- * The "open with" registration is a single flag: the concrete mime/extension lists are
- * contract constants (`ShareReceiveContract.OPEN_WITH_*`), so the block only carries the
- * resolved enabled state that drives both manifest injection and the runtime gate.
- */
 private fun WebApp.buildOpenWithBlock(): OpenWithBlock =
     OpenWithBlock(enabled = webViewConfig.openWithEnabled)
 
@@ -5051,11 +4809,6 @@ private fun WebApp.buildMultiWebBlock(context: android.content.Context?, package
                 }
             }
         } else null
-        // A site left without embedded config but still typed MULTI_WEB would hit
-        // the shell's recursive-nesting guard and render blank: normalize it to a
-        // plain URL site, which the shell always knows how to display. Server-runtime
-        // types are normalized too — without embedded config the shell would route them
-        // into a *ShellMode that fork+execs an interpreter that was never packaged.
         val siteAppType = when {
             siteShellConfig != null -> site.appType
             site.appType == "MULTI_WEB" -> "WEB"
@@ -5109,22 +4862,6 @@ private fun WebApp.buildMultiWebBlock(context: android.content.Context?, package
     )
 }
 
-/**
- * Resolves the source app a multi-web site embeds. Returns null (caller falls
- * back to the site's plain URL) when embedding is impossible or unsafe:
- * nested multi-web apps, self references, or a deleted source. A null source
- * (deleted app) was always tolerated; the first two used to abort the whole
- * build with "MultiWeb site source cannot be MULTI_WEB".
- */
-/**
- * Host-side media inputs of a multi-web app's media sites (GALLERY /
- * IMAGE / VIDEO sources), keyed by site id. Resolved once per build and
- * shared by the incremental-cache fingerprint and the embed step, so the
- * two can never disagree about what a site contains.
- *
- * Remote-URL media is skipped (same as standalone export, which only ever
- * embedded local files); only existing readable local files qualify.
- */
 internal data class MultiWebSiteMediaInputs(
     val galleryItems: Map<String, List<com.webtoapp.data.model.GalleryItem>> = emptyMap(),
     val mediaPaths: Map<String, String> = emptyMap()
@@ -5188,11 +4925,6 @@ internal fun resolveMultiWebSiteSource(
         return null
     }
     if (sourceApp.appType.requiresProcessExec) {
-        // Server-runtime sources cannot ship inside a multi-web APK: the per-site embedder
-        // only packages HTML/FRONTEND/gallery/media assets and the native-lib injection is
-        // keyed on the top-level app type, so a PHP/Node/Python/Go/WordPress site would
-        // route into its *ShellMode at runtime with neither the interpreter nor the project
-        // files present. Degrade to the site's URL (#792 pattern) instead of a broken export.
         AppLogger.w(
             "ApkBuilder",
             "MultiWeb site \"$siteName\" sources a ${sourceApp.appType.name} app; " +
@@ -5303,11 +5035,6 @@ internal fun previewGallerySiteItems(
     }
 }
 
-/**
- * Host media file for an IMAGE/VIDEO multi-web site in host-run preview.
- * Remote URLs are left null (unchanged behavior); only existing local files
- * qualify, mirroring the export preflight's media path resolution.
- */
 internal fun multiWebSitePreviewMediaPath(sourceWebApp: WebApp): String? {
     if (sourceWebApp.appType != com.webtoapp.data.model.AppType.IMAGE &&
         sourceWebApp.appType != com.webtoapp.data.model.AppType.VIDEO
@@ -5397,18 +5124,6 @@ private fun buildOAuthReturnHosts(
     )
 }
 
-/**
- * Schemes third-party apps use to hand control **back** to whoever launched them.
- *
- * Only return channels belong here. Launcher schemes (`weixin`, `alipays`, `taobao`, …) must
- * stay out: declaring one makes this app a candidate for that provider's own links, so tapping
- * "pay with WeChat" could surface this app instead of WeChat itself.
- *
- * `mqqopensdkapi` is QQ Connect's browser-return protocol and the app-agnostic case worth
- * shipping by default: QQ hands the OAuth redirect back to whichever app opened it, via
- * `mqqopensdkapi://browser?url=<redirect_uri>`. `resolveShellDeepLinkUrl` already unwraps that
- * `url` parameter and validates it against the app's own hosts.
- */
 private val APP_RETURN_SCHEMES = listOf(
     "mqqopensdkapi",
     "mqqopensdkapiV2",
@@ -5433,8 +5148,6 @@ private fun buildOAuthReturnSchemes(
 
     if (enableAppReturn) schemes += APP_RETURN_SCHEMES
 
-    // Providers whose callback scheme is bound to the site's own registered app id cannot be
-    // shipped as defaults, so let the user name them.
     schemes += customSchemes
         .map { it.trim().lowercase().removeSuffix("://").removeSuffix(":").trim(':') }
         .filter { it.isNotBlank() }
@@ -5442,10 +5155,6 @@ private fun buildOAuthReturnSchemes(
     return schemes.distinct()
 }
 
-/**
- * Resolve each id on its own. A missing plugin or a throw from one package
- * is omitted and logged. It must not blank the plugins that did resolve.
- */
 internal fun <T> embedPlugins(
     ids: List<String>,
     resolve: (String) -> T?,
@@ -5519,14 +5228,10 @@ private fun embedOnePlugin(
 
 fun WebApp.toApkConfigWithModules(packageName: String, context: android.content.Context): ApkConfig {
     val baseConfig = toApkConfig(packageName, context)
-    // The switch off means nothing runs. Leave the stored id list as the user
-    // saved it and do not wait on the plugin store.
     if (!pluginsEnabled) return baseConfig
 
     val resolved = try {
         val pluginStore = com.webtoapp.core.plugin.PluginStore.getInstance(context)
-        // Wait for the full load. A short timeout used to snapshot a
-        // half-loaded cache and ship pluginsEnabled with an empty list.
         kotlinx.coroutines.runBlocking { pluginStore.awaitLoaded() }
         val ids = pluginStore.effectiveIds(pluginsEnabled, pluginIds)
         val extensionFileManager = com.webtoapp.core.extension.ExtensionFileManager(context)
@@ -5588,7 +5293,6 @@ sealed class BuildResult {
         val incremental: Boolean = false,
         val buildMode: String = "FULL",
         val buildReason: String = "",
-        /** Absolute path of the `<name>.build.json` release-metadata sidecar, if written. */
         val metadataPath: String? = null
     ) : BuildResult()
     data class Error(

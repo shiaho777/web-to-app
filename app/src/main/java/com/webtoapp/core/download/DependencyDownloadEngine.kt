@@ -31,21 +31,11 @@ object DependencyDownloadEngine {
 
     private const val PAUSE_CHECK_MS = 200L
 
-    // Slow-source watchdog: a throttling mirror never errors — it trickles at
-    // a few KB/s forever, holding the download hostage. Below this sustained
-    // speed (after the grace window, past the minimum byte floor, only for
-    // files big enough to matter) the call is cancelled so the caller can
-    // switch to the next mirror; partial bytes stay in .tmp for resume.
     private const val SLOW_THRESHOLD_BYTES_PER_SEC = 64L * 1024
     private const val SLOW_GRACE_MS = 15_000L
     private const val SLOW_MIN_TOTAL_BYTES = 2L * 1024 * 1024
     private const val SLOW_POLL_MS = 2_000L
 
-    // Stall watchdog: no bytes for this long means the source is dead even if
-    // the socket stays open — deliberately far below the OkHttp read timeout
-    // (120s) so a hung mirror fails over to the next source instead of
-    // freezing the call. The speed-window check alone cannot see this: with no
-    // new samples the window keeps reporting the pre-stall rate.
     private const val STALL_TIMEOUT_MS = 30_000L
 
     enum class Outcome { SUCCESS, FAILED, SLOW, CORRUPT }
@@ -132,8 +122,6 @@ object DependencyDownloadEngine {
             .build()
     }
 
-    // Read by the watchdog thread while the copy loop mutates it — deque keeps
-    // both sides safe without locking the hot path.
     private class SpeedTracker {
         private val samples = java.util.concurrent.ConcurrentLinkedDeque<Pair<Long, Long>>()
 
@@ -204,8 +192,8 @@ object DependencyDownloadEngine {
         displayName: String,
         context: Context? = null,
         taskId: TaskId = DEFAULT_TASK,
-        /** When set, the completed temp file must hash to this SHA-256 or the result is [Outcome.CORRUPT]. */
         expectedSha256: String? = null,
+        switchWhenSlow: Boolean = false,
     ): Outcome = withContext(Dispatchers.IO) {
         downloadMutex.withLock {
             val fileName = url.substringAfterLast("/")
@@ -250,6 +238,7 @@ object DependencyDownloadEngine {
                                 call.cancel()
                                 break
                             }
+                            if (!switchWhenSlow) continue
                             val total = totalHint.get()
                             if (total in 1 until SLOW_MIN_TOTAL_BYTES) continue
                             val elapsed = now - startTime
@@ -289,11 +278,6 @@ object DependencyDownloadEngine {
                     body.use { responseBody ->
                         val contentLength = responseBody.contentLength()
                         val totalBytes = if (response.code == 206) {
-                            // A mirror may reply 206 without Content-Length (-1): the sum
-                            // would then read as downloadedBytes - 1, the final size check
-                            // would mismatch, and the resume temp would be deleted — turning
-                            // a resumable download into a from-zero restart. Keep the hint
-                            // unknown in that case instead.
                             if (contentLength >= 0) downloadedBytes + contentLength else -1
                         } else {
                             contentLength
@@ -320,8 +304,6 @@ object DependencyDownloadEngine {
                                         if (_cancelled.get()) {
                                             throw kotlinx.coroutines.CancellationException("cancelled by user [task=$taskId]")
                                         }
-                                        // Keep the stall clock alive while paused so a
-                                        // long pause doesn't read as a dead source on resume.
                                         lastProgressAt.set(System.currentTimeMillis())
                                         delay(PAUSE_CHECK_MS)
                                         if (!isActive) return@withLock Outcome.FAILED
@@ -409,7 +391,6 @@ object DependencyDownloadEngine {
                 throw e
             } catch (e: Exception) {
                 if (slowAbort.get()) {
-                    // Keep .tmp: bytes are valid, the next mirror resumes from here.
                     AppLogger.w(TAG, "$displayName 源过慢已中断，交由调用方切换源 [task=$taskId]")
                     Outcome.SLOW
                 } else {
@@ -421,18 +402,6 @@ object DependencyDownloadEngine {
         }
     }
 
-    /**
-     * Multi-source download with uniform retry / slow-switch / resume policy.
-     * - FAILED: retried up to [maxRetryPerUrl] times, then .tmp is dropped and
-     *   the next source starts clean.
-     * - SLOW: the source is abandoned immediately but .tmp is kept, so the next
-     *   mirror resumes from the stalled byte offset. On the last source a SLOW
-     *   abort is retried — each resume still makes forward progress.
-     * - CORRUPT (digest mismatch, only when [expectedSha256For] resolves a pin
-     *   for the URL): fully-downloaded-but-wrong bytes. Retrying the same URL
-     *   cannot fix wrong content, so the tmp is dropped and the next source
-     *   starts immediately.
-     */
     suspend fun downloadFileWithFallback(
         urls: List<String>,
         destFile: File,
@@ -440,14 +409,12 @@ object DependencyDownloadEngine {
         context: Context? = null,
         maxRetryPerUrl: Int = 2,
         retryDelayMs: Long = 2_000L,
-        /** Resolves the pinned SHA-256 for a URL (null = unpinned, e.g. moving `latest` targets). */
         expectedSha256For: ((url: String) -> String?)? = null,
-        fetch: suspend (url: String, sourceName: String) -> Outcome = { url, sourceName ->
-            downloadFileEx(url, destFile, sourceName, context, expectedSha256 = expectedSha256For?.invoke(url))
-        },
+        fetch: (suspend (url: String, sourceName: String) -> Outcome)? = null,
     ): Boolean {
         var lastOutcome = Outcome.FAILED
         for ((urlIndex, url) in urls.withIndex()) {
+            val hasMoreSources = urlIndex < urls.lastIndex
             val sourceName = if (urls.size > 1) {
                 String.format(Strings.pyDownloadSourceLabel, displayName, urlIndex + 1, urls.size)
             } else displayName
@@ -455,10 +422,12 @@ object DependencyDownloadEngine {
 
             var attempt = 0
             while (true) {
-                lastOutcome = fetch(url, sourceName)
+                lastOutcome = fetch?.invoke(url, sourceName) ?: downloadFileEx(
+                    url, destFile, sourceName, context,
+                    expectedSha256 = expectedSha256For?.invoke(url),
+                    switchWhenSlow = hasMoreSources
+                )
                 if (lastOutcome == Outcome.SUCCESS) return true
-
-                val hasMoreSources = urlIndex < urls.lastIndex
 
                 if (lastOutcome == Outcome.CORRUPT) {
                     File(destFile.parentFile, "${destFile.name}.tmp").delete()
@@ -482,7 +451,7 @@ object DependencyDownloadEngine {
                         emit(DEFAULT_TASK, State.Error(
                             Strings.downloadNameFailed
                                 .replaceFirst("%s", displayName)
-                                .replaceFirst("%s", "all sources too slow")
+                                .replaceFirst("%s", Strings.loadingTimeout)
                         ))
                         return false
                     }
@@ -507,7 +476,6 @@ object DependencyDownloadEngine {
         return false
     }
 
-    /** Streaming SHA-256 of a file, or null when it cannot be read. */
     internal fun sha256Of(file: File): String? = try {
         val digest = java.security.MessageDigest.getInstance("SHA-256")
         file.inputStream().buffered().use { input ->
