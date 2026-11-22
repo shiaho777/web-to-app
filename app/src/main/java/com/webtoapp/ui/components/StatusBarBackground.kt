@@ -1,5 +1,6 @@
 package com.webtoapp.ui.components
 
+import com.webtoapp.ui.shared.StatusBarAppearance
 import android.content.Context
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.logging.AppLogger
@@ -123,79 +124,37 @@ fun StatusBarBackground(
 
 @Composable
 fun StatusBarOverlay(
-    show: Boolean,
-    backgroundType: String,
-    backgroundColor: String?,
-    backgroundImagePath: String?,
-    alpha: Float,
+    appearance: StatusBarAppearance,
     heightDp: Int,
     modifier: Modifier = Modifier
 ) {
-    if (!show) return
+    if (appearance.bandColor == null && appearance.imagePath == null) return
 
     val context = LocalContext.current
     val density = LocalDensity.current
-
-    // Never guess a status-bar height when the insets report 0: on the classic pre-API-30
-    // path the value is 0 because the decor fits system windows, and a fabricated 24dp band
-    // shows up as a blank strip over the content (issue #683). The callers skip rendering on
-    // that path; the fallback below only covers transient first-frame inset dispatch.
-    val topInsetPx = WindowInsets.statusBars.getTop(density)
-    val systemStatusBarHeight = if (topInsetPx > 0) {
-        with(density) { topInsetPx.toDp() }
-    } else {
-        0.dp
+    val actualHeight = if (heightDp >= 0) heightDp.dp else with(density) {
+        WindowInsets.statusBars.getTop(density).toDp()
     }
-
-    val actualHeight = if (heightDp >= 0) heightDp.dp else systemStatusBarHeight
     if (actualHeight <= 0.dp) return
 
-    val imageBitmap = remember(backgroundImagePath) {
-        if (backgroundType == "IMAGE" && !backgroundImagePath.isNullOrEmpty()) {
-            loadStatusBarImageBitmap(context, backgroundImagePath)?.asImageBitmap()
-        } else {
-            null
-        }
+    val imageBitmap = remember(appearance.imagePath) {
+        appearance.imagePath?.let { loadStatusBarImageBitmap(context, it)?.asImageBitmap() }
     }
 
     Box(
         modifier = modifier
             .fillMaxWidth()
             .height(actualHeight)
+            .background(appearance.bandColor?.let { Color(it) } ?: Color.Transparent)
     ) {
-        when {
-            backgroundType == "IMAGE" && imageBitmap != null -> {
-
-                SafeBitmapImage(
-                    bitmap = imageBitmap,
-                    contentDescription = Strings.statusBarBackground,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop,
-                    alpha = alpha
-                )
-            }
-            else -> {
-
-                // Same TRANSPARENT rule as StatusBarBackground above: null stays
-                // see-through instead of degrading to a black band (issue #762).
-                val bgColor = if (backgroundColor == null) {
-                    Color.Transparent
-                } else try {
-                    val hex = backgroundColor.removePrefix("#")
-                    when (hex.length) {
-                        6 -> Color(android.graphics.Color.parseColor("#$hex")).copy(alpha = alpha)
-                        8 -> Color(android.graphics.Color.parseColor("#$hex")).copy(alpha = alpha)
-                        else -> Color.Black.copy(alpha = alpha)
-                    }
-                } catch (e: Exception) {
-                    Color.Black.copy(alpha = alpha)
-                }
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(bgColor)
-                )
-            }
+        if (imageBitmap != null) {
+            SafeBitmapImage(
+                bitmap = imageBitmap,
+                contentDescription = Strings.statusBarBackground,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop,
+                alpha = appearance.imageAlpha
+            )
         }
     }
 }
