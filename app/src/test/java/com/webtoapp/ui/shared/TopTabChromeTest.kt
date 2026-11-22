@@ -9,11 +9,30 @@ class TopTabChromeTest {
 
     @Test
     fun `page sample wins over the stored theme color`() {
-        assertThat(TopTabChrome.backgroundHex("#112233", "#ABCDEF", false)).isEqualTo("#112233")
-        assertThat(TopTabChrome.backgroundHex(null, "#abcdef", false)).isEqualTo("#ABCDEF")
-        assertThat(TopTabChrome.backgroundHex("  ", "abc", true)).isEqualTo(TopTabChrome.DARK_BG)
-        assertThat(TopTabChrome.backgroundHex(null, null, false)).isEqualTo(TopTabChrome.LIGHT_BG)
-        assertThat(TopTabChrome.backgroundHex("#abc", null, false)).isEqualTo("#AABBCC")
+        val colors = TopTabColors()
+        assertThat(colors.siteColor("site", "#abcdef")).isEqualTo("#ABCDEF")
+        colors.recordSample("site", "#abc")
+        assertThat(colors.siteColor("site", "#112233")).isEqualTo("#AABBCC")
+        assertThat(colors.siteColor("other", "abc")).isNull()
+    }
+
+    @Test
+    fun `switching tabs keeps a displayed color until the destination has its own`() {
+        val colors = TopTabColors()
+        assertThat(colors.backgroundHex(null, false)).isEqualTo(TopTabChrome.LIGHT_BG)
+        assertThat(colors.backgroundHex(null, true)).isEqualTo(TopTabChrome.DARK_BG)
+
+        colors.recordSample("first", "#112233")
+        colors.rememberDisplayedColor(colors.siteColor("first", null))
+        assertThat(colors.backgroundHex(colors.siteColor("second", null), false)).isEqualTo("#112233")
+        assertThat(colors.backgroundHex(colors.siteColor("second", "#FEDCBA"), false)).isEqualTo("#FEDCBA")
+
+        colors.recordSample("second", "#FFFFFF")
+        colors.recordSample("second", null)
+        colors.recordSample("second", "invalid")
+        colors.rememberDisplayedColor(colors.siteColor("second", null))
+        assertThat(colors.backgroundHex(colors.siteColor("second", null), false)).isEqualTo("#FFFFFF")
+        assertThat(colors.backgroundHex(colors.siteColor("first", null), false)).isEqualTo("#112233")
     }
 
     @Test

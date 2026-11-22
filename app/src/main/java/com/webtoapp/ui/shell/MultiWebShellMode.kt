@@ -61,6 +61,7 @@ import com.webtoapp.ui.design.WtaRadius
 import com.webtoapp.ui.design.WtaShrinkOut
 import com.webtoapp.ui.design.performHaptic
 import com.webtoapp.ui.shared.TopTabChrome
+import com.webtoapp.ui.shared.TopTabColors
 import com.webtoapp.ui.shared.parseBandColor
 import com.webtoapp.ui.theme.LocalAnimationSettings
 import kotlin.math.roundToInt
@@ -279,7 +280,7 @@ private fun SiteContent(
 }
 
 private class SiteRuntimeRegistry {
-    val webViews = mutableMapOf<String, WebView>()
+    val webViews = mutableStateMapOf<String, WebView>()
     val surfaces = mutableMapOf<String, com.webtoapp.core.engine.BrowserSurface>()
 
     fun pushCurrent(
@@ -361,8 +362,7 @@ private fun TabsMode(
             else pager.position.roundToInt().coerceIn(0, maxPage)
         }
     }
-    var sampledTop by remember { mutableStateOf<String?>(null) }
-    var sampleGeneration by remember { mutableIntStateOf(0) }
+    val tabColors = remember { TopTabColors() }
     val tabColorTracker = remember {
         object {
             var current: com.webtoapp.core.webview.StatusBarPageColorTracker? = null
@@ -381,20 +381,18 @@ private fun TabsMode(
             }
         }
     }
-    LaunchedEffect(highlight) {
-        if (adaptive) sampledTop = null
-    }
-    val sampleSiteId = if (adaptive) sites.getOrNull(highlight)?.id else null
-    val sampleView = if (adaptive) sampleSiteId?.let { registry.webViews[it] } else null
-    DisposableEffect(adaptive, sampleSiteId, sampleView, sampleGeneration) {
-        if (!adaptive || sampleView == null) {
+    val sampleSite = if (adaptive) sites.getOrNull(highlight) else null
+    val sampleSiteId = sampleSite?.id
+    val sampleView = sampleSiteId?.let { registry.webViews[it] }
+    DisposableEffect(sampleSiteId, sampleView) {
+        if (sampleSiteId == null || sampleView == null) {
             tabColorTracker.current = null
             onDispose { }
         } else {
             val tracker = com.webtoapp.core.webview.StatusBarPageColorTracker(
                 webView = sampleView,
                 shouldSample = { true },
-                onColors = { colors -> sampledTop = colors.top }
+                onColors = { colors -> tabColors.recordSample(sampleSiteId, colors.top) }
             )
             tabColorTracker.current = tracker
             tracker.attach()
@@ -405,12 +403,9 @@ private fun TabsMode(
             }
         }
     }
-    val barHex = if (adaptive) {
-        TopTabChrome.backgroundHex(
-            sampledTop,
-            sites.getOrNull(highlight)?.themeColor,
-            androidx.compose.foundation.isSystemInDarkTheme()
-        )
+    val siteColor = tabColors.siteColor(sampleSiteId, sampleSite?.themeColor)
+    val barHex = if (adaptive && sites.size > 1) {
+        tabColors.backgroundHex(siteColor, androidx.compose.foundation.isSystemInDarkTheme())
     } else {
         null
     }
@@ -453,7 +448,10 @@ private fun TabsMode(
                 }
             }
         }
-        if (adaptive) onTopTabColor(if (sites.size > 1) barHex else null)
+        if (adaptive) {
+            if (barHex != null) tabColors.rememberDisplayedColor(siteColor)
+            onTopTabColor(barHex)
+        }
         if (paging) {
             SiteTabSwipe.handler = pager
         } else if (SiteTabSwipe.handler === pager) {
@@ -504,7 +502,7 @@ private fun TabsMode(
         containerColor = Color.Transparent,
         contentWindowInsets = WindowInsets(0),
         topBar = {
-            if (adaptive && sites.size > 1 && barHex != null) {
+            if (barHex != null) {
                 TopTabBar(
                     sites = sites,
                     selectedTab = highlight,
@@ -660,7 +658,6 @@ private fun TabsMode(
                                     registry.webViews[site.id] = wv
                                     if (index == pager.settledPage) {
                                         onWebViewCreated(wv)
-                                        if (adaptive) sampleGeneration++
                                     }
                                 },
                                 swipeRefreshEnabled = swipeRefreshEnabled,
