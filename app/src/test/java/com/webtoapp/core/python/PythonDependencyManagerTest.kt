@@ -3,7 +3,6 @@ package com.webtoapp.core.python
 import android.content.Context
 import com.google.common.truth.Truth.assertThat
 import java.io.File
-import java.util.Locale
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -21,36 +20,48 @@ class PythonDependencyManagerTest {
     val koinRule = com.webtoapp.util.KoinCleanupRule()
 
     private lateinit var context: Context
-    private var originalLocale: Locale = Locale.getDefault()
 
     @Before
     fun setUp() {
         context = RuntimeEnvironment.getApplication()
-        originalLocale = Locale.getDefault()
-        PythonDependencyManager.setMirrorRegion(null)
         PythonDependencyManager.clearCache(context)
     }
 
     @After
     fun tearDown() {
-        PythonDependencyManager.setMirrorRegion(null)
-        Locale.setDefault(originalLocale)
         PythonDependencyManager.clearCache(context)
     }
 
     @Test
-    fun `manual and automatic mirror region selection works`() {
-        PythonDependencyManager.setMirrorRegion(PythonDependencyManager.MirrorRegion.CN)
-        assertThat(PythonDependencyManager.getMirrorRegion()).isEqualTo(PythonDependencyManager.MirrorRegion.CN)
+    fun `standalone mirrors preserve the pinned runtime and abi for each archive`() {
+        val triples = mapOf(
+            "arm64-v8a" to "aarch64-unknown-linux-musl",
+            "x86_64" to "x86_64-unknown-linux-musl",
+            "armeabi-v7a" to "armv7-unknown-linux-gnueabihf"
+        )
+        for ((abi, triple) in triples) {
+            val urls = PythonDependencyManager.pythonArchiveUrls(abi, preferChinaMirror = true)
+            val asset = "/20260623/cpython-3.14.6+20260623-$triple-install_only_stripped.tar.gz"
+            assertThat(urls.take(2)).containsExactly(
+                "https://mirrors.aliyun.com/github/releases/astral-sh/python-build-standalone$asset",
+                "https://mirror.nju.edu.cn/github-release/astral-sh/python-build-standalone$asset"
+            ).inOrder()
+            assertThat(urls.last()).isEqualTo("https://github.com/astral-sh/python-build-standalone/releases/download$asset")
+            assertThat(PythonDependencyManager.pythonArchiveUrls(abi, preferChinaMirror = false))
+                .containsExactly(urls.last())
+        }
+    }
 
-        PythonDependencyManager.setMirrorRegion(PythonDependencyManager.MirrorRegion.GLOBAL)
-        assertThat(PythonDependencyManager.getMirrorRegion()).isEqualTo(PythonDependencyManager.MirrorRegion.GLOBAL)
-
-        PythonDependencyManager.setMirrorRegion(null)
-        Locale.setDefault(Locale.CHINESE)
-        assertThat(PythonDependencyManager.getMirrorRegion()).isEqualTo(PythonDependencyManager.MirrorRegion.CN)
-        Locale.setDefault(Locale.ENGLISH)
-        assertThat(PythonDependencyManager.getMirrorRegion()).isEqualTo(PythonDependencyManager.MirrorRegion.GLOBAL)
+    @Test
+    fun `musl download uses an archive mirror and the same pinned package on both sources`() {
+        val cn = PythonDependencyManager.muslLinkerUrls("arm64-v8a", preferChinaMirror = true)
+        assertThat(cn).containsExactly(
+            "https://repo.huaweicloud.com/alpine/v3.21/main/aarch64/musl-1.2.5-r11.apk",
+            "https://dl-cdn.alpinelinux.org/alpine/v3.21/main/aarch64/musl-1.2.5-r11.apk"
+        ).inOrder()
+        assertThat(PythonDependencyManager.muslLinkerUrls("arm64-v8a", preferChinaMirror = false))
+            .containsExactlyElementsIn(cn.reversed()).inOrder()
+        assertThat(PythonDependencyManager.muslLinkerUrls("armeabi-v7a", preferChinaMirror = true)).isEmpty()
     }
 
     @Test
@@ -196,18 +207,15 @@ class PythonDependencyManagerTest {
 
     @Test
     fun `shouldSkipSourceBuildRetry requires a responding index`() {
-        // Index responded (Collecting...) and no wheel matched -> skip retry.
         assertThat(PythonDependencyManager.shouldSkipSourceBuildRetry(
             "Collecting MarkupSafe==3.0.2\n" +
                 "ERROR: No matching distribution found for MarkupSafe==3.0.2"
         )).isTrue()
 
-        // No evidence the index responded -> likely a network problem; keep retrying.
         assertThat(PythonDependencyManager.shouldSkipSourceBuildRetry(
             "ERROR: No matching distribution found for MarkupSafe==3.0.2"
         )).isFalse()
 
-        // Not a distribution failure at all.
         assertThat(PythonDependencyManager.shouldSkipSourceBuildRetry(
             "Collecting Flask==3.0.0\nDownloading flask-3.0.0-py3-none-any.whl (101 kB)"
         )).isFalse()
@@ -225,8 +233,6 @@ class PythonDependencyManagerTest {
 
     @Test
     fun `sitecustomize script rescues the packaging musl probe`() {
-        // packaging executes the PT_INTERP string of sys.executable verbatim to
-        // compute musllinux tags; the bridge must re-route it to the loader.
         val script = PythonDependencyManager.buildSitecustomizeScript()
         assertThat(script).contains("def _is_loader(p)")
         assertThat(script).contains("head != _MUSL and _is_loader(head)")
@@ -249,7 +255,6 @@ class PythonDependencyManagerTest {
 
         assertThat(PythonDependencyManager.ensureRuntimePatched(context)).isTrue()
 
-        // The stock /lib interpreter was rewritten to the on-device loader path.
         assertThat(ElfInterpPatcher.currentInterp(pythonBin)).isEqualTo(linker.absolutePath)
 
         val siteCustomize = File(pythonHome, "lib/python${PythonDependencyManager.PYTHON_VERSION}/sitecustomize.py")
@@ -261,7 +266,6 @@ class PythonDependencyManagerTest {
         assertThat(marker.readText())
             .isEqualTo("${linker.absolutePath}|v${PythonDependencyManager.SITE_CUSTOMIZE_VERSION}")
 
-        // Second run short-circuits via the marker and stays healed.
         assertThat(PythonDependencyManager.ensureRuntimePatched(context)).isTrue()
         assertThat(ElfInterpPatcher.currentInterp(pythonBin)).isEqualTo(linker.absolutePath)
     }
@@ -280,12 +284,9 @@ class PythonDependencyManagerTest {
             parentFile?.mkdirs()
             writeBytes(ByteArray(2048) { 1 })
         }
-        // A marker from an older heal (different interp / script version).
         File(pythonHome, ".w2a-musl-heal").writeText("/old/path/ld-musl-aarch64.so.1|v1")
 
         assertThat(PythonDependencyManager.ensureRuntimePatched(context)).isTrue()
-        // The $ORIGIN form written by the 2.4.5 patcher migrates to the
-        // absolute on-device loader path.
         assertThat(ElfInterpPatcher.currentInterp(pythonBin)).isEqualTo(linker.absolutePath)
     }
 
@@ -298,7 +299,6 @@ class PythonDependencyManagerTest {
         return File(context.cacheDir, "python-dep-test-$name-${System.nanoTime()}").apply { mkdirs() }
     }
 
-    /** Minimal 64-bit little-endian ELF with a single PT_INTERP segment. */
     private fun buildTestElfBytes(interp: String): ByteArray {
         val interpBytes = interp.toByteArray(Charsets.UTF_8) + 0
         val ehdr = ByteArray(64)
@@ -306,18 +306,18 @@ class PythonDependencyManagerTest {
         ehdr[1] = 'E'.code.toByte()
         ehdr[2] = 'L'.code.toByte()
         ehdr[3] = 'F'.code.toByte()
-        ehdr[4] = 2 // ELFCLASS64
-        ehdr[5] = 1 // ELFDATA2LSB
-        putU16(ehdr, 16, 2) // e_type ET_EXEC
-        putU16(ehdr, 18, 183) // e_machine AArch64
-        putU64(ehdr, 32, 64) // e_phoff
-        putU16(ehdr, 54, 56) // e_phentsize
-        putU16(ehdr, 56, 1) // e_phnum
+        ehdr[4] = 2
+        ehdr[5] = 1
+        putU16(ehdr, 16, 2)
+        putU16(ehdr, 18, 183)
+        putU64(ehdr, 32, 64)
+        putU16(ehdr, 54, 56)
+        putU16(ehdr, 56, 1)
 
         val phdr = ByteArray(56)
-        putU32(phdr, 0, 3) // PT_INTERP
-        putU64(phdr, 8, 120) // p_offset (after header + phdr)
-        putU64(phdr, 32, interpBytes.size.toLong()) // p_filesz
+        putU32(phdr, 0, 3)
+        putU64(phdr, 8, 120)
+        putU64(phdr, 32, interpBytes.size.toLong())
 
         return ehdr + phdr + interpBytes
     }

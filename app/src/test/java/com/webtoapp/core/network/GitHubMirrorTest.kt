@@ -11,16 +11,15 @@ import org.robolectric.annotation.Config
 class GitHubMirrorTest {
 
     @Test
-    fun `proxiedCn expands a github release asset with direct fallback`() {
+    fun `dependency release URLs include additional mirrors and keep github last`() {
         val asset = "https://github.com/oct/x/releases/download/v1/a.zip"
-        val urls = GitHubMirror.proxiedCn(asset)
-        // Order is dynamic by design: CnMirrorProbe re-sorts channels by measured
-        // latency and a background probe can land mid-suite, so assert membership
-        // rather than a fixed sequence. The plain URL must always be present —
-        // it is the fallback route when every proxy fails.
-        assertThat(urls).containsExactlyElementsIn(
-            GitHubMirror.CN_PROXIES.map { it.rewrite(asset) } + asset
-        )
+        val urls = GitHubMirror.dependencyReleaseUrls(asset)
+        assertThat(urls.take(3)).containsExactly(
+            "https://gh-proxy.com/$asset",
+            "https://ghfast.top/$asset",
+            "https://ghproxy.net/$asset"
+        ).inOrder()
+        assertThat(urls.last()).isEqualTo(asset)
     }
 
     @Test
@@ -61,8 +60,6 @@ class GitHubMirrorTest {
         ).forEach { url ->
             val urls = GitHubMirror.proxiedCnGitHubHost(url)
             assertThat(urls).hasSize(GitHubMirror.CN_PROXIES.size + 1)
-            // The plain URL is always present so there is somewhere to fall
-            // back to; its position is dynamic under a measured probe order.
             assertThat(urls).contains(url)
         }
     }
@@ -75,8 +72,6 @@ class GitHubMirrorTest {
 
     @Test
     fun `release downloads keep using the untouched proxiedCn path`() {
-        // Widen proxiedCn to api.github.com later and this fails: the release
-        // path was measured and shipped, so it should not drift on its own.
         val api = "https://api.github.com/repos/shiaho777/web-to-app/releases/latest"
         assertThat(GitHubMirror.proxiedCn(api)).containsExactly(api)
     }

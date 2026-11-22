@@ -10,9 +10,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.core.network.DownloadMirrorPreference
 import com.webtoapp.core.wordpress.WordPressDependencyManager
 import com.webtoapp.ui.design.WtaLoadingIndicator
 
@@ -239,7 +241,7 @@ private fun ErrorWithRetry(
 private fun MirrorSourceInfo() {
     Text(
         "${Strings.wpMirrorSource}: ${
-            if (WordPressDependencyManager.getMirrorRegion() == WordPressDependencyManager.MirrorRegion.CN)
+            if (DownloadMirrorPreference.prefersChina(LocalContext.current))
                 Strings.wpMirrorCN else Strings.wpMirrorGlobal
         }",
         style = MaterialTheme.typography.bodySmall,

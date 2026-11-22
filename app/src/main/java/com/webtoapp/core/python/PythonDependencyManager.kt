@@ -5,6 +5,8 @@ import android.os.Build
 import com.webtoapp.core.download.DependencyDownloadEngine
 import com.webtoapp.core.download.DependencyDownloadNotification
 import com.webtoapp.core.logging.AppLogger
+import com.webtoapp.core.network.DownloadMirrorPreference
+import com.webtoapp.core.network.GitHubMirror
 import com.webtoapp.util.destroyForciblyCompat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
@@ -78,23 +80,31 @@ object PythonDependencyManager {
         "x86"       to "61e84757a8bfbc0d7fa8f4ce6de9cd4d791714369d78f6a08e5b03510fb2a623"
     )
 
-    enum class MirrorRegion { CN, GLOBAL }
+    private const val PYTHON_RELEASE_PATH = "astral-sh/python-build-standalone"
+    private const val ALPINE_CDN = "https://dl-cdn.alpinelinux.org/alpine"
+    private const val ALPINE_ARCHIVE_MIRROR = "https://repo.huaweicloud.com/alpine"
 
-    private fun getPythonUrl(abi: String): String {
-
-        val triple = PY_TRIPLE_BY_ABI[abi] ?: "aarch64-unknown-linux-musl"
-
-        return "https://github.com/astral-sh/python-build-standalone/releases/download/$PYTHON_BUILD_TAG/cpython-${PYTHON_FULL_VERSION}+${PYTHON_BUILD_TAG}-${triple}-install_only_stripped.tar.gz"
+    internal fun pythonArchiveUrls(abi: String, preferChinaMirror: Boolean): List<String> {
+        val triple = PY_TRIPLE_BY_ABI[abi] ?: PY_TRIPLE_BY_ABI.getValue("arm64-v8a")
+        val asset = "$PYTHON_BUILD_TAG/cpython-${PYTHON_FULL_VERSION}+${PYTHON_BUILD_TAG}-$triple-install_only_stripped.tar.gz"
+        val upstream = "https://github.com/$PYTHON_RELEASE_PATH/releases/download/$asset"
+        if (!preferChinaMirror) return listOf(upstream)
+        return listOf(
+            "https://mirrors.aliyun.com/github/releases/$PYTHON_RELEASE_PATH/$asset",
+            "https://mirror.nju.edu.cn/github-release/$PYTHON_RELEASE_PATH/$asset"
+        ) + GitHubMirror.dependencyReleaseUrls(upstream)
     }
 
-    private fun getMuslLinkerUrl(abi: String): String? {
-        val archMap = mapOf(
-            "arm64-v8a"   to "aarch64",
-            "x86_64"      to "x86_64",
-            "x86"         to "x86_64"
-        )
-        val arch = archMap[abi] ?: return null
-        return "https://dl-cdn.alpinelinux.org/alpine/$MUSL_ALPINE_BRANCH/main/$arch/musl-$MUSL_VERSION.apk"
+    internal fun muslLinkerUrls(abi: String, preferChinaMirror: Boolean): List<String> {
+        val arch = when (abi) {
+            "arm64-v8a" -> "aarch64"
+            "x86_64", "x86" -> "x86_64"
+            else -> return emptyList()
+        }
+        val asset = "$MUSL_ALPINE_BRANCH/main/$arch/musl-$MUSL_VERSION.apk"
+        val upstream = "$ALPINE_CDN/$asset"
+        val archive = "$ALPINE_ARCHIVE_MIRROR/$asset"
+        return if (preferChinaMirror) listOf(archive, upstream) else listOf(upstream, archive)
     }
 
     fun getMuslLinkerName(abi: String): String {
@@ -108,22 +118,10 @@ object PythonDependencyManager {
         return "ld-musl-$arch.so.1"
     }
 
-    data class MirrorConfig(
+    private data class MirrorConfig(
         val pythonUrls: List<String>,
-        val muslLinkerUrl: String? = null
+        val muslLinkerUrls: List<String>
     )
-
-    private fun getCnMirror(abi: String): MirrorConfig = MirrorConfig(
-        pythonUrls = com.webtoapp.core.network.GitHubMirror.proxiedCn(getPythonUrl(abi)),
-        muslLinkerUrl = getMuslLinkerUrl(abi)
-    )
-
-    private fun getGlobalMirror(abi: String): MirrorConfig {
-        return MirrorConfig(
-            pythonUrls = listOf(getPythonUrl(abi)),
-            muslLinkerUrl = getMuslLinkerUrl(abi)
-        )
-    }
 
     private const val MAX_RETRY_PER_URL = 2
     private const val RETRY_DELAY_MS = 2000L
@@ -150,18 +148,6 @@ object PythonDependencyManager {
         downloadCancelled.set(true)
         DependencyDownloadEngine.cancel()
         _downloadState.value = DownloadState.Idle
-    }
-
-    private var _userMirrorRegion: MirrorRegion? = null
-
-    fun setMirrorRegion(region: MirrorRegion?) {
-        _userMirrorRegion = region
-    }
-
-    fun getMirrorRegion(): MirrorRegion {
-        _userMirrorRegion?.let { return it }
-        val lang = Locale.getDefault().language
-        return if (lang == "zh") MirrorRegion.CN else MirrorRegion.GLOBAL
     }
 
     fun getDepsDir(context: Context): File {
@@ -331,21 +317,22 @@ object PythonDependencyManager {
                 }
 
                 val abi = getDeviceAbi()
-                val mirror = when (getMirrorRegion()) {
-                    MirrorRegion.CN -> getCnMirror(abi)
-                    MirrorRegion.GLOBAL -> getGlobalMirror(abi)
-                }
+                val preferChinaMirror = DownloadMirrorPreference.prefersChina(context)
+                val mirror = MirrorConfig(
+                    pythonArchiveUrls(abi, preferChinaMirror),
+                    muslLinkerUrls(abi, preferChinaMirror)
+                )
 
                 val success = when {
                     !pythonReady -> downloadPython(context, mirror, abi)
                     !muslReady -> {
-                        val muslUrl = mirror.muslLinkerUrl
-                        if (muslUrl == null) {
+                        val muslUrls = mirror.muslLinkerUrls
+                        if (muslUrls.isEmpty()) {
                             markError(String.format(com.webtoapp.core.i18n.Strings.pyRuntimeNoMuslForAbi, abi))
                             false
                         } else {
                             _downloadState.value = DownloadState.Extracting("musl linker")
-                            downloadMuslLinker(context, muslUrl, abi)
+                            downloadMuslLinker(context, muslUrls, abi)
                         }
                     }
                     else -> true
@@ -1063,13 +1050,8 @@ sys.exit(main())
             return false
         }
 
-        if (mirror.muslLinkerUrl != null) {
-            val muslSuccess = downloadMuslLinker(context, mirror.muslLinkerUrl, abi)
-            if (!muslSuccess) {
-                AppLogger.w(TAG, "musl dynamic linker download failed; Python may not execute on Android")
-            }
-        } else {
-            AppLogger.w(TAG, "Current ABI ($abi) has no available musl linker")
+        if (mirror.muslLinkerUrls.isNotEmpty() && !downloadMuslLinker(context, mirror.muslLinkerUrls, abi)) {
+            return false
         }
 
         ensureRuntimePatched(context)
@@ -1077,7 +1059,7 @@ sys.exit(main())
         return true
     }
 
-    private suspend fun downloadMuslLinker(context: Context, url: String, abi: String): Boolean {
+    private suspend fun downloadMuslLinker(context: Context, urls: List<String>, abi: String): Boolean {
         val linkerName = getMuslLinkerName(abi)
         val destDir = getPythonDir(context)
         val linkerFile = File(destDir, "lib/$linkerName")
@@ -1088,9 +1070,8 @@ sys.exit(main())
         }
 
         try {
-            AppLogger.i(TAG, "Downloading musl linker: $url")
             val apkFile = File(getDepsDir(context), "musl-${abi}.apk")
-            val downloaded = downloadWithRetry(listOf(url), apkFile, "musl linker ($abi)", context, MUSL_SHA256_BY_ABI[abi])
+            val downloaded = downloadWithRetry(urls, apkFile, "musl linker ($abi)", context, MUSL_SHA256_BY_ABI[abi])
             if (!downloaded) return false
 
             val gzipStream = java.util.zip.GZIPInputStream(apkFile.inputStream().buffered())

@@ -15,7 +15,9 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
 import java.io.FileOutputStream
+import java.io.IOException
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
@@ -38,7 +40,10 @@ object DependencyDownloadEngine {
 
     private const val STALL_TIMEOUT_MS = 30_000L
 
-    enum class Outcome { SUCCESS, FAILED, SLOW, CORRUPT }
+    enum class Outcome { SUCCESS, FAILED, SOURCE_REJECTED, SLOW, CORRUPT }
+
+    private val rejectedSourceCodes = setOf(401, 403, 404, 410, 416, 451)
+    private val rejectedRangeCodes = setOf(400, 403, 416)
 
     val DEFAULT_TASK: TaskId = "__default__"
 
@@ -186,7 +191,7 @@ object DependencyDownloadEngine {
         AppLogger.i(TAG, "下载已取消 [task=$taskId]")
     }
 
-    suspend fun downloadFileEx(
+    internal suspend fun downloadFileEx(
         url: String,
         destFile: File,
         displayName: String,
@@ -194,6 +199,7 @@ object DependencyDownloadEngine {
         taskId: TaskId = DEFAULT_TASK,
         expectedSha256: String? = null,
         switchWhenSlow: Boolean = false,
+        client: OkHttpClient = httpClient,
     ): Outcome = withContext(Dispatchers.IO) {
         downloadMutex.withLock {
             val fileName = url.substringAfterLast("/")
@@ -215,13 +221,12 @@ object DependencyDownloadEngine {
                     downloadedBytes = tempFile.length()
                 }
 
-                val requestBuilder = Request.Builder().url(url)
-                if (downloadedBytes > 0) {
-                    requestBuilder.addHeader("Range", "bytes=$downloadedBytes-")
+                val request = Request.Builder().url(url).build()
+                val initialRequest = if (downloadedBytes > 0) {
                     AppLogger.i(TAG, "断点续传: 从 $downloadedBytes 字节继续 ($displayName)")
-                }
-
-                val call = httpClient.newCall(requestBuilder.build())
+                    request.newBuilder().header("Range", "bytes=$downloadedBytes-").build()
+                } else request
+                val activeCall = AtomicReference(client.newCall(initialRequest))
 
                 val watchdog = Thread {
                     try {
@@ -235,7 +240,7 @@ object DependencyDownloadEngine {
                                     TAG,
                                     "$displayName 源 ${(now - lastProgressAt.get()) / 1000}s 无数据，放弃该源 [task=$taskId]"
                                 )
-                                call.cancel()
+                                activeCall.get().cancel()
                                 break
                             }
                             if (!switchWhenSlow) continue
@@ -251,7 +256,7 @@ object DependencyDownloadEngine {
                                     TAG,
                                     "$displayName 源速度 ${formatSpeed(speed)} 持续低于 ${formatSpeed(SLOW_THRESHOLD_BYTES_PER_SEC)}，放弃该源 [task=$taskId]"
                                 )
-                                call.cancel()
+                                activeCall.get().cancel()
                                 break
                             }
                         }
@@ -260,13 +265,27 @@ object DependencyDownloadEngine {
                 }.apply { isDaemon = true; name = "wta-dl-watchdog"; start() }
 
                 try {
-                    val response = call.execute()
-
-                    if (!response.isSuccessful && response.code != 206) {
-                        AppLogger.e(TAG, "下载失败: HTTP ${response.code} - $url [task=$taskId]")
-                        emit(taskId, State.Error(Strings.downloadFailedHttp.replace("%d", response.code.toString())))
+                    var response = activeCall.get().execute()
+                    if (downloadedBytes > 0 && response.code in rejectedRangeCodes) {
+                        AppLogger.i(TAG, "${response.request.url.host} rejected Range with HTTP ${response.code}, retrying from byte zero")
                         response.close()
-                        return@withLock Outcome.FAILED
+                        val restartCall = client.newCall(request)
+                        activeCall.set(restartCall)
+                        if (slowAbort.get() || _cancelled.get()) restartCall.cancel()
+                        downloadedBytes = 0L
+                        response = restartCall.execute()
+                    }
+
+                    if (!response.isSuccessful) {
+                        val code = response.code
+                        val host = response.request.url.host
+                        AppLogger.e(TAG, "下载失败: $host HTTP $code - $url [task=$taskId]")
+                        if (!switchWhenSlow) {
+                            val message = Strings.downloadFailedHttp.replace("%d", code.toString())
+                            emit(taskId, State.Error("$message ($host)"))
+                        }
+                        response.close()
+                        return@withLock if (code in rejectedSourceCodes) Outcome.SOURCE_REJECTED else Outcome.FAILED
                     }
 
                     val body = response.body ?: run {
@@ -377,7 +396,7 @@ object DependencyDownloadEngine {
                         AppLogger.i(TAG, "$displayName SHA-256 校验通过 [task=$taskId]")
                     }
 
-                    tempFile.renameTo(destFile)
+                    if (!tempFile.renameTo(destFile)) throw IOException(destFile.name)
                     AppLogger.i(TAG, "$displayName 下载完成: ${destFile.length()} 字节")
                     Outcome.SUCCESS
                 } finally {
@@ -428,6 +447,15 @@ object DependencyDownloadEngine {
                     switchWhenSlow = hasMoreSources
                 )
                 if (lastOutcome == Outcome.SUCCESS) return true
+
+                if (lastOutcome == Outcome.SOURCE_REJECTED) {
+                    if (hasMoreSources) {
+                        File(destFile.parentFile, "${destFile.name}.tmp").delete()
+                        AppLogger.i(TAG, "$sourceName rejected the request, switching to next source")
+                        publishState(State.Idle)
+                    }
+                    break
+                }
 
                 if (lastOutcome == Outcome.CORRUPT) {
                     File(destFile.parentFile, "${destFile.name}.tmp").delete()

@@ -2,6 +2,10 @@ package com.webtoapp.core.download
 
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.runBlocking
+import okhttp3.OkHttpClient
+import okhttp3.Protocol
+import okhttp3.Response
+import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -52,6 +56,61 @@ class DownloadFallbackPolicyTest {
         )
         assertThat(ok).isTrue()
         assertThat(calls).containsExactly("https://slow/proxied", "https://fast/proxied").inOrder()
+    }
+
+    @Test
+    fun `a forbidden source advances to the next URL without repeating the request`() = runBlocking {
+        val (destFile, tmpFile) = dest()
+        val mirror = "https://mirror/pkg.zip"
+        val official = "https://origin/pkg.zip"
+        val calls = mutableListOf<String>()
+        val client = OkHttpClient.Builder().addInterceptor { chain ->
+            val request = chain.request()
+            val url = request.url.toString()
+            calls += url
+            val blocked = url == mirror
+            Response.Builder()
+                .request(request)
+                .protocol(Protocol.HTTP_1_1)
+                .code(if (blocked) 403 else 200)
+                .message(if (blocked) "Forbidden" else "OK")
+                .body("payload".toResponseBody())
+                .build()
+        }.build()
+
+        val ok = engine().downloadFileWithFallback(listOf(mirror, official), destFile, "Unit", retryDelayMs = 0, fetch = { url, name ->
+            engine().downloadFileEx(url, destFile, name, switchWhenSlow = url == mirror, client = client)
+        })
+
+        assertThat(ok).isTrue()
+        assertThat(calls).containsExactly(mirror, official).inOrder()
+        assertThat(destFile.readText()).isEqualTo("payload")
+        assertThat(tmpFile.exists()).isFalse()
+    }
+
+    @Test
+    fun `a rejected range restarts the same source without appending to partial data`() = runBlocking {
+        val (destFile, tmpFile) = dest()
+        tmpFile.writeText("partial")
+        val ranges = mutableListOf<String?>()
+        val client = OkHttpClient.Builder().addInterceptor { chain ->
+            val request = chain.request()
+            val range = request.header("Range")
+            ranges += range
+            Response.Builder()
+                .request(request)
+                .protocol(Protocol.HTTP_1_1)
+                .code(if (range == null) 200 else 403)
+                .message(if (range == null) "OK" else "Forbidden")
+                .body("payload".toResponseBody())
+                .build()
+        }.build()
+
+        val outcome = engine().downloadFileEx("https://mirror/pkg.zip", destFile, "Unit", client = client)
+
+        assertThat(outcome).isEqualTo(DependencyDownloadEngine.Outcome.SUCCESS)
+        assertThat(ranges).containsExactly("bytes=7-", null).inOrder()
+        assertThat(destFile.readText()).isEqualTo("payload")
     }
 
     @Test
