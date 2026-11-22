@@ -37,6 +37,7 @@ import coil.request.ImageRequest
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.ui.theme.LocalShowDescriptions
 import com.webtoapp.ui.theme.ifDescriptionsShown
+import com.webtoapp.core.network.DownloadMirrorPreference
 import com.webtoapp.core.wordpress.WordPressDependencyManager
 import com.webtoapp.core.wordpress.WordPressManager
 import com.webtoapp.core.wordpress.WordPressSampleManager
@@ -585,7 +586,7 @@ fun CreateWordPressAppScreen(
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = "${Strings.wpMirrorSource}: ${
-                            if (WordPressDependencyManager.getMirrorRegion() == WordPressDependencyManager.MirrorRegion.CN)
+                            if (DownloadMirrorPreference.prefersChina(context))
                                 Strings.wpMirrorCN
                             else
                                 Strings.wpMirrorGlobal

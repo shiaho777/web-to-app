@@ -2,9 +2,13 @@ package com.webtoapp.core.linux
 
 import android.content.Context
 import com.google.gson.JsonObject
+import com.webtoapp.core.download.DependencyDownloadEngine
 import com.webtoapp.core.frontend.PackageManager
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.logging.AppLogger
+import com.webtoapp.core.network.DownloadMirrorPreference
+import com.webtoapp.core.network.GitHubMirror
+import com.webtoapp.core.network.NetworkModule
 import com.webtoapp.core.nodejs.NodeDependencyManager
 import com.webtoapp.core.nodejs.nodeLinkerPath
 import com.webtoapp.util.GsonProvider
@@ -14,13 +18,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import okhttp3.HttpUrl.Companion.toHttpUrl
+import okhttp3.Request
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.IOException
-import java.net.HttpURLConnection
-import java.net.URL
 import java.util.concurrent.TimeUnit
 import java.util.zip.GZIPInputStream
 
@@ -32,8 +36,6 @@ object LocalBuildEnvironment {
     private const val YARN_VERSION = "1.22.22"
     private const val PACKAGED_LAUNCHER_NAME = "libnode_launcher.so"
     private const val LEGACY_LAUNCHER_NAME = "node"
-    private const val HTTP_CONNECT_TIMEOUT_MS = 30_000
-    private const val HTTP_READ_TIMEOUT_MS = 120_000
     private val installMutex = Mutex()
 
     private val gson = GsonProvider.gson
@@ -102,19 +104,21 @@ object LocalBuildEnvironment {
     }
 
     private const val COMPOSER_VERSION = "2.10.2"
+    private const val COMPOSER_SHA256 = "5ee7125f8a30a34d246cefdc0bc85b8a783b28f2aec968994118512350d28027"
+    private const val COMPOSER_VERSION_TIMEOUT_MS = 10_000L
 
-    private val COMPOSER_OFFICIAL_URL = "https://getcomposer.org/download/$COMPOSER_VERSION/composer.phar"
-    private val COMPOSER_GITHUB_URL = "https://github.com/composer/composer/releases/download/$COMPOSER_VERSION/composer.phar"
+    private const val COMPOSER_OFFICIAL_URL = "https://getcomposer.org/download/$COMPOSER_VERSION/composer.phar"
+    private const val COMPOSER_GITHUB_URL = "https://github.com/composer/composer/releases/download/$COMPOSER_VERSION/composer.phar"
+    private const val COMPOSER_NJU_URL =
+        "https://mirror.nju.edu.cn/freebsd-ports/distfiles/composer-$COMPOSER_VERSION/composer.phar"
+    private val composerVersionPattern = Regex("""(?m)^Composer[ \t]+version[ \t]+(\S+)""")
 
-    // CN: probed GitHub proxies first (release-asset throughput), then the
-    // slow official origin, then direct GitHub as the last resort.
-    private fun composerPharUrls(): List<String> {
-        val cn = com.webtoapp.core.wordpress.WordPressDependencyManager.getMirrorRegion() ==
-            com.webtoapp.core.wordpress.WordPressDependencyManager.MirrorRegion.CN
-        if (!cn) return listOf(COMPOSER_OFFICIAL_URL, COMPOSER_GITHUB_URL)
-        val proxied = com.webtoapp.core.network.GitHubMirror.proxiedCn(COMPOSER_GITHUB_URL)
-        return proxied.dropLast(1) + COMPOSER_OFFICIAL_URL + proxied.last()
-    }
+    internal fun composerPharUrls(preferChinaMirror: Boolean): List<String> =
+        if (preferChinaMirror) {
+            listOf(COMPOSER_NJU_URL, COMPOSER_OFFICIAL_URL) + GitHubMirror.dependencyReleaseUrls(COMPOSER_GITHUB_URL)
+        } else {
+            listOf(COMPOSER_OFFICIAL_URL, COMPOSER_GITHUB_URL)
+        }
 
     private val IGNORED_PLATFORM_REQS = listOf(
         "ext-session",
@@ -166,74 +170,74 @@ object LocalBuildEnvironment {
         val marker = getComposerVersionMarker(context)
         val installed = runCatching { marker.readText().trim() }.getOrNull()
 
-        if (target.exists() && installed == COMPOSER_VERSION && verifyComposerVersion(context, target)) {
+        if (installed == COMPOSER_VERSION && target.isFile && DependencyDownloadEngine.sha256Of(target) == COMPOSER_SHA256) {
+            checkComposerRuntime(context, target)
             return@withContext
         }
 
-        var lastError: Exception? = null
-        for (url in composerPharUrls()) {
-            val sourceLabel = if (url.contains("getcomposer.org")) Strings.localBuildComposerSourceOfficial else Strings.localBuildComposerSourceMirror
-            onProgress(Strings.localBuildDownloadComposer.format(COMPOSER_VERSION, sourceLabel), 0.5f)
-            target.parentFile?.mkdirs()
-
-            if (target.exists()) target.delete()
-            marker.delete()
-            try {
-                downloadFile(url, target)
-            } catch (e: Exception) {
-                lastError = e
-                continue
+        target.parentFile?.mkdirs()
+        val staged = File.createTempFile("composer-", ".phar", target.parentFile)
+        try {
+            var lastError: IOException? = null
+            for (url in composerPharUrls(DownloadMirrorPreference.prefersChina(context))) {
+                val sourceLabel = if (url == COMPOSER_OFFICIAL_URL) Strings.localBuildComposerSourceOfficial else Strings.localBuildComposerSourceMirror
+                onProgress(Strings.localBuildDownloadComposer.format(COMPOSER_VERSION, sourceLabel), 0.5f)
+                try {
+                    downloadFile(url, staged)
+                    if (DependencyDownloadEngine.sha256Of(staged) != COMPOSER_SHA256) {
+                        throw IOException(Strings.downloadIntegrityFailed.replaceFirst("%s", url.toHttpUrl().host))
+                    }
+                } catch (e: IOException) {
+                    lastError = e
+                    AppLogger.w(TAG, "Composer download from $url failed: ${e.message}")
+                    continue
+                }
+                checkComposerRuntime(context, staged)
+                if (!staged.renameTo(target)) throw IOException(target.name)
+                marker.writeText(COMPOSER_VERSION)
+                return@withContext
             }
-            if (target.length() < 1_000_000) {
-                lastError = IOException(Strings.downloadTooSmall(sourceLabel, target.length()))
-                target.delete()
-                continue
-            }
-
-            if (!verifyComposerVersion(context, target)) {
-                lastError = IOException(Strings.downloadVersionMismatch(sourceLabel, COMPOSER_VERSION))
-                target.delete()
-                continue
-            }
-            marker.writeText(COMPOSER_VERSION)
-            return@withContext
+            throw IOException(Strings.downloadFailed("Composer $COMPOSER_VERSION", lastError?.message.orEmpty()), lastError)
+        } finally {
+            staged.delete()
         }
-        throw IOException(
-            "Composer 下载失败：所有镜像都未能给出 $COMPOSER_VERSION 的 phar。" +
-                (lastError?.message?.let { "（$it）" } ?: "")
+    }
+
+    private suspend fun checkComposerRuntime(context: Context, phar: File) {
+        val result = probeComposerVersion(context, phar)
+        composerRuntimeError(result)?.let { throw IOException(it) }
+    }
+
+    internal fun composerRuntimeError(result: ExecutionResult): String? {
+        val version = reportedComposerVersion(result)
+        if (version == COMPOSER_VERSION) return null
+        if (version != null) {
+            return Strings.downloadVersionMismatch("Composer $version", COMPOSER_VERSION)
+        }
+        val output = result.stderr.ifBlank { result.stdout }.trim().takeLast(1500)
+        val detail = output.ifEmpty { Strings.composerVersionUnknown }
+        return Strings.runtimeStartFailed("php composer.phar --version [${result.exitCode}]\n$detail")
+    }
+
+    private fun reportedComposerVersion(result: ExecutionResult): String? {
+        if (result.exitCode != 0) return null
+        return composerVersionPattern.find(result.stdout)?.groupValues?.get(1)
+            ?: composerVersionPattern.find(result.stderr)?.groupValues?.get(1)
+    }
+
+    private suspend fun probeComposerVersion(context: Context, phar: File): ExecutionResult = try {
+        executePhp(
+            context = context,
+            arguments = listOf(phar.absolutePath, "--version", "--no-ansi"),
+            workingDir = getToolDir(context),
+            timeout = COMPOSER_VERSION_TIMEOUT_MS
         )
+    } catch (e: IOException) {
+        ExecutionResult(-1, "", e.message.orEmpty(), 0)
     }
 
-    private fun verifyComposerVersion(context: Context, phar: File): Boolean {
-        return readComposerVersion(context, phar)?.contains(COMPOSER_VERSION) == true
-    }
-
-    private fun readComposerVersion(context: Context, phar: File): String? {
-        val phpBin = getPhpExecutablePath(context) ?: return null
-        return try {
-            val execPrefix = com.webtoapp.core.wordpress.WordPressDependencyManager.buildPhpExecPrefix(context)
-            val cmd = execPrefix + listOf(phar.absolutePath, "--version")
-            val launch = HostProcessLauncher.start(
-                context, cmd,
-                mapOf(
-                    "USE_ZEND_ALLOC" to "0",
-                    "TMPDIR" to context.cacheDir.absolutePath
-                ),
-                null
-            )
-            val proc = launch.process ?: return null
-            // `composer --version` prints to stdout; drain it, then wait.
-            val out = proc.inputStream.bufferedReader().use { it.readText() }
-            val finished = proc.waitForCompat(5_000)
-            if (!finished) {
-                proc.destroyForciblyCompat()
-                return null
-            }
-            out.trim().takeIf { it.isNotEmpty() }
-        } catch (_: Exception) {
-            null
-        }
-    }
+    private suspend fun readComposerVersion(context: Context, phar: File): String? =
+        reportedComposerVersion(probeComposerVersion(context, phar))
 
     suspend fun ensurePhpRuntime(
         context: Context,
@@ -281,7 +285,7 @@ object LocalBuildEnvironment {
 
         val phpVersion = readComposerVersion(context, composer)
         onOutput(Strings.composerCurrentPharVersion.format(phpVersion ?: Strings.composerVersionUnknown))
-        val needUpgrade = phpVersion?.contains(COMPOSER_VERSION) != true
+        val needUpgrade = phpVersion != COMPOSER_VERSION
         if (needUpgrade) {
             onOutput(Strings.composerUpgradingPhar.format(COMPOSER_VERSION))
             runCatching { ensureComposer(context) }.onFailure { e ->
@@ -289,7 +293,7 @@ object LocalBuildEnvironment {
             }
         }
 
-        val versionUpgraded = verifyComposerVersion(context, composer)
+        val versionUpgraded = readComposerVersion(context, composer) == COMPOSER_VERSION
         onOutput(Strings.composerUpgradeStatus.format(COMPOSER_VERSION, versionUpgraded))
         val arguments = buildList {
             add(composer.absolutePath)
@@ -399,9 +403,11 @@ object LocalBuildEnvironment {
         }
         tOut.start(); tErr.start()
         val completed = process.waitForCompat(timeout)
+        if (!completed) process.destroyForciblyCompat()
         tOut.join(2_000); tErr.join(2_000)
-        val exit = if (completed) process.exitValue() else { process.destroyForciblyCompat(); -1 }
-        ExecutionResult(exit, stdout.toString(), stderr.toString(), System.currentTimeMillis() - start)
+        val exit = if (completed) process.exitValue() else -1
+        val errorOutput = if (completed) stderr.toString() else "${Strings.loadingTimeout}\n$stderr".trimEnd()
+        ExecutionResult(exit, stdout.toString(), errorOutput, System.currentTimeMillis() - start)
     }
 
     private fun phpIniArgs(): List<String> {
@@ -470,12 +476,8 @@ object LocalBuildEnvironment {
         throw IOException(Strings.nodeLauncherNotPackaged.format(packagedLauncher.absolutePath))
     }
 
-    private fun npmToolTarballUrls(path: String): List<String> =
-        com.webtoapp.core.network.GitHubMirror.npmTarballUrls(
-            "https://registry.npmjs.org/$path",
-            com.webtoapp.core.nodejs.NodeDependencyManager.getMirrorRegion() ==
-                com.webtoapp.core.nodejs.NodeDependencyManager.MirrorRegion.CN
-        )
+    private fun npmToolTarballUrls(context: Context, path: String): List<String> =
+        GitHubMirror.npmTarballUrls("${GitHubMirror.NPM_REGISTRY}/$path", DownloadMirrorPreference.prefersChina(context))
 
     suspend fun ensureNpm(
         context: Context,
@@ -485,7 +487,7 @@ object LocalBuildEnvironment {
         onProgress(Strings.localBuildInstallingNpm, 0.35f)
         installTarballPackage(
             context = context,
-            tarballUrls = npmToolTarballUrls("npm/-/npm-$NPM_VERSION.tgz"),
+            tarballUrls = npmToolTarballUrls(context, "npm/-/npm-$NPM_VERSION.tgz"),
             displayName = "npm $NPM_VERSION",
             targetDir = File(getToolDir(context), "npm")
         )
@@ -499,7 +501,7 @@ object LocalBuildEnvironment {
         onProgress(Strings.localBuildInstallingPnpm, 0.6f)
         installTarballPackage(
             context = context,
-            tarballUrls = npmToolTarballUrls("pnpm/-/pnpm-$PNPM_VERSION.tgz"),
+            tarballUrls = npmToolTarballUrls(context, "pnpm/-/pnpm-$PNPM_VERSION.tgz"),
             displayName = "pnpm $PNPM_VERSION",
             targetDir = File(getToolDir(context), "pnpm")
         )
@@ -513,7 +515,7 @@ object LocalBuildEnvironment {
         onProgress(Strings.localBuildInstallingYarn, 0.8f)
         installTarballPackage(
             context = context,
-            tarballUrls = npmToolTarballUrls("yarn/-/yarn-$YARN_VERSION.tgz"),
+            tarballUrls = npmToolTarballUrls(context, "yarn/-/yarn-$YARN_VERSION.tgz"),
             displayName = "yarn $YARN_VERSION",
             targetDir = File(getToolDir(context), "yarn")
         )
@@ -544,11 +546,7 @@ object LocalBuildEnvironment {
                 }
                 BuildTool.COMPOSER -> {
                     if (!isComposerReady(context)) return@runCatching null
-                    val composer = getComposerPharPath(context)
-                    val result = executePhp(context, listOf(composer.absolutePath, "--version", "--no-ansi"), context.filesDir)
-                    if (result.exitCode == 0) {
-                        Regex("""Composer\s+version\s+(\S+)""").find(result.stdout)?.groupValues?.get(1)
-                    } else null
+                    readComposerVersion(context, getComposerPharPath(context))
                 }
                 BuildTool.PYTHON -> {
                     if (!isPythonReady(context)) return@runCatching null
@@ -700,11 +698,10 @@ object LocalBuildEnvironment {
         if (processEnv["npm_config_registry"] == null &&
             !npmrcPinsRegistry(workingDir) &&
             !npmrcPinsRegistry(File(rootDir, "npmrc")) &&
-            com.webtoapp.core.nodejs.NodeDependencyManager.getMirrorRegion() ==
-                com.webtoapp.core.nodejs.NodeDependencyManager.MirrorRegion.CN
+            DownloadMirrorPreference.prefersChina(context)
         ) {
             processEnv["npm_config_registry"] =
-                com.webtoapp.core.network.GitHubMirror.NPM_MIRROR_REGISTRY
+                GitHubMirror.NPM_MIRROR_REGISTRY
         }
 
         processEnv["COREPACK_ENABLE_AUTO_PIN"] = "0"
@@ -795,8 +792,6 @@ object LocalBuildEnvironment {
             for (url in tarballUrls) {
                 try {
                     downloadFile(url, tempFile)
-                    // A proxy may answer 200 with an HTML error page — only a
-                    // plausible gzip tarball proceeds to extraction.
                     if (tempFile.length() < 10_000 || !isGzipFile(tempFile)) {
                         throw IOException("invalid tarball from $url (${tempFile.length()} bytes)")
                     }
@@ -827,13 +822,15 @@ object LocalBuildEnvironment {
     }.getOrDefault(false)
 
     private fun downloadFile(url: String, targetFile: File) {
-        val connection = URL(url).openConnection() as HttpURLConnection
-        connection.connectTimeout = HTTP_CONNECT_TIMEOUT_MS
-        connection.readTimeout = HTTP_READ_TIMEOUT_MS
-        connection.instanceFollowRedirects = true
-        connection.inputStream.use { input ->
-            FileOutputStream(targetFile).use { output ->
-                input.copyTo(output)
+        val request = Request.Builder().url(url).build()
+        NetworkModule.downloadClient.newCall(request).execute().use { response ->
+            val host = response.request.url.host
+            if (!response.isSuccessful) {
+                throw IOException("$host HTTP ${response.code}")
+            }
+            val body = response.body ?: throw IOException(Strings.downloadReturnedEmpty)
+            body.byteStream().use { input ->
+                targetFile.outputStream().use { output -> input.copyTo(output) }
             }
         }
     }

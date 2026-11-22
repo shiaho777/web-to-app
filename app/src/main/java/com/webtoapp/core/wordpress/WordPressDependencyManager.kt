@@ -7,6 +7,7 @@ import android.os.Build
 import com.webtoapp.core.download.DependencyDownloadEngine
 import com.webtoapp.core.download.DependencyDownloadNotification
 import com.webtoapp.core.logging.AppLogger
+import com.webtoapp.core.network.DownloadMirrorPreference
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,7 +17,6 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 import java.security.MessageDigest
-import java.util.Locale
 import java.util.concurrent.atomic.AtomicBoolean
 
 object WordPressDependencyManager {
@@ -28,8 +28,6 @@ object WordPressDependencyManager {
     const val WORDPRESS_VERSION = "7.0"
 
     const val SQLITE_PLUGIN_VERSION = "2.2.23"
-
-    enum class MirrorRegion { CN, GLOBAL }
 
     const val PHP_RUNTIME_RELEASE = "php-8.4.16-android-arm64-wta1"
 
@@ -50,6 +48,9 @@ object WordPressDependencyManager {
     private const val SQLITE_PLUGIN_ZIP_SHA256 =
         "44be096a14ebcea424b5e4bf764436ec85fb067f74ab47822c4c5346df21591e"
 
+    private const val SQLITE_PLUGIN_FILE_NAME = "sqlite-database-integration.$SQLITE_PLUGIN_VERSION.zip"
+    private const val SQLITE_PLUGIN_OFFICIAL_URL = "https://downloads.wordpress.org/plugin/$SQLITE_PLUGIN_FILE_NAME"
+
     private fun wordpressCoreSha256For(url: String): String? = when {
         "latest" in url -> null
         "zh_CN" in url -> WORDPRESS_CORE_ZH_CN_SHA256
@@ -61,18 +62,21 @@ object WordPressDependencyManager {
         val phpUrls: List<String>,
 
         val wordpressUrls: List<String>,
-        val sqlitePluginUrl: String
+        val sqlitePluginUrls: List<String>
     )
 
     private fun buildCnMirror(): MirrorConfig = MirrorConfig(
-        phpUrls = com.webtoapp.core.network.GitHubMirror.proxiedCn(PHP_GITHUB_URL),
+        phpUrls = com.webtoapp.core.network.GitHubMirror.dependencyReleaseUrls(PHP_GITHUB_URL),
         wordpressUrls = listOf(
             "https://cn.wordpress.org/wordpress-${WORDPRESS_VERSION}-zh_CN.tar.gz",
             "https://cn.wordpress.org/latest-zh_CN.tar.gz",
             "https://wordpress.org/wordpress-${WORDPRESS_VERSION}.tar.gz",
             "https://wordpress.org/latest.tar.gz"
         ),
-        sqlitePluginUrl = "https://downloads.wordpress.org/plugin/"
+        sqlitePluginUrls = listOf(
+            "https://downloads.wenpai.net/plugin/$SQLITE_PLUGIN_FILE_NAME",
+            SQLITE_PLUGIN_OFFICIAL_URL
+        )
     )
 
     private val GLOBAL_MIRROR = MirrorConfig(
@@ -81,7 +85,7 @@ object WordPressDependencyManager {
             "https://wordpress.org/wordpress-${WORDPRESS_VERSION}.tar.gz",
             "https://wordpress.org/latest.tar.gz"
         ),
-        sqlitePluginUrl = "https://downloads.wordpress.org/plugin/"
+        sqlitePluginUrls = listOf(SQLITE_PLUGIN_OFFICIAL_URL)
     )
 
     sealed class DownloadState {
@@ -106,24 +110,8 @@ object WordPressDependencyManager {
         _downloadState.value = DownloadState.Idle
     }
 
-    private var _userMirrorRegion: MirrorRegion? = null
-
-    fun setMirrorRegion(region: MirrorRegion?) {
-        _userMirrorRegion = region
-    }
-
-    fun getMirrorRegion(): MirrorRegion {
-        _userMirrorRegion?.let { return it }
-        val lang = Locale.getDefault().language
-        return if (lang == "zh") MirrorRegion.CN else MirrorRegion.GLOBAL
-    }
-
-    fun getMirrorConfig(): MirrorConfig {
-        return when (getMirrorRegion()) {
-            MirrorRegion.CN -> buildCnMirror()
-            MirrorRegion.GLOBAL -> GLOBAL_MIRROR
-        }
-    }
+    internal fun getMirrorConfig(context: Context): MirrorConfig =
+        if (DownloadMirrorPreference.prefersChina(context)) buildCnMirror() else GLOBAL_MIRROR
 
     fun getDepsDir(context: Context): File {
         return File(context.filesDir, "wordpress_deps").also { it.mkdirs() }
@@ -182,7 +170,7 @@ object WordPressDependencyManager {
 
                 DependencyDownloadNotification.getInstance(context)
                 DependencyDownloadEngine.reset()
-                val mirror = getMirrorConfig()
+                val mirror = getMirrorConfig(context)
 
                 if (!isPhpReady(context)) {
                     val success = downloadPhp(context, mirror)
@@ -226,7 +214,7 @@ object WordPressDependencyManager {
                 }
                 DependencyDownloadNotification.getInstance(context)
                 DependencyDownloadEngine.reset()
-                val mirror = getMirrorConfig()
+                val mirror = getMirrorConfig(context)
                 val ok = downloadPhp(context, mirror)
                 if (ok) markComplete()
                 ok
@@ -331,14 +319,6 @@ object WordPressDependencyManager {
         urls, destFile, displayName, context, MAX_RETRY_PER_URL, RETRY_DELAY_MS, expectedSha256For
     )
 
-    private suspend fun downloadWithRetry(
-        url: String,
-        destFile: File,
-        displayName: String,
-        context: Context?,
-        expectedSha256For: ((url: String) -> String?)? = null
-    ): Boolean = downloadWithRetry(listOf(url), destFile, displayName, context, expectedSha256For)
-
     private suspend fun downloadPhp(context: Context, mirror: MirrorConfig): Boolean {
         val abi = getDeviceAbi()
         if (abi != "arm64-v8a") {
@@ -433,14 +413,12 @@ object WordPressDependencyManager {
     }
 
     private suspend fun downloadSqlitePlugin(context: Context, mirror: MirrorConfig): Boolean {
-        val fileName = "sqlite-database-integration.${SQLITE_PLUGIN_VERSION}.zip"
-        val url = "${mirror.sqlitePluginUrl}sqlite-database-integration.${SQLITE_PLUGIN_VERSION}.zip"
         val destDir = getDepsDir(context)
-        val archiveFile = File(destDir, fileName)
+        val archiveFile = File(destDir, SQLITE_PLUGIN_FILE_NAME)
 
-        AppLogger.i(TAG, "Downloading SQLite plugin: $url")
-
-        val downloaded = downloadWithRetry(url, archiveFile, "SQLite Plugin $SQLITE_PLUGIN_VERSION", context) { _ -> SQLITE_PLUGIN_ZIP_SHA256 }
+        val downloaded = downloadWithRetry(
+            mirror.sqlitePluginUrls, archiveFile, "SQLite Plugin $SQLITE_PLUGIN_VERSION", context
+        ) { SQLITE_PLUGIN_ZIP_SHA256 }
         syncEngineState()
         if (!downloaded) return false
 

@@ -4,9 +4,12 @@ import android.content.Context
 import android.os.Build
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.logging.AppLogger
+import com.webtoapp.core.network.DownloadMirrorPreference
+import com.webtoapp.core.network.GitHubMirror
 import com.webtoapp.core.network.NetworkModule
 import com.webtoapp.util.destroyForciblyCompat
 import com.webtoapp.util.waitForCompat
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -21,10 +24,10 @@ object NativeNodeEngine {
 
     private const val NODE_VERSION = "18.20.4"
 
-    private val ESBUILD_DOWNLOAD_URLS = mapOf(
-        "arm64-v8a" to "https://registry.npmmirror.com/@esbuild/android-arm64/-/android-arm64-0.20.0.tgz",
-        "armeabi-v7a" to "https://registry.npmmirror.com/@esbuild/android-arm/-/android-arm-0.20.0.tgz",
-        "x86_64" to "https://registry.npmmirror.com/@esbuild/android-x64/-/android-x64-0.20.0.tgz"
+    private val ESBUILD_PACKAGE_BY_ABI = mapOf(
+        "arm64-v8a" to "android-arm64",
+        "armeabi-v7a" to "android-arm",
+        "x86_64" to "android-x64"
     )
 
     private val _state = MutableStateFlow<NodeEngineState>(NodeEngineState.NotInitialized)
@@ -91,6 +94,8 @@ object NativeNodeEngine {
                 AppLogger.w(TAG, "Node 引擎初始化完成")
                 Result.success(Unit)
 
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 AppLogger.e(TAG, "Initialization failed", e)
                 _state.value = NodeEngineState.Error(e.message ?: "未知错误")
@@ -104,26 +109,38 @@ object NativeNodeEngine {
         onProgress: (Float) -> Unit
     ) = withContext(Dispatchers.IO) {
         val arch = getArchitecture()
-        val url = ESBUILD_DOWNLOAD_URLS[arch]
+        val packageName = ESBUILD_PACKAGE_BY_ABI[arch]
             ?: throw Exception(Strings.nodeUnsupportedArch.format(arch))
+        val upstream = "${GitHubMirror.NPM_REGISTRY}/@esbuild/$packageName/-/$packageName-0.20.0.tgz"
+        val urls = GitHubMirror.npmTarballUrls(upstream, DownloadMirrorPreference.prefersChina(context))
 
         val engineDir = getEngineDir(context)
         val tempFile = File(engineDir, "esbuild.tgz")
+        val stagedBinary = File(engineDir, "esbuild.install")
         val esbuildFile = getEsbuildPath(context)
 
         try {
-
-            AppLogger.w(TAG, "下载 esbuild: $url")
-            downloadFile(url, tempFile, onProgress)
-
-            extractEsbuildFromTgz(tempFile, esbuildFile)
-
-            esbuildFile.setExecutable(true, false)
-
-            AppLogger.w(TAG, "esbuild 安装完成: ${esbuildFile.absolutePath}")
-
+            var lastError: Exception? = null
+            for (url in urls) {
+                try {
+                    downloadFile(url, tempFile, onProgress)
+                    extractEsbuildFromTgz(tempFile, stagedBinary)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    lastError = e
+                    AppLogger.w(TAG, "esbuild download from $url failed: ${e.message}")
+                    continue
+                }
+                if (!stagedBinary.setExecutable(true, false) || !stagedBinary.renameTo(esbuildFile)) {
+                    throw IOException(Strings.nodeEsbuildInstallFailed)
+                }
+                return@withContext
+            }
+            throw IOException(Strings.downloadFailed("esbuild", lastError?.message.orEmpty()), lastError)
         } finally {
             tempFile.delete()
+            stagedBinary.delete()
         }
     }
 
@@ -233,9 +250,9 @@ object NativeNodeEngine {
         val request = okhttp3.Request.Builder().url(url).build()
         NetworkModule.downloadClient.newCall(request).execute().use { response ->
             if (!response.isSuccessful) {
-                throw Exception("HTTP ${response.code}")
+                throw IOException("${response.request.url.host} HTTP ${response.code}")
             }
-            val body = response.body ?: throw Exception("Empty response body")
+            val body = response.body ?: throw IOException(Strings.downloadReturnedEmpty)
             val total = body.contentLength()
             var downloaded = 0L
 

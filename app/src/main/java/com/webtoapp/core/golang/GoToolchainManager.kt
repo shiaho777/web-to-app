@@ -6,10 +6,10 @@ import android.content.Context
 import android.os.Build
 import com.webtoapp.core.download.DependencyDownloadEngine
 import com.webtoapp.core.download.DependencyDownloadNotification
-import com.webtoapp.core.i18n.AppLanguage
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.util.destroyForciblyCompat
 import com.webtoapp.util.waitForCompat
+import com.webtoapp.core.network.DownloadMirrorPreference
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,24 +30,18 @@ object GoToolchainManager {
 
     const val GO_VERSION = "1.26.10"
 
-    private const val USTC_GO_ARCHIVE_URL =
-        "https://mirrors.ustc.edu.cn/golang/go${GO_VERSION}.linux-arm64.tar.gz"
+    private const val HUST_GO_ARCHIVE_URL =
+        "https://mirrors.hust.edu.cn/golang/go${GO_VERSION}.linux-arm64.tar.gz"
 
     private const val OFFICIAL_GO_ARCHIVE_URL =
         "https://dl.google.com/go/go${GO_VERSION}.linux-arm64.tar.gz"
 
-    private val CN_GO_ARCHIVE_URLS = listOf(USTC_GO_ARCHIVE_URL)
+    private val CN_GO_ARCHIVE_URLS = listOf(HUST_GO_ARCHIVE_URL)
 
     private val OFFSHORE_GO_ARCHIVE_URLS = listOf(OFFICIAL_GO_ARCHIVE_URL)
 
     private const val GO_ARCHIVE_SIZE_BYTES = 63_827_526L
 
-    /**
-     * SHA-256 of go1.26.10.linux-arm64.tar.gz (dl.google.com `.sha256` sidecar;
-     * USTC mirrors the same bytes). 1.26.10 is the 1.26 fix for GO-2026-6809
-     * (CVE-2026-111943). Verify against the sidecar when bumping [GO_VERSION]
-     * — mismatches fail the download loudly.
-     */
     private const val GO_ARCHIVE_SHA256 =
         "3f4227ce7b206a513e794f1393adb473a07b46e94d18bd15d1c684bbb7319797"
 
@@ -191,11 +185,6 @@ object GoToolchainManager {
         return goReleaseMatches(versionText)
     }
 
-    /**
-     * Official tarballs ship `GOROOT/VERSION` with a first line `go1.26.10`.
-     * A cached tree whose first line is an older release is not ready, so
-     * [installGoToolchain] downloads the pinned archive instead of reusing it.
-     */
     internal fun goReleaseMatches(versionFileText: String?): Boolean {
         val line = versionFileText
             ?.lineSequence()
@@ -224,9 +213,6 @@ object GoToolchainManager {
 
     suspend fun installGoToolchain(context: Context): Boolean = withContext(Dispatchers.IO) {
         coroutineScope {
-            // Bridge engine progress into _downloadState for the whole call —
-            // callers' UI otherwise sits on Idle for the entire download since
-            // syncEngineState only ran once at the end.
             val syncJob = launch {
                 DependencyDownloadEngine.state.collect { syncEngineState() }
             }
@@ -264,7 +250,7 @@ object GoToolchainManager {
                     }
                 }
 
-                val urlList = selectGoArchiveUrls(resolvePreferChinaMirror(context))
+                val urlList = selectGoArchiveUrls(DownloadMirrorPreference.prefersChina(context))
                 val ok = downloadWithFallback(urlList, archiveFile, "Go $GO_VERSION ($abi)", context, GO_ARCHIVE_SHA256)
                 syncEngineState()
                 if (!ok) {
@@ -303,13 +289,6 @@ object GoToolchainManager {
                     return@withLock false
                 }
 
-                // NOTE: no DNS binary-patching here. Stock Go toolchains only
-                // consult /etc/resolv.conf (absent on Android, unpatchable: the
-                // slot fits no app-controlled path), and Go 1.26 no longer
-                // carries the Termux fallback paths the old patcher rewrote.
-                // Network access for toolchain ops goes through
-                // LocalDnsBridgeProxy env (see GoBuildEnvironment.runCommand),
-                // whose JVM side resolves DNS via Android APIs.
                 AppLogger.i(TAG, "Go 工具链已就绪: ${getGoBinary(context).absolutePath}")
                 markComplete()
                 true
@@ -387,23 +366,6 @@ object GoToolchainManager {
         } else {
             OFFSHORE_GO_ARCHIVE_URLS
         }
-    }
-
-    internal fun shouldPreferChinaMirror(appLanguage: AppLanguage): Boolean {
-        if (appLanguage == AppLanguage.CHINESE) return true
-        return runCatching {
-            val locale = java.util.Locale.getDefault()
-            locale.language.equals("zh", ignoreCase = true) ||
-                locale.country.equals("CN", ignoreCase = true) ||
-                locale.country in setOf("HK", "MO", "TW")
-        }.getOrDefault(false)
-    }
-
-    private suspend fun resolvePreferChinaMirror(context: Context): Boolean {
-        val appLang = runCatching {
-            com.webtoapp.core.i18n.LanguageManager.getInstance(context).getCurrentLanguage()
-        }.getOrNull() ?: AppLanguage.CHINESE
-        return shouldPreferChinaMirror(appLang)
     }
 
     private suspend fun downloadWithFallback(

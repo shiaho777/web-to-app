@@ -75,6 +75,7 @@ import com.webtoapp.core.golang.GoDependencyManager
 import com.webtoapp.core.golang.GoToolchainManager
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.linux.LocalBuildEnvironment
+import com.webtoapp.core.network.DownloadMirrorPreference
 import com.webtoapp.core.nodejs.NodeDependencyManager
 import com.webtoapp.core.python.PythonDependencyManager
 import com.webtoapp.core.wordpress.WordPressDependencyManager
@@ -157,7 +158,7 @@ fun RuntimeDepsScreen(onBack: () -> Unit) {
     var goProjectCount by remember { mutableIntStateOf(0) }
     var docsProjectCount by remember { mutableIntStateOf(0) }
 
-    var wpMirrorRegion by remember { mutableStateOf(WordPressDependencyManager.getMirrorRegion()) }
+    var mirrorMode by remember { mutableStateOf(DownloadMirrorPreference.get(context)) }
     var isDownloading by remember { mutableStateOf(false) }
     var isPaused by remember { mutableStateOf(false) }
     var isRefreshing by remember { mutableStateOf(false) }
@@ -369,8 +370,9 @@ fun RuntimeDepsScreen(onBack: () -> Unit) {
         )
     }
 
-    fun applyMirror(region: String) {
-        onMirrorChange(region) { wpMirrorRegion = it }
+    fun applyMirror(mode: DownloadMirrorPreference.Mode) {
+        DownloadMirrorPreference.set(context, mode)
+        mirrorMode = mode
     }
 
     suspend fun installKind(kind: RuntimeKind): Boolean {
@@ -516,7 +518,7 @@ fun RuntimeDepsScreen(onBack: () -> Unit) {
 
             item {
                 DownloadMirrorCard(
-                    mirrorRegion = wpMirrorRegion,
+                    mirrorMode = mirrorMode,
                     isDownloading = isDownloading,
                     onMirrorChange = ::applyMirror
                 )
@@ -658,31 +660,6 @@ fun RuntimeDepsScreen(onBack: () -> Unit) {
             }
         )
     }
-}
-
-private fun onMirrorChange(
-    region: String,
-    setUiRegion: (WordPressDependencyManager.MirrorRegion) -> Unit
-) {
-    val wpRegion = when (region) {
-        "cn" -> WordPressDependencyManager.MirrorRegion.CN
-        "global" -> WordPressDependencyManager.MirrorRegion.GLOBAL
-        else -> null
-    }
-    val nodeRegion = when (region) {
-        "cn" -> NodeDependencyManager.MirrorRegion.CN
-        "global" -> NodeDependencyManager.MirrorRegion.GLOBAL
-        else -> null
-    }
-    val pythonRegion = when (region) {
-        "cn" -> PythonDependencyManager.MirrorRegion.CN
-        "global" -> PythonDependencyManager.MirrorRegion.GLOBAL
-        else -> null
-    }
-    WordPressDependencyManager.setMirrorRegion(wpRegion)
-    NodeDependencyManager.setMirrorRegion(nodeRegion)
-    PythonDependencyManager.setMirrorRegion(pythonRegion)
-    setUiRegion(WordPressDependencyManager.getMirrorRegion())
 }
 
 @Composable
@@ -851,13 +828,10 @@ private fun StatusOverviewCard(
 
 @Composable
 private fun DownloadMirrorCard(
-    mirrorRegion: WordPressDependencyManager.MirrorRegion?,
+    mirrorMode: DownloadMirrorPreference.Mode,
     isDownloading: Boolean,
-    onMirrorChange: (String) -> Unit
+    onMirrorChange: (DownloadMirrorPreference.Mode) -> Unit
 ) {
-    val isCn = mirrorRegion == WordPressDependencyManager.MirrorRegion.CN
-    val isGlobal = mirrorRegion == WordPressDependencyManager.MirrorRegion.GLOBAL
-    val isAuto = !isCn && !isGlobal
 
     WtaCard(tone = WtaCardTone.Surface) {
         Column(
@@ -885,20 +859,20 @@ private fun DownloadMirrorCard(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 WtaChip(
-                    selected = isCn,
-                    onClick = { onMirrorChange("cn") },
+                    selected = mirrorMode == DownloadMirrorPreference.Mode.CN,
+                    onClick = { onMirrorChange(DownloadMirrorPreference.Mode.CN) },
                     label = Strings.depMirrorCN,
                     enabled = !isDownloading
                 )
                 WtaChip(
-                    selected = isGlobal,
-                    onClick = { onMirrorChange("global") },
+                    selected = mirrorMode == DownloadMirrorPreference.Mode.GLOBAL,
+                    onClick = { onMirrorChange(DownloadMirrorPreference.Mode.GLOBAL) },
                     label = Strings.depMirrorGlobal,
                     enabled = !isDownloading
                 )
                 WtaChip(
-                    selected = isAuto,
-                    onClick = { onMirrorChange("auto") },
+                    selected = mirrorMode == DownloadMirrorPreference.Mode.AUTO,
+                    onClick = { onMirrorChange(DownloadMirrorPreference.Mode.AUTO) },
                     label = Strings.depMirrorAuto,
                     enabled = !isDownloading
                 )

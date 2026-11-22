@@ -3,6 +3,7 @@ package com.webtoapp.core.wordpress
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
+import com.webtoapp.core.network.DownloadMirrorPreference
 import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -20,6 +21,24 @@ class WordPressPhpRuntimeTest {
     @After
     fun tearDown() {
         WordPressDependencyManager.getDepsDir(context).deleteRecursively()
+    }
+
+    @Test
+    fun `china mirror mode adds a versioned plugin mirror before wordpress org`() {
+        val mode = DownloadMirrorPreference.get(context)
+        val archive = "sqlite-database-integration.${WordPressDependencyManager.SQLITE_PLUGIN_VERSION}.zip"
+        val official = "https://downloads.wordpress.org/plugin/$archive"
+        try {
+            DownloadMirrorPreference.set(context, DownloadMirrorPreference.Mode.CN)
+            assertThat(WordPressDependencyManager.getMirrorConfig(context).sqlitePluginUrls)
+                .containsExactly("https://downloads.wenpai.net/plugin/$archive", official).inOrder()
+
+            DownloadMirrorPreference.set(context, DownloadMirrorPreference.Mode.GLOBAL)
+            assertThat(WordPressDependencyManager.getMirrorConfig(context).sqlitePluginUrls)
+                .containsExactly(official)
+        } finally {
+            DownloadMirrorPreference.set(context, mode)
+        }
     }
 
     @Test

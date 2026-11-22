@@ -3,7 +3,8 @@ package com.webtoapp.core.nodejs
 import android.content.Context
 import com.google.common.truth.Truth.assertThat
 import java.io.File
-import java.util.Locale
+import com.webtoapp.core.network.DownloadMirrorPreference
+import com.webtoapp.core.wordpress.WordPressDependencyManager
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -21,45 +22,33 @@ class NodeDependencyManagerTest {
     val koinRule = com.webtoapp.util.KoinCleanupRule()
 
     private lateinit var context: Context
-    private var originalLocale: Locale = Locale.getDefault()
 
     @Before
     fun setUp() {
         context = RuntimeEnvironment.getApplication()
-        originalLocale = Locale.getDefault()
-        NodeDependencyManager.setMirrorRegion(null)
+        DownloadMirrorPreference.set(context, DownloadMirrorPreference.Mode.AUTO)
         NodeDependencyManager.clearCache(context)
     }
 
     @After
     fun tearDown() {
-        NodeDependencyManager.setMirrorRegion(null)
-        Locale.setDefault(originalLocale)
+        DownloadMirrorPreference.set(context, DownloadMirrorPreference.Mode.AUTO)
         NodeDependencyManager.clearCache(context)
     }
 
     @Test
-    fun `manual mirror region selection takes precedence`() {
-        NodeDependencyManager.setMirrorRegion(NodeDependencyManager.MirrorRegion.CN)
-        val cnConfig = NodeDependencyManager.getMirrorConfig()
-        assertThat(NodeDependencyManager.getMirrorRegion()).isEqualTo(NodeDependencyManager.MirrorRegion.CN)
-        assertThat(cnConfig.nodeUrls.size).isGreaterThan(1)
+    fun `node and php use the same saved mirror selection`() {
+        assertThat(DownloadMirrorPreference.get(context)).isEqualTo(DownloadMirrorPreference.Mode.AUTO)
 
-        NodeDependencyManager.setMirrorRegion(NodeDependencyManager.MirrorRegion.GLOBAL)
-        val globalConfig = NodeDependencyManager.getMirrorConfig()
-        assertThat(NodeDependencyManager.getMirrorRegion()).isEqualTo(NodeDependencyManager.MirrorRegion.GLOBAL)
-        assertThat(globalConfig.nodeUrls).hasSize(1)
-    }
+        DownloadMirrorPreference.set(context, DownloadMirrorPreference.Mode.CN)
+        val nodeCn = NodeDependencyManager.getMirrorConfig(context).nodeUrls
+        val phpCn = WordPressDependencyManager.getMirrorConfig(context).phpUrls
+        assertThat(nodeCn.first().startsWith("https://github.com/")).isFalse()
+        assertThat(phpCn.first().startsWith("https://github.com/")).isFalse()
 
-    @Test
-    fun `auto mirror region follows default locale language`() {
-        NodeDependencyManager.setMirrorRegion(null)
-
-        Locale.setDefault(Locale.CHINESE)
-        assertThat(NodeDependencyManager.getMirrorRegion()).isEqualTo(NodeDependencyManager.MirrorRegion.CN)
-
-        Locale.setDefault(Locale.ENGLISH)
-        assertThat(NodeDependencyManager.getMirrorRegion()).isEqualTo(NodeDependencyManager.MirrorRegion.GLOBAL)
+        DownloadMirrorPreference.set(context, DownloadMirrorPreference.Mode.GLOBAL)
+        assertThat(NodeDependencyManager.getMirrorConfig(context).nodeUrls).containsExactly(nodeCn.last())
+        assertThat(WordPressDependencyManager.getMirrorConfig(context).phpUrls).containsExactly(phpCn.last())
     }
 
     @Test
@@ -160,13 +149,10 @@ class NodeDependencyManagerTest {
 
     @Test
     fun `missingExportAbis reports only satisfiable abis lacking a cached libnode`() {
-        // Empty cache: every upstream ABI is missing; x86 is never reported because
-        // upstream ships no 32-bit x86 libnode and the gap can never be fixed.
         assertThat(
             NodeDependencyManager.missingExportAbis(context, listOf("arm64-v8a", "x86_64", "x86"))
         ).containsExactly("arm64-v8a", "x86_64")
 
-        // A cached libnode.so from the current runtime zip satisfies that ABI.
         File(
             NodeDependencyManager.getNodeDir(context, "x86_64"),
             NodeDependencyManager.NODE_BINARY_NAME
