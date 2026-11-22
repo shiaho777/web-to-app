@@ -229,6 +229,16 @@ an hour as authoritative; the refresh button always bypasses the cache.
 - CI runs on every PR. A green CI is required before merge.
 - Never commit secrets, keystores, `local.properties`, or IDE/cache junk.
 
+### Publishing a signed APK
+
+After the release PR is merged and CI is green, push a matching `vX.Y.Z` tag
+and manually run **Android CI Build** against that tag. The package job uses
+the `SIGNING_KEYSTORE_BASE64`, `SIGNING_STORE_PASSWORD`, `SIGNING_KEY_ALIAS`,
+and `SIGNING_KEY_PASSWORD` Actions secrets, verifies the APK signatures, and
+publishes the standard and Google Play APKs with `SHA256SUMS.txt`. Debug APKs
+are uploaded separately and marked as not for distribution. Never expose
+signing secrets to pull-request workflows.
+
 ### Reviewer expectations
 
 Maintainer reviews look for:
@@ -432,6 +442,15 @@ cd web-to-app
 - 改动涉及构建系统、原生代码或 APK 打包时，附上上面模板重建命令的结果
 - CI 必须绿色才会合并
 - 不要提交密钥、keystore、`local.properties` 或 IDE / 缓存垃圾
+
+**发布正式签名 APK**
+
+发布 PR 合并且 CI 变绿后，推送与版本一致的 `vX.Y.Z` 标签，再手动对该标签运行
+**Android CI Build**。打包任务使用 Actions secrets：
+`SIGNING_KEYSTORE_BASE64`、`SIGNING_STORE_PASSWORD`、`SIGNING_KEY_ALIAS` 和
+`SIGNING_KEY_PASSWORD`，验证 APK 签名，并发布 standard 与 Google Play APK 及
+`SHA256SUMS.txt`。Debug APK 会单独上传并标明不可分发。不要让 PR workflow
+接触签名 secrets。
 
 **Review 标准**
 

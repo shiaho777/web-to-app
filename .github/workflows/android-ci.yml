@@ -77,6 +77,8 @@ jobs:
     if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 90
+    permissions:
+      contents: write
 
     steps:
       - name: Download code
@@ -107,17 +109,48 @@ jobs:
             "cmake;3.22.1" \
             "ndk;28.2.13676358"
 
+      - name: Prepare official release signing
+        env:
+          SIGNING_KEYSTORE_BASE64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
+          SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
+          SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          test -n "$SIGNING_KEYSTORE_BASE64" || { echo "Missing SIGNING_KEYSTORE_BASE64 secret"; exit 1; }
+          test -n "$SIGNING_STORE_PASSWORD" || { echo "Missing SIGNING_STORE_PASSWORD secret"; exit 1; }
+          test -n "$SIGNING_KEY_ALIAS" || { echo "Missing SIGNING_KEY_ALIAS secret"; exit 1; }
+          test -n "$SIGNING_KEY_PASSWORD" || { echo "Missing SIGNING_KEY_PASSWORD secret"; exit 1; }
+          printf '%s' "$SIGNING_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/web-to-app-release.jks"
+          test -s "$RUNNER_TEMP/web-to-app-release.jks"
+          keytool -list -keystore "$RUNNER_TEMP/web-to-app-release.jks" \
+            -storepass "$SIGNING_STORE_PASSWORD" -alias "$SIGNING_KEY_ALIAS" >/dev/null
+
       - name: Build APKs
+        env:
+          SIGNING_STORE_FILE: ${{ runner.temp }}/web-to-app-release.jks
+          SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
+          SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
         run: |
           ./gradlew --no-daemon --no-configuration-cache \
             -Dkotlin.compiler.execution.strategy=in-process \
-            -PallowDebugSignedRelease=true \
             :app:assembleStandardDebug \
             :app:assembleStandardRelease \
             :app:assembleGplayDebug \
             :app:assembleGplayRelease \
             :shell:assembleDebug \
             :shell:assembleRelease
+
+      - name: Verify release APK signatures
+        run: |
+          set -euo pipefail
+          find app/build/outputs/apk/standard/release app/build/outputs/apk/gplay/release \
+            -type f -name '*.apk' -print0 > "$RUNNER_TEMP/release-apks.nul"
+          test -s "$RUNNER_TEMP/release-apks.nul" || { echo "No release APKs were produced"; exit 1; }
+          while IFS= read -r -d '' apk; do
+            apksigner verify -v --min-sdk-version 21 "$apk"
+          done < "$RUNNER_TEMP/release-apks.nul"
 
       # End-to-end proof that the export pipeline produces an installable APK: a real
       # Robolectric build through ApkBuilder against the freshly built shell template.
@@ -138,17 +171,67 @@ jobs:
       - name: Upload standard APKs
         uses: actions/upload-artifact@v4
         with:
-          name: standard-apks-DEBUG-SIGNED-do-not-distribute-${{ github.run_number }}
-          path: |
-            app/build/outputs/apk/standard/**/*.apk
-            shell/build/outputs/apk/**/*.apk
+          name: standard-release-apks-${{ github.run_number }}
+          path: app/build/outputs/apk/standard/release/**/*.apk
           if-no-files-found: error
           retention-days: 14
 
       - name: Upload gplay APKs
         uses: actions/upload-artifact@v4
         with:
-          name: gplay-apks-shiaho.webtoapp-DEBUG-SIGNED-do-not-distribute-${{ github.run_number }}
-          path: app/build/outputs/apk/gplay/**/*.apk
+          name: gplay-release-apks-${{ github.run_number }}
+          path: app/build/outputs/apk/gplay/release/**/*.apk
           if-no-files-found: error
           retention-days: 14
+
+      - name: Upload debug APKs
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-apks-DEBUG-SIGNED-do-not-distribute-${{ github.run_number }}
+          path: |
+            app/build/outputs/apk/standard/debug/**/*.apk
+            app/build/outputs/apk/gplay/debug/**/*.apk
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Publish GitHub release
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          app_version="$(sed -nE 's/^[[:space:]]*versionName = "([^"]+)"$/\1/p' app/build.gradle.kts | head -n 1)"
+          app_version_code="$(sed -nE 's/^[[:space:]]*versionCode = ([0-9]+)$/\1/p' app/build.gradle.kts | head -n 1)"
+          test -n "$app_version" && test -n "$app_version_code"
+          test "$GITHUB_REF_NAME" = "v$app_version" || {
+            echo "Tag $GITHUB_REF_NAME does not match app version $app_version"
+            exit 1
+          }
+          notes_file="fastlane/metadata/android/en-US/changelogs/$app_version_code.txt"
+          test -f "$notes_file" || { echo "Missing release notes: $notes_file"; exit 1; }
+          mapfile -d '' release_apks < <(
+            find app/build/outputs/apk/standard/release app/build/outputs/apk/gplay/release \
+              -type f -name '*.apk' -print0 | sort -z
+          )
+          test "${#release_apks[@]}" -gt 0 || { echo "No release APKs to publish"; exit 1; }
+          mkdir -p "$RUNNER_TEMP/release-assets"
+          for apk in "${release_apks[@]}"; do
+            case "$apk" in
+              */standard/release/*) flavor="standard" ;;
+              */gplay/release/*) flavor="gplay" ;;
+              *) echo "Unexpected release APK path: $apk"; exit 1 ;;
+            esac
+            cp "$apk" "$RUNNER_TEMP/release-assets/web-to-app-$flavor-$(basename "$apk")"
+          done
+          (
+            cd "$RUNNER_TEMP/release-assets"
+            sha256sum ./*.apk > SHA256SUMS.txt
+          )
+          gh release create "$GITHUB_REF_NAME" \
+            "$RUNNER_TEMP"/release-assets/*.apk \
+            "$RUNNER_TEMP/release-assets/SHA256SUMS.txt" \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "WebToApp $app_version" \
+            --notes-file "$notes_file" \
+            --verify-tag \
+            --latest
