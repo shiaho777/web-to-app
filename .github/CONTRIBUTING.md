@@ -215,12 +215,17 @@ an hour as authoritative; the refresh button always bypasses the cache.
 
 ### Pull requests
 
-- Branch from `main`. Keep PRs focused — one logical change per PR.
+- Target `main` and keep each PR focused on one change.
+- Coding agents working in the maintainer's checkout create all local commits
+  on that checkout's `main`. For a PR, publish the intended commit to a remote
+  head branch and target `main`. Direct pushes to remote `main` require an
+  explicit request.
 - Name branches `type/slug` (`fix/…`, `feat/…`, `refactor/…`, `docs/…`) —
   no tool/agent namespaces like `codex/…`.
 - **Write Issues and PRs in English** — titles, bodies, and review threads.
 - Describe the user-visible effect in the PR body, not just the code change.
-- The standard loop is Issue → branch → PR (`Fixes #N`) → green CI → merge.
+- The standard loop is Issue → commit → push the PR head branch → PR
+  (`Fixes #N`) → green CI → merge.
   Issues close on merge, never on PR open or red CI. Opening the PR is not
   the end of the loop: stay until `check` is green and the PR is merged.
 - If your PR touches the build system, native code, or APK packaging, attach
@@ -423,10 +428,13 @@ cd web-to-app
 
 **Pull Request**
 
-- 从 `main` 分出分支，每个 PR 只解决一件事
+- PR 的目标分支为 `main`，每个 PR 只解决一件事
+- 在维护者工作区操作的编码助手统一在原仓库的本地 `main` 上创建提交。走 PR
+  时，将要交付的提交推到远端 PR 分支，目标分支为 `main`。直接推送远端
+  `main` 需要用户明确要求。
 - **Issue 与 PR 请用英文写**——标题、正文、评审讨论
 - PR 描述写"用户看得到的效果"，不只是代码 diff
-- 标准流程是 Issue → 分支 → PR（`Fixes #N`）→ CI 变绿 → 合并。
+- 标准流程是 Issue → 提交 → 推送远端 PR 分支 → PR（`Fixes #N`）→ CI 变绿 → 合并。
   Issue 只在合并时关闭，开 PR 时不关、CI 红时不关。开 PR 不是流程结束，
   要等到 `check` 变绿并且 PR 已合并
 - 改动涉及构建系统、原生代码或 APK 打包时，附上上面模板重建命令的结果
