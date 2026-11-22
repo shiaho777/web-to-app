@@ -1,22 +1,11 @@
 package com.webtoapp.ui.shared
 
-/**
- * Colors for the multi-web top tab bar (#1173). A live page sample wins,
- * then the site's stored theme color, then the same light/dark surfaces the
- * status bar uses. Text is chosen from the same luminance cutoff as
- * [WindowHelper.isColorLight].
- */
+import androidx.compose.runtime.mutableStateMapOf
+
 object TopTabChrome {
     const val LIGHT_BG = "#FFFBFE"
     const val DARK_BG = "#1C1B1F"
 
-    fun backgroundHex(sample: String?, theme: String?, isDark: Boolean): String {
-        parseRgb(sample)?.let { return normalize(sample!!) }
-        parseRgb(theme)?.let { return normalize(theme!!) }
-        return if (isDark) DARK_BG else LIGHT_BG
-    }
-
-    /** True when light text should sit on [backgroundHex]. */
     fun textIsLightOn(backgroundHex: String): Boolean = !isLight(backgroundHex)
 
     fun isLight(hex: String): Boolean {
@@ -25,15 +14,10 @@ object TopTabChrome {
         return luminance > 0.5
     }
 
-    private fun normalize(hex: String): String {
-        val body = hex.trim().removePrefix("#")
-        val expanded = if (body.length == 3 || body.length == 4) {
-            body.asSequence().joinToString("") { "$it$it" }
-        } else {
-            body
+    internal fun normalizeHex(hex: String?): String? =
+        parseRgb(hex)?.joinToString(separator = "", prefix = "#") {
+            it.toString(16).padStart(2, '0').uppercase()
         }
-        return "#" + expanded.take(6).uppercase()
-    }
 
     private fun parseRgb(hex: String?): IntArray? {
         if (hex.isNullOrBlank() || !hex.trim().startsWith("#")) return null
@@ -49,5 +33,24 @@ object TopTabChrome {
             expanded.substring(2, 4).toInt(16),
             expanded.substring(4, 6).toInt(16)
         )
+    }
+}
+
+internal class TopTabColors {
+    private val samples = mutableStateMapOf<String, String>()
+    private var lastDisplayedColor: String? = null
+
+    fun recordSample(siteId: String, color: String?) {
+        TopTabChrome.normalizeHex(color)?.let { samples[siteId] = it }
+    }
+
+    fun siteColor(siteId: String?, themeColor: String?): String? =
+        siteId?.let(samples::get) ?: TopTabChrome.normalizeHex(themeColor)
+
+    fun backgroundHex(siteColor: String?, isDark: Boolean): String =
+        siteColor ?: lastDisplayedColor ?: if (isDark) TopTabChrome.DARK_BG else TopTabChrome.LIGHT_BG
+
+    fun rememberDisplayedColor(siteColor: String?) {
+        if (siteColor != null) lastDisplayedColor = siteColor
     }
 }
