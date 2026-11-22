@@ -5,8 +5,17 @@
     "stargazers_count": 201,
     "forks_count": 45,
     "language": "Python",
-    "pushed_at": "2026-11-20T12:47:38Z",
+    "pushed_at": "2026-11-21T13:03:52Z",
     "html_url": "https://github.com/shiaho777/WebToApp"
+  },
+  {
+    "name": "LogSleuth",
+    "description": "Root-free Android logcat viewer & embeddable zero-permission logging SDK",
+    "stargazers_count": 42,
+    "forks_count": 5,
+    "language": "Kotlin",
+    "pushed_at": "2026-11-18T10:54:52Z",
+    "html_url": "https://github.com/shiaho777/LogSleuth"
   },
   {
     "name": "jseek",
@@ -16,15 +25,6 @@
     "language": "Go",
     "pushed_at": "2026-11-18T13:19:17Z",
     "html_url": "https://github.com/shiaho777/jseek"
-  },
-  {
-    "name": "LogSleuth",
-    "description": "Root-free Android logcat viewer & embeddable zero-permission logging SDK",
-    "stargazers_count": 40,
-    "forks_count": 5,
-    "language": "Kotlin",
-    "pushed_at": "2026-11-18T10:54:52Z",
-    "html_url": "https://github.com/shiaho777/LogSleuth"
   },
   {
     "name": "turn-mcp",
@@ -72,6 +72,15 @@
     "html_url": "https://github.com/shiaho777/revx"
   },
   {
+    "name": "pneuma-android",
+    "description": "Pneuma · 一部会呼吸的 AI 虚拟手机：拟真桌面、聊天、朋友圈、查手机、地图定位、语音/视频通话、日记日历。AI 角色有作息、日程、位置和长期记忆，会主动发消息、发帖互动。数据全在设备本地，联网只调你自己配置的 LLM/生图/语音 API。",
+    "stargazers_count": 18,
+    "forks_count": 14,
+    "language": "TypeScript",
+    "pushed_at": "2026-11-12T10:06:27Z",
+    "html_url": "https://github.com/shiaho777/pneuma-android"
+  },
+  {
     "name": "An-Harness",
     "description": "Android-first on-device AI agent harness — exploring everything possible on Android",
     "stargazers_count": 17,
@@ -88,15 +97,6 @@
     "language": "C",
     "pushed_at": "2026-11-17T09:11:56Z",
     "html_url": "https://github.com/shiaho777/zv-codec"
-  },
-  {
-    "name": "pneuma-android",
-    "description": "Pneuma · 一部会呼吸的 AI 虚拟手机：拟真桌面、聊天、朋友圈、查手机、地图定位、语音/视频通话、日记日历。AI 角色有作息、日程、位置和长期记忆，会主动发消息、发帖互动。数据全在设备本地，联网只调你自己配置的 LLM/生图/语音 API。",
-    "stargazers_count": 17,
-    "forks_count": 14,
-    "language": "TypeScript",
-    "pushed_at": "2026-11-12T10:06:27Z",
-    "html_url": "https://github.com/shiaho777/pneuma-android"
   },
   {
     "name": "wgsql",
@@ -167,7 +167,7 @@
     "stargazers_count": 10,
     "forks_count": 0,
     "language": "Python",
-    "pushed_at": "2026-11-21T08:03:40Z",
+    "pushed_at": "2026-11-21T20:00:06Z",
     "html_url": "https://github.com/shiaho777/pyj-j"
   },
   {
