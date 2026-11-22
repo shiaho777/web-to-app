@@ -8,7 +8,7 @@ Small PHP apps, admin tools, and demos — including custom PHP frameworks.
 
 ## Runtime
 
-- **Version** — PHP 8.4 (built from `pmmp/PHP-Binaries` without `pmmpthread`), downloaded once on first use.
+- **Version** — PHP 8.4 (built from `pmmp/PHP-Binaries` without `pmmpthread`), downloaded on first use from the [runtime repository](https://github.com/shiaho777/web-to-app-runtimes/releases). PHP apps use the native built-in HTTP server, including PHP file uploads.
 - **Composer** — 2.10.x available for dependency management.
 - **Extensions** — custom native extensions (`zend_extension`, `.so`) supported.
 - Managed in the [Linux Environment](/guide/more-features/linux-environment) and [Runtime Management](/guide/more-features/runtime-management) screens.

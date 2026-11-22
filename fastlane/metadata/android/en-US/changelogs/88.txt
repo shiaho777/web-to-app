@@ -1,0 +1,5 @@
+- Refreshed the editor, home screen, and first-run tour. Added automatic update checks.
+- Multi-site pages reclaim unused space and can keep separate site logins. GeckoView can play alongside other apps.
+- Improved PHP uploads and Node.js and Python server startup.
+- Fixed WordPress data loss on app updates, improved backup and restore, and kept pages full-height when zoomed.
+- Added certificate pinning for self-signed remote activation servers and removed AdMob.
