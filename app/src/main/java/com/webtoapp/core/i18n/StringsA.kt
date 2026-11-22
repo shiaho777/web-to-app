@@ -3854,19 +3854,6 @@ object StringsA {
         AppLanguage.KOREAN -> "공통 구성 편집"
     }
 
-    val btnShortcut: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "创建快捷方式"
-        AppLanguage.ENGLISH -> "Create Shortcut"
-        AppLanguage.ARABIC -> "إنشاء اختصار"
-        AppLanguage.PORTUGUESE -> "Criar Atalho"
-        AppLanguage.SPANISH -> "Crear Acceso Directo"
-        AppLanguage.FRENCH -> "Créer un raccourci"
-        AppLanguage.GERMAN -> "Verknüpfung erstellen"
-        AppLanguage.RUSSIAN -> "Создать ярлык"
-        AppLanguage.JAPANESE -> "ショートカットを作成"
-        AppLanguage.KOREAN -> "바로가기 만들기"
-    }
-
     val btnConfirm: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "确认"
         AppLanguage.ENGLISH -> "Confirm"
@@ -9093,32 +9080,6 @@ object StringsA {
         AppLanguage.KOREAN -> "원본 앱"
     }
 
-    val useOriginalIcon: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "使用原图标"
-        AppLanguage.ENGLISH -> "Use Original Icon"
-        AppLanguage.ARABIC -> "استخدام الأيقونة الأصلية"
-        AppLanguage.PORTUGUESE -> "Usar Ícone Original"
-        AppLanguage.SPANISH -> "Usar Icono Original"
-        AppLanguage.FRENCH -> "Utiliser l'Icône Originale"
-        AppLanguage.GERMAN -> "Original-Symbol verwenden"
-        AppLanguage.RUSSIAN -> "Использовать оригинальную иконку"
-        AppLanguage.JAPANESE -> "オリジナルアイコンを使用"
-        AppLanguage.KOREAN -> "원본 아이콘 사용"
-    }
-
-    val shortcutCreated: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "快捷方式创建成功"
-        AppLanguage.ENGLISH -> "Shortcut created successfully"
-        AppLanguage.ARABIC -> "تم إنشاء الاختصار بنجاح"
-        AppLanguage.PORTUGUESE -> "Atalho criado com sucesso"
-        AppLanguage.SPANISH -> "Acceso directo creado con éxito"
-        AppLanguage.FRENCH -> "Raccourci créé avec succès"
-        AppLanguage.GERMAN -> "Verknüpfung erfolgreich erstellt"
-        AppLanguage.RUSSIAN -> "Ярлык успешно создан"
-        AppLanguage.JAPANESE -> "ショートカットを作成しました"
-        AppLanguage.KOREAN -> "바로가기가 생성되었습니다"
-    }
-
     val cloneSuccess: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "克隆成功，请确认安装"
         AppLanguage.ENGLISH -> "Clone successful, please confirm installation"
@@ -12369,16 +12330,16 @@ object StringsA {
     }
 
     val cloneInstallWarning: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "克隆安装仅适用于无签名校验的应用，兼容性较差。建议优先使用「快捷方式」功能。"
-        AppLanguage.ENGLISH -> "Clone install only works for apps without signature verification, with limited compatibility. It's recommended to use 'Shortcut' feature instead."
-        AppLanguage.ARABIC -> "التثبيت المستنسخ يعمل فقط للتطبيقات بدون التحقق من التوقيع، مع توافق محدود. يُنصح باستخدام ميزة 'الاختصار' بدلاً من ذلك."
-        AppLanguage.PORTUGUESE -> "A instalação de clone só funciona para apps sem verificação de assinatura, com compatibilidade limitada. Recomenda-se usar o recurso 'Atalho'."
-        AppLanguage.SPANISH -> "La instalación clonada solo funciona para aplicaciones sin verificación de firma, con compatibilidad limitada. Se recomienda usar la función 'Acceso directo'."
-        AppLanguage.FRENCH -> "L'installation clonée ne fonctionne que pour les applications sans vérification de signature, avec une compatibilité limitée. Il est recommandé d'utiliser la fonctionnalité 'Raccourci'."
-        AppLanguage.GERMAN -> "Die Klon-Installation funktioniert nur bei Apps ohne Signaturverifikation, mit eingeschränkter Kompatibilität. Es wird empfohlen, stattdessen die Funktion 'Verknüpfung' zu verwenden."
-        AppLanguage.RUSSIAN -> "Установка клона работает только для приложений без проверки подписи, с ограниченной совместимостью. Рекомендуется использовать функцию «Ярлык»."
-        AppLanguage.JAPANESE -> "クローンインストールは署名検証のないアプリのみで動作し、互換性が限定的です。代わりに「ショートカット」機能の使用をお勧めします。"
-        AppLanguage.KOREAN -> "클론 설치는 서명 검증이 없는 앱에서만 작동하며 호환성이 제한적입니다. 대신 '바로가기' 기능을 사용하는 것을 권장합니다."
+        AppLanguage.CHINESE -> "部分应用会自行验证签名，克隆可能无法运行。克隆使用新的签名身份，不会替换原应用。"
+        AppLanguage.ENGLISH -> "Some apps verify their own signatures and may not run when cloned. A clone has a new signing identity and does not replace the original app."
+        AppLanguage.ARABIC -> "تتحقق بعض التطبيقات من توقيعها بنفسها وقد لا تعمل بعد الاستنساخ. تحمل النسخة هوية توقيع جديدة ولا تستبدل التطبيق الأصلي."
+        AppLanguage.PORTUGUESE -> "Alguns apps verificam a própria assinatura e podem não funcionar após a clonagem. A cópia usa uma nova identidade de assinatura e não substitui o app original."
+        AppLanguage.SPANISH -> "Algunas apps verifican su propia firma y podrían no funcionar al clonarse. La copia tiene una nueva identidad de firma y no reemplaza la app original."
+        AppLanguage.FRENCH -> "Certaines applications vérifient leur propre signature et peuvent ne pas fonctionner après clonage. La copie a une nouvelle identité de signature et ne remplace pas l'application d'origine."
+        AppLanguage.GERMAN -> "Manche Apps prüfen ihre eigene Signatur und funktionieren möglicherweise nicht als Klon. Der Klon hat eine neue Signaturidentität und ersetzt die Original-App nicht."
+        AppLanguage.RUSSIAN -> "Некоторые приложения проверяют собственную подпись и могут не работать после клонирования. Клон имеет новую подпись и не заменяет оригинальное приложение."
+        AppLanguage.JAPANESE -> "アプリによっては独自に署名を検証するため、クローンが動作しない場合があります。クローンは別の署名 ID を持ち、元のアプリを置き換えません。"
+        AppLanguage.KOREAN -> "일부 앱은 자체 서명을 확인하므로 복제 후 실행되지 않을 수 있습니다. 복제본은 새 서명 ID를 사용하며 원본 앱을 대체하지 않습니다."
     }
 
     val iconLibrary: String get() = when (Strings.lang) {
@@ -13393,19 +13354,6 @@ object StringsA {
         AppLanguage.RUSSIAN -> "Нажмите «назад» ещё раз для выхода"
         AppLanguage.JAPANESE -> "もう一度戻るを押すと終了します"
         AppLanguage.KOREAN -> "한 번 더 누르면 종료됩니다"
-    }
-
-    val shortcutCreatedSuccess: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "快捷方式创建成功"
-        AppLanguage.ENGLISH -> "Shortcut created successfully"
-        AppLanguage.ARABIC -> "تم إنشاء الاختصار بنجاح"
-        AppLanguage.PORTUGUESE -> "Atalho criado com sucesso"
-        AppLanguage.SPANISH -> "Acceso directo creado con éxito"
-        AppLanguage.FRENCH -> "Raccourci créé avec succès"
-        AppLanguage.GERMAN -> "Verknüpfung erfolgreich erstellt"
-        AppLanguage.RUSSIAN -> "Ярлык успешно создан"
-        AppLanguage.JAPANESE -> "ショートカットを作成しました"
-        AppLanguage.KOREAN -> "바로가기 생성 성공"
     }
 
     val preparing: String get() = when (Strings.lang) {

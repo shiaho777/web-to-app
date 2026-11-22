@@ -28,7 +28,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
-import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.view.WindowCompat
 import com.webtoapp.WebToAppApplication
 import com.webtoapp.core.agent.mcp.HostMcpController
@@ -55,9 +54,6 @@ class MainActivity : ComponentActivity() {
 
     private var showLanguageSelection by mutableStateOf(true)
     private var showOnboarding by mutableStateOf(true)
-
-    private var showShortcutPermissionDialog by mutableStateOf(false)
-    private var shortcutPermissionMessage by mutableStateOf("")
 
     private var showStartupPermissionRationale by mutableStateOf(false)
     private var showPermissionDeniedDialog by mutableStateOf(false)
@@ -128,8 +124,6 @@ class MainActivity : ComponentActivity() {
         }
 
         requestNecessaryPermissions()
-
-        checkShortcutPermission()
 
         try {
             WindowCompat.setDecorFitsSystemWindows(window, false)
@@ -249,7 +243,7 @@ class MainActivity : ComponentActivity() {
                         },
                         dismissButton = {
                             TextButton(onClick = { showStartupPermissionRationale = false }) {
-                                Text(Strings.shortcutPermissionLater)
+                                Text(Strings.cancel)
                             }
                         }
                     )
@@ -265,7 +259,7 @@ class MainActivity : ComponentActivity() {
                                 showPermissionDeniedDialog = false
                                 openAppSettings()
                             }) {
-                                Text(Strings.shortcutPermissionGoToSettings)
+                                Text(Strings.installPermissionOpenSettings)
                             }
                         },
                         dismissButton = {
@@ -276,70 +270,6 @@ class MainActivity : ComponentActivity() {
                     )
                 }
 
-                if (showShortcutPermissionDialog) {
-                    WtaAlertDialog(
-                        onDismissRequest = { showShortcutPermissionDialog = false },
-                        title = Strings.shortcutPermissionTitle,
-                        text = shortcutPermissionMessage,
-                        confirmButton = {
-                            TextButton(
-                                onClick = {
-                                    showShortcutPermissionDialog = false
-                                    openAppSettings()
-                                }
-                            ) {
-                                Text(Strings.shortcutPermissionGoToSettings)
-                            }
-                        },
-                        dismissButton = {
-                            TextButton(
-                                onClick = { showShortcutPermissionDialog = false }
-                            ) {
-                                Text(Strings.shortcutPermissionLater)
-                            }
-                        }
-                    )
-                }
-            }
-        }
-    }
-
-    private fun checkShortcutPermission() {
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-
-            if (!ShortcutManagerCompat.isRequestPinShortcutSupported(this)) {
-
-                shortcutPermissionMessage = buildShortcutPermissionMessage()
-                showShortcutPermissionDialog = true
-            }
-        }
-    }
-
-    private fun buildShortcutPermissionMessage(): String {
-        val manufacturer = Build.MANUFACTURER.lowercase()
-
-        return when {
-            manufacturer.contains("xiaomi") || manufacturer.contains("redmi") -> {
-                Strings.shortcutPermissionXiaomi
-            }
-            manufacturer.contains("huawei") || manufacturer.contains("honor") -> {
-                Strings.shortcutPermissionHuawei
-            }
-            manufacturer.contains("oppo") -> {
-                Strings.shortcutPermissionOppo
-            }
-            manufacturer.contains("vivo") -> {
-                Strings.shortcutPermissionVivo
-            }
-            manufacturer.contains("meizu") -> {
-                Strings.shortcutPermissionMeizu
-            }
-            manufacturer.contains("samsung") -> {
-                Strings.shortcutPermissionSamsung
-            }
-            else -> {
-                Strings.shortcutPermissionGeneric
             }
         }
     }

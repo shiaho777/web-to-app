@@ -31,6 +31,7 @@ import com.webtoapp.ui.media.MediaAppActivity
 import com.webtoapp.ui.webview.WebViewActivity
 import com.webtoapp.ui.agent.AgentScreen
 import com.webtoapp.ui.screens.AboutScreen
+import com.webtoapp.ui.screens.ApkInstallScreen
 import com.webtoapp.ui.screens.SettingsScreen
 import com.webtoapp.ui.screens.AiSettingsScreen
 import com.webtoapp.ui.screens.AppModifierScreen
@@ -51,6 +52,7 @@ import com.webtoapp.ui.screens.CreatePythonAppScreen
 import com.webtoapp.ui.screens.CreateWordPressAppScreen
 import com.webtoapp.ui.screens.PluginManagerScreen
 import com.webtoapp.ui.screens.FileManagerScreen
+import com.webtoapp.ui.screens.DualPanelFileManagerScreen
 import com.webtoapp.ui.screens.HomeScreen
 import com.webtoapp.ui.screens.HostsAdBlockScreen
 import com.webtoapp.ui.screens.LinuxEnvironmentScreen
@@ -66,6 +68,7 @@ import org.koin.androidx.compose.koinViewModel
 
 object Routes {
     const val HOME = "home"
+    const val DUAL_PANEL_FILE_MANAGER = "dual_panel_file_manager"
 
     const val CREATE_APP = "create_app"
     const val CREATE_MEDIA_APP = "create_media_app"
@@ -111,6 +114,7 @@ object Routes {
     const val SETTINGS = "settings"
     const val PLAY_STORE = "play_store?appId={appId}&autoStart={autoStart}"
     const val FILE_MANAGER = "file_manager"
+    const val INSTALL_APK = "install_apk"
     const val BUILD_APK = "build_apk/{appId}"
 
     fun playStore(appId: Long? = null, autoStart: Boolean = false): String {
@@ -242,11 +246,25 @@ fun AppNavigation() {
                         onExportAabForApp = { appId ->
                             navController.navigate(Routes.playStore(appId = appId, autoStart = true))
                         },
-                        onOpenFileManager = { navController.navigate(Routes.FILE_MANAGER) },
+                        onOpenFileManager = { navController.navigate(Routes.DUAL_PANEL_FILE_MANAGER) },
+                        onOpenApkInstaller = { navController.navigate(Routes.INSTALL_APK) },
                         onBuildApk = { appId ->
                             navController.navigate(Routes.buildApk(appId))
                         }
                     )
+            }
+
+            composable(Routes.DUAL_PANEL_FILE_MANAGER) {
+                DualPanelFileManagerScreen(
+                    onBack = {
+                        if (!navController.popBackStackSafely()) {
+                            navController.navigate(Routes.HOME) {
+                                popUpTo(Routes.DUAL_PANEL_FILE_MANAGER) { inclusive = true }
+                            }
+                        }
+                    },
+                    onOpenBuildFiles = { navController.navigate(Routes.FILE_MANAGER) }
+                )
             }
 
             composable(Routes.STATS) {
@@ -751,6 +769,10 @@ fun AppNavigation() {
 
             composable(Routes.FILE_MANAGER) {
                 FileManagerScreen(onBack = { navController.popBackStackSafely() })
+            }
+
+            composable(Routes.INSTALL_APK) {
+                ApkInstallScreen(onBack = { navController.popBackStackSafely() })
             }
 
             composable(

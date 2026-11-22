@@ -162,6 +162,7 @@ fun HomeScreen(
     onOpenPlayStore: () -> Unit = {},
     onExportAabForApp: (Long) -> Unit = {},
     onOpenFileManager: () -> Unit = {},
+    onOpenApkInstaller: () -> Unit = {},
     onBuildApk: (Long) -> Unit = {},
 ) {
     val apps by viewModel.filteredSummaries.collectAsStateWithLifecycle()
@@ -399,6 +400,11 @@ fun HomeScreen(
                                 leadingIcon = { MoreMenuIcon(Icons.Rounded.Shop, 1) }
                             )
                             DropdownMenuItem(
+                                text = { Text(Strings.installApkCenter) },
+                                onClick = { showMoreMenu = false; onOpenApkInstaller() },
+                                leadingIcon = { MoreMenuIcon(Icons.Rounded.InstallMobile, 1) }
+                            )
+                            DropdownMenuItem(
                                 text = { Text(Strings.menuFileManager) },
                                 onClick = { showMoreMenu = false; onOpenFileManager() },
                                 leadingIcon = { MoreMenuIcon(Icons.Rounded.Folder, 2) }
@@ -522,7 +528,6 @@ fun HomeScreen(
                 } else {
 
                     val listContext = LocalContext.current
-                    val sharedExporter = remember { com.webtoapp.core.export.AppExporter(listContext) }
                     val sharedApkBuilder = remember { lazy { ApkBuilder(listContext) } }
                     val sharedScope = rememberCoroutineScope()
 
@@ -640,28 +645,6 @@ fun HomeScreen(
                         onDelete = {
                             selectedApp = app
                             showDeleteDialog = true
-                        },
-                        onCreateShortcut = {
-                            scope.launch {
-                                val fullApp = viewModel.getWebApp(app.id) ?: return@launch
-                                when (val result = sharedExporter.createShortcut(fullApp)) {
-                                    is com.webtoapp.core.export.ShortcutResult.Success -> {
-                                        snackbarHostState.showSnackbar(Strings.shortcutCreatedSuccess)
-                                    }
-                                    is com.webtoapp.core.export.ShortcutResult.Pending -> {
-                                        snackbarHostState.showSnackbar(result.message)
-                                    }
-                                    is com.webtoapp.core.export.ShortcutResult.PermissionRequired -> {
-                                        snackbarHostState.showSnackbar(
-                                            message = result.message,
-                                            duration = SnackbarDuration.Long
-                                        )
-                                    }
-                                    is com.webtoapp.core.export.ShortcutResult.Error -> {
-                                        snackbarHostState.showSnackbar(result.message)
-                                    }
-                                }
-                            }
                         },
                         onExport = {
                             scope.launch {
@@ -1024,7 +1007,6 @@ fun HomeScreen(
                             onEdit = actions.onEdit,
                             onEditCore = actions.onEditCore,
                             onDelete = actions.onDelete,
-                            onCreateShortcut = actions.onCreateShortcut,
                             onExport = actions.onExport,
                             onBuildApk = actions.onBuildApk,
                             onShareApk = actions.onShareApk,
@@ -1256,7 +1238,6 @@ fun AppCard(
     onEdit: () -> Unit,
     onEditCore: () -> Unit = {},
     onDelete: () -> Unit,
-    onCreateShortcut: () -> Unit = {},
     onExport: () -> Unit = {},
     onBuildApk: () -> Unit = {},
     onShareApk: () -> Unit = {},
@@ -1446,7 +1427,6 @@ fun AppCard(
                         onEdit = onEdit,
                         onEditCore = onEditCore,
                         onDelete = onDelete,
-                        onCreateShortcut = onCreateShortcut,
                         onExport = onExport,
                         onBuildApk = onBuildApk,
                         onShareApk = onShareApk,
@@ -1464,7 +1444,6 @@ class HomeAppActions(
     val onEdit: () -> Unit,
     val onEditCore: () -> Unit,
     val onDelete: () -> Unit,
-    val onCreateShortcut: () -> Unit,
     val onExport: () -> Unit,
     val onBuildApk: () -> Unit,
     val onShareApk: () -> Unit,
@@ -1515,14 +1494,6 @@ fun AppCardActionsMenu(
             )
         }
         HorizontalDivider()
-        com.webtoapp.ui.design.WtaDropdownMenuItem(
-            text = Strings.btnShortcut,
-            leadingIcon = Icons.Outlined.AppShortcut,
-            onClick = {
-                onDismiss()
-                actions.onCreateShortcut()
-            }
-        )
         com.webtoapp.ui.design.WtaDropdownMenuItem(
             text = Strings.buildDialogTitle,
             leadingIcon = Icons.Outlined.InstallMobile,

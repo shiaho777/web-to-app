@@ -1,9 +1,6 @@
 package com.webtoapp.ui.screens
 
 import android.graphics.drawable.Drawable
-import android.net.Uri
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -24,7 +21,6 @@ import androidx.compose.material.icons.outlined.Apps
 import androidx.compose.material.icons.outlined.Clear
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material.icons.outlined.PhoneAndroid
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.SearchOff
@@ -69,14 +65,10 @@ import com.webtoapp.core.appmodifier.AppCloner
 import com.webtoapp.core.appmodifier.AppFilterType
 import com.webtoapp.core.appmodifier.AppListProvider
 import com.webtoapp.core.appmodifier.AppModifyResult
-import com.webtoapp.core.appmodifier.CloneConfigBuilder
 import com.webtoapp.core.appmodifier.ClonePackageNames
 import com.webtoapp.core.appmodifier.InstalledAppInfo
 import com.webtoapp.core.i18n.Strings
-import com.webtoapp.data.model.SplashType
-import com.webtoapp.ui.components.ActivationCodeCard
 import com.webtoapp.ui.components.AppNameTextFieldSimple
-import com.webtoapp.ui.components.IconPickerWithLibrary
 import com.webtoapp.ui.design.WtaButton
 import com.webtoapp.ui.design.WtaButtonSize
 import com.webtoapp.ui.design.WtaButtonVariant
@@ -97,22 +89,15 @@ import com.webtoapp.ui.design.WtaTextField
 import com.webtoapp.ui.screens.create.WtaCreateFlowScaffold
 import com.webtoapp.ui.screens.create.WtaCreateFlowSection
 import com.webtoapp.ui.theme.LocalShowDescriptions
-import com.webtoapp.util.SplashStorage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.File
 
 private enum class AppSortMode {
     NAME,
     SIZE,
     RECENT
-}
-
-private enum class ModifyOutputMode {
-    SHORTCUT,
-    CLONE
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -550,10 +535,6 @@ fun AppModifyFullScreen(
         onResult = { result ->
             scope.launch {
                 when (result) {
-                    is AppModifyResult.ShortcutSuccess -> {
-                        snackbarHostState.showSnackbar(Strings.shortcutCreated)
-                        onBack()
-                    }
                     is AppModifyResult.CloneSuccess -> {
                         snackbarHostState.showSnackbar(Strings.cloneSuccess)
                         onBack()
@@ -593,14 +574,12 @@ private fun AppModifyContent(
     var isProcessing by remember { mutableStateOf(false) }
     var progress by remember { mutableIntStateOf(0) }
     var progressText by remember { mutableStateOf("") }
-    var outputMode by remember { mutableStateOf(ModifyOutputMode.SHORTCUT) }
     var packageNameInstalled by remember { mutableStateOf(false) }
 
     val trimmedPackageName = editState.newPackageName.trim()
     val packageFormatInvalid = trimmedPackageName.isNotBlank() &&
         !ClonePackageNames.isValid(trimmedPackageName)
     val packageNameError = when {
-        outputMode != ModifyOutputMode.CLONE -> null
         packageFormatInvalid -> Strings.packageNameInvalidFormat
         packageNameInstalled -> Strings.appModifierPackageInUse
         else -> null
@@ -629,57 +608,6 @@ private fun AppModifyContent(
         editState = editState.transform()
     }
 
-    val imagePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri ->
-        uri?.let { update { copy(newIconUri = it, newIconPath = null) } }
-    }
-    val splashImagePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri ->
-        uri?.let {
-            scope.launch {
-                val savedPath = SplashStorage.saveMediaFromUri(context, it, isVideo = false)
-                if (savedPath != null) {
-                    update {
-                        copy(
-                            splashEnabled = true,
-                            splashConfig = splashConfig.copy(
-                                type = SplashType.IMAGE,
-                                mediaPath = savedPath
-                            ),
-                            splashMediaUri = Uri.fromFile(File(savedPath))
-                        )
-                    }
-                }
-            }
-        }
-    }
-    val splashVideoPickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri ->
-        uri?.let {
-            scope.launch {
-                val savedPath = SplashStorage.saveMediaFromUri(context, it, isVideo = true)
-                if (savedPath != null) {
-                    update {
-                        copy(
-                            splashEnabled = true,
-                            splashConfig = splashConfig.copy(
-                                type = SplashType.VIDEO,
-                                mediaPath = savedPath,
-                                videoStartMs = 0L,
-                                videoEndMs = 5000L,
-                                videoDurationMs = 0L
-                            ),
-                            splashMediaUri = Uri.fromFile(File(savedPath))
-                        )
-                    }
-                }
-            }
-        }
-    }
-
     fun runClone() {
         if (editState.newAppName.isBlank() || isProcessing || packageNameError != null) return
         val chosenPackage = trimmedPackageName.ifBlank { defaultClonePackage }
@@ -701,39 +629,7 @@ private fun AppModifyContent(
         }
     }
 
-    fun runShortcut() {
-        if (editState.newAppName.isBlank() || isProcessing) return
-        isProcessing = true
-        scope.launch {
-            try {
-                val result = appCloner.createModifiedShortcut(editState.toConfig(app)) { p, t ->
-                    progress = p
-                    progressText = t
-                }
-                isProcessing = false
-                onResult(result)
-            } catch (e: Exception) {
-                isProcessing = false
-                onResult(AppModifyResult.Error(e.message ?: Strings.failed))
-            }
-        }
-    }
-
-    val hasCustomIcon = editState.newIconUri != null || editState.newIconPath != null
-    val cloneBlockedReason = when {
-        hasCustomIcon -> Strings.appModifierCloneNeedsOriginalIcon
-        CloneConfigBuilder.hasAnyModification(editState.toConfig(app)) ->
-            Strings.appModifierCloneNoEnhancements
-        else -> null
-    }
-    val canClone = cloneBlockedReason == null
     val nameReady = editState.newAppName.isNotBlank()
-
-    LaunchedEffect(canClone) {
-        if (!canClone && outputMode == ModifyOutputMode.CLONE) {
-            outputMode = ModifyOutputMode.SHORTCUT
-        }
-    }
 
     WtaCreateFlowScaffold(
         title = Strings.modifyApp,
@@ -747,16 +643,8 @@ private fun AppModifyContent(
                 isProcessing = isProcessing,
                 progress = progress,
                 progressText = progressText,
-                outputMode = outputMode,
-                canClone = canClone,
-                actionEnabled = nameReady && !isProcessing &&
-                    (outputMode != ModifyOutputMode.CLONE || (canClone && packageNameError == null)),
-                onPrimary = {
-                    when (outputMode) {
-                        ModifyOutputMode.SHORTCUT -> runShortcut()
-                        ModifyOutputMode.CLONE -> runClone()
-                    }
-                }
+                actionEnabled = nameReady && !isProcessing && packageNameError == null,
+                onPrimary = ::runClone
             )
         }
     ) {
@@ -764,118 +652,19 @@ private fun AppModifyContent(
             IdentityPreviewCard(
                 original = app,
                 newName = editState.newAppName.ifBlank { app.appName },
-                newPackageName = trimmedPackageName.ifBlank { defaultClonePackage },
-                outputMode = outputMode,
-                hasCustomIcon = hasCustomIcon
-            )
-
-            OutputModeCard(
-                mode = outputMode,
-                cloneBlockedReason = cloneBlockedReason,
-                onModeChange = { outputMode = it }
+                newPackageName = trimmedPackageName.ifBlank { defaultClonePackage }
             )
 
             BasicInfoCard(
                 editState = editState,
-                outputMode = outputMode,
                 packageNameError = packageNameError,
                 onNameChange = { update { copy(newAppName = it) } },
-                onPackageNameChange = { update { copy(newPackageName = it) } },
-                onPickFromGallery = { imagePickerLauncher.launch("image/*") },
-                onPickFromLibrary = { path ->
-                    update { copy(newIconPath = path, newIconUri = null) }
-                },
-                onResetIcon = {
-                    update { copy(newIconUri = null, newIconPath = null) }
-                }
+                onPackageNameChange = { update { copy(newPackageName = it) } }
             )
-        }
-
-        WtaCreateFlowSection(title = Strings.appConfig) {
-            ActivationCodeCard(
-                enabled = editState.activationEnabled,
-                activationCodes = editState.activationCodes,
-                requireEveryTime = editState.activationRequireEveryTime,
-                dialogConfig = editState.activationDialogConfig,
-                remoteConfig = editState.activationRemoteConfig,
-                onEnabledChange = { update { copy(activationEnabled = it) } },
-                onCodesChange = { update { copy(activationCodes = it) } },
-                onRequireEveryTimeChange = { update { copy(activationRequireEveryTime = it) } },
-                onDialogConfigChange = { update { copy(activationDialogConfig = it) } },
-                onRemoteConfigChange = { update { copy(activationRemoteConfig = it) } }
+            WtaStatusBanner(
+                message = Strings.appModifierCloneIdentityOnly,
+                tone = WtaStatusTone.Warning
             )
-
-            AnnouncementCard(
-                enabled = editState.announcementEnabled,
-                announcement = editState.announcement,
-                onEnabledChange = { update { copy(announcementEnabled = it) } },
-                onAnnouncementChange = { update { copy(announcement = it) } }
-            )
-
-            SplashScreenCard(
-                enabled = editState.splashEnabled,
-                splashConfig = editState.splashConfig,
-                splashMediaUri = editState.splashMediaUri,
-                savedSplashPath = editState.splashConfig.mediaPath,
-                onEnabledChange = { update { copy(splashEnabled = it) } },
-                onSelectImage = { splashImagePickerLauncher.launch("image/*") },
-                onSelectVideo = { splashVideoPickerLauncher.launch("video/*") },
-                onDurationChange = { duration ->
-                    update { copy(splashConfig = splashConfig.copy(duration = duration)) }
-                },
-                onClickToSkipChange = { skip ->
-                    update { copy(splashConfig = splashConfig.copy(clickToSkip = skip)) }
-                },
-                onShowCountdownChange = { show ->
-                    update { copy(splashConfig = splashConfig.copy(showCountdown = show)) }
-                },
-                onOrientationChange = { orientation ->
-                    update { copy(splashConfig = splashConfig.copy(orientation = orientation)) }
-                },
-                onFillScreenChange = { fill ->
-                    update { copy(splashConfig = splashConfig.copy(fillScreen = fill)) }
-                },
-                onEnableAudioChange = { audio ->
-                    update { copy(splashConfig = splashConfig.copy(enableAudio = audio)) }
-                },
-                onVideoTrimChange = { start, end, total ->
-                    update {
-                        copy(
-                            splashConfig = splashConfig.copy(
-                                videoStartMs = start,
-                                videoEndMs = end,
-                                videoDurationMs = total
-                            )
-                        )
-                    }
-                },
-                onClearMedia = {
-                    update {
-                        copy(
-                            splashEnabled = false,
-                            splashConfig = splashConfig.copy(
-                                mediaPath = null,
-                                videoStartMs = 0L,
-                                videoEndMs = 5000L,
-                                videoDurationMs = 0L
-                            ),
-                            splashMediaUri = null
-                        )
-                    }
-                }
-            )
-
-            if (outputMode == ModifyOutputMode.CLONE) {
-                WtaStatusBanner(
-                    message = Strings.cloneInstallWarning,
-                    tone = WtaStatusTone.Warning
-                )
-            } else {
-                WtaStatusBanner(
-                    message = Strings.appModifierShortcutHint,
-                    tone = WtaStatusTone.Info
-                )
-            }
         }
     }
 }
@@ -884,9 +673,7 @@ private fun AppModifyContent(
 private fun IdentityPreviewCard(
     original: InstalledAppInfo,
     newName: String,
-    newPackageName: String,
-    outputMode: ModifyOutputMode,
-    hasCustomIcon: Boolean
+    newPackageName: String
 ) {
     WtaCard(tone = WtaCardTone.Highlighted, contentPadding = PaddingValues(16.dp)) {
         Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
@@ -915,30 +702,8 @@ private fun IdentityPreviewCard(
                 IdentitySide(
                     label = Strings.appModifierNewIdentity,
                     name = newName,
-                    packageName = if (outputMode == ModifyOutputMode.CLONE) {
-                        newPackageName
-                    } else {
-                        original.packageName
-                    },
-                    icon = {
-                        if (hasCustomIcon) {
-                            Box(
-                                modifier = Modifier
-                                    .size(52.dp)
-                                    .clip(RoundedCornerShape(WtaRadius.IconPlate))
-                                    .background(MaterialTheme.colorScheme.primaryContainer),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    Icons.Outlined.PhoneAndroid,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onPrimaryContainer
-                                )
-                            }
-                        } else {
-                            AppIconBox(app = original, size = 52.dp)
-                        }
-                    },
+                    packageName = newPackageName,
+                    icon = { AppIconBox(app = original, size = 52.dp) },
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -983,175 +748,34 @@ private fun IdentitySide(
 }
 
 @Composable
-private fun OutputModeCard(
-    mode: ModifyOutputMode,
-    cloneBlockedReason: String?,
-    onModeChange: (ModifyOutputMode) -> Unit
-) {
-    val canClone = cloneBlockedReason == null
-    WtaCard(tone = WtaCardTone.Surface, contentPadding = PaddingValues(12.dp)) {
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(
-                text = Strings.appModifierOutputMode,
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.SemiBold
-            )
-            ModeOption(
-                selected = mode == ModifyOutputMode.SHORTCUT,
-                title = Strings.btnShortcut,
-                description = Strings.appModifierModeShortcutDesc,
-                icon = Icons.Outlined.PhoneAndroid,
-                badge = Strings.appModifierRecommended,
-                onClick = { onModeChange(ModifyOutputMode.SHORTCUT) }
-            )
-            ModeOption(
-                selected = mode == ModifyOutputMode.CLONE,
-                title = Strings.cloneInstall,
-                description = cloneBlockedReason ?: Strings.appModifierModeCloneDesc,
-                icon = Icons.Outlined.ContentCopy,
-                enabled = canClone,
-                onClick = { if (canClone) onModeChange(ModifyOutputMode.CLONE) }
-            )
-        }
-    }
-}
-
-@Composable
-private fun ModeOption(
-    selected: Boolean,
-    title: String,
-    description: String,
-    icon: ImageVector,
-    onClick: () -> Unit,
-    enabled: Boolean = true,
-    badge: String? = null
-) {
-    val container = when {
-        !enabled -> MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.5f)
-        selected -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.55f)
-        else -> MaterialTheme.colorScheme.surfaceContainerHigh
-    }
-    Surface(
-        onClick = onClick,
-        enabled = enabled,
-        shape = RoundedCornerShape(14.dp),
-        color = container,
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Row(
-            modifier = Modifier.padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.7f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    icon,
-                    contentDescription = null,
-                    tint = if (enabled) MaterialTheme.colorScheme.onSurface
-                    else MaterialTheme.colorScheme.outline
-                )
-            }
-            Spacer(Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.SemiBold,
-                        color = if (enabled) MaterialTheme.colorScheme.onSurface
-                        else MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    if (badge != null) {
-                        Spacer(Modifier.width(8.dp))
-                        Surface(
-                            shape = RoundedCornerShape(999.dp),
-                            color = WtaColors.semantic.success.copy(alpha = 0.14f)
-                        ) {
-                            Text(
-                                text = badge,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = WtaColors.semantic.success,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
-                            )
-                        }
-                    }
-                }
-                Spacer(Modifier.height(2.dp))
-                Text(
-                    text = description,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            if (selected && enabled) {
-                Icon(
-                    Icons.Filled.CheckCircle,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            }
-        }
-    }
-}
-
-@Composable
 private fun BasicInfoCard(
     editState: AppModifierEditState,
-    outputMode: ModifyOutputMode,
     packageNameError: String?,
     onNameChange: (String) -> Unit,
-    onPackageNameChange: (String) -> Unit,
-    onPickFromGallery: () -> Unit,
-    onPickFromLibrary: (String) -> Unit,
-    onResetIcon: () -> Unit
+    onPackageNameChange: (String) -> Unit
 ) {
     WtaCard(tone = WtaCardTone.Surface, contentPadding = PaddingValues(16.dp)) {
         Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            IconPickerWithLibrary(
-                iconUri = editState.newIconUri,
-                iconPath = editState.newIconPath,
-                onSelectFromGallery = onPickFromGallery,
-                onSelectFromLibrary = onPickFromLibrary
-            )
-
-            if (editState.newIconUri != null || editState.newIconPath != null) {
-                TextButton(
-                    onClick = onResetIcon,
-                    contentPadding = PaddingValues(0.dp)
-                ) {
-                    Icon(Icons.Outlined.Refresh, null, Modifier.size(16.dp))
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(Strings.useOriginalIcon, style = MaterialTheme.typography.labelMedium)
-                }
-            }
-
             AppNameTextFieldSimple(
                 value = editState.newAppName,
                 onValueChange = onNameChange
             )
 
-            if (outputMode == ModifyOutputMode.CLONE) {
-                WtaTextField(
-                    value = editState.newPackageName,
-                    onValueChange = onPackageNameChange,
-                    modifier = Modifier.fillMaxWidth(),
-                    label = Strings.customPackageName,
-                    placeholder = Strings.apkPackageNamePlaceholder,
-                    supportingText = packageNameError
-                        ?: Strings.packageNameHint.takeIf { LocalShowDescriptions.current },
-                    isError = packageNameError != null,
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Ascii,
-                        autoCorrectEnabled = false
-                    )
+            WtaTextField(
+                value = editState.newPackageName,
+                onValueChange = onPackageNameChange,
+                modifier = Modifier.fillMaxWidth(),
+                label = Strings.customPackageName,
+                placeholder = Strings.apkPackageNamePlaceholder,
+                supportingText = packageNameError
+                    ?: Strings.packageNameHint.takeIf { LocalShowDescriptions.current },
+                isError = packageNameError != null,
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Ascii,
+                    autoCorrectEnabled = false
                 )
-            }
+            )
         }
     }
 }
@@ -1161,8 +785,6 @@ private fun AppModifyBottomBar(
     isProcessing: Boolean,
     progress: Int,
     progressText: String,
-    outputMode: ModifyOutputMode,
-    canClone: Boolean,
     actionEnabled: Boolean,
     onPrimary: () -> Unit
 ) {
@@ -1204,44 +826,16 @@ private fun AppModifyBottomBar(
                 }
             }
 
-            val primaryText = when {
-                isProcessing -> Strings.appModifierWorking
-                outputMode == ModifyOutputMode.CLONE -> Strings.cloneInstall
-                else -> Strings.btnShortcut
-            }
-
             WtaButton(
                 onClick = onPrimary,
-                text = primaryText,
+                text = if (isProcessing) Strings.appModifierWorking else Strings.cloneInstall,
                 variant = WtaButtonVariant.Primary,
                 modifier = Modifier
                     .fillMaxWidth()
                     .heightIn(min = 48.dp),
                 enabled = actionEnabled,
-                leadingIcon = when {
-                    isProcessing -> null
-                    outputMode == ModifyOutputMode.CLONE -> Icons.Outlined.ContentCopy
-                    else -> Icons.Outlined.PhoneAndroid
-                }
+                leadingIcon = if (isProcessing) null else Icons.Outlined.ContentCopy
             )
-
-            if (outputMode == ModifyOutputMode.CLONE && !canClone) {
-                Spacer(Modifier.height(10.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        Icons.Outlined.Info,
-                        contentDescription = null,
-                        modifier = Modifier.size(14.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(Modifier.width(6.dp))
-                    Text(
-                        Strings.appModifierCloneNeedsOriginalIcon,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
         }
     }
 }

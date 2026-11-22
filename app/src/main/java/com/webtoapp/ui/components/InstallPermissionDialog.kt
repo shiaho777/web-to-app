@@ -20,7 +20,7 @@ fun InstallPermissionDialog(onDismiss: () -> Unit) {
                 ApkInstaller.openUnknownSourcesSettings(context.applicationContext)
                 onDismiss()
             }) {
-                Text(Strings.shortcutPermissionGoToSettings)
+                Text(Strings.installPermissionOpenSettings)
             }
         },
         dismissButton = {

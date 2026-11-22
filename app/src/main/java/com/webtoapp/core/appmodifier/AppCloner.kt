@@ -1,7 +1,6 @@
 package com.webtoapp.core.appmodifier
 
 import android.content.Context
-import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
@@ -10,9 +9,6 @@ import android.graphics.Canvas
 import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Build
-import androidx.core.content.pm.ShortcutInfoCompat
-import androidx.core.content.pm.ShortcutManagerCompat
-import androidx.core.graphics.drawable.IconCompat
 import com.webtoapp.core.apkbuilder.ArscEditor
 import com.webtoapp.core.apkbuilder.ApkTemplate
 import com.webtoapp.core.apkbuilder.AxmlEditor
@@ -22,7 +18,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.core.i18n.Strings
-import com.webtoapp.ui.splash.SplashLauncherActivity
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
@@ -80,130 +75,6 @@ class AppCloner(private val context: Context) {
         "res/mipmap-xxxhdpi-v4/ic_launcher_round.png" to 192
     )
 
-    suspend fun createModifiedShortcut(
-        config: AppModifyConfig,
-        onProgress: (Int, String) -> Unit = { _, _ -> }
-    ): AppModifyResult = withContext(Dispatchers.IO) {
-
-        val safeProgress: suspend (Int, String) -> Unit = { p, t ->
-            withContext(Dispatchers.Main) {
-                try {
-                    onProgress(p, t)
-                } catch (e: Exception) {
-                    AppLogger.e("AppCloner", "Progress callback error: ${e.message}")
-                }
-            }
-        }
-
-        try {
-            safeProgress(10, "准备图标...")
-
-            val iconBitmap = prepareIcon(config)
-            val icon = IconCompat.createWithBitmap(iconBitmap)
-
-            safeProgress(50, "创建快捷方式...")
-
-            val payload = AppModifyPayload(
-                targetPackage = config.originalApp.packageName,
-                splashEnabled = config.splashEnabled,
-                splashConfig = config.splashConfig,
-                activationEnabled = config.activationEnabled,
-                activationCodes = config.activationCodes,
-                activationRequireEveryTime = config.activationRequireEveryTime,
-                activationDialogConfig = config.activationDialogConfig,
-                activationRemoteConfig = config.activationRemoteConfig,
-                announcementEnabled = config.announcementEnabled,
-                announcement = config.announcement
-            )
-
-            val needsSplashLauncher = payload.needsLauncher() &&
-                run {
-
-                    val sp = config.splashConfig.mediaPath
-                    val splashOk = !config.splashEnabled ||
-                        (!sp.isNullOrBlank() && java.io.File(sp).exists())
-                    splashOk
-                }
-
-            AppLogger.d(
-                "AppCloner",
-                "Shortcut config: splashEnabled=${config.splashEnabled}, " +
-                    "activationEnabled=${config.activationEnabled} (${config.activationCodes.size} codes), " +
-                    "announcementEnabled=${config.announcementEnabled}, " +
-                    "needsSplashLauncher=$needsSplashLauncher"
-            )
-
-            val launchIntent = if (needsSplashLauncher) {
-
-                Intent(context, SplashLauncherActivity::class.java).apply {
-
-                    action = Intent.ACTION_VIEW
-                    val payloadJson = payload.toJson()
-                    putExtra(SplashLauncherActivity.EXTRA_PAYLOAD_JSON, payloadJson)
-                    // The launcher replays this intent — sign the payload so the
-                    // exported SplashLauncherActivity can reject forged extras.
-                    putExtra(
-                        SplashLauncherActivity.EXTRA_PAYLOAD_SIGNATURE,
-                        PayloadIntegrity.sign(context, payloadJson)
-                    )
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                }
-            } else {
-
-                context.packageManager.getLaunchIntentForPackage(config.originalApp.packageName)?.apply {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                } ?: return@withContext AppModifyResult.Error("无法获取应用启动 Intent")
-            }
-
-            if (!ShortcutManagerCompat.isRequestPinShortcutSupported(context)) {
-                return@withContext AppModifyResult.Error("当前启动器不支持创建快捷方式")
-            }
-
-            val shortcutId = "modified_${config.originalApp.packageName}_${System.currentTimeMillis()}"
-            val shortcutInfo = ShortcutInfoCompat.Builder(context, shortcutId)
-                .setShortLabel(config.newAppName.take(10))
-                .setLongLabel(config.newAppName.take(25))
-                .setIcon(icon)
-                .setIntent(launchIntent)
-                .build()
-
-            safeProgress(80, "请求创建...")
-
-            val result = withContext(Dispatchers.Main) {
-                ShortcutManagerCompat.requestPinShortcut(context, shortcutInfo, null)
-            }
-
-            iconBitmap.recycle()
-
-            if (result) {
-                safeProgress(100, "Done")
-                AppModifyResult.ShortcutSuccess
-            } else {
-                AppModifyResult.Error("创建快捷方式失败，请检查权限设置")
-            }
-
-        } catch (e: Exception) {
-            AppLogger.e("AppCloner", "Failed to create shortcut", e)
-            AppLogger.e("AppCloner", "Operation failed", e)
-            AppModifyResult.Error(e.message ?: "创建快捷方式失败")
-        }
-    }
-
-    private fun prepareIcon(config: AppModifyConfig): Bitmap {
-
-        config.newIconPath?.let { path ->
-            loadBitmapFromPath(path)?.let { return it }
-        }
-
-        config.originalApp.icon?.let { drawable ->
-            return drawableToBitmap(drawable)
-        }
-
-        return createDefaultIcon()
-    }
-
     private fun loadBitmapFromPath(path: String): Bitmap? {
         return try {
             // Clone icons are re-encoded small; never decode hostile originals raw (#779).
@@ -232,14 +103,6 @@ class AppCloner(private val context: Context) {
         drawable.draw(canvas)
 
         return bitmap
-    }
-
-    private fun createDefaultIcon(): Bitmap {
-        val size = 192
-        return Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888).apply {
-            val canvas = Canvas(this)
-            canvas.drawColor(0xFF6200EE.toInt())
-        }
     }
 
     private val manifestRewriter = CloneManifestRewriter()

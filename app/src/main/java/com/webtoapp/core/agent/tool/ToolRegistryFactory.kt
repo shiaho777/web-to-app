@@ -11,7 +11,6 @@ import com.webtoapp.core.agent.tool.builtin.ClearAppCacheTool
 import com.webtoapp.core.agent.tool.builtin.ClearRuntimeCacheTool
 import com.webtoapp.core.agent.tool.builtin.CreateAppTool
 import com.webtoapp.core.agent.tool.builtin.CreateModuleTool
-import com.webtoapp.core.agent.tool.builtin.CreateShortcutTool
 import com.webtoapp.core.agent.tool.builtin.DeleteAppTool
 import com.webtoapp.core.agent.tool.builtin.DeleteEngineTool
 import com.webtoapp.core.agent.tool.builtin.DeleteFileTool
@@ -106,7 +105,6 @@ class ToolRegistryFactory(
         BuildApkTool(),
         ShareApkTool(),
         ExportAppTool(),
-        CreateShortcutTool(),
         MoveToCategoryTool(),
         ClearAppCacheTool(),
         DeleteAppTool(),

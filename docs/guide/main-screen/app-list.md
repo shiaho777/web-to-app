@@ -22,7 +22,7 @@ Each card shows:
 | **⋮ → Open in browser** | Web and Multi-Web apps open their http(s) URL in the system browser chooser |
 | **Swipe the card left** | Quick [delete](/guide/app-actions/delete) (with confirmation) |
 
-[About → Separate WebApp tasks](/guide/more-features/about) is off by default. When it is on, each home preview gets its own recents entry. Opening the same preview again brings that card forward. Desktop shortcuts always have their own entry, and Back returns to the launcher.
+[About → Separate WebApp tasks](/guide/more-features/about) is off by default. When it is on, each home preview gets its own recents entry. Opening the same preview again brings that card forward. Previously pinned desktop shortcuts continue to open their own entry, and Back returns to the launcher.
 
 ## Sort
 

@@ -1,50 +1,19 @@
 package com.webtoapp.ui.screens
 
-import android.net.Uri
 import androidx.compose.runtime.Stable
-import com.webtoapp.core.activation.ActivationCode
 import com.webtoapp.core.appmodifier.AppModifyConfig
 import com.webtoapp.core.appmodifier.InstalledAppInfo
-import com.webtoapp.data.model.ActivationDialogConfig
-import com.webtoapp.data.model.Announcement
-import com.webtoapp.data.model.SplashConfig
 
 @Stable
 data class AppModifierEditState(
     val newAppName: String = "",
-    val newPackageName: String = "",
-    val newIconUri: Uri? = null,
-    val newIconPath: String? = null,
-
-    val splashEnabled: Boolean = false,
-    val splashConfig: SplashConfig = SplashConfig(),
-
-    val splashMediaUri: Uri? = null,
-
-    val activationEnabled: Boolean = false,
-    val activationCodes: List<ActivationCode> = emptyList(),
-    val activationRequireEveryTime: Boolean = false,
-    val activationDialogConfig: ActivationDialogConfig = ActivationDialogConfig(),
-    val activationRemoteConfig: com.webtoapp.data.model.RemoteActivationConfig = com.webtoapp.data.model.RemoteActivationConfig(),
-
-    val announcementEnabled: Boolean = false,
-    val announcement: Announcement = Announcement()
+    val newPackageName: String = ""
 ) {
     fun toConfig(originalApp: InstalledAppInfo): AppModifyConfig {
         return AppModifyConfig(
             originalApp = originalApp,
             newAppName = newAppName,
-            newPackageName = newPackageName.trim().takeIf { it.isNotBlank() },
-            newIconPath = newIconPath ?: newIconUri?.toString(),
-            splashEnabled = splashEnabled && !splashConfig.mediaPath.isNullOrBlank(),
-            splashConfig = splashConfig,
-            activationEnabled = activationEnabled,
-            activationCodes = activationCodes,
-            activationRequireEveryTime = activationRequireEveryTime,
-            activationDialogConfig = activationDialogConfig,
-            activationRemoteConfig = activationRemoteConfig,
-            announcementEnabled = announcementEnabled,
-            announcement = announcement
+            newPackageName = newPackageName.trim().takeIf { it.isNotBlank() }
         )
     }
 }

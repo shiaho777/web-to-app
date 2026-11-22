@@ -10,7 +10,6 @@ import com.webtoapp.core.apkbuilder.ApkBuilder
 import com.webtoapp.core.apkbuilder.BuildResult
 import com.webtoapp.core.export.AppExporter
 import com.webtoapp.core.export.ExportResult
-import com.webtoapp.core.export.ShortcutResult
 import com.webtoapp.core.playstore.aab.AabExportCoordinator
 import kotlinx.coroutines.flow.first
 
@@ -120,30 +119,6 @@ class ExportAppTool : Tool {
         return when (result) {
             is ExportResult.Success -> ToolResult.ok("Exported to: ${result.path}")
             is ExportResult.Error -> ToolResult.error("ExportApp failed: ${result.message}")
-        }
-    }
-}
-
-class CreateShortcutTool : Tool {
-    override val name = "CreateShortcut"
-    override val description = """
-        Create a home-screen launcher shortcut for an app.
-    """.trimIndent()
-    override val parametersSchema: JsonElement = jsonSchema {
-        integer("appId", "The app id.", required = true)
-    }
-    override fun isReadOnly() = false
-    override fun activityDescription(args: JsonObject): String? =
-        args.get("appId")?.asString?.let { "Creating shortcut for app $it" }
-    override suspend fun execute(args: JsonObject, ctx: ToolContext): ToolResult {
-        val appId = args.get("appId")?.asLong ?: return ToolResult.error("CreateShortcut: missing appId.")
-        val app = ctx.appRepository.getWebApp(appId) ?: return ToolResult.error("CreateShortcut: app $appId not found.")
-        val exporter = AppExporter(ctx.androidContext)
-        return when (val result = exporter.createShortcut(app)) {
-            is ShortcutResult.Success -> ToolResult.ok("Shortcut created for \"${app.name}\".")
-            is ShortcutResult.Pending -> ToolResult.ok("Shortcut creation pending: ${result.message}")
-            is ShortcutResult.PermissionRequired -> ToolResult.error("Shortcut requires permission: ${result.message}")
-            is ShortcutResult.Error -> ToolResult.error("CreateShortcut failed: ${result.message}")
         }
     }
 }
