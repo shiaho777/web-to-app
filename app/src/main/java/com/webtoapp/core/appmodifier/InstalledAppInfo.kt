@@ -53,8 +53,6 @@ data class AppModifyConfig(
 
 sealed class AppModifyResult {
 
-    data object ShortcutSuccess : AppModifyResult()
-
     data class CloneSuccess(val apkPath: String) : AppModifyResult()
 
     data class Error(val message: String) : AppModifyResult()

@@ -4131,66 +4131,6 @@ object StringsE {
         AppLanguage.KOREAN -> "Shiaho가 사랑을 담아 제작"
     }
 
-    val shortcutPermissionTitle: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "需要快捷方式权限"
-        AppLanguage.ENGLISH -> "Shortcut Permission Required"
-        AppLanguage.ARABIC -> "مطلوب إذن الاختصار"
-        AppLanguage.PORTUGUESE -> "Permissão de Atalho Necessária"
-        AppLanguage.SPANISH -> "Se Requiere Permiso de Acceso Directo"
-        AppLanguage.FRENCH -> "Autorisation de Raccourci Requise"
-        AppLanguage.GERMAN -> "Verknüpfungsberechtigung erforderlich"
-        AppLanguage.RUSSIAN -> "Требуется разрешение на ярлык"
-        AppLanguage.JAPANESE -> "ショートカット権限が必要です"
-        AppLanguage.KOREAN -> "바로가기 권한 필요"
-    }
-
-    val shortcutPermissionGoToSettings: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "去设置"
-        AppLanguage.ENGLISH -> "Go to Settings"
-        AppLanguage.ARABIC -> "الذهاب إلى الإعدادات"
-        AppLanguage.PORTUGUESE -> "Ir para Configurações"
-        AppLanguage.SPANISH -> "Ir a Ajustes"
-        AppLanguage.FRENCH -> "Aller aux Paramètres"
-        AppLanguage.GERMAN -> "Zu den Einstellungen"
-        AppLanguage.RUSSIAN -> "Перейти к настройкам"
-        AppLanguage.JAPANESE -> "設定へ移動"
-        AppLanguage.KOREAN -> "설정으로 이동"
-    }
-
-    val shortcutPermissionLater: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "稍后再说"
-        AppLanguage.ENGLISH -> "Later"
-        AppLanguage.ARABIC -> "لاحقاً"
-        AppLanguage.PORTUGUESE -> "Depois"
-        AppLanguage.SPANISH -> "Más tarde"
-        AppLanguage.FRENCH -> "Plus tard"
-        AppLanguage.GERMAN -> "Später"
-        AppLanguage.RUSSIAN -> "Позже"
-        AppLanguage.JAPANESE -> "後で"
-        AppLanguage.KOREAN -> "나중에"
-    }
-
-    val shortcutPermissionXiaomi: String
-        get() = "Detected Xiaomi/Redmi phone. You need to enable 'Desktop Shortcut' permission to create app shortcuts.\n\nGo to: Settings > App Settings > App Management > WebToApp > Permission Management > Desktop Shortcut"
-
-    val shortcutPermissionHuawei: String
-        get() = "Detected Huawei/Honor phone. You need to enable 'Create Desktop Shortcut' permission.\n\nGo to: Settings > Apps > App Management > WebToApp > Permissions > Create Desktop Shortcut"
-
-    val shortcutPermissionOppo: String
-        get() = "Detected OPPO phone. You need to enable 'Desktop Shortcut' permission.\n\nGo to: Settings > App Management > WebToApp > Permissions > Desktop Shortcut"
-
-    val shortcutPermissionVivo: String
-        get() = "Detected vivo phone. You need to enable 'Desktop Shortcut' permission.\n\nGo to: i Manager > App Management > Permission Management > WebToApp > Desktop Shortcut"
-
-    val shortcutPermissionMeizu: String
-        get() = "Detected Meizu phone. You need to enable 'Desktop Shortcut' permission.\n\nGo to: Phone Manager > Permission Management > WebToApp > Desktop Shortcut"
-
-    val shortcutPermissionSamsung: String
-        get() = "Detected Samsung phone. Please ensure the home screen is unlocked for editing.\n\nYou can also long-press the app icon and select 'Add to Home Screen' to create a shortcut."
-
-    val shortcutPermissionGeneric: String
-        get() = "The current launcher may not support creating shortcuts. Please check home screen settings or app permissions.\n\nClick 'Go to Settings' to open the app details page and check for relevant permission options."
-
     val errorUiSectionTitle: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "错误提示"
         AppLanguage.ENGLISH -> "Error Notifications"
@@ -10043,6 +9983,210 @@ object StringsE {
         AppLanguage.JAPANESE -> "ファイルマネージャー"
         AppLanguage.KOREAN -> "파일 관리자"
     }
+    val dualPanelSubtitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "通过系统文件夹授权管理两个独立位置"
+        AppLanguage.ENGLISH -> "Manage two independent locations using Android folder access"
+        AppLanguage.ARABIC -> "إدارة موقعين مستقلين عبر صلاحية اختيار المجلد في Android"
+        AppLanguage.PORTUGUESE -> "Gerencie dois locais independentes com o acesso a pastas do Android"
+        AppLanguage.SPANISH -> "Gestiona dos ubicaciones independientes con el acceso a carpetas de Android"
+        AppLanguage.FRENCH -> "Gérez deux emplacements indépendants avec l’accès aux dossiers Android"
+        AppLanguage.GERMAN -> "Verwalte zwei unabhängige Orte mit dem Android-Ordnerzugriff"
+        AppLanguage.RUSSIAN -> "Управление двумя независимыми расположениями через доступ Android к папкам"
+        AppLanguage.JAPANESE -> "Android のフォルダーアクセスを使って 2 つの場所を個別に管理"
+        AppLanguage.KOREAN -> "Android 폴더 액세스로 서로 독립된 두 위치 관리"
+    }
+    val dualPanelMove: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "移动"
+        AppLanguage.ENGLISH -> "Move"
+        AppLanguage.ARABIC -> "نقل"
+        AppLanguage.PORTUGUESE -> "Mover"
+        AppLanguage.SPANISH -> "Mover"
+        AppLanguage.FRENCH -> "Déplacer"
+        AppLanguage.GERMAN -> "Verschieben"
+        AppLanguage.RUSSIAN -> "Переместить"
+        AppLanguage.JAPANESE -> "移動"
+        AppLanguage.KOREAN -> "이동"
+    }
+    val dualPanelWorking: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "正在处理文件…"
+        AppLanguage.ENGLISH -> "Processing files…"
+        AppLanguage.ARABIC -> "جارٍ معالجة الملفات…"
+        AppLanguage.PORTUGUESE -> "Processando arquivos…"
+        AppLanguage.SPANISH -> "Procesando archivos…"
+        AppLanguage.FRENCH -> "Traitement des fichiers…"
+        AppLanguage.GERMAN -> "Dateien werden verarbeitet…"
+        AppLanguage.RUSSIAN -> "Обработка файлов…"
+        AppLanguage.JAPANESE -> "ファイルを処理しています…"
+        AppLanguage.KOREAN -> "파일 처리 중…"
+    }
+    val dualPanelNewFile: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "新建文件"
+        AppLanguage.ENGLISH -> "New file"
+        AppLanguage.ARABIC -> "ملف جديد"
+        AppLanguage.PORTUGUESE -> "Novo arquivo"
+        AppLanguage.SPANISH -> "Archivo nuevo"
+        AppLanguage.FRENCH -> "Nouveau fichier"
+        AppLanguage.GERMAN -> "Neue Datei"
+        AppLanguage.RUSSIAN -> "Новый файл"
+        AppLanguage.JAPANESE -> "新しいファイル"
+        AppLanguage.KOREAN -> "새 파일"
+    }
+    val dualPanelNewFolder: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "新建文件夹"
+        AppLanguage.ENGLISH -> "New folder"
+        AppLanguage.ARABIC -> "مجلد جديد"
+        AppLanguage.PORTUGUESE -> "Nova pasta"
+        AppLanguage.SPANISH -> "Carpeta nueva"
+        AppLanguage.FRENCH -> "Nouveau dossier"
+        AppLanguage.GERMAN -> "Neuer Ordner"
+        AppLanguage.RUSSIAN -> "Новая папка"
+        AppLanguage.JAPANESE -> "新しいフォルダー"
+        AppLanguage.KOREAN -> "새 폴더"
+    }
+    val dualPanelRename: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "重命名"
+        AppLanguage.ENGLISH -> "Rename"
+        AppLanguage.ARABIC -> "إعادة تسمية"
+        AppLanguage.PORTUGUESE -> "Renomear"
+        AppLanguage.SPANISH -> "Cambiar nombre"
+        AppLanguage.FRENCH -> "Renommer"
+        AppLanguage.GERMAN -> "Umbenennen"
+        AppLanguage.RUSSIAN -> "Переименовать"
+        AppLanguage.JAPANESE -> "名前を変更"
+        AppLanguage.KOREAN -> "이름 변경"
+    }
+    val dualPanelName: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "名称"
+        AppLanguage.ENGLISH -> "Name"
+        AppLanguage.ARABIC -> "الاسم"
+        AppLanguage.PORTUGUESE -> "Nome"
+        AppLanguage.SPANISH -> "Nombre"
+        AppLanguage.FRENCH -> "Nom"
+        AppLanguage.GERMAN -> "Name"
+        AppLanguage.RUSSIAN -> "Имя"
+        AppLanguage.JAPANESE -> "名前"
+        AppLanguage.KOREAN -> "이름"
+    }
+    val dualPanelFileType: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "类型"
+        AppLanguage.ENGLISH -> "Type"
+        AppLanguage.ARABIC -> "النوع"
+        AppLanguage.PORTUGUESE -> "Tipo"
+        AppLanguage.SPANISH -> "Tipo"
+        AppLanguage.FRENCH -> "Type"
+        AppLanguage.GERMAN -> "Typ"
+        AppLanguage.RUSSIAN -> "Тип"
+        AppLanguage.JAPANESE -> "種類"
+        AppLanguage.KOREAN -> "유형"
+    }
+    val dualPanelFileTypeValue: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "文件"
+        AppLanguage.ENGLISH -> "File"
+        AppLanguage.ARABIC -> "ملف"
+        AppLanguage.PORTUGUESE -> "Arquivo"
+        AppLanguage.SPANISH -> "Archivo"
+        AppLanguage.FRENCH -> "Fichier"
+        AppLanguage.GERMAN -> "Datei"
+        AppLanguage.RUSSIAN -> "Файл"
+        AppLanguage.JAPANESE -> "ファイル"
+        AppLanguage.KOREAN -> "파일"
+    }
+    val dualPanelFolderType: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "文件夹"
+        AppLanguage.ENGLISH -> "Folder"
+        AppLanguage.ARABIC -> "مجلد"
+        AppLanguage.PORTUGUESE -> "Pasta"
+        AppLanguage.SPANISH -> "Carpeta"
+        AppLanguage.FRENCH -> "Dossier"
+        AppLanguage.GERMAN -> "Ordner"
+        AppLanguage.RUSSIAN -> "Папка"
+        AppLanguage.JAPANESE -> "フォルダー"
+        AppLanguage.KOREAN -> "폴더"
+    }
+    val dualPanelWritable: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "可写"
+        AppLanguage.ENGLISH -> "Writable"
+        AppLanguage.ARABIC -> "قابل للكتابة"
+        AppLanguage.PORTUGUESE -> "Gravável"
+        AppLanguage.SPANISH -> "Escribible"
+        AppLanguage.FRENCH -> "Accessible en écriture"
+        AppLanguage.GERMAN -> "Beschreibbar"
+        AppLanguage.RUSSIAN -> "Доступно для записи"
+        AppLanguage.JAPANESE -> "書き込み可能"
+        AppLanguage.KOREAN -> "쓰기 가능"
+    }
+    val dualPanelReadOnly: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "只读"
+        AppLanguage.ENGLISH -> "Read-only"
+        AppLanguage.ARABIC -> "للقراءة فقط"
+        AppLanguage.PORTUGUESE -> "Somente leitura"
+        AppLanguage.SPANISH -> "Solo lectura"
+        AppLanguage.FRENCH -> "Lecture seule"
+        AppLanguage.GERMAN -> "Schreibgeschützt"
+        AppLanguage.RUSSIAN -> "Только чтение"
+        AppLanguage.JAPANESE -> "読み取り専用"
+        AppLanguage.KOREAN -> "읽기 전용"
+    }
+    val dualPanelOpenFailed: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "没有可打开此文件的应用，或文件访问被拒绝"
+        AppLanguage.ENGLISH -> "No app can open this file, or access was denied"
+        AppLanguage.ARABIC -> "لا يوجد تطبيق لفتح هذا الملف أو تم رفض الوصول"
+        AppLanguage.PORTUGUESE -> "Nenhum app pode abrir este arquivo ou o acesso foi negado"
+        AppLanguage.SPANISH -> "Ninguna aplicación puede abrir este archivo o se denegó el acceso"
+        AppLanguage.FRENCH -> "Aucune application ne peut ouvrir ce fichier ou l’accès a été refusé"
+        AppLanguage.GERMAN -> "Keine App kann diese Datei öffnen oder der Zugriff wurde verweigert"
+        AppLanguage.RUSSIAN -> "Нет приложения для открытия файла или доступ запрещён"
+        AppLanguage.JAPANESE -> "このファイルを開くアプリがないか、アクセスが拒否されました"
+        AppLanguage.KOREAN -> "파일을 열 앱이 없거나 접근이 거부되었습니다"
+    }
+    val dualPanelToggleHidden: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "显示或隐藏隐藏文件"
+        AppLanguage.ENGLISH -> "Show or hide hidden files"
+        AppLanguage.ARABIC -> "إظهار الملفات المخفية أو إخفاؤها"
+        AppLanguage.PORTUGUESE -> "Mostrar ou ocultar arquivos ocultos"
+        AppLanguage.SPANISH -> "Mostrar u ocultar archivos ocultos"
+        AppLanguage.FRENCH -> "Afficher ou masquer les fichiers cachés"
+        AppLanguage.GERMAN -> "Versteckte Dateien ein- oder ausblenden"
+        AppLanguage.RUSSIAN -> "Показать или скрыть скрытые файлы"
+        AppLanguage.JAPANESE -> "隠しファイルの表示/非表示"
+        AppLanguage.KOREAN -> "숨김 파일 표시 또는 숨기기"
+    }
+    val dualPanelTransferComplete: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "文件操作已完成"
+        AppLanguage.ENGLISH -> "File operation completed"
+        AppLanguage.ARABIC -> "اكتملت عملية الملفات"
+        AppLanguage.PORTUGUESE -> "Operação de arquivos concluída"
+        AppLanguage.SPANISH -> "Operación de archivos completada"
+        AppLanguage.FRENCH -> "Opération sur les fichiers terminée"
+        AppLanguage.GERMAN -> "Dateivorgang abgeschlossen"
+        AppLanguage.RUSSIAN -> "Операция с файлами завершена"
+        AppLanguage.JAPANESE -> "ファイル操作が完了しました"
+        AppLanguage.KOREAN -> "파일 작업이 완료되었습니다"
+    }
+    val dualPanelTransferFailed: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "文件操作失败；请检查权限、空间和日志"
+        AppLanguage.ENGLISH -> "File operation failed; check access, available space, and logs"
+        AppLanguage.ARABIC -> "فشلت عملية الملفات؛ تحقق من الوصول والمساحة والسجل"
+        AppLanguage.PORTUGUESE -> "A operação falhou; verifique o acesso, o espaço disponível e os registros"
+        AppLanguage.SPANISH -> "La operación falló; comprueba el acceso, el espacio y los registros"
+        AppLanguage.FRENCH -> "Échec de l’opération ; vérifiez l’accès, l’espace disponible et les journaux"
+        AppLanguage.GERMAN -> "Dateivorgang fehlgeschlagen; Zugriff, Speicherplatz und Protokolle prüfen"
+        AppLanguage.RUSSIAN -> "Операция не выполнена; проверьте доступ, свободное место и журнал"
+        AppLanguage.JAPANESE -> "ファイル操作に失敗しました。アクセス権、空き容量、ログを確認してください"
+        AppLanguage.KOREAN -> "파일 작업 실패: 접근 권한, 여유 공간 및 로그를 확인하세요"
+    }
+    val dualPanelAccessFailed: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "无法访问所选文件夹；请重新选择并授予读写权限"
+        AppLanguage.ENGLISH -> "Cannot access that folder; select it again and grant read/write access"
+        AppLanguage.ARABIC -> "تعذر الوصول إلى المجلد؛ اختره مجددًا وامنح إذن القراءة والكتابة"
+        AppLanguage.PORTUGUESE -> "Não foi possível acessar a pasta; selecione-a novamente e conceda leitura e gravação"
+        AppLanguage.SPANISH -> "No se puede acceder a la carpeta; selecciónala de nuevo y concede lectura y escritura"
+        AppLanguage.FRENCH -> "Accès au dossier impossible ; sélectionnez-le à nouveau et accordez l’accès en lecture/écriture"
+        AppLanguage.GERMAN -> "Kein Zugriff auf den Ordner; erneut auswählen und Lese-/Schreibzugriff gewähren"
+        AppLanguage.RUSSIAN -> "Нет доступа к папке; выберите её повторно и разрешите чтение и запись"
+        AppLanguage.JAPANESE -> "フォルダーにアクセスできません。再選択して読み書きを許可してください"
+        AppLanguage.KOREAN -> "폴더에 접근할 수 없습니다. 다시 선택하고 읽기/쓰기 권한을 허용하세요"
+    }
     val fileManagerTitle: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "文件管理"
         AppLanguage.ENGLISH -> "File Manager"
@@ -12146,16 +12290,16 @@ object StringsE {
     }
 
     val appModifierSubtitle: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "选择应用，重塑名称、图标与启动体验"
-        AppLanguage.ENGLISH -> "Pick an app, then reshape its name, icon, and launch experience"
-        AppLanguage.ARABIC -> "اختر تطبيقًا ثم أعد تشكيل اسمه وأيقونته وتجربة التشغيل"
-        AppLanguage.PORTUGUESE -> "Escolha um app e redefina nome, ícone e experiência de abertura"
-        AppLanguage.SPANISH -> "Elige una app y redefine nombre, icono y experiencia de apertura"
-        AppLanguage.FRENCH -> "Choisissez une app, puis refaçonnez son nom, son icône et son lancement"
-        AppLanguage.GERMAN -> "App wählen und Name, Symbol sowie Start-Erlebnis neu gestalten"
-        AppLanguage.RUSSIAN -> "Выберите приложение и измените имя, иконку и запуск"
-        AppLanguage.JAPANESE -> "アプリを選び、名前・アイコン・起動体験を再構成"
-        AppLanguage.KOREAN -> "앱을 고른 뒤 이름, 아이콘, 실행 경험을 재구성"
+        AppLanguage.CHINESE -> "选择应用，设置新名称与包名，并生成独立安装副本"
+        AppLanguage.ENGLISH -> "Choose an app, set a new name and package, and create a separate installable copy"
+        AppLanguage.ARABIC -> "اختر تطبيقًا وحدد اسمًا وحزمة جديدين لإنشاء نسخة منفصلة قابلة للتثبيت"
+        AppLanguage.PORTUGUESE -> "Escolha um app, defina novo nome e pacote e crie uma cópia instalável separada"
+        AppLanguage.SPANISH -> "Elige una app, define un nuevo nombre y paquete y crea una copia instalable aparte"
+        AppLanguage.FRENCH -> "Choisissez une app, définissez un nouveau nom et package, puis créez une copie installable"
+        AppLanguage.GERMAN -> "App auswählen, neuen Namen und Paket festlegen und eine separate installierbare Kopie erstellen"
+        AppLanguage.RUSSIAN -> "Выберите приложение, задайте новое имя и пакет и создайте отдельную устанавливаемую копию"
+        AppLanguage.JAPANESE -> "アプリを選び、新しい名前とパッケージ名を設定して別のインストール可能なコピーを作成"
+        AppLanguage.KOREAN -> "앱을 선택하고 새 이름과 패키지를 지정해 별도의 설치 가능한 사본을 만듭니다"
     }
 
     val appModifierLoading: String get() = when (Strings.lang) {
@@ -12288,95 +12432,17 @@ object StringsE {
         AppLanguage.KOREAN -> "새 정체성"
     }
 
-    val appModifierOutputMode: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "输出方式"
-        AppLanguage.ENGLISH -> "Output mode"
-        AppLanguage.ARABIC -> "وضع الإخراج"
-        AppLanguage.PORTUGUESE -> "Modo de saída"
-        AppLanguage.SPANISH -> "Modo de salida"
-        AppLanguage.FRENCH -> "Mode de sortie"
-        AppLanguage.GERMAN -> "Ausgabemodus"
-        AppLanguage.RUSSIAN -> "Режим вывода"
-        AppLanguage.JAPANESE -> "出力方式"
-        AppLanguage.KOREAN -> "출력 방식"
-    }
-
-    val appModifierModeShortcutDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "桌面快捷方式，兼容性最好，可附带开屏/激活/公告"
-        AppLanguage.ENGLISH -> "Home-screen shortcut with best compatibility; splash, activation, and notice supported"
-        AppLanguage.ARABIC -> "اختصار على الشاشة الرئيسية بأفضل توافق، مع شاشة افتتاح/تفعيل/إعلان"
-        AppLanguage.PORTUGUESE -> "Atalho na tela inicial com melhor compatibilidade; splash, ativação e aviso suportados"
-        AppLanguage.SPANISH -> "Acceso directo con mejor compatibilidad; admite splash, activación y aviso"
-        AppLanguage.FRENCH -> "Raccourci d'accueil le plus compatible ; splash, activation et annonce pris en charge"
-        AppLanguage.GERMAN -> "Startbildschirm-Verknüpfung mit bester Kompatibilität; Splash, Aktivierung und Hinweis möglich"
-        AppLanguage.RUSSIAN -> "Ярлык на рабочем столе с лучшей совместимостью; splash, активация и объявление"
-        AppLanguage.JAPANESE -> "互換性が高いホーム画面ショートカット。スプラッシュ/認証/お知らせ対応"
-        AppLanguage.KOREAN -> "호환성이 가장 좋은 홈 화면 바로가기. 스플래시/활성화/공지 지원"
-    }
-
-    val appModifierModeCloneDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "重打包并安装独立副本，仅适合无签名校验的应用"
-        AppLanguage.ENGLISH -> "Repackage and install a separate copy; only for apps without signature checks"
-        AppLanguage.ARABIC -> "إعادة تعبئة وتثبيت نسخة منفصلة؛ فقط للتطبيقات بدون تحقق توقيع"
-        AppLanguage.PORTUGUESE -> "Reempacota e instala uma cópia separada; só para apps sem verificação de assinatura"
-        AppLanguage.SPANISH -> "Reempaqueta e instala una copia aparte; solo apps sin verificación de firma"
-        AppLanguage.FRENCH -> "Reconditionne et installe une copie séparée ; uniquement sans vérification de signature"
-        AppLanguage.GERMAN -> "Neu packen und separate Kopie installieren; nur ohne Signaturprüfung"
-        AppLanguage.RUSSIAN -> "Перепаковать и установить отдельную копию; только без проверки подписи"
-        AppLanguage.JAPANESE -> "再パッケージして別コピーをインストール。署名検証のないアプリ向け"
-        AppLanguage.KOREAN -> "재패키징 후 별도 사본 설치. 서명 검증 없는 앱에만 적합"
-    }
-
-    val appModifierRecommended: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "推荐"
-        AppLanguage.ENGLISH -> "Recommended"
-        AppLanguage.ARABIC -> "موصى به"
-        AppLanguage.PORTUGUESE -> "Recomendado"
-        AppLanguage.SPANISH -> "Recomendado"
-        AppLanguage.FRENCH -> "Recommandé"
-        AppLanguage.GERMAN -> "Empfohlen"
-        AppLanguage.RUSSIAN -> "Рекомендуется"
-        AppLanguage.JAPANESE -> "おすすめ"
-        AppLanguage.KOREAN -> "추천"
-    }
-
-    val appModifierCloneNeedsOriginalIcon: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "自定义图标时暂不支持克隆安装，请改用快捷方式或恢复原图标"
-        AppLanguage.ENGLISH -> "Clone install is unavailable with a custom icon. Use shortcut mode or restore the original icon"
-        AppLanguage.ARABIC -> "تثبيت النسخة غير متاح مع أيقونة مخصصة. استخدم الاختصار أو استعد الأيقونة الأصلية"
-        AppLanguage.PORTUGUESE -> "Clone indisponível com ícone personalizado. Use atalho ou restaure o ícone original"
-        AppLanguage.SPANISH -> "El clon no está disponible con icono personalizado. Usa acceso directo o restaura el icono original"
-        AppLanguage.FRENCH -> "Clone indisponible avec une icône personnalisée. Utilisez le raccourci ou restaurez l'icône d'origine"
-        AppLanguage.GERMAN -> "Klon mit benutzerdefiniertem Symbol nicht verfügbar. Verknüpfung nutzen oder Originalsymbol wiederherstellen"
-        AppLanguage.RUSSIAN -> "Клон недоступен с пользовательской иконкой. Используйте ярлык или верните оригинальную иконку"
-        AppLanguage.JAPANESE -> "カスタムアイコン時はクローン不可。ショートカットを使うか元のアイコンに戻す"
-        AppLanguage.KOREAN -> "사용자 지정 아이콘에서는 클론 설치 불가. 바로가기를 쓰거나 원본 아이콘 복원"
-    }
-
-    val appModifierCloneNoEnhancements: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "克隆安装暂不支持开屏、激活码与公告，请改用快捷方式或关闭这些增强"
-        AppLanguage.ENGLISH -> "Clone install does not support splash, activation, or announcement. Use shortcut mode or turn these off"
-        AppLanguage.ARABIC -> "تثبيت النسخة لا يدعم الافتتاح أو التفعيل أو الإعلان. استخدم الاختصار أو أوقف هذه الميزات"
-        AppLanguage.PORTUGUESE -> "O clone não suporta splash, ativação nem anúncio. Use atalho ou desative esses recursos"
-        AppLanguage.SPANISH -> "El clon no admite splash, activación ni aviso. Usa acceso directo o desactiva estas funciones"
-        AppLanguage.FRENCH -> "Le clone ne prend pas en charge splash, activation ni annonce. Utilisez le raccourci ou désactivez-les"
-        AppLanguage.GERMAN -> "Der Klon unterstützt Splash, Aktivierung und Hinweis nicht. Verknüpfung nutzen oder diese deaktivieren"
-        AppLanguage.RUSSIAN -> "Клон не поддерживает splash, активацию и объявление. Используйте ярлык или отключите их"
-        AppLanguage.JAPANESE -> "クローンはスプラッシュ/認証/お知らせに未対応。ショートカットを使うかこれらを無効にしてください"
-        AppLanguage.KOREAN -> "클론 설치는 스플래시, 활성화, 공지를 지원하지 않습니다. 바로가기를 쓰거나 해당 기능을 끄세요"
-    }
-
     val appModifierCloneEncryptedUnsupported: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "该应用启用了签名绑定加密，克隆后包名与签名改变将无法解密内容。请改用快捷方式，或以内嵌密钥/不加密方式重新导出后再克隆"
-        AppLanguage.ENGLISH -> "This app uses signature-bound encryption. A clone changes the package and signature, so its content can no longer be decrypted. Use shortcut mode, or re-export with an embedded key or without encryption before cloning"
-        AppLanguage.ARABIC -> "يستخدم هذا التطبيق تشفيرًا مرتبطًا بالتوقيع. تغيير الحزمة والتوقيع في النسخة يمنع فك التشفير. استخدم الاختصار أو أعد التصدير بمفتاح مضمّن أو بدون تشفير قبل الاستنساخ"
-        AppLanguage.PORTUGUESE -> "Este app usa criptografia vinculada à assinatura. O clone altera pacote e assinatura, impedindo a descriptografia. Use atalho ou reexporte com chave embutida ou sem criptografia antes de clonar"
-        AppLanguage.SPANISH -> "Esta app usa cifrado ligado a la firma. El clon cambia paquete y firma, impidiendo el descifrado. Usa acceso directo o reexporta con clave incrustada o sin cifrado antes de clonar"
-        AppLanguage.FRENCH -> "Cette app utilise un chiffrement lié à la signature. Le clone change le paquet et la signature, empêchant le déchiffrement. Utilisez le raccourci ou réexportez avec clé intégrée ou sans chiffrement avant de cloner"
-        AppLanguage.GERMAN -> "Diese App nutzt signaturgebundene Verschlüsselung. Der Klon ändert Paket und Signatur, sodass Inhalte nicht mehr entschlüsselt werden können. Verknüpfung nutzen oder mit eingebettetem Schlüssel bzw. ohne Verschlüsselung neu exportieren"
-        AppLanguage.RUSSIAN -> "Это приложение использует шифрование, привязанное к подписи. Клон меняет пакет и подпись, расшифровка станет невозможной. Используйте ярлык или переэкспортируйте со встроенным ключом либо без шифрования"
-        AppLanguage.JAPANESE -> "このアプリは署名紐付き暗号化を使用しています。クローンでパッケージと署名が変わると復号できません。ショートカットを使うか、埋め込み鍵または暗号化なしで再エクスポートしてからクローンしてください"
-        AppLanguage.KOREAN -> "이 앱은 서명 연동 암호화를 사용합니다. 클론 시 패키지와 서명이 바뀌어 복호화할 수 없습니다. 바로가기를 쓰거나 내장 키 또는 암호화 없이 다시 내보낸 후 클론하세요"
+        AppLanguage.CHINESE -> "该应用启用了签名绑定加密，克隆后包名与签名改变将无法解密内容。请以内嵌密钥或不加密方式重新导出后再克隆"
+        AppLanguage.ENGLISH -> "This app uses signature-bound encryption. A clone changes the package and signature, so its content can no longer be decrypted. Re-export with an embedded key or without encryption before cloning."
+        AppLanguage.ARABIC -> "يستخدم هذا التطبيق تشفيرًا مرتبطًا بالتوقيع. تغيير الحزمة والتوقيع في النسخة يمنع فك التشفير. أعد التصدير بمفتاح مضمّن أو بدون تشفير قبل الاستنساخ."
+        AppLanguage.PORTUGUESE -> "Este app usa criptografia vinculada à assinatura. O clone altera pacote e assinatura, impedindo a descriptografia. Reexporte com chave embutida ou sem criptografia antes de clonar."
+        AppLanguage.SPANISH -> "Esta app usa cifrado ligado a la firma. El clon cambia paquete y firma, impidiendo el descifrado. Reexporta con clave incrustada o sin cifrado antes de clonar."
+        AppLanguage.FRENCH -> "Cette app utilise un chiffrement lié à la signature. Le clone change le paquet et la signature, empêchant le déchiffrement. Réexportez avec une clé intégrée ou sans chiffrement avant de cloner."
+        AppLanguage.GERMAN -> "Diese App nutzt signaturgebundene Verschlüsselung. Der Klon ändert Paket und Signatur, sodass Inhalte nicht mehr entschlüsselt werden können. Exportieren Sie mit eingebettetem Schlüssel oder ohne Verschlüsselung erneut."
+        AppLanguage.RUSSIAN -> "Это приложение использует шифрование, привязанное к подписи. Клон меняет пакет и подпись, расшифровка станет невозможной. Повторно экспортируйте со встроенным ключом или без шифрования."
+        AppLanguage.JAPANESE -> "このアプリは署名紐付き暗号化を使用しています。クローンでパッケージと署名が変わると復号できません。埋め込み鍵または暗号化なしで再エクスポートしてください。"
+        AppLanguage.KOREAN -> "이 앱은 서명 연동 암호화를 사용합니다. 클론 시 패키지와 서명이 바뀌어 복호화할 수 없습니다. 내장 키를 사용하거나 암호화 없이 다시 내보내세요."
     }
 
     val appModifierPackageInUse: String get() = when (Strings.lang) {
@@ -12390,19 +12456,6 @@ object StringsE {
         AppLanguage.RUSSIAN -> "Этот пакет уже установлен. Выберите другой пакет или сначала удалите это приложение"
         AppLanguage.JAPANESE -> "このパッケージは既にインストールされています。別のパッケージを選ぶか、先にそのアプリをアンインストールしてください"
         AppLanguage.KOREAN -> "이 패키지는 이미 설치되어 있습니다. 다른 패키지를 선택하거나 해당 앱을 먼저 제거하세요"
-    }
-
-    val appModifierShortcutHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "快捷方式会请求桌面固定权限，并尽量保留开屏、激活码与公告配置。"
-        AppLanguage.ENGLISH -> "Shortcut mode asks to pin on the home screen and keeps splash, activation, and announcement settings when possible."
-        AppLanguage.ARABIC -> "وضع الاختصار يطلب التثبيت على الشاشة الرئيسية ويحتفظ بإعدادات الافتتاح والتفعيل والإعلان قدر الإمكان."
-        AppLanguage.PORTUGUESE -> "O modo atalho pede fixação na tela inicial e mantém splash, ativação e anúncio quando possível."
-        AppLanguage.SPANISH -> "El modo acceso directo pide fijar en el inicio y conserva splash, activación y aviso cuando es posible."
-        AppLanguage.FRENCH -> "Le mode raccourci demande l'épinglage à l'accueil et conserve splash, activation et annonce si possible."
-        AppLanguage.GERMAN -> "Der Verknüpfungsmodus bittet um Anheften und behält Splash, Aktivierung und Hinweis nach Möglichkeit bei."
-        AppLanguage.RUSSIAN -> "Режим ярлыка запрашивает закрепление на рабочем столе и сохраняет splash, активацию и объявление, если возможно."
-        AppLanguage.JAPANESE -> "ショートカットはホーム固定を要求し、可能な限りスプラッシュ/認証/お知らせを保持します。"
-        AppLanguage.KOREAN -> "바로가기 모드는 홈 화면 고정을 요청하며 가능하면 스플래시, 활성화, 공지 설정을 유지합니다."
     }
 
     val appModifierWorking: String get() = when (Strings.lang) {
@@ -15727,4 +15780,146 @@ object StringsE {
         AppLanguage.KOREAN -> "다른 키워드를 시도해 보세요"
     }
 
+    val installApkCenter: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "安装 APK"
+        AppLanguage.ENGLISH -> "Install APK"
+        AppLanguage.ARABIC -> "تثبيت APK"
+        AppLanguage.PORTUGUESE -> "Instalar APK"
+        AppLanguage.SPANISH -> "Instalar APK"
+        AppLanguage.FRENCH -> "Installer l’APK"
+        AppLanguage.GERMAN -> "APK installieren"
+        AppLanguage.RUSSIAN -> "Установить APK"
+        AppLanguage.JAPANESE -> "APKをインストール"
+        AppLanguage.KOREAN -> "APK 설치"
+    }
+
+    val installApkDescription: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "选择 APK 后先验证应用信息，再由 Android 系统安装器完成安装。"
+        AppLanguage.ENGLISH -> "Choose an APK to inspect its app details, then continue in Android’s installer."
+        AppLanguage.ARABIC -> "اختر ملف APK لعرض معلومات التطبيق، ثم أكمل التثبيت عبر مُثبّت Android."
+        AppLanguage.PORTUGUESE -> "Escolha um APK para conferir os dados do app e continue no instalador do Android."
+        AppLanguage.SPANISH -> "Elige un APK para revisar los datos de la app y continúa en el instalador de Android."
+        AppLanguage.FRENCH -> "Choisissez un APK pour vérifier les informations, puis terminez dans l’installateur Android."
+        AppLanguage.GERMAN -> "Wählen Sie ein APK zur Prüfung der App-Informationen und fahren Sie im Android-Installationsprogramm fort."
+        AppLanguage.RUSSIAN -> "Выберите APK, проверьте сведения о приложении и продолжите установку в системном установщике Android."
+        AppLanguage.JAPANESE -> "APKを選択してアプリ情報を確認し、Androidのインストーラーでインストールを続けます。"
+        AppLanguage.KOREAN -> "APK를 선택해 앱 정보를 확인한 뒤 Android 설치 프로그램에서 설치를 계속합니다."
+    }
+
+    val selectApkFile: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "选择 APK 文件"
+        AppLanguage.ENGLISH -> "Choose APK file"
+        AppLanguage.ARABIC -> "اختيار ملف APK"
+        AppLanguage.PORTUGUESE -> "Escolher arquivo APK"
+        AppLanguage.SPANISH -> "Elegir archivo APK"
+        AppLanguage.FRENCH -> "Choisir un fichier APK"
+        AppLanguage.GERMAN -> "APK-Datei auswählen"
+        AppLanguage.RUSSIAN -> "Выбрать файл APK"
+        AppLanguage.JAPANESE -> "APKファイルを選択"
+        AppLanguage.KOREAN -> "APK 파일 선택"
+    }
+
+    val invalidApkFile: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "所选文件不是有效的 APK，或无法读取。"
+        AppLanguage.ENGLISH -> "The selected file is not a valid APK or cannot be read."
+        AppLanguage.ARABIC -> "الملف المحدد ليس APK صالحًا أو يتعذر قراءته."
+        AppLanguage.PORTUGUESE -> "O arquivo selecionado não é um APK válido ou não pode ser lido."
+        AppLanguage.SPANISH -> "El archivo seleccionado no es un APK válido o no se puede leer."
+        AppLanguage.FRENCH -> "Le fichier sélectionné n’est pas un APK valide ou ne peut pas être lu."
+        AppLanguage.GERMAN -> "Die ausgewählte Datei ist kein gültiges APK oder kann nicht gelesen werden."
+        AppLanguage.RUSSIAN -> "Выбранный файл не является действительным APK или не читается."
+        AppLanguage.JAPANESE -> "選択したファイルは有効なAPKではないか、読み取れません。"
+        AppLanguage.KOREAN -> "선택한 파일이 유효한 APK가 아니거나 읽을 수 없습니다."
+    }
+
+    val apkPackageNameLabel: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "包名"
+        AppLanguage.ENGLISH -> "Package name"
+        AppLanguage.ARABIC -> "اسم الحزمة"
+        AppLanguage.PORTUGUESE -> "Nome do pacote"
+        AppLanguage.SPANISH -> "Nombre del paquete"
+        AppLanguage.FRENCH -> "Nom du package"
+        AppLanguage.GERMAN -> "Paketname"
+        AppLanguage.RUSSIAN -> "Имя пакета"
+        AppLanguage.JAPANESE -> "パッケージ名"
+        AppLanguage.KOREAN -> "패키지 이름"
+    }
+
+    val apkVersionLabel: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "版本"
+        AppLanguage.ENGLISH -> "Version"
+        AppLanguage.ARABIC -> "الإصدار"
+        AppLanguage.PORTUGUESE -> "Versão"
+        AppLanguage.SPANISH -> "Versión"
+        AppLanguage.FRENCH -> "Version"
+        AppLanguage.GERMAN -> "Version"
+        AppLanguage.RUSSIAN -> "Версия"
+        AppLanguage.JAPANESE -> "バージョン"
+        AppLanguage.KOREAN -> "버전"
+    }
+
+    val apkSizeLabel: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "文件大小"
+        AppLanguage.ENGLISH -> "File size"
+        AppLanguage.ARABIC -> "حجم الملف"
+        AppLanguage.PORTUGUESE -> "Tamanho do arquivo"
+        AppLanguage.SPANISH -> "Tamaño del archivo"
+        AppLanguage.FRENCH -> "Taille du fichier"
+        AppLanguage.GERMAN -> "Dateigröße"
+        AppLanguage.RUSSIAN -> "Размер файла"
+        AppLanguage.JAPANESE -> "ファイルサイズ"
+        AppLanguage.KOREAN -> "파일 크기"
+    }
+
+    val apkInstallerOpened: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "已打开 Android 安装器；请在系统提示中确认安装。"
+        AppLanguage.ENGLISH -> "Android’s installer opened. Confirm the installation in its prompt."
+        AppLanguage.ARABIC -> "فُتح مُثبّت Android. أكّد التثبيت في نافذة النظام."
+        AppLanguage.PORTUGUESE -> "O instalador do Android foi aberto. Confirme a instalação na tela do sistema."
+        AppLanguage.SPANISH -> "Se abrió el instalador de Android. Confirma la instalación en el aviso del sistema."
+        AppLanguage.FRENCH -> "L’installateur Android est ouvert. Confirmez l’installation dans sa fenêtre."
+        AppLanguage.GERMAN -> "Das Android-Installationsprogramm wurde geöffnet. Bestätigen Sie dort die Installation."
+        AppLanguage.RUSSIAN -> "Открылся установщик Android. Подтвердите установку в системном окне."
+        AppLanguage.JAPANESE -> "Androidのインストーラーを開きました。システム画面でインストールを確認してください。"
+        AppLanguage.KOREAN -> "Android 설치 프로그램이 열렸습니다. 시스템 안내에서 설치를 확인하세요."
+    }
+
+    val apkInstallerLaunchFailed: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "无法打开 Android 安装器。"
+        AppLanguage.ENGLISH -> "Could not open Android’s installer."
+        AppLanguage.ARABIC -> "تعذّر فتح مُثبّت Android."
+        AppLanguage.PORTUGUESE -> "Não foi possível abrir o instalador do Android."
+        AppLanguage.SPANISH -> "No se pudo abrir el instalador de Android."
+        AppLanguage.FRENCH -> "Impossible d’ouvrir l’installateur Android."
+        AppLanguage.GERMAN -> "Das Android-Installationsprogramm konnte nicht geöffnet werden."
+        AppLanguage.RUSSIAN -> "Не удалось открыть установщик Android."
+        AppLanguage.JAPANESE -> "Androidのインストーラーを開けませんでした。"
+        AppLanguage.KOREAN -> "Android 설치 프로그램을 열 수 없습니다."
+    }
+
+    val installPermissionOpenSettings: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "前往设置"
+        AppLanguage.ENGLISH -> "Open settings"
+        AppLanguage.ARABIC -> "فتح الإعدادات"
+        AppLanguage.PORTUGUESE -> "Abrir configurações"
+        AppLanguage.SPANISH -> "Abrir ajustes"
+        AppLanguage.FRENCH -> "Ouvrir les paramètres"
+        AppLanguage.GERMAN -> "Einstellungen öffnen"
+        AppLanguage.RUSSIAN -> "Открыть настройки"
+        AppLanguage.JAPANESE -> "設定を開く"
+        AppLanguage.KOREAN -> "설정 열기"
+    }
+
+    val appModifierCloneIdentityOnly: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "仅重打包应用名称与包名；开屏、激活弹窗、公告和图标注入当前不可用。安装后原应用仍保留，克隆包会使用 WebToApp 签名。"
+        AppLanguage.ENGLISH -> "Only the app label and package identity are changed. Splash, activation dialogs, announcements, and icon injection are unavailable. The original stays installed; the clone is signed with WebToApp’s key."
+        AppLanguage.ARABIC -> "يُعدّل اسم التطبيق وهويّة الحزمة فقط. شاشة البداية ونوافذ التفعيل والإعلانات وحقن الأيقونات غير متاحة. يبقى التطبيق الأصلي مثبتًا، وتُوقّع النسخة بمفتاح WebToApp."
+        AppLanguage.PORTUGUESE -> "Apenas o nome e a identidade do pacote são alterados. Splash, diálogos de ativação, avisos e injeção de ícones não estão disponíveis. O original permanece instalado; o clone usa a chave do WebToApp."
+        AppLanguage.SPANISH -> "Solo se cambian el nombre y la identidad del paquete. No están disponibles la pantalla inicial, los diálogos de activación, los avisos ni la inyección de iconos. La app original sigue instalada; el clon usa la clave de WebToApp."
+        AppLanguage.FRENCH -> "Seuls le nom et l’identité du package sont modifiés. L’écran de lancement, les dialogues d’activation, les annonces et l’injection d’icône ne sont pas disponibles. L’application d’origine reste installée ; le clone est signé avec la clé WebToApp."
+        AppLanguage.GERMAN -> "Nur App-Name und Paketidentität werden geändert. Startbildschirm, Aktivierungsdialoge, Hinweise und Symbolinjektion sind nicht verfügbar. Das Original bleibt installiert; der Klon wird mit dem WebToApp-Schlüssel signiert."
+        AppLanguage.RUSSIAN -> "Изменяются только имя приложения и идентификатор пакета. Заставка, диалоги активации, объявления и внедрение значков недоступны. Исходное приложение остаётся установленным; клон подписывается ключом WebToApp."
+        AppLanguage.JAPANESE -> "変更されるのはアプリ名とパッケージ識別子のみです。スプラッシュ、認証ダイアログ、お知らせ、アイコン注入は利用できません。元のアプリは残り、クローンはWebToAppの鍵で署名されます。"
+        AppLanguage.KOREAN -> "앱 이름과 패키지 ID만 변경됩니다. 스플래시, 활성화 대화상자, 공지 및 아이콘 주입은 사용할 수 없습니다. 원본 앱은 유지되며 클론은 WebToApp 키로 서명됩니다."
+    }
 }

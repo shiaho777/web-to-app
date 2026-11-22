@@ -13,6 +13,7 @@
 | ── | ── |
 | **管理插件** | [管理插件](/zh/guide/more-features/extension-modules) |
 | **应用修改器** | [应用修改器](/zh/guide/more-features/app-modifier) |
+| **安装 APK** | [安装 APK](/zh/guide/app-actions/install-apk) |
 | **Linux 环境** | [Linux 环境](/zh/guide/more-features/linux-environment) |
 | **运行时管理** | [运行时管理](/zh/guide/more-features/runtime-management) |
 | **端口管理** | [端口管理](/zh/guide/more-features/port-manager) |

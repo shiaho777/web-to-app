@@ -13,6 +13,7 @@ Grouped with dividers, top to bottom:
 | ── | ── |
 | **Manage Plugins** | [Manage Plugins](/guide/more-features/extension-modules) |
 | **App Modifier** | [App Modifier](/guide/more-features/app-modifier) |
+| **Install APK** | [Install APK](/guide/app-actions/install-apk) |
 | **Linux Environment** | [Linux Environment](/guide/more-features/linux-environment) |
 | **Runtime Management** | [Runtime Management](/guide/more-features/runtime-management) |
 | **Port Manager** | [Port Manager](/guide/more-features/port-manager) |

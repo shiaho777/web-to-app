@@ -6,7 +6,7 @@ A tool-calling assistant inside the app that can operate the entire WebToApp sur
 
 Beyond generating web apps, plugins, userscripts, MV3 Chrome extensions, and local runtime projects, the Agent can directly perform actions across the app:
 
-- **App lifecycle** — create, edit, duplicate, delete, build APK/AAB, export, share, create shortcuts, move to categories.
+- **App lifecycle** — create, edit, duplicate, delete, build APK/AAB, export, share, and move to categories.
 - **Ports & engines** — scan/kill ports, check/select/delete browser engines (WebView, GeckoView).
 - **Runtimes** — check status, install, and clear caches for Node.js, PHP, Python, Go, WordPress, and the Linux environment.
 - **Ad-block** — view rule counts and sources, import/remove/enable/disable hosts subscriptions.

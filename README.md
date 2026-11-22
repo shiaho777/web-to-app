@@ -129,7 +129,7 @@ A quick scan of what's in the box. Each links to the detailed feature map below.
 | WordPress | APK running WordPress over local PHP + SQLite | Portable sites, theme/plugin demos, content packages |
 | Images / video / galleries | Media-focused APK | Albums, course materials, portfolios, offline viewers |
 | Multiple sites | Tab/card/feed/drawer multi-web APK | Link hubs, portals, app collections |
-| Installed APK | Rebranded clone or shortcut disguise | Icon/name/package experiments, repackaging research |
+| Installed APK | Rebranded clone | Name/package identity experiments and repackaging research |
 
 Node.js, PHP, Python, Go, WordPress, image, and video stay in the app. Turn them on from **About → Advanced features** (off by default). Gallery does not need that switch.
 
@@ -252,7 +252,7 @@ WebToApp has a large number of switches. The sections below group them by use ca
 - **Website scraper** for offline packs — HTML, CSS, JS, images, fonts, `url()`, `srcset`, `@import`, path rewriting, same-domain limits, depth limits, and size limits; parallel streaming worker pool with main-thread progress callbacks.
 - **Multi-Web layouts** — bottom tabs, top tabs that follow a sideways swipe, cards (1–4 columns and a height slider), feeds, drawers (1–3 columns), site order, the tab opened on launch, per-site icons/theme colors/extraction selectors/refresh intervals, and shared JS/CSS.
 - **Gallery apps** — categorized media, grid/list/timeline views, shuffle/single-loop, sorting, thumbnail bar, overlays, auto-next, and playback memory.
-- **App Modifier** — shortcut disguise or real binary clone with manifest/resource patching and re-signing.
+- **App Modifier** — clone installed APKs with manifest/resource patching and re-signing; set a new name and package identity.
 
 </details>
 
@@ -283,7 +283,7 @@ WebToApp ships a built-in AI agent (open from **⋮ → Agent**) that can operat
 | Files | Read, Write, Edit, Delete, List, Glob, Grep project files |
 | Apps | List, Get, Create, Update app configurations |
 | Config templates | List, save, apply, delete, export, and import a common-config JSON file |
-| App lifecycle | Build APK/AAB, Export, Share, Create shortcut, Duplicate, Delete, Move to category |
+| App lifecycle | Build APK/AAB, Export, Share, Duplicate, Delete, Move to category |
 | Ports & engines | Scan/kill ports, check/select/delete browser engines (WebView, GeckoView) |
 | Runtimes | Status, install, and cache-clear for Node.js, PHP, Python, Go, WordPress, Linux env |
 | Ad-block | Rule counts, import/remove/enable/disable hosts subscriptions |
