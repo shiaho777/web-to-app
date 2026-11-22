@@ -205,24 +205,14 @@ object ApkExportPreflight {
 
     private fun MutableList<ApkExportPreflightIssue>.addNetworkTrustWarnings(webApp: WebApp) {
         val networkTrust = webApp.apkExportConfig?.networkTrustConfig ?: return
-        if (!networkTrust.trustSystemCa && !networkTrust.trustUserCa && networkTrust.customCaCertificates.isEmpty()) {
+        val trustUserCa = networkTrust.trustUserCa && !webApp.webViewConfig.antiCapture
+        if (!networkTrust.trustSystemCa && !trustUserCa && networkTrust.customCaCertificates.isEmpty()) {
             add(
                 ApkExportPreflightIssue(
                     severity = ApkExportPreflightSeverity.Error,
                     key = "networkTrust",
                     title = Strings.preflightNoCaAnchorTitle,
                     message = Strings.preflightNoCaAnchorMessage
-                )
-            )
-        }
-
-        if (networkTrust.customCaCertificates.isNotEmpty()) {
-            add(
-                ApkExportPreflightIssue(
-                    severity = ApkExportPreflightSeverity.Warning,
-                    key = "networkTrust.customCa",
-                    title = Strings.preflightTemplateCaLimitTitle,
-                    message = Strings.preflightTemplateCaLimitMessage
                 )
             )
         }

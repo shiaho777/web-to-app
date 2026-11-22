@@ -189,6 +189,10 @@
             android:name="com.webtoapp.SAEP_POLICY_TEMPLATE"
             android:resource="@raw/agent_saep_policy" />
 
+        <meta-data
+            android:name="com.webtoapp.CUSTOM_CA_BUNDLE"
+            android:resource="@raw/wta_export_ca_bundle" />
+
         
         <property
             android:name="android.app.property.PAGE_SIZE_COMPATIBILITY"

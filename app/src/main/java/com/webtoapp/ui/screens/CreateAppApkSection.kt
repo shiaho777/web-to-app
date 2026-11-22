@@ -590,13 +590,6 @@ private fun NetworkTrustConfigPanel(
                 }
             }
         }
-
-        if (config.customCaCertificates.isNotEmpty()) {
-            WtaStatusBanner(
-                message = Strings.networkTrustTemplateLimitHint,
-                tone = WtaStatusTone.Info
-            )
-        }
     }
 
     if (showSavePresetDialog) {
