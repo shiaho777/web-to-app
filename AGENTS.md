@@ -99,13 +99,14 @@ Mental model:
 ## Workflow
 
 - Do not commit secrets, `local.properties`, keystores, or IDE/cache junk.
-- Do not create commits, push, open PRs, or file Issues unless the user asks to deliver / ship / push / open a PR (or equivalent).
+- Create commits only when the user asks to commit or deliver the work. Create every commit in this repository on the local `main` branch. Do not commit in temporary repositories, separate worktrees, or other local branches. If you cannot commit on `main` here, report the blocker and leave the changes in the original working tree.
+- Push, open PRs, or file Issues only when the user asks for delivery or the specific action.
 - When changing export or shell packaging, rebuild the template you touched.
 - When changing config fields, run `checkConfigFieldDrift` to catch model ↔ shell config name drift.
 
 ### Delivery (Issue + PR + CI)
 
-Default target: [shiaho777/web-to-app](https://github.com/shiaho777/web-to-app). Prefer a pull request over direct pushes to `main` when delivering code. Human-facing wording of the same loop lives in [CONTRIBUTING.md](.github/CONTRIBUTING.md); keep those docs in sync when this process changes.
+Deliver to [shiaho777/web-to-app](https://github.com/shiaho777/web-to-app). A PR targets GitHub's `main` branch and uses a remote head branch for review. Publish the intended local `main` commit to that head branch while keeping all local commits on `main`. Push directly to GitHub's `main` only when the user explicitly asks. Keep [CONTRIBUTING.md](.github/CONTRIBUTING.md) in sync when this process changes.
 
 **Language (required):** GitHub **Issues and PRs must be written in English** — titles, bodies, labels text you author, and delivery comments on the Issue/PR. Local chat with the user may be Chinese or any language; do not copy that language into Issue/PR text.
 
@@ -118,16 +119,16 @@ Do not write `1367（已关闭）`, `1367 (closed)`, `#1367 closed`, or `author:
 
 Do not tell the user to find a finished delivery with `is:issue state:open`. That filter hides closed Issues and merged PRs. To look one up, use the URL above, or a search of the number alone (`1376`) with no `author:` and no `state:open`.
 
-When the user asks to deliver a change, run the Issue → branch → PR → CI → merge loop end-to-end. Opening the PR is not the end of the task. Stay with it until the merge is done:
+For PR delivery, run the Issue → local `main` commit → remote head branch → PR → CI → merge loop end-to-end:
 
 1. Watch the required `check` job in "Android CI Build" until it finishes. `package-apks` skips on PRs; do not wait on it.
-2. If `check` fails, fix it on the same branch and push. Do not open a second PR for the fix.
+2. If `check` fails, commit the fix on local `main` and push it to the existing PR head branch.
 3. Squash-merge only after `check` is green. Then confirm the Issue is closed by the merge and the head branch is deleted.
 4. Do not tell the user the delivery is done while the PR is still open, CI is still running or red, or the Issue is still open.
 
 Do not close the Issue yourself before the PR is merged and CI is green.
 
-**Branch naming:** use plain `type/slug` names — `fix/…`, `feat/…`, `refactor/…`, `docs/…`, `perf/…`, `chore/…`. Do not use tool/agent namespaces (`codex/…`, `devin/…`, etc.); the branch belongs to the repo, not the agent.
+Name remote PR head branches `type/slug`, using a prefix such as `fix/`, `feat/`, `refactor/`, `docs/`, `perf/`, or `chore/`. Avoid tool or agent namespaces such as `codex/` and `devin/`.
 
 ---
 
