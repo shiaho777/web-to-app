@@ -37,6 +37,8 @@ data class AppModifyConfig(
     /** User-selected clone package. Blank/null falls back to a generated unique name. */
     val newPackageName: String? = null,
     val newIconPath: String? = null,
+    val newVersionName: String = originalApp.versionName,
+    val newVersionCode: Int = originalApp.versionCode.coerceIn(1, Int.MAX_VALUE.toLong()).toInt(),
 
     val splashEnabled: Boolean = false,
     val splashConfig: SplashConfig = SplashConfig(),
@@ -48,14 +50,18 @@ data class AppModifyConfig(
     val activationRemoteConfig: com.webtoapp.data.model.RemoteActivationConfig = com.webtoapp.data.model.RemoteActivationConfig(),
 
     val announcementEnabled: Boolean = false,
-    val announcement: Announcement = Announcement()
+    val announcement: Announcement = Announcement(),
+
+    val dialogEngineEnabled: Boolean = false,
+    val dialogEngineProject: DialogEngineProject = DialogEngineProject()
 )
 
 sealed class AppModifyResult {
 
-    data object ShortcutSuccess : AppModifyResult()
-
-    data class CloneSuccess(val apkPath: String) : AppModifyResult()
+    data class CloneSuccess(
+        val apkPath: String,
+        val installerLaunched: Boolean
+    ) : AppModifyResult()
 
     data class Error(val message: String) : AppModifyResult()
 }

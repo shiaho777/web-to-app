@@ -11,7 +11,7 @@ Beyond generating web apps, plugins, userscripts, MV3 Chrome extensions, and loc
 - **Runtimes** — check status, install, and clear caches for Node.js, PHP, Python, Go, WordPress, and the Linux environment.
 - **Ad-block** — view rule counts and sources, import/remove/enable/disable hosts subscriptions.
 - **Stats & health** — usage statistics, URL health checks.
-- **App modifier** — list installed apps, clone/rebrand apps, batch import from text, export templates.
+- **App modifier** — list user-installed apps, build and sign a rebranded APK with a custom package name and version, install the resulting copy, batch import from text, and export templates.
 - **Build environment & compliance** — initialize the Linux build environment, install components, run Google Play policy checks.
 - **Modules** — list, create, and update plugins.
 - **Files** — read, write, edit, delete, list, glob, and grep project files.

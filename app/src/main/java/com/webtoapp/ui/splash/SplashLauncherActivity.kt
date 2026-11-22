@@ -30,6 +30,9 @@ import androidx.compose.ui.viewinterop.AndroidView
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import com.webtoapp.core.appmodifier.AppModifyPayload
+import com.webtoapp.core.appmodifier.DialogEngineAction
+import com.webtoapp.core.appmodifier.DialogEngineComponentType
+import com.webtoapp.core.appmodifier.DialogEngineProject
 import com.webtoapp.data.model.Announcement
 import com.webtoapp.data.model.SplashConfig
 import com.webtoapp.data.model.SplashOrientation
@@ -174,6 +177,9 @@ fun SplashLauncherScreen(
     }
 
     var showAnnouncementDialog by remember { mutableStateOf(false) }
+    var showCustomDialog by remember {
+        mutableStateOf(payload.dialogEngineEnabled && payload.dialogEngineProject.enabled)
+    }
     var remainingDaysNotice by remember {
         mutableStateOf<com.webtoapp.core.activation.RemainingDaysNotice?>(null)
     }
@@ -186,6 +192,9 @@ fun SplashLauncherScreen(
     ) }
 
     suspend fun continueAfterActivationGate() {
+        if (payload.dialogEngineEnabled && payload.dialogEngineProject.enabled && showCustomDialog) {
+            return
+        }
         // Respect showOnce/version pinning like the in-app announcement paths; without
         // this gate the dialog re-appeared on every clone launch.
         val announceNow = announcementEnabled && announcement.title.isNotEmpty() &&
@@ -226,7 +235,9 @@ fun SplashLauncherScreen(
     }
 
     LaunchedEffect(Unit) {
-        if (!activationEnabled && !announcementEnabled && !hasValidSplash) {
+        if (!activationEnabled && !announcementEnabled && !hasValidSplash &&
+            !(payload.dialogEngineEnabled && payload.dialogEngineProject.enabled)
+        ) {
             onLaunchTarget()
         }
     }
@@ -289,11 +300,55 @@ fun SplashLauncherScreen(
             )
         }
 
-        if (!showActivationDialog && !showAnnouncementDialog && !showSplash &&
+        if (!showActivationDialog && !showAnnouncementDialog && !showCustomDialog && !showSplash &&
             remainingDaysNotice == null && isActivated
         ) {
             WtaLoadingIndicator(color = Color.White)
         }
+    }
+
+    if (showCustomDialog) {
+        DialogEngineRuntimeDialog(
+            project = payload.dialogEngineProject,
+            onPrimary = { action, value ->
+                showCustomDialog = false
+                executeDialogEngineAction(
+                    action = action,
+                    value = value,
+                    targetPackage = payload.targetPackage,
+                    context = context,
+                    onLaunchTarget = onLaunchTarget
+                )
+                if (action == DialogEngineAction.CLOSE ||
+                    action == DialogEngineAction.NONE
+                ) {
+                    scope.launch { continueAfterActivationGate() }
+                }
+            },
+            onSecondary = { action, value ->
+                showCustomDialog = false
+                executeDialogEngineAction(
+                    action = action,
+                    value = value,
+                    targetPackage = payload.targetPackage,
+                    context = context,
+                    onLaunchTarget = onLaunchTarget
+                )
+                if (action == DialogEngineAction.CLOSE ||
+                    action == DialogEngineAction.NONE
+                ) {
+                    scope.launch { continueAfterActivationGate() }
+                }
+            },
+            onDismiss = {
+                if (payload.dialogEngineProject.dismissOnOutside ||
+                    payload.dialogEngineProject.dismissOnBack
+                ) {
+                    showCustomDialog = false
+                    scope.launch { continueAfterActivationGate() }
+                }
+            }
+        )
     }
 
     if (showActivationDialog) {
@@ -368,6 +423,186 @@ fun SplashLauncherScreen(
             }
         )
     }
+}
+
+private fun executeDialogEngineAction(
+    action: DialogEngineAction,
+    value: String,
+    targetPackage: String,
+    context: android.content.Context,
+    onLaunchTarget: () -> Unit
+) {
+    when (action) {
+        DialogEngineAction.LAUNCH_TARGET -> onLaunchTarget()
+        DialogEngineAction.OPEN_URL -> {
+            val safeUrl = normalizeExternalIntentUrl(value)
+            if (safeUrl.isNotEmpty()) {
+                runCatching {
+                    context.startActivity(
+                        android.content.Intent(
+                            android.content.Intent.ACTION_VIEW,
+                            android.net.Uri.parse(safeUrl)
+                        )
+                    )
+                }
+            }
+        }
+        DialogEngineAction.CLOSE,
+        DialogEngineAction.NONE -> Unit
+    }
+}
+
+@Composable
+private fun DialogEngineRuntimeDialog(
+    project: DialogEngineProject,
+    onPrimary: (DialogEngineAction, String) -> Unit,
+    onSecondary: (DialogEngineAction, String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val containerColor = parseDialogColor(project.backgroundColor, Color.White)
+    val contentColor = parseDialogColor(project.contentColor, Color.Black)
+    val accentColor = parseDialogColor(project.accentColor, MaterialTheme.colorScheme.primary)
+
+    com.webtoapp.ui.design.WtaAlertDialog(
+        onDismissRequest = onDismiss,
+        modifier = Modifier.fillMaxWidth(project.widthFraction.coerceIn(0.5f, 1f)),
+        properties = androidx.compose.ui.window.DialogProperties(
+            dismissOnBackPress = project.dismissOnBack,
+            dismissOnClickOutside = project.dismissOnOutside
+        ),
+        title = project.title.ifBlank { null },
+        confirmButton = {
+            TextButton(onClick = {
+                onPrimary(project.primaryAction, project.primaryActionValue)
+            }) {
+                Text(project.primaryText.ifBlank { "Continue" })
+            }
+        },
+        dismissButton = if (project.secondaryText.isNotBlank()) {
+            {
+                TextButton(onClick = {
+                    onSecondary(project.secondaryAction, project.secondaryActionValue)
+                }) {
+                    Text(project.secondaryText)
+                }
+            }
+        } else null,
+        content = {
+            if (project.message.isNotBlank()) {
+                Text(
+                    text = project.message,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = contentColor
+                )
+            }
+            project.components.forEach { component ->
+                DialogEngineRuntimeComponent(
+                    component = component,
+                    accentColor = accentColor,
+                    contentColor = contentColor
+                )
+            }
+        }
+    )
+}
+
+@Composable
+private fun DialogEngineRuntimeComponent(
+    component: com.webtoapp.core.appmodifier.DialogEngineComponent,
+    accentColor: Color,
+    contentColor: Color
+) {
+    when (component.type) {
+        DialogEngineComponentType.TITLE -> Text(
+            text = component.text,
+            style = MaterialTheme.typography.titleMedium,
+            color = contentColor,
+            modifier = Modifier.fillMaxWidth(component.widthFraction.coerceIn(0.1f, 1f))
+        )
+        DialogEngineComponentType.MESSAGE -> Text(
+            text = component.text,
+            style = MaterialTheme.typography.bodyMedium,
+            color = contentColor,
+            modifier = Modifier.fillMaxWidth(component.widthFraction.coerceIn(0.1f, 1f))
+        )
+        DialogEngineComponentType.TEXT_FIELD,
+        DialogEngineComponentType.PASSWORD -> {
+            var value by remember(component.id) { mutableStateOf("") }
+            OutlinedTextField(
+                value = value,
+                onValueChange = { value = it },
+                enabled = component.enabled,
+                label = if (component.text.isNotBlank()) ({ Text(component.text) }) else null,
+                placeholder = if (component.hint.isNotBlank()) ({ Text(component.hint) }) else null,
+                visualTransformation = if (component.type == DialogEngineComponentType.PASSWORD) {
+                    androidx.compose.ui.text.input.PasswordVisualTransformation()
+                } else androidx.compose.ui.text.input.VisualTransformation.None,
+                modifier = Modifier.fillMaxWidth(component.widthFraction.coerceIn(0.1f, 1f))
+            )
+        }
+        DialogEngineComponentType.CHECKBOX -> {
+            var checked by remember(component.id) { mutableStateOf(component.selected) }
+            Row(
+                modifier = Modifier.fillMaxWidth(component.widthFraction.coerceIn(0.1f, 1f)),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Checkbox(
+                    checked = checked,
+                    onCheckedChange = { checked = it },
+                    enabled = component.enabled,
+                    colors = CheckboxDefaults.colors(checkedColor = accentColor)
+                )
+                Text(component.text, color = contentColor)
+            }
+        }
+        DialogEngineComponentType.SWITCH -> {
+            var checked by remember(component.id) { mutableStateOf(component.selected) }
+            Row(
+                modifier = Modifier.fillMaxWidth(component.widthFraction.coerceIn(0.1f, 1f)),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(component.text, color = contentColor)
+                Switch(
+                    checked = checked,
+                    onCheckedChange = { checked = it },
+                    enabled = component.enabled
+                )
+            }
+        }
+        DialogEngineComponentType.PROGRESS -> LinearProgressIndicator(
+            modifier = Modifier
+                .fillMaxWidth(component.widthFraction.coerceIn(0.1f, 1f))
+                .height(component.heightDp.dp),
+            color = accentColor
+        )
+        DialogEngineComponentType.IMAGE -> Spacer(
+            modifier = Modifier
+                .fillMaxWidth(component.widthFraction.coerceIn(0.1f, 1f))
+                .height(component.heightDp.dp)
+                .background(parseDialogColor(component.backgroundColor, Color.LightGray))
+        )
+        DialogEngineComponentType.LIST,
+        DialogEngineComponentType.BUTTON -> {
+            Text(
+                text = component.text,
+                color = contentColor,
+                modifier = Modifier.fillMaxWidth(component.widthFraction.coerceIn(0.1f, 1f))
+            )
+        }
+    }
+}
+
+private fun parseDialogColor(value: String, fallback: Color): Color {
+    return runCatching {
+        val normalized = value.removePrefix("#")
+        val argb = normalized.toLong(16)
+        val a = ((argb ushr 24) and 0xff).toInt()
+        val r = ((argb ushr 16) and 0xff).toInt()
+        val g = ((argb ushr 8) and 0xff).toInt()
+        val b = (argb and 0xff).toInt()
+        Color(red = r, green = g, blue = b, alpha = if (normalized.length <= 6) 255 else a)
+    }.getOrDefault(fallback)
 }
 
 private fun normalizeExternalUrlForIntent(rawUrl: String): String {
