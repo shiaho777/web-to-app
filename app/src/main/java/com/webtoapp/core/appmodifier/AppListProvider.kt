@@ -65,8 +65,9 @@ class AppListProvider(private val context: Context) {
         val isSystemApp = (appInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0
 
         val apkPath = appInfo.sourceDir
+        val splitApkPaths = appInfo.splitSourceDirs?.toList().orEmpty()
         val apkSize = try {
-            File(apkPath).length()
+            (listOf(apkPath) + splitApkPaths).sumOf { File(it).length() }
         } catch (e: Exception) {
             0L
         }
@@ -88,7 +89,8 @@ class AppListProvider(private val context: Context) {
             isSystemApp = isSystemApp,
             installedTime = firstInstallTime,
             updatedTime = lastUpdateTime,
-            apkSize = apkSize
+            apkSize = apkSize,
+            splitApkPaths = splitApkPaths
         )
     }
 

@@ -1,5 +1,7 @@
 package com.webtoapp.ui.screens
 
+import android.content.Context
+import android.content.Intent
 import android.graphics.drawable.Drawable
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -62,6 +64,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.core.content.FileProvider
 import androidx.core.graphics.drawable.toBitmap
 import com.webtoapp.core.appmodifier.AppCloner
 import com.webtoapp.core.appmodifier.AppFilterType
@@ -544,8 +547,21 @@ fun AppModifyFullScreen(
 
 private fun shareCloneApk(context: Context, apkPath: String, chooserTitle: String) {
     val apkFile = File(apkPath)
-    val sendIntent = AppModifierApkSharer.createSendIntent(context, apkFile)
-    context.startActivity(Intent.createChooser(sendIntent, chooserTitle))
+    val uri = FileProvider.getUriForFile(
+        context,
+        "${context.packageName}.fileprovider",
+        apkFile
+    )
+    val sendIntent = Intent(Intent.ACTION_SEND).apply {
+        type = "*/*"
+        putExtra(Intent.EXTRA_STREAM, uri)
+        clipData = android.content.ClipData.newRawUri(apkFile.name, uri)
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    }
+    val chooser = Intent.createChooser(sendIntent, chooserTitle).apply {
+        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    }
+    context.startActivity(chooser)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

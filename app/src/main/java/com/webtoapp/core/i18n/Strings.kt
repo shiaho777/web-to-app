@@ -3987,6 +3987,8 @@ object Strings {
     val appModifierNewIdentity: String get() = StringsE.appModifierNewIdentity
 
     val appModifierCloneNeedsOriginalIcon: String get() = StringsE.appModifierCloneNeedsOriginalIcon
+    val appModifierSplitApkUnsupported: String get() = StringsE.appModifierSplitApkUnsupported
+    val appModifierApkReady: String get() = StringsE.appModifierApkReady
     val appModifierCloneNoEnhancements: String get() = StringsE.appModifierCloneNoEnhancements
     val appModifierCloneEncryptedUnsupported: String get() = StringsE.appModifierCloneEncryptedUnsupported
     val appModifierPackageInUse: String get() = StringsE.appModifierPackageInUse

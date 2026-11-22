@@ -16,7 +16,8 @@ data class InstalledAppInfo(
     val isSystemApp: Boolean,
     val installedTime: Long,
     val updatedTime: Long,
-    val apkSize: Long
+    val apkSize: Long,
+    val splitApkPaths: List<String> = emptyList()
 ) {
 
     val formattedSize: String
