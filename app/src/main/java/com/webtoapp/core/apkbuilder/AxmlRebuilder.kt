@@ -2349,6 +2349,77 @@ class AxmlRebuilder {
         return false
     }
 
+    internal fun buildNetworkSecurityConfig(
+        trustSystemCa: Boolean,
+        trustUserCa: Boolean,
+        cleartextTrafficPermitted: Boolean,
+        customCaResourceId: Int?
+    ): ByteArray {
+        val pool = StringPool(0x100, true, mutableListOf(), intArrayOf(), null, 0)
+        val document = ParsedAxml(8, pool, null, mutableListOf())
+
+        fun appendElement(
+            name: String,
+            attribute: String? = null,
+            valueType: Int = 0,
+            value: Int = 0,
+            children: () -> Unit = {}
+        ) {
+            val nameIndex = getOrAddString(pool, name)
+            val start = buildSimpleStartElement(-1, nameIndex, if (attribute == null) 0 else 1)
+            if (attribute != null) {
+                ByteBuffer.wrap(start.data).order(ByteOrder.LITTLE_ENDIAN).apply {
+                    position(36)
+                    putInt(-1)
+                    putInt(getOrAddString(pool, attribute))
+                    putInt(if (valueType == 0x03) value else -1)
+                    putShort(8)
+                    put(0)
+                    put(valueType.toByte())
+                    putInt(value)
+                }
+            }
+            document.chunks += start
+            children()
+            document.chunks += buildEndElement(-1, nameIndex)
+        }
+
+        appendElement("network-security-config") {
+            appendElement("base-config", "cleartextTrafficPermitted", 0x12, if (cleartextTrafficPermitted) -1 else 0) {
+                appendElement("trust-anchors") {
+                    if (trustSystemCa) {
+                        appendElement("certificates", "src", 0x03, getOrAddString(pool, "system"))
+                    }
+                    if (trustUserCa) {
+                        appendElement("certificates", "src", 0x03, getOrAddString(pool, "user"))
+                    }
+                    if (customCaResourceId != null) {
+                        appendElement("certificates", "src", 0x01, customCaResourceId)
+                    }
+                }
+            }
+            appendElement("domain-config", "cleartextTrafficPermitted", 0x12, -1) {
+                for (host in listOf("localhost", "127.0.0.1", "10.0.2.2")) {
+                    appendElement("domain") {
+                        val chunk = ByteBuffer.allocate(28).order(ByteOrder.LITTLE_ENDIAN)
+                        chunk.putShort(CHUNK_TEXT.toShort())
+                        chunk.putShort(16)
+                        chunk.putInt(chunk.capacity())
+                        chunk.putInt(0)
+                        chunk.putInt(-1)
+                        chunk.putInt(getOrAddString(pool, host))
+                        chunk.putShort(8)
+                        chunk.put(0)
+                        chunk.put(0)
+                        chunk.putInt(0)
+                        document.chunks += Chunk(CHUNK_TEXT, 0, chunk.capacity(), chunk.array())
+                    }
+                }
+            }
+        }
+        return rebuildAxml(document)
+    }
+
     private fun rebuildAxml(parsed: ParsedAxml): ByteArray {
         val output = ByteArrayOutputStream()
 

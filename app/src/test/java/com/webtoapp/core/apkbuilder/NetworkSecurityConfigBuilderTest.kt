@@ -1,6 +1,8 @@
 package com.webtoapp.core.apkbuilder
 
 import com.google.common.truth.Truth.assertThat
+import com.webtoapp.core.playstore.aab.axml.AxmlConstants
+import com.webtoapp.core.playstore.aab.axml.AxmlReader
 import com.webtoapp.data.model.CustomCaCertificate
 import com.webtoapp.data.model.NetworkTrustConfig
 import org.junit.Rule
@@ -72,6 +74,35 @@ class NetworkSecurityConfigBuilderTest {
         assertThat(xml).contains("""<certificates src="@raw/wta_custom_ca_1" />""")
         assertThat(xml).contains("""<certificates src="@raw/wta_custom_ca_2" />""")
         assertThat(xml).doesNotContain("""<certificates src="@raw/wta_custom_ca_3" />""")
+    }
+
+    @Test
+    fun `packed config encodes user and custom anchors along with local HTTP domains`() {
+        val bundleId = 0x7f050003
+        val axml = AxmlRebuilder().buildNetworkSecurityConfig(
+            trustSystemCa = false,
+            trustUserCa = true,
+            cleartextTrafficPermitted = false,
+            customCaResourceId = bundleId
+        )
+        val reader = AxmlReader(axml)
+        val root = reader.readDocument()
+        assertThat(root.name).isEqualTo("network-security-config")
+        val base = root.children.filterIsInstance<AxmlReader.Element>().single { it.name == "base-config" }
+        assertThat(base.attributes.single().typedValueType).isEqualTo(AxmlConstants.TYPE_INT_BOOLEAN)
+        assertThat(base.attributes.single().typedValueData).isEqualTo(0)
+        val anchors = (base.children.single() as AxmlReader.Element).children.filterIsInstance<AxmlReader.Element>()
+        val sources = anchors.map { it.attributes.single() }
+        assertThat(sources.map { it.typedValueType })
+            .containsExactly(AxmlConstants.TYPE_STRING, AxmlConstants.TYPE_REFERENCE).inOrder()
+        assertThat(reader.stringAt(sources[0].typedValueData)).isEqualTo("user")
+        assertThat(sources[1].typedValueData).isEqualTo(bundleId)
+
+        val local = root.children.filterIsInstance<AxmlReader.Element>().single { it.name == "domain-config" }
+        assertThat(local.attributes.single().typedValueData).isEqualTo(-1)
+        assertThat(local.children.filterIsInstance<AxmlReader.Element>()
+            .map { (it.children.single() as AxmlReader.TextNode).text })
+            .containsExactly("localhost", "127.0.0.1", "10.0.2.2")
     }
 }
 

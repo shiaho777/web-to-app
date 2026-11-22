@@ -2871,7 +2871,7 @@ class WebViewManager(
                     return
                 }
 
-                if (error != null &&
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N && error != null &&
                     error.primaryError == android.net.http.SslError.SSL_UNTRUSTED) {
                     runCatching { CustomCaTrustStore.init(context) }
                     if (CustomCaTrustStore.hasAnchors()) {

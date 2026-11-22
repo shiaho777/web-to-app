@@ -1819,7 +1819,6 @@ object Strings {
     val saveNetworkPresetHint: String get() = StringsC.saveNetworkPresetHint
     val sha256Prefix: String get() = StringsC.sha256Prefix
     val applySavedNetworkPreset: String get() = StringsC.applySavedNetworkPreset
-    val networkTrustTemplateLimitHint: String get() = StringsC.networkTrustTemplateLimitHint
     val saveNetworkPresetTitle: String get() = StringsC.saveNetworkPresetTitle
     val presetName: String get() = StringsC.presetName
     val invalidCertificate: String get() = StringsC.invalidCertificate
@@ -1833,8 +1832,6 @@ object Strings {
     val preflightOverlayPermissionMessage: String get() = StringsC.preflightOverlayPermissionMessage
     val preflightNoCaAnchorTitle: String get() = StringsC.preflightNoCaAnchorTitle
     val preflightNoCaAnchorMessage: String get() = StringsC.preflightNoCaAnchorMessage
-    val preflightTemplateCaLimitTitle: String get() = StringsC.preflightTemplateCaLimitTitle
-    val preflightTemplateCaLimitMessage: String get() = StringsC.preflightTemplateCaLimitMessage
     val preflightCleartextTitle: String get() = StringsC.preflightCleartextTitle
     val preflightCleartextMessage: String get() = StringsC.preflightCleartextMessage
     val preflightCustomCaUnavailable: String get() = StringsC.preflightCustomCaUnavailable

@@ -408,7 +408,7 @@ class ApkBuildCache(private val context: Context) {
         // bust the manifest-fingerprinted cache just like the share/deep-link lists do.
         parts += "openWith=${config.openWithEnabled}"
         parts += "runtimePerms=${config.runtimePermissions}"
-        parts += "networkTrust=${config.networkTrustConfig}"
+        parts += "nativeNetworkTrust=v1:${config.networkTrustConfig}:${config.antiCaptureEnabled}"
         // Native libs (libnode.so / libnode_bridge.so / libc++_shared.so) must participate
         // so a host upgrade that ships a new/realigned libnode.so invalidates the cached
         // unsigned APK. Otherwise REUSE_UNSIGNED serves a stale unaligned lib that dlopen

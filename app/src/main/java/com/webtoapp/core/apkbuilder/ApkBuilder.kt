@@ -1439,6 +1439,13 @@ class ApkBuilder(private val context: Context) {
         } else emptyList()
 
         ZipFile(sourceApk).use { zipIn ->
+            val networkSecurityEntries = if (mode == ModifyApkMode.FULL) {
+                ApkNetworkSecurityConfig.replacements(
+                    zipIn, config.networkTrustConfig, config.antiCaptureEnabled, axmlRebuilder
+                )
+            } else {
+                emptyMap()
+            }
             ZipOutputStream(FileOutputStream(outputApk)).use { zipOut ->
 
                 val entries = zipIn.entries().toList()
@@ -1526,6 +1533,10 @@ class ApkBuilder(private val context: Context) {
                                 )
                             }
                             writeEntryDeflated(zipOut, entry.name, modifiedData)
+                        }
+
+                        entry.name in networkSecurityEntries -> {
+                            writeEntryDeflated(zipOut, entry.name, networkSecurityEntries.getValue(entry.name))
                         }
 
                         saepResource != null && entry.name == saepResource.path -> {
