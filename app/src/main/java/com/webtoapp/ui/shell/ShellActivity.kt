@@ -30,6 +30,7 @@ import com.webtoapp.data.model.DisplayCutoutMode
 import com.webtoapp.data.model.KeyboardAdjustMode
 import com.webtoapp.data.model.withNotificationPolyfill
 import com.webtoapp.core.floatingwindow.FloatingWindowService
+import com.webtoapp.ui.shared.StatusBarAppearance
 import com.webtoapp.ui.shared.WindowHelper
 
 /** One generated APK hosts exactly one app — the resume-state key is constant. */
@@ -68,18 +69,13 @@ class ShellActivity : AppCompatActivity() {
     private var statusBarCustomColor: String? = null
     private var statusBarDarkIcons: Boolean? = null
     private var statusBarBackgroundType: String = "COLOR"
-    private var statusBarBackgroundImage: String? = null
-    private var statusBarBackgroundAlpha: Float = 1.0f
-    private var statusBarHeightDp: Int = -1
 
     private var statusBarColorModeDark: String = "THEME"
     private var statusBarCustomColorDark: String? = null
     private var statusBarDarkIconsDark: Boolean? = null
     private var statusBarBackgroundTypeDark: String = "COLOR"
-    private var statusBarBackgroundImageDark: String? = null
-    private var statusBarBackgroundAlphaDark: Float = 1.0f
+    private var statusBarAppearance: StatusBarAppearance? = null
     private var statusBarAutoColor: String? = null
-    private var topTabBarColor: String? = null
     private var pageBottomAutoColor: String? = null
     private var keyboardAdjustMode: KeyboardAdjustMode = KeyboardAdjustMode.RESIZE
     private var displayCutoutMode: DisplayCutoutMode = DisplayCutoutMode.SHORT_EDGES
@@ -131,52 +127,11 @@ class ShellActivity : AppCompatActivity() {
         val baseUrl = shellConfig?.targetUrl ?: return
         resumeStore.persistExternalJump(SHELL_RESUME_SESSION_KEY, baseUrl, sourceUrl)
     }
-    private fun applyStatusBarColor(
-        colorMode: String,
-        customColor: String?,
-        darkIcons: Boolean?,
-        isDarkTheme: Boolean,
-        backgroundAlpha: Float = 1f
-    ) {
-        val resolved = resolveStatusBarColorMode(colorMode, customColor)
-        WindowHelper.applyStatusBarColor(this, resolved.first, resolved.second, darkIcons, isDarkTheme, backgroundAlpha)
-    }
-
-    private fun resolveStatusBarColorMode(colorMode: String, customColor: String?): Pair<String, String?> {
-        return if (colorMode == com.webtoapp.data.model.StatusBarColorMode.PAGE_TOP.name) {
-            val resolvedColor = statusBarAutoColor ?: customColor
-            if (resolvedColor.isNullOrBlank()) {
-                com.webtoapp.data.model.StatusBarColorMode.THEME.name to null
-            } else {
-                com.webtoapp.data.model.StatusBarColorMode.CUSTOM.name to resolvedColor
-            }
-        } else {
-            colorMode to customColor
-        }
-    }
-
     private fun refreshStatusBarAppearance() {
-        if (customView != null) return
-        val systemDark = isSystemInDarkMode()
-        if (immersiveFullscreenEnabled) {
-            applyImmersiveFullscreen(true, isDarkTheme = systemDark)
-            return
+        if (customView == null) {
+            if (!immersiveFullscreenEnabled || showStatusBarInFullscreen) statusBarAppearance?.applyTo(this)
+            if (!immersiveFullscreenEnabled || showNavigationBarInFullscreen) applyPageEdgeNavigation(isSystemInDarkMode())
         }
-        val effectiveColorMode = if (systemDark) statusBarColorModeDark else statusBarColorMode
-        val effectiveCustomColor = if (systemDark) statusBarCustomColorDark else statusBarCustomColor
-        val effectiveAlpha = if (systemDark) statusBarBackgroundAlphaDark else statusBarBackgroundAlpha
-        applyStatusBarColor(effectiveColorMode, effectiveCustomColor, resolvedStatusIcons(systemDark), systemDark, effectiveAlpha)
-        applyPageEdgeNavigation(systemDark)
-    }
-
-    private fun resolvedStatusIcons(isDark: Boolean): Boolean? {
-        val explicit = if (isDark) statusBarDarkIconsDark else statusBarDarkIcons
-        if (explicit != null) return explicit
-        val mode = if (isDark) statusBarColorModeDark else statusBarColorMode
-        if (mode != "TRANSPARENT" && mode != "PAGE_TOP") return null
-        val hex = (if (mode == "TRANSPARENT") topTabBarColor else null) ?: statusBarAutoColor ?: return null
-        val color = runCatching { android.graphics.Color.parseColor(hex) }.getOrNull() ?: return null
-        return com.webtoapp.ui.shared.WindowHelper.isColorLight(color)
     }
 
     private fun applyPageEdgeNavigation(isDark: Boolean) {
@@ -202,7 +157,6 @@ class ShellActivity : AppCompatActivity() {
         val systemDark = isSystemInDarkMode()
         val effectiveColorMode = if (systemDark) statusBarColorModeDark else statusBarColorMode
         val effectiveCustomColor = if (systemDark) statusBarCustomColorDark else statusBarCustomColor
-        val resolved = resolveStatusBarColorMode(effectiveColorMode, effectiveCustomColor)
         // Issue #711: while a web video holds HTML5 fullscreen (custom view showing), the
         // status bar is force-hidden regardless of the static "show status bar in fullscreen"
         // preference; the flag is cleared in hideCustomView() when the video exits fullscreen.
@@ -214,13 +168,14 @@ class ShellActivity : AppCompatActivity() {
             hideNavBar = shouldHideNavBar,
             isDarkTheme = isDarkTheme,
             showStatusBar = effectiveShowStatusBar,
-            statusBarColorMode = resolved.first,
-            statusBarCustomColor = resolved.second,
-            statusBarDarkIcons = resolvedStatusIcons(systemDark),
+            statusBarColorMode = effectiveColorMode,
+            statusBarCustomColor = effectiveCustomColor,
+            statusBarDarkIcons = if (systemDark) statusBarDarkIconsDark else statusBarDarkIcons,
             statusBarBgType = if (systemDark) statusBarBackgroundTypeDark else statusBarBackgroundType,
             keyboardAdjustMode = keyboardAdjustMode,
             displayCutoutMode = displayCutoutMode,
-            tag = "ShellActivity"
+            tag = "ShellActivity",
+            statusBarAppearance = statusBarAppearance
         )
         // showNavigationBarInFullscreen only applies while fullscreen is on.
         // Leaving fullscreen always shows the system navigation bar.
@@ -620,16 +575,11 @@ class ShellActivity : AppCompatActivity() {
         statusBarCustomColor = config.webViewConfig.statusBarColor
         statusBarDarkIcons = config.webViewConfig.statusBarDarkIcons
         statusBarBackgroundType = config.webViewConfig.statusBarBackgroundType
-        statusBarBackgroundImage = config.webViewConfig.statusBarBackgroundImage
-        statusBarBackgroundAlpha = config.webViewConfig.statusBarBackgroundAlpha
-        statusBarHeightDp = config.webViewConfig.statusBarHeightDp
 
         statusBarColorModeDark = config.webViewConfig.statusBarColorModeDark
         statusBarCustomColorDark = config.webViewConfig.statusBarColorDark
         statusBarDarkIconsDark = config.webViewConfig.statusBarDarkIconsDark
         statusBarBackgroundTypeDark = config.webViewConfig.statusBarBackgroundTypeDark
-        statusBarBackgroundImageDark = config.webViewConfig.statusBarBackgroundImageDark
-        statusBarBackgroundAlphaDark = config.webViewConfig.statusBarBackgroundAlphaDark
         showStatusBarInFullscreen = config.webViewConfig.showStatusBarInFullscreen
         hideStatusBarInVideoFullscreen = config.webViewConfig.hideStatusBarInVideoFullscreen
         showNavigationBarInFullscreen = config.webViewConfig.showNavigationBarInFullscreen
@@ -726,30 +676,6 @@ class ShellActivity : AppCompatActivity() {
                 themeTypeName = config.themeType,
                 darkModeSetting = config.darkMode
             ) {
-
-                val systemDark = isSystemInDarkMode()
-
-                LaunchedEffect(
-                    systemDark,
-                    statusBarColorMode,
-                    statusBarCustomColor,
-                    statusBarDarkIcons,
-                    statusBarBackgroundAlpha,
-                    statusBarColorModeDark,
-                    statusBarCustomColorDark,
-                    statusBarDarkIconsDark,
-                    statusBarBackgroundAlphaDark,
-                    statusBarAutoColor,
-                    pageBottomAutoColor
-                ) {
-                    if (!immersiveFullscreenEnabled) {
-                        val effectiveColorMode = if (systemDark) statusBarColorModeDark else statusBarColorMode
-                        val effectiveCustomColor = if (systemDark) statusBarCustomColorDark else statusBarCustomColor
-                        val effectiveAlpha = if (systemDark) statusBarBackgroundAlphaDark else statusBarBackgroundAlpha
-                        applyStatusBarColor(effectiveColorMode, effectiveCustomColor, resolvedStatusIcons(systemDark), systemDark, effectiveAlpha)
-                        applyPageEdgeNavigation(systemDark)
-                    }
-                }
 
                 ShellScreen(
                 config = config,
@@ -948,10 +874,11 @@ class ShellActivity : AppCompatActivity() {
                     pageBottomAutoColor = color
                     refreshStatusBarAppearance()
                 },
-                onTopTabColor = { color ->
-                    if (topTabBarColor == color) return@ShellScreen
-                    topTabBarColor = color
-                    refreshStatusBarAppearance()
+                onStatusBarAppearanceChanged = { appearance ->
+                    if (statusBarAppearance != appearance) {
+                        statusBarAppearance = appearance
+                        refreshStatusBarAppearance()
+                    }
                 },
                 onFileChooser = { callback, params ->
                     (webView ?: browserSurface?.webView)?.let {
@@ -972,18 +899,7 @@ class ShellActivity : AppCompatActivity() {
                     if (customView == null) {
                         applyImmersiveFullscreen(enabled)
                     }
-                },
-
-                statusBarBackgroundType = statusBarBackgroundType,
-                statusBarBackgroundColor = statusBarCustomColor,
-                statusBarBackgroundImage = statusBarBackgroundImage,
-                statusBarBackgroundAlpha = statusBarBackgroundAlpha,
-                statusBarHeightDp = statusBarHeightDp,
-
-                statusBarBackgroundTypeDark = statusBarBackgroundTypeDark,
-                statusBarBackgroundColorDark = statusBarCustomColorDark,
-                statusBarBackgroundImageDark = statusBarBackgroundImageDark,
-                statusBarBackgroundAlphaDark = statusBarBackgroundAlphaDark
+                }
                 )
             }
         }
@@ -1097,7 +1013,7 @@ class ShellActivity : AppCompatActivity() {
             backgroundMedia.onFocusLost(!isFinishing && !isChangingConfigurations)
         }
         if (hasFocus) {
-            if (customView != null) {
+            if (customView != null || immersiveFullscreenEnabled) {
                 applyImmersiveFullscreen(true, isDarkTheme = isSystemInDarkMode())
             } else {
                 refreshStatusBarAppearance()

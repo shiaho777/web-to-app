@@ -159,7 +159,8 @@ object WindowHelper {
         statusBarBgType: String = "COLOR",
         keyboardAdjustMode: KeyboardAdjustMode? = null,
         displayCutoutMode: DisplayCutoutMode = DisplayCutoutMode.SHORT_EDGES,
-        tag: String = "WindowHelper"
+        tag: String = "WindowHelper",
+        statusBarAppearance: StatusBarAppearance? = null
     ) {
         try {
 
@@ -214,7 +215,9 @@ object WindowHelper {
                         WindowCompat.setDecorFitsSystemWindows(activity.window, classicKeyboardResize)
                         controller.show(WindowInsetsCompat.Type.statusBars())
 
-                        if (effectiveStatusBarBgType == "IMAGE") {
+                        if (statusBarAppearance != null) {
+                            statusBarAppearance.applyTo(activity)
+                        } else if (effectiveStatusBarBgType == "IMAGE") {
                             activity.window.statusBarColor = android.graphics.Color.TRANSPARENT
                             val useDarkIcons = statusBarDarkIcons ?: !isDarkTheme
                             controller.isAppearanceLightStatusBars = useDarkIcons
@@ -286,7 +289,9 @@ object WindowHelper {
                         activity.window.navigationBarColor = android.graphics.Color.TRANSPARENT
                     }
 
-                    if (effectiveStatusBarBgType == "IMAGE") {
+                    if (statusBarAppearance != null) {
+                        statusBarAppearance.applyTo(activity)
+                    } else if (effectiveStatusBarBgType == "IMAGE") {
                         activity.window.statusBarColor = android.graphics.Color.TRANSPARENT
                         val useDarkIcons = statusBarDarkIcons ?: !isDarkTheme
                         controller.isAppearanceLightStatusBars = useDarkIcons
@@ -388,7 +393,7 @@ object WindowHelper {
         }
     }
 
-    private fun isClassicKeyboardResize(keyboardAdjustMode: KeyboardAdjustMode?): Boolean {
+    internal fun isClassicKeyboardResize(keyboardAdjustMode: KeyboardAdjustMode?): Boolean {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) return false
         return (keyboardAdjustMode ?: KeyboardAdjustMode.RESIZE) == KeyboardAdjustMode.RESIZE
     }

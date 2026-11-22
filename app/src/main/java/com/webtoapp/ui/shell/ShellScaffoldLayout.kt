@@ -35,8 +35,6 @@ import com.webtoapp.ui.shared.needsPanelImePadding
 import com.webtoapp.ui.shared.parseBandColor
 import com.webtoapp.core.webview.WebViewCallbacks
 import com.webtoapp.data.model.WebViewConfig
-import com.webtoapp.data.model.hasAnyToolbarItem
-import com.webtoapp.data.model.isBrowserToolbarVisible
 import com.webtoapp.data.model.resolveToolbarButtons
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -45,6 +43,7 @@ fun BoxScope.ShellScaffoldLayout(
     config: ShellConfig,
     appType: String,
     hideToolbar: Boolean,
+    showToolbar: Boolean,
 
     isLoading: Boolean,
     loadProgress: Int,
@@ -116,16 +115,6 @@ fun BoxScope.ShellScaffoldLayout(
 
     val toolbarCfg = config.webViewConfig
     val toolbarEnabled = toolbarCfg.browserToolbarEnabled
-    val hasAnyItem = hasAnyToolbarItem(
-        toolbarShowTitle = toolbarCfg.toolbarShowTitle,
-        toolbarShowUrl = toolbarCfg.toolbarShowUrl,
-        toolbarShowBack = toolbarCfg.toolbarShowBack,
-        toolbarShowForward = toolbarCfg.toolbarShowForward,
-        toolbarShowRefresh = toolbarCfg.toolbarShowRefresh,
-        toolbarShowConsole = toolbarCfg.toolbarShowConsole,
-        toolbarShowFind = toolbarCfg.toolbarShowFind
-    )
-    val showToolbar = isBrowserToolbarVisible(toolbarEnabled, hasAnyItem)
     val chromeHost = remember { BrowserChromeHost() }
 
     val toolbarVisibility = resolveToolbarButtons(

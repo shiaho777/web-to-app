@@ -51,11 +51,13 @@ object StatusBarPageColorSampler {
                 if (isNaN(r) || isNaN(g) || isNaN(b) || isNaN(a)) return null;
                 return rgbaToHex(r, g, b, a);
             }
-            function colorFromElement(element) {
+            function colorFromElement(element, skipBackgroundImages) {
                 var current = element;
                 while (current) {
                     try {
-                        var color = parseColor(getComputedStyle(current).backgroundColor);
+                        var style = getComputedStyle(current);
+                        if (skipBackgroundImages && style.backgroundImage && style.backgroundImage !== 'none') return null;
+                        var color = parseColor(style.backgroundColor);
                         if (color) return color;
                     } catch (e) {
                     }
@@ -63,7 +65,7 @@ object StatusBarPageColorSampler {
                 }
                 return null;
             }
-            function sampleTopArea(y) {
+            function sampleArea(y, skipBackgroundImages) {
                 var width = Math.max(1, window.innerWidth || 0);
                 var height = Math.max(1, window.innerHeight || 0);
                 var sampleY = Math.max(1, Math.min(height - 1, Math.round(y)));
@@ -72,27 +74,31 @@ object StatusBarPageColorSampler {
                 });
                 for (var i = 0; i < xs.length; i++) {
                     var element = document.elementFromPoint(xs[i], sampleY);
-                    var color = colorFromElement(element);
+                    var color = colorFromElement(element, skipBackgroundImages);
                     if (color) return color;
                 }
                 return null;
             }
             function metaThemeColor() {
-                var meta = document.querySelector('meta[name="theme-color" i]');
-                return meta ? parseColor(meta.getAttribute('content')) : null;
+                var tags = document.querySelectorAll('meta[name="theme-color" i]');
+                for (var i = 0; i < tags.length; i++) {
+                    var media = tags[i].getAttribute('media');
+                    if (media && !window.matchMedia(media).matches) continue;
+                    var color = parseColor(tags[i].getAttribute('content'));
+                    if (color) return color;
+                }
+                return null;
             }
-            var top = sampleTopArea(1) ||
-                sampleTopArea(6) ||
-                sampleTopArea(12) ||
-                sampleTopArea(20) ||
-                sampleTopArea((window.visualViewport && window.visualViewport.offsetTop) || 1) ||
-                colorFromElement(document.body) ||
-                colorFromElement(document.documentElement) ||
+            var top = sampleArea(1, true) ||
+                sampleArea(6, true) ||
+                sampleArea(12, true) ||
+                sampleArea(20, true) ||
+                sampleArea((window.visualViewport && window.visualViewport.offsetTop) || 1, true) ||
                 metaThemeColor() ||
                 null;
-            var bottom = sampleTopArea(heightEdge(-1)) ||
-                sampleTopArea(heightEdge(-8)) ||
-                sampleTopArea(heightEdge(-24)) ||
+            var bottom = sampleArea(heightEdge(-1)) ||
+                sampleArea(heightEdge(-8)) ||
+                sampleArea(heightEdge(-24)) ||
                 top;
             function heightEdge(delta) {
                 var height = Math.max(1, window.innerHeight || 0);

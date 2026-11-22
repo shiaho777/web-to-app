@@ -16,13 +16,20 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.toArgb
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.webtoapp.WebToAppApplication
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.core.shell.ShellConfig
 import com.webtoapp.core.webview.LongPressHandler
 import com.webtoapp.data.model.Announcement
+import com.webtoapp.data.model.hasAnyToolbarItem
+import com.webtoapp.data.model.isBrowserToolbarVisible
 import com.webtoapp.ui.components.RemainingDaysNoticeDialog
+import com.webtoapp.ui.components.StatusBarOverlay
+import com.webtoapp.ui.shared.StatusBarAppearance
+import com.webtoapp.ui.shared.WindowHelper
+import com.webtoapp.ui.shared.resolveStatusBarAppearance
 import com.webtoapp.util.TvUtils
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -56,22 +63,11 @@ fun ShellScreen(
     onStatusBarAutoColorChanged: (String?) -> Unit = {},
     onPageBottomColorChanged: (String?) -> Unit = {},
     onPageScroll: ((Int) -> Unit)? = null,
-    onTopTabColor: (String?) -> Unit = {},
+    onStatusBarAppearanceChanged: (StatusBarAppearance) -> Unit,
     onFileChooser: (ValueCallback<Array<Uri>>?, WebChromeClient.FileChooserParams?) -> Boolean,
     onShowCustomView: (View, WebChromeClient.CustomViewCallback?) -> Unit,
     onHideCustomView: () -> Unit,
-    onFullscreenModeChanged: (Boolean) -> Unit,
-
-    statusBarBackgroundType: String = "COLOR",
-    statusBarBackgroundColor: String? = null,
-    statusBarBackgroundImage: String? = null,
-    statusBarBackgroundAlpha: Float = 1.0f,
-    statusBarHeightDp: Int = -1,
-
-    statusBarBackgroundTypeDark: String = "COLOR",
-    statusBarBackgroundColorDark: String? = null,
-    statusBarBackgroundImageDark: String? = null,
-    statusBarBackgroundAlphaDark: Float = 1.0f
+    onFullscreenModeChanged: (Boolean) -> Unit
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -170,6 +166,7 @@ fun ShellScreen(
         mutableStateOf<com.webtoapp.core.engine.BrowserSurface?>(null)
     }
     var statusBarAutoColor by remember { mutableStateOf<String?>(null) }
+    var topTabColor by remember { mutableStateOf<String?>(null) }
     var pageBottomAutoColor by remember { mutableStateOf<String?>(null) }
     var statusBarColorTracker by remember { mutableStateOf<com.webtoapp.core.webview.StatusBarPageColorTracker?>(null) }
 
@@ -391,13 +388,6 @@ fun ShellScreen(
         }
     }
 
-    fun usesPageTopStatusBarColor(): Boolean {
-        return (config.webViewConfig.statusBarBackgroundType == "COLOR" &&
-            config.webViewConfig.statusBarColorMode == com.webtoapp.data.model.StatusBarColorMode.PAGE_TOP.name) ||
-            (config.webViewConfig.statusBarBackgroundTypeDark == "COLOR" &&
-                config.webViewConfig.statusBarColorModeDark == com.webtoapp.data.model.StatusBarColorMode.PAGE_TOP.name)
-    }
-
     fun usesPageEdgeColor(): Boolean {
         val pageModes = setOf(
             com.webtoapp.data.model.StatusBarColorMode.PAGE_TOP.name,
@@ -407,18 +397,6 @@ fun ShellScreen(
             config.webViewConfig.statusBarColorMode in pageModes) ||
             (config.webViewConfig.statusBarBackgroundTypeDark == "COLOR" &&
                 config.webViewConfig.statusBarColorModeDark in pageModes)
-    }
-
-    fun resolveStatusBarOverlayColor(isDark: Boolean): String? {
-        val mode = if (isDark) config.webViewConfig.statusBarColorModeDark else config.webViewConfig.statusBarColorMode
-        val configuredColor = if (isDark) statusBarBackgroundColorDark else statusBarBackgroundColor
-        return when (mode) {
-            com.webtoapp.data.model.StatusBarColorMode.PAGE_TOP.name -> statusBarAutoColor ?: configuredColor ?: if (isDark) "#1C1B1F" else "#FFFBFE"
-            com.webtoapp.data.model.StatusBarColorMode.CUSTOM.name -> configuredColor ?: if (isDark) "#1C1B1F" else "#FFFBFE"
-            com.webtoapp.data.model.StatusBarColorMode.THEME.name -> if (isDark) "#1C1B1F" else "#FFFBFE"
-            com.webtoapp.data.model.StatusBarColorMode.TRANSPARENT.name -> null
-            else -> configuredColor
-        }
     }
 
     LaunchedEffect(showSplash, splashCountdown) {
@@ -576,7 +554,26 @@ fun ShellScreen(
         onDispose { context.unregisterComponentCallbacks(componentCallbacks) }
     }
 
-    val hideToolbar = config.webViewConfig.hideToolbar
+    val statusConfig = config.webViewConfig
+    val hideToolbar = statusConfig.hideToolbar
+    val isDarkTheme = androidx.compose.foundation.isSystemInDarkTheme()
+    val showToolbar = isBrowserToolbarVisible(
+        statusConfig.browserToolbarEnabled,
+        hasAnyToolbarItem(
+            toolbarShowTitle = statusConfig.toolbarShowTitle,
+            toolbarShowUrl = statusConfig.toolbarShowUrl,
+            toolbarShowBack = statusConfig.toolbarShowBack,
+            toolbarShowForward = statusConfig.toolbarShowForward,
+            toolbarShowRefresh = statusConfig.toolbarShowRefresh,
+            toolbarShowConsole = statusConfig.toolbarShowConsole,
+            toolbarShowFind = statusConfig.toolbarShowFind
+        )
+    )
+
+    LaunchedEffect(isDarkTheme) {
+        statusBarColorTracker?.reset()
+        statusBarColorTracker?.scheduleSample(56L, settle = true)
+    }
 
     val swipeRefreshEnabled = config.webViewConfig.swipeRefreshEnabled
 
@@ -640,6 +637,7 @@ fun ShellScreen(
         config = config,
         appType = appType,
         hideToolbar = hideToolbar,
+        showToolbar = showToolbar,
         isLoading = isLoading,
         loadProgress = loadProgress,
         pageTitle = pageTitle,
@@ -695,10 +693,10 @@ fun ShellScreen(
                 webViewRef?.evaluateJavascript(script, appendResult)
             }
         },
-        statusBarHeightDp = statusBarHeightDp,
+        statusBarHeightDp = statusConfig.statusBarHeightDp,
         pageTopColor = statusBarAutoColor,
         pageBottomColor = pageBottomAutoColor,
-        onTopTabColor = onTopTabColor
+        onTopTabColor = { topTabColor = it }
     )
 
     if (showActivationDialog) {
@@ -789,60 +787,23 @@ fun ShellScreen(
         )
     }
 
-    val isDarkTheme = androidx.compose.foundation.isSystemInDarkTheme()
-    val effectiveColorMode = if (isDarkTheme) config.webViewConfig.statusBarColorModeDark else config.webViewConfig.statusBarColorMode
-    val effectiveBgType = if (isDarkTheme) statusBarBackgroundTypeDark else statusBarBackgroundType
-    val effectiveBgColor = resolveStatusBarOverlayColor(isDarkTheme)
-    val effectiveBgImage = if (isDarkTheme) statusBarBackgroundImageDark else statusBarBackgroundImage
-    val effectiveBgAlpha = if (isDarkTheme) statusBarBackgroundAlphaDark else statusBarBackgroundAlpha
-    // On the classic pre-API-30 resize path nothing draws behind the status bar and the bar
-    // itself is chrome-owned, so a Compose overlay would only paint a floating band over the
-    // web content (issue #683). Reserve space is already handled by the content padding; the
-    // window-level bar color comes from WindowHelper.
-    val classicSystemBars = com.webtoapp.ui.shared.WindowHelper.isClassicSystemBarsWindow(activity)
-    // THEME used to be painted only with window.statusBarColor. Target SDK 35 ignores
-    // that call, so the bar stayed the light window color and no longer followed dark mode.
-    val paintsStatusBand = effectiveBgType != "COLOR" ||
-        effectiveColorMode != com.webtoapp.data.model.StatusBarColorMode.TRANSPARENT.name
-    val showOverlay = !classicSystemBars && paintsStatusBand &&
-        ((hideToolbar && config.webViewConfig.showStatusBarInFullscreen) || !hideToolbar)
-    if (showOverlay) {
-        com.webtoapp.ui.components.StatusBarOverlay(
-            show = true,
-            backgroundType = effectiveBgType,
-            backgroundColor = effectiveBgColor,
-            backgroundImagePath = effectiveBgImage,
-            alpha = effectiveBgAlpha,
-            heightDp = statusBarHeightDp,
-            modifier = Modifier.align(Alignment.TopStart)
-        )
-
-        val view = activity.window.decorView
-        val insetsController = androidx.core.view.WindowInsetsControllerCompat(activity.window, view)
-
-        val explicitDarkIcons = if (isDarkTheme) {
-            config.webViewConfig.statusBarDarkIconsDark
-        } else {
-            config.webViewConfig.statusBarDarkIcons
-        }
-        val isLightOverlay = explicitDarkIcons ?: when (effectiveBgType) {
-            "COLOR" -> {
-                val colorHex = effectiveBgColor
-                if (colorHex.isNullOrBlank()) {
-                    !isDarkTheme
-                } else try {
-                    val color = android.graphics.Color.parseColor(colorHex)
-                    val luminance = (0.299 * android.graphics.Color.red(color) +
-                            0.587 * android.graphics.Color.green(color) +
-                            0.114 * android.graphics.Color.blue(color)) / 255.0
-                    luminance > 0.5
-                } catch (_: Exception) { !isDarkTheme }
-            }
-
-            else -> !isDarkTheme
-        }
-        insetsController.isAppearanceLightStatusBars = isLightOverlay
-        insetsController.isAppearanceLightNavigationBars = isLightOverlay
+    val appearance = resolveStatusBarAppearance(
+        mode = if (isDarkTheme) statusConfig.statusBarColorModeDark else statusConfig.statusBarColorMode,
+        customColor = if (isDarkTheme) statusConfig.statusBarColorDark else statusConfig.statusBarColor,
+        backgroundType = if (isDarkTheme) statusConfig.statusBarBackgroundTypeDark else statusConfig.statusBarBackgroundType,
+        backgroundImage = if (isDarkTheme) statusConfig.statusBarBackgroundImageDark else statusConfig.statusBarBackgroundImage,
+        backgroundAlpha = if (isDarkTheme) statusConfig.statusBarBackgroundAlphaDark else statusConfig.statusBarBackgroundAlpha,
+        darkIcons = if (isDarkTheme) statusConfig.statusBarDarkIconsDark else statusConfig.statusBarDarkIcons,
+        pageTop = statusBarAutoColor,
+        topTabColor = topTabColor,
+        themeColor = MaterialTheme.colorScheme.background.toArgb(),
+        pageBehindBar = hideToolbar && !showToolbar,
+        browserToolbarVisible = showToolbar,
+        classicWindow = WindowHelper.isClassicKeyboardResize(webViewConfig.keyboardAdjustMode)
+    )
+    SideEffect { onStatusBarAppearanceChanged(appearance) }
+    if (!hideToolbar || statusConfig.showStatusBarInFullscreen) {
+        StatusBarOverlay(appearance, statusConfig.statusBarHeightDp, Modifier.align(Alignment.TopStart))
     }
 
     }
