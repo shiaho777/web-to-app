@@ -189,7 +189,7 @@ WebToApp has a large number of switches. The sections below group them by use ca
 <summary><b>📦 Local server runtimes (fork + exec on-device)</b></summary>
 
 - **Node.js** (18.20.x) runs in a dedicated `:nodejs` OS process via a native `node_launcher` wrapper loading `libnode.so`; supports custom native `.node` extensions.
-- **PHP 8.4** built from `pmmp/PHP-Binaries` without `pmmpthread` so the built-in web server and native uploads work, downloaded once on first use, with Composer 2.10.x and custom native extensions (`zend_extension`, `.so`).
+- **PHP 8.4** built from `pmmp/PHP-Binaries` without `pmmpthread` so the built-in web server and native uploads work, downloaded on first use from the [runtime repository](https://github.com/shiaho777/web-to-app-runtimes/releases), with Composer 2.10.x and custom native extensions (`zend_extension`, `.so`).
 - **Python 3.14** — Flask, Django, FastAPI via uvicorn, Tornado, the built-in HTTP server; pip dependencies resolved into `.pypackages`, custom native extensions supported; binary names are versioned so future bumps do not hard-code paths.
 - **Go 1.26** — official Linux arm64 toolchain (`.tar.gz` from `dl.google.com`, USTC mirror for CN), on-device `go build` / `go mod` / `go run`, `vendor/` offline builds, static serving, and the native `go_exec_loader` wrapper; DNS and CA trust go through the same local JVM bridge used by PHP.
 - **WordPress 7.x** over local PHP + SQLite (`sqlite-database-integration`), with theme and plugin import.

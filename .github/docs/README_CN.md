@@ -189,7 +189,7 @@ WebToApp 的开关非常多。下面按使用场景分组,并用可折叠区段�
 <summary><b>📦 设备端服务器运行时(fork + exec)</b></summary>
 
 - **Node.js**(18.20.x)跑在独立 `:nodejs` OS 进程中,底层由原生 `node_launcher` 加载 `libnode.so`;支持自定义原生 `.node` 扩展。
-- **PHP 8.4** 基于 `pmmp/PHP-Binaries` 构建(去除 `pmmpthread`,以支持内置 Web 服务器和原生文件上传),首次使用时下载,支持 Composer 2.10.x 和自定义原生扩展(`zend_extension`、`.so`)。
+- **PHP 8.4** 基于 `pmmp/PHP-Binaries` 构建(去除 `pmmpthread`,以支持内置 Web 服务器和原生文件上传),首次使用从[运行时仓库](https://github.com/shiaho777/web-to-app-runtimes/releases)下载，支持 Composer 2.10.x 和自定义原生扩展(`zend_extension`、`.so`)。
 - **Python 3.14** —— Flask、Django、FastAPI/uvicorn、Tornado、内置 HTTP server;pip 依赖解析到 `.pypackages`,支持自定义原生扩展;二进制名按版本生成,后续升级不必硬编码路径。
 - **Go 1.26** —— 官方 Linux arm64 工具链(`.tar.gz` 来自 `dl.google.com`,国内走 USTC 镜像),设备端 `go build` / `go mod` / `go run`、`vendor/` 离线构建、静态文件服务和原生 `go_exec_loader` 包装层;DNS 与 CA 信任走与 PHP 相同的本机 JVM 桥接。
 - **WordPress 7.x** 跑在本地 PHP 之上,用 `sqlite-database-integration` 接 SQLite,支持主题和插件导入。
@@ -392,7 +392,7 @@ cd web-to-app
 ./gradlew assembleStandardRelease   # 签名 release APK
 ./gradlew bundleGplayRelease        # 可上架 Play 的签名 AAB
 ./gradlew :app:assembleStandardRelease -Pfdroid=true
-# 未签名的 F-Droid APK（不含 Firebase、Google 登录、AdMob）
+# 未签名的 F-Droid APK（不含 Firebase 和 Google 登录）
 ```
 
 GitHub/Play 的签名 release 通过 `local.properties` 和 `app/build.gradle.kts` 配置。F-Droid 变体保持未签名。见 [F-Droid](https://shiaho777.github.io/web-to-app/zh/developer/fdroid)。

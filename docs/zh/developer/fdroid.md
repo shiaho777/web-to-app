@@ -52,9 +52,9 @@ RepoType: git
 Repo: https://github.com/shiaho777/web-to-app.git
 
 Builds:
-  - versionName: "2.8.8"
-    versionCode: 87
-    commit: v2.8.8
+  - versionName: "2.9.0"
+    versionCode: 88
+    commit: v2.9.0
     subdir: app
     gradle:
       - standard
@@ -69,8 +69,8 @@ UpdateCheckMode: Tags
 UpdateCheckData: app/build.gradle.kts|versionCode = (\d+)|.|versionName = "([^"]+)"
 ```
 
-使用与 GitHub Releases 相同的 tag（`v2.8.8`）。两个渠道同一版本；F-Droid 用自己的签名，两边的 APK 不能互相覆盖更新。
+使用与 GitHub Releases 相同的 tag（`v2.9.0`）。两个渠道同一版本；F-Droid 用自己的签名，两边的 APK 不能互相覆盖更新。
 
 ## 不要混用模板
 
-带 `-Pfdroid=true` 的 assemble 会重建不含 Firebase 的 `webview_shell.apk`，并拷进 `app/src/main/assets/template/`。做普通 GitHub/Play 模板构建前，从 git 恢复该文件，或**不要**加 `-Pfdroid` 再跑 `:shell:assembleRelease :app:syncShellTemplateApk`。
+带 `-Pfdroid=true` 的 assemble 会重建不含 Firebase 的 `webview_shell.apk`，并拷进 `app/src/main/assets/template/`。构建普通 GitHub 或 Play 版本前，需要重新生成模板。去掉 `-Pfdroid` 后运行 `:shell:assembleRelease :app:syncShellTemplateApk`。

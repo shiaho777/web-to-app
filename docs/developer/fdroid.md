@@ -52,9 +52,9 @@ RepoType: git
 Repo: https://github.com/shiaho777/web-to-app.git
 
 Builds:
-  - versionName: "2.8.8"
-    versionCode: 87
-    commit: v2.8.8
+  - versionName: "2.9.0"
+    versionCode: 88
+    commit: v2.9.0
     subdir: app
     gradle:
       - standard
@@ -69,8 +69,8 @@ UpdateCheckMode: Tags
 UpdateCheckData: app/build.gradle.kts|versionCode = (\d+)|.|versionName = "([^"]+)"
 ```
 
-Tag the same commit that GitHub Releases use (`v2.8.8`). F-Droid and GitHub then ship the same version from one tag; F-Droid's signing key is different, so the two APKs cannot update each other.
+Tag the same commit that GitHub Releases use (`v2.9.0`). F-Droid and GitHub then ship the same version from one tag; F-Droid's signing key is different, so the two APKs cannot update each other.
 
 ## Do not mix templates
 
-A `-Pfdroid=true` assemble rebuilds `webview_shell.apk` without Firebase and copies it into `app/src/main/assets/template/`. Restore that file from git before a normal GitHub/Play template build, or run `:shell:assembleRelease :app:syncShellTemplateApk` **without** `-Pfdroid`.
+A `-Pfdroid=true` assemble rebuilds `webview_shell.apk` without Firebase and copies it into `app/src/main/assets/template/`. Regenerate the template before a normal GitHub or Play build. Run `:shell:assembleRelease :app:syncShellTemplateApk` **without** `-Pfdroid`.

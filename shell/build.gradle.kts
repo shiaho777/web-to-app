@@ -14,16 +14,12 @@ import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
 
-// Same switch as :app. -Pfdroid=true drops Firebase and Play Services from the
-// template that the host embeds, and from every APK exported by that host.
 val isFdroidBuild: Boolean = run {
     val raw = findProperty("fdroid")?.toString()?.trim()?.lowercase()
     raw != null && raw != "false" && raw != "0" && raw != "no"
 }
 
 if (isFdroidBuild) {
-    // Same cutoff as :app. GeckoView's FIDO client is the remaining Play Services
-    // edge; WebAuthn is the only path that loads it.
     configurations.configureEach {
         exclude(group = "com.google.android.gms")
         exclude(group = "com.google.firebase")
@@ -40,14 +36,12 @@ android {
         minSdk = 23
 
         targetSdk = 35
-        versionCode = 87
-        versionName = "2.8.8"
+        versionCode = 88
+        versionName = "2.9.0"
 
         buildConfigField("boolean", "SHELL_RUNTIME_ONLY", "true")
         buildConfigField("boolean", "FDROID", isFdroidBuild.toString())
 
-        // Generated APKs inherit this targetSdk; export can still pin a different
-        // value via `targetSdk` override, and the Play/AAB path forces 36.
 
         vectorDrawables {
             useSupportLibrary = true
@@ -59,7 +53,6 @@ android {
 
         externalNativeBuild {
             cmake {
-                // All native sources are C; no CXX flags or shared STL needed.
             }
         }
     }
@@ -73,8 +66,6 @@ android {
 
     signingConfigs {
         getByName("debug") {
-            // The template is re-signed by ApkBuilder at export; its own v1 JAR
-            // signature (MANIFEST.MF + CERT.SF/RSA, ~200KB raw) is dead weight.
             enableV1Signing = false
         }
     }
@@ -95,10 +86,6 @@ android {
         getByName("main") {
             manifest.srcFile("src/main/AndroidManifest.xml")
 
-            // Runtime Kotlin is synced from ../app into build/generated (see
-            // syncShellRuntimeSources below) and ordered via preBuild deps —
-            // never into the source tree, so git stays clean. Plain string
-            // paths here: AGP forbids Provider instances in srcDirs.
             java.srcDirs(
                 "src/main/java-overrides",
                 "build/generated/shellRuntimeSrc",
@@ -157,8 +144,6 @@ android {
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
-            // Bundled-dependency legal boilerplate (META-INF/androidx/*/LICENSE.txt
-            // and friends) — not needed at runtime, ~150KB raw across the file set.
             excludes += "META-INF/**/*.txt"
             excludes += "META-INF/**/LICENSE"
             excludes += "META-INF/**/NOTICE"
@@ -182,24 +167,14 @@ android {
             excludes += "**/libsoftokn3.so"
             excludes += "**/liblgpllibs.so"
             excludes += "**/libplugin-container.so"
-            // GeckoView breakpad helper — depends on libmozglue.so which is already
-            // excluded, so it can never load; dead weight carried by every APK.
             excludes += "**/libcrashhelper.so"
 
             excludes += "**/libphp.so"
 
-            // Host-preview-only user-mode exec loader. Server-runtime exports are
-            // pinned to targetSdk 28 and execve directly; they never load it.
             excludes += "**/libstatic_exec.so"
 
-            // All shell natives are c++_static (see defaultConfig cmake arguments);
-            // nothing in the template may DT_NEEDED libc++_shared.so. NODEJS_APP
-            // exports still get it — ApkBuilder.injectNodeJsNativeLibs embeds the
-            // host copy for libnode.so.
             excludes += "**/libc++_shared.so"
 
-            // Cronet natives are injected into exported APKs by ApkBuilder when
-            // 强制 HTTP/3 is enabled; the template never carries them.
             excludes += "**/libcronet*.so"
         }
     }
@@ -215,7 +190,6 @@ val syncShellRuntimeSources by tasks.registering(Sync::class) {
     group = "build"
 
     from("../app/src/main/java")
-    // Google-typed sources live outside main. The fdroid tree is the no-op twin.
     if (isFdroidBuild) {
         from("../app/src/fdroid/java")
     } else {
@@ -300,18 +274,11 @@ val syncShellRuntimeSources by tasks.registering(Sync::class) {
 
         "**/core/frontend/GitHubRepoFetcher.kt",
 
-        // Host-side plugin management: packages, import and legacy migration
-        // only exist where the store exists. Generated APKs run embedded
-        // payloads, never a store.
         "**/core/plugin/PluginStore.kt",
         "**/core/plugin/PluginImporter.kt",
         "**/core/plugin/PluginMigrator.kt",
         "**/core/plugin/ChromePluginRows.kt",
 
-        // Host editor tooling. Generated APKs do not install toolchains or run
-        // esbuild. Server runtimes exec through HostProcessLauncher, which stays
-        // synced: targetSdk 28 exports use ProcessBuilder, and the W^X loader
-        // (StaticExecProcess + libstatic_exec.so) stays host-only.
         "**/core/linux/StaticExecProcess.kt",
         "**/core/linux/NativeNodeEngine.kt",
         "**/core/linux/HtmlProjectOptimizer.kt",
@@ -321,14 +288,8 @@ val syncShellRuntimeSources by tasks.registering(Sync::class) {
         "**/core/linux/NodeProjectBuilder.kt",
         "**/core/linux/PureBuildEngine.kt",
 
-        // Strings.kt / StringsA-E.kt carry the full 10-language editor surface
-        // (~4.3 MB source, mostly editor-only text). Shell gets reduced copies
-        // emitted by generateShellStrings below (referenced members only).
         "**/core/i18n/Strings*.kt",
 
-        // Host DataStore language. Generated APKs publish Strings.lang from the
-        // baked shell config. Syncing this would let a shortcut cold start
-        // overwrite that with the builder's saved language (#1391).
         "**/core/i18n/HostLanguage.kt",
 
         "**/core/scraper/**",
@@ -344,8 +305,6 @@ val syncShellRuntimeSources by tasks.registering(Sync::class) {
     into(layout.buildDirectory.dir("generated/shellRuntimeSrc"))
 }
 
-// Explicit wiring (no tasks.matching scan, which breaks configuration cache):
-// generated sources must exist before any compilation.
 tasks.named("preBuild") { dependsOn(syncShellRuntimeSources) }
 
 /**
@@ -367,8 +326,6 @@ abstract class GenerateShellStringsTask : DefaultTask() {
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val syncedSrcDir: DirectoryProperty
 
-    // Shell-only sources (src/main/java-overrides) also compile against
-    // Strings — they must feed the reference scan too.
     @get:InputDirectory
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val overridesDir: DirectoryProperty
@@ -378,8 +335,6 @@ abstract class GenerateShellStringsTask : DefaultTask() {
 
     @TaskAction
     fun generate() {
-        // Self-contained python3 resolution (script closures can't serialize
-        // for the configuration cache; mirrors resolvePython3Command).
         val isWindows = System.getProperty("os.name").lowercase().contains("windows")
         val candidates: List<List<String>> = if (isWindows) {
             listOf(listOf("python3"), listOf("python"), listOf("py", "-3"))
@@ -396,7 +351,6 @@ abstract class GenerateShellStringsTask : DefaultTask() {
                     break
                 }
             } catch (_: Exception) {
-                // Candidate unavailable; try the next one.
             }
         }
 
@@ -442,10 +396,6 @@ val syncShellRuntimeAssets by tasks.registering(Copy::class) {
 
         include("php_router_server.php")
 
-        // GeckoViewEngine installs this built-in WebExtension from
-        // resource://android/assets/web_extensions/wta_native_bridge/ when the CORS
-        // bypass / private-network bridge is enabled — without the asset in the shell
-        // template, exported Gecko apps silently fail to install it (host-only asset).
         include("web_extensions/**")
     }
 
@@ -454,12 +404,6 @@ val syncShellRuntimeAssets by tasks.registering(Copy::class) {
 
 tasks.named("preBuild") { dependsOn(syncShellRuntimeAssets) }
 
-// omni.ja arrives via the GeckoView AAR's assets and packaging.resources.excludes
-// does not cover AAR assets, so strip it from the merged dir. Named wiring +
-// execution-time-only access keeps this configuration-cache safe; the merge
-// task stays up-to-date-aware (a skipped merge means outputs already stripped).
-// Lazy exact-name match: the merge task is created after configuration, so
-// named() would fail. The closure touches only task-scoped state.
 tasks.matching { it.name == "mergeReleaseAssets" }.configureEach {
     doLast {
         val mergedAssetsDir = outputs.files.files.firstOrNull { it.isDirectory }
@@ -558,8 +502,6 @@ androidComponents {
             dependsOn(nativeBuildTaskName)
         }
 
-        // NOTE: no explicit merge${capName}NativeLibs wiring — the
-        // addGeneratedSourceDirectory calls below already infer task deps.
 
         variant.sources.jniLibs?.addGeneratedSourceDirectory(
             syncNodeLauncherTask,
@@ -579,7 +521,6 @@ dependencies {
     implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
     implementation("androidx.documentfile:documentfile:1.0.1")
 
-    // Native Google sign-in. Omitted from -Pfdroid=true builds.
     if (!isFdroidBuild) {
         implementation("androidx.credentials:credentials:1.5.0")
         implementation("androidx.credentials:credentials-play-services-auth:1.5.0")
@@ -627,8 +568,6 @@ dependencies {
 
     implementation("org.mozilla.geckoview:geckoview-arm64-v8a:142.0.20250827004350")
 
-    // Forced HTTP/3 upstream (see app/build.gradle.kts): classes only, natives are
-    // injected into exported APKs by ApkBuilder when 强制 HTTP/3 is enabled.
     implementation("org.chromium.net:cronet-embedded:143.7445.0")
 
     implementation("androidx.media:media:1.7.0")

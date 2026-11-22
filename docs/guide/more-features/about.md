@@ -5,7 +5,9 @@ App information and data tools. Open it from [⋮ → About](/guide/main-screen/
 ## Features
 
 - **About** — version, current language, and project links.
-- **Update check** — check for a newer version of the builder (shows current version and whether an update is available).
+- **Check for updates** — view the installed version and check GitHub Releases for a newer build. Startup checks are on by default and can be switched off in About. Skip a version to stop reminders for that release. F-Droid handles updates through its own channel.
+- **What’s new** — after the builder has recorded an installed version, the first launch after a later upgrade shows the release notes when available.
+- **Feature tour** — replay the skippable introduction from About.
 - **Legal disclaimer** — important notices covering permitted use and responsibilities.
 
 ## Host switches
