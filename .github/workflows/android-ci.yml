@@ -110,6 +110,7 @@ jobs:
             "ndk;28.2.13676358"
 
       - name: Prepare official release signing
+        if: github.ref_type == 'tag'
         env:
           SIGNING_KEYSTORE_BASE64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
           SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
@@ -126,7 +127,17 @@ jobs:
           keytool -list -keystore "$RUNNER_TEMP/web-to-app-release.jks" \
             -storepass "$SIGNING_STORE_PASSWORD" -alias "$SIGNING_KEY_ALIAS" >/dev/null
 
-      - name: Build APKs
+      - name: Build trial debug APKs
+        run: |
+          ./gradlew --no-daemon --no-configuration-cache \
+            -Dkotlin.compiler.execution.strategy=in-process \
+            -PallowDebugSignedRelease=true \
+            :app:assembleStandardDebug \
+            :app:assembleGplayDebug \
+            :shell:assembleDebug
+
+      - name: Build release APKs
+        if: github.ref_type == 'tag'
         env:
           SIGNING_STORE_FILE: ${{ runner.temp }}/web-to-app-release.jks
           SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
@@ -135,14 +146,12 @@ jobs:
         run: |
           ./gradlew --no-daemon --no-configuration-cache \
             -Dkotlin.compiler.execution.strategy=in-process \
-            :app:assembleStandardDebug \
             :app:assembleStandardRelease \
-            :app:assembleGplayDebug \
             :app:assembleGplayRelease \
-            :shell:assembleDebug \
             :shell:assembleRelease
 
       - name: Verify release APK signatures
+        if: github.ref_type == 'tag'
         run: |
           set -euo pipefail
           find app/build/outputs/apk/standard/release app/build/outputs/apk/gplay/release \
@@ -169,6 +178,7 @@ jobs:
           retention-days: 14
 
       - name: Upload standard APKs
+        if: github.ref_type == 'tag'
         uses: actions/upload-artifact@v4
         with:
           name: standard-release-apks-${{ github.run_number }}
@@ -177,6 +187,7 @@ jobs:
           retention-days: 14
 
       - name: Upload gplay APKs
+        if: github.ref_type == 'tag'
         uses: actions/upload-artifact@v4
         with:
           name: gplay-release-apks-${{ github.run_number }}
