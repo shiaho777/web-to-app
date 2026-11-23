@@ -37,13 +37,6 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import java.util.concurrent.atomic.AtomicInteger
 
-/**
- * End-to-end regression tests for the agent turn loop. The #742 collector
- * re-subscribed the cold gateway flow per event, so a turn never received any
- * content (UI stuck on "thinking") while the provider was spammed with
- * duplicate requests. The gateway fake below is a cold callbackFlow just like
- * the real providers and counts how many times its producer runs.
- */
 @RunWith(RobolectricTestRunner::class)
 class AgentEngineStreamTest {
 
@@ -57,7 +50,7 @@ class AgentEngineStreamTest {
                 trySend(LlmEvent.TextDelta("Hello"))
                 trySend(LlmEvent.TextDelta(", world"))
                 trySend(LlmEvent.Done(FinishReason.STOP))
-                close() // real providers close right after the terminal event
+                close()
                 awaitClose { }
             }
         }
@@ -66,9 +59,6 @@ class AgentEngineStreamTest {
 
         assertEquals("one request attempt must subscribe the stream once", 1, producerRuns.get())
         assertEquals("Hello, world", events.filterIsInstance<AgentEvent.TextDelta>().joinToString("") { it.delta })
-        // The accumulated buffer must grow monotonically — #749 briefly rebuilt it per
-        // delta, leaving only the newest fragment (body streamed in replacing chunks
-        // and the persisted message ended up one token long).
         assertEquals(
             "the last delta must carry the FULL accumulated text",
             "Hello, world",
@@ -79,10 +69,6 @@ class AgentEngineStreamTest {
         assertEquals("Hello, world", (completed as AgentEvent.Completed).summary)
     }
 
-    /**
-     * Thinking arrives first and anchors a TH marker in the accumulated text; body
-     * deltas must append AFTER the marker, keeping both intact across the stream.
-     */
     @Test(timeout = 15_000)
     fun `thinking marker and body text accumulate into one interleaved buffer`() = runBlocking {
         val gateway = object : LlmGateway {
@@ -108,10 +94,6 @@ class AgentEngineStreamTest {
         )
     }
 
-    /**
-     * A tool call that follows streamed prose must not truncate that prose: the TC
-     * marker is appended after it in the accumulated text.
-     */
     @Test(timeout = 15_000)
     fun `prose before a tool call marker is not truncated`() = runBlocking {
         val producerRuns = AtomicInteger(0)
@@ -147,9 +129,11 @@ class AgentEngineStreamTest {
     @Test(timeout = 15_000)
     fun `recoverable stream error retries with a fresh request`() = runBlocking {
         val producerRuns = AtomicInteger(0)
+        val sessionIds = mutableListOf<String>()
         val gateway = object : LlmGateway {
             override fun chatStream(req: ChatRequest): Flow<LlmEvent> = callbackFlow {
                 val attempt = producerRuns.incrementAndGet()
+                sessionIds += req.sessionId
                 trySend(LlmEvent.Started)
                 if (attempt == 1) {
                     trySend(LlmEvent.Error("stream interrupted", recoverable = true))
@@ -157,7 +141,7 @@ class AgentEngineStreamTest {
                     trySend(LlmEvent.TextDelta("recovered"))
                     trySend(LlmEvent.Done(FinishReason.STOP))
                 }
-                close() // real providers close right after the terminal event
+                close()
                 awaitClose { }
             }
         }
@@ -165,16 +149,12 @@ class AgentEngineStreamTest {
         val events = engine(gateway).run(input()).toList(mutableListOf())
 
         assertEquals("the retry must re-request through the gateway", 2, producerRuns.get())
+        assertEquals(listOf("test-session", "test-session"), sessionIds)
         assertTrue(events.filterIsInstance<AgentEvent.Notice>().isNotEmpty())
         assertTrue(events.filterIsInstance<AgentEvent.TextDelta>().any { it.delta == "recovered" })
         assertTrue(events.last() is AgentEvent.Completed)
     }
 
-    /**
-     * A stream that opens, completes with zero deltas, and closes is a distinct
-     * outcome from a request error. The Completed summary must say so explicitly —
-     * an empty summary previously made the whole turn vanish (nothing persisted).
-     */
     @Test(timeout = 15_000)
     fun `an empty stream completes with an explicit empty-response summary`() = runBlocking {
         val gateway = object : LlmGateway {
@@ -196,10 +176,6 @@ class AgentEngineStreamTest {
         )
     }
 
-    /**
-     * A hard (non-recoverable) stream error must fail the turn with the provider's
-     * message — the UI and the session both rely on this message being present.
-     */
     @Test(timeout = 15_000)
     fun `a hard stream error fails the turn with the provider message`() = runBlocking {
         val gateway = object : LlmGateway {
@@ -296,7 +272,6 @@ class AgentEngineStreamTest {
         )
     }
 
-    /** The repository eagerly reads three Flow properties at construction; the rest is never called in tool-free turns. */
     private class FakeWebAppDao : WebAppDao {
         override fun getAllWebApps(): Flow<List<WebApp>> = flowOf(emptyList())
         override fun getAllWebAppSummaries(): Flow<List<WebAppSummary>> = flowOf(emptyList())

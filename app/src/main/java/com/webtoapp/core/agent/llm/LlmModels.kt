@@ -4,6 +4,7 @@ import com.google.gson.JsonElement
 import com.webtoapp.core.agent.tool.ImageAttachment
 import com.webtoapp.data.model.AiModel
 import com.webtoapp.data.model.ApiKeyConfig
+import java.util.UUID
 
 data class ChatRequest(
     val apiKey: ApiKeyConfig,
@@ -12,7 +13,8 @@ data class ChatRequest(
     val tools: List<ToolDeclaration> = emptyList(),
     val temperature: Float = 0.7f,
     val maxTokens: Int? = null,
-    val useTools: Boolean = true
+    val useTools: Boolean = true,
+    val sessionId: String = UUID.randomUUID().toString()
 )
 
 data class LlmMessage(

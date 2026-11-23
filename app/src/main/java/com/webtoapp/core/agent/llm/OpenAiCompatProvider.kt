@@ -6,7 +6,6 @@ import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import com.webtoapp.core.logging.AppLogger
-import com.webtoapp.core.network.NetworkModule
 import com.webtoapp.data.model.AiProvider
 import com.webtoapp.util.GsonProvider
 import kotlinx.coroutines.channels.awaitClose
@@ -21,12 +20,9 @@ import java.util.concurrent.atomic.AtomicReference
 internal class OpenAiCompatProvider(@Suppress("UNUSED_PARAMETER") context: Context) : LlmProvider {
     private val gson = GsonProvider.gson
     private val sse = SseParser()
-    private val client get() = NetworkModule.streamingClient
 
     override fun supports(provider: AiProvider) = provider != AiProvider.ANTHROPIC && provider != AiProvider.GOOGLE && provider != AiProvider.OLLAMA
 
-    // CUSTOM endpoints speaking Anthropic Messages or OpenAI Responses are owned by
-    // their dedicated providers; only Chat Completions stays here.
     override fun supports(req: ChatRequest): Boolean {
         if (!supports(req.apiKey.provider)) return false
         if (req.apiKey.provider == AiProvider.CUSTOM) {
@@ -37,9 +33,6 @@ internal class OpenAiCompatProvider(@Suppress("UNUSED_PARAMETER") context: Conte
 
     override fun chatStream(req: ChatRequest): Flow<LlmEvent> = callbackFlow {
         trySend(LlmEvent.Started)
-        // Track the live call across retries so a cancelled/aborted collection
-        // (idle timeout, user abort) tears down the actual HTTP connection instead
-        // of leaving an orphaned request streaming into a closed channel.
         val inFlight = AtomicReference<Call?>()
         executeCall(req, isRetry = false, inFlight = inFlight)
         awaitClose { inFlight.get()?.cancel() }
@@ -50,13 +43,9 @@ internal class OpenAiCompatProvider(@Suppress("UNUSED_PARAMETER") context: Conte
         isRetry: Boolean,
         inFlight: AtomicReference<Call?>
     ) {
-        val url = HttpHelpers.joinUrl(HttpHelpers.baseUrl(req.apiKey), req.apiKey.getEffectiveChatEndpoint())
         val effectiveReq = if (isRetry) req.copy(temperature = 1f) else req
         val body = buildBody(effectiveReq)
-        val builder = Request.Builder().url(url).header("Content-Type", "application/json")
-            .post(gson.toJson(body).toRequestBody("application/json".toMediaType()))
-        HttpHelpers.applyAuth(builder, req.apiKey)
-        val call = client.newCall(builder.build())
+        val call = HttpHelpers.newChatCall(effectiveReq, gson.toJson(body).toRequestBody("application/json".toMediaType()))
         inFlight.set(call)
         call.enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
@@ -65,9 +54,7 @@ internal class OpenAiCompatProvider(@Suppress("UNUSED_PARAMETER") context: Conte
                     try { Thread.sleep(1000) } catch (_: InterruptedException) {}
                     executeCall(req, isRetry = true, inFlight = inFlight)
                 } else {
-                    // Include the endpoint so a connection-level failure is
-                    // attributable to a specific base URL, not just "network error".
-                    trySend(LlmEvent.Error("Network error: ${e.message ?: "connection failed"} [$url]")); close()
+                    trySend(LlmEvent.Error("Network error: ${e.message ?: "connection failed"} [${call.request().url}]")); close()
                 }
             }
             override fun onResponse(call: Call, response: Response) {
@@ -100,8 +87,6 @@ internal class OpenAiCompatProvider(@Suppress("UNUSED_PARAMETER") context: Conte
                             val choice = json.getAsJsonArray("choices")?.takeIf { it.size() > 0 }?.get(0)?.asJsonObject ?: return@consume true
                             val delta = choice.getAsJsonObject("delta") ?: choice.getAsJsonObject("message") ?: return@consume true
 
-                            // Parse each section independently so a malformed field never drops
-                            // the entire chunk (which previously caused silent tool-call loss).
                             runCatching {
                                 sequenceOf("reasoning_content","thinking","reasoning").mapNotNull { delta.get(it) }.firstOrNull()?.let { el ->
                                     if (!el.isJsonNull && el.isJsonPrimitive) el.asString.takeIf { it.isNotEmpty() }?.let { trySend(LlmEvent.ThinkingDelta(it)) }
@@ -139,11 +124,6 @@ internal class OpenAiCompatProvider(@Suppress("UNUSED_PARAMETER") context: Conte
                     }
                     if (!done) emitFinish(toolNames, toolArgsAccum, toolSignatures, finishReason)
                 } catch (e: Exception) {
-                    // A SocketTimeoutException (OkHttp read timeout) or a premature connection
-                    // close lands here. Previously this was silently swallowed (only finally {
-                    // close() } ran), so the engine's collector saw the flow complete with no
-                    // Done/Error event and the turn hung. Surface it as a recoverable error so
-                    // the engine's retry path can kick in.
                     AppLogger.w("OpenAiCompatProvider", "stream interrupted: ${e.message}")
                     trySend(LlmEvent.Error("Stream interrupted: ${e.message}", recoverable = true))
                 } finally { runCatching { response.body?.close() }; close() }
@@ -174,8 +154,6 @@ internal class OpenAiCompatProvider(@Suppress("UNUSED_PARAMETER") context: Conte
         add("messages", JsonArray().apply { req.messages.forEach { msg -> add(buildMsg(msg)) } })
         if (req.useTools && req.tools.isNotEmpty()) {
             add("tools", JsonArray().apply { req.tools.forEach { t -> add(buildTool(t)) } })
-            // Some OpenAI-compat gateways (SenseNova etc.) don't default to "auto"
-            // and never emit tool calls unless tool_choice is explicit.
             addProperty("tool_choice", "auto")
         }
     }
@@ -213,19 +191,12 @@ internal class OpenAiCompatProvider(@Suppress("UNUSED_PARAMETER") context: Conte
         else addProperty("content", msg.content)
 
         if (msg.role == LlmMessage.Role.TOOL) {
-            // The OpenAI Chat Completions schema only allows string content on role:"tool"
-            // messages — image content parts are valid solely on user messages. Tool
-            // results that carry images (ViewImage / GenerateImage / image-file reads) must
-            // degrade to a text reference here, otherwise strict endpoints reject the whole
-            // request with 400 and the engine retries the same invalid payload 5 times.
             if (msg.images.isNotEmpty() && msg.content.isEmpty()) {
                 addProperty("content", "[${msg.images.size} image(s) returned by tool; not displayable in this message role]")
             }
         }
 
         if (msg.role == LlmMessage.Role.ASSISTANT) {
-            // GLM thinking mode requires reasoning_content on every assistant message
-            // once thinking has been used; passing an empty string is safer than omitting it.
             addProperty("reasoning_content", msg.reasoningContent ?: "")
         }
         msg.toolCallId?.let { addProperty("tool_call_id", it) }; msg.name?.let { addProperty("name", it) }

@@ -1,11 +1,14 @@
 package com.webtoapp.core.agent.llm
 
 import com.webtoapp.core.ai.ApiKeyRotation
+import com.webtoapp.core.ai.OpenCodeGo
 import com.webtoapp.core.ai.RatedFailure
 import com.webtoapp.data.model.AiProvider
 import com.webtoapp.data.model.ApiFormat
 import com.webtoapp.data.model.ApiKeyConfig
+import okhttp3.Call
 import okhttp3.Request
+import okhttp3.RequestBody
 
 internal object HttpHelpers {
     fun baseUrl(apiKey: ApiKeyConfig): String =
@@ -21,15 +24,26 @@ internal object HttpHelpers {
         return "$b/$e"
     }
 
-    fun applyAuth(builder: Request.Builder, apiKey: ApiKeyConfig) {
+    fun chatUrl(apiKey: ApiKeyConfig): String =
+        OpenCodeGo.inferenceUrl(joinUrl(baseUrl(apiKey), apiKey.getEffectiveChatEndpoint()))
+
+    fun newChatCall(req: ChatRequest, body: RequestBody): Call {
+        val url = chatUrl(req.apiKey)
+        val builder = Request.Builder().url(url)
+            .header("Content-Type", "application/json")
+            .post(body)
+        applyAuth(builder, req.apiKey, useConsoleAuth = OpenCodeGo.usesConsoleAuth(url))
+        return OpenCodeGo.newCall(builder.build(), req.sessionId)
+    }
+
+    fun applyAuth(builder: Request.Builder, apiKey: ApiKeyConfig, useConsoleAuth: Boolean = false) {
         val key = apiKey.apiKey.trim().replace("\n", "").replace("\r", "")
-        // A CUSTOM endpoint speaking the Anthropic Messages protocol authenticates with
-        // x-api-key + anthropic-version, not a Bearer header.
         val anthropicProtocol = apiKey.provider == AiProvider.ANTHROPIC ||
             (apiKey.provider == AiProvider.CUSTOM && apiKey.apiFormat == ApiFormat.ANTHROPIC)
         when {
             anthropicProtocol -> {
-                builder.header("x-api-key", key)
+                if (useConsoleAuth) builder.header("Authorization", "Bearer $key")
+                else builder.header("x-api-key", key)
                 builder.header("anthropic-version", "2023-06-01")
             }
             apiKey.provider == AiProvider.OLLAMA || apiKey.provider == AiProvider.LM_STUDIO ||

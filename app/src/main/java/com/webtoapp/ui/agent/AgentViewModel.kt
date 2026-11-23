@@ -125,7 +125,6 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
     private val readFilesThisTurn = mutableSetOf<String>()
     private var lastToolUiPushAt = 0L
 
-    /** One automatic compact+retry budget per user-initiated turn (#1140). */
     private val overflowAutoRetry = java.util.concurrent.atomic.AtomicBoolean(false)
 
     private val connection = object : ServiceConnection {
@@ -619,12 +618,9 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch { sessionStore.rename(id, title) }
     }
 
-    /** Export a session as a Markdown transcript and open the system share sheet. */
     fun exportSession(id: String) {
         viewModelScope.launch {
             val session = sessionStore.get(id) ?: return@launch
-            // Rendering + writing the transcript is proportional to session size —
-            // keep it off the main thread (viewModelScope defaults to Main).
             runCatching {
                 kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
                     val markdown = com.webtoapp.ui.agent.components.SessionTranscript.render(
@@ -658,10 +654,8 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    /** Delete a project file inside the current session sandbox, after drawer confirmation. */
     fun deleteSessionFile(relativePath: String) {
         val sid = _ui.value.currentSession?.id ?: return
-        // Never allow deleting the built-APK virtual entries through this path.
         if (relativePath.startsWith("apk:")) return
         viewModelScope.launch {
             val deleted = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
@@ -676,8 +670,6 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun selectFile(path: String) {
-        // "apk:<name>" is a virtual path for a built APK artifact — no file content
-        // to read, just surface the path so PreviewPane renders an info card.
         if (path.startsWith("apk:")) {
             _ui.update {
                 it.copy(
@@ -691,7 +683,6 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         val sid = _ui.value.currentSession?.id ?: return
         viewModelScope.launch {
             val text = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                // Windowed read — previewing a giant upload must not OOM the app.
                 val w = files.readTextWindow(sid, path, 0, PREVIEW_MAX_LINES)
                 when {
                     w == null -> null
@@ -711,11 +702,6 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    /**
-     * Sandbox-absolute file backing a pending image attachment, for Coil previews.
-     * UserAttachment.path is session-sandbox-relative; java.io.File(path) would
-     * resolve it against the process CWD and never load.
-     */
     fun attachmentPreviewFile(att: com.webtoapp.core.agent.session.UserAttachment): java.io.File? {
         val sid = _ui.value.currentSession?.id ?: return null
         return files.resolveSafe(sid, att.path)
@@ -725,12 +711,6 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         _ui.update { it.copy(previewFilePath = path) }
     }
 
-    /**
-     * Open a file with the system chooser ("Open with…") so the user can pick an
-     * external app (file manager, browser, etc.) to view or locate the file.
-     * For APK artifacts it uses the absolute built_apks path; for project files
-     * it resolves the sandbox-relative path to an absolute file first.
-     */
     fun openWithSystemChooser(path: String) {
         val file: java.io.File = if (path.startsWith("apk:")) {
             val apkName = path.removePrefix("apk:")
@@ -792,8 +772,6 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun cancelTurn() {
-        // Aborted-turn persistence is handled by AgentService. Here we just cancel the
-        // engine job and reset UI buffers immediately for responsiveness.
         service?.cancel()
         _ui.update {
             it.copy(
@@ -802,9 +780,6 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
                 streamingText = "",
                 streamingThinkingSegments = emptyList(),
                 pendingToolCalls = emptyList(),
-                // A permission/choice dialog still open when the turn was cancelled
-                // would otherwise stay visible, and answering it sends into a channel
-                // nobody reads anymore.
                 pendingPermission = null,
                 pendingChoice = null
             )
@@ -846,7 +821,7 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
 
             _ui.update { it.copy(compacting = true, info = Strings.agentCompacting) }
             val svc = compactService ?: CompactService(gateway).also { compactService = it }
-            val result = svc.compact(session.messages, textModel, textKey, peerKeys(textKey, keys))
+            val result = svc.compact(session.id, session.messages, textModel, textKey, peerKeys(textKey, keys))
             if (result.didCompact) {
                 sessionStore.replaceMessages(session.id, result.messages)
                 _ui.update {
@@ -879,12 +854,6 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
             return
         }
 
-        // Flip the phase synchronously, BEFORE any suspend call: ensureActiveSession /
-        // appendMessage give a second fast tap a window in which the guard above
-        // still sees Idle — duplicating the user message and starting two turns
-        // (the second AgentService.start() cancels the first without finalizing it,
-        // leaving its tool cards stuck in a running state in the session history).
-        // Every failure path below must reset to Idle.
         _ui.update { it.copy(phase = AgentUiState.Phase.Connecting) }
 
         viewModelScope.launch {
@@ -930,7 +899,6 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    /** Clear the transient turn-phase UI without touching session/persisted state. */
     private fun resetTurnUiState() {
         _ui.update { it.copy(phase = AgentUiState.Phase.Idle, error = null, currentActivity = null) }
     }
@@ -953,8 +921,6 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             val session = ensureActiveSession() ?: return@launch
             val added = withContext(Dispatchers.IO) {
-                // Only warn about a slow import when a pick actually looks big —
-                // a tiny file shouldn't flash "Importing…" after it already landed.
                 val bigPick = uris.any {
                     val size = querySizeBytes(it)
                     size == null || size > IMPORTING_HINT_MIN_BYTES
@@ -1001,19 +967,11 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         val name = queryDisplayName(uri) ?: "upload_${System.currentTimeMillis()}"
         val mime = runCatching { ctx.contentResolver.getType(uri) }.getOrNull()
             ?: mimeFromName(name)
-        // Streamed copy — a multi-GB upload must never be materialised into a
-        // heap ByteArray (that readBytes() call is what OOM-crashed on attach).
         val input = runCatching { ctx.contentResolver.openInputStream(uri) }.getOrNull()
             ?: return null
         return input.use { writeUploadStream(sessionId, "uploads", name, it, mime) }
     }
 
-    /**
-     * A folder attaches as ONE reference (`uploads/<name>/`), not one attachment
-     * per file — the chip UI's `path.endsWith("/")` folder branch was designed
-     * for this. Children are stream-copied under that directory so the model can
-     * walk them with ListFiles/Glob/Read itself.
-     */
     private fun importFolderToUploads(sessionId: String, treeUri: Uri): UserAttachment? {
         val tree = runCatching { DocumentFile.fromTreeUri(ctx, treeUri) }.getOrNull()
             ?: return null
@@ -1049,10 +1007,8 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
         walk(tree, "$base/")
-        // Materialise the dir even for an empty folder so the path is real.
         files.resolveSafe(sessionId, base)?.mkdirs()
         if (truncated) {
-            // Self-describing marker the model sees in ListFiles/Glob output.
             files.writeText(
                 sessionId,
                 "$base/IMPORT-TRUNCATED.txt",
@@ -1106,7 +1062,6 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         return name ?: uri.lastPathSegment?.substringAfterLast('/')
     }
 
-    /** Reported size via OpenableColumns.SIZE; null when the provider doesn't say. */
     private fun querySizeBytes(uri: Uri): Long? = runCatching {
         ctx.contentResolver.query(uri, null, null, null, null)?.use { c ->
             val idx = c.getColumnIndex(android.provider.OpenableColumns.SIZE)
@@ -1237,8 +1192,6 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
     fun regenerate(messageId: String) {
         val sid = _ui.value.currentSession?.id ?: return
         if (!_ui.value.canSend) return
-        // Flip synchronously like send(): truncateAt/get give a double-tap the same
-        // TOCTOU window that duplicated turns before.
         _ui.update { it.copy(phase = AgentUiState.Phase.Connecting) }
         viewModelScope.launch {
             try {
@@ -1278,8 +1231,6 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
 
         val textModel = resolveTextModel(models)
         if (textModel == null) {
-            // send()/regenerate() already flipped the phase to Connecting before
-            // launching — every pre-turn bail-out here must put it back.
             streamingSessionId = null
             _ui.update { it.copy(phase = AgentUiState.Phase.Idle, error = Strings.agentMissingTextModel) }
             return
@@ -1305,8 +1256,6 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         val registry = factory.build(hasImageModel = imageModel != null)
 
         val projectSummary = files.listAll(session.id).take(40).map { f ->
-            // Streamed, capped count — a huge upload must not be slurped into a
-            // String just to fill a summary row (binary/oversized → -1 = size only).
             val lines = if (f.isText) files.countLines(session.id, f.relativePath) else -1
             com.webtoapp.core.agent.prompt.sections.ProjectFilesSection.FileSummary(
                 f.relativePath,
@@ -1326,10 +1275,6 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         val sessionRoot = files.getSessionRoot(session.id).absolutePath
         val selectedContext = buildSelectedContext(session.config)
 
-        // Estimate the ACTUAL wire payload (system prompt + history + tool
-        // declarations), not just the persisted messages — the uncounted envelope
-        // plus the old chars/4 rate is what let oversized requests hit the
-        // provider's context-length 400 (#1140).
         val modelName = textModel.alias?.takeIf { it.isNotBlank() } ?: textModel.model.name
         var parts = buildRequestParts(session, prompt, modelName, sessionRoot, selectedContext, projectSummary, planMode, registry)
         var requestTokens = compactSvc.estimateRequestTokens(
@@ -1337,7 +1282,7 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         )
         var didAutoCompact = false
         if (compactSvc.shouldCompactRequest(requestTokens, contextLength)) {
-            val result = compactSvc.compact(session.messages, textModel, textKey, peerKeys(textKey, keys))
+            val result = compactSvc.compact(session.id, session.messages, textModel, textKey, peerKeys(textKey, keys))
             if (result.didCompact) {
                 sessionStore.replaceMessages(session.id, result.messages)
                 val compacted = sessionStore.get(session.id) ?: session
@@ -1400,12 +1345,6 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         )
     }
 
-    /**
-     * Recovery path for a provider context-overflow rejection (#1140): drop the
-     * failed turn's bubble, compact whatever history remains and re-dispatch the
-     * user's last message. [overflowAutoRetry] is already consumed by the caller,
-     * so a still-oversized retry surfaces the original error instead of looping.
-     */
     private suspend fun retryAfterContextOverflow(sessionId: String, originalError: String) {
         suspend fun giveUp() {
             _ui.update { it.copy(phase = AgentUiState.Phase.Idle, error = originalError) }
@@ -1416,8 +1355,6 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         if (lastUserIdx < 0) { giveUp(); return }
         val userMsg = session.messages[lastUserIdx]
 
-        // Discard everything after the last user message — the failed turn's
-        // partial assistant output and error bubble.
         var kept = session.messages.take(lastUserIdx + 1)
 
         val models = configManager.savedModelsFlow.first()
@@ -1427,7 +1364,7 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         val gateway = service?.gateway
         if (textModel != null && textKey != null && gateway != null) {
             val svc = compactService ?: CompactService(gateway).also { compactService = it }
-            val result = svc.compact(kept, textModel, textKey, peerKeys(textKey, keys))
+            val result = svc.compact(session.id, kept, textModel, textKey, peerKeys(textKey, keys))
             if (result.didCompact) kept = result.messages
         }
 
@@ -1435,7 +1372,6 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         dispatchTurn(saved, userMsg.content)
     }
 
-    /** Wire payload for one dispatch; rebuilt when auto-compaction rewrites the session. */
     private data class OutgoingRequest(
         val session: AgentSession,
         val systemPrompt: String,
@@ -1444,11 +1380,6 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         val tailMentions: List<String>
     )
 
-    /**
-     * Everything the engine needs for one dispatch, derived from a session's
-     * message list: system prompt, wire-format history and the effective user
-     * message. Rebuilt after auto-compaction, which rewrites `session.messages`.
-     */
     private fun buildRequestParts(
         session: AgentSession,
         prompt: String,
@@ -1473,9 +1404,6 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         )
 
         val tailMessage = session.messages.lastOrNull()
-        // The tail user message rides inside `history` (not `userMessage`) whenever
-        // it carries @mentions or attachments — otherwise its references would
-        // silently never reach the model.
         val tailInHistory = tailMessage?.role == AgentMessage.Role.USER &&
             (tailMessage.mentionedFiles.isNotEmpty() ||
                 tailMessage.userAttachmentsSafe.isNotEmpty())
@@ -1490,10 +1418,6 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
             when (m.role) {
                 AgentMessage.Role.USER -> {
                     val out = mutableListOf<LlmMessage>()
-                    // Images are the one attachment kind the model cannot inspect
-                    // by path (ViewImage needs an image model configured), so they
-                    // still travel as vision input — size-gated to stay under
-                    // provider limits and keep a giant image from OOMing the read.
                     val images = m.userAttachmentsSafe.filter { it.isImage }.mapNotNull { att ->
                         val f = files.resolveSafe(session.id, att.path)
                             ?: return@mapNotNull null
@@ -1615,13 +1539,6 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    /**
-     * Text/thinking deltas arrive per token; pushing the whole accumulated
-     * buffer into UI state on every one re-parses and recomposes the entire
-     * timeline each token. Coalesce to ~15fps instead — visually identical,
-     * an order of magnitude less work. Completion paths always replace the
-     * buffers with the persisted message, so nothing is ever lost.
-     */
     private var lastStreamUiPushAt = 0L
 
     private fun maybePushStreamUi(force: Boolean = false) {
@@ -1699,24 +1616,18 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         try {
             ContextCompat.startForegroundService(ctx, intent)
         } catch (e: Exception) {
-            // targetSdk 34+ may reject background FGS start; bind only in that case.
             AppLogger.w("AgentViewModel", "startForegroundService rejected, falling back to bind only", e)
         }
         ctx.bindService(intent, connection, Context.BIND_AUTO_CREATE)
     }
 
     private fun attachToService() {
-        // If the service is still running a turn (e.g. the UI was destroyed and is now
-        // reconnecting), resume the streaming buffers from its latest draft so the user
-        // sees the in-flight output instead of a blank screen.
         resumeFromActiveTurn()
 
         eventCollectionJob?.cancel()
         eventCollectionJob = viewModelScope.launch {
             service?.events?.collect { handleAgentEvent(it) }
         }
-        // The prompter delivers requests/choices via Channels (single consumer), so cancel
-        // any previous collectors before starting new ones to avoid competing consumers.
         permissionCollectionJob?.cancel()
         permissionCollectionJob = viewModelScope.launch {
             service?.permissionPrompter?.requests?.collect { req ->
@@ -1729,8 +1640,6 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
                 _ui.update { it.copy(pendingChoice = req) }
             }
         }
-        // Track the service's active-turn draft id so the UI can hide the in-flight
-        // draft from the history list (it is shown live via StreamingBubble instead).
         activeTurnJob?.cancel()
         activeTurnJob = viewModelScope.launch {
             service?.activeTurn?.collect { snap ->
@@ -1742,25 +1651,17 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         applyAutoApproveToService(_ui.value.autoApprove)
     }
 
-    /**
-     * Pull the service's current [AgentService.activeTurn] snapshot into the streaming
-     * UI buffers. This lets a freshly created ViewModel (after the previous one was
-     * cleared) pick up an in-flight turn and keep showing its progress live.
-     */
     private fun resumeFromActiveTurn() {
         val svc = service ?: return
         val snapshot = svc.activeTurn.value ?: return
         if (!snapshot.isRunning) return
         val draft = snapshot.draftMessage ?: return
-        // Only resume if this turn belongs to the session the user is currently viewing.
         if (_ui.value.currentSession?.id != snapshot.sessionId) return
 
         streamingSessionId = snapshot.sessionId
         streamText.setLength(0)
         streamText.append(draft.content)
         streamThinkingSegments.clear()
-        // Rebuild per-turn segments from the persisted structured field so the live
-        // timeline can keep interleaving them with text/tools after a UI recreation.
         val draftSegments = draft.thinkingSegmentsSafe
         if (draftSegments.isNotEmpty()) {
             val now = System.currentTimeMillis()
@@ -1773,7 +1674,6 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
                 )
             }
         } else if (!draft.thinking.isNullOrBlank()) {
-            // Legacy draft (no structured segments) — restore as a single frozen segment.
             streamThinkingSegments += ThinkingSegment(
                 id = "th-restored",
                 content = draft.thinking,
@@ -1806,7 +1706,6 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
                 maybePushStreamUi()
             }
             is AgentEvent.ThinkingDelta -> {
-                // Associate by segmentId (stable per turn, mirrors the inline marker).
                 val now = System.currentTimeMillis()
                 val idx = streamThinkingSegments.indexOfFirst { it.id == ev.segmentId }
                 if (idx < 0) {
@@ -1822,7 +1721,6 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
                 maybePushStreamUi()
             }
             AgentEvent.ThinkingTurnEnded -> {
-                // Freeze any still-live segment so the next turn opens its own live block.
                 var changed = false
                 for (i in streamThinkingSegments.indices) {
                     val seg = streamThinkingSegments[i]
@@ -1930,9 +1828,6 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
                 }
             }
             is AgentEvent.AppChanged -> {
-                // Same shape as FileChanged but for apps created/updated by tools:
-                // one review-card entry per app, newest first; a later change to the
-                // same app replaces its earlier entry instead of piling up duplicates.
                 _ui.update { state ->
                     val ch = ev.change
                     val entry = PendingAppChange(
@@ -1949,11 +1844,9 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
             }
             is AgentEvent.ApkBuilt -> {
                 _ui.update { state ->
-                    // Replace any previous build for the same appId, keep others.
                     val rest = state.builtApks.filterNot { it.appId == ev.info.appId }
                     state.copy(builtApks = rest + ev.info)
                 }
-                // Persist to the session so it survives app restarts.
                 val sid0 = sid
                 viewModelScope.launch {
                     val session = sessionStore.get(sid0) ?: return@launch
@@ -1985,8 +1878,6 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
                 _ui.update { it.copy(info = ev.message) }
             }
             is AgentEvent.Completed -> {
-                // Persistence is handled by AgentService (outlives the UI scope).
-                // Here we only reset the streaming UI buffers and surface a notice.
                 streamingSessionId = null
                 streamText.clear(); streamThinkingSegments.clear(); streamTools.clear(); streamToolArgs.clear(); readFilesThisTurn.clear()
                 lastToolUiPushAt = 0L
@@ -2003,7 +1894,6 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
                         else null
                     )
                 }
-                // The service finalized the message; refresh title from the persisted session.
                 viewModelScope.launch { maybeAutoTitle(sid) }
             }
             is AgentEvent.PlanReviewRequired -> {
@@ -2022,7 +1912,6 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
                 }
             }
             AgentEvent.Aborted -> {
-                // Partial output is persisted by AgentService; just reset UI state.
                 streamingSessionId = null
                 streamText.clear(); streamThinkingSegments.clear(); streamTools.clear(); streamToolArgs.clear(); readFilesThisTurn.clear()
                 _ui.update {
@@ -2036,16 +1925,8 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
                 }
             }
             is AgentEvent.Failed -> {
-                // The service persists an error bubble into the session, but a request
-                // that dies before the first delta would otherwise leave NO visible
-                // trace at all (spinner stops, nothing rendered, nothing shown) —
-                // surface the reason here too so every failure is locatable.
                 streamingSessionId = null
                 streamText.clear(); streamThinkingSegments.clear(); streamTools.clear(); streamToolArgs.clear(); readFilesThisTurn.clear()
-                // A context-length 400 used to be a dead end: every "continue"
-                // resent the same oversized payload. Compact the history, drop the
-                // failed turn and retry once (#1140); the flag is consumed so a
-                // still-overflowing retry surfaces the original error.
                 if (CompactService.isContextOverflowError(ev.message) &&
                     overflowAutoRetry.compareAndSet(false, true)
                 ) {
@@ -2077,8 +1958,6 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private suspend fun maybeAutoTitle(sessionId: String) {
-        // Re-read from the store: the service finalized the assistant message, so the
-        // persisted session is the source of truth here.
         val session = sessionStore.get(sessionId) ?: return
         if (!session.titleAutoGenerated) return
 
@@ -2121,7 +2000,8 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
             ),
             tools = emptyList(),
             temperature = 0.3f,
-            useTools = false
+            useTools = false,
+            sessionId = session.id
         )
 
         val sb = StringBuilder()
@@ -2153,13 +2033,6 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         sessionStore.setAutoTitle(session.id, title)
     }
 
-    /**
-     * `@file` mentions ride in as synthesised Read calls — an explicit "look at
-     * this" gesture that keeps inlining the file head (bounded). Windowed read
-     * only: the full file is never materialised, so mentioning a huge/binary
-     * upload degrades to a note instead of an OOM. (+ attachments are different:
-     * they stay pure path references via [com.webtoapp.core.agent.session.AttachmentNote].)
-     */
     private fun synthesiseReadCallsFor(m: AgentMessage, sessionId: String): List<LlmMessage> {
         val pathsToRead = m.mentionedFiles.distinct()
         if (pathsToRead.isEmpty()) return emptyList()
@@ -2217,7 +2090,6 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         return out
     }
 
-    /** Byte-size label for model-facing notes (FileInfo.formatSize tops out at MB). */
     private fun formatSize(bytes: Long): String = when {
         bytes < 1024 -> "${bytes}B"
         bytes < 1024 * 1024 -> "${bytes / 1024}KB"
@@ -2232,10 +2104,6 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         val session = sessionStore.get(id) ?: return
         val checker = service?.permissionChecker
         if (checker != null) {
-            // Fresh PlanManager per session — the checker's mode must follow suit.
-            // Without this reset, a Plan mode left over from an abandoned plan
-            // review in a previous session denies all writes while the prompt
-            // (and this fresh manager) say "not in plan mode".
             checker.resetToBaseline()
             planManager = PlanManager(session.id, files, checker)
             registryFactory = ToolRegistryFactory(planManager!!, imageRegistry)
@@ -2247,7 +2115,6 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         if (sessionChanged) {
             todoManager.clear()
         }
-        // Restore persisted built APKs when switching into this session.
         val restoredApks = if (sessionChanged) {
             session.config.builtApksSafe.map { p ->
                 BuiltApkInfo(
@@ -2304,16 +2171,12 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
 
         private const val MENTION_TOTAL_CHAR_BUDGET = 60_000
 
-        /** Vision-input cap for inlined image attachments (provider-side limits). */
         private const val MAX_INLINE_IMAGE_BYTES = 20L * 1024 * 1024
 
-        /** Folder attachments stream-copy at most this many children. */
         private const val MAX_FOLDER_IMPORT_FILES = 500
 
-        /** Picks at/under this size copy fast enough to skip the "Importing…" toast. */
         private const val IMPORTING_HINT_MIN_BYTES = 32L * 1024 * 1024
 
-        /** Lines the file-preview pane loads via a bounded windowed read. */
         private const val PREVIEW_MAX_LINES = 2_000
 
         private const val STREAM_UI_THROTTLE_MS = 66L

@@ -34,13 +34,6 @@ class CompactService(
     fun estimateTokens(messages: List<AgentMessage>): Int =
         messages.sumOf { estimateTokens(it) }
 
-    /**
-     * Estimate tokens for the *actual wire payload* — system prompt + wire-format
-     * history + the user message + every tool declaration. The persisted-message
-     * estimate alone misses the fixed envelope (system prompt, schemas, re-injected
-     * mentions) and undercounts badly on CJK/code, which let oversized requests
-     * sail straight into the provider's context-length 400.
-     */
     fun estimateRequestTokens(
         systemPrompt: String,
         history: List<LlmMessage>,
@@ -72,13 +65,6 @@ class CompactService(
         return tokens
     }
 
-    /**
-     * Heuristic chars→tokens. CJK ideographs/kana/hangul run ~1 token per char on
-     * common tokenizers, so counting them at the legacy chars/4 rate undercounted
-     * Chinese-heavy sessions by ~4x; non-CJK text (code, English) is closer to ~3
-     * chars/token. Slight overestimation is deliberate — compaction firing a bit
-     * early beats a dead-end provider 400.
-     */
     fun estimateTokens(text: String): Int {
         if (text.isEmpty()) return 0
         var cjk = 0
@@ -88,13 +74,14 @@ class CompactService(
 
     private fun isCjkChar(c: Char): Boolean {
         val v = c.code
-        return v in 0x2E80..0x9FFF ||   // radicals, kana, CJK unified ideographs
-            v in 0xAC00..0xD7AF ||      // Hangul syllables
-            v in 0xF900..0xFAFF ||      // CJK compatibility ideographs
-            v in 0xFF00..0xFFEF         // fullwidth forms
+        return v in 0x2E80..0x9FFF ||
+            v in 0xAC00..0xD7AF ||
+            v in 0xF900..0xFAFF ||
+            v in 0xFF00..0xFFEF
     }
 
     suspend fun compact(
+        sessionId: String,
         messages: List<AgentMessage>,
         textModel: SavedModel,
         textApiKey: ApiKeyConfig,
@@ -137,7 +124,8 @@ class CompactService(
                 LlmMessage(LlmMessage.Role.USER, historyText)
             ),
             tools = emptyList(),
-            useTools = false
+            useTools = false,
+            sessionId = sessionId
         )
 
         val summaryText = try {
@@ -306,21 +294,14 @@ class CompactService(
     companion object {
         private const val TAG = "CompactService"
 
-        /** Envelope cost per wire message (role, ids, JSON framing). */
         private const val MESSAGE_OVERHEAD_TOKENS = 8
 
         private const val TOOL_CALL_OVERHEAD_TOKENS = 8
 
         private const val TOOL_DECL_OVERHEAD_TOKENS = 8
 
-        /** Order-of-magnitude placeholder for an inline image part. */
         private const val IMAGE_ESTIMATE_TOKENS = 1500
 
-        /**
-         * True when a provider error text means "the request exceeds the model's
-         * context window" — the one failure where compacting and retrying is the
-         * correct response instead of dead-ending the turn.
-         */
         fun isContextOverflowError(message: String): Boolean {
             val m = message.lowercase()
             return m.contains("context length") ||
