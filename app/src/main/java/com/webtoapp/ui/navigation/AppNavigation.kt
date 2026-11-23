@@ -695,14 +695,24 @@ fun AppNavigation() {
                 )
             }
 
-            composable(Routes.AI_SETTINGS) {
-                AiSettingsScreen(onBack = { navController.popBackStackSafely() })
+            composable(
+                route = "${Routes.AI_SETTINGS}?addModel={addModel}",
+                arguments = listOf(navArgument("addModel") {
+                    type = NavType.BoolType
+                    defaultValue = false
+                })
+            ) { entry ->
+                AiSettingsScreen(
+                    onBack = { navController.popBackStackSafely() },
+                    startAddingModel = entry.arguments?.getBoolean("addModel") == true
+                )
             }
 
             composable(Routes.AGENT) {
                 AgentScreen(
                     onBack = { navController.popBackStackSafely() },
                     onOpenAiSettings = { navController.navigate(Routes.AI_SETTINGS) },
+                    onAddModel = { navController.navigate("${Routes.AI_SETTINGS}?addModel=true") },
                     onOpenApp = { appId -> navController.navigate(Routes.editApp(appId)) }
                 )
             }

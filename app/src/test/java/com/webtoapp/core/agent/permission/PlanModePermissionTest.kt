@@ -30,16 +30,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
-/**
- * Regression for #997: entering plan mode mid-turn deadlocked the agent.
- *
- * AgentEngine.runSequential checks permissions against the shared ToolContext
- * but executes every tool on `toolContext.copy(...)`. EnterPlanModeTool
- * publishes the generated plan path via `setActivePlanFile()` — on that
- * throwaway copy. The shared context's `effectivePlanFile()` therefore stayed
- * null, `checkPlan` denied every Write (including to the plan file itself),
- * and ExitPlanMode kept failing with "plan file is empty" forever.
- */
 @RunWith(RobolectricTestRunner::class)
 class PlanModePermissionTest {
 
@@ -87,8 +77,6 @@ class PlanModePermissionTest {
         harness.enterPlanModeOnCallCopy()
         val planPath = harness.planPath()
 
-        // Engine order: permission check on the shared context, then execute on
-        // a fresh copy carrying the progress callback.
         assertThat(harness.checkWrite(planPath)).isEqualTo(PermissionDecision.Allow)
         val write = WriteFileTool().execute(
             JsonObject().apply {
@@ -108,12 +96,26 @@ class PlanModePermissionTest {
     fun `the turn-start snapshot path also permits plan file writes`() = runBlocking {
         val harness = Harness(activePlanFile = ".plans/amber-arrow-cloud.md")
 
-        // Snapshot path arrives via the constructor when a plan survived from
-        // an earlier turn — no mid-turn publication involved.
         harness.checker.setMode(PermissionMode.Plan)
 
         assertThat(harness.checkWrite(".plans/amber-arrow-cloud.md"))
             .isEqualTo(PermissionDecision.Allow)
+    }
+
+    @Test
+    fun `leaving planning restores the approval preference and preserves the draft plan`() = runBlocking {
+        val harness = Harness()
+        harness.checker.syncAutoApprove(true)
+        harness.enterPlanModeOnCallCopy()
+        val path = harness.planPath()
+        val content = "# Plan\n\n- Keep the draft."
+        assertThat(harness.ctx.fileManager.writeText(SESSION_ID, path, content)).isNotNull()
+
+        harness.planManager.leave()
+
+        assertThat(harness.checker.mode).isEqualTo(PermissionMode.AutoApprove)
+        assertThat(harness.planManager.state.value).isEqualTo(PlanManager.State())
+        assertThat(harness.ctx.fileManager.readText(SESSION_ID, path)).isEqualTo(content)
     }
 
     private class Harness(activePlanFile: String? = null) {
@@ -142,7 +144,6 @@ class PlanModePermissionTest {
             )
         }
 
-        /** Mirrors AgentEngine: the tool runs on a per-call copy of the shared context. */
         fun enterPlanModeOnCallCopy() = runBlocking {
             val result = EnterPlanModeTool(planManager).execute(JsonObject(), ctx.copy())
             assertThat(result.isError).isFalse()
@@ -164,7 +165,6 @@ class PlanModePermissionTest {
         fun pathArgs(path: String) = JsonObject().apply { addProperty("path", path) }
     }
 
-    /** The repository eagerly reads three Flow properties at construction; the rest is never called here. */
     private class FakeWebAppDao : WebAppDao {
         override fun getAllWebApps(): Flow<List<WebApp>> = flowOf(emptyList())
         override fun getAllWebAppSummaries(): Flow<List<WebAppSummary>> = flowOf(emptyList())

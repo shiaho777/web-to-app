@@ -47,7 +47,7 @@ class PlanManager(
         return ExitResult.Submitted(planPath!!, content)
     }
 
-    fun approve() {
+    fun leave() {
         permissionChecker.resetToBaseline()
         _state.value = State(active = false)
     }

@@ -271,7 +271,7 @@ private fun KindChip(kind: DetectedArtifact.Kind) {
         )
         DetectedArtifact.Kind.Php -> Triple(
             Strings.agentKindPhp,
-            WtaColors.semantic.warningContainer, WtaColors.semantic.onWarningContainer
+            WtaColors.semantic.neutralContainer, WtaColors.semantic.onNeutralContainer
         )
         DetectedArtifact.Kind.Python -> Triple(
             Strings.agentKindPython,
@@ -287,7 +287,7 @@ private fun KindChip(kind: DetectedArtifact.Kind) {
         )
         DetectedArtifact.Kind.Gallery -> Triple(
             Strings.agentKindGallery,
-            WtaColors.semantic.warningContainer, WtaColors.semantic.onWarningContainer
+            WtaColors.semantic.neutralContainer, WtaColors.semantic.onNeutralContainer
         )
         DetectedArtifact.Kind.JsModule -> Triple(
             Strings.agentKindJsModule,
@@ -295,7 +295,7 @@ private fun KindChip(kind: DetectedArtifact.Kind) {
         )
         DetectedArtifact.Kind.StyleModule -> Triple(
             Strings.agentKindStyleModule,
-            WtaColors.semantic.warningContainer, WtaColors.semantic.onWarningContainer
+            WtaColors.semantic.neutralContainer, WtaColors.semantic.onNeutralContainer
         )
         DetectedArtifact.Kind.UserScript -> Triple(
             Strings.agentKindUserScript,

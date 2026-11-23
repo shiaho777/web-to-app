@@ -68,8 +68,6 @@ fun ChangesReviewCard(
             vertical = 2.dp
         )
     ) {
-        // Dense review chrome: the default 48dp touch floor would put the
-        // header buttons and undo icon back to the height this card is shrinking.
         CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides Dp.Unspecified) {
         WtaCard(
             tone = WtaCardTone.Elevated,
@@ -198,7 +196,6 @@ private fun ChangeRow(
     }
 }
 
-/** Header action short enough to leave the conversation the vertical room. */
 @Composable
 internal fun ReviewActionButton(
     text: String,
@@ -245,14 +242,14 @@ private fun KindBadge(kind: PendingChange.Kind) {
         )
         PendingChange.Kind.Edit -> KindStyle(
             label = "EDIT",
-            container = WtaColors.semantic.warningContainer,
-            content = WtaColors.semantic.onWarningContainer,
+            container = WtaColors.semantic.neutralContainer,
+            content = WtaColors.semantic.onNeutralContainer,
             icon = Icons.Outlined.Edit
         )
         PendingChange.Kind.Delete -> KindStyle(
             label = "DELETE",
-            container = WtaColors.semantic.errorContainer,
-            content = WtaColors.semantic.onErrorContainer,
+            container = WtaColors.semantic.neutralContainer,
+            content = WtaColors.semantic.onNeutralContainer,
             icon = Icons.Outlined.Delete
         )
     }
