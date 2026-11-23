@@ -1539,6 +1539,7 @@ object Strings {
     val agentAppChangesOpen: String get() = StringsB.agentAppChangesOpen
     val agentAppChangesFields: String get() = StringsB.agentAppChangesFields
     val agentPlanModeBadge: String get() = StringsB.agentPlanModeBadge
+    val agentPlanReview: String get() = StringsB.agentPlanReview
     val agentPlanModeNoPath: String get() = StringsB.agentPlanModeNoPath
     val agentPlanModeExitTooltip: String get() = StringsB.agentPlanModeExitTooltip
     val agentOpenDrawer: String get() = StringsB.agentOpenDrawer
@@ -1548,6 +1549,10 @@ object Strings {
     val agentHomeRecentSeeAll: String get() = StringsB.agentHomeRecentSeeAll
     val agentHomeUntitledSession: String get() = StringsB.agentHomeUntitledSession
     val agentHomeStartersTitle: String get() = StringsB.agentHomeStartersTitle
+    val agentStarterTodoLabel: String get() = StringsB.agentStarterTodoLabel
+    val agentStarterPortfolioLabel: String get() = StringsB.agentStarterPortfolioLabel
+    val agentStarterHtmlLabel: String get() = StringsB.agentStarterHtmlLabel
+    val agentStarterLandingLabel: String get() = StringsB.agentStarterLandingLabel
     val agentStarterPrompt1: String get() = StringsB.agentStarterPrompt1
     val agentStarterPrompt2: String get() = StringsB.agentStarterPrompt2
     val agentStarterPrompt3: String get() = StringsB.agentStarterPrompt3

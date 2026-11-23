@@ -89,9 +89,6 @@ fun AgentDrawer(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.surface)
-            // ModalDrawerSheet requests focus on open; landing on the drawer
-            // container keeps the IME down — without this the search field grabs
-            // initial focus and pops the keyboard every time the drawer opens.
             .focusable()
     ) {
         DrawerHeader(state.drawerSearch, onSearchChange)
@@ -412,7 +409,7 @@ private fun SessionRow(
                         showDeleteDialog = false
                     },
                     text = Strings.agentSessionDelete,
-                    variant = WtaButtonVariant.Destructive,
+                    variant = WtaButtonVariant.Tonal,
                     size = WtaButtonSize.Small
                 )
             },
@@ -570,7 +567,7 @@ private fun FileEntryRow(
                         showDeleteDialog = false
                     },
                     text = Strings.agentSessionDelete,
-                    variant = WtaButtonVariant.Destructive,
+                    variant = WtaButtonVariant.Tonal,
                     size = WtaButtonSize.Small
                 )
             },

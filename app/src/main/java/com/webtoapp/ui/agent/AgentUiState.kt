@@ -46,7 +46,7 @@ data class AgentUiState(
     val modelProviderGroups: List<ProviderGroup> = emptyList(),
     val selectedProviderKeyId: String? = null,
     val currentModelLabel: String = "",
-    val modelMissing: Boolean = false,
+    val modelMissing: Boolean = true,
 
     val mentionPickerOpen: Boolean = false,
 
@@ -104,6 +104,7 @@ data class AgentUiState(
     enum class DrawerTab { Sessions, Files }
 
     val canSend: Boolean get() = phase == Phase.Idle && !compacting
+    val canChangePlanMode: Boolean get() = canSend && currentSession != null && pendingPlanReview == null
     val isWorking: Boolean get() = phase != Phase.Idle && phase != Phase.Error
     val contextAppIds: List<Long> get() = currentSession?.config?.contextAppIdsSafe.orEmpty()
     val contextModuleIds: List<String> get() = currentSession?.config?.contextModuleIdsSafe.orEmpty()

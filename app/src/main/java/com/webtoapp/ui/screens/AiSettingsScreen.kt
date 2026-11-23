@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -34,6 +35,7 @@ import com.webtoapp.core.ai.ApiKeyRotation
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.data.model.*
 import com.webtoapp.ui.components.*
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -49,7 +51,8 @@ import com.webtoapp.ui.theme.ifDescriptionsShown
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AiSettingsScreen(
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    startAddingModel: Boolean = false
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -59,8 +62,8 @@ fun AiSettingsScreen(
     val apiKeys by configManager.apiKeysFlow.collectAsStateWithLifecycle(initialValue = emptyList())
     val savedModels by configManager.savedModelsFlow.collectAsStateWithLifecycle(initialValue = emptyList())
 
-    var showAddApiKeyDialog by remember { mutableStateOf(false) }
-    var showAddModelDialog by remember { mutableStateOf(false) }
+    var showAddApiKeyDialog by rememberSaveable { mutableStateOf(false) }
+    var showAddModelDialog by rememberSaveable { mutableStateOf(false) }
     var selectedApiKey by remember { mutableStateOf<ApiKeyConfig?>(null) }
     var editingApiKey by remember { mutableStateOf<ApiKeyConfig?>(null) }
     var editingModel by remember { mutableStateOf<SavedModel?>(null) }
@@ -68,7 +71,23 @@ fun AiSettingsScreen(
     var deletingModel by remember { mutableStateOf<SavedModel?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
 
-    var selectedTab by remember { mutableStateOf(0) }
+    var selectedTab by rememberSaveable { mutableIntStateOf(0) }
+    var startModelSetup by rememberSaveable { mutableStateOf(startAddingModel) }
+    var addModelAfterKey by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(startModelSetup) {
+        if (startModelSetup) {
+            val keys = configManager.apiKeysFlow.first()
+            if (keys.isEmpty()) {
+                addModelAfterKey = true
+                showAddApiKeyDialog = true
+            } else {
+                selectedTab = 1
+                showAddModelDialog = true
+            }
+            startModelSetup = false
+        }
+    }
+
     val catalogRepo = remember { com.webtoapp.core.ai.ModelsDevRepository.getInstance(context) }
     val catalogState by catalogRepo.state.collectAsStateWithLifecycle()
 
@@ -184,6 +203,11 @@ fun AiSettingsScreen(
                     }
                     if (saved) {
                         showAddApiKeyDialog = false
+                        if (addModelAfterKey) {
+                            addModelAfterKey = false
+                            selectedTab = 1
+                            showAddModelDialog = true
+                        }
                     } else {
                         snackbarHostState.showSnackbar(
                             message = Strings.saveFailed,
@@ -289,7 +313,6 @@ fun AiSettingsScreen(
                 TextButton(
                     onClick = {
                         scope.launch {
-                            // A saved model without its key is dead weight — cascade.
                             linkedModels.forEach { configManager.deleteSavedModel(it.id) }
                             configManager.deleteApiKey(key.id)
                             deletingApiKey = null
@@ -387,8 +410,6 @@ private fun AiEmptyCard(icon: ImageVector, text: String) {
     }
 }
 
-// The "[OK] "/"[FAIL] " tags baked into the shared result strings are handy in
-// logs; on screen the color already carries the meaning.
 private fun String.stripResultTag(): String =
     removePrefix("[OK] ").removePrefix("[FAIL] ")
 
@@ -828,8 +849,6 @@ private fun AddApiKeyDialog(
     var customModelsEndpoint by remember { mutableStateOf(initialConfig?.customModelsEndpoint ?: "") }
     var customChatEndpoint by remember { mutableStateOf(initialConfig?.customChatEndpoint ?: "") }
     var selectedApiFormat by remember { mutableStateOf(initialConfig?.apiFormat ?: ApiFormat.OPENAI_COMPATIBLE) }
-    // Default chat endpoint for CUSTOM endpoints follows the selected wire format and
-    // mirrors ApiKeyConfig.getEffectiveChatEndpoint()'s CUSTOM branch.
     val customDefaultChatEndpoint = when (selectedApiFormat) {
         ApiFormat.ANTHROPIC -> "/v1/messages"
         ApiFormat.OPENAI_RESPONSES -> "/v1/responses"

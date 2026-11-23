@@ -7,8 +7,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Arrangement
@@ -20,7 +18,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.ime
@@ -29,6 +26,7 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -40,20 +38,16 @@ import androidx.compose.material.icons.outlined.ArrowDownward
 import androidx.compose.material.icons.outlined.Bolt
 import androidx.compose.material.icons.outlined.Build
 import androidx.compose.material.icons.outlined.Checklist
-import androidx.compose.material.icons.outlined.Code
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Logout
-import androidx.compose.material.icons.outlined.Menu
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.PlayArrow
-import androidx.compose.material.icons.outlined.RocketLaunch
 import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material.icons.outlined.Smartphone
-import androidx.compose.material.icons.outlined.Web
+import androidx.compose.material.icons.outlined.Shield
+import androidx.compose.material.icons.outlined.Terminal
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
@@ -72,7 +66,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -81,6 +74,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -89,7 +83,8 @@ import com.webtoapp.ui.agent.components.ChoiceBottomSheet
 import com.webtoapp.ui.agent.components.Composer
 import com.webtoapp.ui.agent.components.AgentContextSheet
 import com.webtoapp.ui.agent.components.AgentToolsSheet
-import com.webtoapp.ui.agent.components.MaterialIconBadgeRound
+import com.webtoapp.ui.agent.components.AgentWelcome
+import com.webtoapp.ui.agent.components.MarkdownText
 import com.webtoapp.ui.agent.components.MessageActions
 import com.webtoapp.ui.agent.components.formatMessageForCopy
 import com.webtoapp.ui.agent.components.MessageBubble
@@ -98,7 +93,6 @@ import com.webtoapp.ui.agent.components.PreviewSheet
 import com.webtoapp.ui.agent.components.AgentDrawer
 import com.webtoapp.ui.agent.components.StreamingBubble
 import com.webtoapp.ui.agent.components.TodoChecklist
-import com.webtoapp.ui.design.WtaAlpha
 import com.webtoapp.ui.design.WtaCard
 import com.webtoapp.ui.design.WtaCardTone
 import com.webtoapp.ui.design.WtaDropdownMenu
@@ -115,19 +109,16 @@ import com.webtoapp.ui.design.WtaStatusTone
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.ui.text.font.FontFamily
 import com.webtoapp.ui.design.WtaButton
 import com.webtoapp.ui.design.WtaButtonSize
 import com.webtoapp.ui.design.WtaButtonVariant
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 @Composable
 fun AgentScreen(
     onBack: () -> Unit,
     onOpenAiSettings: () -> Unit,
+    onAddModel: () -> Unit,
     onOpenApp: (Long) -> Unit = {}
 ) {
     val context = LocalContext.current
@@ -154,7 +145,6 @@ fun AgentScreen(
     val folderPicker = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocumentTree()
     ) { uri -> uri?.let { vm.attachFolder(it) } }
-
     val skillPicker = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocument()
     ) { uri -> uri?.let(vm::importSkill) }
@@ -172,12 +162,19 @@ fun AgentScreen(
                 runCatching { drawerState.close() }
                 return@launch
             }
-            onBack()
+            when {
+                state.slashOpen -> vm.dismissSlash()
+                state.mentionPickerOpen -> vm.dismissMention()
+                else -> onBack()
+            }
         }
         Unit
     }
     BackHandler { leaveScreen() }
 
+    LaunchedEffect(state.pendingPlanReview) {
+        if (state.pendingPlanReview != null) focusManager.clearFocus()
+    }
     LaunchedEffect(state.error, state.contextPickerOpen) {
         if (!state.contextPickerOpen) {
             state.error?.let {
@@ -285,35 +282,33 @@ fun AgentScreen(
             actions = {
                 WtaIconButton(
                     onClick = vm::openDrawer,
-                    icon = Icons.Outlined.Menu,
+                    icon = Icons.Outlined.History,
                     contentDescription = Strings.agentOpenDrawer
                 )
                 WtaIconButton(
                     onClick = vm::tryNewSession,
                     icon = Icons.Outlined.Add,
-                    contentDescription = Strings.agentNewSession
+                    contentDescription = Strings.agentNewSession,
+                    tonal = true
                 )
-                if (previewable) {
-                    WtaIconButton(
-                        onClick = vm::openPreview,
-                        icon = Icons.Outlined.PlayArrow,
-                        contentDescription = Strings.agentPreviewOpen
-                    )
-                }
-                if (saveable) {
-                    WtaIconButton(
-                        onClick = vm::openSaveAsAppDialog,
-                        icon = Icons.Outlined.Apps,
-                        contentDescription = Strings.agentSaveAsApp
-                    )
-                }
+                val approvalMode = if (state.autoApprove) Strings.agentAutoModeLabel else Strings.agentManualModeLabel
                 Box {
                     WtaIconButton(
                         onClick = { actionsOpen = true },
-                        icon = Icons.Outlined.MoreVert,
-                        contentDescription = Strings.moreOptions
+                        icon = if (state.autoApprove) Icons.Outlined.Bolt else Icons.Outlined.MoreVert,
+                        contentDescription = "${Strings.moreOptions} · $approvalMode"
                     )
                     WtaDropdownMenu(expanded = actionsOpen, onDismissRequest = { actionsOpen = false }) {
+                        if (previewable) {
+                            WtaDropdownMenuItem(
+                                text = Strings.agentPreviewOpen,
+                                leadingIcon = Icons.Outlined.PlayArrow,
+                                onClick = {
+                                    actionsOpen = false
+                                    vm.openPreview()
+                                }
+                            )
+                        }
                         WtaDropdownMenuItem(
                             text = Strings.agentToolsTitle,
                             leadingIcon = Icons.Outlined.Build,
@@ -323,6 +318,32 @@ fun AgentScreen(
                                 toolsOpen = true
                             }
                         )
+                        WtaDropdownMenuItem(
+                            text = if (state.autoApprove) Strings.agentManualModeLabel else Strings.agentAutoModeLabel,
+                            leadingIcon = if (state.autoApprove) Icons.Outlined.Shield else Icons.Outlined.Bolt,
+                            onClick = {
+                                actionsOpen = false
+                                vm.setAutoApprove(!state.autoApprove)
+                            }
+                        )
+                        WtaDropdownMenuItem(
+                            text = Strings.agentSlashChipLabel,
+                            leadingIcon = Icons.Outlined.Terminal,
+                            onClick = {
+                                actionsOpen = false
+                                vm.openSlashCommands()
+                            }
+                        )
+                        if (saveable) {
+                            WtaDropdownMenuItem(
+                                text = Strings.agentSaveAsApp,
+                                leadingIcon = Icons.Outlined.Apps,
+                                onClick = {
+                                    actionsOpen = false
+                                    vm.openSaveAsAppDialog()
+                                }
+                            )
+                        }
                         WtaDropdownMenuItem(
                             text = Strings.aiSettings,
                             leadingIcon = Icons.Outlined.Settings,
@@ -337,16 +358,15 @@ fun AgentScreen(
         ) { _ ->
             Column(
                 modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .widthIn(max = 720.dp)
                     .fillMaxSize()
                     .windowInsetsPadding(WindowInsets.ime.exclude(WindowInsets.navigationBars))
             ) {
                 if (state.planActive) {
                     PlanBanner(
                         planFilePath = state.planFilePath,
-                        onExit = {
-                            state.slashCommands.firstOrNull { it.id == "exit-plan" }
-                                ?.let(vm::runSlashCommand)
-                        }
+                        onReview = if (state.canChangePlanMode) vm::submitPlanForReview else null
                     )
                 }
                 Conversation(
@@ -357,10 +377,6 @@ fun AgentScreen(
                     onFillComposer = vm::setComposerText,
                     modifier = Modifier.weight(1f)
                 )
-                HorizontalDivider(
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = WtaAlpha.Divider)
-                )
-
                 state.pendingPlanReview?.let { review ->
                     PlanReviewCard(
                         review = review,
@@ -397,9 +413,7 @@ fun AgentScreen(
                     onDismissSlash = vm::dismissSlash,
                     onPickMention = vm::pickFileMention,
                     onDismissMention = vm::dismissMention,
-                    onToggleAutoApprove = { vm.setAutoApprove(!state.autoApprove) },
-
-                    onTriggerSlash = { vm.setComposerText("/") },
+                    onTogglePlanMode = vm::togglePlanMode,
 
                     onAttachImage = { imagePicker.launch("image/*") },
                     onAttachFile = { filePicker.launch("*/*") },
@@ -411,9 +425,10 @@ fun AgentScreen(
                         focusManager.clearFocus()
                         vm.openContextPicker()
                     },
-
-                    onOpenModelPicker = vm::openModelPicker,
-                    onCompactContext = vm::compactNow
+                    onOpenModelPicker = {
+                        focusManager.clearFocus()
+                        if (state.modelMissing) onAddModel() else vm.openModelPicker()
+                    }
                 )
             }
         }
@@ -497,20 +512,45 @@ private fun EditingHint(onCancel: () -> Unit) {
 }
 
 @Composable
-private fun PlanBanner(planFilePath: String?, onExit: () -> Unit) {
-    Box(
-        modifier = Modifier.padding(
-            horizontal = WtaSpacing.ScreenHorizontal,
-            vertical = WtaSpacing.Small
-        )
+private fun PlanBanner(planFilePath: String?, onReview: (() -> Unit)?) {
+    WtaCard(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = WtaSpacing.ScreenHorizontal, vertical = WtaSpacing.Small),
+        tone = WtaCardTone.Surface,
+        contentPadding = PaddingValues(WtaSpacing.Medium)
     ) {
-        WtaStatusBanner(
-            title = Strings.agentPlanModeBadge,
-            message = planFilePath ?: Strings.agentPlanModeNoPath,
-            tone = WtaStatusTone.Warning,
-            actionLabel = Strings.agentPlanModeExitTooltip,
-            onAction = onExit
-        )
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                Icons.Outlined.Checklist,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(WtaSize.Icon)
+            )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(Strings.agentPlanModeBadge, style = MaterialTheme.typography.titleSmall)
+                planFilePath?.let {
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+            if (onReview != null) {
+                WtaButton(
+                    onClick = onReview,
+                    text = Strings.agentPlanReview,
+                    variant = WtaButtonVariant.Outlined,
+                    size = WtaButtonSize.Small
+                )
+            }
+        }
     }
 }
 
@@ -520,56 +560,45 @@ private fun PlanReviewCard(
     onApprove: () -> Unit,
     onRequestRevisions: () -> Unit
 ) {
-    Box(
-        modifier = Modifier.padding(
+    WtaCard(
+        tone = WtaCardTone.Surface,
+        modifier = Modifier.fillMaxWidth().padding(
             horizontal = WtaSpacing.ScreenHorizontal,
-            vertical = WtaSpacing.Tiny + 2.dp
-        )
+            vertical = WtaSpacing.Tiny
+        ),
+        contentPadding = PaddingValues(WtaSpacing.Medium)
     ) {
-        WtaCard(
-            tone = WtaCardTone.Elevated,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(
-                modifier = Modifier.padding(WtaSpacing.Medium)
+        Column(verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)) {
+            Text(
+                text = Strings.agentPlanAwaitingReview,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold
+            )
+            MarkdownText(
+                text = review.content,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier
+                    .heightIn(max = 176.dp)
+                    .verticalScroll(rememberScrollState())
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
             ) {
-                Text(
-                    text = Strings.agentPlanAwaitingReview,
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface
+                WtaButton(
+                    onClick = onRequestRevisions,
+                    text = Strings.agentPlanRequestRevisions,
+                    variant = WtaButtonVariant.Outlined,
+                    size = WtaButtonSize.Small,
+                    modifier = Modifier.weight(1f)
                 )
-                Spacer(Modifier.height(WtaSpacing.Small))
-                Text(
-                    text = review.content,
-                    style = MaterialTheme.typography.bodySmall,
-                    fontFamily = FontFamily.Monospace,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(max = 200.dp)
-                        .verticalScroll(rememberScrollState())
+                WtaButton(
+                    onClick = onApprove,
+                    text = Strings.agentPlanApprove,
+                    variant = WtaButtonVariant.Tonal,
+                    size = WtaButtonSize.Small,
+                    modifier = Modifier.weight(1f)
                 )
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = WtaSpacing.Small),
-                    horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
-                ) {
-                    WtaButton(
-                        onClick = onApprove,
-                        text = Strings.agentPlanApprove,
-                        variant = WtaButtonVariant.Tonal,
-                        size = WtaButtonSize.Small,
-                        modifier = Modifier.weight(1f)
-                    )
-                    WtaButton(
-                        onClick = onRequestRevisions,
-                        text = Strings.agentPlanRequestRevisions,
-                        variant = WtaButtonVariant.Text,
-                        size = WtaButtonSize.Small
-                    )
-                }
             }
         }
     }
@@ -665,8 +694,8 @@ private fun Conversation(
 
     if (messages.isEmpty() && !state.isWorking && state.todos.isEmpty()) {
 
-        EmptyConversationHint(
-            state = state,
+        AgentWelcome(
+            sessions = state.sessions,
             onPickSession = onPickSession,
             onOpenSessions = onOpenSessions,
             onFillComposer = onFillComposer,
@@ -682,8 +711,11 @@ private fun Conversation(
             modifier = Modifier
                 .fillMaxSize()
                 .nestedScroll(userScrollMonitor),
-            contentPadding = PaddingValues(WtaSpacing.ScreenHorizontal),
-            verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
+            contentPadding = PaddingValues(
+                horizontal = WtaSpacing.ScreenHorizontal,
+                vertical = WtaSpacing.Medium
+            ),
+            verticalArrangement = Arrangement.spacedBy(WtaSpacing.Medium)
         ) {
             items(messages, key = { it.id }) { msg ->
                 MessageBubble(
@@ -750,7 +782,7 @@ private fun Conversation(
 private fun JumpToLatestPill(onClick: () -> Unit) {
     WtaCard(
         onClick = onClick,
-        tone = WtaCardTone.Highlighted,
+        tone = WtaCardTone.Elevated,
         shape = RoundedCornerShape(WtaRadius.Pill),
         contentPadding = PaddingValues(
             horizontal = WtaSpacing.Medium + 2.dp,
@@ -761,7 +793,7 @@ private fun JumpToLatestPill(onClick: () -> Unit) {
             Icon(
                 imageVector = Icons.Outlined.ArrowDownward,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                tint = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.size(WtaSize.IconSmall)
             )
             Spacer(Modifier.width(WtaSpacing.Tiny + 2.dp))
@@ -769,225 +801,8 @@ private fun JumpToLatestPill(onClick: () -> Unit) {
                 text = Strings.agentJumpToLatest,
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onPrimaryContainer
+                color = MaterialTheme.colorScheme.onSurface
             )
         }
     }
 }
-
-@Composable
-private fun EmptyConversationHint(
-    state: AgentUiState,
-    onPickSession: (String) -> Unit,
-    onOpenSessions: () -> Unit,
-    onFillComposer: (String) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val recentSessions = remember(state.sessions) {
-        state.sessions
-            .filter { it.messages.isNotEmpty() }
-            .sortedByDescending { it.updatedAt }
-            .take(3)
-    }
-    val starterPrompts = remember {
-        listOf(
-            Strings.agentStarterPrompt1 to Icons.Outlined.Checklist,
-            Strings.agentStarterPrompt2 to Icons.Outlined.Web,
-            Strings.agentStarterPrompt3 to Icons.Outlined.Code,
-            Strings.agentStarterPrompt4 to Icons.Outlined.Smartphone
-        )
-    }
-
-    LazyColumn(
-        modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(
-            horizontal = WtaSpacing.ScreenHorizontal,
-            vertical = WtaSpacing.ExtraLarge
-        ),
-        verticalArrangement = Arrangement.spacedBy(WtaSpacing.SectionGap)
-    ) {
-        item("hero") {
-            Column {
-                Box(
-                    modifier = Modifier
-                        .size(52.dp)
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(MaterialTheme.colorScheme.primaryContainer),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.RocketLaunch,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                        modifier = Modifier.size(26.dp)
-                    )
-                }
-                Spacer(Modifier.height(WtaSpacing.Medium + 2.dp))
-                Text(
-                    text = Strings.agentHomeTitle,
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Spacer(Modifier.height(WtaSpacing.Tiny))
-                Text(
-                    text = Strings.agentHomeSubtitle,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-
-        item("starters-header") {
-            SectionHeader(
-                title = Strings.agentHomeStartersTitle,
-                actionLabel = null,
-                onAction = null
-            )
-        }
-        item("starters-grid") {
-            Column(verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)) {
-                starterPrompts.chunked(2).forEachIndexed { rowIndex, rowPrompts ->
-                    Row(horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small)) {
-                        rowPrompts.forEach { (prompt, icon) ->
-                            StarterCard(
-                                prompt = prompt,
-                                icon = icon,
-                                onPick = onFillComposer,
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
-                        if (rowPrompts.size == 1) {
-                            Spacer(Modifier.weight(1f))
-                        }
-                    }
-                }
-            }
-        }
-
-        if (recentSessions.isNotEmpty()) {
-            item("sessions-header") {
-                SectionHeader(
-                    title = Strings.agentHomeRecentTitle,
-                    actionLabel = Strings.agentHomeRecentSeeAll,
-                    onAction = onOpenSessions
-                )
-            }
-            items(recentSessions, key = { "session-${it.id}" }) { session ->
-                RecentSessionRow(session = session, onClick = { onPickSession(session.id) })
-            }
-        }
-    }
-}
-
-@Composable
-private fun StarterCard(
-    prompt: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    onPick: (String) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    WtaCard(
-        onClick = { onPick(prompt) },
-        tone = WtaCardTone.Elevated,
-        contentPadding = PaddingValues(
-            horizontal = WtaSpacing.Medium - 2.dp,
-            vertical = WtaSpacing.Small + 4.dp
-        ),
-        modifier = modifier
-    ) {
-        Column {
-            Box(
-                modifier = Modifier
-                    .size(30.dp)
-                    .clip(RoundedCornerShape(WtaRadius.Chip))
-                    .background(MaterialTheme.colorScheme.primary.copy(alpha = WtaAlpha.MutedContainer)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(17.dp)
-                )
-            }
-            Spacer(Modifier.height(WtaSpacing.Small))
-            Text(
-                text = prompt,
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 2
-            )
-        }
-    }
-}
-
-@Composable
-private fun SectionHeader(title: String, actionLabel: String?, onAction: (() -> Unit)?) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.weight(1f)
-        )
-        if (actionLabel != null && onAction != null) {
-            Text(
-                text = actionLabel,
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier
-                    .clickable(onClick = onAction)
-                    .padding(WtaSpacing.Tiny)
-            )
-        }
-    }
-}
-
-@Composable
-private fun RecentSessionRow(
-    session: com.webtoapp.core.agent.session.AgentSession,
-    onClick: () -> Unit
-) {
-    WtaCard(
-        onClick = onClick,
-        tone = WtaCardTone.Elevated,
-        contentPadding = PaddingValues(
-            horizontal = WtaSpacing.Medium + 2.dp,
-            vertical = WtaSpacing.Medium
-        ),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = session.title.ifBlank { Strings.agentHomeUntitledSession },
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1
-                )
-                val timeText = remember(session.updatedAt) {
-                    SESSION_TIME_FORMAT.format(Date(session.updatedAt))
-                }
-                Text(
-                    text = listOf(
-                        Strings.agentSessionMessagesShort.format(session.messages.size),
-                        timeText
-                    ).joinToString(" · "),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            Icon(
-                imageVector = Icons.Outlined.History,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(WtaSize.IconSmall + 2.dp)
-            )
-        }
-    }
-}
-
-private val SESSION_TIME_FORMAT = SimpleDateFormat("MM-dd HH:mm", Locale.getDefault())

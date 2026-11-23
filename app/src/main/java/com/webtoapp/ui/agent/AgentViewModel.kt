@@ -465,6 +465,10 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun openSlashCommands() {
+        _ui.update { it.copy(slashOpen = true, mentionPickerOpen = false) }
+    }
+
     fun dismissSlash() {
         _ui.update { it.copy(slashOpen = false) }
     }
@@ -474,11 +478,16 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
             "clear" -> newSession()
             "compact" -> compactNow()
             "plan" -> enterPlanMode()
-            "exit-plan" -> exitPlanMode()
+            "exit-plan" -> submitPlanForReview()
             "model" -> openModelPicker()
             else -> Unit
         }
-        _ui.update { it.copy(composerText = "", slashOpen = false) }
+        _ui.update {
+            it.copy(
+                composerText = if (command.id == "clear" || it.composerText.startsWith("/")) "" else it.composerText,
+                slashOpen = false
+            )
+        }
     }
 
     fun openModelPicker() {
@@ -523,7 +532,6 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
                     modelPickerOpen = true,
                     modelProviderGroups = groups,
                     selectedProviderKeyId = currentKeyId ?: groups.firstOrNull()?.apiKeyId,
-                    composerText = "",
                     slashOpen = false
                 )
             }
@@ -1546,14 +1554,32 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         )
     }
 
+    fun togglePlanMode() {
+        val state = _ui.value
+        if (!state.canChangePlanMode) return
+        if (state.planActive) {
+            planManager?.leave()
+            _ui.update { it.copy(planActive = false, planFilePath = null) }
+        } else {
+            enterPlanMode()
+        }
+    }
+
     private fun enterPlanMode() {
-        val session = _ui.value.currentSession ?: return
-        val plan = planManager ?: PlanManager(session.id, files, service!!.permissionChecker).also {
+        val state = _ui.value
+        if (!state.canChangePlanMode) return
+        val session = state.currentSession ?: return
+        val checker = service?.permissionChecker ?: run {
+            _ui.update { it.copy(error = Strings.agentServiceNotConnected) }
+            return
+        }
+        val plan = planManager ?: PlanManager(session.id, files, checker).also {
             planManager = it
+            registryFactory = ToolRegistryFactory(it, imageRegistry)
         }
         when (val r = plan.enter()) {
             is PlanManager.EnterResult.Entered -> {
-                _ui.update { it.copy(planActive = true, planFilePath = r.planPath, info = Strings.agentPlanEntered) }
+                _ui.update { it.copy(planActive = true, planFilePath = r.planPath) }
             }
             is PlanManager.EnterResult.AlreadyActive -> {
                 _ui.update { it.copy(planActive = true, planFilePath = r.planPath, info = Strings.agentPlanAlreadyActive) }
@@ -1561,7 +1587,8 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    private fun exitPlanMode() {
+    fun submitPlanForReview() {
+        if (!_ui.value.canChangePlanMode) return
         val plan = planManager ?: return
         when (val r = plan.exit()) {
             is PlanManager.ExitResult.Submitted -> {
@@ -1579,7 +1606,7 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
     fun approvePlan() {
         val plan = planManager ?: return
         _ui.value.currentSession ?: return
-        plan.approve()
+        plan.leave()
         _ui.update {
             it.copy(
                 planActive = false,
@@ -1868,10 +1895,13 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
                 )
                 streamToolArgs.remove(ev.toolCallId)
                 lastToolUiPushAt = 0L
+                val planState = planManager?.state?.value
                 _ui.update {
                     it.copy(
                         phase = AgentUiState.Phase.Streaming,
                         pendingToolCalls = streamTools.values.toList(),
+                        planActive = planState?.active == true,
+                        planFilePath = planState?.activePlanPath,
                         currentActivity = null
                     )
                 }
@@ -2205,8 +2235,9 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
             it.copy(
                 currentSession = session,
                 estimatedContextTokens = if (sessionChanged) 0 else it.estimatedContextTokens,
-                planActive = if (sessionChanged) false else it.planActive,
-                planFilePath = if (sessionChanged) null else it.planFilePath,
+                planActive = false,
+                planFilePath = null,
+                pendingPlanReview = null,
                 projectFiles = files.listAll(session.id),
 
                 pendingChanges = if (sessionChanged) emptyList() else it.pendingChanges,
