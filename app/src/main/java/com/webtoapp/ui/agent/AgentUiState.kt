@@ -18,11 +18,6 @@ data class AgentUiState(
     val streamingText: String = "",
     val streamingThinkingSegments: List<ThinkingSegment> = emptyList(),
 
-    /**
-     * Message id of the assistant draft the service is currently writing, if any.
-     * The UI hides this message from the history list while streaming (to avoid it
-     * showing twice: once as a saved bubble and once in the live StreamingBubble).
-     */
     val streamingDraftMessageId: String? = null,
 
     val pendingToolCalls: List<RecordedToolCall> = emptyList(),
@@ -51,7 +46,6 @@ data class AgentUiState(
     val modelProviderGroups: List<ProviderGroup> = emptyList(),
     val selectedProviderKeyId: String? = null,
     val currentModelLabel: String = "",
-    /** No usable text model is configured — the model chip highlights this. */
     val modelMissing: Boolean = false,
 
     val mentionPickerOpen: Boolean = false,
@@ -99,18 +93,28 @@ data class AgentUiState(
     val compacting: Boolean = false,
 
     val contextPickerOpen: Boolean = false,
-    val contextAppIds: List<Long> = emptyList(),
-    val contextModuleIds: List<String> = emptyList(),
     val availableContextApps: List<ContextAppItem> = emptyList(),
     val availableContextModules: List<ContextModuleItem> = emptyList(),
-    val availableCategories: List<ContextCategoryItem> = emptyList()
+    val availableCategories: List<ContextCategoryItem> = emptyList(),
+    val availableSkills: List<ContextSkillItem> = emptyList(),
+    val contextLoading: Boolean = false,
+    val importingSkill: Boolean = false
 ) {
     enum class Phase { Idle, Connecting, Streaming, AwaitingTool, AwaitingUser, Error }
     enum class DrawerTab { Sessions, Files }
 
-    val canSend: Boolean get() = phase == Phase.Idle
+    val canSend: Boolean get() = phase == Phase.Idle && !compacting
     val isWorking: Boolean get() = phase != Phase.Idle && phase != Phase.Error
+    val contextAppIds: List<Long> get() = currentSession?.config?.contextAppIdsSafe.orEmpty()
+    val contextModuleIds: List<String> get() = currentSession?.config?.contextModuleIdsSafe.orEmpty()
+    val contextSkillIds: List<String> get() = currentSession?.config?.skillIdsSafe.orEmpty()
+    val selectedContextCount: Int
+        get() = contextAppIds.size + contextModuleIds.size + availableSkills.count { it.id in contextSkillIds }
 }
+
+data class ContextSkillItem(val id: String, val name: String, val description: String, val bytes: Int)
+
+data class AgentToolItem(val name: String, val description: String, val readOnly: Boolean)
 
 data class ContextAppItem(
     val id: Long,
@@ -119,13 +123,6 @@ data class ContextAppItem(
     val categoryId: Long? = null
 )
 
-/**
- * One turn's worth of streaming reasoning. [frozenDurationMs] is null while the
- * reasoning for this turn is still arriving (live); once the turn's thinking stream
- * ends it is frozen so the UI renders a static, collapsed block and the next turn
- * can open its own live block. [id] matches the inline marker in the streamed text
- * so the timeline can interleave this block with prose/tools.
- */
 data class ThinkingSegment(
     val id: String,
     val content: String,
@@ -159,11 +156,6 @@ data class PendingChange(
     enum class Kind { Write, Edit, Delete }
 }
 
-/**
- * An app created or updated by an agent tool this turn, pending review. Mirrors
- * [PendingChange] for the app-changes review card: shown below the conversation
- * after the turn ends, with what changed and a jump to the app's editor.
- */
 data class PendingAppChange(
     val appId: Long,
     val appName: String,

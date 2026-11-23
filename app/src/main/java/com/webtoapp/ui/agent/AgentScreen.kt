@@ -38,6 +38,7 @@ import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Apps
 import androidx.compose.material.icons.outlined.ArrowDownward
 import androidx.compose.material.icons.outlined.Bolt
+import androidx.compose.material.icons.outlined.Build
 import androidx.compose.material.icons.outlined.Checklist
 import androidx.compose.material.icons.outlined.Code
 import androidx.compose.material.icons.outlined.History
@@ -67,6 +68,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -85,7 +87,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.ui.agent.components.ChoiceBottomSheet
 import com.webtoapp.ui.agent.components.Composer
-import com.webtoapp.ui.agent.components.ContextPickerDialog
+import com.webtoapp.ui.agent.components.AgentContextSheet
+import com.webtoapp.ui.agent.components.AgentToolsSheet
 import com.webtoapp.ui.agent.components.MaterialIconBadgeRound
 import com.webtoapp.ui.agent.components.MessageActions
 import com.webtoapp.ui.agent.components.formatMessageForCopy
@@ -98,6 +101,8 @@ import com.webtoapp.ui.agent.components.TodoChecklist
 import com.webtoapp.ui.design.WtaAlpha
 import com.webtoapp.ui.design.WtaCard
 import com.webtoapp.ui.design.WtaCardTone
+import com.webtoapp.ui.design.WtaDropdownMenu
+import com.webtoapp.ui.design.WtaDropdownMenuItem
 import com.webtoapp.ui.design.WtaFadeIn
 import com.webtoapp.ui.design.WtaFadeOut
 import com.webtoapp.ui.design.WtaIconButton
@@ -137,6 +142,8 @@ fun AgentScreen(
     val focusManager = LocalFocusManager.current
 
     var drawerMounted by remember { mutableStateOf(false) }
+    var actionsOpen by remember { mutableStateOf(false) }
+    var toolsOpen by rememberSaveable { mutableStateOf(false) }
 
     val imagePicker = rememberLauncherForActivityResult(
         ActivityResultContracts.GetMultipleContents()
@@ -147,6 +154,10 @@ fun AgentScreen(
     val folderPicker = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocumentTree()
     ) { uri -> uri?.let { vm.attachFolder(it) } }
+
+    val skillPicker = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri -> uri?.let(vm::importSkill) }
 
     val leaveScreen: () -> Unit = {
         scope.launch {
@@ -167,12 +178,17 @@ fun AgentScreen(
     }
     BackHandler { leaveScreen() }
 
-    LaunchedEffect(state.error) { state.error?.let { snackbar.showSnackbar(it); vm.dismissBanner() } }
+    LaunchedEffect(state.error, state.contextPickerOpen) {
+        if (!state.contextPickerOpen) {
+            state.error?.let {
+                snackbar.showSnackbar(it)
+                vm.dismissBanner()
+            }
+        }
+    }
     LaunchedEffect(state.info) { state.info?.let { snackbar.showSnackbar(it); vm.dismissBanner() } }
     LaunchedEffect(state.drawerOpen) {
         if (state.drawerOpen) {
-            // Don't let the composer IME stay up over the drawer — opening the
-            // sidebar should dismiss the keyboard, not summon it.
             focusManager.clearFocus()
             drawerMounted = true
             drawerState.open()
@@ -291,19 +307,37 @@ fun AgentScreen(
                         contentDescription = Strings.agentSaveAsApp
                     )
                 }
-                WtaIconButton(
-                    onClick = onOpenAiSettings,
-                    icon = Icons.Outlined.Settings,
-                    contentDescription = Strings.aiSettings
-                )
+                Box {
+                    WtaIconButton(
+                        onClick = { actionsOpen = true },
+                        icon = Icons.Outlined.MoreVert,
+                        contentDescription = Strings.moreOptions
+                    )
+                    WtaDropdownMenu(expanded = actionsOpen, onDismissRequest = { actionsOpen = false }) {
+                        WtaDropdownMenuItem(
+                            text = Strings.agentToolsTitle,
+                            leadingIcon = Icons.Outlined.Build,
+                            onClick = {
+                                actionsOpen = false
+                                focusManager.clearFocus()
+                                toolsOpen = true
+                            }
+                        )
+                        WtaDropdownMenuItem(
+                            text = Strings.aiSettings,
+                            leadingIcon = Icons.Outlined.Settings,
+                            onClick = {
+                                actionsOpen = false
+                                onOpenAiSettings()
+                            }
+                        )
+                    }
+                }
             }
         ) { _ ->
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    // WtaScreen's Scaffold padding already reserves the navigation
-                    // bar; pad only the IME excess so the composer lands flush on
-                    // top of the keyboard instead of floating a nav-bar above it.
                     .windowInsetsPadding(WindowInsets.ime.exclude(WindowInsets.navigationBars))
             ) {
                 if (state.planActive) {
@@ -373,7 +407,10 @@ fun AgentScreen(
                     onRemoveAttachment = vm::removePendingAttachment,
                     resolveAttachmentPreview = vm::attachmentPreviewFile,
 
-                    onOpenContextPicker = vm::openContextPicker,
+                    onOpenContextPicker = {
+                        focusManager.clearFocus()
+                        vm.openContextPicker()
+                    },
 
                     onOpenModelPicker = vm::openModelPicker,
                     onCompactContext = vm::compactNow
@@ -383,15 +420,25 @@ fun AgentScreen(
     }
 
     if (state.contextPickerOpen) {
-        ContextPickerDialog(
-            apps = state.availableContextApps,
-            modules = state.availableContextModules,
-            categories = state.availableCategories,
-            selectedAppIds = state.contextAppIds,
-            selectedModuleIds = state.contextModuleIds,
+        AgentContextSheet(
+            state = state,
+            onDismissError = vm::dismissBanner,
             onToggleApp = vm::toggleContextApp,
             onToggleModule = vm::toggleContextModule,
+            onToggleSkill = vm::toggleContextSkill,
+            onImportSkill = { skillPicker.launch(arrayOf("*/*")) },
+            onRemoveSkill = vm::removeSkill,
+            onCompact = vm::compactNow,
             onDismiss = vm::closeContextPicker
+        )
+    }
+    if (toolsOpen) {
+        AgentToolsSheet(
+            sessionId = state.currentSession?.id,
+            imageModelId = state.currentSession?.config?.imageModelId,
+            loadTools = vm::toolCatalog,
+            onMcpEnabledChange = vm::setLocalMcpEnabled,
+            onDismiss = { toolsOpen = false }
         )
     }
 
@@ -538,8 +585,6 @@ private fun Conversation(
     modifier: Modifier = Modifier
 ) {
     val listState = rememberLazyListState()
-    // Hide the in-flight assistant draft from history while streaming: it is shown
-    // live via StreamingBubble, so including it here would render the same output twice.
     val messages = state.currentSession?.messages.orEmpty().filterNot {
         it.id == state.streamingDraftMessageId
     }
@@ -574,11 +619,6 @@ private fun Conversation(
         if (atBottom) followBottom = true
     }
 
-    // A fresh turn (Idle → Connecting) always re-attaches to the newest content.
-    // Without this, a followBottom left false from earlier history reading keeps
-    // the just-sent user message AND the whole streaming output off-screen —
-    // sending is an explicit action, so the view must jump to it. Manual scroll-up
-    // only detaches within a turn; the next send snaps back.
     var wasWorking by remember { mutableStateOf(false) }
     LaunchedEffect(state.isWorking) {
         val working = state.isWorking
@@ -611,15 +651,11 @@ private fun Conversation(
             val viewportBottom = info.viewportEndOffset - info.afterContentPadding
             val last = info.visibleItemsInfo.lastOrNull()
             if (last != null && last.index == info.totalItemsCount - 1) {
-                // The newest item is on screen — align its bottom edge with the viewport.
                 val gap = (last.offset + last.size) - viewportBottom
                 if (gap > 0) {
                     listState.scrollBy(gap.toFloat())
                 }
             } else if (info.totalItemsCount > 0) {
-                // The newest item is entirely below the fold (a burst of output
-                // outgrew the viewport between pushes) — jump straight to it so
-                // following never stalls.
                 listState.scrollToItem(info.totalItemsCount - 1)
             }
 

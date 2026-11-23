@@ -1482,6 +1482,16 @@ object Strings {
     val agentContextEmpty: String get() = StringsB.agentContextEmpty
     val agentContextPickerDone: String get() = StringsB.agentContextPickerDone
     val agentContextAllCategories: String get() = StringsB.agentContextAllCategories
+    val agentSkillsLabel: String get() = StringsB.agentSkillsLabel
+    val agentSkillImport: String get() = StringsB.agentSkillImport
+    val agentSkillsEmpty: String get() = StringsB.agentSkillsEmpty
+    val agentSkillImportFailed: String get() = StringsB.agentSkillImportFailed
+    val agentSkillBudgetExceeded: String get() = StringsB.agentSkillBudgetExceeded
+    val agentToolsTitle: String get() = StringsB.agentToolsTitle
+    val agentToolReadOnly: String get() = StringsB.agentToolReadOnly
+    val agentToolPermissionChecked: String get() = StringsB.agentToolPermissionChecked
+    val agentContextReferencesHint: String get() = StringsB.agentContextReferencesHint
+    val agentSkillRemoveConfirm: String get() = StringsB.agentSkillRemoveConfirm
     val agentSaveAsApp: String get() = StringsB.agentSaveAsApp
     val agentSaveAsAppTitle: String get() = StringsB.agentSaveAsAppTitle
     val agentSaveAsAppDescription: String get() = StringsB.agentSaveAsAppDescription

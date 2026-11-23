@@ -4408,6 +4408,136 @@ object StringsB {
         AppLanguage.JAPANESE -> "添付ファイルのインポートに失敗しました（ファイルが大きすぎるか、ストレージ不足）"
         AppLanguage.KOREAN -> "첨부 파일 가져오기 실패 (파일이 너무 크거나 저장 공간 부족)"
     }
+    val agentSkillsLabel: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "技能"
+        AppLanguage.ENGLISH -> "Skills"
+        AppLanguage.ARABIC -> "المهارات"
+        AppLanguage.PORTUGUESE -> "Skills"
+        AppLanguage.SPANISH -> "Habilidades"
+        AppLanguage.FRENCH -> "Compétences"
+        AppLanguage.GERMAN -> "Skills"
+        AppLanguage.RUSSIAN -> "Навыки"
+        AppLanguage.JAPANESE -> "スキル"
+        AppLanguage.KOREAN -> "스킬"
+    }
+
+    val agentSkillImport: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "导入 SKILL.md"
+        AppLanguage.ENGLISH -> "Import SKILL.md"
+        AppLanguage.ARABIC -> "استيراد SKILL.md"
+        AppLanguage.PORTUGUESE -> "Importar SKILL.md"
+        AppLanguage.SPANISH -> "Importar SKILL.md"
+        AppLanguage.FRENCH -> "Importer SKILL.md"
+        AppLanguage.GERMAN -> "SKILL.md importieren"
+        AppLanguage.RUSSIAN -> "Импорт SKILL.md"
+        AppLanguage.JAPANESE -> "SKILL.md を読み込む"
+        AppLanguage.KOREAN -> "SKILL.md 가져오기"
+    }
+
+    val agentSkillsEmpty: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "暂无技能"
+        AppLanguage.ENGLISH -> "No skills"
+        AppLanguage.ARABIC -> "لا توجد مهارات"
+        AppLanguage.PORTUGUESE -> "Nenhuma habilidade"
+        AppLanguage.SPANISH -> "No hay habilidades"
+        AppLanguage.FRENCH -> "Aucune compétence"
+        AppLanguage.GERMAN -> "Keine Skills"
+        AppLanguage.RUSSIAN -> "Нет навыков"
+        AppLanguage.JAPANESE -> "スキルがありません"
+        AppLanguage.KOREAN -> "스킬이 없습니다"
+    }
+
+    val agentSkillImportFailed: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "导入失败。请选择不超过 24 KB 的 UTF-8 Markdown 文件。"
+        AppLanguage.ENGLISH -> "Import failed. Choose a UTF-8 Markdown file up to 24 KB."
+        AppLanguage.ARABIC -> "تعذر الاستيراد. اختر ملف Markdown بترميز UTF-8 لا يتجاوز 24 كيلوبايت."
+        AppLanguage.PORTUGUESE -> "Falha ao importar. Escolha um arquivo Markdown em UTF-8 de até 24 KB."
+        AppLanguage.SPANISH -> "No se pudo importar. Elige un archivo Markdown UTF-8 de hasta 24 KB."
+        AppLanguage.FRENCH -> "Échec de l’import. Choisissez un fichier Markdown UTF-8 de 24 Ko maximum."
+        AppLanguage.GERMAN -> "Import fehlgeschlagen. Wähle eine UTF-8-Markdown-Datei mit höchstens 24 KB."
+        AppLanguage.RUSSIAN -> "Не удалось импортировать. Выберите файл Markdown в UTF-8 размером до 24 КБ."
+        AppLanguage.JAPANESE -> "読み込めませんでした。24 KB 以下の UTF-8 Markdown ファイルを選んでください。"
+        AppLanguage.KOREAN -> "가져오지 못했습니다. 24KB 이하의 UTF-8 Markdown 파일을 선택하세요."
+    }
+
+    val agentSkillBudgetExceeded: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "所选技能超过 32 KB。请先取消选中部分技能。"
+        AppLanguage.ENGLISH -> "Selected skills exceed 32 KB. Deselect a skill first."
+        AppLanguage.ARABIC -> "تتجاوز المهارات المحددة 32 كيلوبايت. ألغِ تحديد إحدى المهارات أولًا."
+        AppLanguage.PORTUGUESE -> "Os skills selecionados excedem 32 KB. Desmarque um skill primeiro."
+        AppLanguage.SPANISH -> "Las habilidades seleccionadas superan 32 KB. Deselecciona una primero."
+        AppLanguage.FRENCH -> "Les compétences sélectionnées dépassent 32 Ko. Désélectionnez-en une."
+        AppLanguage.GERMAN -> "Die ausgewählten Skills überschreiten 32 KB. Wähle zuerst eine ab."
+        AppLanguage.RUSSIAN -> "Размер выбранных навыков превышает 32 КБ. Снимите выбор с одного навыка."
+        AppLanguage.JAPANESE -> "選んだスキルが 32 KB を超えています。いずれかの選択を解除してください。"
+        AppLanguage.KOREAN -> "선택한 스킬이 32KB를 초과합니다. 먼저 스킬 하나를 선택 해제하세요."
+    }
+
+    val agentToolsTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "工具与 MCP"
+        AppLanguage.ENGLISH -> "Tools & MCP"
+        AppLanguage.ARABIC -> "الأدوات وMCP"
+        AppLanguage.PORTUGUESE -> "Ferramentas e MCP"
+        AppLanguage.SPANISH -> "Herramientas y MCP"
+        AppLanguage.FRENCH -> "Outils et MCP"
+        AppLanguage.GERMAN -> "Werkzeuge und MCP"
+        AppLanguage.RUSSIAN -> "Инструменты и MCP"
+        AppLanguage.JAPANESE -> "ツールと MCP"
+        AppLanguage.KOREAN -> "도구 및 MCP"
+    }
+
+    val agentToolReadOnly: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "只读"
+        AppLanguage.ENGLISH -> "Read-only"
+        AppLanguage.ARABIC -> "للقراءة فقط"
+        AppLanguage.PORTUGUESE -> "Somente leitura"
+        AppLanguage.SPANISH -> "Solo lectura"
+        AppLanguage.FRENCH -> "Lecture seule"
+        AppLanguage.GERMAN -> "Schreibgeschützt"
+        AppLanguage.RUSSIAN -> "Только чтение"
+        AppLanguage.JAPANESE -> "読み取り専用"
+        AppLanguage.KOREAN -> "읽기 전용"
+    }
+
+    val agentToolPermissionChecked: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "受权限控制"
+        AppLanguage.ENGLISH -> "Permission checked"
+        AppLanguage.ARABIC -> "خاضعة للأذونات"
+        AppLanguage.PORTUGUESE -> "Sujeita a permissões"
+        AppLanguage.SPANISH -> "Sujeta a permisos"
+        AppLanguage.FRENCH -> "Soumis aux autorisations"
+        AppLanguage.GERMAN -> "Berechtigungsprüfung"
+        AppLanguage.RUSSIAN -> "Проверка разрешений"
+        AppLanguage.JAPANESE -> "権限確認あり"
+        AppLanguage.KOREAN -> "권한 확인 필요"
+    }
+
+    val agentContextReferencesHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "发送所选项目的索引和技能指引，源码由 Agent 按需读取。"
+        AppLanguage.ENGLISH -> "Sends selected item references and skill guidance. The Agent reads source files as needed."
+        AppLanguage.ARABIC -> "يرسل مراجع العناصر المحددة وإرشادات المهارات. يقرأ الـAgent ملفات المصدر عند الحاجة."
+        AppLanguage.PORTUGUESE -> "Envia referências dos itens e instruções dos skills. O Agent lê o código-fonte quando necessário."
+        AppLanguage.SPANISH -> "Envía referencias y guías de habilidades. El Agent lee el código fuente cuando lo necesita."
+        AppLanguage.FRENCH -> "Envoie les références et les consignes des compétences. L’Agent lit le code source si nécessaire."
+        AppLanguage.GERMAN -> "Sendet Verweise und Skill-Anweisungen. Der Agent liest Quelldateien bei Bedarf."
+        AppLanguage.RUSSIAN -> "Передаёт ссылки на выбранные объекты и указания навыков. Агент читает исходники по необходимости."
+        AppLanguage.JAPANESE -> "選択項目の参照とスキルの指示を送信します。ソースは必要に応じて読み込みます。"
+        AppLanguage.KOREAN -> "선택한 항목의 참조와 스킬 지침을 보냅니다. 에이전트가 필요할 때 소스를 읽습니다."
+    }
+
+    val agentSkillRemoveConfirm: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "从技能库移除此技能？"
+        AppLanguage.ENGLISH -> "Remove this skill from the library?"
+        AppLanguage.ARABIC -> "هل تريد إزالة هذه المهارة من المكتبة؟"
+        AppLanguage.PORTUGUESE -> "Remover este skill da biblioteca?"
+        AppLanguage.SPANISH -> "¿Quitar esta habilidad de la biblioteca?"
+        AppLanguage.FRENCH -> "Retirer cette compétence de la bibliothèque ?"
+        AppLanguage.GERMAN -> "Diese Skill aus der Bibliothek entfernen?"
+        AppLanguage.RUSSIAN -> "Удалить этот навык из библиотеки?"
+        AppLanguage.JAPANESE -> "このスキルをライブラリから削除しますか？"
+        AppLanguage.KOREAN -> "라이브러리에서 이 스킬을 삭제할까요?"
+    }
+
     val agentContextChipLabel: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "上下文"
         AppLanguage.ENGLISH -> "Context"

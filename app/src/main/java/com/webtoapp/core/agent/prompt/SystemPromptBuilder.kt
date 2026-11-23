@@ -6,7 +6,6 @@ import com.webtoapp.core.agent.prompt.sections.IdentitySection
 import com.webtoapp.core.agent.prompt.sections.PlanModeSection
 import com.webtoapp.core.agent.prompt.sections.ProjectFilesSection
 import com.webtoapp.core.agent.prompt.sections.ToolUsageSection
-import com.webtoapp.core.agent.tool.Tool
 import com.webtoapp.core.i18n.AppLanguage
 
 object SystemPromptBuilder {
@@ -15,7 +14,6 @@ object SystemPromptBuilder {
         val language: AppLanguage,
         val modelName: String,
         val sessionDir: String,
-        val tools: List<Tool>,
         val projectFiles: List<ProjectFilesSection.FileSummary>,
 
         val planMode: PlanMode? = null,
@@ -33,11 +31,11 @@ object SystemPromptBuilder {
         val sections = buildList {
             add(IdentitySection.build(lang))
             add(BehaviorSection.build(lang))
-            add(ToolUsageSection.build(lang, input.tools))
+            add(ToolUsageSection.build(lang))
             add(EnvironmentSection.build(lang, input.modelName, input.sessionDir))
-            if (input.selectedContext.isNotBlank()) add(input.selectedContext)
             add(ProjectFilesSection.build(lang, input.projectFiles))
             input.planMode?.let { add(PlanModeSection.build(lang, it.planFilePath, it.planExists)) }
+            if (input.selectedContext.isNotBlank()) add(input.selectedContext)
         }
         return sections
             .filter { it.isNotBlank() }

@@ -34,13 +34,16 @@ import com.webtoapp.core.agent.session.PersistedApk
 import com.webtoapp.core.agent.todo.TodoManager
 import com.webtoapp.core.agent.tool.ToolContext
 import com.webtoapp.core.agent.tool.BuiltApkInfo
-import com.webtoapp.core.agent.tool.ToolRegistry
 import com.webtoapp.core.agent.tool.ToolRegistryFactory
 import com.webtoapp.core.agent.prompt.SystemPromptBuilder
+import com.webtoapp.core.agent.prompt.SelectedContextSection
+import com.webtoapp.core.agent.prompt.toPromptLang
+import com.webtoapp.core.agent.skill.AgentSkillLibrary
+import com.webtoapp.core.agent.mcp.HostMcpController
+import com.webtoapp.core.host.HostRuntimePrefs
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.data.model.AiFeature
-import com.webtoapp.data.model.toManifestJson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -59,6 +62,7 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
     private val ctx: Context = application
     private val files = ProjectFileManager(ctx)
     private val sessionStore = SessionStore(ctx, files)
+    private val skillLibrary = AgentSkillLibrary(ctx.filesDir.resolve("agent_skills"))
     private val configManager = AiConfigManager(ctx)
     private val todoManager = TodoManager()
 
@@ -145,6 +149,7 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         bindService()
         observeAutoApprovePref()
         observeCurrentModel()
+        viewModelScope.launch { refreshSkills() }
     }
 
     private fun observeAutoApprovePref() {
@@ -169,7 +174,13 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
                 val label = model?.alias?.takeIf { it.isNotBlank() }
                     ?: model?.model?.name
                     ?: Strings.agentModelChipLabel
-                _ui.update { it.copy(currentModelLabel = label, modelMissing = model == null) }
+                _ui.update {
+                    it.copy(
+                        currentModelLabel = label,
+                        modelMissing = model == null,
+                        contextCapacity = model?.effectiveContextLength ?: 0
+                    )
+                }
             }
         }
     }
@@ -803,47 +814,49 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun compactNow() {
-        val session = _ui.value.currentSession ?: return
-        val service = service ?: run {
+        val current = _ui.value
+        if (!current.canSend) return
+        val session = current.currentSession ?: return
+        val gateway = service?.gateway ?: run {
             _ui.update { it.copy(error = Strings.agentServiceNotConnected) }
             return
         }
-        val gateway = service.gateway
+        _ui.update { it.copy(compacting = true) }
         viewModelScope.launch {
-            val models = configManager.savedModelsFlow.first()
-            val keys = configManager.apiKeysFlow.first()
-            val textModel = resolveTextModel(models)
-            val textKey = textModel?.let { m -> keys.firstOrNull { it.id == m.apiKeyId } }
-            if (textModel == null || textKey == null) {
-                _ui.update { it.copy(error = Strings.agentMissingTextModel) }
-                return@launch
-            }
-
-            _ui.update { it.copy(compacting = true, info = Strings.agentCompacting) }
-            val svc = compactService ?: CompactService(gateway).also { compactService = it }
-            val result = svc.compact(session.id, session.messages, textModel, textKey, peerKeys(textKey, keys))
-            if (result.didCompact) {
-                sessionStore.replaceMessages(session.id, result.messages)
-                _ui.update {
-                    it.copy(
-                        compacting = false,
-                        info = Strings.agentCompactedManual.format(
-                            session.messages.size,
-                            result.messages.size
-                        ),
-                        estimatedContextTokens = svc.estimateTokens(result.messages),
-                        contextCapacity = textModel.effectiveContextLength
-                    )
+            try {
+                val snapshot = sessionStore.get(session.id) ?: return@launch
+                val textModel = resolveTextModel(configManager.savedModelsFlow.first())
+                val keys = configManager.apiKeysFlow.first()
+                val textKey = textModel?.let { m -> keys.firstOrNull { it.id == m.apiKeyId } }
+                if (textModel == null || textKey == null) {
+                    _ui.update { it.copy(error = Strings.agentMissingTextModel) }
+                    return@launch
                 }
-            } else {
-                _ui.update { it.copy(compacting = false, info = Strings.agentCompactSkipped.format(result.reason)) }
+
+                val svc = compactService ?: CompactService(gateway).also { compactService = it }
+                val result = svc.compact(snapshot.id, snapshot.messages, textModel, textKey, peerKeys(textKey, keys))
+                if (result.didCompact) {
+                    val saved = sessionStore.replaceMessages(snapshot.id, result.messages, expectedMessages = snapshot.messages)
+                    if (saved != null) {
+                        _ui.update {
+                            if (it.currentSession?.id != snapshot.id) it else it.copy(
+                                info = Strings.agentCompactedManual.format(snapshot.messages.size, saved.messages.size),
+                                estimatedContextTokens = svc.estimateTokens(saved.messages)
+                            )
+                        }
+                    }
+                } else if (_ui.value.currentSession?.id == snapshot.id) {
+                    _ui.update { it.copy(info = Strings.agentCompactSkipped.format(result.reason)) }
+                }
+            } finally {
+                _ui.update { it.copy(compacting = false) }
             }
         }
     }
 
     fun send() {
         val current = _ui.value
-        if (current.phase != AgentUiState.Phase.Idle) return
+        if (!current.canSend) return
         val rawMessage = current.composerText.trim()
         if (rawMessage.isEmpty() && current.pendingAttachments.isEmpty()) return
 
@@ -1085,26 +1098,33 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         }
 
     fun openContextPicker() {
+        if (_ui.value.contextPickerOpen) return
+        _ui.update { it.copy(contextPickerOpen = true, contextLoading = true) }
         viewModelScope.launch {
-            val session = ensureActiveSession() ?: return@launch
-            val apps = webAppRepository.allWebApps.first()
-                .map { ContextAppItem(it.id, it.name, it.appType.name, it.categoryId) }
-            val categories = categoryRepository.allCategories.first()
-                .sortedBy { it.sortOrder }
-                .map { ContextCategoryItem(it.id, it.name, it.icon) }
-            val store = com.webtoapp.core.plugin.PluginStore.getInstance(ctx)
-            store.awaitLoaded()
-            val modules = store.getAllPlugins()
-                .map { ContextModuleItem(it.id, it.name, it.kind.name) }
-            _ui.update {
-                it.copy(
-                    contextPickerOpen = true,
-                    availableContextApps = apps,
-                    availableContextModules = modules,
-                    availableCategories = categories,
-                    contextAppIds = session.config.contextAppIdsSafe,
-                    contextModuleIds = session.config.contextModuleIdsSafe
-                )
+            try {
+                ensureActiveSession()
+                val apps = webAppRepository.allWebApps.first()
+                    .map { ContextAppItem(it.id, it.name, it.appType.name, it.categoryId) }
+                val categories = categoryRepository.allCategories.first().sortedBy { it.sortOrder }
+                    .map { ContextCategoryItem(it.id, it.name, it.icon) }
+                val store = com.webtoapp.core.plugin.PluginStore.getInstance(ctx)
+                store.awaitLoaded()
+                val modules = store.getAllPlugins().map { ContextModuleItem(it.id, it.name, it.kind.name) }
+                _ui.update {
+                    it.copy(
+                        availableContextApps = apps,
+                        availableContextModules = modules,
+                        availableCategories = categories
+                    )
+                }
+                refreshSkills()
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                AppLogger.w("AgentViewModel", "Context picker load failed: ${e.javaClass.simpleName}")
+                _ui.update { it.copy(error = Strings.loadFailed) }
+            } finally {
+                _ui.update { it.copy(contextLoading = false) }
             }
         }
     }
@@ -1113,59 +1133,106 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         _ui.update { it.copy(contextPickerOpen = false) }
     }
 
-    fun toggleContextApp(id: Long) {
-        val sid = _ui.value.currentSession?.id ?: return
-        viewModelScope.launch {
-            val newIds = _ui.value.contextAppIds.let { if (id in it) it - id else it + id }
-            _ui.update { it.copy(contextAppIds = newIds) }
-            val session = sessionStore.get(sid) ?: return@launch
-            sessionStore.updateConfig(sid, session.config.copy(contextAppIds = newIds))
+    fun toggleContextApp(id: Long) = updateContextConfig { config ->
+        config.copy(contextAppIds = withToggledItem(config.contextAppIdsSafe, id))
+    }
+
+    fun toggleContextModule(id: String) = updateContextConfig { config ->
+        config.copy(contextModuleIds = withToggledItem(config.contextModuleIdsSafe, id))
+    }
+
+    fun toggleContextSkill(id: String) = updateContextConfig { config ->
+        val ids = withToggledItem(config.skillIdsSafe, id)
+        val skills = _ui.value.availableSkills
+        if (id in ids && skills.filter { it.id in ids }.sumOf { it.bytes } > AgentSkillLibrary.maxSelectedBytes) {
+            _ui.update { it.copy(error = Strings.agentSkillBudgetExceeded) }
+            config
+        } else {
+            config.copy(skillIds = ids)
         }
     }
 
-    fun toggleContextModule(id: String) {
+    private fun updateContextConfig(transform: (SessionConfig) -> SessionConfig) {
         val sid = _ui.value.currentSession?.id ?: return
+        viewModelScope.launch { sessionStore.updateConfig(sid, transform) }
+    }
+
+    private fun <T> withToggledItem(ids: List<T>, id: T): List<T> =
+        if (id in ids) ids - id else ids + id
+
+    fun importSkill(uri: Uri) {
+        if (_ui.value.importingSkill) return
+        _ui.update { it.copy(importingSkill = true) }
         viewModelScope.launch {
-            val newIds = _ui.value.contextModuleIds.let { if (id in it) it - id else it + id }
-            _ui.update { it.copy(contextModuleIds = newIds) }
-            val session = sessionStore.get(sid) ?: return@launch
-            sessionStore.updateConfig(sid, session.config.copy(contextModuleIds = newIds))
+            try {
+                withContext(Dispatchers.IO) {
+                    val name = DocumentFile.fromSingleUri(ctx, uri)?.name ?: "SKILL.md"
+                    val input = requireNotNull(ctx.contentResolver.openInputStream(uri))
+                    input.use { skillLibrary.import(it, name) }
+                }
+                refreshSkills()
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                AppLogger.w("AgentViewModel", "Skill import failed: ${e.javaClass.simpleName}")
+                _ui.update { it.copy(error = Strings.agentSkillImportFailed) }
+            } finally {
+                _ui.update { it.copy(importingSkill = false) }
+            }
+        }
+    }
+
+    fun removeSkill(id: String) {
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) { skillLibrary.remove(id) }
+            sessionStore.removeSkillReferences(id)
+            refreshSkills()
+        }
+    }
+
+    private suspend fun refreshSkills() {
+        val skills = withContext(Dispatchers.IO) {
+            skillLibrary.list().map { ContextSkillItem(it.id, it.name, it.description, it.sizeBytes) }
+        }
+        _ui.update { it.copy(availableSkills = skills) }
+    }
+
+    fun setLocalMcpEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            HostRuntimePrefs.getInstance(ctx).setMcpEnabled(enabled)
+            HostMcpController.apply(ctx)
+        }
+    }
+
+    suspend fun toolCatalog(): List<AgentToolItem> {
+        val session = _ui.value.currentSession ?: return emptyList()
+        val factory = registryFactory ?: run {
+            val checker = service?.permissionChecker ?: return emptyList()
+            ToolRegistryFactory(PlanManager(session.id, files, checker), imageRegistry)
+        }
+        val imageModelId = session.config.imageModelId
+        val hasImageModel = imageModelId != null && configManager.savedModelsFlow.first().any { it.id == imageModelId }
+        return factory.build(hasImageModel).all.sortedBy { it.name }.map {
+            AgentToolItem(it.name, it.description.lineSequence().first().trim(), it.isReadOnly())
         }
     }
 
     private suspend fun buildSelectedContext(config: SessionConfig): String {
-        if (config.contextAppIdsSafe.isEmpty() && config.contextModuleIdsSafe.isEmpty()) return ""
-        val sb = StringBuilder()
-        sb.appendLine("# Selected apps & modules (current context)")
-        sb.appendLine("The user selected these as the working context. Use GetApp/UpdateApp and GetModule/UpdateModule with these ids to inspect or edit them.")
-        if (config.contextAppIdsSafe.isNotEmpty()) {
-            sb.appendLine()
-            sb.appendLine("## Apps")
-            config.contextAppIdsSafe.forEach { id ->
-                val app = webAppRepository.getWebApp(id) ?: return@forEach
-                sb.appendLine()
-                sb.appendLine("### App id=${app.id} name=\"${app.name}\" type=${app.appType}")
-                sb.appendLine(app.toManifestJson())
-            }
+        val apps = config.contextAppIdsSafe.distinct().mapNotNull { id ->
+            val app = webAppRepository.getWebApp(id) ?: return@mapNotNull null
+            SelectedContextSection.Reference(app.id.toString(), app.name, app.appType.name)
         }
-        if (config.contextModuleIdsSafe.isNotEmpty()) {
+        val modules = if (config.contextModuleIdsSafe.isEmpty()) emptyList() else {
             val store = com.webtoapp.core.plugin.PluginStore.getInstance(ctx)
             store.awaitLoaded()
-            sb.appendLine()
-            sb.appendLine("## Plugins")
-            config.contextModuleIdsSafe.forEach { id ->
-                val plugin = store.getPlugin(id) ?: return@forEach
-                sb.appendLine()
-                sb.appendLine("### Plugin id=${plugin.id} name=\"${plugin.name}\" kind=${plugin.kind}")
-                sb.appendLine(com.webtoapp.util.GsonProvider.gson.toJson(plugin))
-                val files = store.readPackageFiles(plugin.id)
-                files.forEach { (rel, content) ->
-                    sb.appendLine("--- $rel ---")
-                    sb.appendLine(content)
-                }
+            store.getPluginsByIds(config.contextModuleIdsSafe.distinct()).map { plugin ->
+                SelectedContextSection.Reference(plugin.id, plugin.name, plugin.kind.name)
             }
         }
-        return sb.toString().trimEnd()
+        val skills = if (config.skillIdsSafe.isEmpty()) emptyList() else withContext(Dispatchers.IO) {
+            skillLibrary.selected(config.skillIdsSafe)
+        }
+        return SelectedContextSection.build(Strings.currentLanguage.value.toPromptLang(), apps, modules, skills)
     }
 
     fun deleteFromMessage(messageId: String) {
@@ -1255,13 +1322,15 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         }
         val registry = factory.build(hasImageModel = imageModel != null)
 
-        val projectSummary = files.listAll(session.id).take(40).map { f ->
-            val lines = if (f.isText) files.countLines(session.id, f.relativePath) else -1
-            com.webtoapp.core.agent.prompt.sections.ProjectFilesSection.FileSummary(
-                f.relativePath,
-                lines,
-                f.sizeBytes
-            )
+        val projectSummary = withContext(Dispatchers.IO) {
+            files.listAll(session.id).take(40).map { f ->
+                val lines = if (f.isText) files.countLines(session.id, f.relativePath) else -1
+                com.webtoapp.core.agent.prompt.sections.ProjectFilesSection.FileSummary(
+                    f.relativePath,
+                    lines,
+                    f.sizeBytes
+                )
+            }
         }
 
         val planState = plan.state.value
@@ -1276,7 +1345,7 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         val selectedContext = buildSelectedContext(session.config)
 
         val modelName = textModel.alias?.takeIf { it.isNotBlank() } ?: textModel.model.name
-        var parts = buildRequestParts(session, prompt, modelName, sessionRoot, selectedContext, projectSummary, planMode, registry)
+        var parts = buildRequestParts(session, prompt, modelName, sessionRoot, selectedContext, projectSummary, planMode)
         var requestTokens = compactSvc.estimateRequestTokens(
             parts.systemPrompt, parts.history, parts.userMessage, registry.all
         )
@@ -1286,7 +1355,7 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
             if (result.didCompact) {
                 sessionStore.replaceMessages(session.id, result.messages)
                 val compacted = sessionStore.get(session.id) ?: session
-                parts = buildRequestParts(compacted, prompt, modelName, sessionRoot, selectedContext, projectSummary, planMode, registry)
+                parts = buildRequestParts(compacted, prompt, modelName, sessionRoot, selectedContext, projectSummary, planMode)
                 requestTokens = compactSvc.estimateRequestTokens(
                     parts.systemPrompt, parts.history, parts.userMessage, registry.all
                 )
@@ -1387,15 +1456,13 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         sessionRoot: String,
         selectedContext: String,
         projectSummary: List<com.webtoapp.core.agent.prompt.sections.ProjectFilesSection.FileSummary>,
-        planMode: SystemPromptBuilder.PlanMode?,
-        registry: ToolRegistry
+        planMode: SystemPromptBuilder.PlanMode?
     ): OutgoingRequest {
         val systemPrompt = SystemPromptBuilder.build(
             SystemPromptBuilder.Input(
                 language = Strings.currentLanguage.value,
                 modelName = modelName,
                 sessionDir = sessionRoot,
-                tools = registry.all,
                 projectFiles = projectSummary,
 
                 planMode = planMode,
@@ -1568,7 +1635,9 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
                     it.copy(
                         sessions = all,
                         currentSession = current,
-                        projectFiles = current?.let { c -> files.listAll(c.id) }.orEmpty()
+                        estimatedContextTokens = if (it.currentSession?.id == current?.id) it.estimatedContextTokens else 0,
+                        projectFiles = if (it.currentSession?.id == current?.id) it.projectFiles
+                            else current?.let { c -> files.listAll(c.id) }.orEmpty()
                     )
                 }
             }
@@ -1851,9 +1920,7 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
                 }
                 val sid0 = sid
                 viewModelScope.launch {
-                    val session = sessionStore.get(sid0) ?: return@launch
-                    val existing = session.config.builtApksSafe.filterNot { it.appId == ev.info.appId }
-                    val updated = existing + PersistedApk(
+                    val apk = PersistedApk(
                         appId = ev.info.appId,
                         apkName = ev.info.apkName,
                         apkPath = ev.info.apkPath,
@@ -1862,7 +1929,9 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
                         packageName = ev.info.packageName,
                         versionName = ev.info.versionName
                     )
-                    sessionStore.updateConfig(sid0, session.config.copy(builtApks = updated))
+                    sessionStore.updateConfig(sid0) { config ->
+                        config.copy(builtApks = config.builtApksSafe.filterNot { it.appId == apk.appId } + apk)
+                    }
                 }
             }
             is AgentEvent.PermissionDenied -> {
@@ -2135,6 +2204,7 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         _ui.update {
             it.copy(
                 currentSession = session,
+                estimatedContextTokens = if (sessionChanged) 0 else it.estimatedContextTokens,
                 planActive = if (sessionChanged) false else it.planActive,
                 planFilePath = if (sessionChanged) null else it.planFilePath,
                 projectFiles = files.listAll(session.id),

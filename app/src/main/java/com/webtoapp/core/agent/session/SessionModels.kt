@@ -29,7 +29,8 @@ data class SessionConfig(
     val contextAppIds: List<Long> = emptyList(),
     val contextModuleIds: List<String> = emptyList(),
 
-    val builtApks: List<PersistedApk> = emptyList()
+    val builtApks: List<PersistedApk> = emptyList(),
+    val skillIds: List<String> = emptyList()
 ) {
     val builtApksSafe: List<PersistedApk>
         get() = @Suppress("USELESS_CAST") (builtApks as? List<PersistedApk>) ?: emptyList()
@@ -39,6 +40,9 @@ data class SessionConfig(
 
     val contextModuleIdsSafe: List<String>
         get() = @Suppress("USELESS_CAST") (contextModuleIds as? List<String>) ?: emptyList()
+
+    val skillIdsSafe: List<String>
+        get() = @Suppress("USELESS_CAST") (skillIds as? List<String>) ?: emptyList()
 }
 
 data class PersistedApk(
