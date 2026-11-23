@@ -6,12 +6,19 @@ import android.net.Uri
 import android.util.Base64
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
+import com.webtoapp.core.agent.llm.ChatRequest
+import com.webtoapp.core.agent.llm.DefaultLlmGateway
+import com.webtoapp.core.agent.llm.HttpHelpers
+import com.webtoapp.core.agent.llm.LlmEvent
+import com.webtoapp.core.agent.llm.LlmMessage
 import com.webtoapp.data.model.*
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.core.network.NetworkModule
 import okhttp3.*
@@ -52,7 +59,6 @@ class AiApiClient(private val context: Context) {
 
             val modelsEndpoint = apiKey.getEffectiveModelsEndpoint()
             val fullUrl = buildApiUrl(baseUrl, modelsEndpoint)
-            // The key travels in a header now, so the URL is safe to log as-is.
             AppLogger.i("AiApiClient", "Testing API connection: provider=${apiKey.provider.name}, url=$fullUrl")
 
             val request = when (apiKey.provider) {
@@ -121,15 +127,15 @@ class AiApiClient(private val context: Context) {
         }
     }
 
-    // Per-model probe: one real chat request against the saved model id.
-    // Unlike testConnection (models endpoint only), this also catches wrong
-    // model ids, missing access, and provider-side model outages.
     suspend fun testModel(apiKey: ApiKeyConfig, model: AiModel): Result<String> = withContext(Dispatchers.IO) {
         try {
             val baseUrl = when {
                 !apiKey.baseUrl.isNullOrBlank() -> apiKey.baseUrl.trimEnd('/')
                 apiKey.provider.baseUrl.isNotBlank() -> apiKey.provider.baseUrl.trimEnd('/')
                 else -> return@withContext Result.failure(Exception(Strings.aiApiNotConfiguredDetail))
+            }
+            if (OpenCodeGo.isInferenceUrl(HttpHelpers.chatUrl(apiKey))) {
+                return@withContext testOpenCodeGoModel(apiKey, model)
             }
             val probe = listOf(mapOf("role" to "user", "content" to "Hi"))
             AppLogger.i("AiApiClient", "Testing model: provider=${apiKey.provider.name}, model=${model.id}")
@@ -142,10 +148,34 @@ class AiApiClient(private val context: Context) {
                 AiProvider.OLLAMA -> chatWithOllama(baseUrl, apiKey.apiKey, model.id, probe, 0.7f)
                 else -> probeOpenAICompatible(baseUrl, apiKey, model.id, probe)
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             AppLogger.e("AiApiClient", "Model test EXCEPTION: ${e.message}", e)
             Result.failure(e)
         }
+    }
+
+    private suspend fun testOpenCodeGoModel(apiKey: ApiKeyConfig, model: AiModel): Result<String> {
+        val text = withTimeoutOrNull(45_000L) {
+            val request = ChatRequest(
+                apiKey = apiKey,
+                model = model,
+                messages = listOf(LlmMessage(LlmMessage.Role.USER, "Hi")),
+                useTools = false
+            )
+            val response = StringBuilder()
+            DefaultLlmGateway.create(context).chatStream(request).collect { event ->
+                when (event) {
+                    is LlmEvent.TextDelta -> response.append(event.delta)
+                    is LlmEvent.Error -> throw IOException(event.message)
+                    else -> Unit
+                }
+            }
+            response.toString()
+        } ?: return Result.failure(IOException(Strings.aiRequestTimeout))
+        return if (text.isNotBlank()) Result.success(text)
+        else Result.failure(IOException(Strings.aiCannotParseResponse))
     }
 
     suspend fun fetchModels(apiKey: ApiKeyConfig): Result<List<AiModel>> = withContext(Dispatchers.IO) {
@@ -411,9 +441,6 @@ class AiApiClient(private val context: Context) {
             return listOf(ModelCapability.IMAGE_GENERATION)
         }
 
-        // Matched on the family prefix rather than individual generations, so a
-        // new major version does not silently lose capabilities. Listing
-        // "claude-3"/"claude-4" used to drop Claude 5 back to text-only.
         if (id.contains("vision") || id.contains("gpt-4o") || id.contains("gpt-5") ||
             id.contains("gemini") || id.contains("claude-") ||
             id.contains("pixtral") || id.contains("mistral-large") ||
@@ -453,8 +480,6 @@ class AiApiClient(private val context: Context) {
             id.contains("gpt-3.5") -> 16000
             id.contains("o1") || id.contains("o3") || id.contains("o4") -> 200000
 
-            // Family-prefixed so a new generation inherits the floor instead of
-            // falling through to the 8192 default and truncating every prompt.
             id.contains("claude-") -> 200000
 
             id.contains("gemini-1.5") || id.contains("gemini-2") || id.contains("gemini-3") -> 1000000
@@ -471,8 +496,6 @@ class AiApiClient(private val context: Context) {
             id.contains("jamba-1.5") -> 256000
             id.contains("jamba") -> 256000
 
-            // Grok 4 ships a longer window than this; 128k is a deliberate floor
-            // because the registry is the authoritative source when it is reachable.
             id.contains("grok-4") || id.contains("grok-3") || id.contains("grok-2") -> 131072
             id.contains("grok") -> 8192
 
@@ -481,9 +504,6 @@ class AiApiClient(private val context: Context) {
             id.contains("qwen-long") || id.contains("qwen-turbo") -> 1000000
             id.contains("qwen2.5") || id.contains("qwen3") -> 131072
             id.contains("qwen") -> 32000
-            // Zhipu is absent from the models.dev catalogue, so GLM models always
-            // land on these fallbacks — getting GLM-5 wrong truncated a 200k
-            // window down to 8192.
             id.contains("glm-5") -> 200000
             id.contains("glm-4") -> 128000
             id.contains("glm") -> 8192
@@ -1043,10 +1063,6 @@ class AiApiClient(private val context: Context) {
         }
     }
 
-    // Minimal chat probe for the model test: no temperature/max_tokens, because
-    // reasoning models (o1, gpt-5, …) reject those fields and would fail the
-    // test even though the model is reachable. Honors customChatEndpoint, which
-    // chatWithOpenAICompatible does not.
     private fun probeOpenAICompatible(
         baseUrl: String,
         apiKey: ApiKeyConfig,
@@ -1073,8 +1089,6 @@ class AiApiClient(private val context: Context) {
             .post(gson.toJson(body).toRequestBody("application/json".toMediaType()))
             .build()
 
-        // Cap the wait: streamingClient's 10-minute read timeout is a bad fit
-        // for a manual connectivity probe.
         val probeClient = client.newBuilder().callTimeout(45, TimeUnit.SECONDS).build()
         val response = probeClient.newCall(request).execute()
         val responseBody = response.body?.string() ?: ""

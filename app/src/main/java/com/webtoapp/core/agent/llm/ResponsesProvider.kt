@@ -5,7 +5,6 @@ import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import com.webtoapp.core.logging.AppLogger
-import com.webtoapp.core.network.NetworkModule
 import com.webtoapp.data.model.ApiFormat
 import com.webtoapp.data.model.AiProvider
 import com.webtoapp.util.GsonProvider
@@ -17,15 +16,9 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.IOException
 
-/**
- * OpenAI Responses API (/responses) streaming provider. Selected when a CUSTOM
- * endpoint declares [ApiFormat.OPENAI_RESPONSES]; the named providers all speak
- * Chat Completions and never route here.
- */
 internal class ResponsesProvider(@Suppress("UNUSED_PARAMETER") context: Context) : LlmProvider {
     private val gson = GsonProvider.gson
     private val sse = SseParser()
-    private val client get() = NetworkModule.streamingClient
 
     override fun supports(provider: AiProvider) = false
 
@@ -34,12 +27,8 @@ internal class ResponsesProvider(@Suppress("UNUSED_PARAMETER") context: Context)
 
     override fun chatStream(req: ChatRequest): Flow<LlmEvent> = callbackFlow {
         trySend(LlmEvent.Started)
-        val url = HttpHelpers.joinUrl(HttpHelpers.baseUrl(req.apiKey), req.apiKey.getEffectiveChatEndpoint())
         val body = buildBody(req)
-        val builder = Request.Builder().url(url).header("Content-Type", "application/json")
-            .post(gson.toJson(body).toRequestBody("application/json".toMediaType()))
-        HttpHelpers.applyAuth(builder, req.apiKey)
-        val call = client.newCall(builder.build())
+        val call = HttpHelpers.newChatCall(req, gson.toJson(body).toRequestBody("application/json".toMediaType()))
         call.enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
                 trySend(LlmEvent.Error(e.message ?: "Network error")); close()
@@ -53,7 +42,6 @@ internal class ResponsesProvider(@Suppress("UNUSED_PARAMETER") context: Context)
                 }
                 try {
                     val source = response.body?.source() ?: run { trySend(LlmEvent.Error("Empty response body")); close(); return }
-                    // callId -> accumulated function arguments
                     val toolArgs = LinkedHashMap<String, StringBuilder>()
                     val toolNames = LinkedHashMap<String, String>()
                     var finishReason = FinishReason.STOP
@@ -94,7 +82,6 @@ internal class ResponsesProvider(@Suppress("UNUSED_PARAMETER") context: Context)
                                             ?: item.get("id")?.asString ?: return@consume true
                                         val name = item.get("name")?.takeUnless { it.isJsonNull }?.asString
                                             ?: toolNames[id].orEmpty()
-                                        // Prefer the final assembled arguments from the done item.
                                         val finalArgs = item.get("arguments")?.takeUnless { it.isJsonNull }?.asString
                                             ?: toolArgs[id]?.toString().orEmpty()
                                         toolArgs[id] = StringBuilder(finalArgs)
@@ -142,7 +129,6 @@ internal class ResponsesProvider(@Suppress("UNUSED_PARAMETER") context: Context)
         names.forEach { (id, name) ->
             trySend(LlmEvent.ToolCallEnd(id, name, args[id]?.toString().orEmpty()))
         }
-        // Safety net: any function call that accumulated args without a recorded name.
         args.forEach { (id, argsBuilder) ->
             if (id !in names) trySend(LlmEvent.ToolCallEnd(id, "", argsBuilder.toString()))
         }

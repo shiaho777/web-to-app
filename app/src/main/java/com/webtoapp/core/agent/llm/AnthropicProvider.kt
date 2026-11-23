@@ -5,7 +5,6 @@ import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import com.webtoapp.core.agent.tool.ImageAttachment
-import com.webtoapp.core.network.NetworkModule
 import com.webtoapp.data.model.AiProvider
 import com.webtoapp.util.GsonProvider
 import kotlinx.coroutines.channels.awaitClose
@@ -17,17 +16,16 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.IOException
 
 internal class AnthropicProvider(@Suppress("UNUSED_PARAMETER") context: Context) : LlmProvider {
-    private val gson = GsonProvider.gson; private val sse = SseParser(); private val client get() = NetworkModule.streamingClient
+    private val gson = GsonProvider.gson
+    private val sse = SseParser()
     override fun supports(provider: AiProvider) = provider == AiProvider.ANTHROPIC
     override fun supports(req: ChatRequest): Boolean =
         req.apiKey.provider == AiProvider.ANTHROPIC ||
             (req.apiKey.provider == AiProvider.CUSTOM && req.apiKey.apiFormat == com.webtoapp.data.model.ApiFormat.ANTHROPIC)
     override fun chatStream(req: ChatRequest): Flow<LlmEvent> = callbackFlow {
-        val url = HttpHelpers.joinUrl(HttpHelpers.baseUrl(req.apiKey), req.apiKey.getEffectiveChatEndpoint())
         val body = buildBody(req)
-        val b = Request.Builder().url(url).header("Content-Type","application/json").post(gson.toJson(body).toRequestBody("application/json".toMediaType()))
-        HttpHelpers.applyAuth(b, req.apiKey); trySend(LlmEvent.Started)
-        val call = client.newCall(b.build())
+        val call = HttpHelpers.newChatCall(req, gson.toJson(body).toRequestBody("application/json".toMediaType()))
+        trySend(LlmEvent.Started)
         call.enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) { trySend(LlmEvent.Error(e.message?:"Network error")); close() }
             override fun onResponse(call: Call, response: Response) {
