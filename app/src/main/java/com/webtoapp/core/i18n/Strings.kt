@@ -1582,6 +1582,15 @@ object Strings {
     val agentNewSessionAlreadyEmpty: String get() = StringsB.agentNewSessionAlreadyEmpty
     val agentPreviewOpen: String get() = StringsB.agentPreviewOpen
     val agentPreviewClose: String get() = StringsB.agentPreviewClose
+    val agentToolCallCount: String get() = StringsB.agentToolCallCount
+    val agentToolReadFile: String get() = StringsB.agentToolReadFile
+    val agentToolWriteFile: String get() = StringsB.agentToolWriteFile
+    val agentToolEditFile: String get() = StringsB.agentToolEditFile
+    val agentToolDeleteFile: String get() = StringsB.agentToolDeleteFile
+    val agentToolFindFiles: String get() = StringsB.agentToolFindFiles
+    val agentToolSearchContent: String get() = StringsB.agentToolSearchContent
+    val agentToolListFiles: String get() = StringsB.agentToolListFiles
+    val agentToolSubmitPlan: String get() = StringsB.agentToolSubmitPlan
     val agentToolArgsLabel: String get() = StringsB.agentToolArgsLabel
     val agentToolResultLabel: String get() = StringsB.agentToolResultLabel
 

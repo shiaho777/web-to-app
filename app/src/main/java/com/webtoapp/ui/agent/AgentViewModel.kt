@@ -1741,8 +1741,9 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
                     toolCallId = ev.toolCallId,
                     name = ev.name,
                     argumentsJson = "",
-                    resultPreview = RecordedToolCall.RUNNING_SENTINEL,
-                    ok = true
+                    resultPreview = "",
+                    ok = true,
+                    status = RecordedToolCall.Status.Running
                 )
                 streamToolArgs.remove(ev.toolCallId)
                 _ui.update {
@@ -1793,7 +1794,8 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
                     resultPreview = ev.result.text.take(2000),
                     ok = !ev.result.isError,
                     activity = prev?.activity,
-                    thoughtSignature = ev.thoughtSignature ?: prev?.thoughtSignature
+                    thoughtSignature = ev.thoughtSignature ?: prev?.thoughtSignature,
+                    status = if (ev.result.isError) RecordedToolCall.Status.Failed else RecordedToolCall.Status.Completed
                 )
                 streamToolArgs.remove(ev.toolCallId)
                 lastToolUiPushAt = 0L

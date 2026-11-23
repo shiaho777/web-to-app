@@ -31,24 +31,16 @@ data class SessionConfig(
 
     val builtApks: List<PersistedApk> = emptyList()
 ) {
-    /** Null-safe: Gson bypasses the constructor so [builtApks] can be null for old sessions. */
     val builtApksSafe: List<PersistedApk>
         get() = @Suppress("USELESS_CAST") (builtApks as? List<PersistedApk>) ?: emptyList()
 
-    /** Null-safe: Gson bypasses the constructor so [contextAppIds] can be null for old sessions. */
     val contextAppIdsSafe: List<Long>
         get() = @Suppress("USELESS_CAST") (contextAppIds as? List<Long>) ?: emptyList()
 
-    /** Null-safe: Gson bypasses the constructor so [contextModuleIds] can be null for old sessions. */
     val contextModuleIdsSafe: List<String>
         get() = @Suppress("USELESS_CAST") (contextModuleIds as? List<String>) ?: emptyList()
 }
 
-/**
- * A build artifact (APK) produced during a session, persisted so it survives
- * app restarts. Mirrors [com.webtoapp.core.agent.tool.BuiltApkInfo] but lives
- * in the session layer to avoid a dependency on the tool package.
- */
 data class PersistedApk(
     val appId: Long,
     val apkName: String,
@@ -82,34 +74,13 @@ data class AgentMessage(
 ) {
     enum class Role { USER, ASSISTANT, SYSTEM }
 
-    /**
-     * Null-safe accessor: Gson bypasses the constructor when deserialising, so
-     * [userAttachments] can be null for messages loaded from older session JSON that
-     * predates this field. Treat that the same as an empty list.
-     */
     val userAttachmentsSafe: List<UserAttachment>
         get() = @Suppress("USELESS_CAST") (userAttachments as? List<UserAttachment>) ?: emptyList()
 
-    /**
-     * Null-safe accessor: Gson bypasses the constructor when deserialising, so
-     * [thinkingSegments] can be null for messages loaded from older session JSON that
-     * predates this field. Treat that the same as an empty list.
-     */
     val thinkingSegmentsSafe: List<ThinkingSegmentData>
         get() = @Suppress("USELESS_CAST") (thinkingSegments as? List<ThinkingSegmentData>) ?: emptyList()
 }
 
-/**
- * A file the user attached to a message from the composer. The bytes live in the
- * session sandbox at [path] (session-relative); only metadata is persisted here so
- * the sessions blob stays small. Attachments are PATH REFERENCES — their content
- * is never inlined into the model context; the model inspects them with its file
- * tools. [isImage] attachments additionally reach the model as vision input when
- * it is multimodal (size-capped). A folder is a single attachment whose [path]
- * ends with '/', with [entryCount] recording how many files were imported and
- * [sizeBytes] their total size. [sizeBytes]/[entryCount] are 0 for attachments
- * persisted before those fields existed — callers fall back to live stats.
- */
 data class UserAttachment(
     val path: String,
     val displayName: String,
@@ -128,24 +99,27 @@ data class RecordedToolCall(
 
     val activity: String? = null,
 
-    /**
-     * Gemini 3 function-call signature. Required on the replayed model turn;
-     * absent for providers that do not send one. Older session JSON leaves it null.
-     */
-    val thoughtSignature: String? = null
+    val thoughtSignature: String? = null,
+    val status: Status? = null
 ) {
+    enum class Status { Running, Completed, Failed, Stopped }
+
+    val effectiveStatus: Status
+        get() = status ?: when {
+            resultPreview == RUNNING_SENTINEL -> Status.Running
+            ok -> Status.Completed
+            else -> Status.Failed
+        }
+
+    val visibleResult: String
+        get() = if (resultPreview == RUNNING_SENTINEL) "" else resultPreview
+
     companion object {
 
         const val RUNNING_SENTINEL = "__running__"
     }
 }
 
-/**
- * One turn's worth of reasoning, persisted so the boundaries survive across drafts
- * and reloads. [id] matches the inline marker (`\u2063TH:id\u2063`) embedded in
- * [AgentMessage.content], letting the timeline renderer interleave thinking blocks
- * with prose and tool calls in the order they actually occurred.
- */
 data class ThinkingSegmentData(
     val id: String,
     val content: String,

@@ -72,11 +72,6 @@ class AgentService : Service() {
     private val _isRunning = MutableStateFlow(false)
     val isRunning: StateFlow<Boolean> = _isRunning.asStateFlow()
 
-    /**
-     * Snapshot of the currently running (or just-finished) turn, so the UI can resume
-     * an in-flight turn after being destroyed and recreated (e.g. user left the Agent
-     * screen, Activity got reclaimed, then came back). Null when no turn is active.
-     */
     private val _activeTurn = MutableStateFlow<TurnSnapshot?>(null)
     val activeTurn: StateFlow<TurnSnapshot?> = _activeTurn.asStateFlow()
 
@@ -97,9 +92,6 @@ class AgentService : Service() {
     }
 
     fun start(request: AgentRequest) {
-        // A still-running previous turn gets preempted here: finalize it exactly like
-        // cancel() would (drop/finalize the draft, no orphaned running tool cards) —
-        // turnJob.cancel() alone skips the aborted-turn finalization entirely.
         if (turnJob?.isActive == true) {
             abortController?.abort()
             val prevJob = turnJob
@@ -151,8 +143,6 @@ class AgentService : Service() {
                     readFiles = request.toolContext.readFiles,
                     activePlanFile = request.toolContext.activePlanFile
                 )
-                // Single collection source: broadcast to UI AND persist in the same
-                // collector so persistence no longer depends on any UI scope.
                 engine.run(
                     AgentEngine.Input(
                         systemPrompt = request.systemPrompt,
@@ -165,9 +155,7 @@ class AgentService : Service() {
                         maxTokens = null
                     )
                 ).collect { ev ->
-                    // Broadcast to UI first so live streaming stays responsive.
                     _events.emit(ev)
-                    // Then persist (best-effort; never let a storage failure kill the turn).
                     if (store != null) {
                         runCatching { persistEvent(store, sessionId, accumulator, ev) }
                             .onFailure { AppLogger.w(TAG, "persist failed: ${it.message}") }
@@ -175,9 +163,6 @@ class AgentService : Service() {
                 }
             } catch (t: Throwable) {
                 if (t is kotlinx.coroutines.CancellationException) {
-                    // Normal cancellation (user cancel / turn preemption): the abort
-                    // paths persist the turn; broadcasting Failed would reset a live
-                    // successor turn's UI state in the ViewModel.
                     throw t
                 }
                 val ev = AgentEvent.Failed(t.message ?: "service crashed")
@@ -186,9 +171,6 @@ class AgentService : Service() {
                     runCatching { persistEvent(store, sessionId, accumulator, ev) }
                 }
             } finally {
-                // Only clear state if THIS turn is still the active one — a cancelled
-                // turn's finally can run after a new start() installed its snapshot,
-                // and blindly flipping isRunning would corrupt the new turn's state.
                 if (currentSessionId == sessionId) {
                     _isRunning.value = false
                 }
@@ -209,9 +191,6 @@ class AgentService : Service() {
         acc: TurnAccumulator,
         ev: AgentEvent
     ) {
-        // Flush helper: writes the draft AND syncs _activeTurn so the UI can hide the
-        // draft from the history list (otherwise it renders twice: once as a saved
-        // bubble, once in the live StreamingBubble).
         suspend fun flush(force: Boolean = false) {
             val draft = acc.maybeFlushDraft(store, force)
             if (draft != null) {
@@ -259,7 +238,7 @@ class AgentService : Service() {
             }
             is AgentEvent.Completed -> {
                 val msg = acc.buildFinalMessage(
-                    summaryFallback = ev.summary,
+                    summaryFallback = ev.summary.takeUnless { acc.awaitingPlanReview },
                     isError = false
                 )
                 if (msg != null) {
@@ -270,8 +249,6 @@ class AgentService : Service() {
                         draftMessage = msg
                     )
                 } else {
-                    // Degenerate turn produced nothing durable; drop the draft so we
-                    // don't leave an empty stub message in the session.
                     acc.draftId?.let { store.dropDraft(sessionId, it) }
                     _activeTurn.value = null
                 }
@@ -288,6 +265,7 @@ class AgentService : Service() {
                 _activeTurn.value = null
             }
             is AgentEvent.PlanReviewRequired -> {
+                acc.awaitingPlanReview = true
                 val msg = acc.buildFinalMessage(
                     summaryFallback = null,
                     isError = false
@@ -318,7 +296,6 @@ class AgentService : Service() {
             is AgentEvent.PermissionDenied, is AgentEvent.Usage, is AgentEvent.Notice,
             is AgentEvent.ApkBuilt, is AgentEvent.AppChanged,
             AgentEvent.Started -> {
-                // No persistence impact.
             }
         }
     }
@@ -328,25 +305,18 @@ class AgentService : Service() {
     private var currentAccumulator: TurnAccumulator? = null
 
     fun cancel() {
-        // Signal abort FIRST so the engine's own abort checkpoints (AgentEvent.Aborted)
-        // fire while the flow is still alive and the collector can persist the turn.
         abortController?.abort()
         val job = turnJob
         val sessionId = currentSessionId
         val store = currentStore
         val acc = currentAccumulator
         if (job != null) {
-            // Give the engine a short window to emit Aborted (and let this collector
-            // persist it) before the job is killed outright.
             scope.launch {
                 kotlinx.coroutines.withTimeoutOrNull(ABORT_PERSIST_GRACE_MS) { job.join() }
                 job.cancel()
             }
         }
         if (store != null && sessionId != null && acc != null) {
-            // Belt-and-braces persistence in case the engine was suspended somewhere
-            // that never observes the abort flag: finalize (or drop) the draft here so
-            // no orphaned "running" draft with phantom tool entries survives.
             scope.launch {
                 kotlinx.coroutines.withTimeoutOrNull(ABORT_PERSIST_GRACE_MS) {
                     runCatching { persistAbortedTurn(store, sessionId, acc) }
@@ -356,12 +326,6 @@ class AgentService : Service() {
         _isRunning.value = false
     }
 
-    /**
-     * Fallback finalization for an aborted turn, mirroring the engine's Aborted branch:
-     * finalize the draft as aborted, or drop it when nothing substantive accumulated.
-     * Safe to race with the engine's own Aborted handling — both paths produce the same
-     * final message for the same draftId, and finalizeDraft is an upsert.
-     */
     private suspend fun persistAbortedTurn(store: SessionStore, sessionId: String, acc: TurnAccumulator) {
         acc.finishRunningToolsAsAborted()
         val msg = acc.buildFinalMessage(
@@ -411,8 +375,6 @@ class AgentService : Service() {
             }
             inForeground = true
         } catch (e: Exception) {
-            // Background FGS starts are throttled from Android 12 on; failing to promote
-            // must not crash the agent loop — keep running un-promoted instead.
             com.webtoapp.core.logging.AppLogger.w("AgentService", "startForeground failed: ${e.message}")
         }
     }
@@ -460,10 +422,6 @@ class AgentService : Service() {
         val maxTurns: Int = 24
     )
 
-    /**
-     * Live snapshot of a turn, exposed to the UI so it can resume display of an
-     * in-flight turn after recreation.
-     */
     data class TurnSnapshot(
         val sessionId: String,
         val isRunning: Boolean,
@@ -479,14 +437,11 @@ class AgentService : Service() {
     }
 }
 
-/**
- * Accumulates a single turn's streaming output on the service side so it can be
- * persisted as a draft (and finalized) independently of any UI scope. Mirrors the
- * ViewModel's in-memory buffers but is purely data-oriented and persistence-driven.
- */
 internal class TurnAccumulator(private val sessionId: String) {
     private val text = StringBuilder()
     private val thinkingSegments = mutableListOf<ThinkingSegment>()
+    var awaitingPlanReview = false
+
     private val tools = LinkedHashMap<String, RecordedToolCall>()
     private val toolArgs = LinkedHashMap<String, StringBuilder>()
     private val producedFiles = mutableListOf<String>()
@@ -535,8 +490,9 @@ internal class TurnAccumulator(private val sessionId: String) {
             toolCallId = id,
             name = name,
             argumentsJson = "",
-            resultPreview = RecordedToolCall.RUNNING_SENTINEL,
-            ok = true
+            resultPreview = "",
+            ok = true,
+            status = RecordedToolCall.Status.Running
         )
         toolArgs.remove(id)
     }
@@ -573,7 +529,8 @@ internal class TurnAccumulator(private val sessionId: String) {
             resultPreview = result.text.take(2000),
             ok = !result.isError,
             activity = prev?.activity,
-            thoughtSignature = thoughtSignature ?: prev?.thoughtSignature
+            thoughtSignature = thoughtSignature ?: prev?.thoughtSignature,
+            status = if (result.isError) RecordedToolCall.Status.Failed else RecordedToolCall.Status.Completed
         )
         toolArgs.remove(id)
     }
@@ -582,28 +539,21 @@ internal class TurnAccumulator(private val sessionId: String) {
         if (path !in producedFiles) producedFiles += path
     }
 
-    /**
-     * Marks tools still showing the running sentinel as failed/aborted so a cancelled
-     * turn doesn't persist phantom "running" tool entries in the session history.
-     */
     fun finishRunningToolsAsAborted() {
         val keys = tools.keys.toList()
         keys.forEach { id ->
             val t = tools[id] ?: return@forEach
-            if (t.resultPreview == RecordedToolCall.RUNNING_SENTINEL) {
+            if (t.effectiveStatus == RecordedToolCall.Status.Running) {
                 tools[id] = t.copy(
-                    resultPreview = Strings.agentAbortedHint,
-                    ok = false
+                    resultPreview = t.visibleResult,
+                    ok = false,
+                    status = RecordedToolCall.Status.Stopped
                 )
             }
         }
         toolArgs.clear()
     }
 
-    /**
-     * Throttled draft upsert. Writes at most once per [FLUSH_INTERVAL_MS], unless
-     * [force] is set (used for tool-finish boundaries and other durable events).
-     */
     suspend fun maybeFlushDraft(store: SessionStore, force: Boolean = false): AgentMessage? {
         val now = System.currentTimeMillis()
         if (!force && now - lastFlushAt < FLUSH_INTERVAL_MS) return null
@@ -614,9 +564,6 @@ internal class TurnAccumulator(private val sessionId: String) {
     }
 
     private fun buildDraftMessage(): AgentMessage? {
-        // Keep inline markers (both tool and thinking) in content: the timeline renderer
-        // turns them into interleaved Tool/Thinking segments. Strip only to judge whether
-        // there is any substantive content.
         val raw = text.toString().trim()
         val joined = joinedThinking()
         val segs = buildThinkingSegmentData()
@@ -645,29 +592,25 @@ internal class TurnAccumulator(private val sessionId: String) {
         val joined = joinedThinking()
         val segs = buildThinkingSegmentData()
         val fallbackText = stripAllMarkers(summaryFallback.orEmpty()).trim()
-        // A turn that produced no streamed substance still owes a durable record when
-        // it ended abnormally (errorSuffix) or completed with an explicit summary
-        // (the engine's empty-response notice): returning null here is what made a
-        // fast request failure look like a silent empty response. Only a substance-less
-        // ABORT may still be dropped — the user cancelled deliberately.
         val hasSubstance = stripAllMarkers(raw).isNotBlank() || !joined.isNullOrBlank() ||
             tools.isNotEmpty() || fallbackText.isNotBlank()
         if (!hasSubstance && errorSuffix == null) return null
 
-        val baseText = if (stripAllMarkers(raw).isNotBlank()) raw
-                       else stripAllMarkers(summaryFallback.orEmpty()).trim()
-
         val content = buildString {
-            append(baseText)
-            if (aborted && baseText.isNotBlank()) {
-                append("\n\n")
+            append(raw)
+            if (stripAllMarkers(raw).isBlank() && fallbackText.isNotBlank()) {
+                if (isNotEmpty()) append("\n\n")
+                append(fallbackText)
+            }
+            if (aborted) {
+                if (isNotEmpty()) append("\n\n")
                 append(Strings.agentAbortedHint)
             }
             if (errorSuffix != null) {
                 if (isNotEmpty()) append("\n\n")
                 append(Strings.agentErrorPrefix.format(errorSuffix))
             }
-        }.ifBlank { Strings.agentNoOutput }
+        }
 
         val id = draftId ?: java.util.UUID.randomUUID().toString().also { draftId = it }
         return AgentMessage(
@@ -715,9 +658,6 @@ internal class TurnAccumulator(private val sessionId: String) {
     }
 
     companion object {
-        // Draft persistence cadence: each flush rewrites the whole sessions blob in
-        // DataStore, so this trades crash-recovery granularity against streaming-time
-        // serialization cost (500ms keeps at most ~1s of output at risk).
         private const val FLUSH_INTERVAL_MS = 500L
         private const val PREVIEW_CAP = 2000
     }
