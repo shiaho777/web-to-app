@@ -1,50 +1,29 @@
 package com.webtoapp.core.agent.prompt.sections
 
 import com.webtoapp.core.agent.prompt.PromptLang
-import com.webtoapp.core.agent.tool.Tool
-
 internal object ToolUsageSection {
-    fun build(lang: PromptLang, tools: List<Tool>): String {
-        val list = tools.joinToString("\n") { "- ${it.name}: ${it.description.lineSequence().first().trim()}" }
-        return when (lang) {
-            PromptLang.EN -> buildEn(list)
-            PromptLang.ZH -> buildZh(list)
-        }
+    fun build(lang: PromptLang): String = when (lang) {
+        PromptLang.EN -> en
+        PromptLang.ZH -> zh
     }
 
-    private fun buildEn(toolList: String) = """
-        # Available tools
+    private val en = """
+        # Using tools
 
-        $toolList
+        Use the declared tool schemas for exact arguments. Find files with Glob, Grep, or ListFiles. Use Read before modifying an existing file and Edit for targeted changes.
 
-        Tool selection rules:
-        - Read for any file you intend to look at; never use a side channel.
-        - Write only for new files or full rewrites; prefer Edit when the change is local.
-        - Edit fails on non-unique matches: include enough surrounding context that old_string occurs exactly once, or pass replace_all=true.
-        - Glob to find files by name; Grep to find files by content.
-        - ListFiles for a quick directory snapshot.
-        - AskUserQuestion only for genuine clarifications. Don't use it to ask "Should I proceed?" — that's what plan mode is for.
+        Batch independent reads. Wait for each write or tool result when the next action depends on it. A tool's permission prompt governs actions that need approval.
 
-        Independent tool calls in a single turn run in parallel. Batch reads aggressively. Sequential calls only when one depends on another's output.
-
-        TodoWrite at the start of any task with three or more steps. Mark each in_progress when you begin and completed when done — the user sees a live checklist.
+        Use TodoWrite for work that benefits from a visible checklist. Update it as real steps advance. Keep task progress and verification grounded in tool results.
     """.trimIndent()
 
-    private fun buildZh(toolList: String) = """
-        # 可用工具
+    private val zh = """
+        # 使用工具
 
-        $toolList
+        按已声明的工具参数构造调用。用 Glob、Grep 或 ListFiles 定位文件。改动已有文件前先 Read，局部修改用 Edit。
 
-        工具选择规则：
-        - 要看的文件先用 Read；不要绕道。
-        - Write 只用于新建文件或完整重写；局部修改优先用 Edit。
-        - Edit 在 old_string 不唯一时会失败：要么扩展上下文让 old_string 唯一，要么传 replace_all=true。
-        - 按文件名找文件用 Glob；按内容找文件用 Grep。
-        - ListFiles 用来快速看目录。
-        - AskUserQuestion 只用于真正需要澄清的时候。不要用它来问"我可以继续吗？"——那是 plan mode 的活。
+        互不依赖的读取可以批量执行。下一步依赖写入或工具结果时，等前一步完成。需要批准的动作以工具权限确认结果为准。
 
-        同一轮中互不依赖的工具调用会被并行执行。读类工具尽量批量调。顺序调用只在确实依赖前一个结果时使用。
-
-        三步以上的任务，开头先 TodoWrite。开始一项时设 in_progress，完成时设 completed——用户能看到这份实时清单。
+        适合用清单跟踪的任务可用 TodoWrite，实际进展或验证结果发生变化时再更新。
     """.trimIndent()
 }

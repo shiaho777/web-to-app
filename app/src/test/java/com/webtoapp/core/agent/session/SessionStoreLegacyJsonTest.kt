@@ -11,19 +11,6 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
-/**
- * Regression tests for issue #712: restoring a backup exported from a
- * pre-Agent (AI Coding era) release writes the legacy `aicoding_sessions_v1`
- * blob back onto the device. Those sessions predate the composer attachments
- * (#374), the context picker (#381) and built-APK persistence (#447), so their
- * JSON lacks `userAttachments`, `contextAppIds`, `contextModuleIds` and
- * `builtApks`. Gson bypasses Kotlin constructor defaults, so those non-null
- * properties deserialise as null and every direct use crashed (opening Agent
- * rendered history via `message.userAttachments.isNotEmpty()` → NPE).
- *
- * The fixture `legacy_agent_sessions_v1.json` is a sanitised copy of a real
- * user backup: identical field structure, truncated/synthetic content.
- */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33])
 class SessionStoreLegacyJsonTest {
@@ -48,7 +35,6 @@ class SessionStoreLegacyJsonTest {
 
         assertThat(sessions).hasSize(5)
         sessions.forEach { session ->
-            // Previously-unguarded fields must never be null after decode.
             session.config.builtApks
             session.config.contextAppIds
             session.config.contextModuleIds
@@ -68,7 +54,6 @@ class SessionStoreLegacyJsonTest {
     fun `legacy messages expose empty userAttachments via safe accessor`() = runBlocking {
         val sessions = store.decodeForTest(legacyJson())
         val messages = sessions.flatMap { it.messages }
-        // The fixture mirrors the real legacy schema: no userAttachments key anywhere.
         assertThat(messages).isNotEmpty()
         messages.forEach { message ->
             assertThat(message.userAttachmentsSafe).isEmpty()
@@ -82,15 +67,31 @@ class SessionStoreLegacyJsonTest {
         sessions.forEach { session ->
             assertThat(session.config.contextAppIdsSafe).isEmpty()
             assertThat(session.config.contextModuleIdsSafe).isEmpty()
+            assertThat(session.config.skillIdsSafe).isEmpty()
             assertThat(session.config.builtApksSafe).isEmpty()
         }
     }
 
     @Test
+    fun `compaction preserves messages added after the snapshot`(): Unit = runBlocking {
+        val session = store.create()
+        val initial = AgentMessage(role = AgentMessage.Role.USER, content = "Initial request")
+        val newer = AgentMessage(role = AgentMessage.Role.USER, content = "Newer request")
+        val summary = AgentMessage(role = AgentMessage.Role.USER, content = "Summary")
+        store.appendMessage(session.id, initial)
+        val snapshot = store.get(session.id)!!
+        store.appendMessage(session.id, newer)
+
+        assertThat(store.replaceMessages(session.id, listOf(summary), snapshot.messages)).isNull()
+        val latest = store.get(session.id)!!
+        assertThat(latest.messages).containsExactly(initial, newer).inOrder()
+        assertThat(store.replaceMessages(session.id, listOf(summary), latest.messages)?.messages)
+            .containsExactly(summary)
+    }
+
+    @Test
     fun `decoded legacy blob re-serialises with normalised lists and decodes again`() = runBlocking {
         val sessions = store.decodeForTest(legacyJson())
-        // SessionStore.persist always writes via gson.toJson; the normalised list must
-        // round-trip so the first write after restore heals the stored blob.
         val raw = GsonProvider.gson.toJson(sessions)
         val again = store.decodeForTest(raw)
         assertThat(again).hasSize(sessions.size)

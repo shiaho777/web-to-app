@@ -93,8 +93,6 @@ fun Composer(
     onAttachFile: () -> Unit,
     onAttachFolder: () -> Unit,
     onRemoveAttachment: (String) -> Unit,
-    // Resolves a pending attachment's sandbox-relative path to the file Coil should
-    // load — java.io.File(att.path) resolves against the process CWD and never exists.
     resolveAttachmentPreview: (UserAttachment) -> Any?,
 
     onOpenContextPicker: () -> Unit,
@@ -144,17 +142,12 @@ fun Composer(
             contextCapacity = state.contextCapacity,
             compacting = state.compacting,
             onCompactContext = onCompactContext,
-            selectedContextCount = state.contextAppIds.size + state.contextModuleIds.size,
+            selectedContextCount = state.selectedContextCount,
             onOpenContextPicker = onOpenContextPicker
         )
     }
 }
 
-/**
- * One short row: attach, a filled control-radius field, send/stop.
- * [BasicTextField] is required — an M3 TextField forces a 56dp minimum and
- * draws the bottom indicator this row is not allowed to have.
- */
 @Composable
 private fun ComposerCard(
     state: AgentUiState,
@@ -208,9 +201,6 @@ private fun ComposerCard(
     }
 }
 
-/**
- * Filled field on [WtaRadius.Control]. No indicator line and no square corners.
- */
 @Composable
 private fun RowScope.ComposerField(
     value: String,
@@ -309,7 +299,6 @@ private fun PendingAttachmentsRow(
     }
 }
 
-/** Image attachment with a real thumbnail (Coil) instead of a bare text chip. */
 @Composable
 private fun ImageAttachmentChip(att: UserAttachment, onRemove: (String) -> Unit, previewModel: Any?) {
     Box {
@@ -373,7 +362,6 @@ private fun FileAttachmentChip(att: UserAttachment, onRemove: (String) -> Unit) 
     }
 }
 
-/** Small circular "×" badge overlaid on an image thumbnail. */
 @Composable
 private fun AttachmentRemoveBadge(onClick: () -> Unit, modifier: Modifier = Modifier) {
     Surface(
@@ -593,7 +581,6 @@ private fun ModeChipRow(
 ) {
     var showCompactMenu by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
 
-    // Chips can outgrow narrow screens — scroll instead of clipping the model chip.
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -633,8 +620,6 @@ private fun ModeChipRow(
             val usageLabel = formatTokenUsage(estimatedTokens, contextCapacity)
             val usageRatio = if (contextCapacity > 0) estimatedTokens.toFloat() / contextCapacity else 0f
             val usageHigh = usageRatio >= 0.75f
-            // Box anchors the compact-context menu to this chip — emitted as a row
-            // sibling it would anchor to the column's top-start corner instead.
             Box {
                 ContextChip(
                     label = usageLabel,
@@ -673,20 +658,12 @@ private fun formatTokenUsage(used: Int, capacity: Int): String {
     return "$usedK / $capK"
 }
 
-/**
- * Current-model chip at the trailing edge of the composer mode row. The model
- * name lives in an inner horizontally scrollable lane (capped, never
- * ellipsized), so long provider/model ids stay fully readable by swiping the
- * chip itself instead of truncating the label.
- */
 @Composable
 private fun ModelChip(
     label: String,
     missing: Boolean,
     onClick: () -> Unit
 ) {
-    // No usable model is a blocking state: flag it instead of looking normal
-    // and failing only after the user hits send.
     val tone = if (missing) WtaCardTone.Critical else WtaCardTone.Highlighted
     val onTone = if (missing) MaterialTheme.colorScheme.onErrorContainer
         else MaterialTheme.colorScheme.onPrimaryContainer
