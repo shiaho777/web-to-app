@@ -15,14 +15,14 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
@@ -33,6 +33,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.RocketLaunch
 import androidx.compose.material.icons.outlined.AttachFile
 import androidx.compose.material.icons.outlined.Apps
 import androidx.compose.material.icons.outlined.Build
@@ -49,12 +50,12 @@ import androidx.compose.material.icons.outlined.FolderOpen
 import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.ExpandLess
 import androidx.compose.material.icons.outlined.ExpandMore
-import androidx.compose.material.icons.outlined.HourglassTop
 import androidx.compose.material.icons.outlined.Lightbulb
 import androidx.compose.material.icons.outlined.MoreHoriz
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.StopCircle
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -66,12 +67,17 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.key
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -96,6 +102,7 @@ import com.webtoapp.ui.design.WtaIconButton
 import com.webtoapp.ui.design.WtaInfoChip
 import com.webtoapp.ui.design.WtaLoadingIndicator
 import com.webtoapp.ui.design.WtaShrinkOut
+import com.webtoapp.ui.design.WtaSectionDivider
 import com.webtoapp.ui.design.WtaSize
 import com.webtoapp.ui.design.WtaSpacing
 import com.webtoapp.ui.theme.AppColors
@@ -108,23 +115,21 @@ data class MessageActions(
     val onDeleteFromHere: (AgentMessage) -> Unit
 )
 
-/**
- * Build a copy-paste-friendly plain-text rendering of an assistant message.
- * When [includeDetails] is true, thinking blocks and tool calls are interleaved
- * with the prose output (in arrival order where possible); otherwise only the
- * clean prose output is returned.
- */
 internal fun formatMessageForCopy(message: AgentMessage, includeDetails: Boolean): String {
-    val cleanContent = AgentViewModel.stripInlineMarkers(message.content).trim()
-    if (!includeDetails) return cleanContent
     val segments = message.thinkingSegmentsSafe
+    val messageText = if (message.role == AgentMessage.Role.ASSISTANT) {
+        assistantDisplayText(
+            message.content,
+            message.toolCalls.isNotEmpty() || segments.isNotEmpty() || !message.thinking.isNullOrBlank()
+        )
+    } else message.content
+    val cleanContent = AgentViewModel.stripInlineMarkers(messageText).trim()
+    if (!includeDetails) return cleanContent
     val hasThinking = segments.any { it.content.isNotBlank() }
     val hasTools = message.toolCalls.isNotEmpty()
     if (!hasThinking && !hasTools) return cleanContent
 
     val sb = StringBuilder()
-    // Thinking blocks (in order). If there's only one, label it simply; otherwise
-    // number them so multi-turn reasoning stays readable.
     segments.forEachIndexed { i, seg ->
         val c = seg.content.trim()
         if (c.isBlank()) return@forEachIndexed
@@ -133,18 +138,16 @@ internal fun formatMessageForCopy(message: AgentMessage, includeDetails: Boolean
         if (segments.size > 1) sb.append(" (${i + 1})")
         sb.append("\n").append(c)
     }
-    // Tool calls with their result previews.
     message.toolCalls.forEach { tc ->
         if (sb.isNotEmpty()) sb.append("\n\n")
         sb.append(tc.name)
         val args = tc.argumentsJson.trim()
         if (args.isNotEmpty()) sb.append("(").append(args).append(")")
-        val result = tc.resultPreview.trim()
-        if (result.isNotEmpty() && result != RecordedToolCall.RUNNING_SENTINEL) {
+        val result = tc.visibleResult.trim()
+        if (result.isNotEmpty()) {
             sb.append("\n→ ").append(result)
         }
     }
-    // Final prose output.
     if (cleanContent.isNotEmpty()) {
         if (sb.isNotEmpty()) sb.append("\n\n")
         sb.append(cleanContent)
@@ -160,28 +163,15 @@ fun MessageBubble(
     modifier: Modifier = Modifier
 ) {
     val isUser = message.role == AgentMessage.Role.USER
-    val tone = when {
-        message.isError -> WtaCardTone.Critical
-        isUser -> WtaCardTone.Highlighted
-        else -> WtaCardTone.Surface
-    }
-    val onContainer = when {
-        message.isError -> MaterialTheme.colorScheme.onErrorContainer
-        isUser -> MaterialTheme.colorScheme.onPrimaryContainer
-        else -> MaterialTheme.colorScheme.onSurface
-    }
+    val tone = if (isUser || message.isError) WtaCardTone.Elevated else WtaCardTone.Surface
+    val onContainer = MaterialTheme.colorScheme.onSurface
     var menuOpen by remember { mutableStateOf(false) }
 
     Column(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth().padding(start = if (isUser) WtaSpacing.ExtraLarge else 0.dp),
         horizontalAlignment = if (isUser) Alignment.End else Alignment.Start
     ) {
-        // For assistant messages, thinking blocks are interleaved with prose/tools via
-        // the timeline when structured segments exist; otherwise fall back to a single
-        // top-of-bubble ThinkingBlock for legacy messages (pre-structured-thinking).
-        // NOTE: thinkingSegments can be null for messages deserialised from older
-        // session JSON — Gson bypasses the constructor so the emptyList() default is
-        // lost. Treat null as empty.
+        if (!isUser) AgentResponseLabel()
         val segments: List<ThinkingSegmentData> = message.thinkingSegmentsSafe
         val hasStructuredThinking = !isUser && segments.isNotEmpty()
         if (!isUser && !hasStructuredThinking && !message.thinking.isNullOrBlank()) {
@@ -189,21 +179,16 @@ fun MessageBubble(
                 content = message.thinking,
                 durationMs = message.thinkingDurationMs,
                 isLive = false,
-                modifier = Modifier.widthIn(max = 560.dp)
+                modifier = Modifier.widthIn(max = 640.dp)
             )
             Spacer(Modifier.height(WtaSpacing.Tiny))
         }
-        WtaCard(
+        MessageSurface(
             tone = tone,
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(
-                horizontal = WtaSpacing.Medium + 2.dp,
-                vertical = WtaSpacing.Medium - 2.dp
-            ),
-            // Long-press opens the same action menu as the ⋯ button — the
-            // standard chat affordance users reach for before discovering the
-            // tiny icon. Text long-press still selects via SelectionContainer.
+            showAsTimeline = !isUser && (message.toolCalls.isNotEmpty() || hasStructuredThinking),
             modifier = Modifier
-                .widthIn(max = 560.dp)
+                .widthIn(max = if (isUser) 560.dp else 640.dp)
+                .then(if (isUser) Modifier else Modifier.fillMaxWidth())
                 .combinedClickable(
                     onClick = {},
                     onLongClick = { menuOpen = true }
@@ -243,7 +228,7 @@ fun MessageBubble(
                     toolCalls = message.toolCalls,
                     thinkingSegments = uiThinkingSegments,
                     onSurface = onContainer,
-                    liveTrailing = false
+                    hasLegacyThinking = !hasStructuredThinking && !message.thinking.isNullOrBlank()
                 )
             }
         }
@@ -254,7 +239,6 @@ fun MessageBubble(
         Row(
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Timestamp orients long sessions; the menu stays the action anchor.
             Text(
                 text = remember(message.timestamp) {
                     MESSAGE_TIME_FORMAT.format(Date(message.timestamp))
@@ -278,11 +262,13 @@ fun MessageBubble(
                             onClick = { menuOpen = false; actions.onCopy(message, false) }
                         )
                     } else {
-                        DropdownMenuItem(
-                            text = { Text(Strings.agentMessageActionCopyOutput) },
-                            leadingIcon = { Icon(Icons.Outlined.ContentCopy, contentDescription = null) },
-                            onClick = { menuOpen = false; actions.onCopy(message, false) }
-                        )
+                        if (formatMessageForCopy(message, includeDetails = false).isNotBlank()) {
+                            DropdownMenuItem(
+                                text = { Text(Strings.agentMessageActionCopyOutput) },
+                                leadingIcon = { Icon(Icons.Outlined.ContentCopy, contentDescription = null) },
+                                onClick = { menuOpen = false; actions.onCopy(message, false) }
+                            )
+                        }
                         DropdownMenuItem(
                             text = { Text(Strings.agentMessageActionCopyAll) },
                             leadingIcon = { Icon(Icons.Outlined.ContentCopy, contentDescription = null) },
@@ -323,17 +309,8 @@ fun ThinkingBlock(
     initiallyExpanded: Boolean = isLive,
     modifier: Modifier = Modifier
 ) {
-    // Key on composition position, not content: a live segment's content grows with
-    // every delta, so a content-derived key would reset this state per token — for
-    // `appeared` that meant the fade-in could never finish (the block stayed
-    // invisible for the whole stream), and for `expanded` it meant a manual collapse
-    // was undone by the next delta.
-    var expanded by remember { mutableStateOf(initiallyExpanded && isLive) }
-    LaunchedEffect(isLive) {
-        if (!isLive) expanded = false
-        else expanded = true
-    }
-    // Live thinking blocks materialize with a small fade+rise; settled ones stay static.
+    var userExpanded by rememberSaveable { mutableStateOf<Boolean?>(null) }
+    val expanded = userExpanded ?: (initiallyExpanded && isLive)
     var appeared by remember { mutableStateOf(!isLive) }
     LaunchedEffect(Unit) { appeared = true }
     val appearAlpha by animateFloatAsState(if (appeared) 1f else 0f, tween(220), label = "appear-alpha")
@@ -349,7 +326,12 @@ fun ThinkingBlock(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable { expanded = !expanded }
+                .clickable(
+                    role = Role.Button,
+                    onClickLabel = if (expanded) Strings.collapse else Strings.expand,
+                    onClick = { userExpanded = !expanded }
+                )
+                .heightIn(min = WtaSize.TouchTarget)
                 .padding(horizontal = WtaSpacing.Small + 2.dp, vertical = WtaSpacing.Small - 2.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -385,13 +367,6 @@ fun ThinkingBlock(
                 )
                 Spacer(Modifier.width(WtaSpacing.Tiny + 2.dp))
             }
-            Text(
-                text = if (expanded) Strings.agentThinkingTapToCollapse
-                else Strings.agentThinkingTapToExpand,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = WtaAlpha.Strong)
-            )
-            Spacer(Modifier.width(2.dp))
             Icon(
                 imageVector = if (expanded) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,
                 contentDescription = null,
@@ -435,6 +410,28 @@ fun ThinkingBlock(
 }
 
 @Composable
+private fun AgentResponseLabel() {
+    Row(
+        modifier = Modifier.padding(bottom = WtaSpacing.Tiny),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Tiny + 2.dp)
+    ) {
+        Icon(
+            imageVector = Icons.Outlined.RocketLaunch,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(WtaSize.IconSmall)
+        )
+        Text(
+            text = Strings.agentTitle,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+@Composable
 fun StreamingBubble(
     text: String,
     thinkingSegments: List<ThinkingSegment>,
@@ -442,13 +439,11 @@ fun StreamingBubble(
     activity: String?
 ) {
     Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.Start) {
-        WtaCard(
+        AgentResponseLabel()
+        MessageSurface(
             tone = WtaCardTone.Surface,
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(
-                horizontal = WtaSpacing.Medium + 2.dp,
-                vertical = WtaSpacing.Medium - 2.dp
-            ),
-            modifier = Modifier.widthIn(max = 560.dp)
+            showAsTimeline = pendingTools.isNotEmpty() || thinkingSegments.isNotEmpty(),
+            modifier = Modifier.widthIn(max = 640.dp).fillMaxWidth()
         ) {
             if (text.isNotEmpty() || pendingTools.isNotEmpty() || thinkingSegments.isNotEmpty()) {
                 RichAssistantTimeline(
@@ -458,12 +453,8 @@ fun StreamingBubble(
                     onSurface = MaterialTheme.colorScheme.onSurface,
                     liveTrailing = true
                 )
-                // Between a finished tool call and the next streamed chunk nothing
-                // else says "still working" — keep the typing cue alive in that gap.
-                // Suppressed while prose is live-trailing (the caret covers it) or
-                // a live thinking block is showing its own spinner.
                 val toolSettled = pendingTools.isNotEmpty() &&
-                    pendingTools.none { it.resultPreview == RecordedToolCall.RUNNING_SENTINEL }
+                    pendingTools.none { it.effectiveStatus == RecordedToolCall.Status.Running }
                 val thinkingLive = thinkingSegments.any { it.frozenDurationMs == null }
                 val tail = text.trimEnd()
                 val tailIsMarker = tail.isEmpty() || tail.last() == '\u2063'
@@ -504,7 +495,28 @@ fun StreamingBubble(
     }
 }
 
-/** Three staggered pulsing dots — the classic "typing" cue for the connecting state. */
+@Composable
+private fun MessageSurface(
+    tone: WtaCardTone,
+    showAsTimeline: Boolean,
+    modifier: Modifier,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    if (showAsTimeline) {
+        Column(modifier = modifier, content = content)
+    } else {
+        WtaCard(
+            tone = tone,
+            contentPadding = PaddingValues(
+                horizontal = WtaSpacing.Medium + 2.dp,
+                vertical = WtaSpacing.Medium - 2.dp
+            ),
+            modifier = modifier,
+            content = content
+        )
+    }
+}
+
 @Composable
 private fun TypingDots(color: Color, modifier: Modifier = Modifier) {
     val transition = rememberInfiniteTransition(label = "typing-dots")
@@ -538,363 +550,276 @@ private fun TypingDots(color: Color, modifier: Modifier = Modifier) {
     }
 }
 
-private val INLINE_TOOL_MARKER = Regex("\u2063TC:([^\u2063]+)\u2063")
-private val INLINE_THINKING_MARKER = Regex("\u2063TH:([^\u2063]+)\u2063")
-// Match ANY \u2063…\u2063 pair (not just TC/TH) so an unrecognized marker type is still
-// consumed rather than leaking into a Prose segment as visible text.
-private val ANY_INLINE_MARKER = Regex("\u2063[^\u2063]*\u2063")
-
 @Composable
-fun RichAssistantTimeline(
+private fun RichAssistantTimeline(
     text: String,
     toolCalls: List<RecordedToolCall>,
     onSurface: Color,
     thinkingSegments: List<ThinkingSegment> = emptyList(),
     liveTrailing: Boolean = false,
-    modifier: Modifier = Modifier
+    hasLegacyThinking: Boolean = false
 ) {
-    val emptyHint = Strings.agentNoOutput
-    val toolsById = remember(toolCalls) { toolCalls.associateBy { it.toolCallId } }
-    val thinkingById = remember(thinkingSegments) { thinkingSegments.associateBy { it.id } }
-    val seenToolIds = remember(text, toolCalls, thinkingSegments) { mutableSetOf<String>() }
-    val seenThinkingIds = remember(text, toolCalls, thinkingSegments) { mutableSetOf<String>() }
-
-    val segments = remember(text, toolCalls, thinkingSegments) {
-        buildSegments(text, toolsById, thinkingById, seenToolIds, seenThinkingIds)
+    val parts = remember(text, toolCalls, thinkingSegments, hasLegacyThinking) {
+        buildAssistantTimeline(text, toolCalls, thinkingSegments, hasLegacyThinking)
     }
-
-    val leftoverTools = remember(toolCalls, segments) {
-        toolCalls.filter { it.toolCallId !in seenToolIds }
-    }
-    val leftoverThinking = remember(thinkingSegments, segments) {
-        thinkingSegments.filter { it.id !in seenThinkingIds }
-    }
-
-    val proseLastIdx = segments.indexOfLast { it is TimelineSegment.Prose }
-
-    Column(modifier = modifier.fillMaxWidth()) {
-        if (segments.isEmpty() && leftoverTools.isEmpty() && leftoverThinking.isEmpty()) {
-
-            SelectionContainer {
-                Text(
-                    text = emptyHint,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = onSurface
-                )
-            }
-            return@Column
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
+    ) {
+        if (parts.isEmpty() && !hasLegacyThinking && !liveTrailing) {
+            Text(Strings.agentNoOutput, style = MaterialTheme.typography.bodyMedium, color = onSurface)
         }
-        segments.forEachIndexed { i, seg ->
-            when (seg) {
-                is TimelineSegment.Prose -> {
-                    val isLastProse = i == proseLastIdx
-                    val proseText = if (liveTrailing && isLastProse && leftoverTools.isEmpty())
-                        seg.text
-                    else seg.text
-                    if (proseText.isNotEmpty()) {
-                        RichAssistantText(
-                            text = proseText,
-                            onSurface = onSurface,
-                            streamingCaret = liveTrailing && isLastProse && leftoverTools.isEmpty()
-                        )
-                    }
-                }
-                is TimelineSegment.Thinking -> {
-                    val isLive = liveTrailing && seg.seg.frozenDurationMs == null
-                    if (i > 0) Spacer(Modifier.height(WtaSpacing.Tiny))
+        parts.forEachIndexed { index, part ->
+            when (part) {
+                is AssistantTimelinePart.Prose -> RichAssistantText(
+                    text = part.text,
+                    onSurface = onSurface,
+                    streamingCaret = liveTrailing && index == parts.lastIndex
+                )
+                is AssistantTimelinePart.Thinking -> key("thinking-${part.segment.id}") {
+                    val isLive = liveTrailing && part.segment.frozenDurationMs == null
                     ThinkingBlock(
-                        content = seg.seg.content,
-                        durationMs = seg.seg.frozenDurationMs,
+                        content = part.segment.content,
+                        durationMs = part.segment.frozenDurationMs,
                         isLive = isLive,
                         initiallyExpanded = isLive
                     )
-                    if (i < segments.lastIndex || leftoverTools.isNotEmpty()) {
-                        Spacer(Modifier.height(WtaSpacing.Tiny))
-                    }
                 }
-                is TimelineSegment.Tool -> {
-                    if (i > 0) Spacer(Modifier.height(WtaSpacing.Tiny))
-                    ToolCallCard(seg.tc, live = liveTrailing &&
-                        seg.tc.resultPreview == RecordedToolCall.RUNNING_SENTINEL)
-                    Spacer(Modifier.height(WtaSpacing.Tiny))
+                is AssistantTimelinePart.Tools -> key("tools-${part.calls.first().toolCallId}") {
+                    ToolActivityGroup(part.calls, liveTrailing)
                 }
             }
         }
-        // Thinking segments whose marker wasn't in the text yet (e.g. a brand-new live
-        // turn whose marker just arrived but text hasn't followed) render as trailing.
-        leftoverThinking.forEach { seg ->
-            val isLive = liveTrailing && seg.frozenDurationMs == null
-            ThinkingBlock(
-                content = seg.content,
-                durationMs = seg.frozenDurationMs,
-                isLive = isLive,
-                initiallyExpanded = isLive
-            )
-            Spacer(Modifier.height(WtaSpacing.Tiny))
-        }
-        leftoverTools.forEach { tc ->
-            Spacer(Modifier.height(WtaSpacing.Tiny))
-            ToolCallCard(tc, live = liveTrailing &&
-                tc.resultPreview == RecordedToolCall.RUNNING_SENTINEL)
-        }
     }
 }
-
-private sealed class TimelineSegment {
-    data class Prose(val text: String) : TimelineSegment()
-    data class Thinking(val seg: ThinkingSegment) : TimelineSegment()
-    data class Tool(val tc: RecordedToolCall) : TimelineSegment()
-}
-
-private fun buildSegments(
-    text: String,
-    toolsById: Map<String, RecordedToolCall>,
-    thinkingById: Map<String, ThinkingSegment>,
-    seenToolIds: MutableSet<String>,
-    seenThinkingIds: MutableSet<String>
-): List<TimelineSegment> {
-    if (text.isEmpty()) return emptyList()
-    val out = mutableListOf<TimelineSegment>()
-    var cursor = 0
-    ANY_INLINE_MARKER.findAll(text).forEach { match ->
-        val before = text.substring(cursor, match.range.first)
-        if (before.isNotBlank()) out += TimelineSegment.Prose(scrubInline(before).trimEnd())
-        val raw = match.value
-        when {
-            raw.startsWith("\u2063TC:") -> {
-                val id = INLINE_TOOL_MARKER.find(raw)?.groupValues?.get(1)
-                if (id != null) {
-                    toolsById[id]?.let {
-                        out += TimelineSegment.Tool(it)
-                        seenToolIds += id
-                    }
-                }
-            }
-            raw.startsWith("\u2063TH:") -> {
-                val id = INLINE_THINKING_MARKER.find(raw)?.groupValues?.get(1)
-                if (id != null) {
-                    thinkingById[id]?.let {
-                        out += TimelineSegment.Thinking(it)
-                        seenThinkingIds += id
-                    }
-                }
-            }
-        }
-        // Unrecognized marker types fall through here — they are consumed (cursor
-        // advances past them) so they never reach a Prose segment.
-        cursor = match.range.last + 1
-    }
-    if (cursor < text.length) {
-        val tail = text.substring(cursor)
-        if (tail.isNotBlank()) out += TimelineSegment.Prose(scrubInline(tail).trimEnd())
-    }
-    return out
-}
-
-/** Strip any stray \u2063 characters (e.g. an unpaired marker) so they never render. */
-private fun scrubInline(s: String): String =
-    if ('\u2063' !in s) s else s.replace("\u2063", "")
 
 @Composable
-fun ToolCallCard(tc: RecordedToolCall, live: Boolean) {
-    val running = tc.resultPreview == RecordedToolCall.RUNNING_SENTINEL
-    val (statusIcon, statusTint) = when {
-        running -> Icons.Outlined.HourglassTop to MaterialTheme.colorScheme.primary
-        tc.ok -> Icons.Outlined.CheckCircle to WtaColors.semantic.success
-        else -> Icons.Outlined.ErrorOutline to MaterialTheme.colorScheme.error
-    }
-    var expanded by remember(tc.toolCallId) { mutableStateOf(running) }
-    LaunchedEffect(running, live) {
-        expanded = running
-    }
-    val subtitle = remember(tc.argumentsJson, tc.activity, tc.resultPreview, running) {
-        subtitleFor(tc).ifBlank {
-            when {
-                running -> tc.activity.orEmpty()
-                !tc.ok -> tc.resultPreview.take(80)
-                else -> ""
-            }
-        }
-    }
-    // Started ticking when the card first appears live; stops when the tool finishes.
-    val startedAt = remember(tc.toolCallId) { System.currentTimeMillis() }
-    var elapsedMs by remember(tc.toolCallId) { mutableStateOf<Long?>(null) }
-    LaunchedEffect(running) {
-        if (running) {
-            while (true) {
-                elapsedMs = System.currentTimeMillis() - startedAt
-                kotlinx.coroutines.delay(500)
-            }
-        }
-    }
-    val stripeColor = when {
-        running -> MaterialTheme.colorScheme.primary
-        tc.ok -> WtaColors.semantic.success
-        else -> MaterialTheme.colorScheme.error
-    }
-    var showFullResult by remember(tc.toolCallId) { mutableStateOf(false) }
+private fun ToolActivityGroup(calls: List<RecordedToolCall>, live: Boolean) {
+    var showAll by rememberSaveable { mutableStateOf(false) }
+    var openDetails by rememberSaveable { mutableStateOf(emptyList<String>()) }
+    val canShowMore = calls.size > 3
+    val visibleCalls = if (showAll || !canShowMore) calls else calls.takeLast(3)
+    val groupStatus = calls.minOf { it.presentationStatus(live) }
+    val colors = MaterialTheme.colorScheme
 
-    // Live cards materialize with a small fade+rise; history rows stay static.
-    var appeared by remember(tc.toolCallId) { mutableStateOf(!live) }
-    LaunchedEffect(Unit) { appeared = true }
-    val appearAlpha by animateFloatAsState(if (appeared) 1f else 0f, tween(220), label = "appear-alpha")
-    val appearDy by animateDpAsState(if (appeared) 0.dp else 8.dp, tween(220), label = "appear-dy")
-
-    Surface(
-        color = if (!tc.ok && !running) MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.25f)
-                else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
-        shape = MaterialTheme.shapes.medium,
-        modifier = Modifier
-            .fillMaxWidth()
-            .graphicsLayer { alpha = appearAlpha; translationY = appearDy.toPx() }
+    WtaCard(
+        modifier = Modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(0.dp)
     ) {
-        Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
-            // Status stripe, stretching with the card (header + expanded body).
-            Box(
-                modifier = Modifier
-                    .width(3.dp)
-                    .fillMaxHeight()
-                    .background(stripeColor)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .then(
+                    if (canShowMore) Modifier.clickable(
+                        role = Role.Button,
+                        onClickLabel = if (showAll) Strings.collapse else Strings.expand,
+                        onClick = { showAll = !showAll }
+                    ) else Modifier
+                )
+                .heightIn(min = if (canShowMore) WtaSize.TouchTarget else 36.dp)
+                .padding(horizontal = WtaSpacing.Medium),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
+        ) {
+            Text(
+                text = Strings.agentToolCallCount.format(calls.size),
+                style = MaterialTheme.typography.labelMedium,
+                color = colors.onSurfaceVariant,
+                modifier = Modifier.weight(1f)
             )
-            Column(modifier = Modifier.fillMaxWidth()) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { expanded = !expanded }
-                        .padding(horizontal = WtaSpacing.Small + 2.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = toolIconFor(tc.name),
-                        contentDescription = null,
-                        tint = statusTint,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(Modifier.width(WtaSpacing.Small))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = tc.name,
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            maxLines = 1
-                        )
-                        if (subtitle.isNotBlank()) {
-                            Text(
-                                text = subtitle,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 1
-                            )
-                        }
-                    }
-                    elapsedMs?.takeIf { it >= 400 || !running }?.let { ms ->
-                        Text(
-                            text = formatElapsed(ms),
-                            style = MaterialTheme.typography.labelSmall.copy(fontFamily = FontFamily.Monospace),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(Modifier.width(WtaSpacing.Tiny + 2.dp))
-                    }
-                    if (running) {
-                        WtaLoadingIndicator(
-                            size = 12.dp,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                        Spacer(Modifier.width(WtaSpacing.Tiny + 2.dp))
-                    }
-                    Icon(
-                        imageVector = statusIcon,
-                        contentDescription = null,
-                        tint = statusTint,
-                        modifier = Modifier.size(14.dp)
-                    )
-                    Spacer(Modifier.width(WtaSpacing.Tiny))
-                    Icon(
-                        imageVector = if (expanded) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(16.dp)
-                    )
-                }
-                AnimatedVisibility(
-                    visible = expanded,
-                    enter = WtaExpandIn,
-                    exit = WtaShrinkOut
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = WtaSpacing.Small + 2.dp)
-                            .padding(bottom = WtaSpacing.Small)
-                    ) {
-                        val handled = SpecialToolBody(tc, running = running)
-                        if (!handled) {
-                            if (tc.argumentsJson.isNotBlank()) {
-                                ToolBlockLabel(Strings.agentToolArgsLabel)
-                                Spacer(Modifier.height(2.dp))
-                                ToolMonoBlock(prettyJsonOrRaw(tc.argumentsJson))
-                            }
-                            if (running) {
-                                Spacer(Modifier.height(WtaSpacing.Tiny + 2.dp))
-                                ToolBlockLabel(Strings.agentToolResultLabel)
-                                Spacer(Modifier.height(2.dp))
-                                if (tc.resultPreview.isNotBlank() && tc.resultPreview != RecordedToolCall.RUNNING_SENTINEL) {
-                                    ToolMonoBlock(text = tc.resultPreview, spinner = true)
-                                } else {
-                                    ToolMonoBlock(
-                                        text = (tc.activity ?: Strings.agentPhaseToolRunning),
-                                        spinner = true
-                                    )
-                                }
-                            } else if (tc.resultPreview.isNotBlank()) {
-                                Spacer(Modifier.height(WtaSpacing.Tiny + 2.dp))
-                                ToolBlockLabel(Strings.agentToolResultLabel)
-                                Spacer(Modifier.height(2.dp))
-                                ToolMonoBlock(
-                                    text = tc.resultPreview,
-                                    truncated = tc.resultPreview.length >= 2000,
-                                    onViewFull = { showFullResult = true }
-                                )
-                            }
-                        }
-                    }
+            Text(
+                text = groupStatus.label,
+                style = MaterialTheme.typography.labelSmall,
+                color = if (groupStatus == ToolPresentationStatus.Running) colors.primary else colors.onSurfaceVariant
+            )
+            if (canShowMore) {
+                Icon(
+                    imageVector = if (showAll) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,
+                    contentDescription = null,
+                    tint = colors.onSurfaceVariant,
+                    modifier = Modifier.size(WtaSize.IconSmall)
+                )
+            }
+        }
+        visibleCalls.forEach { call ->
+            key(call.toolCallId) {
+                WtaSectionDivider(Modifier.padding(horizontal = WtaSpacing.Medium))
+                val expanded = call.toolCallId in openDetails
+                ToolActivityRow(call, call.presentationStatus(live), expanded) {
+                    openDetails = if (expanded) openDetails - call.toolCallId else openDetails + call.toolCallId
                 }
             }
         }
-    }
-
-    if (showFullResult) {
-        ToolFullResultDialog(
-            title = tc.name,
-            content = tc.resultPreview,
-            onDismiss = { showFullResult = false }
-        )
     }
 }
 
-/** Map common tool names to an icon; unknown tools fall back to a wrench. */
+private enum class ToolPresentationStatus {
+    Failed, Stopped, Running, Completed;
+
+    val label: String
+        get() = when (this) {
+            Failed -> Strings.failed
+            Stopped -> Strings.agentAbortedHint.trim('[', ']')
+            Running -> Strings.agentPhaseToolRunning
+            Completed -> Strings.completed
+        }
+}
+
+private fun RecordedToolCall.presentationStatus(live: Boolean): ToolPresentationStatus = when (effectiveStatus) {
+    RecordedToolCall.Status.Failed -> ToolPresentationStatus.Failed
+    RecordedToolCall.Status.Stopped -> ToolPresentationStatus.Stopped
+    RecordedToolCall.Status.Running -> if (live) ToolPresentationStatus.Running else ToolPresentationStatus.Stopped
+    RecordedToolCall.Status.Completed -> ToolPresentationStatus.Completed
+}
+
+@Composable
+private fun ToolActivityRow(
+    call: RecordedToolCall,
+    status: ToolPresentationStatus,
+    expanded: Boolean,
+    onToggle: () -> Unit
+) {
+    val colors = MaterialTheme.colorScheme
+    val title = toolActionLabel(call.name)
+    val target = remember(call.argumentsJson) { toolTarget(call.argumentsJson) }
+    val running = status == ToolPresentationStatus.Running
+    val summary = if (target.isNotBlank()) target else if (running || status == ToolPresentationStatus.Failed) {
+        call.visibleResult.lineSequence().lastOrNull { it.isNotBlank() }?.take(160).orEmpty()
+    } else ""
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .semantics { stateDescription = status.label }
+            .clickable(
+                role = Role.Button,
+                onClickLabel = if (expanded) Strings.collapse else Strings.expand,
+                onClick = onToggle
+            )
+            .heightIn(min = WtaSize.TouchTarget)
+            .padding(horizontal = WtaSpacing.Medium, vertical = WtaSpacing.Tiny + 2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
+    ) {
+        Icon(
+            imageVector = toolIconFor(call.name),
+            contentDescription = null,
+            tint = colors.onSurfaceVariant,
+            modifier = Modifier.size(WtaSize.IconSmall + 2.dp)
+        )
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.labelLarge,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            if (summary.isNotBlank()) {
+                Text(
+                    text = summary,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = colors.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+        if (running) {
+            WtaLoadingIndicator(size = 14.dp, color = colors.primary)
+        } else {
+            Icon(
+                imageVector = when (status) {
+                    ToolPresentationStatus.Completed -> Icons.Outlined.CheckCircle
+                    ToolPresentationStatus.Stopped -> Icons.Outlined.StopCircle
+                    else -> Icons.Outlined.ErrorOutline
+                },
+                contentDescription = null,
+                tint = colors.onSurfaceVariant,
+                modifier = Modifier.size(16.dp)
+            )
+        }
+        Icon(
+            imageVector = if (expanded) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,
+            contentDescription = null,
+            tint = colors.onSurfaceVariant,
+            modifier = Modifier.size(WtaSize.IconSmall)
+        )
+    }
+    AnimatedVisibility(visible = expanded, enter = WtaExpandIn, exit = WtaShrinkOut) {
+        ToolActivityDetails(call, status)
+    }
+}
+
+@Composable
+private fun ToolActivityDetails(call: RecordedToolCall, status: ToolPresentationStatus) {
+    var showResult by remember { mutableStateOf(false) }
+    val result = call.visibleResult
+    val running = status == ToolPresentationStatus.Running
+    val hasProblem = status == ToolPresentationStatus.Failed || status == ToolPresentationStatus.Stopped
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(
+            start = WtaSpacing.Medium,
+            end = WtaSpacing.Medium,
+            bottom = WtaSpacing.Medium
+        ),
+        verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
+    ) {
+        Text(
+            text = call.name,
+            style = MaterialTheme.typography.labelSmall.copy(fontFamily = FontFamily.Monospace),
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        if (hasProblem || !SpecialToolBody(call, running)) {
+            if (result.isNotBlank()) {
+                ToolBlockLabel(Strings.agentToolResultLabel)
+                ToolMonoBlock(
+                    text = result,
+                    spinner = running,
+                    truncated = result.length > 440 || result.count { it == '\n' } > 6,
+                    onViewFull = { showResult = true }
+                )
+            } else if (running) {
+                ToolMonoBlock(text = Strings.agentPhaseToolRunning, spinner = true)
+            }
+            if (call.argumentsJson.isNotBlank() && call.argumentsJson.trim() != "{}") {
+                ToolBlockLabel(Strings.agentToolArgsLabel)
+                ToolMonoBlock(prettyJsonOrRaw(call.argumentsJson))
+            }
+        }
+    }
+    if (showResult) {
+        ToolFullResultDialog(title = toolActionLabel(call.name), content = result, onDismiss = { showResult = false })
+    }
+}
+
+private fun toolActionLabel(name: String): String = when (name) {
+    "Read", "ReadAppFile" -> Strings.agentToolReadFile
+    "Write" -> Strings.agentToolWriteFile
+    "Edit" -> Strings.agentToolEditFile
+    "Delete" -> Strings.agentToolDeleteFile
+    "Glob" -> Strings.agentToolFindFiles
+    "Grep" -> Strings.agentToolSearchContent
+    "ListFiles" -> Strings.agentToolListFiles
+    "EnterPlanMode" -> Strings.agentPlanModeBadge
+    "ExitPlanMode" -> Strings.agentToolSubmitPlan
+    "TodoWrite", "TodoUpdate" -> Strings.agentTodoListHeader
+    "preview" -> Strings.agentPreviewOpen
+    else -> name
+}
+
 private fun toolIconFor(name: String): androidx.compose.ui.graphics.vector.ImageVector = when (name) {
     "Write" -> Icons.Outlined.Edit
     "Edit" -> Icons.Outlined.Edit
-    "Read" -> Icons.Outlined.Description
+    "Read", "ReadAppFile" -> Icons.Outlined.Description
     "Delete" -> Icons.Outlined.Delete
     "Glob" -> Icons.Outlined.Search
     "Grep" -> Icons.Outlined.Search
     "ListFiles" -> Icons.Outlined.FolderOpen
-    "TodoWrite" -> Icons.Outlined.ChecklistRtl
+    "TodoWrite", "TodoUpdate", "EnterPlanMode", "ExitPlanMode" -> Icons.Outlined.ChecklistRtl
     "CreateApp", "UpdateApp", "GetApp", "ListApps" -> Icons.Outlined.Apps
     "CreateModule", "UpdateModule", "GetModule", "ListModules" -> Icons.Outlined.Extension
     else -> Icons.Outlined.Build
 }
 
-private fun formatElapsed(ms: Long): String = when {
-    ms < 1000 -> "${ms}ms"
-    ms < 60_000 -> "%.1fs".format(ms / 1000.0)
-    else -> "${ms / 60_000}m ${(ms % 60_000) / 1000}s"
-}
-
-/** Full-screen scrollable dialog showing the untruncated tool result. */
 @Composable
 private fun ToolFullResultDialog(title: String, content: String, onDismiss: () -> Unit) {
     val clipboard = LocalClipboardManager.current
@@ -932,16 +857,14 @@ private fun ToolFullResultDialog(title: String, content: String, onDismiss: () -
 
 @Composable
 private fun SpecialToolBody(tc: RecordedToolCall, running: Boolean): Boolean {
-    val args = runCatching {
-        JsonParser.parseString(tc.argumentsJson).asJsonObject
-    }.getOrNull()
+    val args = parseToolArgs(tc.argumentsJson)
 
     return when (tc.name) {
         "Write" -> {
-            val path = args?.get("path")?.takeIf { !it.isJsonNull }?.asString.orEmpty()
-            val content = args?.get("content")?.takeIf { !it.isJsonNull }?.asString.orEmpty()
+            val path = args.stringValue("path")
+            val content = args.stringValue("content")
             if (path.isEmpty() && content.isEmpty()) return false
-            ToolPathHeader(path = path, kind = ToolKind.Write)
+            ToolPathHeader(path = path)
             if (content.isNotEmpty() || running) {
                 Spacer(Modifier.height(WtaSpacing.Tiny + 2.dp))
                 CodeBlock(
@@ -951,10 +874,10 @@ private fun SpecialToolBody(tc: RecordedToolCall, running: Boolean): Boolean {
                     maxHeightDp = 280
                 )
             }
-            if (!running && tc.resultPreview.isNotBlank()) {
+            if (!running && tc.visibleResult.isNotBlank()) {
                 Spacer(Modifier.height(WtaSpacing.Tiny + 2.dp))
                 Text(
-                    text = tc.resultPreview,
+                    text = tc.visibleResult,
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -962,15 +885,15 @@ private fun SpecialToolBody(tc: RecordedToolCall, running: Boolean): Boolean {
             true
         }
         "Edit" -> {
-            val path = args?.get("path")?.takeIf { !it.isJsonNull }?.asString.orEmpty()
-            val oldStr = args?.get("old_string")?.takeIf { !it.isJsonNull }?.asString.orEmpty()
-            val newStr = args?.get("new_string")?.takeIf { !it.isJsonNull }?.asString.orEmpty()
+            val path = args.stringValue("path")
+            val oldStr = args.stringValue("old_string")
+            val newStr = args.stringValue("new_string")
             if (path.isEmpty() && oldStr.isEmpty() && newStr.isEmpty()) return false
             val diffLines = if (oldStr.isNotEmpty() && newStr.isNotEmpty() && !running) {
                 com.webtoapp.core.agent.diff.LineDiff.diff(oldStr, newStr)
             } else null
             val stats = diffLines?.let { com.webtoapp.core.agent.diff.LineDiff.stats(it) }
-            ToolPathHeader(path = path, kind = ToolKind.Edit, stats = stats)
+            ToolPathHeader(path = path, stats = stats)
 
             if (diffLines != null) {
                 Spacer(Modifier.height(WtaSpacing.Tiny + 2.dp))
@@ -998,10 +921,10 @@ private fun SpecialToolBody(tc: RecordedToolCall, running: Boolean): Boolean {
                     )
                 }
             }
-            if (!running && tc.resultPreview.isNotBlank()) {
+            if (!running && tc.visibleResult.isNotBlank()) {
                 Spacer(Modifier.height(WtaSpacing.Tiny + 2.dp))
                 Text(
-                    text = tc.resultPreview,
+                    text = tc.visibleResult,
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -1009,19 +932,19 @@ private fun SpecialToolBody(tc: RecordedToolCall, running: Boolean): Boolean {
             true
         }
         "Read" -> {
-            val path = args?.get("path")?.takeIf { !it.isJsonNull }?.asString.orEmpty()
+            val path = args.stringValue("path")
             if (path.isEmpty()) return false
-            ToolPathHeader(path = path, kind = ToolKind.Read)
-            if (running && tc.resultPreview.isBlank()) {
+            ToolPathHeader(path = path)
+            if (running && tc.visibleResult.isBlank()) {
                 Spacer(Modifier.height(WtaSpacing.Tiny + 2.dp))
                 ToolMonoBlock(
-                    text = tc.activity ?: Strings.agentPhaseToolRunning,
+                    text = Strings.agentPhaseToolRunning,
                     spinner = true
                 )
-            } else if (tc.resultPreview.isNotBlank()) {
+            } else if (tc.visibleResult.isNotBlank()) {
                 Spacer(Modifier.height(WtaSpacing.Tiny + 2.dp))
                 CodeBlock(
-                    code = tc.resultPreview,
+                    code = tc.visibleResult,
                     language = languageFor(path),
                     showCaret = running,
                     maxHeightDp = 280
@@ -1030,13 +953,13 @@ private fun SpecialToolBody(tc: RecordedToolCall, running: Boolean): Boolean {
             true
         }
         "Delete" -> {
-            val path = args?.get("path")?.takeIf { !it.isJsonNull }?.asString.orEmpty()
+            val path = args.stringValue("path")
             if (path.isEmpty()) return false
-            ToolPathHeader(path = path, kind = ToolKind.Delete)
-            if (!running && tc.resultPreview.isNotBlank()) {
+            ToolPathHeader(path = path)
+            if (!running && tc.visibleResult.isNotBlank()) {
                 Spacer(Modifier.height(WtaSpacing.Tiny))
                 Text(
-                    text = tc.resultPreview,
+                    text = tc.visibleResult,
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -1044,9 +967,8 @@ private fun SpecialToolBody(tc: RecordedToolCall, running: Boolean): Boolean {
             true
         }
         "Glob", "Grep", "ListFiles" -> {
-            // Path-listing tools read far better as rows than as a raw text blob.
             if (running) return false
-            val lines = tc.resultPreview.lines().map { it.trim() }.filter { it.isNotEmpty() }
+            val lines = tc.visibleResult.lines().map { it.trim() }.filter { it.isNotEmpty() }
             if (lines.isEmpty()) return false
             FileListBody(lines)
             true
@@ -1091,44 +1013,14 @@ private fun FileListBody(lines: List<String>) {
     }
 }
 
-private enum class ToolKind { Write, Edit, Read, Delete }
-
 @Composable
-private fun ToolPathHeader(
-    path: String,
-    kind: ToolKind,
-    stats: com.webtoapp.core.agent.diff.LineDiff.Stats? = null
-) {
-    val (label, container, content) = when (kind) {
-        ToolKind.Write -> Triple(
-            "WRITE",
-            WtaColors.semantic.successContainer,
-            WtaColors.semantic.onSuccessContainer
-        )
-        ToolKind.Edit -> Triple(
-            "EDIT",
-            WtaColors.semantic.warningContainer,
-            WtaColors.semantic.onWarningContainer
-        )
-        ToolKind.Read -> Triple(
-            "READ",
-            WtaColors.semantic.infoContainer,
-            WtaColors.semantic.onInfoContainer
-        )
-        ToolKind.Delete -> Triple(
-            "DELETE",
-            WtaColors.semantic.errorContainer,
-            WtaColors.semantic.onErrorContainer
-        )
-    }
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        WtaInfoChip(
-            label = label,
-            containerColor = container,
-            contentColor = content
-        )
-        Spacer(Modifier.width(WtaSpacing.Small))
-        SelectionContainer(modifier = Modifier.weight(1f, fill = false)) {
+private fun ToolPathHeader(path: String, stats: com.webtoapp.core.agent.diff.LineDiff.Stats? = null) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
+    ) {
+        SelectionContainer(modifier = Modifier.weight(1f)) {
             Text(
                 text = path,
                 style = MaterialTheme.typography.labelMedium.copy(fontFamily = FontFamily.Monospace),
@@ -1137,18 +1029,16 @@ private fun ToolPathHeader(
             )
         }
         if (stats != null && (stats.added > 0 || stats.removed > 0)) {
-            Spacer(Modifier.width(WtaSpacing.Small))
             Text(
                 text = "+${stats.added}",
                 style = MaterialTheme.typography.labelSmall.copy(fontFamily = FontFamily.Monospace),
                 color = WtaColors.semantic.success,
                 fontWeight = FontWeight.SemiBold
             )
-            Spacer(Modifier.width(WtaSpacing.Tiny))
             Text(
                 text = "-${stats.removed}",
                 style = MaterialTheme.typography.labelSmall.copy(fontFamily = FontFamily.Monospace),
-                color = MaterialTheme.colorScheme.error,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontWeight = FontWeight.SemiBold
             )
         }
@@ -1198,65 +1088,57 @@ private fun ToolBlockLabel(text: String) {
 }
 
 @Composable
-private fun ToolMonoBlock(text: String, spinner: Boolean = false, truncated: Boolean = false, onViewFull: (() -> Unit)? = null) {
+private fun ToolMonoBlock(
+    text: String,
+    spinner: Boolean = false,
+    truncated: Boolean = false,
+    onViewFull: (() -> Unit)? = null
+) {
     val clipboard = LocalClipboardManager.current
-    androidx.compose.material3.Surface(
+    val colors = MaterialTheme.colorScheme
+    Surface(
         modifier = Modifier.fillMaxWidth(),
-        color = AppColors.EditorDark,
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(
-            com.webtoapp.ui.design.WtaRadius.IconPlate
-        )
+        color = colors.surfaceContainerHigh,
+        shape = MaterialTheme.shapes.small
     ) {
-        Row(modifier = Modifier.padding(horizontal = WtaSpacing.Small + 2.dp, vertical = WtaSpacing.Small)) {
-            if (spinner) {
-                WtaLoadingIndicator(
-                    modifier = Modifier.padding(top = 4.dp),
-                    size = 10.dp,
-                    color = AppColors.CodeGutter
-                )
-                Spacer(Modifier.width(WtaSpacing.Small))
-            }
-            SelectionContainer(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = text,
-                    style = MaterialTheme.typography.bodySmall.copy(
-                        fontFamily = FontFamily.Monospace,
-                        fontSize = 11.sp,
-                        color = AppColors.CodeForeground
-                    )
-                )
-            }
-            if (!spinner && text.isNotBlank()) {
-                Spacer(Modifier.width(WtaSpacing.Small))
-                WtaIconButton(
-                    onClick = { clipboard.setText(AnnotatedString(text)) },
-                    icon = Icons.Outlined.ContentCopy,
-                    contentDescription = Strings.agentMessageActionCopy,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-        }
-        if (truncated && onViewFull != null) {
+        Column {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable(onClick = onViewFull)
-                    .padding(horizontal = WtaSpacing.Small + 2.dp, vertical = WtaSpacing.Tiny),
-                verticalAlignment = Alignment.CenterVertically
+                modifier = Modifier.padding(start = WtaSpacing.Medium, top = WtaSpacing.Small, bottom = WtaSpacing.Small),
+                horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Tiny),
+                verticalAlignment = Alignment.Top
             ) {
-                Text(
-                    text = Strings.agentToolViewFull,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = AppColors.CodeGutter,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Spacer(Modifier.weight(1f))
-                Icon(
-                    imageVector = Icons.Outlined.ExpandMore,
-                    contentDescription = null,
-                    tint = AppColors.CodeGutter,
-                    modifier = Modifier.size(14.dp)
-                )
+                if (spinner) {
+                    WtaLoadingIndicator(
+                        modifier = Modifier.padding(top = WtaSpacing.Tiny),
+                        size = 12.dp,
+                        color = colors.primary
+                    )
+                }
+                SelectionContainer(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = text,
+                        style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
+                        color = colors.onSurface,
+                        maxLines = if (truncated) 7 else Int.MAX_VALUE,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                if (!spinner && text.isNotBlank()) {
+                    WtaIconButton(
+                        onClick = { clipboard.setText(AnnotatedString(text)) },
+                        icon = Icons.Outlined.ContentCopy,
+                        contentDescription = Strings.agentMessageActionCopy,
+                        modifier = Modifier.size(WtaSize.TouchTarget)
+                    )
+                } else {
+                    Spacer(Modifier.width(WtaSpacing.Small))
+                }
+            }
+            if (truncated && onViewFull != null) {
+                androidx.compose.material3.TextButton(
+                    onClick = onViewFull,
+                    modifier = Modifier.align(Alignment.End)
+                ) { Text(Strings.details) }
             }
         }
     }
@@ -1352,16 +1234,17 @@ private fun DiffLineRow(line: com.webtoapp.core.agent.diff.LineDiff.Line) {
     }
 }
 
-private fun subtitleFor(tc: RecordedToolCall): String {
-    tc.activity?.takeIf { it.isNotBlank() }?.let { return it }
-    val args = runCatching { JsonParser.parseString(tc.argumentsJson).asJsonObject }.getOrNull()
-        ?: return ""
-    val keys = listOf("path", "file", "filePath", "pattern", "query", "command", "url", "name")
-    for (k in keys) {
-        val v = args.get(k)?.takeIf { !it.isJsonNull }?.asString.orEmpty()
-        if (v.isNotBlank()) return v
-    }
-    return ""
+private fun parseToolArgs(json: String): com.google.gson.JsonObject? =
+    runCatching { JsonParser.parseString(json) as? com.google.gson.JsonObject }.getOrNull()
+
+private fun com.google.gson.JsonObject?.stringValue(key: String): String =
+    this?.get(key)?.takeIf { it.isJsonPrimitive }?.asString.orEmpty()
+
+private fun toolTarget(json: String): String {
+    val args = parseToolArgs(json) ?: return ""
+    return listOf("path", "file", "filePath", "pattern", "query", "command", "url", "name", "appId", "moduleId")
+        .firstNotNullOfOrNull { args.stringValue(it).takeIf(String::isNotBlank) }
+        .orEmpty()
 }
 
 private fun prettyJsonOrRaw(json: String): String {

@@ -1,5 +1,8 @@
 package com.webtoapp.core.agent.runtime
 
+import com.webtoapp.core.agent.session.RecordedToolCall
+import com.webtoapp.core.agent.tool.ToolResult
+
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -9,14 +12,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
-/**
- * Regression coverage for the silent-empty-response bug: a turn whose request died
- * BEFORE the first streamed delta accumulated no text/thinking/tools, and
- * [TurnAccumulator.buildFinalMessage] returned null — the error was then dropped
- * entirely (no persisted bubble, no banner, nothing). A failed turn must always
- * leave a durable record; an empty-but-completed turn must persist the engine's
- * empty-response notice; only a substance-less abort stays dropped.
- */
 @RunWith(RobolectricTestRunner::class)
 class TurnAccumulatorTest {
 
@@ -66,4 +61,33 @@ class TurnAccumulatorTest {
         assertNotNull(msg)
         assertEquals("hello world", msg!!.content)
     }
+
+    @Test
+    fun `tool-only turn preserves its timeline markers without adding assistant prose`() {
+        val acc = TurnAccumulator("session-1")
+        val marker = "\u2063TC:write\u2063"
+        acc.startTool("write", "Write")
+        acc.applyTextDelta(marker)
+        acc.finishTool("write", "Write", "{}", ToolResult.ok("Created index.html"))
+
+        val result = acc.buildFinalMessage(summaryFallback = null, isError = false)!!
+
+        assertEquals(marker, result.content)
+        assertEquals(RecordedToolCall.Status.Completed, result.toolCalls.single().effectiveStatus)
+    }
+
+    @Test
+    fun `progress does not complete a tool and abort keeps its partial output`() {
+        val acc = TurnAccumulator("session-1")
+        acc.startTool("write", "Write")
+        acc.updateToolProgress("write", "progress")
+        val running = acc.buildFinalMessage(summaryFallback = null, isError = false)!!.toolCalls.single()
+        assertEquals(RecordedToolCall.Status.Running, running.effectiveStatus)
+
+        acc.finishRunningToolsAsAborted()
+        val aborted = acc.buildFinalMessage(summaryFallback = null, isError = true, aborted = true)!!
+        assertEquals(RecordedToolCall.Status.Stopped, aborted.toolCalls.single().effectiveStatus)
+        assertEquals("progress", aborted.toolCalls.single().visibleResult)
+    }
+
 }
