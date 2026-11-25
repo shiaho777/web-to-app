@@ -6242,6 +6242,32 @@ object StringsE {
         AppLanguage.KOREAN -> "내 오프라인 앱"
     }
 
+    val publicBuildReport: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "公开构建报告"
+        AppLanguage.ENGLISH -> "Public build report"
+        AppLanguage.ARABIC -> "تقرير بناء عام"
+        AppLanguage.PORTUGUESE -> "Relatório público de compilação"
+        AppLanguage.SPANISH -> "Informe público de compilación"
+        AppLanguage.FRENCH -> "Rapport de compilation public"
+        AppLanguage.GERMAN -> "Öffentlicher Build-Bericht"
+        AppLanguage.RUSSIAN -> "Публичный отчёт о сборке"
+        AppLanguage.JAPANESE -> "公開用ビルドレポート"
+        AppLanguage.KOREAN -> "공개 빌드 보고서"
+    }
+
+    val copyPublicBuildReport: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "复制公开报告"
+        AppLanguage.ENGLISH -> "Copy public report"
+        AppLanguage.ARABIC -> "نسخ التقرير العام"
+        AppLanguage.PORTUGUESE -> "Copiar relatório público"
+        AppLanguage.SPANISH -> "Copiar informe público"
+        AppLanguage.FRENCH -> "Copier le rapport public"
+        AppLanguage.GERMAN -> "Öffentlichen Bericht kopieren"
+        AppLanguage.RUSSIAN -> "Копировать публичный отчёт"
+        AppLanguage.JAPANESE -> "公開用レポートをコピー"
+        AppLanguage.KOREAN -> "공개 보고서 복사"
+    }
+
     val permissionConfigTitle: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "权限配置"
         AppLanguage.ENGLISH -> "Permission Configuration"

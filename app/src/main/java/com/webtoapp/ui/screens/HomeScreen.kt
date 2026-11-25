@@ -717,7 +717,7 @@ fun HomeScreen(
                                         } catch (e: Exception) {
                                             shareApkFailureReport = buildActionFailureReport(
                                                 title = Strings.apkShareFailed,
-                                                stage = "share_apk_intent",
+                                                action = BuildFailureAction.SHARE_APK_INTENT,
                                                 webApp = fullApp,
                                                 summary = Strings.shareApkFailed.replace("%s", e.message ?: "Unknown error"),
                                                 logPath = result.logPath,
@@ -732,11 +732,11 @@ fun HomeScreen(
                                     is BuildResult.Error -> {
                                         shareApkFailureReport = buildActionFailureReport(
                                             title = Strings.apkShareFailed,
-                                            stage = result.diagnostic?.stage?.label ?: "build_apk_for_share",
+                                            action = BuildFailureAction.BUILD_APK_FOR_SHARE,
                                             webApp = fullApp,
                                             summary = Strings.shareApkFailed.replace("%s", result.message),
                                             logPath = result.logPath,
-                                            extraLines = buildDiagnosticLines(result)
+                                            diagnostic = result.diagnostic
                                         )
                                     }
                                 }
