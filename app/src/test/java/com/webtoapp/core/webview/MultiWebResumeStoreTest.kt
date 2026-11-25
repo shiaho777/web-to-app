@@ -63,6 +63,34 @@ class MultiWebResumeStoreTest {
     }
 
     @Test
+    fun `drawer button position survives reopening the store and is scoped to the app and anchor`() {
+        val position = MultiWebDrawerButtonPosition(0.25f, 0.75f)
+        newStore().persistDrawerButtonPosition("preview/1/topEnd", position)
+
+        val reopened = newStore()
+        assertThat(reopened.drawerButtonPosition("preview/1/topEnd")).isEqualTo(position)
+        assertThat(reopened.drawerButtonPosition("preview/1/bottomStart")).isNull()
+        assertThat(reopened.drawerButtonPosition("preview/2/topEnd")).isNull()
+        assertThat(reopened.drawerButtonPosition("shell/topEnd")).isNull()
+    }
+
+    @Test
+    fun `a drag clamps at the edges and can move back immediately`() {
+        val position = MultiWebDrawerButtonPosition(0.5f, 0.5f)
+        val edge = position.movedBy(dx = 200f, dy = -400f, availableWidth = 100, availableHeight = 200)
+        assertThat(edge).isEqualTo(MultiWebDrawerButtonPosition(1f, 0f))
+        assertThat(edge.movedBy(dx = -25f, dy = 50f, availableWidth = 100, availableHeight = 200))
+            .isEqualTo(MultiWebDrawerButtonPosition(0.75f, 0.25f))
+    }
+
+    @Test
+    fun `a collapsed axis retains its position for when the viewport expands`() {
+        val position = MultiWebDrawerButtonPosition(0.75f, 0.25f)
+        assertThat(position.movedBy(dx = -500f, dy = 25f, availableWidth = 0, availableHeight = 100))
+            .isEqualTo(MultiWebDrawerButtonPosition(0.75f, 0.5f))
+    }
+
+    @Test
     fun `drawer search matches name host or url`() {
         assertThat(multiWebSiteMatchesQuery("Pixiv", "https://www.pixiv.net/art", "pixiv.net", "")).isTrue()
         assertThat(multiWebSiteMatchesQuery("Pixiv", "https://www.pixiv.net/art", "pixiv.net", "pix")).isTrue()

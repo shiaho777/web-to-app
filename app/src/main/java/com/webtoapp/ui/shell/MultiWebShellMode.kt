@@ -105,6 +105,7 @@ fun MultiWebShellMode(
     isRefreshing: Boolean = false,
     onRefresh: () -> Unit = {},
     onBrowserSurfaceCreated: (com.webtoapp.core.engine.BrowserSurface) -> Unit = {},
+    previewAppId: Long? = null,
     onTopTabColor: (String?) -> Unit = {}
 ) {
     val multiWebConfig = config.multiWebConfig
@@ -134,7 +135,10 @@ fun MultiWebShellMode(
         "TOP_TABS" -> TabsMode(config, multiWebConfig, sites, webViewConfig, webViewCallbacks, webViewManager, onWebViewCreated, swipeRefreshEnabled, isRefreshing, onRefresh, onBrowserSurfaceCreated, TabBarPlacement.TOP, onTopTabColor)
         "CARDS" -> CardsMode(config, multiWebConfig, sites, webViewConfig, webViewCallbacks, webViewManager, onWebViewCreated, swipeRefreshEnabled, isRefreshing, onRefresh, onBrowserSurfaceCreated)
         "FEED" -> FeedMode(config, multiWebConfig, sites, webViewConfig, webViewCallbacks, webViewManager, onWebViewCreated, swipeRefreshEnabled, isRefreshing, onRefresh, onBrowserSurfaceCreated)
-        "DRAWER" -> DrawerMode(config, multiWebConfig, sites, webViewConfig, webViewCallbacks, webViewManager, onWebViewCreated, swipeRefreshEnabled, isRefreshing, onRefresh, onBrowserSurfaceCreated)
+        "DRAWER" -> DrawerMode(
+            config, multiWebConfig, sites, webViewConfig, webViewCallbacks, webViewManager, onWebViewCreated,
+            swipeRefreshEnabled, isRefreshing, onRefresh, onBrowserSurfaceCreated, previewAppId
+        )
         else -> TabsMode(config, multiWebConfig, sites, webViewConfig, webViewCallbacks, webViewManager, onWebViewCreated, swipeRefreshEnabled, isRefreshing, onRefresh, onBrowserSurfaceCreated)
     }
 }
@@ -1304,7 +1308,8 @@ private fun DrawerMode(
     swipeRefreshEnabled: Boolean,
     isRefreshing: Boolean,
     onRefresh: () -> Unit,
-    onBrowserSurfaceCreated: (com.webtoapp.core.engine.BrowserSurface) -> Unit = {}
+    onBrowserSurfaceCreated: (com.webtoapp.core.engine.BrowserSurface) -> Unit,
+    previewAppId: Long?
 ) {
     val (resumeStore, resumeKey) = rememberResumeStore(config)
     var selectedSiteId by rememberSaveable {
@@ -1572,53 +1577,15 @@ private fun DrawerMode(
                     }
                 }
                 if (showFab) {
-                    val topEnd = !multiWebConfig.drawerFabAnchor.equals("BOTTOM_START", ignoreCase = true)
-                    DrawerSiteFab(
-                        modifier = Modifier
-                            .align(if (topEnd) Alignment.TopEnd else Alignment.BottomStart)
-                            .zIndex(2f)
-                            .windowInsetsPadding(
-                                WindowInsets.safeDrawing.only(
-                                    WindowInsetsSides.Horizontal +
-                                        if (topEnd) WindowInsetsSides.Top else WindowInsetsSides.Bottom
-                                )
-                            )
-                            .padding(12.dp),
+                    MultiWebDrawerButton(
+                        modifier = Modifier.zIndex(2f),
                         site = currentSite,
-                        contentDescription = Strings.multiWebSiteList,
+                        anchor = multiWebConfig.drawerFabAnchor,
+                        store = resumeStore,
+                        appKey = previewAppId?.let { "preview/$it" } ?: "shell",
                         onClick = { drawerVisible = true }
                     )
                 }
-            }
-        }
-    }
-}
-
-@Composable
-private fun DrawerSiteFab(
-    modifier: Modifier,
-    site: MultiWebSiteShellConfig?,
-    contentDescription: String,
-    onClick: () -> Unit
-) {
-    Surface(
-        onClick = onClick,
-        modifier = modifier.size(44.dp),
-        shape = CircleShape,
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
-        shadowElevation = 6.dp
-    ) {
-        Box(contentAlignment = Alignment.Center) {
-            val emoji = site?.iconEmoji?.takeIf { it.isNotBlank() }
-            if (emoji != null) {
-                Text(emoji, fontSize = 20.sp)
-            } else {
-                Icon(
-                    Icons.Outlined.GridView,
-                    contentDescription = contentDescription,
-                    modifier = Modifier.size(22.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
             }
         }
     }
