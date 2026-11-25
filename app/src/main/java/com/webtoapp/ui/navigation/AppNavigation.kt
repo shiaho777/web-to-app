@@ -12,6 +12,7 @@ import com.webtoapp.ui.design.WtaAlertDialog
 import com.webtoapp.ui.design.WtaLoadingIndicator
 import com.webtoapp.ui.viewmodel.EditorSaveState
 import com.webtoapp.ui.viewmodel.EditorSaveViewModel
+import com.webtoapp.ui.viewmodel.OfflinePackDraftViewModel
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
@@ -609,25 +610,20 @@ fun AppNavigation() {
 
             composable(Routes.CREATE_OFFLINE_PACK) { backStackEntry ->
                 val save = editorSave(navController, backStackEntry)
-                val saveState by save.state.collectAsStateWithLifecycle()
+                val draft = viewModel<OfflinePackDraftViewModel>(viewModelStoreOwner = backStackEntry)
+                val state by draft.state.collectAsStateWithLifecycle()
                 CreateOfflinePackScreen(
-                    isScraping = saveState is EditorSaveState.Saving,
-                    onBack = { navController.popBackStackSafely() },
-                    onStartScrape = { name, url, maxDepth, downloadCdn, followLinks, maxFiles, maxTotalSizeMb, skipPatterns, timeoutSeconds, onProgress ->
-                        save.submit(showProgress = false) {
-                            viewModel.saveScrapedWebsiteApp(
-                                name = name,
-                                url = url,
-                                iconUri = null,
-                                maxDepth = maxDepth,
-                                downloadCdnResources = downloadCdn,
-                                followLinks = followLinks,
-                                maxFiles = maxFiles,
-                                maxTotalSizeMb = maxTotalSizeMb,
-                                skipPatterns = skipPatterns,
-                                timeoutSeconds = timeoutSeconds,
-                                onProgress = onProgress
-                            )
+                    state = state,
+                    onBack = { if (!save.isSaving) navController.popBackStackSafely() },
+                    onStartScrape = draft::prepare,
+                    onClosePreview = { if (!save.isSaving) draft.discard() },
+                    onDismissError = draft::discard,
+                    onSavePack = { pack ->
+                        if (draft.beginSaving()) {
+                            val accepted = save.submit(onFinished = draft::finishSaving) {
+                                viewModel.saveOfflinePack(pack)
+                            }
+                            if (!accepted) draft.finishSaving(false)
                         }
                     }
                 )

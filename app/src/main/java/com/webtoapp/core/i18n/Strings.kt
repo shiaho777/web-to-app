@@ -4197,6 +4197,11 @@ object Strings {
     fun buildServiceRunning(appName: String): String = StringsE.buildServiceRunning(appName)
     val openWithTitle: String get() = StringsE.openWithTitle
     val openWithHint: String get() = StringsE.openWithHint
+    val galleryContinueWatching: String get() = StringsE.galleryContinueWatching
+    val galleryResumeUnavailable: String get() = StringsE.galleryResumeUnavailable
+    val offlinePackPreviewTitle: String get() = StringsE.offlinePackPreviewTitle
+    val offlinePackMissingResources: String get() = StringsE.offlinePackMissingResources
+    val offlinePackNoMissingResources: String get() = StringsE.offlinePackNoMissingResources
     val signingBackupTitle: String get() = StringsE.signingBackupTitle
     val signingBackupUnlock: String get() = StringsE.signingBackupUnlock
     val signingBackupPassword: String get() = StringsE.signingBackupPassword

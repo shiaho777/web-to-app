@@ -15,6 +15,7 @@ import androidx.compose.material3.MotionScheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -25,6 +26,7 @@ import com.webtoapp.data.model.SplashOrientation
 import com.webtoapp.data.repository.WebAppRepository
 import com.webtoapp.ui.animation.HostPreviewMotion
 import com.webtoapp.ui.shell.GalleryFolderNavigator
+import com.webtoapp.ui.shared.GalleryWatchHistory
 import com.webtoapp.ui.shell.ShellGalleryPlayer
 import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
@@ -81,7 +83,8 @@ class GalleryPlayerActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     private fun showGallery(galleryConfig: GalleryConfig, galleryId: Long) {
         val positionKey = galleryPositionKey(galleryId).takeIf {
-            galleryId > 0 && galleryConfig.rememberPosition && !galleryConfig.useDeviceFolder
+            galleryId > 0 && galleryConfig.rememberPosition && !galleryConfig.useDeviceFolder &&
+                galleryConfig.items.none { it.type == com.webtoapp.data.model.GalleryItemType.VIDEO }
         }
         val savedIndex = positionKey?.let {
             getSharedPreferences(GALLERY_POSITION_PREFS, MODE_PRIVATE).getInt(it, -1)
@@ -122,7 +125,17 @@ class GalleryPlayerActivity : ComponentActivity() {
                         positionKeySuffix = "preview/$galleryId"
                     )
                 } else {
-                    GalleryFolderNavigator(galleryConfig.categories, onBack = { finish() }) { categoryId, back ->
+                    val history = androidx.compose.runtime.remember(galleryId) {
+                        GalleryWatchHistory(applicationContext, "preview/$galleryId/bundled")
+                    }
+                    val watched = history.latestEntry.collectAsState()
+                    GalleryFolderNavigator(
+                        galleryConfig.categories,
+                        onBack = { finish() },
+                        latestVideo = {
+                            watched.value?.takeIf { entry -> galleryConfig.items.any { it.id == entry.videoId } }
+                        }
+                    ) { categoryId, videoId, back ->
                         val scoped = if (categoryId == null) galleryConfig else galleryConfig.copy(
                             items = galleryConfig.getItemsByCategory(categoryId)
                         )
@@ -131,7 +144,9 @@ class GalleryPlayerActivity : ComponentActivity() {
                             startIndex = if (categoryId == null) startIndex.coerceIn(0, scoped.items.lastIndex.coerceAtLeast(0)) else 0,
                             onBack = back,
                             positionKey = positionKey.takeIf { categoryId == null },
-                            startInOverview = categoryId != null || savedIndex <= 0
+                            startInOverview = videoId == null && (categoryId != null || savedIndex <= 0),
+                            history = history,
+                            startVideoId = videoId
                         )
                     }
                 }

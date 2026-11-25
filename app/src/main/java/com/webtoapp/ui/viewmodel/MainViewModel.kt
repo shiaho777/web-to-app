@@ -1453,59 +1453,31 @@ class MainViewModel(
         )
     }
 
-    suspend fun saveScrapedWebsiteApp(
-        name: String,
-        url: String,
-        iconUri: Uri?,
-        maxDepth: Int = 3,
-        downloadCdnResources: Boolean = true,
-        followLinks: Boolean = true,
-        maxFiles: Int = 500,
-        maxTotalSizeMb: Int = 200,
-        skipPatterns: String = "",
-        timeoutSeconds: Int = 30,
-        onProgress: (com.webtoapp.core.scraper.WebsiteScraper.ScrapeProgress) -> Unit = {}
-    ) {
+    internal suspend fun saveOfflinePack(draft: OfflinePackDraft) {
         val context = getApplication<Application>()
-        val scraper = com.webtoapp.core.scraper.WebsiteScraper(context)
-        val patterns = skipPatterns.split(',', ' ', ';').map(String::trim).filter(String::isNotEmpty)
-        val config = com.webtoapp.core.scraper.WebsiteScraper.ScrapeConfig(
-            url = url,
-            maxDepth = maxDepth,
-            downloadCdnResources = downloadCdnResources,
-            followLinks = followLinks,
-            maxFiles = maxFiles,
-            maxTotalSize = maxTotalSizeMb * 1024L * 1024L,
-            skipPatterns = patterns,
-            timeoutSeconds = timeoutSeconds
-        )
-        val mainHandler = android.os.Handler(android.os.Looper.getMainLooper())
-        when (val result = scraper.scrape(config) { progress -> mainHandler.post { onProgress(progress) } }) {
-            is com.webtoapp.core.scraper.WebsiteScraper.ScrapeResult.Error -> throw EditorSaveException(result.message)
-            is com.webtoapp.core.scraper.WebsiteScraper.ScrapeResult.Success -> {
-                try {
-                    createApp(Strings.websiteOfflinePackTitle, iconUri) { iconPath, themeType, categoryId ->
-                        val projectId = newHtmlProject()
-                        val savedFiles = copyBuildOutputToStorage(context, result.projectDir.absolutePath, projectId)
-                        if (!hasReadableHtmlEntry(savedFiles)) throw EditorSaveException(Strings.scrapeNoHtmlFound)
-                        WebApp(
-                            name = name.ifBlank { java.net.URL(url).host },
-                            url = url,
-                            iconPath = iconPath,
-                            appType = AppType.HTML,
-                            htmlConfig = HtmlConfig(projectId = projectId, entryFile = result.entryFile, files = savedFiles),
-                            themeType = themeType,
-                            categoryId = categoryId
-                        )
-                    }
-                    _uiState.value = UiState.Success(
-                        Strings.scrapePackSuccess.format(result.totalFiles, result.totalSize / 1024)
-                    )
-                } finally {
-                    withContext(Dispatchers.IO) { scraper.deleteScrapedSite(result.projectDir.name) }
-                }
+        val result = draft.result
+        createApp(Strings.websiteOfflinePackTitle, null) { iconPath, themeType, categoryId ->
+            val projectId = newHtmlProject()
+            val savedFiles = copyBuildOutputToStorage(context, result.projectDir.absolutePath, projectId)
+            if (savedFiles.none { it.name == result.entryFile && File(it.path).canRead() }) {
+                throw EditorSaveException(Strings.scrapeNoHtmlFound)
             }
+            WebApp(
+                name = draft.name.ifBlank { java.net.URL(draft.url).host },
+                url = draft.url,
+                iconPath = iconPath,
+                appType = AppType.HTML,
+                htmlConfig = HtmlConfig(
+                    projectId = projectId,
+                    entryFile = result.entryFile,
+                    files = savedFiles,
+                    loadMode = HtmlLoadMode.LOCAL_HTTP
+                ),
+                themeType = themeType,
+                categoryId = categoryId
+            )
         }
+        _uiState.value = UiState.Success(Strings.scrapePackSuccess.format(result.totalFiles, result.totalSize / 1024))
     }
 
     fun selectCategory(categoryId: Long?) {
