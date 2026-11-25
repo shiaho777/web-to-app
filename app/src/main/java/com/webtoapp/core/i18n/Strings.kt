@@ -3385,6 +3385,8 @@ object Strings {
     val advancedConfig: String get() = StringsE.advancedConfig
     val animationPositionInfo: String get() = StringsE.animationPositionInfo
     val apkBuildFailed: String get() = StringsE.apkBuildFailed
+    val publicBuildReport: String get() = StringsE.publicBuildReport
+    val copyPublicBuildReport: String get() = StringsE.copyPublicBuildReport
     val apkShareFailed: String get() = StringsE.apkShareFailed
     val attachContext: String get() = StringsE.attachContext
     val btnCopy: String get() = StringsE.btnCopy

@@ -371,10 +371,10 @@ private fun BuildApkContent(
             if (preflight.hasErrors) {
                 buildFailureReport = buildActionFailureReport(
                     title = Strings.apkExportPreflightTitle,
-                    stage = "export_preflight",
+                    action = BuildFailureAction.EXPORT_PREFLIGHT,
                     webApp = webAppWithConfig,
                     summary = Strings.apkExportPreflightBlocked.format(preflight.errors.size),
-                    extraLines = preflight.issues.map { it.summary() }
+                    preflight = preflight
                 )
                 isBuilding = false
                 return@launch
@@ -494,7 +494,7 @@ private fun BuildApkContent(
                 val error = builderInitError
                 buildFailureReport = buildActionFailureReport(
                     title = Strings.apkBuildFailed,
-                    stage = "apk_builder_init",
+                    action = BuildFailureAction.BUILDER_INIT,
                     webApp = currentBuildConfig(),
                     summary = error?.message ?: Strings.unknownError,
                     throwable = error
@@ -1466,101 +1466,15 @@ fun EngineSelectionCard(
     }
 }
 
-private fun buildBuildFailureReport(
-    webApp: WebApp,
-    error: BuildResult.Error
-): BuildFailureReport {
-    return buildActionFailureReport(
+private fun buildBuildFailureReport(webApp: WebApp, error: BuildResult.Error): BuildFailureReport =
+    buildActionFailureReport(
         title = Strings.apkBuildFailed,
-        stage = error.diagnostic?.stage?.label ?: "apk_build",
+        action = BuildFailureAction.BUILD_APK,
         webApp = webApp,
         summary = error.message,
         logPath = error.logPath,
-        extraLines = buildDiagnosticLines(error)
+        diagnostic = error.diagnostic
     )
-}
-
-internal data class BuildFailureReport(
-    val title: String,
-    val summary: String,
-    val details: String
-)
-
-internal fun readBuildLogTail(path: String?, maxChars: Int = 20000): String {
-    return try {
-        val file = path
-            ?.takeIf { it.isNotBlank() }
-            ?.let { java.io.File(it) }
-            ?.takeIf { it.exists() && it.isFile }
-            ?: return "<build log unavailable>"
-        val length = file.length()
-        if (length <= maxChars) {
-            file.readText()
-        } else {
-            val start = length - maxChars
-            java.io.RandomAccessFile(file, "r").use { raf ->
-                raf.seek(start)
-                val buffer = ByteArray(maxChars)
-                raf.readFully(buffer)
-                val tail = String(buffer, Charsets.UTF_8)
-                val firstNl = tail.indexOf('\n')
-                if (firstNl >= 0 && firstNl < tail.length - 1) tail.substring(firstNl + 1) else tail
-            }
-        }
-    } catch (e: Exception) {
-        AppLogger.e("BuildApkScreen", "读取 APK 构建日志失败", e)
-        Strings.readBuildLogFailed.format(e.message ?: "Unknown error")
-    }
-}
-
-internal fun buildActionFailureReport(
-    title: String,
-    stage: String,
-    webApp: WebApp,
-    summary: String,
-    logPath: String? = null,
-    throwable: Throwable? = null,
-    extraLines: List<String> = emptyList()
-): BuildFailureReport {
-    throwable?.let { AppLogger.e("BuildApkScreen", "$title failed at $stage", it) }
-    val buildLog = readBuildLogTail(logPath)
-
-    val details = buildString {
-        appendLine(title)
-        appendLine("stage: $stage")
-        appendLine("summary: $summary")
-        appendLine()
-        appendLine("project:")
-        appendLine("name=${webApp.name}")
-        appendLine("appType=${webApp.appType}")
-        appendLine("source=${webApp.url}")
-        if (extraLines.isNotEmpty()) {
-            appendLine()
-            appendLine("context:")
-            extraLines.forEach { appendLine(it) }
-        }
-        appendLine()
-        appendLine("log_path:")
-        appendLine(logPath ?: "<unavailable>")
-        appendLine()
-        appendLine("build_log:")
-        appendLine(buildLog)
-        if (throwable != null) {
-            appendLine()
-            appendLine("exception:")
-            appendLine(android.util.Log.getStackTraceString(throwable))
-        }
-        appendLine()
-        appendLine("recent_logs:")
-        append(AppLogger.getRecentLogTail())
-    }
-
-    return BuildFailureReport(
-        title = title,
-        summary = summary,
-        details = details
-    )
-}
 
 internal fun incrementalBuildModeLabel(mode: String?): String {
     return when (mode) {
@@ -1571,23 +1485,13 @@ internal fun incrementalBuildModeLabel(mode: String?): String {
     }
 }
 
-internal fun buildDiagnosticLines(error: BuildResult.Error): List<String> {
-    val diagnostic = error.diagnostic ?: return emptyList()
-    return buildList {
-        add("failureStage=${diagnostic.stage.name}")
-        add("failureCause=${diagnostic.cause.name}")
-        diagnostic.details.forEach { (key, value) ->
-            add("$key=$value")
-        }
-    }
-}
-
 @Composable
 internal fun BuildFailureReportDialog(
     report: BuildFailureReport,
     onDismiss: () -> Unit
 ) {
     val clipboardManager = LocalClipboardManager.current
+    var showLocalDetails by remember(report) { mutableStateOf(false) }
 
     WtaAlertDialog(
         onDismissRequest = onDismiss,
@@ -1600,17 +1504,19 @@ internal fun BuildFailureReportDialog(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            Spacer(Modifier.height(8.dp))
+            TextButton(onClick = { showLocalDetails = !showLocalDetails }) {
+                Text(if (showLocalDetails) Strings.publicBuildReport else Strings.logDetails)
+            }
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .heightIn(max = 420.dp),
+                    .heightIn(max = 380.dp),
                 shape = RoundedCornerShape(WtaRadius.Control),
                 color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.55f)
             ) {
                 Box(modifier = Modifier.fillMaxWidth()) {
                     Text(
-                        text = report.details,
+                        text = if (showLocalDetails) report.localDetails else report.publicDetails,
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(14.dp)
@@ -1621,14 +1527,14 @@ internal fun BuildFailureReportDialog(
                     )
 
                     androidx.compose.material3.FilledTonalButton(
-                        onClick = { clipboardManager.setText(AnnotatedString(report.details)) },
+                        onClick = { clipboardManager.setText(AnnotatedString(report.publicDetails)) },
                         modifier = Modifier
                             .align(Alignment.BottomEnd)
                             .padding(12.dp)
                     ) {
                         Icon(Icons.Outlined.ContentCopy, null, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text(Strings.copy)
+                        Text(Strings.copyPublicBuildReport)
                     }
                 }
             }

@@ -68,7 +68,7 @@ body:
     id: actual
     attributes:
       label: Actual behavior
-      description: Include error messages or screenshots if you have them. For build failures, the build log (Build screen) helps a lot.
+      description: Include error messages or screenshots if you have them. For an APK build failure, paste the report from **Copy public report** on the Build screen.
     validations:
       required: true
   - type: textarea
