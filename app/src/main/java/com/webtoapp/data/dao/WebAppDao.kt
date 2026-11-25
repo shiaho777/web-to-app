@@ -1,6 +1,7 @@
 package com.webtoapp.data.dao
 
 import androidx.room.*
+import com.webtoapp.data.model.ApkExportConfig
 import com.webtoapp.data.model.AppType
 import com.webtoapp.data.model.WebApp
 import kotlinx.coroutines.flow.Flow
@@ -84,6 +85,20 @@ interface WebAppDao {
     @Update
     suspend fun update(webApp: WebApp)
 
+    @Transaction
+    suspend fun updatePreservingPublishedIdentity(webApp: WebApp, formerAutoPackageName: String?): Boolean {
+        val current = getWebAppById(webApp.id) ?: return false
+        val published = current.apkExportConfig?.publishedPerAppSigning
+        val exportConfig = if (published != null) {
+            (webApp.apkExportConfig ?: ApkExportConfig()).copy(publishedPerAppSigning = published)
+        } else webApp.apkExportConfig
+        update(webApp.copy(
+            packageName = current.packageName ?: webApp.packageName ?: formerAutoPackageName,
+            apkExportConfig = exportConfig
+        ))
+        return true
+    }
+
     @Delete
     suspend fun delete(webApp: WebApp)
 
@@ -146,10 +161,6 @@ interface WebAppDao {
     @Query("SELECT url FROM web_apps")
     suspend fun getAllUrls(): List<String>
 
-    /**
-     * Custom home order only. Does not touch [WebApp.updatedAt], so "recently
-     * updated" keeps meaning the last real edit.
-     */
     @Query("UPDATE web_apps SET homeSortIndex = :index WHERE id = :id")
     suspend fun updateHomeSortIndex(id: Long, index: Int)
 

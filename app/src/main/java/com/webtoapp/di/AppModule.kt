@@ -27,7 +27,7 @@ val databaseModule = module {
 }
 
 val repositoryModule = module {
-    single { WebAppRepository(get()) }
+    single { WebAppRepository(get(), androidContext()) }
     single { AppCategoryRepository(get()) }
     single { AppStatsRepository(get()) }
 }

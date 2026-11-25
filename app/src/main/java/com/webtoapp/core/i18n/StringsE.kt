@@ -14569,6 +14569,162 @@ object StringsE {
         AppLanguage.KOREAN -> "보낸 앱이 텍스트/설정/코드 파일(txt/json/xml/py/js…)을 받을 수 있습니다. 내용은 공유 받은함에 도착합니다"
     }
 
+    val signingBackupTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "备份独立签名密钥"
+        AppLanguage.ENGLISH -> "Back up per-app signing keys"
+        AppLanguage.ARABIC -> "نسخ مفاتيح التوقيع الخاصة بالتطبيقات احتياطيًا"
+        AppLanguage.PORTUGUESE -> "Backup das chaves de assinatura dos apps"
+        AppLanguage.SPANISH -> "Copia de claves de firma de las aplicaciones"
+        AppLanguage.FRENCH -> "Sauvegarder les clés de signature par application"
+        AppLanguage.GERMAN -> "App-Signaturschlüssel sichern"
+        AppLanguage.RUSSIAN -> "Резервная копия ключей подписи приложений"
+        AppLanguage.JAPANESE -> "アプリ別の署名鍵をバックアップ"
+        AppLanguage.KOREAN -> "앱별 서명 키 백업"
+    }
+
+    val signingBackupUnlock: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "解锁备份中的签名密钥"
+        AppLanguage.ENGLISH -> "Unlock the signing keys in this backup"
+        AppLanguage.ARABIC -> "فتح مفاتيح التوقيع في هذه النسخة الاحتياطية"
+        AppLanguage.PORTUGUESE -> "Desbloquear as chaves de assinatura deste backup"
+        AppLanguage.SPANISH -> "Desbloquear las claves de firma de esta copia"
+        AppLanguage.FRENCH -> "Déverrouiller les clés de signature de cette sauvegarde"
+        AppLanguage.GERMAN -> "Signaturschlüssel dieser Sicherung entsperren"
+        AppLanguage.RUSSIAN -> "Разблокировать ключи подписи в этой копии"
+        AppLanguage.JAPANESE -> "バックアップ内の署名鍵を解除"
+        AppLanguage.KOREAN -> "이 백업의 서명 키 잠금 해제"
+    }
+
+    val signingBackupPassword: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "备份密码"
+        AppLanguage.ENGLISH -> "Backup password"
+        AppLanguage.ARABIC -> "كلمة مرور النسخة الاحتياطية"
+        AppLanguage.PORTUGUESE -> "Senha do backup"
+        AppLanguage.SPANISH -> "Contraseña de la copia"
+        AppLanguage.FRENCH -> "Mot de passe de la sauvegarde"
+        AppLanguage.GERMAN -> "Sicherungspasswort"
+        AppLanguage.RUSSIAN -> "Пароль резервной копии"
+        AppLanguage.JAPANESE -> "バックアップのパスワード"
+        AppLanguage.KOREAN -> "백업 비밀번호"
+    }
+
+    val signingBackupConfirmPassword: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "再次输入密码"
+        AppLanguage.ENGLISH -> "Confirm password"
+        AppLanguage.ARABIC -> "تأكيد كلمة المرور"
+        AppLanguage.PORTUGUESE -> "Confirme a senha"
+        AppLanguage.SPANISH -> "Confirma la contraseña"
+        AppLanguage.FRENCH -> "Confirmer le mot de passe"
+        AppLanguage.GERMAN -> "Passwort bestätigen"
+        AppLanguage.RUSSIAN -> "Подтвердите пароль"
+        AppLanguage.JAPANESE -> "パスワードを再入力"
+        AppLanguage.KOREAN -> "비밀번호 확인"
+    }
+
+    val signingBackupPasswordHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "设定至少 12 个字符的密码。恢复时需要此密码，才能用原密钥更新已安装应用。"
+        AppLanguage.ENGLISH -> "Use at least 12 characters. You’ll need this password to restore the keys and update installed apps."
+        AppLanguage.ARABIC -> "استخدم 12 حرفًا على الأقل. ستحتاج إلى كلمة المرور لاستعادة المفاتيح وتحديث التطبيقات المثبّتة."
+        AppLanguage.PORTUGUESE -> "Use pelo menos 12 caracteres. Você precisará da senha para restaurar as chaves e atualizar os apps instalados."
+        AppLanguage.SPANISH -> "Usa al menos 12 caracteres. Necesitarás esta contraseña para restaurar las claves y actualizar las aplicaciones instaladas."
+        AppLanguage.FRENCH -> "Utilisez au moins 12 caractères. Ce mot de passe sera nécessaire pour restaurer les clés et mettre à jour les applications installées."
+        AppLanguage.GERMAN -> "Verwende mindestens 12 Zeichen. Für die Wiederherstellung der Schlüssel und Updates installierter Apps ist dieses Passwort erforderlich."
+        AppLanguage.RUSSIAN -> "Используйте не менее 12 символов. Пароль понадобится для восстановления ключей и обновления установленных приложений."
+        AppLanguage.JAPANESE -> "12 文字以上を使用してください。鍵を復元してインストール済みのアプリを更新するには、このパスワードが必要です。"
+        AppLanguage.KOREAN -> "12자 이상 입력하세요. 키를 복원하고 설치된 앱을 업데이트하려면 이 비밀번호가 필요합니다."
+    }
+
+    val signingBackupExport: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "连同密钥备份"
+        AppLanguage.ENGLISH -> "Back up with keys"
+        AppLanguage.ARABIC -> "نسخ مع المفاتيح"
+        AppLanguage.PORTUGUESE -> "Incluir chaves"
+        AppLanguage.SPANISH -> "Incluir claves"
+        AppLanguage.FRENCH -> "Inclure les clés"
+        AppLanguage.GERMAN -> "Mit Schlüsseln sichern"
+        AppLanguage.RUSSIAN -> "Копия с ключами"
+        AppLanguage.JAPANESE -> "鍵もバックアップ"
+        AppLanguage.KOREAN -> "키 포함 백업"
+    }
+
+    val signingBackupWithoutKeys: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "跳过密钥"
+        AppLanguage.ENGLISH -> "Skip keys"
+        AppLanguage.ARABIC -> "تخطّي المفاتيح"
+        AppLanguage.PORTUGUESE -> "Ignorar chaves"
+        AppLanguage.SPANISH -> "Omitir claves"
+        AppLanguage.FRENCH -> "Ignorer les clés"
+        AppLanguage.GERMAN -> "Schlüssel überspringen"
+        AppLanguage.RUSSIAN -> "Пропустить ключи"
+        AppLanguage.JAPANESE -> "鍵をスキップ"
+        AppLanguage.KOREAN -> "키 건너뛰기"
+    }
+
+    val signingBackupNoKeys: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "备份已导出，目前没有已生成的独立签名密钥。"
+        AppLanguage.ENGLISH -> "Backup exported. No per-app signing keys have been generated yet."
+        AppLanguage.ARABIC -> "تم تصدير النسخة الاحتياطية. لم تُنشأ مفاتيح توقيع خاصة بالتطبيقات بعد."
+        AppLanguage.PORTUGUESE -> "Backup exportado. Nenhuma chave de assinatura por app foi gerada ainda."
+        AppLanguage.SPANISH -> "Copia exportada. Todavía no se han generado claves de firma por aplicación."
+        AppLanguage.FRENCH -> "Sauvegarde exportée. Aucune clé de signature par application n’a encore été générée."
+        AppLanguage.GERMAN -> "Sicherung exportiert. Es wurden noch keine App-Signaturschlüssel erzeugt."
+        AppLanguage.RUSSIAN -> "Копия экспортирована. Ключи подписи приложений ещё не созданы."
+        AppLanguage.JAPANESE -> "バックアップをエクスポートしました。アプリ別の署名鍵はまだ生成されていません。"
+        AppLanguage.KOREAN -> "백업을 내보냈습니다. 아직 생성된 앱별 서명 키가 없습니다."
+    }
+
+    val signingBackupMissingKey: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "原签名密钥不可用。请从原设备创建含密钥的备份，并在数据备份中导入。"
+        AppLanguage.ENGLISH -> "The original signing key is unavailable. Create a backup with keys on the original device and import it in Data Backup."
+        AppLanguage.ARABIC -> "مفتاح التوقيع الأصلي غير متاح. أنشئ نسخة مع المفاتيح على الجهاز الأصلي واستوردها من النسخ الاحتياطي للبيانات."
+        AppLanguage.PORTUGUESE -> "A chave original está indisponível. Crie um backup com as chaves no dispositivo original e importe-o em Backup de dados."
+        AppLanguage.SPANISH -> "La clave original no está disponible. Crea una copia con las claves en el dispositivo original e impórtala desde Copia de datos."
+        AppLanguage.FRENCH -> "La clé d’origine est indisponible. Créez une sauvegarde avec les clés sur l’appareil d’origine et importez-la dans Sauvegarde des données."
+        AppLanguage.GERMAN -> "Der ursprüngliche Schlüssel ist nicht verfügbar. Erstelle auf dem ursprünglichen Gerät eine Sicherung mit Schlüsseln und importiere sie unter Datensicherung."
+        AppLanguage.RUSSIAN -> "Исходный ключ недоступен. Создайте копию с ключами на исходном устройстве и импортируйте её в разделе резервного копирования."
+        AppLanguage.JAPANESE -> "元の署名鍵が利用できません。元の端末で鍵付きのバックアップを作成し、データバックアップから読み込んでください。"
+        AppLanguage.KOREAN -> "원래 서명 키를 사용할 수 없습니다. 원래 기기에서 키를 포함해 백업한 후 데이터 백업에서 가져오세요."
+    }
+
+    val signingBackupConflict: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "此包名已有不同的签名证书。现有密钥已保留。"
+        AppLanguage.ENGLISH -> "A different signing certificate already exists for this package. The existing key was kept."
+        AppLanguage.ARABIC -> "توجد شهادة توقيع مختلفة لهذه الحزمة. تم الاحتفاظ بالمفتاح الحالي."
+        AppLanguage.PORTUGUESE -> "Já existe outro certificado de assinatura para este pacote. A chave atual foi preservada."
+        AppLanguage.SPANISH -> "Ya existe un certificado de firma distinto para este paquete. Se ha conservado la clave existente."
+        AppLanguage.FRENCH -> "Un autre certificat de signature existe déjà pour ce paquet. La clé existante a été conservée."
+        AppLanguage.GERMAN -> "Für dieses Paket existiert bereits ein anderes Signaturzertifikat. Der vorhandene Schlüssel wurde beibehalten."
+        AppLanguage.RUSSIAN -> "Для этого пакета уже есть другой сертификат подписи. Существующий ключ сохранён."
+        AppLanguage.JAPANESE -> "このパッケージには別の署名証明書があります。既存の鍵は保持されました。"
+        AppLanguage.KOREAN -> "이 패키지에 다른 서명 인증서가 이미 있습니다. 기존 키를 보존했습니다."
+    }
+
+    val signingBackupUnreadable: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "无法解锁签名密钥。请检查密码和备份文件。"
+        AppLanguage.ENGLISH -> "Could not unlock the signing keys. Check the password and the backup file."
+        AppLanguage.ARABIC -> "تعذّر فتح مفاتيح التوقيع. تحقّق من كلمة المرور وملف النسخة الاحتياطية."
+        AppLanguage.PORTUGUESE -> "Não foi possível desbloquear as chaves. Verifique a senha e o arquivo de backup."
+        AppLanguage.SPANISH -> "No se han podido desbloquear las claves. Comprueba la contraseña y el archivo de copia."
+        AppLanguage.FRENCH -> "Impossible de déverrouiller les clés. Vérifiez le mot de passe et le fichier de sauvegarde."
+        AppLanguage.GERMAN -> "Die Schlüssel konnten nicht entsperrt werden. Prüfe das Passwort und die Sicherungsdatei."
+        AppLanguage.RUSSIAN -> "Не удалось разблокировать ключи. Проверьте пароль и файл резервной копии."
+        AppLanguage.JAPANESE -> "署名鍵を解除できません。パスワードとバックアップファイルを確認してください。"
+        AppLanguage.KOREAN -> "서명 키의 잠금을 해제할 수 없습니다. 비밀번호와 백업 파일을 확인하세요."
+    }
+
+    val signingBackupInvalid: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "签名密钥与备份中的项目不匹配。"
+        AppLanguage.ENGLISH -> "The signing keys do not match the projects in this backup."
+        AppLanguage.ARABIC -> "مفاتيح التوقيع لا تتطابق مع المشاريع في هذه النسخة الاحتياطية."
+        AppLanguage.PORTUGUESE -> "As chaves de assinatura não correspondem aos projetos deste backup."
+        AppLanguage.SPANISH -> "Las claves de firma no coinciden con los proyectos de esta copia."
+        AppLanguage.FRENCH -> "Les clés de signature ne correspondent pas aux projets de cette sauvegarde."
+        AppLanguage.GERMAN -> "Die Signaturschlüssel passen nicht zu den Projekten in dieser Sicherung."
+        AppLanguage.RUSSIAN -> "Ключи подписи не соответствуют проектам в этой копии."
+        AppLanguage.JAPANESE -> "署名鍵がバックアップ内のプロジェクトと一致しません。"
+        AppLanguage.KOREAN -> "서명 키가 이 백업의 프로젝트와 일치하지 않습니다."
+    }
+
     val perAppSigningTitle: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "每应用独立签名身份"
         AppLanguage.ENGLISH -> "Per-app signing identity"

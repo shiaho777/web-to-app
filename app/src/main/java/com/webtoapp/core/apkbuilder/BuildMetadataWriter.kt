@@ -3,6 +3,7 @@ package com.webtoapp.core.apkbuilder
 import android.content.Context
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.data.model.WebApp
+import com.webtoapp.util.AppConstants
 import org.json.JSONObject
 import java.io.File
 import java.io.FileInputStream
@@ -12,15 +13,6 @@ import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
 
-/**
- * Machine-readable release metadata, written as a `<name>.build.json` sidecar next to every
- * successfully built APK.
- *
- * The human-readable build log already records the same facts; the sidecar exists for
- * tooling — a script (or a future "verify an APK" screen) can answer "which host version /
- * certificate / config produced this file" without parsing log text. The file is a pure
- * sidecar: nothing in the build reads it back, so a write failure is logged and ignored.
- */
 object BuildMetadataWriter {
 
     private const val TAG = "BuildMetadata"
@@ -88,6 +80,33 @@ object BuildMetadataWriter {
             AppLogger.w(TAG, "Build metadata write failed (build is unaffected): ${e.message}")
             null
         }
+    }
+
+    internal fun findLegacyAutomaticPackageName(context: Context, app: WebApp): String? {
+        if (app.packageName != null || ApkBuilder.customPackageName(app) != null) return null
+        val packageName = ApkBuilder.generatePackageName(app.name)
+        if (app.apkExportConfig?.perAppSigningEnabled == true &&
+            PerAppSigningIdentity.existingFingerprint(context, packageName) != null) {
+            return packageName
+        }
+        val prefix = app.name.replace(AppConstants.SANITIZE_FILENAME_REGEX, "_").take(50) + "_v"
+        val files = resolveOutputDir(context).listFiles { file ->
+            file.name.startsWith(prefix) && file.name.endsWith(".build.json")
+        }.orEmpty()
+        val hasMatchingBuild = files.any { file ->
+            runCatching {
+                if (file.length() !in 1..64_000) return@runCatching false
+                val metadata = JSONObject(file.readText())
+                val built = metadata.getJSONObject("app")
+                val apkName = file.name.removeSuffix(".build.json")
+                val hasApk = File(file.parentFile, "$apkName.APK").isFile ||
+                    File(file.parentFile, "$apkName.apk").isFile
+                hasApk && metadata.optLong("generatedAtMs") >= app.createdAt &&
+                    built.optString("name") == app.name && built.optString("appType") == app.appType.name &&
+                    built.optString("packageName") == packageName
+            }.getOrDefault(false)
+        }
+        return packageName.takeIf { hasMatchingBuild }
     }
 
     private fun sha256Hex(file: File): String {
