@@ -2,25 +2,10 @@ package com.webtoapp.core.webview
 
 import android.content.Context
 
-/**
- * Selected-site persistence for multi-web apps.
- *
- * The shell Activity's savedInstanceState bundle only covers process-death
- * recreations; a cold relaunch (task killed, launcher restart) rebuilds the
- * composition from scratch and every display mode used to fall back to the
- * first site in the list (#1036). Recording the selected site id on every
- * switch lets a fresh start resume on the site the user was actually on —
- * the multi-web counterpart of WebViewResumeStore's last-URL resume.
- */
 class MultiWebResumeStore(context: Context) {
 
     private val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
-    /**
-     * Records [siteId] as the current selection for [key]. A null/blank id
-     * clears the record — card mode's site grid is "no site selected" and a
-     * cold start must not resurrect a closed site.
-     */
     fun persistSelectedSiteId(key: String, siteId: String?) {
         val prefKey = key + SUFFIX_SITE
         if (siteId.isNullOrBlank()) {
@@ -30,14 +15,8 @@ class MultiWebResumeStore(context: Context) {
         }
     }
 
-    /**
-     * The last recorded site id, or null. Callers validate it against the
-     * current site list — sites can be edited or reordered between sessions,
-     * and an unknown id must fall back to the default selection.
-     */
     fun resumeSiteId(key: String): String? = prefs.getString(key + SUFFIX_SITE, null)
 
-    /** Site ids the user marked in the side drawer. Blank ids are dropped. */
     fun savedSiteIds(key: String): Set<String> {
         val raw = prefs.getStringSet(key + SUFFIX_SAVED, null) ?: return emptySet()
         return raw.map { it.trim() }.filter { it.isNotEmpty() }.toSet()
@@ -53,14 +32,39 @@ class MultiWebResumeStore(context: Context) {
         }
     }
 
+    internal fun drawerButtonPosition(key: String): MultiWebDrawerButtonPosition? =
+        MultiWebDrawerButtonPosition(
+            horizontal = prefs.getFloat(key + SUFFIX_DRAWER_BUTTON_X, Float.NaN),
+            vertical = prefs.getFloat(key + SUFFIX_DRAWER_BUTTON_Y, Float.NaN)
+        ).takeIf { it.horizontal in 0f..1f && it.vertical in 0f..1f }
+
+    internal fun persistDrawerButtonPosition(key: String, position: MultiWebDrawerButtonPosition) {
+        prefs.edit()
+            .putFloat(key + SUFFIX_DRAWER_BUTTON_X, position.horizontal)
+            .putFloat(key + SUFFIX_DRAWER_BUTTON_Y, position.vertical)
+            .apply()
+    }
+
     private companion object {
         const val PREFS_NAME = "multiweb_resume"
         const val SUFFIX_SITE = ".site"
         const val SUFFIX_SAVED = ".saved"
+        const val SUFFIX_DRAWER_BUTTON_X = ".drawerButtonX"
+        const val SUFFIX_DRAWER_BUTTON_Y = ".drawerButtonY"
     }
 }
 
-/** Drawer search matches the visible name, the host, or the full URL. */
+internal data class MultiWebDrawerButtonPosition(val horizontal: Float, val vertical: Float) {
+    fun movedBy(dx: Float, dy: Float, availableWidth: Int, availableHeight: Int): MultiWebDrawerButtonPosition =
+        MultiWebDrawerButtonPosition(
+            movedFraction(horizontal, dx, availableWidth),
+            movedFraction(vertical, dy, availableHeight)
+        )
+
+    private fun movedFraction(fraction: Float, delta: Float, available: Int): Float =
+        if (available > 0) (fraction + delta / available).coerceIn(0f, 1f) else fraction
+}
+
 internal fun multiWebSiteMatchesQuery(name: String, url: String, domain: String, query: String): Boolean {
     val q = query.trim()
     if (q.isEmpty()) return true

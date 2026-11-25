@@ -3824,6 +3824,7 @@ fun WebViewScreen(
                     ) {
                     com.webtoapp.ui.shell.MultiWebShellMode(
                         config = shellConfig,
+                        previewAppId = mwApp.id,
                         webViewConfig = mwApp.webViewConfig,
                         webViewCallbacks = webViewCallbacks,
                         webViewManager = webViewManager,
