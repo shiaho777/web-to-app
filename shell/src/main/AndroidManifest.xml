@@ -8,9 +8,6 @@
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
     <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
-    <!-- Android 16 opt-in / Android 17 enforced on some ROMs regardless of targetSdk;
-         without it LAN hosts fail with ERR_LOCAL_NETWORK_PERMISSION_MISSING. Harmless on
-         older releases (unknown permissions are ignored). -->
     <uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK" />
 
     
@@ -76,13 +73,6 @@
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
     
-    <!--
-        Keep this list to the FGS types actually used by the services below
-        (specialUse + mediaPlayback). Export keeps a type only when its service
-        survives. DATA_SYNC is host-only (build keep-alive and Agent) and must
-        not appear here — a catch-all list produces false-positive Play
-        Console foreground-service declarations.
-    -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
@@ -115,6 +105,9 @@
 
     
     <queries>
+        <intent>
+            <action android:name="android.intent.action.TTS_SERVICE" />
+        </intent>
         <intent>
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="tel" />
@@ -156,14 +149,6 @@
         </intent>
     </queries>
 
-    <!--
-    ==========================================================================
-    android:enableOnBackInvokedCallback="true"
-    Android 13+ predictive back 兼容开关。详见宿主 manifest 同名注释。
-    打开后所有 OnBackPressedCallback 自动收到 OEM 侧边手势 / 三角键的返回
-    事件，子 APK 在 webapp 内滑边返回会回退网页历史，而不是退到桌面。
-    ==========================================================================
-    -->
     <application
         android:name=".WebToAppApplication"
         android:allowBackup="false"
@@ -183,8 +168,6 @@
             android:name="com.webtoapp.WTA_APP_MARKER"
             android:value="true" />
 
-        <!-- Inert resource reservation. ApkBuilder removes this entry when SAEP is
-             off, or renames it to the platform key after validating the raw resource. -->
         <meta-data
             android:name="com.webtoapp.SAEP_POLICY_TEMPLATE"
             android:resource="@raw/agent_saep_policy" />
@@ -230,11 +213,6 @@
                 android:value="background_run" />
         </service>
 
-        <!--
-            WebMediaPlaybackService - WebView 内媒体播放的后台保活前台服务。
-            音频本身仍在 WebView 内播放；该服务提供 mediaPlayback 前台服务 + 唤醒锁 +
-            媒体通知生命周期（播放中启动 / 暂停分离 / 停止移除）。
-        -->
         <service
             android:name=".core.webview.WebMediaPlaybackService"
             android:enabled="true"
@@ -284,12 +262,6 @@
                 android:value="floating_window" />
         </service>
 
-        <!--
-            NodeService - 子 APK 里跑用户 Node.js 项目的独立子进程。
-            为什么独立进程详见 app/src/main/AndroidManifest.xml 同名条目的注释。
-            子 APK 上保持完全相同的配置，否则 Node 子 APK 就退化回主进程嵌入式
-            模式（V8 无法重启）的旧行为。
-        -->
         <service
             android:name=".core.nodejs.NodeService"
             android:enabled="true"
@@ -341,11 +313,6 @@
             </intent-filter>
         </receiver>
 
-        <!--
-            BridgeAlarmReceiver - 通知调度（页内 Web Notification.scheduleNotification）。
-            NativeBridge.scheduleBridgeAlarm 通过显式 PendingIntent 广播触发；缺少此声明时
-            生成的 APK 中定时通知会被系统静默丢弃。与宿主清单保持同名同 action。
-        -->
         <receiver
             android:name=".core.notification.BridgeAlarmReceiver"
             android:enabled="true"
