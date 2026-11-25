@@ -15,13 +15,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.ui.design.WtaLoadingIndicator
 
@@ -228,9 +225,10 @@ fun RuntimeBrandedErrorCard(
 fun RuntimeIconPickerCard(
     appIcon: Uri?,
     onSelectIcon: () -> Unit,
-    placeholderIcon: ImageVector = Icons.Default.Code
+    placeholderIcon: ImageVector = Icons.Default.Code,
+    preserveIconShape: Boolean = false,
+    onPreserveIconShapeChange: ((Boolean) -> Unit)? = null
 ) {
-    val context = LocalContext.current
     EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
             RuntimeSectionHeader(
@@ -240,17 +238,19 @@ fun RuntimeIconPickerCard(
             Spacer(modifier = Modifier.height(12.dp))
 
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Surface(
-                    modifier = Modifier.size(64.dp),
-                    shape = MaterialTheme.shapes.medium,
-                    color = MaterialTheme.colorScheme.surfaceVariant
-                ) {
-                    if (appIcon != null) {
-                        AsyncImage(
-                            model = ImageRequest.Builder(context).data(appIcon).crossfade(true).build(),
-                            contentDescription = null, modifier = Modifier.fillMaxSize()
-                        )
-                    } else {
+                if (appIcon != null) {
+                    AppIconImage(
+                        model = appIcon,
+                        contentDescription = null,
+                        modifier = Modifier.size(64.dp),
+                        crossfade = true
+                    )
+                } else {
+                    Surface(
+                        modifier = Modifier.size(64.dp),
+                        shape = MaterialTheme.shapes.medium,
+                        color = MaterialTheme.colorScheme.surfaceVariant
+                    ) {
                         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                             Icon(placeholderIcon, null, modifier = Modifier.size(32.dp))
                         }
@@ -262,6 +262,10 @@ fun RuntimeIconPickerCard(
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(Strings.labelIcon)
                 }
+            }
+            if (appIcon != null && onPreserveIconShapeChange != null) {
+                Spacer(modifier = Modifier.height(12.dp))
+                AppIconStyleSelector(preserveIconShape, onPreserveIconShapeChange)
             }
         }
     }

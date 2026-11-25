@@ -79,16 +79,17 @@ fun CreateMultiWebAppScreen(
         themeType: String,
         pluginsEnabled: Boolean,
         pluginIds: Set<String>,
+        preserveIconShape: Boolean,
     ) -> Unit
 ) {
     val isEdit = existingAppId > 0L
 
     var appName by remember { mutableStateOf("") }
     var appIcon by remember { mutableStateOf<Uri?>(null) }
+    var preserveIconShape by remember { mutableStateOf(false) }
     var injectScripts by remember { mutableStateOf<List<com.webtoapp.data.model.UserScript>>(emptyList()) }
     var pluginsEnabled by remember { mutableStateOf(false) }
     var pluginIds by remember { mutableStateOf<Set<String>>(emptySet()) }
-    // Edit must not save the default empty attachment before the row is read.
     var draftReady by remember { mutableStateOf(existingAppId <= 0L) }
 
     var sites by remember { mutableStateOf<List<MultiWebSite>>(emptyList()) }
@@ -117,7 +118,6 @@ fun CreateMultiWebAppScreen(
     var selectedAppIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
     var filterType by remember { mutableStateOf<String?>(null) }
     var filterCategoryId by remember { mutableStateOf<Long?>(null) }
-    // Non-null while the add/edit custom-site dialog is open; siteId == null means adding.
     var siteDialog by remember { mutableStateOf<SiteDialogData?>(null) }
     var categories by remember { mutableStateOf<List<com.webtoapp.data.model.AppCategory>>(emptyList()) }
     LaunchedEffect(Unit) {
@@ -137,6 +137,7 @@ fun CreateMultiWebAppScreen(
             existingApp?.let { app ->
                 appName = app.name
                 app.iconPath?.let { appIcon = android.net.Uri.parse(it) }
+                preserveIconShape = app.apkExportConfig?.preserveIconShape == true
                 app.multiWebConfig?.let { config ->
                     sites = config.sites
                     refreshInterval = config.refreshInterval
@@ -212,6 +213,7 @@ fun CreateMultiWebAppScreen(
                         "AURORA",
                         pluginsEnabled,
                         pluginIds,
+                        preserveIconShape,
                     )
                 },
                 enabled = canCreate
@@ -235,7 +237,9 @@ fun CreateMultiWebAppScreen(
                         ) {
                             RuntimeIconPickerCard(
                                 appIcon = appIcon,
-                                onSelectIcon = { iconPickerLauncher.launch("image/*") }
+                                onSelectIcon = { iconPickerLauncher.launch("image/*") },
+                                preserveIconShape = preserveIconShape,
+                                onPreserveIconShapeChange = { preserveIconShape = it }
                             )
                             PremiumTextField(
                                 value = appName,
@@ -706,10 +710,6 @@ private fun ExistingAppPicker(
     onAddSelected: () -> Unit
 ) {
     val accentColor = MaterialTheme.colorScheme.onSurface
-    // Nested multi-web and server-runtime apps (Node/PHP/Python/Go/WordPress) cannot be
-    // embedded as site sources: their runtimes are not packaged into a multi-web APK, so
-    // such sites would render a broken shell mode in the export. The build degrades
-    // legacy configs to URL sites; the picker hides them so new ones are never created.
     val eligibleApps = existingApps.filter {
         it.appType != com.webtoapp.data.model.AppType.MULTI_WEB && !it.appType.requiresProcessExec
     }

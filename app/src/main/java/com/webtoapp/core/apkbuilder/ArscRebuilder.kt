@@ -29,7 +29,8 @@ class ArscRebuilder {
     fun rebuildWithNewAppNameAndIcons(
         arscData: ByteArray,
         targetAppName: String,
-        replaceIcons: Boolean = false
+        replaceIcons: Boolean = false,
+        preserveIconShape: Boolean = false
     ): ByteArray {
         AppLogger.d(TAG, "rebuildWithNewAppName: target='$targetAppName', replaceIcons=$replaceIcons")
 
@@ -42,6 +43,7 @@ class ArscRebuilder {
             val packageCount = buffer.int
 
             if (tableType != RES_TABLE_TYPE) {
+                check(!preserveIconShape) { "Invalid launcher resource table" }
                 AppLogger.e(TAG, "Invalid ARSC file: type=$tableType")
                 return arscData
             }
@@ -61,6 +63,7 @@ class ArscRebuilder {
             val stylesStart = buffer.int
 
             if (poolType != RES_STRING_POOL_TYPE) {
+                check(!preserveIconShape) { "Invalid launcher resource string pool" }
                 AppLogger.e(TAG, "Invalid string pool: type=$poolType")
                 return arscData
             }
@@ -87,12 +90,12 @@ class ArscRebuilder {
             val remainingData = arscData.copyOfRange(afterStringPool, arscData.size)
 
             if (replaceIcons) {
-                val iconPaths = findIconPathIndices(remainingData, strings)
+                val iconPaths = findIconPathIndices(remainingData, strings, preserveIconShape)
                 _lastDiscoveredIconSpecs = iconPaths
                 _lastDiscoveredIconPaths = iconPaths.map { it.path }.toSet()
                 AppLogger.d(TAG, "Discovered old icon paths (for ZIP replacement): $_lastDiscoveredIconPaths")
 
-                convertLauncherBackgroundToDrawable(remainingData, strings)
+                if (!preserveIconShape) convertLauncherBackgroundToDrawable(remainingData, strings)
             }
 
             var modified = false
@@ -157,6 +160,7 @@ class ArscRebuilder {
             return newArsc.array()
 
         } catch (e: Exception) {
+            if (preserveIconShape) throw IllegalStateException("Could not preserve the original launcher icon", e)
             AppLogger.e(TAG, "Failed to rebuild ARSC", e)
             return arscData
         }
@@ -168,15 +172,6 @@ class ArscRebuilder {
     private var _lastDiscoveredIconSpecs: List<DiscoveredIconPath> = emptyList()
     fun getLastDiscoveredIconSpecs(): List<DiscoveredIconPath> = _lastDiscoveredIconSpecs
 
-    /**
-     * Locates the simple `color/ic_launcher_background` entry inside an ARSC (or a bare
-     * package chunk) **by resource name** — never by a fixed id/index: every new library
-     * with color resources shifts indices, and the launcher background's position is a
-     * build artifact of resource merging, not a contract.
-     *
-     * Returns `[valuePos, valueType, valueData]` for the entry, or null when the package,
-     * the color type, the resource, or the (complex) entry cannot be found.
-     */
     internal fun findLauncherBackgroundEntry(arscOrPackage: ByteArray): IntArray? {
         val packageData = locatePackageChunk(arscOrPackage) ?: return null
         val buf = ByteBuffer.wrap(packageData).order(ByteOrder.LITTLE_ENDIAN)
@@ -185,11 +180,9 @@ class ArscRebuilder {
         val pkgHeaderSize = buf.short.toInt() and 0xFFFF
         if (pkgType != 0x0200) return null
 
-        // Package chunk header: header(8) + id(4) + name(256) — typeStrings/keyStrings
-        // offsets live right after the name.
         buf.position(8 + 4 + 256)
         val typeStringsOffset = buf.int
-        buf.int // lastPublicType
+        buf.int
         val keyStringsOffset = buf.int
 
         buf.position(typeStringsOffset)
@@ -223,7 +216,7 @@ class ArscRebuilder {
                         val entryPos = pos + entriesStart + entryOff
                         if (entryPos + 12 > packageData.size) continue
                         if (readI32(packageData, entryPos + 4) != launcherBgKeyIdx) continue
-                        if ((readU16(packageData, entryPos + 2) and 0x0001) != 0) continue // complex entry
+                        if ((readU16(packageData, entryPos + 2) and 0x0001) != 0) continue
 
                         val valuePos = entryPos + 8
                         val vType = packageData[valuePos + 3].toInt() and 0xFF
@@ -237,11 +230,6 @@ class ArscRebuilder {
         return null
     }
 
-    /**
-     * The caller may hand us a full resources.arsc (table header + global string pool +
-     * package) or just the package chunk. Walk the top-level chunk list until the first
-     * RES_TABLE_PACKAGE_TYPE (0x0200) chunk; a bare package chunk is returned as-is.
-     */
     private fun locatePackageChunk(arscOrPackage: ByteArray): ByteArray? {
         val buf = ByteBuffer.wrap(arscOrPackage).order(ByteOrder.LITTLE_ENDIAN)
         val headType = buf.short.toInt() and 0xFFFF
@@ -258,8 +246,6 @@ class ArscRebuilder {
                 if (chunkSize <= 0 || pos + chunkSize > arscOrPackage.size) return null
                 return arscOrPackage.copyOfRange(pos, pos + chunkSize)
             }
-            // The table header chunk (0x0002) declares the size of the WHOLE file —
-            // walk past its header only, then keep iterating the real top-level chunks.
             val step = if (chunkType == 0x0002) chunkHeaderSize else chunkSize
             if (step <= 0 || pos + step > arscOrPackage.size) return null
             pos += step
@@ -300,9 +286,11 @@ class ArscRebuilder {
 
     private fun findIconPathIndices(
         packageData: ByteArray,
-        globalStrings: List<String>
+        globalStrings: List<String>,
+        preserveIconShape: Boolean
     ): List<DiscoveredIconPath> {
         val result = mutableListOf<DiscoveredIconPath>()
+        val removedAdaptiveIcons = mutableSetOf<LauncherIconKind>()
 
         try {
             val buf = ByteBuffer.wrap(packageData).order(ByteOrder.LITTLE_ENDIAN)
@@ -313,6 +301,7 @@ class ArscRebuilder {
             val pkgId = buf.int
 
             if (pkgType != RES_TABLE_PACKAGE_TYPE) {
+                check(!preserveIconShape) { "Missing launcher resource package" }
                 AppLogger.w(TAG, "Not a package chunk: type=0x${pkgType.toString(16)}")
                 return result
             }
@@ -344,6 +333,7 @@ class ArscRebuilder {
             AppLogger.d(TAG, "keyIndices: ic_launcher=$icLauncherKeyIdx, round=$icLauncherRoundKeyIdx, foreground=$icLauncherFgKeyIdx")
 
             if (mipmapTypeId <= 0 && drawableTypeId <= 0) {
+                check(!preserveIconShape) { "Missing launcher resource types" }
                 AppLogger.w(TAG, "mipmap/drawable types not found in package")
                 return result
             }
@@ -372,8 +362,6 @@ class ArscRebuilder {
                     val entryCount = buf.int
                     val entriesStart = buf.int
 
-                    // ResTable_config density sits at config offset 14; the config itself
-                    // starts right after the fixed 20-byte type chunk header.
                     val densityDpi = readU16(packageData, pos + 34)
 
                     val isInteresting = typeId == mipmapTypeId || typeId == drawableTypeId
@@ -445,7 +433,14 @@ class ArscRebuilder {
 
                         if (kind == null) continue
 
-                        // Adaptive-icon XML definitions must stay; only bitmap files are replaced.
+                        if (preserveIconShape && kind != LauncherIconKind.FOREGROUND &&
+                            oldPath.endsWith(".xml")
+                        ) {
+                            buf.putInt(pos + chunkHeaderSize + entryIdx * Int.SIZE_BYTES, -1)
+                            removedAdaptiveIcons.add(kind)
+                            continue
+                        }
+
                         if (!oldPath.endsWith(".png")) {
                             AppLogger.d(TAG, "Found icon path '$oldPath' (kind=$kind, non-bitmap, KEEPING)")
                             continue
@@ -461,9 +456,19 @@ class ArscRebuilder {
             AppLogger.d(TAG, "Scan complete: typeChunks=$typeChunkCount, mipmapChunks=$mipmapTypeChunkCount, drawableChunks=$drawableTypeChunkCount, results=${result.size}")
 
         } catch (e: Exception) {
+            if (preserveIconShape) throw e
             AppLogger.e(TAG, "Failed to find icon path indices", e)
         }
 
+        if (preserveIconShape) {
+            val requiredKinds = listOf(LauncherIconKind.LAUNCHER, LauncherIconKind.ROUND)
+            check(removedAdaptiveIcons.containsAll(requiredKinds)) {
+                "Missing adaptive launcher icon entries"
+            }
+            check(requiredKinds.all { kind -> result.any { it.kind == kind } }) {
+                "Missing bitmap launcher icon entries"
+            }
+        }
         return result.distinctBy { it.path }
     }
 

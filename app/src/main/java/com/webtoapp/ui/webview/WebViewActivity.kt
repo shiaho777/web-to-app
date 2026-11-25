@@ -94,6 +94,7 @@ import com.webtoapp.ui.design.WtaFadeOut
 import com.webtoapp.ui.design.WtaLoadingIndicator
 import com.webtoapp.ui.theme.WebToAppTheme
 import com.webtoapp.util.DownloadHelper
+import com.webtoapp.core.host.fitInTransparentSquare
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -148,14 +149,10 @@ internal fun recentsTaskDescription(
 }
 
 private fun scaleRecentsIcon(source: Bitmap): Bitmap {
-    val longest = maxOf(source.width, source.height)
-    if (longest <= RECENTS_ICON_MAX_PX || longest <= 0) return source
-    val scale = RECENTS_ICON_MAX_PX.toFloat() / longest
-    val width = (source.width * scale).toInt().coerceAtLeast(1)
-    val height = (source.height * scale).toInt().coerceAtLeast(1)
-    val scaled = Bitmap.createScaledBitmap(source, width, height, true)
-    if (scaled !== source) source.recycle()
-    return scaled
+    val size = minOf(maxOf(source.width, source.height), RECENTS_ICON_MAX_PX)
+    val square = source.fitInTransparentSquare(size)
+    if (square !== source) source.recycle()
+    return square
 }
 
 open class WebViewActivity : AppCompatActivity() {

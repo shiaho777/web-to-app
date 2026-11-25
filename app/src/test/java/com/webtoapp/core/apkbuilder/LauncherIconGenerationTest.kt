@@ -6,6 +6,8 @@ import android.graphics.BitmapFactory
 import android.graphics.Color
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
+import com.webtoapp.core.playstore.aab.arsc.ArscReader
+import com.webtoapp.core.playstore.aab.arsc.ArscToProtoTable
 import java.io.File
 import java.util.zip.ZipFile
 import kotlinx.coroutines.runBlocking
@@ -18,14 +20,6 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
-/**
- * Regression tests for the launcher icon pipeline (issue #529: a transparent-background
- * icon image was composited twice — full-bleed background layer plus safe-zone foreground).
- *
- * The generated APK must back the adaptive icon with a solid derived color, keep the
- * foreground aspect-correct inside the safe zone, and give legacy mipmap entries
- * density-appropriate sizes instead of stretched 432px foreground padding.
- */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33])
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -37,7 +31,6 @@ class LauncherIconGenerationTest {
     private val context: Context get() = ApplicationProvider.getApplicationContext()
     private val template = ApkTemplate(context)
 
-    // --- background color derivation ---
 
     @Test
     fun `transparent logo with dark subject derives a white background`() {
@@ -133,7 +126,6 @@ class LauncherIconGenerationTest {
         assertThat(pixels.distinct()).containsExactly(0xFFFFFFFF.toInt())
     }
 
-    // --- foreground / legacy geometry ---
 
     @Test
     fun `adaptive foreground preserves aspect ratio inside the safe zone`() {
@@ -150,7 +142,6 @@ class LauncherIconGenerationTest {
         val height = bounds.height().toFloat()
 
         assertThat(width / height).isWithin(0.2f).of(2f)
-        // Safe zone is the central 72% (288px of 432); the content must not spill out.
         assertThat(bounds.left).isAtLeast(72 - 8)
         assertThat(bounds.top).isAtLeast(72 - 8)
         assertThat(bounds.right).isAtMost(360 + 8)
@@ -193,13 +184,11 @@ class LauncherIconGenerationTest {
         assertThat(decoded.width).isEqualTo(96)
         assertThat(decoded.height).isEqualTo(96)
 
-        // A 2:1 wide logo inside a circle stays wider than tall, and the circle corners stay clear.
         val bounds = opaqueBounds(decoded)
         assertThat(bounds.width()).isGreaterThan(bounds.height())
         assertThat(decoded.getPixel(2, 2) ushr 24).isEqualTo(0)
     }
 
-    // --- full pipeline against the real shell template ---
 
     @Test
     fun `modifyApk writes a solid background and layer-correct icon entries`() {
@@ -249,7 +238,6 @@ class LauncherIconGenerationTest {
         assertThat(specs.filter { it.kind == ArscRebuilder.LauncherIconKind.ROUND }).isNotEmpty()
 
         ZipFile(outputApk).use { zip ->
-            // The background layer must be a uniform opaque color, not the user image.
             val bgEntry = zip.getEntry(ArscRebuilder.LAUNCHER_BACKGROUND_DRAWABLE_PATH)
             assertThat(bgEntry).isNotNull()
             val bgBytes = zip.getInputStream(bgEntry).readBytes()
@@ -258,7 +246,6 @@ class LauncherIconGenerationTest {
             bg.getPixels(bgPixels, 0, bg.width, 0, 0, bg.width, bg.height)
             assertThat(bgPixels.distinct()).hasSize(1)
             assertThat(bgPixels.first() ushr 24).isEqualTo(255)
-            // Dark subject on a transparent logo must get a light backing.
             assertThat(bgPixels.first()).isEqualTo(0xFFFFFFFF.toInt())
 
             specs.forEach { spec ->
@@ -286,9 +273,60 @@ class LauncherIconGenerationTest {
         }
     }
 
-    // --- helpers ---
+    @Test
+    fun `original icon export retains only transparent density-specific bitmaps for both launcher ids`() {
+        val templateApk = resolveFile(
+            "src/main/assets/template/webview_shell.apk",
+            "app/src/main/assets/template/webview_shell.apk"
+        )
+        assumeTrue(templateApk.exists())
+        val logoFile = temp.newFile("original.png")
+        val logo = Bitmap.createBitmap(120, 240, Bitmap.Config.ARGB_8888).apply { eraseColor(Color.RED) }
+        logoFile.outputStream().use { logo.compress(Bitmap.CompressFormat.PNG, 100, it) }
+        val outputApk = temp.newFile("original-icon.apk")
+        val config = ApkConfig(meta = MetaBlock(
+            appName = "Original Icon",
+            packageName = "com.example.originalicon",
+            targetUrl = "https://example.com",
+            appType = "WEB"
+        ))
+        runBlocking {
+            ApkBuilder(context).modifyApk(
+                sourceApk = templateApk,
+                outputApk = outputApk,
+                config = config,
+                iconPath = logoFile.absolutePath,
+                preserveIconShape = true,
+                splashMediaPath = null
+            ) { _, _ -> }
+        }
 
-    /** 2:1 wide logo with a transparent background — the shape from issue #529. */
+        ZipFile(outputApk).use { zip ->
+            assertThat(zip.getEntry(ArscRebuilder.LAUNCHER_BACKGROUND_DRAWABLE_PATH)).isNull()
+            val arsc = zip.getInputStream(zip.getEntry("resources.arsc")).use { it.readBytes() }
+            val mipmap = ArscToProtoTable.convert(ArscReader(arsc).read())
+                .packageList.flatMap { it.typeList }.single { it.name == "mipmap" }
+            val launcherIcons = mipmap.entryList.filter { it.name in setOf("ic_launcher", "ic_launcher_round") }
+            assertThat(launcherIcons).hasSize(2)
+            launcherIcons.forEach { launcher ->
+                assertThat(launcher.configValueList).isNotEmpty()
+                launcher.configValueList.forEach { variant ->
+                    assertThat(variant.config.sdkVersion).isLessThan(26)
+                    assertThat(variant.value.item.file.path).endsWith(".png")
+                    val bitmap = zip.getInputStream(zip.getEntry(variant.value.item.file.path)).use {
+                        BitmapFactory.decodeStream(it)
+                    }
+                    assertThat(bitmap.getPixel(bitmap.width / 2, 0)).isEqualTo(Color.RED)
+                    assertThat(bitmap.getPixel(0, bitmap.height / 2)).isEqualTo(Color.TRANSPARENT)
+                    assertThat(bitmap.getPixel(bitmap.width / 2, bitmap.height - 1)).isEqualTo(Color.RED)
+                    val bounds = opaqueBounds(bitmap)
+                    assertThat(bounds.height()).isEqualTo(bitmap.height)
+                    assertThat(bounds.width().toFloat() / bounds.height()).isWithin(0.01f).of(0.5f)
+                }
+            }
+        }
+    }
+
     private fun transparentLogo(subjectColor: Int): Bitmap {
         val bitmap = Bitmap.createBitmap(200, 100, Bitmap.Config.ARGB_8888)
         val pixels = IntArray(200 * 100) { Color.TRANSPARENT }

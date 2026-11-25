@@ -19,16 +19,10 @@ class ApkBuildCacheTest {
         assertThat(cache.isContentReplaceableEntry("assets/html/index.html")).isTrue()
         assertThat(cache.isContentReplaceableEntry("assets/nodejs_app/server.js")).isTrue()
         assertThat(cache.isContentReplaceableEntry("assets/splash_media.png")).isTrue()
-        // Stale-content hazards: these are written conditionally at build time, so a cached
-        // copy must be dropped even when the new build does not rewrite them (removed CA,
-        // disabled dark status-bar image, cleared announcement icon...).
         assertThat(cache.isContentReplaceableEntry("assets/wta_custom_ca/1.cer")).isTrue()
         assertThat(cache.isContentReplaceableEntry("assets/statusbar_background_dark.png")).isTrue()
         assertThat(cache.isContentReplaceableEntry("assets/announcement_icon.png")).isTrue()
         assertThat(cache.isContentReplaceableEntry("assets/python/arm64-v8a/python3")).isTrue()
-        // Python stdlib is re-embedded by RuntimeAssetEmbedder on every build in both
-        // modes; without this entry CONTENT_OVERLAY duplicates it and the duplicates
-        // accumulate across incremental rebuilds.
         assertThat(cache.isContentReplaceableEntry("assets/python_runtime/lib/os.py")).isTrue()
         assertThat(cache.isContentReplaceableEntry("assets/extensions/ext/popup.html")).isTrue()
         assertThat(cache.isContentReplaceableEntry("AndroidManifest.xml")).isFalse()
@@ -80,20 +74,16 @@ class ApkBuildCacheTest {
         )
 
         val base = planWith(null, null)
-        // Enabling scheduled start adds SCHEDULE_EXACT_ALARM + ScheduledStartReceiver to
-        // the manifest set; a cached base without them must not be overlaid onto.
         val withSched = planWith("android.permission.SCHEDULE_EXACT_ALARM|ScheduledStartReceiver", null)
         assertThat(withSched.identityFingerprint).isNotEqualTo(base.identityFingerprint)
 
-        // Toggling export-level performance options changes output bytes without touching
-        // ApkConfig; it must not hit REUSE_UNSIGNED either.
         val withPerf = planWith(null, "opt=true|cfg=PerformanceConfig(minify=true)")
         assertThat(withPerf.identityFingerprint).isNotEqualTo(base.identityFingerprint)
         assertThat(withPerf.identityFingerprint).isNotEqualTo(withSched.identityFingerprint)
     }
 
     @Test
-    fun `icon background color changes the identity fingerprint`() {
+    fun `icon background and original mode change the identity fingerprint`() {
         val context = RuntimeEnvironment.getApplication()
         val cache = ApkBuildCache(context)
         val template = File(context.cacheDir, "shell_icon_bg.apk").apply {
@@ -110,13 +100,14 @@ class ApkBuildCacheTest {
             )
         )
 
-        fun planFor(color: String?) = cache.plan(
+        fun planFor(color: String?, preserveIconShape: Boolean = false) = cache.plan(
             webApp = com.webtoapp.data.model.WebApp(
                 id = 56,
                 name = "IconBg",
                 url = "https://example.com",
                 apkExportConfig = com.webtoapp.data.model.ApkExportConfig(
-                    iconBackgroundColor = color
+                    iconBackgroundColor = color,
+                    preserveIconShape = preserveIconShape
                 )
             ),
             packageName = "com.demo.iconbg",
@@ -138,6 +129,8 @@ class ApkBuildCacheTest {
             .isNotEqualTo(planFor(null).identityFingerprint)
         assertThat(planFor("#000000").identityFingerprint)
             .isNotEqualTo(planFor("#FFFFFF").identityFingerprint)
+        assertThat(planFor(null, preserveIconShape = true).identityFingerprint)
+            .isNotEqualTo(planFor(null).identityFingerprint)
     }
 
     @Test
@@ -216,7 +209,6 @@ class ApkBuildCacheTest {
             )
         )
 
-        // plan uses real fingerprints so won't match id1/c1 — just verify save files exist
         val keyDir = File(context.filesDir, "apk_build_cache/app_42")
         assertThat(File(keyDir, "base_unsigned.apk").isFile).isTrue()
         assertThat(File(keyDir, "meta.json").isFile).isTrue()
@@ -360,7 +352,6 @@ class ApkBuildCacheTest {
             forceFullRebuild = false
         )
 
-        // First build with the "old" libnode.so fingerprint → cache miss → FULL.
         val plan1 = planWith("sha256=oldlibnode,size=1,aligned16k=false")
         assertThat(plan1.mode).isEqualTo(IncrementalBuildMode.FULL)
 
@@ -376,9 +367,6 @@ class ApkBuildCacheTest {
             shellTemplateId = plan1.shellTemplateId
         )
 
-        // Same config but host upgraded libnode.so to a 16KB-aligned build → the native
-        // libs fingerprint changed. This must NOT reuse the stale cached unsigned APK;
-        // it must rebuild so the new aligned lib is re-injected.
         val plan2 = planWith("sha256=newlibnode,size=2,aligned16k=true")
         assertThat(plan2.mode).isEqualTo(IncrementalBuildMode.FULL)
         assertThat(plan2.identityFingerprint).isNotEqualTo(plan1.identityFingerprint)
@@ -598,7 +586,6 @@ class ApkBuildCacheTest {
             )
         )
 
-        // Build #1 with host versionCode 50 → cache miss → FULL; cache the unsigned APK.
         val plan1 = cache.plan(
             webApp = webApp,
             packageName = "com.demo.hostvc",
@@ -630,9 +617,6 @@ class ApkBuildCacheTest {
             shellTemplateId = plan1.shellTemplateId
         )
 
-        // Same app + config + template, but the host just upgraded (versionCode 50 -> 51).
-        // The cache MUST NOT reuse the stale unsigned APK — a FULL rebuild is required so the
-        // latest export/packaging/alignment logic is re-applied.
         val plan2 = cache.plan(
             webApp = webApp,
             packageName = "com.demo.hostvc",

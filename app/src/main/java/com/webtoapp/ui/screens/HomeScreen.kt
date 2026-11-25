@@ -56,6 +56,7 @@ import com.webtoapp.core.apkbuilder.ApkBuilder
 import com.webtoapp.core.apkbuilder.ExportRuntimeEnsure
 import com.webtoapp.core.apkbuilder.BuildResult
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.ui.components.AppIconImage
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.data.dao.WebAppSummary
 import com.webtoapp.data.model.AppCategory
@@ -1295,23 +1296,11 @@ fun AppCard(
         ) {
             Box {
                 if (app.iconPath != null) {
-                    Box(
-                        modifier = Modifier
-                            .size(52.dp)
-                            .clip(RoundedCornerShape(WtaRadius.Card))
-                            .background(colors.secondaryContainer),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        AsyncImage(
-                            model = ImageRequest.Builder(LocalContext.current)
-                                .data(app.iconPath)
-                                .crossfade(false)
-                                .build(),
-                            contentDescription = app.name,
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
-                        )
-                    }
+                    AppIconImage(
+                        model = app.iconPath,
+                        contentDescription = app.name,
+                        modifier = Modifier.size(52.dp)
+                    )
                 } else {
                     WtaIconPlate(
                         containerColor = colors.secondaryContainer,
@@ -1611,23 +1600,11 @@ fun AppGridTile(
         ) {
             Box {
                 if (app.iconPath != null) {
-                    Box(
-                        modifier = Modifier
-                            .size(56.dp)
-                            .clip(RoundedCornerShape(WtaRadius.Card))
-                            .background(colors.secondaryContainer),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        AsyncImage(
-                            model = ImageRequest.Builder(LocalContext.current)
-                                .data(app.iconPath)
-                                .crossfade(false)
-                                .build(),
-                            contentDescription = app.name,
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
-                        )
-                    }
+                    AppIconImage(
+                        model = app.iconPath,
+                        contentDescription = app.name,
+                        modifier = Modifier.size(56.dp)
+                    )
                 } else {
                     WtaIconPlate(
                         containerColor = colors.secondaryContainer,

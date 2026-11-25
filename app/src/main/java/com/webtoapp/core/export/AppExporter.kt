@@ -20,6 +20,7 @@ import com.webtoapp.core.i18n.Strings
 import com.webtoapp.data.model.WebApp
 import com.webtoapp.ui.webview.WebViewActivity
 import com.webtoapp.util.threadLocalCompat
+import com.webtoapp.core.host.fitInTransparentSquare
 import java.io.File
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
@@ -54,8 +55,6 @@ class AppExporter(private val context: Context) {
                 IconCompat.createWithResource(context, android.R.drawable.sym_def_app_icon)
             }
 
-            // Always a document task. Sharing the builder's task makes Back
-            // open the builder whenever it is still in recents (#1391).
             val launchIntent = WebViewActivity.buildShortcutLaunchIntent(context, webApp.id)
 
             when {
@@ -156,7 +155,6 @@ class AppExporter(private val context: Context) {
                     path.startsWith("/") -> {
                         val file = File(path)
                         if (file.exists()) {
-                            // Output is scaled to SHORTCUT_ICON_SIZE below; cap the decode (#779).
                             com.webtoapp.util.BoundedBitmaps.decodeBoundedBitmapFile(path, 1024)
                         } else null
                     }
@@ -178,7 +176,7 @@ class AppExporter(private val context: Context) {
 
                 if (original != null) {
 
-                    val scaled = Bitmap.createScaledBitmap(original, SHORTCUT_ICON_SIZE, SHORTCUT_ICON_SIZE, true)
+                    val scaled = original.fitInTransparentSquare(SHORTCUT_ICON_SIZE)
                     if (scaled !== original) {
                         original.recycle()
                     }
@@ -264,11 +262,6 @@ class AppExporter(private val context: Context) {
         }
     }
 
-    /**
-     * Writes the source zip ([AppSourcePackager]) and returns its path.
-     * Callers that should hand the file to the user open the share sheet
-     * themselves; this method only produces the archive.
-     */
     fun exportAsTemplate(webApp: WebApp): ExportResult {
         return try {
             ExportResult.Success(AppSourcePackager(context).pack(webApp).absolutePath)

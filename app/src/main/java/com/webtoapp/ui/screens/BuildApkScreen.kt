@@ -54,7 +54,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.Lifecycle
@@ -63,9 +62,10 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
 import com.webtoapp.WebToAppApplication
 import com.webtoapp.core.apkbuilder.ApkBuilder
+import com.webtoapp.ui.components.AppIconImage
+import com.webtoapp.ui.components.AppIconStyleSelector
 import com.webtoapp.core.apkbuilder.ApkExportPreflight
 import com.webtoapp.core.apkbuilder.BuildResult
 import com.webtoapp.core.apkbuilder.ExportRuntimeEnsure
@@ -99,12 +99,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-/**
- * 独立"构建 APK"配置页。
- *
- * 从应用列表点击"构建 APK"后进入本页，可在全屏页面中调整加密 / 隔离 / 后台运行 /
- * 通知 / 浏览器引擎等构建选项，执行预检、构建，并查看构建摘要与 APK 分析。
- */
 @Composable
 fun BuildApkScreen(
     appId: Long,
@@ -116,7 +110,6 @@ fun BuildApkScreen(
 
     val app = webApp
     if (app == null) {
-        // 数据尚未加载或应用不存在
         WtaScreen(
             title = Strings.buildDialogTitle,
             onBack = onBack
@@ -143,8 +136,6 @@ private fun BuildApkContent(
     val scope = rememberCoroutineScope()
     val repository = remember { WebToAppApplication.repository }
 
-    // 双阶段渲染：先显示轻量骨架，等导航过渡动画结束（220ms）后再初始化重活，
-    // 避免 ApkBuilder 构造（mkdirs）、包名查询、引擎检查、预检等与过渡动画抢主线程导致掉帧。
     var uiReady by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
         delay(220L)
@@ -152,8 +143,6 @@ private fun BuildApkContent(
     }
     var apkBuilderState by remember { mutableStateOf<ApkBuilder?>(null) }
     var builderInitError by remember(webApp.id) { mutableStateOf<Throwable?>(null) }
-    // A tap that arrived before the builder (keystore open) or the runtime
-    // prefetch finished. Honored once both are done, instead of dropped.
     var buildArmed by remember(webApp.id) { mutableStateOf(false) }
     LaunchedEffect(uiReady) {
         if (!uiReady) return@LaunchedEffect
@@ -177,12 +166,13 @@ private fun BuildApkContent(
     var buildFailureReport by remember(webApp.id) { mutableStateOf<BuildFailureReport?>(null) }
     var isEnsuringRuntime by remember(webApp.id) { mutableStateOf(false) }
     var ensureRuntimeText by remember(webApp.id) { mutableStateOf<String?>(null) }
-    // Runtime downloads under the ensure step report through the shared engine;
-    // surface them so "preparing" shows real progress instead of a bare spinner.
     val depDownloadState by com.webtoapp.core.download.DependencyDownloadEngine.state
         .collectAsStateWithLifecycle()
     var forceFullRebuild by remember(webApp.id) {
         mutableStateOf(webApp.apkExportConfig?.forceFullRebuild ?: false)
+    }
+    var preserveIconShape by remember(webApp.id) {
+        mutableStateOf(webApp.apkExportConfig?.preserveIconShape == true)
     }
     var lastBuildMode by remember(webApp.id) { mutableStateOf<String?>(null) }
     var lastBuildReason by remember(webApp.id) { mutableStateOf<String?>(null) }
@@ -220,14 +210,8 @@ private fun BuildApkContent(
     var saepEnabled by remember(webApp.id) {
         mutableStateOf(webApp.apkExportConfig?.saepEnabled ?: false)
     }
-    // Resolve the package exactly the way the builder does. That rule used to
-    // live inside ApkBuilder, so the screen could not reproduce a derived
-    // package name, never found the installed app, and never bumped the version.
     val resolvedPackageName = com.webtoapp.core.apkbuilder.ApkBuilder.resolvePackageName(webApp)
 
-    // Build history: every successful build leaves a `<name>.build.json` metadata
-    // sidecar next to the APK (BuildMetadataWriter); the card below joins sidecars
-    // with the APKs still on disk. `historyTick` re-scans after a build or a delete.
     val buildHistoryReader = remember { com.webtoapp.core.apkbuilder.BuildHistoryReader(context) }
     var historyTick by remember(webApp.id) { mutableIntStateOf(0) }
     var buildHistory by remember(webApp.id) {
@@ -247,8 +231,6 @@ private fun BuildApkContent(
     var suggestedVersion by remember(resolvedPackageName) {
         mutableStateOf<Pair<Int, String>?>(null)
     }
-    // True when this build's package is already on the device. Re-probed on
-    // resume so returning from the system installer reveals Launch (#1151).
     var targetInstalled by remember(resolvedPackageName) { mutableStateOf(false) }
     var installProbeTick by remember(resolvedPackageName) { mutableIntStateOf(0) }
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -291,12 +273,6 @@ private fun BuildApkContent(
         }
     }
 
-    /**
-     * The build-screen-managed slice of [com.webtoapp.data.model.ApkExportConfig]: every
-     * option this screen edits, merged onto the app's stored config so untouched fields
-     * (package name, version, permissions, …) survive. Single source for both the build
-     * call and the persist path below.
-     */
     fun buildScreenExportConfig(): com.webtoapp.data.model.ApkExportConfig {
         return (webApp.apkExportConfig ?: com.webtoapp.data.model.ApkExportConfig()).copy(
             encryptionConfig = encryptionConfig,
@@ -308,7 +284,8 @@ private fun BuildApkContent(
             engineType = selectedEngineType,
             perAppSigningEnabled = perAppSigningEnabled,
             saepEnabled = saepEnabled,
-            forceFullRebuild = forceFullRebuild
+            forceFullRebuild = forceFullRebuild,
+            preserveIconShape = preserveIconShape
         )
     }
 
@@ -328,25 +305,20 @@ private fun BuildApkContent(
         ).withRuntimePermissionsSyncedFromFeatures()
     }
 
-    // Persist the build options onto the app row so a later visit restores them instead
-    // of resetting to defaults. The snapshot from first composition is the "clean"
-    // baseline — writes only run after the user actually changes something, and
-    // persistBuildScreenExportConfig itself skips no-op writes (updateWebApp bumps
-    // `updatedAt`, which would reshuffle the app list and re-emit into the collector).
     val exportConfigSnapshot = buildScreenExportConfig()
     val initialExportConfig = remember(webApp.id) { exportConfigSnapshot }
+    var exportConfigEdited by remember(webApp.id) { mutableStateOf(false) }
     val latestExportConfig by rememberUpdatedState(exportConfigSnapshot)
     LaunchedEffect(exportConfigSnapshot) {
-        if (exportConfigSnapshot == initialExportConfig) return@LaunchedEffect
+        if (exportConfigSnapshot != initialExportConfig) exportConfigEdited = true
+        if (!exportConfigEdited) return@LaunchedEffect
         delay(400)
         persistBuildScreenExportConfig(repository, webApp.id, exportConfigSnapshot)
     }
     DisposableEffect(webApp.id) {
         onDispose {
             val pending = latestExportConfig
-            if (pending != initialExportConfig) {
-                // The composition scope is already gone by the time onDispose runs; flush
-                // on a detached IO scope so a change made right before leaving still lands.
+            if (exportConfigEdited || pending != initialExportConfig) {
                 CoroutineScope(Dispatchers.IO).launch {
                     persistBuildScreenExportConfig(repository, webApp.id, pending)
                 }
@@ -383,9 +355,6 @@ private fun BuildApkContent(
                 neededAbis = webAppWithConfig.apkExportConfig?.architecture?.abiFilters
             )
             if (!ensureOk) {
-                // Abort here: buildApk runs the same ensure again, so falling
-                // through would burn a second full runtime download attempt
-                // before the build fails on the same missing dependency.
                 progressText = when (webAppWithConfig.appType) {
                     AppType.PYTHON_APP -> Strings.pythonRuntimeDownloadFailed
                     AppType.NODEJS_APP -> Strings.njsDownloadFailed
@@ -396,9 +365,6 @@ private fun BuildApkContent(
                 isBuilding = false
                 return@launch
             }
-            // Preflight still gates the build, but without the removed on-screen panel
-            // a silent abort would leave no feedback — blocking issues go through the
-            // same failure dialog as real build errors instead.
             val preflight = withContext(Dispatchers.IO) {
                 ApkExportPreflight.check(context, webAppWithConfig)
             }
@@ -493,8 +459,6 @@ private fun BuildApkContent(
                     neededAbis = webApp.apkExportConfig?.architecture?.abiFilters
                 )
             } finally {
-                // Cancellation used to leave this true, which disabled the build
-                // button for the rest of the visit.
                 isEnsuringRuntime = false
             }
             if (!ensureOk) {
@@ -672,22 +636,20 @@ private fun BuildApkContent(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     val iconPath = webApp.iconPath
                     Box(
-                        modifier = Modifier
-                            .size(44.dp)
-                            .clip(RoundedCornerShape(WtaRadius.IconPlate)),
+                        modifier = Modifier.size(44.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         if (!iconPath.isNullOrBlank()) {
-                            AsyncImage(
+                            AppIconImage(
                                 model = iconPath,
                                 contentDescription = null,
-                                modifier = Modifier.fillMaxSize(),
-                                contentScale = ContentScale.Crop
+                                modifier = Modifier.fillMaxSize()
                             )
                         } else {
                             Box(
                                 modifier = Modifier
                                     .fillMaxSize()
+                                    .clip(RoundedCornerShape(WtaRadius.IconPlate))
                                     .background(
                                         MaterialTheme.colorScheme.primary.copy(
                                             alpha = com.webtoapp.ui.design.WtaAlpha.MutedContainer
@@ -757,6 +719,18 @@ private fun BuildApkContent(
                 }
             }
 
+            if (!webApp.iconPath.isNullOrBlank()) {
+                item {
+                    WtaCard {
+                        AppIconStyleSelector(
+                            preserveIconShape = preserveIconShape,
+                            onChange = { preserveIconShape = it },
+                            enabled = !isBuilding && !isEnsuringRuntime
+                        )
+                    }
+                }
+            }
+
             item {
                 EncryptionConfigCard(
                     config = encryptionConfig,
@@ -789,8 +763,6 @@ private fun BuildApkContent(
                 )
             }
 
-            // GeckoView is offered for WEB and MULTI_WEB: multi-web surfaces share
-            // one GeckoRuntime across per-site GeckoSessions (#1035).
             if (webApp.appType == AppType.WEB || webApp.appType == AppType.MULTI_WEB) {
                 item {
                     WtaCard {
@@ -1144,7 +1116,10 @@ private fun BuildApkContent(
             confirmButton = {
                 TextButton(onClick = {
                     showExportAabConfirm = false
-                    onExportAab()
+                    scope.launch {
+                        persistBuildScreenExportConfig(repository, webApp.id, buildScreenExportConfig())
+                        onExportAab()
+                    }
                 }) { Text(Strings.confirm) }
             },
             dismissButton = {
@@ -1197,12 +1172,6 @@ private fun resolveBuildIsolationDefault(
     return config ?: com.webtoapp.core.privacy.IsolationConfig.DISABLED
 }
 
-/**
- * Write the build screen's export config back onto the stored app row, preserving fields
- * the screen doesn't manage. Skips the update entirely when the stored row already
- * matches — [WebAppRepository.updateWebApp] bumps `updatedAt`, so even a no-op write
- * would reshuffle the app list and feed this screen's collector another emission.
- */
 internal suspend fun persistBuildScreenExportConfig(
     repository: com.webtoapp.data.repository.WebAppRepository,
     appId: Long,
@@ -1239,13 +1208,10 @@ private fun BuildSummaryCard(
         Row(verticalAlignment = Alignment.CenterVertically) {
             val iconPath = webApp.iconPath
             if (!iconPath.isNullOrBlank()) {
-                AsyncImage(
+                AppIconImage(
                     model = iconPath,
                     contentDescription = null,
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(RoundedCornerShape(WtaRadius.IconPlate)),
-                    contentScale = ContentScale.Crop
+                    modifier = Modifier.size(40.dp)
                 )
             } else {
                 Box(
@@ -1527,8 +1493,6 @@ internal fun readBuildLogTail(path: String?, maxChars: Int = 20000): String {
             ?.let { java.io.File(it) }
             ?.takeIf { it.exists() && it.isFile }
             ?: return "<build log unavailable>"
-        // Build logs can reach multiple MB; read only the tail instead of loading the
-        // whole file into memory just to drop all but the last 20k chars.
         val length = file.length()
         if (length <= maxChars) {
             file.readText()
@@ -1539,7 +1503,6 @@ internal fun readBuildLogTail(path: String?, maxChars: Int = 20000): String {
                 val buffer = ByteArray(maxChars)
                 raf.readFully(buffer)
                 val tail = String(buffer, Charsets.UTF_8)
-                // Cut to the first newline so the report starts at a clean line.
                 val firstNl = tail.indexOf('\n')
                 if (firstNl >= 0 && firstNl < tail.length - 1) tail.substring(firstNl + 1) else tail
             }
@@ -1678,12 +1641,6 @@ internal fun BuildFailureReportDialog(
     )
 }
 
-/**
- * Per-app build history: one row per recorded build output, newest first. Rows whose
- * APK is still on disk are tappable (install) and offer share + delete; rows whose APK
- * was pruned while the `.build.json` sidecar survived render dimmed as file-removed
- * records and can only be dropped via delete.
- */
 @Composable
 private fun BuildHistoryCard(
     entries: List<com.webtoapp.core.apkbuilder.BuildHistoryEntry>,
