@@ -8,7 +8,11 @@ import android.net.Uri
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.data.model.GalleryItem
 import com.webtoapp.data.model.GalleryItemType
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.ensureActive
+import kotlin.coroutines.coroutineContext
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
@@ -76,65 +80,77 @@ object MediaStorage {
         return dir
     }
 
-    suspend fun saveGalleryMedia(
+    suspend fun importGalleryMedia(context: Context, uri: Uri): GalleryMediaImport {
+        var imported: GalleryItem? = null
+        return try {
+            withContext(Dispatchers.IO) {
+                val name = runCatching { getDisplayNameFromUri(context, uri) }
+                    .getOrDefault(uri.lastPathSegment.orEmpty())
+                val type = runCatching { getMediaType(context, uri) }.getOrNull()
+                val item = type?.let { saveGalleryMedia(context, uri, it, name) }
+                imported = item
+                GalleryMediaImport(name, item)
+            }
+        } catch (error: CancellationException) {
+            imported?.let { item ->
+                withContext(NonCancellable + Dispatchers.IO) { deleteGalleryMedia(item) }
+            }
+            throw error
+        }
+    }
+
+    private suspend fun saveGalleryMedia(
         context: Context,
         uri: Uri,
-        type: GalleryItemType
-    ): SavedMediaInfo? = withContext(Dispatchers.IO) {
+        type: GalleryItemType,
+        name: String
+    ): GalleryItem? {
+        var destination: File? = null
+        var thumbnailPath: String? = null
+        var complete = false
         try {
-            val galleryDir = getGalleryDir(context)
-
             val extension = getExtensionFromUri(context, uri, type)
-            val fileName = "gallery_${UUID.randomUUID()}.$extension"
-            val destFile = File(galleryDir, fileName)
-
+            val file = File(getGalleryDir(context), "gallery_${UUID.randomUUID()}.$extension")
+            destination = file
             context.contentResolver.openInputStream(uri)?.use { input ->
-                FileOutputStream(destFile).use { output ->
-                    input.copyTo(output)
+                FileOutputStream(file).use { output ->
+                    val buffer = ByteArray(64 * 1024)
+                    while (true) {
+                        coroutineContext.ensureActive()
+                        val count = input.read(buffer)
+                        if (count < 0) break
+                        output.write(buffer, 0, count)
+                    }
                 }
-            } ?: return@withContext null
+            } ?: return null
 
-            val mediaInfo = getMediaInfo(destFile, type)
+            if (file.length() == 0L) return null
+            coroutineContext.ensureActive()
+            val mediaInfo = getMediaInfo(file, type)
+            thumbnailPath = generateThumbnail(context, file, type)
+            coroutineContext.ensureActive()
 
-            val thumbnailPath = generateThumbnail(context, destFile, type)
-
-            SavedMediaInfo(
-                path = destFile.absolutePath,
+            val item = GalleryItem(
+                path = file.absolutePath,
+                type = type,
+                name = name,
                 thumbnailPath = thumbnailPath,
                 width = mediaInfo.width,
                 height = mediaInfo.height,
                 duration = mediaInfo.duration,
-                fileSize = destFile.length()
+                fileSize = file.length()
             )
-        } catch (e: Exception) {
-            AppLogger.e(TAG, "Failed to save gallery media: ${e.message}", e)
-            null
-        }
-    }
-
-    suspend fun saveGalleryMediaBatch(
-        context: Context,
-        items: List<Pair<Uri, GalleryItemType>>
-    ): List<GalleryItem> = withContext(Dispatchers.IO) {
-        items.mapIndexedNotNull { index, (uri, type) ->
-            val info = saveGalleryMedia(context, uri, type)
-            if (info != null) {
-
-                val displayName = getDisplayNameFromUri(context, uri)
-
-                GalleryItem(
-                    path = info.path,
-                    type = type,
-                    name = displayName,
-                    thumbnailPath = info.thumbnailPath,
-                    duration = info.duration,
-                    width = info.width,
-                    height = info.height,
-                    fileSize = info.fileSize,
-                    sortIndex = index
-                )
-            } else {
-                null
+            complete = true
+            return item
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: Exception) {
+            AppLogger.e(TAG, "Failed to save gallery media", error)
+            return null
+        } finally {
+            if (!complete) {
+                destination?.delete()
+                thumbnailPath?.let { File(it).delete() }
             }
         }
     }
@@ -374,14 +390,7 @@ object MediaStorage {
     }
 }
 
-data class SavedMediaInfo(
-    val path: String,
-    val thumbnailPath: String?,
-    val width: Int,
-    val height: Int,
-    val duration: Long,
-    val fileSize: Long
-)
+data class GalleryMediaImport(val name: String, val item: GalleryItem?)
 
 private data class MediaInfo(
     val width: Int,

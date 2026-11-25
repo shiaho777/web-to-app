@@ -1,5 +1,6 @@
 package com.webtoapp.ui.shell
 
+import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
@@ -24,6 +25,7 @@ import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.Videocam
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Size
@@ -31,27 +33,75 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.core.shell.GalleryShellConfig
 import com.webtoapp.ui.design.WtaFadeIn
 import com.webtoapp.ui.design.WtaFadeOut
 import com.webtoapp.ui.design.WtaLoadingIndicator
 import com.webtoapp.ui.shared.AspectRatioSurface
+import com.webtoapp.ui.shared.GalleryPlaybackSpeedMenu
+import com.webtoapp.ui.shared.GalleryVideoTitle
+import com.webtoapp.ui.shared.applyGalleryPlaybackSpeed
 import com.webtoapp.ui.shared.ZoomableState
 import com.webtoapp.ui.shared.zoomable
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun ShellGalleryPlayer(
-    galleryConfig: com.webtoapp.core.shell.GalleryShellConfig,
+    galleryConfig: GalleryShellConfig,
     onBack: () -> Unit,
     positionKeySuffix: String? = null
+) {
+    if (galleryConfig.useDeviceFolder) {
+        GalleryDeviceFolderLibrary(positionKeySuffix ?: "shell", onBack) { videos, index, back ->
+            ShellGalleryPlayback(
+                galleryConfig = galleryConfig.copy(
+                    items = videos,
+                    rememberPosition = false,
+                    playMode = "SEQUENTIAL",
+                    shuffleOnLoop = false,
+                    sortOrder = "CUSTOM"
+                ),
+                onBack = back,
+                startIndex = index,
+                useDeviceFiles = true
+            )
+        }
+    } else {
+        GalleryFolderNavigator(galleryConfig.categories, onBack) { categoryId, back ->
+            val scopedConfig = if (categoryId == null) galleryConfig else galleryConfig.copy(
+                items = galleryConfig.items.filter { it.categoryId == categoryId },
+                rememberPosition = false
+            )
+            ShellGalleryPlayback(
+                galleryConfig = scopedConfig,
+                onBack = back,
+                positionKeySuffix = positionKeySuffix,
+                scanAssetsIfEmpty = categoryId == null
+            )
+        }
+    }
+}
+
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+@Composable
+private fun ShellGalleryPlayback(
+    galleryConfig: GalleryShellConfig,
+    onBack: () -> Unit,
+    positionKeySuffix: String? = null,
+    startIndex: Int? = null,
+    useDeviceFiles: Boolean = false,
+    scanAssetsIfEmpty: Boolean = false
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -67,7 +117,7 @@ fun ShellGalleryPlayer(
     var effectiveItems by remember { mutableStateOf(items) }
 
     LaunchedEffect(items) {
-        effectiveItems = if (items.isNotEmpty()) {
+        effectiveItems = if (items.isNotEmpty() || !scanAssetsIfEmpty) {
             items
         } else {
             val derived = deriveGalleryItemsFromAssets(context)
@@ -80,13 +130,16 @@ fun ShellGalleryPlayer(
             modifier = Modifier.fillMaxSize().background(Color.Black),
             contentAlignment = Alignment.Center
         ) {
-            Text(Strings.galleryEmpty, color = Color.White)
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(Strings.galleryEmpty, color = Color.White)
+                TextButton(onClick = onBack) { Text(Strings.back) }
+            }
         }
         return
     }
 
     val pagerState = androidx.compose.foundation.pager.rememberPagerState(
-        initialPage = 0,
+        initialPage = startIndex?.coerceIn(effectiveItems.indices) ?: 0,
         pageCount = { effectiveItems.size }
     )
 
@@ -101,8 +154,8 @@ fun ShellGalleryPlayer(
         else "${SHELL_GALLERY_POSITION_KEY}_$positionKeySuffix"
     }
     var positionRestored by remember { mutableStateOf(!galleryConfig.rememberPosition) }
-    var showGrid by remember { mutableStateOf(true) }
-    var enteredInPager by remember { mutableStateOf(false) }
+    var showGrid by remember { mutableStateOf(startIndex == null) }
+    var enteredInPager by remember { mutableStateOf(startIndex != null) }
     androidx.activity.compose.BackHandler(enabled = !showGrid && !enteredInPager) {
         showGrid = true
     }
@@ -150,7 +203,11 @@ fun ShellGalleryPlayer(
     }
 
     var showControls by remember { mutableStateOf(true) }
-    var isPlaying by remember { mutableStateOf(galleryConfig.autoPlay) }
+    var isPlaying by remember { mutableStateOf(startIndex != null || galleryConfig.autoPlay) }
+    var playbackSpeed by rememberSaveable { mutableFloatStateOf(1f) }
+    var speedMenuOpen by remember { mutableStateOf(false) }
+    var thumbnailBarHeight by remember { mutableIntStateOf(0) }
+    val controlsBottomPadding = with(LocalDensity.current) { thumbnailBarHeight.toDp() }
 
     LaunchedEffect(currentIndex, isPlaying) {
         if (isPlaying && currentItem?.type == "IMAGE" && !pagerState.isScrollInProgress) {
@@ -167,8 +224,8 @@ fun ShellGalleryPlayer(
         }
     }
 
-    LaunchedEffect(showControls) {
-        if (showControls) {
+    LaunchedEffect(showControls, isPlaying, speedMenuOpen, currentIndex) {
+        if (showControls && isPlaying && !speedMenuOpen) {
             kotlinx.coroutines.delay(3000)
             showControls = false
         }
@@ -207,17 +264,27 @@ fun ShellGalleryPlayer(
                             isPlaying = isPlaying && page == currentIndex,
                             enableAudio = galleryConfig.enableAudio,
                             showControls = showControls,
+                            useDeviceFile = useDeviceFiles,
+                            playbackSpeed = playbackSpeed,
+                            onSpeedChange = { playbackSpeed = it },
+                            onSpeedMenuOpenChange = { speedMenuOpen = it },
+                            controlsBottomPadding = controlsBottomPadding,
                             onPlayStateChange = { playing -> isPlaying = playing },
+                            repeatVideo = galleryConfig.playMode == "SINGLE_LOOP" ||
+                                (galleryConfig.videoAutoNext && galleryConfig.loop && effectiveItems.size == 1),
                             onVideoEnded = {
-                                if (galleryConfig.videoAutoNext) {
+                                val advance = if (galleryConfig.videoAutoNext) {
+                                    com.webtoapp.ui.shared.galleryAutoAdvanceTarget(
+                                        currentIndex, effectiveItems.size, galleryConfig.loop, galleryConfig.shuffleOnLoop
+                                    )
+                                } else null
+                                if (advance == null) {
+                                    isPlaying = false
+                                    showControls = true
+                                } else {
                                     scope.launch {
-                                        val advance = com.webtoapp.ui.shared.galleryAutoAdvanceTarget(
-                                            currentIndex, effectiveItems.size, galleryConfig.loop, galleryConfig.shuffleOnLoop
-                                        )
-                                        if (advance != null) {
-                                            if (advance.reshuffle) effectiveItems = effectiveItems.shuffled()
-                                            pagerState.animateScrollToPage(advance.targetIndex)
-                                        }
+                                        if (advance.reshuffle) effectiveItems = effectiveItems.shuffled()
+                                        pagerState.animateScrollToPage(advance.targetIndex)
                                     }
                                 }
                             },
@@ -291,7 +358,7 @@ fun ShellGalleryPlayer(
                 visible = showControls,
                 enter = WtaFadeIn + slideInVertically(initialOffsetY = { it }),
                 exit = WtaFadeOut + slideOutVertically(targetOffsetY = { it }),
-                modifier = Modifier.align(Alignment.BottomCenter)
+                modifier = Modifier.align(Alignment.BottomCenter).onSizeChanged { thumbnailBarHeight = it.height }
             ) {
                 ShellThumbnailBar(
                     items = effectiveItems,
@@ -500,7 +567,6 @@ fun ShellGalleryImageViewer(
                     contentAlignment = Alignment.Center
                 ) {
                     val density = LocalDensity.current
-                    // Fresh zoom state per item; pinch/pan/double-tap below.
                     val zoom = remember(item.assetPath) {
                         ZoomableState()
                     }
@@ -548,11 +614,19 @@ fun ShellGalleryVideoPlayer(
     onPlayStateChange: (Boolean) -> Unit,
     onVideoEnded: () -> Unit,
     onToggleControls: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    useDeviceFile: Boolean = false,
+    playbackSpeed: Float = 1f,
+    onSpeedChange: (Float) -> Unit = {},
+    onSpeedMenuOpenChange: (Boolean) -> Unit = {},
+    controlsBottomPadding: Dp = 0.dp,
+    repeatVideo: Boolean = false
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
+    val onVideoCompleted by rememberUpdatedState(onVideoEnded)
+    val isActivePage by rememberUpdatedState(isCurrentPage)
     var player by remember { mutableStateOf<android.media.MediaPlayer?>(null) }
     var surfaceHolder by remember { mutableStateOf<android.view.SurfaceHolder?>(null) }
     var isPrepared by remember { mutableStateOf(false) }
@@ -561,9 +635,12 @@ fun ShellGalleryVideoPlayer(
     var duration by remember { mutableLongStateOf(0L) }
     var videoWidth by remember { mutableIntStateOf(0) }
     var videoHeight by remember { mutableIntStateOf(0) }
-    val isEncrypted = remember(item.assetPath) { assetDecryptor.isEncrypted(item.assetPath) }
+    var playbackFailed by remember(item.assetPath) { mutableStateOf(false) }
+    val isEncrypted = remember(item.assetPath, useDeviceFile) {
+        !useDeviceFile && assetDecryptor.isEncrypted(item.assetPath)
+    }
 
-    DisposableEffect(item.assetPath, isEncrypted) {
+    DisposableEffect(item.assetPath, useDeviceFile, isEncrypted) {
         val mediaPlayer = android.media.MediaPlayer()
         var assetFd: android.content.res.AssetFileDescriptor? = null
 
@@ -577,21 +654,39 @@ fun ShellGalleryVideoPlayer(
                         videoWidth = mp.videoWidth
                         videoHeight = mp.videoHeight
                         surfaceHolder?.let { mp.setDisplay(it) }
-                        if (isPlaying) mp.start()
                     }
                     mediaPlayer.setOnVideoSizeChangedListener { _, width, height ->
                         videoWidth = width
                         videoHeight = height
                     }
                     mediaPlayer.setOnCompletionListener {
-                        onVideoEnded()
+                        if (isActivePage) onVideoCompleted()
                     }
-                    mediaPlayer.setOnErrorListener { _, _, _ -> true }
+                    mediaPlayer.setOnErrorListener { _, _, _ ->
+                        playbackFailed = true
+                        true
+                    }
+                }
+
+                if (useDeviceFile) {
+                    val uri = Uri.parse(item.assetPath)
+                    require(uri.scheme == "content")
+                    val descriptor = context.contentResolver.openAssetFileDescriptor(uri, "r")
+                        ?: throw java.io.IOException("Video provider returned no file")
+                    descriptor.use {
+                        withContext(Dispatchers.Main) {
+                            if (descriptor.declaredLength >= 0L) {
+                                mediaPlayer.setDataSource(descriptor.fileDescriptor, descriptor.startOffset, descriptor.declaredLength)
+                            } else {
+                                mediaPlayer.setDataSource(descriptor.fileDescriptor)
+                            }
+                            mediaPlayer.prepareAsync()
+                        }
+                    }
+                    return@launch
                 }
 
                 if (!isEncrypted) {
-                    // Host-run preview points at absolute host files: feed
-                    // them straight to the player instead of APK assets.
                     val localFile = item.assetPath
                         .takeIf { isLocalMediaAssetPath(it) }
                         ?.let { java.io.File(it) }
@@ -631,8 +726,6 @@ fun ShellGalleryVideoPlayer(
                     }
                 } else {
 
-                    // Decrypt straight into the temp file: buffering a whole
-                    // video in the heap is what OOM-killed the shell.
                     val encryptedPath =
                         item.assetPath + com.webtoapp.core.crypto.CryptoConstants.ENCRYPTED_EXTENSION
                     val decrypted = assetDecryptor.openEncryptedAsset(encryptedPath)
@@ -650,8 +743,11 @@ fun ShellGalleryVideoPlayer(
                         mediaPlayer.prepareAsync()
                     }
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 AppLogger.e("ShellGallery", "Failed to load video: ${item.assetPath}", e)
+                withContext(Dispatchers.Main) { playbackFailed = true }
             }
         }
 
@@ -665,7 +761,6 @@ fun ShellGalleryVideoPlayer(
 
             }
             try {
-                mediaPlayer.stop()
                 mediaPlayer.release()
             } catch (e: Exception) {
 
@@ -680,16 +775,21 @@ fun ShellGalleryVideoPlayer(
         }
     }
 
-    LaunchedEffect(isPlaying, isPrepared, isCurrentPage) {
+    LaunchedEffect(isPlaying, isPrepared, isCurrentPage, playbackSpeed) {
         player?.let { mp ->
             if (isPrepared) {
                 if (isPlaying && isCurrentPage) {
                     if (!mp.isPlaying) mp.start()
+                    mp.applyGalleryPlaybackSpeed(playbackSpeed)
                 } else {
                     if (mp.isPlaying) mp.pause()
                 }
             }
         }
+    }
+
+    LaunchedEffect(isPrepared, repeatVideo) {
+        if (isPrepared) player?.isLooping = repeatVideo
     }
 
     LaunchedEffect(enableAudio, isPrepared) {
@@ -753,11 +853,21 @@ fun ShellGalleryVideoPlayer(
             }
         )
 
+        if (playbackFailed) {
+            Text(
+                Strings.playbackFailed,
+                color = Color.White,
+                modifier = Modifier.align(Alignment.Center).padding(24.dp)
+            )
+        }
+
         AnimatedVisibility(
             visible = showControls,
             enter = WtaFadeIn,
             exit = WtaFadeOut,
             modifier = Modifier.align(Alignment.BottomCenter)
+                .padding(bottom = controlsBottomPadding)
+                .consumeWindowInsets(PaddingValues(bottom = controlsBottomPadding))
         ) {
             Surface(
                 modifier = Modifier.fillMaxWidth(),
@@ -844,6 +954,11 @@ fun ShellGalleryVideoPlayer(
                                 tint = Color.White
                             )
                         }
+                        GalleryPlaybackSpeedMenu(
+                            speed = playbackSpeed,
+                            onSelect = onSpeedChange,
+                            onExpandedChange = onSpeedMenuOpenChange
+                        )
                     }
                 }
             }
@@ -918,7 +1033,8 @@ private fun ShellThumbnailBar(
 @Composable
 private fun ShellThumbnailCell(
     item: com.webtoapp.core.shell.GalleryShellItem,
-    assetDecryptor: com.webtoapp.core.crypto.AssetDecryptor
+    assetDecryptor: com.webtoapp.core.crypto.AssetDecryptor,
+    description: String? = item.name
 ) {
     val context = LocalContext.current
     val thumbAssetPath = item.thumbnailPath
@@ -942,7 +1058,7 @@ private fun ShellThumbnailCell(
     if (bmp != null) {
         Image(
             bitmap = bmp.asImageBitmap(),
-            contentDescription = item.name,
+            contentDescription = description,
             modifier = Modifier.fillMaxSize(),
             contentScale = androidx.compose.ui.layout.ContentScale.Crop
         )
@@ -1041,7 +1157,11 @@ private fun ShellGalleryGridView(
                     .clip(RoundedCornerShape(4.dp))
                     .clickable { onItemClick(index) }
             ) {
-                ShellThumbnailCell(item = item, assetDecryptor = assetDecryptor)
+                ShellThumbnailCell(
+                    item = item,
+                    assetDecryptor = assetDecryptor,
+                    description = item.name.takeUnless { item.type == "VIDEO" }
+                )
                 if (item.type == "VIDEO") {
                     Icon(
                         Icons.Default.PlayCircle,
@@ -1051,6 +1171,7 @@ private fun ShellGalleryGridView(
                             .align(Alignment.Center),
                         tint = Color.White.copy(alpha = 0.8f)
                     )
+                    GalleryVideoTitle(item.name)
                 }
             }
         }

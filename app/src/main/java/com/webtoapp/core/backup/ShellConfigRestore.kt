@@ -93,14 +93,6 @@ private val INTERNAL_SCRIPT_NAMES = setOf("__kernel__", "__perf_start__", "__per
 
 private val APP_RETURN_SCHEMES = setOf("mqqopensdkapi", "mqqopensdkapiV2", "mqqopensdkapiV3")
 
-/**
- * Reverse of the export projection for legacy source bundles: rebuilds the
- * editor project record from the shell configuration an old export carried
- * (`app_config.json`, parsed as [ShellConfig]). Values the projection never
- * serialized (host dark mode/language, runtime permission grants, SDK
- * overrides, per-site configs, lyric parsing) fall back to defaults; file
- * paths are rewritten by [LegacySourceBundleImporter] afterwards.
- */
 internal fun ShellConfig.toRestoredWebApp(): WebApp {
     val type = AppType.fromPersistedName(appType) ?: AppType.WEB
     val wv = webViewConfig
@@ -135,11 +127,14 @@ internal fun ShellConfig.toRestoredWebApp(): WebApp {
                         path = "",
                         type = enumOrDefault(item.type, GalleryItemType.IMAGE),
                         name = item.name,
+                        categoryId = item.categoryId,
                         duration = item.duration,
                         sortIndex = item.sortIndex,
                         createdAt = item.createdAt
                     )
                 },
+                categories = gallery.categories,
+                useDeviceFolder = gallery.useDeviceFolder,
                 playMode = enumOrDefault(gallery.playMode, GalleryPlayMode.SEQUENTIAL),
                 imageInterval = gallery.imageInterval,
                 loop = gallery.loop,

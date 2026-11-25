@@ -6,6 +6,13 @@ A collection of media with browsing and playback controls, played by a dedicated
 
 Albums, portfolios, and offline media viewers.
 
+## Content sources
+
+- **Bundled media** — select several images or videos at once. Create folders in the editor, then long-press items to select and move them. Items added while a folder is selected go into that folder. The installed app opens with the folder list when the gallery has folders. Bundled files travel with the exported app for offline playback.
+- **Device video folder** — install the app, open it, and choose a directory using the Android picker. The app browses videos and subfolders and plays the original files. Manage files with Android's file manager and tap **Refresh** in the gallery to see changes. Directory access is granted separately in preview and on each installation.
+
+The device folder mode has no preset video count or file-size limit. Available storage and device playback support determine what you can keep and play. Bundled media increases the exported app's size and is subject to the distribution channel's size limits.
+
 ## Core config
 
 Backed by `GalleryConfig`.
@@ -22,6 +29,7 @@ Backed by `GalleryConfig`.
 - **Loop** (`loop`) and **auto-play** (`autoPlay`).
 - **Shuffle on loop** (`shuffleOnLoop`) — reshuffle the order every time playback wraps around (only meaningful with loop on).
 - **Video auto-next** (`videoAutoNext`) — advance to the next item when a video ends.
+- **Video controls** — play or pause, seek with the progress bar, skip ten seconds, and choose a speed from 0.5× to 2×.
 - **Remember position** (`rememberPosition`) — resume playback position (per gallery in preview; fixed slot in exported apps).
 - **Enable audio** (`enableAudio`).
 

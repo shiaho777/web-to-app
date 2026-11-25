@@ -118,6 +118,7 @@ object ApkExportPreflight {
                 else -> emptyList()
             },
             galleryItems = if (appType == AppType.GALLERY) galleryConfig?.items.orEmpty() else emptyList(),
+            galleryUsesDeviceFolder = galleryConfig?.useDeviceFolder == true,
             multiWebSites = if (appType == AppType.MULTI_WEB) multiWebConfig?.sites.orEmpty() else emptyList(),
             wordPressProjectDir = if (appType == AppType.WORDPRESS) {
                 wordpressConfig?.projectId?.takeIf { it.isNotBlank() }
