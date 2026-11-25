@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
@@ -46,7 +45,6 @@ import com.webtoapp.ui.design.WtaButton
 import com.webtoapp.ui.design.WtaButtonSize
 import com.webtoapp.ui.design.WtaButtonVariant
 import com.webtoapp.ui.design.WtaCard
-import com.webtoapp.ui.design.WtaCardTone
 import com.webtoapp.ui.design.WtaSectionDivider
 import com.webtoapp.ui.design.WtaSettingRow
 import com.webtoapp.ui.design.WtaSize
@@ -92,7 +90,7 @@ internal fun AgentWelcome(
     ) {
         item(key = "welcome") {
             Column(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().animateItem(),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
             ) {
@@ -129,7 +127,7 @@ internal fun AgentWelcome(
 
         item(key = "tasks") {
             Column(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().animateItem(),
                 verticalArrangement = Arrangement.spacedBy(WtaSpacing.CardGap)
             ) {
                 Text(Strings.agentHomeStartersTitle, style = MaterialTheme.typography.titleSmall)
@@ -152,7 +150,7 @@ internal fun AgentWelcome(
 
         if (recentSessions.isNotEmpty()) {
             item(key = "recent-sessions") {
-                Column(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.fillMaxWidth().animateItem()) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically

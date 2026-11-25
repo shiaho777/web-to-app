@@ -24,6 +24,9 @@ class SessionStore(
 
     val sessionsFlow: Flow<List<AgentSession>> = context.aicodingStore.data.map { decode(it[KEY_SESSIONS]) }
     val currentSessionIdFlow: Flow<String?> = context.aicodingStore.data.map { it[KEY_CURRENT] }
+    val selectionFlow: Flow<Pair<List<AgentSession>, String?>> = context.aicodingStore.data.map {
+        decode(it[KEY_SESSIONS]) to it[KEY_CURRENT]
+    }
 
     suspend fun create(title: String = ""): AgentSession {
         val session = AgentSession(title = title)

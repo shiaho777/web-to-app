@@ -6,6 +6,8 @@ import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.net.Uri
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.documentfile.provider.DocumentFile
 import android.os.IBinder
 import androidx.core.content.ContextCompat
@@ -44,6 +46,7 @@ import com.webtoapp.core.host.HostRuntimePrefs
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.data.model.AiFeature
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -111,7 +114,7 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
     private var registryFactory: ToolRegistryFactory? = null
 
     private val _ui = MutableStateFlow(
-        AgentUiState(slashCommands = DEFAULT_SLASH_COMMANDS)
+        AgentUiState()
     )
     val ui: StateFlow<AgentUiState> = _ui.asStateFlow()
 
@@ -121,6 +124,8 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
     private var permissionCollectionJob: Job? = null
     private var choiceCollectionJob: Job? = null
     private var activeTurnJob: Job? = null
+    private var submissionJob: Job? = null
+    private val drafts = mutableMapOf<String, ComposerDraft>()
     private var streamingSessionId: String? = null
     private val streamText = StringBuilder()
     private val streamThinkingSegments = mutableListOf<ThinkingSegment>()
@@ -386,53 +391,35 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun setComposerText(text: String) {
+        updateComposer(TextFieldValue(text, TextRange(text.length)))
+    }
 
-        val slashOpen = text.startsWith("/") && !text.contains(" ")
-
-        val mention = parseTrailingMention(text)
-        val sid = _ui.value.currentSession?.id
-        val mentionMatches = if (mention != null && sid != null && !slashOpen) {
-            searchProjectFiles(sid, mention)
-        } else emptyList()
-
-        _ui.update {
-            it.copy(
-                composerText = text,
-                slashOpen = slashOpen,
-                mentionPickerOpen = mention != null && !slashOpen,
-                mentionQuery = mention.orEmpty(),
-                mentionMatches = mentionMatches
+    fun updateComposer(value: TextFieldValue) {
+        _ui.update { current ->
+            val slash = value.text.startsWith("/") && value.text.none(Char::isWhitespace)
+            val mention = if (value.selection.collapsed && !slash) {
+                AgentFileMentions.atCaret(value.text, value.selection.end)
+            } else null
+            current.copy(
+                composerValue = value,
+                slashOpen = slash,
+                mentionPickerOpen = mention != null,
+                mentionQuery = mention?.value.orEmpty(),
+                mentionMatches = mention?.let { searchProjectFiles(current.projectFiles, it.value) }.orEmpty()
             )
         }
     }
 
-    private fun parseTrailingMention(text: String): String? {
-        val atIdx = text.lastIndexOf('@')
-        if (atIdx < 0) return null
-        val tail = text.substring(atIdx + 1)
-
-        if (tail.any { !(it.isLetterOrDigit() || it == '_' || it == '-' || it == '.' || it == '/') }) {
-            return null
-        }
-
-        val before = if (atIdx == 0) ' ' else text[atIdx - 1]
-        if (!before.isWhitespace()) return null
-        return tail
-    }
-
     private fun searchProjectFiles(
-        sessionId: String,
+        projectFiles: List<com.webtoapp.core.agent.files.ProjectFileManager.FileInfo>,
         query: String
     ): List<com.webtoapp.core.agent.files.ProjectFileManager.FileInfo> {
-        val all = files.listAll(sessionId)
-        if (query.isBlank()) return all.take(8)
-        val q = query.lowercase()
-        return all.asSequence()
-            .filter { it.relativePath.lowercase().contains(q) }
+        if (query.isBlank()) return projectFiles.take(8)
+        return projectFiles.asSequence()
+            .filter { it.relativePath.contains(query, ignoreCase = true) }
             .sortedWith(
-
                 compareByDescending<com.webtoapp.core.agent.files.ProjectFileManager.FileInfo> {
-                    it.relativePath.substringAfterLast('/').lowercase().startsWith(q)
+                    it.relativePath.substringAfterLast('/').startsWith(query, ignoreCase = true)
                 }.thenBy { it.relativePath.length }
             )
             .take(8)
@@ -440,14 +427,15 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun pickFileMention(path: String) {
-        val current = _ui.value.composerText
-        val atIdx = current.lastIndexOf('@')
-        if (atIdx < 0) return
-
-        val replaced = current.substring(0, atIdx) + "@" + path + " "
-        _ui.update {
-            it.copy(
-                composerText = replaced,
+        _ui.update { current ->
+            if (!current.mentionPickerOpen || !current.composerValue.selection.collapsed ||
+                current.mentionMatches.none { it.relativePath == path }
+            ) return@update current
+            val query = AgentFileMentions.atCaret(current.composerText, current.composerValue.selection.end)
+                ?: return@update current
+            val edited = AgentFileMentions.insert(current.composerText, query, path)
+            current.copy(
+                composerValue = TextFieldValue(edited.text, TextRange(edited.caret)),
                 mentionPickerOpen = false,
                 mentionQuery = "",
                 mentionMatches = emptyList()
@@ -473,20 +461,20 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         _ui.update { it.copy(slashOpen = false) }
     }
 
-    fun runSlashCommand(command: SlashCommand) {
-        when (command.id) {
-            "clear" -> newSession()
-            "compact" -> compactNow()
-            "plan" -> enterPlanMode()
-            "exit-plan" -> submitPlanForReview()
-            "model" -> openModelPicker()
-            else -> Unit
-        }
+    fun runSlashCommand(command: SlashCommand, onPickModel: () -> Unit) {
         _ui.update {
+            val typedCommand = it.composerText.startsWith("/") && it.composerText.none(Char::isWhitespace)
             it.copy(
-                composerText = if (command.id == "clear" || it.composerText.startsWith("/")) "" else it.composerText,
+                composerValue = if (typedCommand) TextFieldValue() else it.composerValue,
                 slashOpen = false
             )
+        }
+        when (command) {
+            SlashCommand.Model -> onPickModel()
+            SlashCommand.Plan -> enterPlanMode()
+            SlashCommand.ReviewPlan -> submitPlanForReview()
+            SlashCommand.Compact -> compactNow()
+            SlashCommand.NewSession -> newSession()
         }
     }
 
@@ -599,16 +587,13 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun newSession() {
-        viewModelScope.launch {
-
-            val s = sessionStore.create()
-            attachSession(s.id)
-        }
+        viewModelScope.launch { sessionStore.create() }
     }
 
     fun tryNewSession(): Boolean {
         val cur = _ui.value.currentSession
-        if (cur != null && cur.messages.isEmpty()) {
+        val draft = _ui.value
+        if (cur != null && cur.messages.isEmpty() && draft.composerText.isBlank() && draft.pendingAttachments.isEmpty()) {
             _ui.update { it.copy(info = Strings.agentNewSessionAlreadyEmpty) }
             return false
         }
@@ -618,13 +603,15 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
 
     fun selectSession(id: String) {
         viewModelScope.launch {
-            sessionStore.setCurrent(id)
-            attachSession(id)
+            if (sessionStore.get(id) != null) sessionStore.setCurrent(id)
         }
     }
 
     fun deleteSession(id: String) {
-        viewModelScope.launch { sessionStore.delete(id) }
+        viewModelScope.launch {
+            sessionStore.delete(id)
+            drafts.remove(id)
+        }
     }
 
     fun pinSession(id: String, pinned: Boolean) {
@@ -787,10 +774,18 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun refreshFiles(sessionId: String) {
         val list = files.listAll(sessionId)
-        _ui.update { it.copy(projectFiles = list) }
+        _ui.update { current ->
+            if (current.currentSession?.id != sessionId) current
+            else current.copy(
+                projectFiles = list,
+                mentionMatches = if (current.mentionPickerOpen) searchProjectFiles(list, current.mentionQuery)
+                    else emptyList()
+            )
+        }
     }
 
     fun cancelTurn() {
+        submissionJob?.cancel()
         service?.cancel()
         _ui.update {
             it.copy(
@@ -799,6 +794,7 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
                 streamingText = "",
                 streamingThinkingSegments = emptyList(),
                 pendingToolCalls = emptyList(),
+                streamingDraftMessageId = null,
                 pendingPermission = null,
                 pendingChoice = null
             )
@@ -870,22 +866,29 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
 
         if (rawMessage == "/model" || rawMessage.startsWith("/model ")) {
             val arg = rawMessage.removePrefix("/model").trim()
-            _ui.update { it.copy(composerText = "") }
+            _ui.update { it.copy(composerValue = TextFieldValue(), slashOpen = false) }
             if (arg.isEmpty()) openModelPicker() else selectModelByName(arg)
+            return
+        }
+
+        if (current.modelMissing) {
+            _ui.update { it.copy(error = Strings.agentMissingTextModel) }
             return
         }
 
         _ui.update { it.copy(phase = AgentUiState.Phase.Connecting) }
 
-        viewModelScope.launch {
+        submissionJob = viewModelScope.launch {
             try {
-                val session = ensureActiveSession() ?: run {
+                val session = (current.currentSession?.let { sessionStore.get(it.id) }
+                    ?: ensureActiveSession()) ?: run {
                     resetTurnUiState(); return@launch
                 }
+                if (_ui.value.currentSession?.id != session.id) return@launch
                 val pending = current.pendingAttachments
-                val mentionedPaths = extractMentionPaths(rawMessage, session.id)
+                val mentionedPaths = AgentFileMentions.paths(rawMessage) { files.exists(session.id, it) }
 
-                val editingId = _ui.value.editingMessageId
+                val editingId = current.editingMessageId
                 val baseSession = if (editingId != null) {
                     sessionStore.truncateAt(session.id, editingId, keep = false) ?: session
                 } else session
@@ -900,19 +903,26 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
                     resetTurnUiState(); return@launch
                 }
 
-                _ui.update {
-                    it.copy(
-                        composerText = "",
-                        editingMessageId = null,
-                        mentionPickerOpen = false,
-                        mentionQuery = "",
-                        mentionMatches = emptyList(),
-                        pendingAttachments = emptyList()
-                    )
+                _ui.update { latest ->
+                    if (latest.currentSession?.id != session.id) latest else {
+                        val submittedText = latest.composerText == current.composerText
+                        latest.copy(
+                            composerValue = if (submittedText) TextFieldValue() else latest.composerValue,
+                            editingMessageId = null,
+                            slashOpen = !submittedText && latest.slashOpen,
+                            mentionPickerOpen = !submittedText && latest.mentionPickerOpen,
+                            mentionQuery = if (submittedText) "" else latest.mentionQuery,
+                            mentionMatches = if (submittedText) emptyList() else latest.mentionMatches,
+                            pendingAttachments = latest.pendingAttachments - pending.toSet()
+                        )
+                    }
                 }
+                if (_ui.value.currentSession?.id != session.id) return@launch
 
                 overflowAutoRetry.set(false)
                 dispatchTurn(updated, rawMessage)
+            } catch (cancelled: CancellationException) {
+                throw cancelled
             } catch (t: Throwable) {
                 resetTurnUiState()
                 throw t
@@ -924,53 +934,50 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         _ui.update { it.copy(phase = AgentUiState.Phase.Idle, error = null, currentActivity = null) }
     }
 
-    private fun extractMentionPaths(text: String, sessionId: String): List<String> {
-        val regex = Regex("(?:^|\\s)@([A-Za-z0-9_\\-./]+)")
-        val raw = regex.findAll(text).mapNotNull { it.groupValues[1].takeIf { p -> p.isNotEmpty() } }.toList()
-        if (raw.isEmpty()) return emptyList()
-        val seen = LinkedHashSet<String>()
-        for (p in raw) {
-
-            val cleaned = p.trimEnd('.', ',', ';', ':', '!', '?', ')', ']')
-            if (cleaned.isNotEmpty() && files.exists(sessionId, cleaned)) seen.add(cleaned)
-        }
-        return seen.toList()
-    }
-
     fun attachUris(uris: List<Uri>) {
         if (uris.isEmpty()) return
+        val selectedId = _ui.value.currentSession?.id
         viewModelScope.launch {
-            val session = ensureActiveSession() ?: return@launch
+            val sessionId = selectedId ?: ensureActiveSession()?.id ?: return@launch
             val added = withContext(Dispatchers.IO) {
                 val bigPick = uris.any {
                     val size = querySizeBytes(it)
                     size == null || size > IMPORTING_HINT_MIN_BYTES
                 }
-                if (bigPick) _ui.update { it.copy(info = Strings.agentAttachImporting) }
-                uris.mapNotNull { uri -> importUriToUploads(session.id, uri) }
+                if (bigPick) showAttachmentStatus(sessionId, Strings.agentAttachImporting)
+                uris.mapNotNull { uri -> importUriToUploads(sessionId, uri) }
             }
-            if (added.isNotEmpty()) {
-                _ui.update { it.copy(pendingAttachments = it.pendingAttachments + added) }
-                refreshFiles(session.id)
-            }
-            if (added.size < uris.size) {
-                _ui.update { it.copy(info = Strings.agentAttachFailed) }
-            }
+            addPendingAttachments(sessionId, added)
+            if (added.size < uris.size) showAttachmentStatus(sessionId, Strings.agentAttachFailed)
         }
     }
 
     fun attachFolder(treeUri: Uri) {
+        val selectedId = _ui.value.currentSession?.id
         viewModelScope.launch {
-            _ui.update { it.copy(info = Strings.agentAttachImporting) }
-            val session = ensureActiveSession() ?: return@launch
-            val added = withContext(Dispatchers.IO) { importFolderToUploads(session.id, treeUri) }
-            if (added != null) {
-                _ui.update { it.copy(pendingAttachments = it.pendingAttachments + added) }
-                refreshFiles(session.id)
-            } else {
-                _ui.update { it.copy(info = Strings.agentAttachFailed) }
-            }
+            val sessionId = selectedId ?: ensureActiveSession()?.id ?: return@launch
+            showAttachmentStatus(sessionId, Strings.agentAttachImporting)
+            val added = withContext(Dispatchers.IO) { importFolderToUploads(sessionId, treeUri) }
+            if (added != null) addPendingAttachments(sessionId, listOf(added))
+            else showAttachmentStatus(sessionId, Strings.agentAttachFailed)
         }
+    }
+
+    private fun addPendingAttachments(sessionId: String, added: List<UserAttachment>) {
+        if (added.isEmpty()) return
+        if (_ui.value.currentSession?.id != sessionId) {
+            if (_ui.value.sessions.any { it.id == sessionId }) {
+                val draft = drafts[sessionId] ?: ComposerDraft()
+                drafts[sessionId] = draft.copy(attachments = (draft.attachments + added).distinctBy { it.path })
+            }
+            return
+        }
+        _ui.update { it.copy(pendingAttachments = (it.pendingAttachments + added).distinctBy { att -> att.path }) }
+        refreshFiles(sessionId)
+    }
+
+    private fun showAttachmentStatus(sessionId: String, message: String) {
+        _ui.update { if (it.currentSession?.id == sessionId) it.copy(info = message) else it }
     }
 
     fun removePendingAttachment(path: String) {
@@ -1255,13 +1262,13 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         _ui.update {
             it.copy(
                 editingMessageId = message.id,
-                composerText = message.content
+                composerValue = TextFieldValue(message.content, TextRange(message.content.length))
             )
         }
     }
 
     fun cancelEditing() {
-        _ui.update { it.copy(editingMessageId = null, composerText = "") }
+        _ui.update { it.copy(editingMessageId = null, composerValue = TextFieldValue()) }
     }
 
     fun regenerate(messageId: String) {
@@ -1612,7 +1619,7 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
                 planActive = false,
                 planFilePath = null,
                 pendingPlanReview = null,
-                composerText = "Plan approved. Proceed with implementation."
+                composerValue = TextFieldValue(Strings.agentPlanApprovedMessage)
             )
         }
         send()
@@ -1621,7 +1628,7 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
     fun rejectPlan() {
         val plan = planManager ?: return
         plan.revise()
-        _ui.update { it.copy(pendingPlanReview = null, composerText = "") }
+        _ui.update { it.copy(pendingPlanReview = null, composerValue = TextFieldValue()) }
     }
 
     private fun maybePushToolUi(force: Boolean = false) {
@@ -1649,24 +1656,11 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun observeStreams() {
         viewModelScope.launch {
-            combine(sessionStore.sessionsFlow, sessionStore.currentSessionIdFlow) { all, currentId ->
-                all to currentId
-            }.collect { (all, currentId) ->
-                val currentMissing = currentId == null || all.none { it.id == currentId }
-                if (all.isEmpty() || currentMissing) {
-                    ensureActiveSession()
-                    return@collect
-                }
-                val current = all.firstOrNull { it.id == currentId }
-                _ui.update {
-                    it.copy(
-                        sessions = all,
-                        currentSession = current,
-                        estimatedContextTokens = if (it.currentSession?.id == current?.id) it.estimatedContextTokens else 0,
-                        projectFiles = if (it.currentSession?.id == current?.id) it.projectFiles
-                            else current?.let { c -> files.listAll(c.id) }.orEmpty()
-                    )
-                }
+            sessionStore.selectionFlow.collect { (sessions, currentId) ->
+                val current = sessions.firstOrNull { it.id == currentId }
+                _ui.update { it.copy(sessions = sessions) }
+                if (current == null) ensureActiveSession() else applySession(current)
+                drafts.keys.retainAll(sessions.mapTo(mutableSetOf()) { it.id })
             }
         }
     }
@@ -2199,58 +2193,80 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private suspend fun attachSession(id: String) {
-        if (streamingSessionId != null && streamingSessionId != id) {
-            cancelTurn()
+        sessionStore.get(id)?.let(::applySession)
+    }
+
+    private fun applySession(session: AgentSession) {
+        val previous = _ui.value
+        val previousId = previous.currentSession?.id
+        if (previousId == session.id) {
+            _ui.update { it.copy(currentSession = session) }
+            return
         }
-        val session = sessionStore.get(id) ?: return
+        val outgoing = previous.composerDraft()
+        if (previousId != null) {
+            if (outgoing == ComposerDraft()) drafts.remove(previousId)
+            else drafts[previousId] = outgoing
+            if (previous.isWorking) cancelTurn()
+        }
+        val incoming = drafts.remove(session.id) ?: if (previousId == null) outgoing else ComposerDraft()
         val checker = service?.permissionChecker
-        if (checker != null) {
-            checker.resetToBaseline()
-            planManager = PlanManager(session.id, files, checker)
-            registryFactory = ToolRegistryFactory(planManager!!, imageRegistry)
-        } else {
-            planManager = null
-            registryFactory = null
+        checker?.resetToBaseline()
+        planManager = checker?.let { PlanManager(session.id, files, it) }
+        registryFactory = planManager?.let { ToolRegistryFactory(it, imageRegistry) }
+        todoManager.clear()
+        val restoredApks = session.config.builtApksSafe.map {
+            BuiltApkInfo(
+                appId = it.appId,
+                apkName = it.apkName,
+                apkPath = it.apkPath,
+                sizeBytes = it.sizeBytes,
+                buildMode = it.buildMode,
+                packageName = it.packageName,
+                versionName = it.versionName
+            )
         }
-        val sessionChanged = _ui.value.currentSession?.id != session.id
-        if (sessionChanged) {
-            todoManager.clear()
-        }
-        val restoredApks = if (sessionChanged) {
-            session.config.builtApksSafe.map { p ->
-                BuiltApkInfo(
-                    appId = p.appId,
-                    apkName = p.apkName,
-                    apkPath = p.apkPath,
-                    sizeBytes = p.sizeBytes,
-                    buildMode = p.buildMode,
-                    packageName = p.packageName,
-                    versionName = p.versionName
-                )
-            }
-        } else {
-            _ui.value.builtApks
-        }
+        val projectFiles = files.listAll(session.id)
         _ui.update {
             it.copy(
                 currentSession = session,
-                estimatedContextTokens = if (sessionChanged) 0 else it.estimatedContextTokens,
+                composerValue = incoming.value,
+                pendingAttachments = incoming.attachments,
+                editingMessageId = incoming.editingMessageId,
+                slashOpen = false,
+                mentionPickerOpen = false,
+                mentionQuery = "",
+                mentionMatches = emptyList(),
+                estimatedContextTokens = 0,
                 planActive = false,
                 planFilePath = null,
                 pendingPlanReview = null,
-                projectFiles = files.listAll(session.id),
-
-                pendingChanges = if (sessionChanged) emptyList() else it.pendingChanges,
+                projectFiles = projectFiles,
+                pendingChanges = emptyList(),
                 builtApks = restoredApks,
-                changesReviewExpanded = if (sessionChanged) false else it.changesReviewExpanded,
-                pendingAppChanges = if (sessionChanged) emptyList() else it.pendingAppChanges,
-                appChangesExpanded = if (sessionChanged) false else it.appChangesExpanded,
-
-                previewFilePath = if (sessionChanged) null else it.previewFilePath,
-                drawerOpen = if (sessionChanged) false else it.drawerOpen
+                changesReviewExpanded = false,
+                pendingAppChanges = emptyList(),
+                appChangesExpanded = false,
+                selectedFilePath = null,
+                selectedFileContent = null,
+                previewFilePath = null,
+                previewOpen = false,
+                drawerOpen = false
             )
         }
     }
+
+    private data class ComposerDraft(
+        val value: TextFieldValue = TextFieldValue(),
+        val attachments: List<UserAttachment> = emptyList(),
+        val editingMessageId: String? = null
+    )
+
+    private fun AgentUiState.composerDraft() = ComposerDraft(
+        value = composerValue.copy(composition = null),
+        attachments = pendingAttachments,
+        editingMessageId = editingMessageId
+    )
 
     override fun onCleared() {
         super.onCleared()

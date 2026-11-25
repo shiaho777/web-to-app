@@ -1,46 +1,35 @@
 package com.webtoapp.ui.agent.components
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.OpenInNew
 import androidx.compose.material.icons.outlined.AddCircle
+import androidx.compose.material.icons.outlined.Apps
 import androidx.compose.material.icons.outlined.Edit
-import androidx.compose.material.icons.outlined.ExpandLess
-import androidx.compose.material.icons.outlined.ExpandMore
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.ui.agent.PendingAppChange
-import com.webtoapp.ui.design.WtaAlpha
-import com.webtoapp.ui.design.WtaCard
-import com.webtoapp.ui.design.WtaCardTone
+import com.webtoapp.ui.design.WtaButton
+import com.webtoapp.ui.design.WtaButtonSize
+import com.webtoapp.ui.design.WtaButtonVariant
 import com.webtoapp.ui.design.WtaColors
-import com.webtoapp.ui.design.WtaExpandIn
 import com.webtoapp.ui.design.WtaInfoChip
-import com.webtoapp.ui.design.WtaShrinkOut
 import com.webtoapp.ui.design.WtaSize
 import com.webtoapp.ui.design.WtaSpacing
 
@@ -54,83 +43,22 @@ fun AppChangesReviewCard(
     modifier: Modifier = Modifier
 ) {
     if (changes.isEmpty()) return
-    Box(
-        modifier = modifier.padding(
-            horizontal = WtaSpacing.ScreenHorizontal,
-            vertical = 2.dp
-        )
-    ) {
-        CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides Dp.Unspecified) {
-        WtaCard(
-            tone = WtaCardTone.Elevated,
-            contentPadding = PaddingValues(0.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            HeaderRow(
-                count = changes.size,
-                expanded = expanded,
-                onToggle = onToggle,
-                onClear = onClear
+    AgentReviewCard(
+        title = Strings.agentAppChangesHeader.format(changes.size),
+        icon = Icons.Outlined.Apps,
+        expanded = expanded,
+        onToggle = onToggle,
+        modifier = modifier,
+        actions = {
+            WtaButton(
+                text = Strings.agentChangesReviewClear,
+                onClick = onClear,
+                variant = WtaButtonVariant.Tonal,
+                size = WtaButtonSize.Small
             )
-            AnimatedVisibility(
-                visible = expanded,
-                enter = WtaExpandIn,
-                exit = WtaShrinkOut
-            ) {
-                Column {
-                    HorizontalDivider(
-                        color = MaterialTheme.colorScheme.outlineVariant
-                            .copy(alpha = WtaAlpha.Divider)
-                    )
-                    changes.forEach { change ->
-                        AppChangeRow(
-                            change = change,
-                            onOpen = { onOpenApp(change.appId) }
-                        )
-                    }
-                }
-            }
         }
-        }
-    }
-}
-
-@Composable
-private fun HeaderRow(
-    count: Int,
-    expanded: Boolean,
-    onToggle: () -> Unit,
-    onClear: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onToggle)
-            .padding(horizontal = WtaSpacing.Small, vertical = 2.dp),
-        verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(
-            imageVector = if (expanded) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,
-            contentDescription = if (expanded) Strings.agentChangesReviewCollapse
-            else Strings.agentChangesReviewExpand,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(WtaSize.IconSmall)
-        )
-        Spacer(Modifier.width(WtaSpacing.Tiny))
-        Text(
-            text = Strings.agentAppChangesHeader.format(count),
-            style = MaterialTheme.typography.bodySmall,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.onSurface,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f)
-        )
-        ReviewActionButton(
-            text = Strings.agentChangesReviewClear,
-            onClick = onClear,
-            tonal = true
-        )
+        changes.forEach { change -> AppChangeRow(change, onOpen = { onOpenApp(change.appId) }) }
     }
 }
 
@@ -142,8 +70,9 @@ private fun AppChangeRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onOpen)
-            .padding(horizontal = WtaSpacing.Small, vertical = 2.dp),
+            .clickable(role = Role.Button, onClickLabel = Strings.agentAppChangesOpen, onClick = onOpen)
+            .heightIn(min = WtaSize.TouchTarget)
+            .padding(horizontal = WtaSpacing.Medium, vertical = WtaSpacing.Tiny),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
     ) {
@@ -179,7 +108,7 @@ private fun AppChangeRow(
         }
         Icon(
             imageVector = Icons.AutoMirrored.Outlined.OpenInNew,
-            contentDescription = Strings.agentAppChangesOpen,
+            contentDescription = null,
             tint = MaterialTheme.colorScheme.primary,
             modifier = Modifier.size(WtaSize.IconSmall)
         )

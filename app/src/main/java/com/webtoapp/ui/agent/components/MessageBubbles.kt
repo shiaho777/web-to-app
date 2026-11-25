@@ -1,10 +1,8 @@
 package com.webtoapp.ui.agent.components
 
-import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
@@ -16,13 +14,13 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
@@ -33,9 +31,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.RocketLaunch
-import androidx.compose.material.icons.outlined.AttachFile
 import androidx.compose.material.icons.outlined.Apps
+import androidx.compose.material.icons.outlined.AttachFile
 import androidx.compose.material.icons.outlined.Build
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.ChecklistRtl
@@ -48,12 +45,11 @@ import androidx.compose.material.icons.outlined.Extension
 import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.outlined.FolderOpen
 import androidx.compose.material.icons.outlined.Image
-import androidx.compose.material.icons.outlined.ExpandLess
-import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.Lightbulb
 import androidx.compose.material.icons.outlined.MoreHoriz
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material.icons.outlined.RocketLaunch
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.StopCircle
 import androidx.compose.material3.DropdownMenu
@@ -65,17 +61,19 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.key
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.AnnotatedString
@@ -92,20 +90,22 @@ import com.webtoapp.core.agent.session.UserAttachment
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.ui.agent.AgentViewModel
 import com.webtoapp.ui.agent.ThinkingSegment
-import com.webtoapp.ui.design.WtaAlertDialog
 import com.webtoapp.ui.design.WtaAlpha
+import com.webtoapp.ui.design.WtaButton
+import com.webtoapp.ui.design.WtaButtonVariant
 import com.webtoapp.ui.design.WtaCard
 import com.webtoapp.ui.design.WtaCardTone
 import com.webtoapp.ui.design.WtaColors
-import com.webtoapp.ui.design.WtaExpandIn
 import com.webtoapp.ui.design.WtaIconButton
 import com.webtoapp.ui.design.WtaInfoChip
 import com.webtoapp.ui.design.WtaLoadingIndicator
-import com.webtoapp.ui.design.WtaShrinkOut
+import com.webtoapp.ui.design.WtaMotion
 import com.webtoapp.ui.design.WtaSectionDivider
+import com.webtoapp.ui.design.WtaSegmentedRow
 import com.webtoapp.ui.design.WtaSize
 import com.webtoapp.ui.design.WtaSpacing
 import com.webtoapp.ui.theme.AppColors
+import com.webtoapp.ui.theme.LocalAnimationSettings
 import java.util.Date
 
 data class MessageActions(
@@ -160,7 +160,8 @@ internal fun formatMessageForCopy(message: AgentMessage, includeDetails: Boolean
 fun MessageBubble(
     message: AgentMessage,
     actions: MessageActions,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onInspectActivity: () -> Unit = {}
 ) {
     val isUser = message.role == AgentMessage.Role.USER
     val tone = if (isUser || message.isError) WtaCardTone.Elevated else WtaCardTone.Surface
@@ -179,7 +180,8 @@ fun MessageBubble(
                 content = message.thinking,
                 durationMs = message.thinkingDurationMs,
                 isLive = false,
-                modifier = Modifier.widthIn(max = 640.dp)
+                modifier = Modifier.widthIn(max = 640.dp),
+                onInspectActivity = onInspectActivity
             )
             Spacer(Modifier.height(WtaSpacing.Tiny))
         }
@@ -228,7 +230,8 @@ fun MessageBubble(
                     toolCalls = message.toolCalls,
                     thinkingSegments = uiThinkingSegments,
                     onSurface = onContainer,
-                    hasLegacyThinking = !hasStructuredThinking && !message.thinking.isNullOrBlank()
+                    hasLegacyThinking = !hasStructuredThinking && !message.thinking.isNullOrBlank(),
+                    onInspectActivity = onInspectActivity
                 )
             }
         }
@@ -307,21 +310,15 @@ fun ThinkingBlock(
     durationMs: Long?,
     isLive: Boolean,
     initiallyExpanded: Boolean = isLive,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onInspectActivity: () -> Unit = {}
 ) {
     var userExpanded by rememberSaveable { mutableStateOf<Boolean?>(null) }
     val expanded = userExpanded ?: (initiallyExpanded && isLive)
-    var appeared by remember { mutableStateOf(!isLive) }
-    LaunchedEffect(Unit) { appeared = true }
-    val appearAlpha by animateFloatAsState(if (appeared) 1f else 0f, tween(220), label = "appear-alpha")
-    val appearDy by animateDpAsState(if (appeared) 0.dp else 8.dp, tween(220), label = "appear-dy")
     WtaCard(
         tone = WtaCardTone.Elevated,
         contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
-        modifier = modifier.graphicsLayer {
-            alpha = appearAlpha
-            translationY = appearDy.toPx()
-        }
+        modifier = modifier
     ) {
         Row(
             modifier = Modifier
@@ -329,7 +326,10 @@ fun ThinkingBlock(
                 .clickable(
                     role = Role.Button,
                     onClickLabel = if (expanded) Strings.collapse else Strings.expand,
-                    onClick = { userExpanded = !expanded }
+                    onClick = {
+                        onInspectActivity()
+                        userExpanded = !expanded
+                    }
                 )
                 .heightIn(min = WtaSize.TouchTarget)
                 .padding(horizontal = WtaSpacing.Small + 2.dp, vertical = WtaSpacing.Small - 2.dp),
@@ -367,18 +367,9 @@ fun ThinkingBlock(
                 )
                 Spacer(Modifier.width(WtaSpacing.Tiny + 2.dp))
             }
-            Icon(
-                imageVector = if (expanded) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(WtaSize.IconSmall - 2.dp)
-            )
+            AgentDisclosureIcon(expanded)
         }
-        AnimatedVisibility(
-            visible = expanded,
-            enter = WtaExpandIn,
-            exit = WtaShrinkOut
-        ) {
+        AgentReveal(visible = expanded) {
 
             val bodyMod = if (isLive) {
                 Modifier
@@ -436,7 +427,8 @@ fun StreamingBubble(
     text: String,
     thinkingSegments: List<ThinkingSegment>,
     pendingTools: List<RecordedToolCall>,
-    activity: String?
+    activity: String?,
+    onInspectActivity: () -> Unit = {}
 ) {
     Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.Start) {
         AgentResponseLabel()
@@ -451,18 +443,15 @@ fun StreamingBubble(
                     toolCalls = pendingTools,
                     thinkingSegments = thinkingSegments,
                     onSurface = MaterialTheme.colorScheme.onSurface,
-                    liveTrailing = true
+                    liveTrailing = true,
+                    onInspectActivity = onInspectActivity
                 )
                 val toolSettled = pendingTools.isNotEmpty() &&
                     pendingTools.none { it.effectiveStatus == RecordedToolCall.Status.Running }
                 val thinkingLive = thinkingSegments.any { it.frozenDurationMs == null }
                 val tail = text.trimEnd()
                 val tailIsMarker = tail.isEmpty() || tail.last() == '\u2063'
-                AnimatedVisibility(
-                    visible = toolSettled && !thinkingLive && tailIsMarker,
-                    enter = WtaExpandIn,
-                    exit = WtaShrinkOut
-                ) {
+                AgentReveal(visible = toolSettled && !thinkingLive && tailIsMarker) {
                     Row(
                         modifier = Modifier.padding(top = WtaSpacing.Tiny + 2.dp),
                         verticalAlignment = Alignment.CenterVertically
@@ -519,6 +508,10 @@ private fun MessageSurface(
 
 @Composable
 private fun TypingDots(color: Color, modifier: Modifier = Modifier) {
+    if (!LocalAnimationSettings.current.enabled) {
+        Icon(Icons.Outlined.MoreHoriz, null, modifier = modifier.size(WtaSize.IconSmall), tint = color)
+        return
+    }
     val transition = rememberInfiniteTransition(label = "typing-dots")
     Row(
         modifier = modifier,
@@ -557,7 +550,8 @@ private fun RichAssistantTimeline(
     onSurface: Color,
     thinkingSegments: List<ThinkingSegment> = emptyList(),
     liveTrailing: Boolean = false,
-    hasLegacyThinking: Boolean = false
+    hasLegacyThinking: Boolean = false,
+    onInspectActivity: () -> Unit
 ) {
     val parts = remember(text, toolCalls, thinkingSegments, hasLegacyThinking) {
         buildAssistantTimeline(text, toolCalls, thinkingSegments, hasLegacyThinking)
@@ -582,11 +576,12 @@ private fun RichAssistantTimeline(
                         content = part.segment.content,
                         durationMs = part.segment.frozenDurationMs,
                         isLive = isLive,
-                        initiallyExpanded = isLive
+                        initiallyExpanded = isLive,
+                        onInspectActivity = onInspectActivity
                     )
                 }
                 is AssistantTimelinePart.Tools -> key("tools-${part.calls.first().toolCallId}") {
-                    ToolActivityGroup(part.calls, liveTrailing)
+                    ToolActivityGroup(part.calls, liveTrailing, onInspectActivity)
                 }
             }
         }
@@ -594,12 +589,16 @@ private fun RichAssistantTimeline(
 }
 
 @Composable
-private fun ToolActivityGroup(calls: List<RecordedToolCall>, live: Boolean) {
+private fun ToolActivityGroup(
+    calls: List<RecordedToolCall>,
+    live: Boolean,
+    onInspectActivity: () -> Unit
+) {
     var showAll by rememberSaveable { mutableStateOf(false) }
-    var openDetails by rememberSaveable { mutableStateOf(emptyList<String>()) }
+    var expandedId by rememberSaveable { mutableStateOf<String?>(null) }
     val canShowMore = calls.size > 3
-    val visibleCalls = if (showAll || !canShowMore) calls else calls.takeLast(3)
-    val groupStatus = calls.minOf { it.presentationStatus(live) }
+    val visibleCalls = if (showAll) calls else compactToolActivity(calls, expandedId, live)
+    val statuses = calls.groupingBy { it.presentationStatus(live) }.eachCount()
     val colors = MaterialTheme.colorScheme
 
     WtaCard(
@@ -613,7 +612,10 @@ private fun ToolActivityGroup(calls: List<RecordedToolCall>, live: Boolean) {
                     if (canShowMore) Modifier.clickable(
                         role = Role.Button,
                         onClickLabel = if (showAll) Strings.collapse else Strings.expand,
-                        onClick = { showAll = !showAll }
+                        onClick = {
+                            onInspectActivity()
+                            showAll = !showAll
+                        }
                     ) else Modifier
                 )
                 .heightIn(min = if (canShowMore) WtaSize.TouchTarget else 36.dp)
@@ -627,26 +629,43 @@ private fun ToolActivityGroup(calls: List<RecordedToolCall>, live: Boolean) {
                 color = colors.onSurfaceVariant,
                 modifier = Modifier.weight(1f)
             )
-            Text(
-                text = groupStatus.label,
-                style = MaterialTheme.typography.labelSmall,
-                color = if (groupStatus == ToolPresentationStatus.Running) colors.primary else colors.onSurfaceVariant
-            )
-            if (canShowMore) {
-                Icon(
-                    imageVector = if (showAll) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,
-                    contentDescription = null,
-                    tint = colors.onSurfaceVariant,
-                    modifier = Modifier.size(WtaSize.IconSmall)
+            if (statuses.size == 1) {
+                val status = statuses.keys.single()
+                Text(
+                    text = status.label,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (status == ToolPresentationStatus.Running) colors.primary else colors.onSurfaceVariant
                 )
+            } else {
+                ToolPresentationStatus.entries.filter { it != ToolPresentationStatus.Completed }.forEach { status ->
+                    statuses[status]?.let { count ->
+                        Row(
+                            modifier = Modifier.semantics { contentDescription = "${status.label}: $count" },
+                            horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Tiny),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = status.icon,
+                                contentDescription = null,
+                                tint = if (status == ToolPresentationStatus.Running) colors.primary else colors.onSurfaceVariant,
+                                modifier = Modifier.size(WtaSize.IconSmall)
+                            )
+                            Text(count.toString(), style = MaterialTheme.typography.labelSmall)
+                        }
+                    }
+                }
+            }
+            if (canShowMore) {
+                AgentDisclosureIcon(showAll)
             }
         }
         visibleCalls.forEach { call ->
             key(call.toolCallId) {
                 WtaSectionDivider(Modifier.padding(horizontal = WtaSpacing.Medium))
-                val expanded = call.toolCallId in openDetails
+                val expanded = call.toolCallId == expandedId
                 ToolActivityRow(call, call.presentationStatus(live), expanded) {
-                    openDetails = if (expanded) openDetails - call.toolCallId else openDetails + call.toolCallId
+                    onInspectActivity()
+                    expandedId = if (expanded) null else call.toolCallId
                 }
             }
         }
@@ -655,6 +674,14 @@ private fun ToolActivityGroup(calls: List<RecordedToolCall>, live: Boolean) {
 
 private enum class ToolPresentationStatus {
     Failed, Stopped, Running, Completed;
+
+    val icon: ImageVector
+        get() = when (this) {
+            Failed -> Icons.Outlined.ErrorOutline
+            Stopped -> Icons.Outlined.StopCircle
+            Running -> Icons.Outlined.MoreHoriz
+            Completed -> Icons.Outlined.CheckCircle
+        }
 
     val label: String
         get() = when (this) {
@@ -683,9 +710,10 @@ private fun ToolActivityRow(
     val title = toolActionLabel(call.name)
     val target = remember(call.argumentsJson) { toolTarget(call.argumentsJson) }
     val running = status == ToolPresentationStatus.Running
-    val summary = if (target.isNotBlank()) target else if (running || status == ToolPresentationStatus.Failed) {
+    val report = if (running || status == ToolPresentationStatus.Failed) {
         call.visibleResult.lineSequence().lastOrNull { it.isNotBlank() }?.take(160).orEmpty()
     } else ""
+    val summary = target.ifBlank { report }
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -722,39 +750,53 @@ private fun ToolActivityRow(
                     overflow = TextOverflow.Ellipsis
                 )
             }
+            if (status == ToolPresentationStatus.Failed && report.isNotBlank() && report != summary) {
+                Text(
+                    text = report,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = colors.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
         }
-        if (running) {
-            WtaLoadingIndicator(size = 14.dp, color = colors.primary)
-        } else {
-            Icon(
-                imageVector = when (status) {
-                    ToolPresentationStatus.Completed -> Icons.Outlined.CheckCircle
-                    ToolPresentationStatus.Stopped -> Icons.Outlined.StopCircle
-                    else -> Icons.Outlined.ErrorOutline
-                },
-                contentDescription = null,
-                tint = colors.onSurfaceVariant,
-                modifier = Modifier.size(16.dp)
-            )
+        val animated = LocalAnimationSettings.current.enabled
+        Box(Modifier.size(18.dp), contentAlignment = Alignment.Center) {
+            Crossfade(
+                targetState = status,
+                animationSpec = WtaMotion.standardTween(WtaMotion.DurationQuick),
+                label = "tool state"
+            ) { displayed ->
+                if (displayed == ToolPresentationStatus.Running && animated) {
+                    WtaLoadingIndicator(size = 16.dp, color = colors.primary)
+                } else {
+                    Icon(
+                        imageVector = displayed.icon,
+                        contentDescription = null,
+                        tint = if (displayed == ToolPresentationStatus.Running) colors.primary else colors.onSurfaceVariant,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
         }
-        Icon(
-            imageVector = if (expanded) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,
-            contentDescription = null,
-            tint = colors.onSurfaceVariant,
-            modifier = Modifier.size(WtaSize.IconSmall)
-        )
+        AgentDisclosureIcon(expanded)
     }
-    AnimatedVisibility(visible = expanded, enter = WtaExpandIn, exit = WtaShrinkOut) {
+    AgentReveal(visible = expanded) {
         ToolActivityDetails(call, status)
     }
 }
 
 @Composable
 private fun ToolActivityDetails(call: RecordedToolCall, status: ToolPresentationStatus) {
-    var showResult by remember { mutableStateOf(false) }
+    var fullContent by remember { mutableStateOf<String?>(null) }
     val result = call.visibleResult
+    val args = call.argumentsJson.takeIf { it.isNotBlank() && it.trim() != "{}" }
     val running = status == ToolPresentationStatus.Running
     val hasProblem = status == ToolPresentationStatus.Failed || status == ToolPresentationStatus.Stopped
+    var showArguments by rememberSaveable(call.toolCallId) { mutableStateOf(false) }
+    val hasStructuredOutput = !hasProblem && call.name in setOf("Write", "Edit", "Read", "Delete")
+    val canSwitch = args != null && (result.isNotBlank() || running || hasStructuredOutput)
+
     Column(
         modifier = Modifier.fillMaxWidth().padding(
             start = WtaSpacing.Medium,
@@ -763,35 +805,43 @@ private fun ToolActivityDetails(call: RecordedToolCall, status: ToolPresentation
         ),
         verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
     ) {
-        Text(
-            text = call.name,
-            style = MaterialTheme.typography.labelSmall.copy(fontFamily = FontFamily.Monospace),
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        if (hasProblem || !SpecialToolBody(call, running)) {
+        if (canSwitch) {
+            WtaSegmentedRow(
+                options = listOf(Strings.agentToolResultLabel, Strings.agentToolArgsLabel),
+                selectedIndex = if (showArguments) 1 else 0,
+                onSelect = { showArguments = it == 1 }
+            )
+        }
+        if (args != null && (showArguments || !canSwitch)) {
+            val content = remember(args) { prettyJsonOrRaw(args) }
+            ToolMonoBlock(
+                text = content,
+                truncated = content.length > 440 || content.count { it == '\n' } > 6,
+                onViewFull = { fullContent = content }
+            )
+        } else if (hasProblem || !SpecialToolBody(call, running)) {
             if (result.isNotBlank()) {
-                ToolBlockLabel(Strings.agentToolResultLabel)
                 ToolMonoBlock(
                     text = result,
                     spinner = running,
                     truncated = result.length > 440 || result.count { it == '\n' } > 6,
-                    onViewFull = { showResult = true }
+                    onViewFull = { fullContent = result }
                 )
-            } else if (running) {
-                ToolMonoBlock(text = Strings.agentPhaseToolRunning, spinner = true)
-            }
-            if (call.argumentsJson.isNotBlank() && call.argumentsJson.trim() != "{}") {
-                ToolBlockLabel(Strings.agentToolArgsLabel)
-                ToolMonoBlock(prettyJsonOrRaw(call.argumentsJson))
+            } else {
+                Text(
+                    text = status.label,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }
-    if (showResult) {
-        ToolFullResultDialog(title = toolActionLabel(call.name), content = result, onDismiss = { showResult = false })
+    fullContent?.let {
+        ToolFullResultDialog(title = toolActionLabel(call.name), content = it, onDismiss = { fullContent = null })
     }
 }
 
-private fun toolActionLabel(name: String): String = when (name) {
+internal fun toolActionLabel(name: String): String = when (name) {
     "Read", "ReadAppFile" -> Strings.agentToolReadFile
     "Write" -> Strings.agentToolWriteFile
     "Edit" -> Strings.agentToolEditFile
@@ -799,6 +849,7 @@ private fun toolActionLabel(name: String): String = when (name) {
     "Glob" -> Strings.agentToolFindFiles
     "Grep" -> Strings.agentToolSearchContent
     "ListFiles" -> Strings.agentToolListFiles
+    "AskUserQuestion" -> Strings.agentChoiceTitle
     "EnterPlanMode" -> Strings.agentPlanModeBadge
     "ExitPlanMode" -> Strings.agentToolSubmitPlan
     "TodoWrite", "TodoUpdate" -> Strings.agentTodoListHeader
@@ -823,36 +874,27 @@ private fun toolIconFor(name: String): androidx.compose.ui.graphics.vector.Image
 @Composable
 private fun ToolFullResultDialog(title: String, content: String, onDismiss: () -> Unit) {
     val clipboard = LocalClipboardManager.current
-    WtaAlertDialog(
-        onDismissRequest = onDismiss,
-        confirmButton = {
-            androidx.compose.material3.TextButton(onClick = onDismiss) {
-                Text(Strings.close)
-            }
-        },
-        dismissButton = {
-            androidx.compose.material3.TextButton(onClick = {
-                clipboard.setText(AnnotatedString(content))
-                onDismiss()
-            }) {
-                Text(Strings.agentMessageActionCopy)
-            }
-        },
+    AgentPanel(
         title = title,
-        content = {
-            Box(modifier = Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState())) {
-                SelectionContainer {
-                    Text(
-                        text = content,
-                        style = MaterialTheme.typography.bodySmall.copy(
-                            fontFamily = FontFamily.Monospace,
-                            fontSize = 11.sp
-                        )
-                    )
-                }
+        icon = Icons.Outlined.Description,
+        onDismiss = onDismiss
+    ) {
+        Box(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+            SelectionContainer {
+                Text(
+                    text = content,
+                    style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace)
+                )
             }
         }
-    )
+        WtaButton(
+            onClick = { clipboard.setText(AnnotatedString(content)) },
+            text = Strings.agentMessageActionCopy,
+            variant = WtaButtonVariant.Tonal,
+            leadingIcon = Icons.Outlined.ContentCopy,
+            modifier = Modifier.align(Alignment.End)
+        )
+    }
 }
 
 @Composable
@@ -1348,7 +1390,12 @@ fun TodoChecklist(todos: List<com.webtoapp.core.agent.todo.TodoManager.Item>) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { expanded = !expanded }
+                    .clickable(
+                        role = Role.Button,
+                        onClickLabel = if (expanded) Strings.collapse else Strings.expand,
+                        onClick = { expanded = !expanded }
+                    )
+                    .heightIn(min = WtaSize.TouchTarget)
                     .padding(horizontal = WtaSpacing.Medium, vertical = WtaSpacing.Small + 2.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -1372,18 +1419,9 @@ fun TodoChecklist(todos: List<com.webtoapp.core.agent.todo.TodoManager.Item>) {
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                Icon(
-                    imageVector = if (expanded) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(18.dp)
-                )
+                AgentDisclosureIcon(expanded)
             }
-            AnimatedVisibility(
-                visible = expanded,
-                enter = WtaExpandIn,
-                exit = WtaShrinkOut
-            ) {
+            AgentReveal(visible = expanded) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()

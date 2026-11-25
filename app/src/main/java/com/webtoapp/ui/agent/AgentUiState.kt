@@ -1,5 +1,6 @@
 package com.webtoapp.ui.agent
 
+import androidx.compose.ui.text.input.TextFieldValue
 import com.webtoapp.core.agent.files.ProjectFileManager
 import com.webtoapp.core.agent.permission.ChoiceRequest
 import com.webtoapp.core.agent.permission.PermissionRequest
@@ -36,9 +37,8 @@ data class AgentUiState(
 
     val todos: List<TodoManager.Item> = emptyList(),
 
-    val composerText: String = "",
+    val composerValue: TextFieldValue = TextFieldValue(),
     val slashOpen: Boolean = false,
-    val slashCommands: List<SlashCommand> = emptyList(),
 
     val pendingAttachments: List<UserAttachment> = emptyList(),
 
@@ -103,6 +103,7 @@ data class AgentUiState(
     enum class Phase { Idle, Connecting, Streaming, AwaitingTool, AwaitingUser, Error }
     enum class DrawerTab { Sessions, Files }
 
+    val composerText: String get() = composerValue.text
     val canSend: Boolean get() = phase == Phase.Idle && !compacting
     val canChangePlanMode: Boolean get() = canSend && currentSession != null && pendingPlanReview == null
     val isWorking: Boolean get() = phase != Phase.Idle && phase != Phase.Error
@@ -166,21 +167,13 @@ data class PendingAppChange(
     val changedAt: Long
 )
 
-data class SlashCommand(
-    val id: String,
-    val command: String,
-    val description: String,
-    val icon: String,
-    val iconColor: String = "9CA3AF"
-)
-
-internal val DEFAULT_SLASH_COMMANDS = listOf(
-    SlashCommand("model", "/model", "Switch the model for this session", "smart_toy", "3B82F6"),
-    SlashCommand("plan", "/plan", "Enter plan mode (read-only research)", "fact_check", "F97316"),
-    SlashCommand("exit-plan", "/exit-plan", "Exit plan mode and submit the plan", "logout", "F97316"),
-    SlashCommand("compact", "/compact", "Compress conversation context", "compress", "F59E0B"),
-    SlashCommand("clear", "/clear", "Start a new empty session", "auto_delete", "EF4444"),
-)
+enum class SlashCommand(val command: String) {
+    Model("/model"),
+    Plan("/plan"),
+    ReviewPlan("/exit-plan"),
+    Compact("/compact"),
+    NewSession("/clear")
+}
 
 data class ModelChoice(
 
