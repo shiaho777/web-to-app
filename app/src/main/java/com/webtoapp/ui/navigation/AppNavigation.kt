@@ -1,6 +1,17 @@
 package com.webtoapp.ui.navigation
 
 import android.net.Uri
+import androidx.activity.compose.BackHandler
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.window.DialogProperties
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.withResumed
+import androidx.navigation.NavBackStackEntry
+import com.webtoapp.ui.design.WtaAlertDialog
+import com.webtoapp.ui.design.WtaLoadingIndicator
+import com.webtoapp.ui.viewmodel.EditorSaveState
+import com.webtoapp.ui.viewmodel.EditorSaveViewModel
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
@@ -140,6 +151,41 @@ private fun NavController.popBackStackSafely(): Boolean {
     val entry = currentBackStackEntry ?: return false
     if (!entry.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) return false
     return popBackStack()
+}
+
+@Composable
+private fun editorSave(navController: NavController, entry: NavBackStackEntry): EditorSaveViewModel {
+    val save = viewModel<EditorSaveViewModel>(viewModelStoreOwner = entry)
+    val state by save.state.collectAsStateWithLifecycle()
+    val saving = state as? EditorSaveState.Saving
+    BackHandler(enabled = saving?.showProgress == true) {}
+    LaunchedEffect(state) {
+        if (state == EditorSaveState.Saved) {
+            entry.lifecycle.withResumed {
+                if (navController.currentBackStackEntry == entry) navController.popBackStackSafely()
+            }
+        }
+    }
+    if (saving?.showProgress == true) {
+        WtaAlertDialog(
+            onDismissRequest = {},
+            title = Strings.saving,
+            confirmButton = {},
+            content = { WtaLoadingIndicator() },
+            properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false)
+        )
+    }
+    (state as? EditorSaveState.Failed)?.let { failure ->
+        WtaAlertDialog(
+            onDismissRequest = save::dismissError,
+            title = Strings.saveFailed,
+            text = failure.message.takeUnless { it == Strings.saveFailed },
+            confirmButton = {
+                TextButton(onClick = save::dismissError) { Text(Strings.close) }
+            }
+        )
+    }
+    return save
 }
 
 @Composable
@@ -302,22 +348,26 @@ fun AppNavigation() {
                 )
             }
 
-            composable(Routes.CREATE_MEDIA_APP) {
+            composable(Routes.CREATE_MEDIA_APP) { backStackEntry ->
+                val save = editorSave(navController, backStackEntry)
                 CreateMediaAppScreen(
-                    onBack = { navController.popBackStackSafely() },
+                    onBack = { if (!save.isSaving) navController.popBackStackSafely() },
                     onCreated = { name, appType, mediaUri, mediaConfig, iconUri, themeType ->
-                        viewModel.saveMediaApp(name, appType, mediaUri, mediaConfig, iconUri, themeType)
-                        navController.popBackStackSafely()
+                        save.submit {
+                            viewModel.saveMediaApp(name, appType, mediaUri, mediaConfig, iconUri, themeType)
+                        }
                     }
                 )
             }
 
-            composable(Routes.CREATE_GALLERY_APP) {
+            composable(Routes.CREATE_GALLERY_APP) { backStackEntry ->
+                val save = editorSave(navController, backStackEntry)
                 CreateGalleryAppScreenV2(
-                    onBack = { navController.popBackStackSafely() },
-                    onCreated = { name, galleryConfig, iconUri, themeType ->
-                        viewModel.saveGalleryApp(name, galleryConfig, iconUri, themeType)
-                        navController.popBackStackSafely()
+                    onBack = { if (!save.isSaving) navController.popBackStackSafely() },
+                    onCreated = { name, galleryConfig, iconUri, themeType, onFinished ->
+                        save.submit(onFinished = onFinished) {
+                            viewModel.saveGalleryApp(name, galleryConfig, iconUri, themeType)
+                        }
                     }
                 )
             }
@@ -337,6 +387,7 @@ fun AppNavigation() {
                     }
                 )
             ) { backStackEntry ->
+                val save = editorSave(navController, backStackEntry)
                 val importDir = backStackEntry.arguments?.getString("importDir")?.let {
                     try {
                         java.net.URLDecoder.decode(it, "UTF-8")
@@ -352,10 +403,11 @@ fun AppNavigation() {
                     }
                 }
                 CreateHtmlAppScreen(
-                    onBack = { navController.popBackStackSafely() },
+                    onBack = { if (!save.isSaving) navController.popBackStackSafely() },
                     onCreated = { name, htmlConfig, iconUri, themeType ->
-                        viewModel.saveHtmlApp(name, htmlConfig, iconUri, themeType)
-                        navController.popBackStackSafely()
+                        save.submit {
+                            viewModel.saveHtmlApp(name, htmlConfig, iconUri, themeType)
+                        }
                     },
                     onZipCreated = {
                         name: String,
@@ -367,89 +419,102 @@ fun AppNavigation() {
                         loadMode: HtmlLoadMode,
                         port: Int,
                         portConflictMode: com.webtoapp.data.model.PortConflictMode ->
-                        viewModel.saveZipHtmlApp(
-                            name = name,
-                            extractedDir = extractedDir,
-                            entryFile = entryFile,
-                            iconUri = iconUri,
-                            enableJavaScript = enableJs,
-                            enableLocalStorage = enableStorage,
-                            loadMode = loadMode,
-                            port = port,
-                            portConflictMode = portConflictMode
-                        )
-                        navController.popBackStackSafely()
+                        save.submit {
+                            viewModel.saveZipHtmlApp(
+                                name = name,
+                                extractedDir = extractedDir,
+                                entryFile = entryFile,
+                                iconUri = iconUri,
+                                enableJavaScript = enableJs,
+                                enableLocalStorage = enableStorage,
+                                loadMode = loadMode,
+                                port = port,
+                                portConflictMode = portConflictMode
+                            )
+                        }
                     },
                     importDir = importDir,
                     importProjectName = projectName
                 )
             }
 
-            composable(Routes.CREATE_FRONTEND_APP) {
+            composable(Routes.CREATE_FRONTEND_APP) { backStackEntry ->
+                val save = editorSave(navController, backStackEntry)
                 CreateFrontendAppScreen(
-                    onBack = { navController.popBackStackSafely() },
+                    onBack = { if (!save.isSaving) navController.popBackStackSafely() },
                     onCreated = { name, outputPath, iconUri, framework ->
-                        viewModel.saveFrontendApp(
-                            name = name,
-                            outputPath = outputPath,
-                            iconUri = iconUri,
-                            framework = framework.name
-                        )
-                        navController.popBackStackSafely()
+                        save.submit {
+                            viewModel.saveFrontendApp(
+                                name = name,
+                                outputPath = outputPath,
+                                iconUri = iconUri,
+                                framework = framework.name
+                            )
+                        }
                     },
                     onNavigateToLinuxEnv = { navController.navigate(Routes.LINUX_ENVIRONMENT) }
                 )
             }
 
-            composable(Routes.CREATE_WORDPRESS_APP) {
+            composable(Routes.CREATE_WORDPRESS_APP) { backStackEntry ->
+                val save = editorSave(navController, backStackEntry)
                 CreateWordPressAppScreen(
-                    onBack = { navController.popBackStackSafely() },
+                    onBack = { if (!save.isSaving) navController.popBackStackSafely() },
                     onCreated = { name, wordpressConfig, iconUri, themeType ->
-                        viewModel.saveWordPressApp(name, wordpressConfig, iconUri, themeType)
-                        navController.popBackStackSafely()
+                        save.submit {
+                            viewModel.saveWordPressApp(name, wordpressConfig, iconUri, themeType)
+                        }
                     }
                 )
             }
 
-            composable(Routes.CREATE_NODEJS_APP) {
+            composable(Routes.CREATE_NODEJS_APP) { backStackEntry ->
+                val save = editorSave(navController, backStackEntry)
                 CreateNodeJsAppScreen(
-                    onBack = { navController.popBackStackSafely() },
+                    onBack = { if (!save.isSaving) navController.popBackStackSafely() },
                     onCreated = { name, nodejsConfig, iconUri, themeType ->
-                        viewModel.saveNodeJsApp(name, nodejsConfig, iconUri, themeType)
-                        navController.popBackStackSafely()
+                        save.submit {
+                            viewModel.saveNodeJsApp(name, nodejsConfig, iconUri, themeType)
+                        }
                     },
                     onOpenLinuxEnv = { navController.navigate(Routes.LINUX_ENVIRONMENT) },
                 )
             }
 
-            composable(Routes.CREATE_PHP_APP) {
+            composable(Routes.CREATE_PHP_APP) { backStackEntry ->
+                val save = editorSave(navController, backStackEntry)
                 CreatePhpAppScreen(
-                    onBack = { navController.popBackStackSafely() },
+                    onBack = { if (!save.isSaving) navController.popBackStackSafely() },
                     onCreated = { name, phpAppConfig, iconUri, themeType ->
-                        viewModel.savePhpApp(name, phpAppConfig, iconUri, themeType)
-                        navController.popBackStackSafely()
+                        save.submit {
+                            viewModel.savePhpApp(name, phpAppConfig, iconUri, themeType)
+                        }
                     },
                     onOpenLinuxEnv = { navController.navigate(Routes.LINUX_ENVIRONMENT) },
                 )
             }
 
-            composable(Routes.CREATE_PYTHON_APP) {
+            composable(Routes.CREATE_PYTHON_APP) { backStackEntry ->
+                val save = editorSave(navController, backStackEntry)
                 CreatePythonAppScreen(
-                    onBack = { navController.popBackStackSafely() },
+                    onBack = { if (!save.isSaving) navController.popBackStackSafely() },
                     onCreated = { name, pythonAppConfig, iconUri, themeType ->
-                        viewModel.savePythonApp(name, pythonAppConfig, iconUri, themeType)
-                        navController.popBackStackSafely()
+                        save.submit {
+                            viewModel.savePythonApp(name, pythonAppConfig, iconUri, themeType)
+                        }
                     },
                     onOpenLinuxEnv = { navController.navigate(Routes.LINUX_ENVIRONMENT) },
                 )
             }
 
-            composable(Routes.CREATE_GO_APP) {
+            composable(Routes.CREATE_GO_APP) { backStackEntry ->
+                val save = editorSave(navController, backStackEntry)
                 CreateGoAppScreen(
-                    onBack = { navController.popBackStackSafely() },
+                    onBack = { if (!save.isSaving) navController.popBackStackSafely() },
                     onCreated = { name, goAppConfig, iconUri, themeType ->
-                        viewModel.saveGoApp(name, goAppConfig, iconUri, themeType)
-                        navController.popBackStackSafely()
+                        save.submit {
+                            viewModel.saveGoApp(name, goAppConfig, iconUri, themeType)
+                        }
                     }
                 )
             }
@@ -458,13 +523,15 @@ fun AppNavigation() {
                 route = Routes.EDIT_PHP_APP,
                 arguments = listOf(navArgument("appId") { type = NavType.LongType })
             ) { backStackEntry ->
+                val save = editorSave(navController, backStackEntry)
                 val appId = backStackEntry.arguments?.getLong("appId") ?: 0L
                 CreatePhpAppScreen(
                     existingAppId = appId,
-                    onBack = { navController.popBackStackSafely() },
+                    onBack = { if (!save.isSaving) navController.popBackStackSafely() },
                     onCreated = { name, phpAppConfig, iconUri, themeType ->
-                        viewModel.updatePhpApp(appId, name, phpAppConfig, iconUri, themeType)
-                        navController.popBackStackSafely()
+                        save.submit {
+                            viewModel.updatePhpApp(appId, name, phpAppConfig, iconUri, themeType)
+                        }
                     },
                     onOpenLinuxEnv = { navController.navigate(Routes.LINUX_ENVIRONMENT) },
                 )
@@ -474,13 +541,15 @@ fun AppNavigation() {
                 route = Routes.EDIT_PYTHON_APP,
                 arguments = listOf(navArgument("appId") { type = NavType.LongType })
             ) { backStackEntry ->
+                val save = editorSave(navController, backStackEntry)
                 val appId = backStackEntry.arguments?.getLong("appId") ?: 0L
                 CreatePythonAppScreen(
                     existingAppId = appId,
-                    onBack = { navController.popBackStackSafely() },
+                    onBack = { if (!save.isSaving) navController.popBackStackSafely() },
                     onCreated = { name, pythonAppConfig, iconUri, themeType ->
-                        viewModel.updatePythonApp(appId, name, pythonAppConfig, iconUri, themeType)
-                        navController.popBackStackSafely()
+                        save.submit {
+                            viewModel.updatePythonApp(appId, name, pythonAppConfig, iconUri, themeType)
+                        }
                     },
                     onOpenLinuxEnv = { navController.navigate(Routes.LINUX_ENVIRONMENT) },
                 )
@@ -490,26 +559,30 @@ fun AppNavigation() {
                 route = Routes.EDIT_GO_APP,
                 arguments = listOf(navArgument("appId") { type = NavType.LongType })
             ) { backStackEntry ->
+                val save = editorSave(navController, backStackEntry)
                 val appId = backStackEntry.arguments?.getLong("appId") ?: 0L
                 CreateGoAppScreen(
                     existingAppId = appId,
-                    onBack = { navController.popBackStackSafely() },
+                    onBack = { if (!save.isSaving) navController.popBackStackSafely() },
                     onCreated = { name, goAppConfig, iconUri, themeType ->
-                        viewModel.updateGoApp(appId, name, goAppConfig, iconUri, themeType)
-                        navController.popBackStackSafely()
+                        save.submit {
+                            viewModel.updateGoApp(appId, name, goAppConfig, iconUri, themeType)
+                        }
                     }
                 )
             }
 
-            composable(Routes.CREATE_MULTI_WEB_APP) {
+            composable(Routes.CREATE_MULTI_WEB_APP) { backStackEntry ->
+                val save = editorSave(navController, backStackEntry)
                 CreateMultiWebAppScreen(
-                    onBack = { navController.popBackStackSafely() },
+                    onBack = { if (!save.isSaving) navController.popBackStackSafely() },
                     onCreated = { name, multiWebConfig, iconUri, injectScripts, themeType, pluginsEnabled, pluginIds, preserveIconShape ->
-                        viewModel.saveMultiWebApp(
-                            name, multiWebConfig, iconUri, injectScripts, themeType,
-                            pluginsEnabled, pluginIds.toList(), preserveIconShape
-                        )
-                        navController.popBackStackSafely()
+                        save.submit {
+                            viewModel.saveMultiWebApp(
+                                name, multiWebConfig, iconUri, injectScripts, themeType,
+                                pluginsEnabled, pluginIds.toList(), preserveIconShape
+                            )
+                        }
                     }
                 )
             }
@@ -518,37 +591,44 @@ fun AppNavigation() {
                 route = Routes.EDIT_MULTI_WEB_APP,
                 arguments = listOf(navArgument("appId") { type = NavType.LongType })
             ) { backStackEntry ->
+                val save = editorSave(navController, backStackEntry)
                 val appId = backStackEntry.arguments?.getLong("appId") ?: 0L
                 CreateMultiWebAppScreen(
                     existingAppId = appId,
-                    onBack = { navController.popBackStackSafely() },
+                    onBack = { if (!save.isSaving) navController.popBackStackSafely() },
                     onCreated = { name, multiWebConfig, iconUri, injectScripts, themeType, pluginsEnabled, pluginIds, preserveIconShape ->
-                        viewModel.updateMultiWebApp(
-                            appId, name, multiWebConfig, iconUri, injectScripts, themeType,
-                            pluginsEnabled, pluginIds.toList(), preserveIconShape
-                        )
-                        navController.popBackStackSafely()
+                        save.submit {
+                            viewModel.updateMultiWebApp(
+                                appId, name, multiWebConfig, iconUri, injectScripts, themeType,
+                                pluginsEnabled, pluginIds.toList(), preserveIconShape
+                            )
+                        }
                     }
                 )
             }
 
-            composable(Routes.CREATE_OFFLINE_PACK) {
+            composable(Routes.CREATE_OFFLINE_PACK) { backStackEntry ->
+                val save = editorSave(navController, backStackEntry)
+                val saveState by save.state.collectAsStateWithLifecycle()
                 CreateOfflinePackScreen(
+                    isScraping = saveState is EditorSaveState.Saving,
                     onBack = { navController.popBackStackSafely() },
                     onStartScrape = { name, url, maxDepth, downloadCdn, followLinks, maxFiles, maxTotalSizeMb, skipPatterns, timeoutSeconds, onProgress ->
-                        viewModel.saveScrapedWebsiteApp(
-                            name = name,
-                            url = url,
-                            iconUri = null,
-                            maxDepth = maxDepth,
-                            downloadCdnResources = downloadCdn,
-                            followLinks = followLinks,
-                            maxFiles = maxFiles,
-                            maxTotalSizeMb = maxTotalSizeMb,
-                            skipPatterns = skipPatterns,
-                            timeoutSeconds = timeoutSeconds,
-                            onProgress = onProgress
-                        )
+                        save.submit(showProgress = false) {
+                            viewModel.saveScrapedWebsiteApp(
+                                name = name,
+                                url = url,
+                                iconUri = null,
+                                maxDepth = maxDepth,
+                                downloadCdnResources = downloadCdn,
+                                followLinks = followLinks,
+                                maxFiles = maxFiles,
+                                maxTotalSizeMb = maxTotalSizeMb,
+                                skipPatterns = skipPatterns,
+                                timeoutSeconds = timeoutSeconds,
+                                onProgress = onProgress
+                            )
+                        }
                     }
                 )
             }
@@ -587,13 +667,15 @@ fun AppNavigation() {
                 route = Routes.EDIT_MEDIA_APP,
                 arguments = listOf(navArgument("appId") { type = NavType.LongType })
             ) { backStackEntry ->
+                val save = editorSave(navController, backStackEntry)
                 val appId = backStackEntry.arguments?.getLong("appId") ?: 0L
                 CreateMediaAppScreen(
                     existingAppId = appId,
-                    onBack = { navController.popBackStackSafely() },
+                    onBack = { if (!save.isSaving) navController.popBackStackSafely() },
                     onCreated = { name, appType, mediaUri, mediaConfig, iconUri, themeType ->
-                        viewModel.updateMediaApp(appId, name, appType, mediaUri, mediaConfig, iconUri, themeType)
-                        navController.popBackStackSafely()
+                        save.submit {
+                            viewModel.updateMediaApp(appId, name, appType, mediaUri, mediaConfig, iconUri, themeType)
+                        }
                     }
                 )
             }
@@ -602,13 +684,15 @@ fun AppNavigation() {
                 route = Routes.EDIT_GALLERY_APP,
                 arguments = listOf(navArgument("appId") { type = NavType.LongType })
             ) { backStackEntry ->
+                val save = editorSave(navController, backStackEntry)
                 val appId = backStackEntry.arguments?.getLong("appId") ?: 0L
                 CreateGalleryAppScreenV2(
                     existingAppId = appId,
-                    onBack = { navController.popBackStackSafely() },
-                    onCreated = { name, galleryConfig, iconUri, themeType ->
-                        viewModel.updateGalleryApp(appId, name, galleryConfig, iconUri, themeType)
-                        navController.popBackStackSafely()
+                    onBack = { if (!save.isSaving) navController.popBackStackSafely() },
+                    onCreated = { name, galleryConfig, iconUri, themeType, onFinished ->
+                        save.submit(onFinished = onFinished) {
+                            viewModel.updateGalleryApp(appId, name, galleryConfig, iconUri, themeType)
+                        }
                     }
                 )
             }
@@ -617,28 +701,31 @@ fun AppNavigation() {
                 route = Routes.EDIT_HTML_APP,
                 arguments = listOf(navArgument("appId") { type = NavType.LongType })
             ) { backStackEntry ->
+                val save = editorSave(navController, backStackEntry)
                 val appId = backStackEntry.arguments?.getLong("appId") ?: 0L
                 CreateHtmlAppScreen(
                     existingAppId = appId,
-                    onBack = { navController.popBackStackSafely() },
+                    onBack = { if (!save.isSaving) navController.popBackStackSafely() },
                     onCreated = { name, htmlConfig, iconUri, themeType ->
-                        viewModel.updateHtmlApp(appId, name, htmlConfig, iconUri, themeType)
-                        navController.popBackStackSafely()
+                        save.submit {
+                            viewModel.updateHtmlApp(appId, name, htmlConfig, iconUri, themeType)
+                        }
                     },
                     onZipCreated = { name, extractedDir, entryFile, iconUri, enableJs, enableStorage, loadMode, port, portConflictMode ->
-                        viewModel.updateZipHtmlApp(
-                            appId = appId,
-                            name = name,
-                            extractedDir = extractedDir,
-                            entryFile = entryFile,
-                            iconUri = iconUri,
-                            enableJavaScript = enableJs,
-                            enableLocalStorage = enableStorage,
-                            loadMode = loadMode,
-                            port = port,
-                            portConflictMode = portConflictMode
-                        )
-                        navController.popBackStackSafely()
+                        save.submit {
+                            viewModel.updateZipHtmlApp(
+                                appId = appId,
+                                name = name,
+                                extractedDir = extractedDir,
+                                entryFile = entryFile,
+                                iconUri = iconUri,
+                                enableJavaScript = enableJs,
+                                enableLocalStorage = enableStorage,
+                                loadMode = loadMode,
+                                port = port,
+                                portConflictMode = portConflictMode
+                            )
+                        }
                     }
                 )
             }
@@ -647,13 +734,15 @@ fun AppNavigation() {
                 route = Routes.EDIT_FRONTEND_APP,
                 arguments = listOf(navArgument("appId") { type = NavType.LongType })
             ) { backStackEntry ->
+                val save = editorSave(navController, backStackEntry)
                 val appId = backStackEntry.arguments?.getLong("appId") ?: 0L
                 CreateFrontendAppScreen(
                     existingAppId = appId,
-                    onBack = { navController.popBackStackSafely() },
+                    onBack = { if (!save.isSaving) navController.popBackStackSafely() },
                     onCreated = { name, outputPath, iconUri, framework ->
-                        viewModel.updateFrontendApp(appId, name, outputPath, iconUri, framework.name)
-                        navController.popBackStackSafely()
+                        save.submit {
+                            viewModel.updateFrontendApp(appId, name, outputPath, iconUri, framework.name)
+                        }
                     },
                     onNavigateToLinuxEnv = { navController.navigate(Routes.LINUX_ENVIRONMENT) }
                 )
@@ -663,13 +752,15 @@ fun AppNavigation() {
                 route = Routes.EDIT_NODEJS_APP,
                 arguments = listOf(navArgument("appId") { type = NavType.LongType })
             ) { backStackEntry ->
+                val save = editorSave(navController, backStackEntry)
                 val appId = backStackEntry.arguments?.getLong("appId") ?: 0L
                 CreateNodeJsAppScreen(
                     existingAppId = appId,
-                    onBack = { navController.popBackStackSafely() },
+                    onBack = { if (!save.isSaving) navController.popBackStackSafely() },
                     onCreated = { name, nodejsConfig, iconUri, themeType ->
-                        viewModel.updateNodeJsApp(appId, name, nodejsConfig, iconUri, themeType)
-                        navController.popBackStackSafely()
+                        save.submit {
+                            viewModel.updateNodeJsApp(appId, name, nodejsConfig, iconUri, themeType)
+                        }
                     },
                     onOpenLinuxEnv = { navController.navigate(Routes.LINUX_ENVIRONMENT) },
                 )

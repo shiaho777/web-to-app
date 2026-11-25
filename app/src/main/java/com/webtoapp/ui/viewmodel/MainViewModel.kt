@@ -29,6 +29,7 @@ import com.webtoapp.util.HtmlProjectHelper
 import com.webtoapp.util.ensureWebUrlScheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -724,59 +725,75 @@ class MainViewModel(
         }
     }
 
-    private fun createApp(
+    private suspend fun createApp(
         typeName: String,
         iconUri: Uri?,
-        buildApp: suspend (savedIconPath: String?, currentThemeType: String, categoryId: Long?) -> WebApp?
-    ) {
-        viewModelScope.launch {
-            _uiState.value = UiState.Loading
-            try {
-                val currentThemeType = getCurrentThemeType()
-                val savedIconPath = saveIconIfPresent(iconUri)
-                val categoryId = _selectedCategoryId.value?.takeIf { it > 0 }
-
-                val webApp = buildApp(savedIconPath, currentThemeType, categoryId)
-                    ?: return@launch
-
-                withContext(Dispatchers.IO) { repository.createWebApp(webApp) }
+        buildApp: suspend EditorSaveFiles.(savedIconPath: String?, currentThemeType: String, categoryId: Long?) -> WebApp
+    ) = withContext(Dispatchers.IO) {
+        val files = EditorSaveFiles(getApplication())
+        var committed = false
+        try {
+            val iconPath = files.saveIcon(iconUri)
+            val app = files.buildApp(iconPath, getCurrentThemeType(), _selectedCategoryId.value?.takeIf { it > 0 })
+            withContext(NonCancellable) {
+                check(repository.createWebApp(app) > 0)
+                committed = true
                 _uiState.value = UiState.Success(Strings.appCreatedSuccessfully.replaceFirst("%s", typeName))
-            } catch (e: Exception) {
-                AppLogger.e("MainViewModel", "Failed to save $typeName app", e)
-                _uiState.value = UiState.Error(Strings.creationFailed.replaceFirst("%s", e.message ?: ""))
             }
+            files.cleanupDrafts()
+        } finally {
+            if (!committed) files.discard()
         }
     }
 
-    private fun updateApp(
+    private suspend fun updateApp(
         appId: Long,
         typeName: String,
         iconUri: Uri?,
-        applyUpdate: suspend (existingApp: WebApp, savedIconPath: String?) -> WebApp
-    ) {
-        viewModelScope.launch {
-            _uiState.value = UiState.Loading
-            try {
-                val existingApp = withContext(Dispatchers.IO) {
-                    repository.getWebAppById(appId).first()
-                } ?: throw Exception("App not found")
-
-                val savedIconPath = saveIconIfPresent(iconUri) ?: existingApp.iconPath
-                val updatedApp = applyUpdate(existingApp, savedIconPath)
-
-                withContext(Dispatchers.IO) { repository.updateWebApp(updatedApp) }
-                deleteReplacedIconIfUnused(existingApp.iconPath, updatedApp.iconPath)
-                deleteReplacedSplashIfUnused(existingApp.splashConfig?.mediaPath, updatedApp.splashConfig?.mediaPath)
-                deleteUnusedGalleryFiles(existingApp.galleryConfig, updatedApp.galleryConfig)
+        applyUpdate: suspend EditorSaveFiles.(existingApp: WebApp, savedIconPath: String?) -> WebApp
+    ) = withContext(Dispatchers.IO) {
+        val existingApp = repository.getWebApp(appId) ?: throw EditorSaveException(Strings.appNotFound)
+        val files = EditorSaveFiles(getApplication())
+        var committed = false
+        try {
+            val savedIconPath = files.saveIcon(iconUri, existingApp.iconPath)
+            val updatedApp = files.applyUpdate(existingApp, savedIconPath)
+            withContext(NonCancellable) {
+                if (!repository.updateWebAppIfPresent(updatedApp)) {
+                    throw EditorSaveException(Strings.appNotFound)
+                }
+                committed = true
                 _uiState.value = UiState.Success(Strings.appUpdatedSuccessfully.replaceFirst("%s", typeName))
-            } catch (e: Exception) {
-                AppLogger.e("MainViewModel", "Failed to update $typeName app", e)
-                _uiState.value = UiState.Error(Strings.updateFailed.replaceFirst("%s", e.message ?: ""))
             }
+            try {
+                files.cleanupDrafts()
+                deleteReplacedIconIfUnused(existingApp.iconPath, updatedApp.iconPath)
+                deleteUnusedGalleryFiles(existingApp.galleryConfig, updatedApp.galleryConfig)
+                deleteReplacedHtmlProject(existingApp, updatedApp)
+            } catch (error: Exception) {
+                AppLogger.w("MainViewModel", "Could not finish cleaning up the previous project files", error)
+            }
+        } finally {
+            if (!committed) files.discard()
         }
     }
 
-    fun saveMediaApp(
+    private suspend fun deleteReplacedHtmlProject(previous: WebApp, updated: WebApp) {
+        val projectId = (previous.htmlConfig?.projectId ?: previous.multiWebConfig?.projectId)
+            ?.takeIf { it.isNotBlank() } ?: return
+        if (projectId == (updated.htmlConfig?.projectId ?: updated.multiWebConfig?.projectId)) return
+        val inUse = repository.allWebApps.first().any { app ->
+            app.htmlConfig?.projectId == projectId ||
+                app.wordpressConfig?.sourceProjectId == projectId ||
+                app.multiWebConfig?.projectId == projectId ||
+                app.multiWebConfig?.sites.orEmpty().any { site ->
+                    site.sourceProjectId == projectId || site.siteProjectId == projectId
+                }
+        }
+        if (!inUse) HtmlStorage.deleteProject(getApplication(), projectId)
+    }
+
+    suspend fun saveMediaApp(
         name: String,
         appType: AppType,
         mediaUri: Uri?,
@@ -784,15 +801,8 @@ class MainViewModel(
         iconUri: Uri?,
         themeType: String = "AURORA"
     ) = createApp("Media", iconUri) { savedIconPath, currentThemeType, categoryId ->
-        val context = getApplication<Application>()
         val isVideo = appType == AppType.VIDEO
-        val savedMediaPath = mediaUri?.let { uri ->
-            withContext(Dispatchers.IO) { MediaStorage.saveMedia(context, uri, isVideo) }
-        }
-        if (savedMediaPath == null) {
-            _uiState.value = UiState.Error(Strings.failedSaveMediaFile)
-            return@createApp null
-        }
+        val savedMediaPath = saveMedia(mediaUri ?: throw EditorSaveException(Strings.failedSaveMediaFile), isVideo)
         WebApp(
             name = name.ifBlank { if (isVideo) "Video App" else "Image App" },
             url = savedMediaPath,
@@ -808,15 +818,14 @@ class MainViewModel(
         )
     }
 
-    fun saveGalleryApp(
+    suspend fun saveGalleryApp(
         name: String,
         galleryConfig: GalleryConfig?,
         iconUri: Uri?,
         themeType: String = "AURORA"
     ) {
         if (galleryConfig == null || !galleryConfig.hasContent) {
-            _uiState.value = UiState.Error(Strings.pleaseAddMediaFile)
-            return
+            throw EditorSaveException(Strings.pleaseAddMediaFile)
         }
         createApp("Gallery", iconUri) { savedIconPath, currentThemeType, categoryId ->
             WebApp(
@@ -839,13 +848,20 @@ class MainViewModel(
         context: Context,
         files: List<HtmlFile>,
         projectId: String
-    ): List<HtmlFile> = HtmlProjectHelper.processAndSaveFiles(context, files, projectId)
+    ): List<HtmlFile> {
+        val saved = HtmlProjectHelper.processAndSaveFiles(context, files, projectId)
+        val savedNames = saved.mapTo(hashSetOf()) { it.name }
+        if (files.any { it.name !in savedNames }) throw EditorSaveException(Strings.saveFailedCannotProcessHtml)
+        return saved
+    }
 
     private suspend fun copyBuildOutputToStorage(
         context: Context,
         outputPath: String,
         projectId: String
-    ): List<HtmlFile> = HtmlProjectHelper.copyBuildOutputToStorage(context, outputPath, projectId)
+    ): List<HtmlFile> = HtmlProjectHelper.copyBuildOutputToStorage(
+        context, outputPath, projectId, requireAllFiles = true
+    )
 
     private fun hasReadableHtmlEntry(files: List<HtmlFile>): Boolean {
         return files.any { file ->
@@ -854,21 +870,21 @@ class MainViewModel(
         }
     }
 
-    fun saveHtmlApp(
+    suspend fun saveHtmlApp(
         name: String,
         htmlConfig: HtmlConfig?,
         iconUri: Uri?,
         themeType: String = "AURORA"
     ) = createApp("HTML", iconUri) { savedIconPath, currentThemeType, categoryId ->
         val context = getApplication<Application>()
-        val projectId = HtmlStorage.generateProjectId()
-        val savedHtmlFiles = processAndSaveHtmlFiles(context, htmlConfig?.files ?: emptyList(), projectId)
+        val projectId = newHtmlProject()
+        val sourceFiles = htmlConfig?.files.orEmpty()
+        val savedHtmlFiles = processAndSaveHtmlFiles(context, sourceFiles, projectId)
+        cleanupHtmlDraftOnSuccess(sourceFiles)
 
         if (savedHtmlFiles.none { it.type == HtmlFileType.HTML || it.name.endsWith(".html", ignoreCase = true) }) {
             AppLogger.e("MainViewModel", "No HTML files were saved successfully. savedHtmlFiles=$savedHtmlFiles")
-            withContext(Dispatchers.IO) { HtmlStorage.deleteProject(context, projectId) }
-            _uiState.value = UiState.Error(Strings.saveFailedCannotProcessHtml)
-            return@createApp null
+            throw EditorSaveException(Strings.saveFailedCannotProcessHtml)
         }
 
         val savedHtmlConfig = htmlConfig?.copy(
@@ -876,7 +892,6 @@ class MainViewModel(
             files = savedHtmlFiles
         )
         AppLogger.d("MainViewModel", "HTML app saved successfully: projectId=$projectId, files=${savedHtmlFiles.size}")
-        withContext(Dispatchers.IO) { HtmlStorage.clearTempFiles(context) }
 
         WebApp(
             name = name.ifBlank { "HTML App" },
@@ -893,7 +908,7 @@ class MainViewModel(
         )
     }
 
-    fun saveZipHtmlApp(
+    suspend fun saveZipHtmlApp(
         name: String,
         extractedDir: String,
         entryFile: String,
@@ -905,17 +920,15 @@ class MainViewModel(
         portConflictMode: com.webtoapp.data.model.PortConflictMode = com.webtoapp.data.model.PortConflictMode.AUTO_KILL
     ) = createApp("HTML", iconUri) { savedIconPath, currentThemeType, categoryId ->
         val context = getApplication<Application>()
-        val projectId = HtmlStorage.generateProjectId()
+        val projectId = newHtmlProject()
         val savedFiles = copyBuildOutputToStorage(context, extractedDir, projectId)
+        cleanupZipDraftOnSuccess(extractedDir)
 
         if (savedFiles.none { it.type == HtmlFileType.HTML || it.name.endsWith(".html", ignoreCase = true) }) {
             AppLogger.e("MainViewModel", "No HTML files found in ZIP project")
-            withContext(Dispatchers.IO) { HtmlStorage.deleteProject(context, projectId) }
-            _uiState.value = UiState.Error(Strings.saveFailedNoHtmlInZip)
-            return@createApp null
+            throw EditorSaveException(Strings.saveFailedNoHtmlInZip)
         }
 
-        withContext(Dispatchers.IO) { com.webtoapp.util.ZipProjectImporter.cleanupTempFiles(context) }
         AppLogger.d("MainViewModel", "ZIP HTML app saved: projectId=$projectId, files=${savedFiles.size}, entry=$entryFile")
 
         WebApp(
@@ -942,21 +955,19 @@ class MainViewModel(
         )
     }
 
-    fun saveFrontendApp(
+    suspend fun saveFrontendApp(
         name: String,
         outputPath: String,
         iconUri: Uri?,
         framework: String
     ) = createApp(framework, iconUri) { savedIconPath, currentThemeType, categoryId ->
         val context = getApplication<Application>()
-        val projectId = HtmlStorage.generateProjectId()
+        val projectId = newHtmlProject()
         val savedFiles = copyBuildOutputToStorage(context, outputPath, projectId)
 
         if (!hasReadableHtmlEntry(savedFiles)) {
             AppLogger.e("MainViewModel", "No readable HTML entry found in frontend build output: $outputPath")
-            withContext(Dispatchers.IO) { HtmlStorage.deleteProject(context, projectId) }
-            _uiState.value = UiState.Error("Frontend build output has no readable HTML entry")
-            return@createApp null
+            throw EditorSaveException(Strings.saveFailedCannotProcessHtml)
         }
 
         WebApp(
@@ -979,7 +990,7 @@ class MainViewModel(
         )
     }
 
-    fun saveWordPressApp(
+    suspend fun saveWordPressApp(
         name: String,
         wordpressConfig: WordPressConfig,
         iconUri: Uri?,
@@ -1000,7 +1011,7 @@ class MainViewModel(
         )
     }
 
-    fun saveNodeJsApp(
+    suspend fun saveNodeJsApp(
         name: String,
         nodejsConfig: NodeJsConfig,
         iconUri: Uri?,
@@ -1021,7 +1032,7 @@ class MainViewModel(
         )
     }
 
-    fun updateNodeJsApp(
+    suspend fun updateNodeJsApp(
         appId: Long,
         name: String,
         nodejsConfig: NodeJsConfig,
@@ -1036,7 +1047,7 @@ class MainViewModel(
         )
     }
 
-    fun savePhpApp(
+    suspend fun savePhpApp(
         name: String,
         phpAppConfig: PhpAppConfig,
         iconUri: Uri?,
@@ -1053,7 +1064,7 @@ class MainViewModel(
         )
     }
 
-    fun savePythonApp(
+    suspend fun savePythonApp(
         name: String,
         pythonAppConfig: PythonAppConfig,
         iconUri: Uri?,
@@ -1070,7 +1081,7 @@ class MainViewModel(
         )
     }
 
-    fun saveGoApp(
+    suspend fun saveGoApp(
         name: String,
         goAppConfig: GoAppConfig,
         iconUri: Uri?,
@@ -1087,7 +1098,7 @@ class MainViewModel(
         )
     }
 
-    fun updatePhpApp(
+    suspend fun updatePhpApp(
         appId: Long,
         name: String,
         phpAppConfig: PhpAppConfig,
@@ -1102,7 +1113,7 @@ class MainViewModel(
         )
     }
 
-    fun updatePythonApp(
+    suspend fun updatePythonApp(
         appId: Long,
         name: String,
         pythonAppConfig: PythonAppConfig,
@@ -1117,7 +1128,7 @@ class MainViewModel(
         )
     }
 
-    fun updateGoApp(
+    suspend fun updateGoApp(
         appId: Long,
         name: String,
         goAppConfig: GoAppConfig,
@@ -1132,7 +1143,7 @@ class MainViewModel(
         )
     }
 
-    fun saveMultiWebApp(
+    suspend fun saveMultiWebApp(
         name: String,
         multiWebConfig: MultiWebConfig,
         iconUri: Uri?,
@@ -1142,49 +1153,13 @@ class MainViewModel(
         pluginIds: List<String> = emptyList(),
         preserveIconShape: Boolean = false,
     ) = createApp("Multi-Site", iconUri) { savedIconPath, currentThemeType, categoryId ->
-        val context = getApplication<Application>()
-        val localSites = multiWebConfig.sites.filter { it.type == "LOCAL" && it.localFileUri.isNotBlank() }
-        val inlineSites = multiWebConfig.sites.filter { it.type == "INLINE_HTML" && it.inlineHtml.isNotBlank() }
-        val existingHtmlSites = multiWebConfig.sites.filter { it.type == "EXISTING" && it.sourceProjectId.isNotBlank() }
-        val hasOwnFiles = localSites.isNotEmpty() || inlineSites.isNotEmpty()
-        val projectId = if (hasOwnFiles && multiWebConfig.projectId.isBlank()) {
-            HtmlStorage.generateProjectId()
-        } else if (existingHtmlSites.isNotEmpty() && !hasOwnFiles && multiWebConfig.projectId.isBlank()) {
-            existingHtmlSites.first().sourceProjectId
-        } else multiWebConfig.projectId.ifBlank { if (hasOwnFiles) HtmlStorage.generateProjectId() else "" }
-
-        val updatedSites = multiWebConfig.sites.map { site ->
-            when {
-                site.type == "LOCAL" && site.localFileUri.isNotBlank() && projectId.isNotBlank() -> {
-                    val uri = Uri.parse(site.localFileUri)
-                    val fileName = buildMultiWebSiteRelativePath(site)
-                    val savedPath = HtmlStorage.saveHtmlFile(context, uri, fileName, projectId)
-                    if (savedPath != null) {
-                        site.copy(localFilePath = fileName.trimStart('/'), localFileUri = "")
-                    } else site
-                }
-                site.type == "INLINE_HTML" && site.inlineHtml.isNotBlank() && projectId.isNotBlank() -> {
-                    val fileName = buildMultiWebSiteRelativePath(site)
-                    HtmlStorage.saveProcessedHtml(context, site.inlineHtml, fileName, projectId)
-                    site.copy(localFilePath = fileName.trimStart('/'))
-                }
-                site.type == "EXISTING" && site.localFilePath.isNotBlank() && projectId.isNotBlank() -> {
-                    site.copy(localFilePath = buildMultiWebSiteRelativePath(site).trimStart('/'))
-                }
-                else -> site
-            }
-        }
-
-        if (projectId.isNotBlank()) {
-            copyExistingMultiWebSiteFiles(context, updatedSites, projectId)
-        }
-
+        val storedConfig = materializeMultiWebConfig(multiWebConfig)
         WebApp(
             name = name.ifBlank { "Multi-Site App" },
-            url = updatedSites.firstOrNull()?.getEffectiveUrl() ?: "",
+            url = storedConfig.sites.firstOrNull()?.getEffectiveUrl() ?: "",
             iconPath = savedIconPath,
             appType = AppType.MULTI_WEB,
-            multiWebConfig = multiWebConfig.copy(sites = updatedSites, projectId = projectId),
+            multiWebConfig = storedConfig,
             webViewConfig = com.webtoapp.data.model.WebViewConfig(injectScripts = injectScripts),
             apkExportConfig = if (preserveIconShape) {
                 com.webtoapp.data.model.ApkExportConfig(preserveIconShape = true)
@@ -1196,7 +1171,7 @@ class MainViewModel(
         )
     }
 
-    fun updateMultiWebApp(
+    suspend fun updateMultiWebApp(
         appId: Long,
         name: String,
         multiWebConfig: MultiWebConfig,
@@ -1207,47 +1182,12 @@ class MainViewModel(
         pluginIds: List<String> = emptyList(),
         preserveIconShape: Boolean = false,
     ) = updateApp(appId, "Multi-Site", iconUri) { existingApp, savedIconPath ->
-        val context = getApplication<Application>()
-        val localSites = multiWebConfig.sites.filter { it.type == "LOCAL" && it.localFileUri.isNotBlank() }
-        val inlineSites = multiWebConfig.sites.filter { it.type == "INLINE_HTML" && it.inlineHtml.isNotBlank() }
-        val existingHtmlSites = multiWebConfig.sites.filter { it.type == "EXISTING" && it.sourceProjectId.isNotBlank() }
-        val hasOwnFiles = localSites.isNotEmpty() || inlineSites.isNotEmpty()
-        val projectId = multiWebConfig.projectId
-            .ifBlank { existingApp.multiWebConfig?.projectId ?: "" }
-            .ifBlank { if (existingHtmlSites.isNotEmpty()) existingHtmlSites.first().sourceProjectId else "" }
-            .ifBlank { if (hasOwnFiles) HtmlStorage.generateProjectId() else "" }
-
-        val updatedSites = multiWebConfig.sites.map { site ->
-            when {
-                site.type == "LOCAL" && site.localFileUri.isNotBlank() && projectId.isNotBlank() -> {
-                    val uri = Uri.parse(site.localFileUri)
-                    val fileName = buildMultiWebSiteRelativePath(site)
-                    val savedPath = HtmlStorage.saveHtmlFile(context, uri, fileName, projectId)
-                    if (savedPath != null) {
-                        site.copy(localFilePath = fileName.trimStart('/'), localFileUri = "")
-                    } else site
-                }
-                site.type == "INLINE_HTML" && site.inlineHtml.isNotBlank() && projectId.isNotBlank() -> {
-                    val fileName = buildMultiWebSiteRelativePath(site)
-                    HtmlStorage.saveProcessedHtml(context, site.inlineHtml, fileName, projectId)
-                    site.copy(localFilePath = fileName.trimStart('/'))
-                }
-                site.type == "EXISTING" && site.localFilePath.isNotBlank() && projectId.isNotBlank() -> {
-                    site.copy(localFilePath = buildMultiWebSiteRelativePath(site).trimStart('/'))
-                }
-                else -> site
-            }
-        }
-
-        if (projectId.isNotBlank()) {
-            copyExistingMultiWebSiteFiles(context, updatedSites, projectId)
-        }
-
+        val storedConfig = materializeMultiWebConfig(multiWebConfig, existingApp.multiWebConfig?.projectId)
         existingApp.copy(
             name = name.ifBlank { existingApp.name },
-            url = updatedSites.firstOrNull()?.getEffectiveUrl() ?: existingApp.url,
+            url = storedConfig.sites.firstOrNull()?.getEffectiveUrl() ?: existingApp.url,
             iconPath = savedIconPath,
-            multiWebConfig = multiWebConfig.copy(sites = updatedSites, projectId = projectId),
+            multiWebConfig = storedConfig,
             webViewConfig = existingApp.webViewConfig.copy(injectScripts = injectScripts),
             apkExportConfig = existingApp.apkExportConfig?.copy(preserveIconShape = preserveIconShape)
                 ?: if (preserveIconShape) com.webtoapp.data.model.ApkExportConfig(preserveIconShape = true) else null,
@@ -1255,6 +1195,61 @@ class MainViewModel(
             pluginIds = pluginIds,
             updatedAt = System.currentTimeMillis()
         )
+    }
+
+    private suspend fun EditorSaveFiles.materializeMultiWebConfig(
+        config: MultiWebConfig,
+        previousProjectId: String? = null
+    ): MultiWebConfig {
+        val context = getApplication<Application>()
+        val previousId = config.projectId.ifBlank { previousProjectId.orEmpty() }
+        val needsFiles = config.sites.any { site ->
+            (site.type == "LOCAL" && (site.localFileUri.isNotBlank() || site.localFilePath.isNotBlank())) ||
+                (site.type == "INLINE_HTML" && site.inlineHtml.isNotBlank()) ||
+                (site.type == "EXISTING" && site.sourceProjectId.isNotBlank() && site.localFilePath.isNotBlank())
+        }
+        if (!needsFiles) return config.copy(projectId = "")
+        val projectId = newHtmlProject()
+        val previousRoot = File(context.filesDir, "html_projects/$previousId")
+        if (previousId.isNotBlank()) {
+            val retainedFiles = config.sites.filter { site ->
+                site.type == "LOCAL" && site.localFileUri.isBlank() && site.localFilePath.isNotBlank()
+            }
+            retainedFiles.forEach { site ->
+                val path = site.localFilePath.trimStart('/')
+                val file = com.webtoapp.util.SafeZip.safeChild(previousRoot, path)
+                    ?: throw EditorSaveException(Strings.saveFailedCannotProcessHtml)
+                if (HtmlStorage.saveFromTempFile(context, file.absolutePath, path, projectId) == null) {
+                    throw EditorSaveException(Strings.saveFailedCannotProcessHtml)
+                }
+            }
+        }
+        val projectRoot = File(context.filesDir, "html_projects/$projectId")
+        val sites = config.sites.map { site ->
+            when {
+                site.type == "LOCAL" && site.localFileUri.isNotBlank() -> {
+                    val name = buildMultiWebSiteRelativePath(site)
+                    if (com.webtoapp.util.SafeZip.safeChild(projectRoot, name) == null) {
+                        throw EditorSaveException(Strings.saveFailedCannotProcessHtml)
+                    }
+                    val saved = HtmlStorage.saveHtmlFile(context, Uri.parse(site.localFileUri), name, projectId)
+                    if (saved == null || !File(saved).isFile) throw EditorSaveException(Strings.saveFailedCannotProcessHtml)
+                    site.copy(localFilePath = name, localFileUri = "")
+                }
+                site.type == "INLINE_HTML" && site.inlineHtml.isNotBlank() -> {
+                    val name = buildMultiWebSiteRelativePath(site)
+                    if (com.webtoapp.util.SafeZip.safeChild(projectRoot, name) == null || HtmlStorage.saveProcessedHtml(context, site.inlineHtml, name, projectId) == null) {
+                        throw EditorSaveException(Strings.saveFailedCannotProcessHtml)
+                    }
+                    site.copy(localFilePath = name)
+                }
+                site.type == "EXISTING" && site.localFilePath.isNotBlank() ->
+                    site.copy(localFilePath = buildMultiWebSiteRelativePath(site))
+                else -> site
+            }
+        }
+        copyExistingMultiWebSiteFiles(context, sites, projectId, previousRoot.takeIf { previousId.isNotBlank() })
+        return config.copy(sites = sites, projectId = projectId)
     }
 
     private fun buildMultiWebSiteRelativePath(site: MultiWebSite): String {
@@ -1266,30 +1261,28 @@ class MainViewModel(
     private fun copyExistingMultiWebSiteFiles(
         context: Application,
         sites: List<MultiWebSite>,
-        projectId: String
+        projectId: String,
+        previousRoot: File?
     ) {
-        val targetRoot = File(context.filesDir, "html_projects/$projectId").also { it.mkdirs() }
+        val htmlRoot = File(context.filesDir, "html_projects")
+        val targetRoot = File(htmlRoot, projectId)
         sites.filter { it.type == "EXISTING" && it.sourceProjectId.isNotBlank() && it.localFilePath.isNotBlank() }
             .forEach { site ->
-                val sourceRoot = File(context.filesDir, "html_projects/${site.sourceProjectId}")
-                if (!sourceRoot.exists() || !sourceRoot.isDirectory) return@forEach
-
-                val desiredRelative = site.localFilePath.trim().trimStart('/')
-                val sourceRelative = site.localFilePath.substringAfter('/', site.localFilePath).trimStart('/')
-                if (sourceRelative == desiredRelative && sourceRoot.absolutePath == targetRoot.absolutePath) {
-                    return@forEach
+                val relativePath = site.localFilePath.trimStart('/')
+                val sourceRoot = com.webtoapp.util.SafeZip.safeChild(htmlRoot, site.sourceProjectId)
+                val sourceRelative = relativePath.removePrefix("${site.id.ifBlank { "site" }}/")
+                val original = sourceRoot?.let { com.webtoapp.util.SafeZip.safeChild(it, sourceRelative) }
+                val savedCopy = previousRoot?.let { com.webtoapp.util.SafeZip.safeChild(it, relativePath) }
+                val source = original?.takeIf(File::isFile) ?: savedCopy?.takeIf(File::isFile)
+                    ?: throw EditorSaveException(Strings.saveFailedCannotProcessHtml)
+                if (com.webtoapp.util.SafeZip.safeChild(targetRoot, relativePath) == null ||
+                    HtmlStorage.saveFromTempFile(context, source.absolutePath, relativePath, projectId) == null) {
+                    throw EditorSaveException(Strings.saveFailedCannotProcessHtml)
                 }
-
-                val sourceFile = File(sourceRoot, sourceRelative)
-                if (!sourceFile.exists() || !sourceFile.isFile) return@forEach
-
-                val targetFile = File(targetRoot, desiredRelative)
-                targetFile.parentFile?.mkdirs()
-                sourceFile.copyTo(targetFile, overwrite = true)
             }
     }
 
-    fun updateFrontendApp(
+    suspend fun updateFrontendApp(
         appId: Long,
         name: String,
         outputPath: String?,
@@ -1299,12 +1292,11 @@ class MainViewModel(
         val context = getApplication<Application>()
 
         val htmlConfig = if (!outputPath.isNullOrEmpty()) {
-            val projectId = existingApp.htmlConfig?.projectId ?: HtmlStorage.generateProjectId()
+            val projectId = newHtmlProject()
             val savedFiles = copyBuildOutputToStorage(context, outputPath, projectId)
             if (!hasReadableHtmlEntry(savedFiles)) {
                 AppLogger.e("MainViewModel", "No readable HTML entry found in frontend build output: $outputPath")
-                _uiState.value = UiState.Error("Frontend build output has no readable HTML entry")
-                throw IllegalStateException("Frontend build output has no readable HTML entry")
+                throw EditorSaveException(Strings.saveFailedCannotProcessHtml)
             }
             HtmlConfig(
                 projectId = projectId,
@@ -1324,7 +1316,7 @@ class MainViewModel(
         )
     }
 
-    fun updateMediaApp(
+    suspend fun updateMediaApp(
         appId: Long,
         name: String,
         appType: AppType,
@@ -1333,12 +1325,8 @@ class MainViewModel(
         iconUri: Uri?,
         themeType: String = "AURORA"
     ) = updateApp(appId, "Media", iconUri) { existingApp, savedIconPath ->
-        val context = getApplication<Application>()
         val isVideo = appType == AppType.VIDEO
-
-        val savedMediaPath = mediaUri?.let { uri ->
-            withContext(Dispatchers.IO) { MediaStorage.saveMedia(context, uri, isVideo) }
-        } ?: existingApp.url
+        val savedMediaPath = mediaUri?.let { saveMedia(it, isVideo) } ?: existingApp.url
 
         existingApp.copy(
             name = name.ifBlank { existingApp.name },
@@ -1350,7 +1338,7 @@ class MainViewModel(
         )
     }
 
-    fun updateGalleryApp(
+    suspend fun updateGalleryApp(
         appId: Long,
         name: String,
         galleryConfig: GalleryConfig?,
@@ -1358,8 +1346,7 @@ class MainViewModel(
         themeType: String = "AURORA"
     ) {
         if (galleryConfig == null || !galleryConfig.hasContent) {
-            _uiState.value = UiState.Error(Strings.pleaseAddMediaFile)
-            return
+            throw EditorSaveException(Strings.pleaseAddMediaFile)
         }
         updateApp(appId, "Gallery", iconUri) { existingApp, savedIconPath ->
             existingApp.copy(
@@ -1371,7 +1358,7 @@ class MainViewModel(
         }
     }
 
-    fun updateHtmlApp(
+    suspend fun updateHtmlApp(
         appId: Long,
         name: String,
         htmlConfig: HtmlConfig?,
@@ -1383,22 +1370,15 @@ class MainViewModel(
         val finalHtmlConfig = if (htmlConfig != null && (htmlConfig != existingApp.htmlConfig || htmlContentChanged(existingApp.htmlConfig, htmlConfig))) {
             AppLogger.d("MainViewModel", "HTML files changed, re-processing...")
 
-            val oldProjectId = existingApp.htmlConfig?.projectId
-
-            val projectId = HtmlStorage.generateProjectId()
+            val projectId = newHtmlProject()
             val savedHtmlFiles = processAndSaveHtmlFiles(context, htmlConfig.files, projectId)
+            cleanupHtmlDraftOnSuccess(htmlConfig.files)
 
             if (savedHtmlFiles.none { it.type == HtmlFileType.HTML || it.name.endsWith(".html", ignoreCase = true) }) {
                 AppLogger.e("MainViewModel", "No HTML files were saved successfully in update")
-                withContext(Dispatchers.IO) { HtmlStorage.deleteProject(context, projectId) }
-                throw Exception(Strings.saveFailedCannotProcessHtml)
+                throw EditorSaveException(Strings.saveFailedCannotProcessHtml)
             }
 
-            if (!oldProjectId.isNullOrBlank() && oldProjectId != projectId) {
-                withContext(Dispatchers.IO) { HtmlStorage.deleteProject(context, oldProjectId) }
-            }
-
-            withContext(Dispatchers.IO) { HtmlStorage.clearTempFiles(context) }
             htmlConfig.copy(projectId = projectId, files = savedHtmlFiles)
         } else {
             existingApp.htmlConfig
@@ -1429,7 +1409,7 @@ class MainViewModel(
         }
     }
 
-    fun updateZipHtmlApp(
+    suspend fun updateZipHtmlApp(
         appId: Long,
         name: String,
         extractedDir: String,
@@ -1443,22 +1423,15 @@ class MainViewModel(
     ) = updateApp(appId, "HTML", iconUri) { existingApp, savedIconPath ->
         val context = getApplication<Application>()
 
-        val oldProjectId = existingApp.htmlConfig?.projectId
-
-        val projectId = HtmlStorage.generateProjectId()
+        val projectId = newHtmlProject()
         val savedFiles = copyBuildOutputToStorage(context, extractedDir, projectId)
+        cleanupZipDraftOnSuccess(extractedDir)
 
         if (savedFiles.none { it.type == HtmlFileType.HTML || it.name.endsWith(".html", ignoreCase = true) }) {
             AppLogger.e("MainViewModel", "No HTML files found in updated ZIP project")
-            withContext(Dispatchers.IO) { HtmlStorage.deleteProject(context, projectId) }
-            throw Exception(Strings.saveFailedNoHtmlInZip)
+            throw EditorSaveException(Strings.saveFailedNoHtmlInZip)
         }
 
-        if (!oldProjectId.isNullOrBlank() && oldProjectId != projectId) {
-            withContext(Dispatchers.IO) { HtmlStorage.deleteProject(context, oldProjectId) }
-        }
-
-        withContext(Dispatchers.IO) { com.webtoapp.util.ZipProjectImporter.cleanupTempFiles(context) }
         AppLogger.d("MainViewModel", "ZIP HTML app updated: projectId=$projectId, files=${savedFiles.size}, entry=$entryFile")
 
         val finalHtmlConfig = HtmlConfig(
@@ -1480,7 +1453,7 @@ class MainViewModel(
         )
     }
 
-    fun saveScrapedWebsiteApp(
+    suspend fun saveScrapedWebsiteApp(
         name: String,
         url: String,
         iconUri: Uri?,
@@ -1493,90 +1466,44 @@ class MainViewModel(
         timeoutSeconds: Int = 30,
         onProgress: (com.webtoapp.core.scraper.WebsiteScraper.ScrapeProgress) -> Unit = {}
     ) {
-        viewModelScope.launch {
-            _uiState.value = UiState.Loading
-            try {
-                val context = getApplication<Application>()
-                val scraper = com.webtoapp.core.scraper.WebsiteScraper(context)
-
-                val skipPatternList = if (skipPatterns.isBlank()) emptyList()
-                    else skipPatterns.split(",", " ", ";").map { it.trim() }.filter { it.isNotEmpty() }
-
-                val config = com.webtoapp.core.scraper.WebsiteScraper.ScrapeConfig(
-                    url = url,
-                    maxDepth = maxDepth,
-                    downloadCdnResources = downloadCdnResources,
-                    followLinks = followLinks,
-                    maxFiles = maxFiles,
-                    maxTotalSize = maxTotalSizeMb.toLong() * 1024 * 1024,
-                    skipPatterns = skipPatternList,
-                    timeoutSeconds = timeoutSeconds
-                )
-
-                val mainHandler = android.os.Handler(android.os.Looper.getMainLooper())
-                val result = scraper.scrape(config) { progress ->
-                    mainHandler.post { onProgress(progress) }
-                }
-
-                when (result) {
-                    is com.webtoapp.core.scraper.WebsiteScraper.ScrapeResult.Success -> {
-
-                        val currentThemeType = getCurrentThemeType()
-                        val savedIconPath = saveIconIfPresent(iconUri)
-                        val categoryId = _selectedCategoryId.value?.takeIf { it > 0 }
-
-                        val projectId = HtmlStorage.generateProjectId()
-                        val savedFiles = copyBuildOutputToStorage(
-                            context,
-                            result.projectDir.absolutePath,
-                            projectId
-                        )
-
-                        if (savedFiles.none { it.type == HtmlFileType.HTML || it.name.endsWith(".html", ignoreCase = true) }) {
-                            AppLogger.e("MainViewModel", "No HTML files in scraped result")
-                            withContext(Dispatchers.IO) { HtmlStorage.deleteProject(context, projectId) }
-                            _uiState.value = UiState.Error(Strings.scrapeNoHtmlFound)
-                            return@launch
-                        }
-
-                        val webApp = WebApp(
-                            name = name.ifBlank {
-                                try { java.net.URL(url).host } catch (e: Exception) { "Offline Site" }
-                            },
+        val context = getApplication<Application>()
+        val scraper = com.webtoapp.core.scraper.WebsiteScraper(context)
+        val patterns = skipPatterns.split(',', ' ', ';').map(String::trim).filter(String::isNotEmpty)
+        val config = com.webtoapp.core.scraper.WebsiteScraper.ScrapeConfig(
+            url = url,
+            maxDepth = maxDepth,
+            downloadCdnResources = downloadCdnResources,
+            followLinks = followLinks,
+            maxFiles = maxFiles,
+            maxTotalSize = maxTotalSizeMb * 1024L * 1024L,
+            skipPatterns = patterns,
+            timeoutSeconds = timeoutSeconds
+        )
+        val mainHandler = android.os.Handler(android.os.Looper.getMainLooper())
+        when (val result = scraper.scrape(config) { progress -> mainHandler.post { onProgress(progress) } }) {
+            is com.webtoapp.core.scraper.WebsiteScraper.ScrapeResult.Error -> throw EditorSaveException(result.message)
+            is com.webtoapp.core.scraper.WebsiteScraper.ScrapeResult.Success -> {
+                try {
+                    createApp(Strings.websiteOfflinePackTitle, iconUri) { iconPath, themeType, categoryId ->
+                        val projectId = newHtmlProject()
+                        val savedFiles = copyBuildOutputToStorage(context, result.projectDir.absolutePath, projectId)
+                        if (!hasReadableHtmlEntry(savedFiles)) throw EditorSaveException(Strings.scrapeNoHtmlFound)
+                        WebApp(
+                            name = name.ifBlank { java.net.URL(url).host },
                             url = url,
-                            iconPath = savedIconPath,
+                            iconPath = iconPath,
                             appType = AppType.HTML,
-                            htmlConfig = HtmlConfig(
-                                projectId = projectId,
-                                entryFile = result.entryFile,
-                                files = savedFiles,
-                                enableJavaScript = true,
-                                enableLocalStorage = true
-                            ),
-                            activationEnabled = false,
-                            activationCodeList = emptyList(),
-                            bgmEnabled = false,
-                            bgmConfig = BgmConfig(),
-                            themeType = currentThemeType,
+                            htmlConfig = HtmlConfig(projectId = projectId, entryFile = result.entryFile, files = savedFiles),
+                            themeType = themeType,
                             categoryId = categoryId
                         )
-
-                        withContext(Dispatchers.IO) { repository.createWebApp(webApp) }
-
-                        scraper.deleteScrapedSite(result.projectDir.name)
-
-                        val sizeKb = result.totalSize / 1024
-                        _uiState.value = UiState.Success(
-                            Strings.scrapePackSuccess.format(result.totalFiles, sizeKb)
-                        )
                     }
-                    is com.webtoapp.core.scraper.WebsiteScraper.ScrapeResult.Error -> {
-                        _uiState.value = UiState.Error(result.message)
-                    }
+                    _uiState.value = UiState.Success(
+                        Strings.scrapePackSuccess.format(result.totalFiles, result.totalSize / 1024)
+                    )
+                } finally {
+                    withContext(Dispatchers.IO) { scraper.deleteScrapedSite(result.projectDir.name) }
                 }
-            } catch (e: Exception) {
-                AppLogger.e("MainViewModel", "Website scrape failed", e)
-                _uiState.value = UiState.Error(Strings.scrapePackFailed.format(e.message))
             }
         }
     }
@@ -1658,6 +1585,55 @@ class MainViewModel(
         }
     }
 }
+internal class EditorSaveException(message: String) : IllegalArgumentException(message)
+
+private class EditorSaveFiles(private val context: Context) {
+    private var iconPath: String? = null
+    private var mediaPath: String? = null
+    private var projectId: String? = null
+
+    fun saveIcon(uri: Uri?, existingPath: String? = null): String? {
+        if (uri == null || (uri.scheme == "file" && uri.path == existingPath)) return existingPath
+        return (IconStorage.saveIconFromUri(context, uri) ?: throw EditorSaveException(Strings.failedSaveIcon))
+            .also { iconPath = it }
+    }
+
+    fun saveMedia(uri: Uri, video: Boolean): String =
+        (MediaStorage.saveMedia(context, uri, video) ?: throw EditorSaveException(Strings.failedSaveMediaFile))
+            .also { mediaPath = it }
+
+    fun newHtmlProject(): String = HtmlStorage.generateProjectId().also { projectId = it }
+
+    private val draftsToClean = mutableSetOf<File>()
+
+    fun cleanupHtmlDraftOnSuccess(files: List<HtmlFile>) {
+        val root = File(context.cacheDir, "html_temp").canonicalFile
+        files.map { File(it.path).canonicalFile }
+            .filter { it.path.startsWith(root.path + File.separator) }
+            .forEach { draftsToClean.add(it) }
+    }
+
+    fun cleanupZipDraftOnSuccess(extractedDir: String) {
+        val cache = context.cacheDir.canonicalFile
+        val source = File(extractedDir).canonicalFile
+        if (!source.path.startsWith(cache.path + File.separator)) return
+        val firstDirectory = source.relativeTo(cache).path.substringBefore(File.separator)
+        if (firstDirectory.startsWith("zip_import_")) draftsToClean.add(File(cache, firstDirectory))
+    }
+
+    fun cleanupDrafts() {
+        draftsToClean.forEach { draft ->
+            if (!draft.deleteRecursively()) AppLogger.w("EditorSave", "Could not remove a saved project draft")
+        }
+    }
+
+    fun discard() {
+        IconStorage.deleteIcon(iconPath)
+        MediaStorage.deleteMedia(mediaPath)
+        projectId?.let { HtmlStorage.deleteProject(context, it) }
+    }
+}
+
 sealed class UiState {
     data object Idle : UiState()
     data object Loading : UiState()

@@ -29,6 +29,7 @@ import com.webtoapp.ui.screens.create.WtaCreateFlowSection
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateOfflinePackScreen(
+    isScraping: Boolean,
     onBack: () -> Unit,
     onStartScrape: (
         name: String,
@@ -54,27 +55,16 @@ fun CreateOfflinePackScreen(
     var timeoutSeconds by remember { mutableIntStateOf(30) }
     var showAdvanced by remember { mutableStateOf(false) }
 
-    var isScraping by remember { mutableStateOf(false) }
     var scrapeProgress by remember { mutableStateOf<WebsiteScraper.ScrapeProgress?>(null) }
 
     val startScrape = {
         if (url.isNotBlank() && !isScraping) {
             val finalUrl = if (url.startsWith("http")) url else "https://$url"
-            isScraping = true
+            scrapeProgress = null
             onStartScrape(
                 appName, finalUrl, maxDepth, downloadCdn,
                 followLinks, maxFiles, maxTotalSizeMb, skipPatterns, timeoutSeconds
-            ) { progress ->
-                scrapeProgress = progress
-                if (progress.phase == WebsiteScraper.ScrapeProgress.Phase.COMPLETE ||
-                    progress.phase == WebsiteScraper.ScrapeProgress.Phase.ERROR
-                ) {
-                    isScraping = false
-                    if (progress.phase == WebsiteScraper.ScrapeProgress.Phase.COMPLETE) {
-                        onBack()
-                    }
-                }
-            }
+            ) { progress -> scrapeProgress = progress }
         }
     }
 
@@ -394,6 +384,9 @@ fun CreateOfflinePackScreen(
                     }
                 }
 
+                if (isScraping && scrapeProgress == null) {
+                    Text(Strings.preparing, modifier = Modifier.padding(16.dp))
+                }
                 if (isScraping && scrapeProgress != null) {
                     val progress = scrapeProgress!!
 
@@ -481,25 +474,7 @@ fun CreateOfflinePackScreen(
 
                 if (!isScraping) {
                     PremiumButton(
-                        onClick = {
-                            if (url.isBlank()) return@PremiumButton
-                            val finalUrl = if (url.startsWith("http")) url else "https://$url"
-                            isScraping = true
-                            onStartScrape(
-                                appName, finalUrl, maxDepth, downloadCdn,
-                                followLinks, maxFiles, maxTotalSizeMb, skipPatterns, timeoutSeconds
-                            ) { p ->
-                                scrapeProgress = p
-                                if (p.phase == WebsiteScraper.ScrapeProgress.Phase.COMPLETE ||
-                                    p.phase == WebsiteScraper.ScrapeProgress.Phase.ERROR
-                                ) {
-                                    isScraping = false
-                                    if (p.phase == WebsiteScraper.ScrapeProgress.Phase.COMPLETE) {
-                                        onBack()
-                                    }
-                                }
-                            }
-                        },
+                        onClick = startScrape,
                         enabled = url.isNotBlank(),
                         modifier = Modifier.fillMaxWidth()
                     ) {
