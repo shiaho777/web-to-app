@@ -1137,6 +1137,7 @@ class WebViewManager(
     }
 
     private val managedWebViews = java.util.WeakHashMap<WebView, Boolean>()
+    private val speechBridges = mutableMapOf<WebView, WebSpeechSynthesisBridge>()
 
     private val userscriptInjectionState =
         java.util.WeakHashMap<WebView, MutableSet<String>>()
@@ -1483,6 +1484,13 @@ class WebViewManager(
         }
 
         managedWebViews[webView] = true
+        if (config.javaScriptEnabled && config.enableNativeBridge) {
+            if (webView !in speechBridges) {
+                WebSpeechSynthesisBridge.install(webView)?.let { speechBridges[webView] = it }
+            }
+        } else {
+            speechBridges.remove(webView)?.release(webView)
+        }
 
         val cookieManager = CookieManager.getInstance()
         cookieManager.setAcceptCookie(true)
@@ -2252,6 +2260,7 @@ class WebViewManager(
                     TlsMitmBridge.allowHost(runCatching { android.net.Uri.parse(url ?: "").host }.getOrNull())
                 }
                 view?.let {
+                    speechBridges[it]?.onPageStarted(it)
                     userscriptInjectionState.remove(it)
                     pagePhaseExecutionState.remove(it)
                 }
@@ -2433,6 +2442,7 @@ class WebViewManager(
 
             override fun onPageFinished(view: WebView?, url: String?) {
                 super.onPageFinished(view, url)
+                view?.let { speechBridges[it]?.injectFallback(it) }
                 currentMainFrameUrl = url ?: currentMainFrameUrl
                 val elapsed = System.currentTimeMillis() - diagPageStartTime
                 AppLogger.d("WebViewManager", "Page finished: +${elapsed}ms blocked=$diagBlockedCount errors=$diagErrorCount")
@@ -3133,6 +3143,7 @@ class WebViewManager(
     }
 
     fun discardWebView(webView: WebView) {
+        speechBridges.remove(webView)?.release(webView)
         userscriptInjectionState.remove(webView)
         pagePhaseExecutionState.remove(webView)
         safeAreaScriptHandlers.remove(webView)?.let { handler -> runCatching { handler.remove() } }
@@ -4058,6 +4069,7 @@ class WebViewManager(
 
     fun destroyWebView(webView: WebView) {
         try {
+            speechBridges.remove(webView)?.release(webView)
             managedWebViews.remove(webView)
             primeUserActivationDone.remove(webView)
             failoverCursor.remove(webView)

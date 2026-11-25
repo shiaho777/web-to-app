@@ -2,37 +2,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!--
-    ==========================================================================
-    权限声明策略（2026-05 修订）
-    ==========================================================================
-    本 manifest 只声明「宿主 app 本体」运行需要的权限和组件。
 
-    设计原则：
-      1. 用户打包的子 APK 如需 SMS / 通话 / 通讯录 / 日历 / 定位 / 传感器 /
-         NFC / USB / 后台服务 等高危能力，由 ApkBuilder 在打包时按用户勾选
-         动态注入到**子包**的 manifest，不预声明在宿主 manifest 里。
-      2. 仅供子 APK 使用的运行时组件（如后台运行服务 / Node.js 子进程前台
-         服务等）只在 shell 模板 manifest 中声明，不混入宿主 manifest。
-         宿主自身不会实例化这些组件，预声明只会让国产安全引擎做"组件指纹
-         聚合"时把宿主误判为驻留型可疑应用。
-
-    若有新的宿主功能真的需要某个权限/组件，请：
-      1. 在本文件添加并注释"宿主使用：xxx 功能"
-      2. 在代码里能被 grep 到对应 API 调用
-    禁止再把"给子 APK 准备"的权限/组件写进本文件。
-    ==========================================================================
-    -->
-
-    <!-- ====== 网络（宿主必需：加载网页、下载运行时、推送请求）====== -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <!-- 宿主使用：预览/分析局域网地址。Android 16 opt-in、17 强制（部分 ROM 不分
-         targetSdk 直接强制）；缺失时 LAN 请求超时或报 ERR_LOCAL_NETWORK_PERMISSION_MISSING。
-         旧系统会忽略未知权限，无副作用。 -->
     <uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK" />
 
-    <!-- ====== 存储 / 媒体（宿主必需：选择图标、导入 HTML、素材库）====== -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
@@ -43,30 +17,23 @@
     <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
     <uses-permission android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED" />
 
-    <!-- ====== APK 安装 / 桌面快捷方式（宿主必需：打包完成后一键安装子 APK）====== -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <uses-permission android:name="com.android.launcher.permission.INSTALL_SHORTCUT" />
 
-    <!-- ====== 通知（宿主必需：打包任务前台通知）====== -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
-    <!-- ====== 相机（宿主使用：扫码导入网址）====== -->
     <uses-permission android:name="android.permission.CAMERA" />
 
-    <!-- ====== 音频（宿主使用：录音、媒体回放音量调整）====== -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
 
-    <!-- ====== 定位（宿主使用：预览需要地理位置的网站，与生成的 APK 保持一致）====== -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
-    <!-- ====== WiFi（宿主使用：网络状态查询、WiFi 扫描；写权限留给子 APK 注入）====== -->
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
     <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
 
-    <!-- ====== 蓝牙（宿主使用：基本扫描/连接）====== -->
     <uses-permission android:name="android.permission.BLUETOOTH"
         android:maxSdkVersion="30" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"
@@ -74,31 +41,24 @@
     <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
 
-    <!-- ====== 生物识别（宿主使用：应用锁、隐私保护）====== -->
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
 
-    <!-- ====== 悬浮窗（宿主使用：FloatingWindowService 悬浮小窗预览模式）====== -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
-    <!-- ====== 电池 / 勿扰（宿主使用：打包任务防杀后台、勿扰模式）====== -->
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
 
-    <!-- ====== 前台服务（宿主必需：打包任务 + 悬浮窗预览 + WebView 媒体播放）====== -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
 
-    <!-- ====== 系统运行（宿主必需：打包 / 启动等长任务保持唤醒）====== -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
-    <!-- ====== 自启动（宿主使用：BootReceiver 开机拉起用户指定的子应用、定时启动）====== -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
 
-    <!-- ====== uses-feature（标注设备能力，全部 required=false 不限制安装）====== -->
     <uses-feature android:name="android.hardware.camera" android:required="false" />
     <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
     <uses-feature android:name="android.hardware.camera.flash" android:required="false" />
@@ -111,6 +71,9 @@
     
     
     <queries>
+        <intent>
+            <action android:name="android.intent.action.TTS_SERVICE" />
+        </intent>
         
         <intent>
             <action android:name="android.intent.action.VIEW" />
@@ -200,33 +163,12 @@
             <action android:name="com.webtoapp.action.PORT_RELEASE" />
         </intent>
 
-        <!-- Baseline app-list visibility: every package with a launcher entry.
-             The standard flavor adds QUERY_ALL_PACKAGES for the rest. -->
         <intent>
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
         </intent>
     </queries>
 
-    <!--
-    ==========================================================================
-    android:enableOnBackInvokedCallback="true"
-    ==========================================================================
-    Android 13+ 的「可预测返回手势」(predictive back) 要求 app 显式声明这个
-    flag，否则 OEM（华为 / 小米 / OPPO / 三星等）的侧边返回手势 / 三角形
-    返回键会**绕过**老的 OnBackPressedDispatcher，默认行为是 finish() 当前
-    Activity，于是用户在 webapp 里滑边返回会**直接退到桌面**而不是回退到
-    上一个网页。
-
-    打开这个 flag 后，AndroidX activity 1.8+ 的 OnBackPressedDispatcher 会
-    自动桥接到系统的 OnBackInvokedDispatcher——所有现有的
-    OnBackPressedCallback / BackHandler 不需要改动，就能在 Android 13+
-    收到手势/三角键的返回事件，按已实现的 WebView.goBack() 逻辑做网页历史
-    回退。
-
-    Android 12 及以下忽略此 flag，行为与原本完全一致。
-    ==========================================================================
-    -->
     <application
         android:name=".WebToAppApplication"
         android:allowBackup="false"
@@ -265,7 +207,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <!-- OAuth callback -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -275,7 +216,6 @@
                     android:host="oauth2callback" />
             </intent-filter>
 
-            <!-- Browser intent: handle http/https URLs so Android offers WebToApp as a browser -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -284,7 +224,6 @@
                 <data android:scheme="https" />
             </intent-filter>
 
-            <!-- Share intent: receive text/URLs from other apps via share sheet -->
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -303,7 +242,6 @@
             android:windowSoftInputMode="adjustResize"
             android:theme="@style/Theme.WebToApp.Shell" />
 
-        <!-- Separate recents task. Home preview uses it when that switch is on. The preview tool always does. -->
         <activity
             android:name=".ui.webview.WebViewDocumentActivity"
             android:configChanges="orientation|screenSize|keyboardHidden|screenLayout|smallestScreenSize|uiMode"
@@ -388,22 +326,12 @@
             android:exported="false"
             android:foregroundServiceType="dataSync" />
 
-        <!--
-            ApkBuildService - APK 构建期间的前台保活服务。
-            长构建（Node/Python 等运行时注入）在后台容易被系统回收，这里持 dataSync
-            前台通知 + 部分唤醒锁，保证导出过程跑完。
-        -->
         <service
             android:name=".core.apkbuilder.ApkBuildService"
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="dataSync" />
 
-        <!--
-            WebMediaPlaybackService - WebView 内媒体播放的后台保活前台服务。
-            音频本身仍在 WebView 内播放；该服务提供 mediaPlayback 前台服务 + 唤醒锁 +
-            媒体通知生命周期（播放中启动 / 暂停分离 / 停止移除）。
-        -->
         <service
             android:name=".core.webview.WebMediaPlaybackService"
             android:enabled="true"
@@ -411,27 +339,6 @@
             android:foregroundServiceType="mediaPlayback"
             android:stopWithTask="false" />
 
-        <!--
-            NodeService - Node.js 嵌入式运行时的独立子进程容器。
-            
-            为什么单独开一个 OS 进程：
-              libnode.so 一旦 dlopen + V8 init 就**永远 reset 不了**。如果跑在主进程：
-                1) 用户 server.js 抛 SyntaxError / 调 process.exit 会让宿主进程死
-                2) 切换项目 / 上次崩了想重试都没法做，必须用户从最近任务列表把
-                   App 划掉再重开——非常糟糕的用户体验
-              把它关到 :nodejs 子进程后，V8 死活都关在子进程里，主进程稳如磐石。
-              要重启 V8 时主进程让子进程自杀，Android Framework 自动重建——零感知。
-            
-            android:process=":nodejs"  → 同 APK 内的独立 OS 进程（前导冒号表示
-                                          private process，跟 webtoapp 共享 UID
-                                          但有独立的 zygote-fork 出来的进程）
-            isolatedProcess=false      → 我们要访问 filesDir / nativeLibraryDir，
-                                          isolatedProcess 模式下连这些都拿不到
-            stopWithTask=false         → 用户从最近任务划掉 App 时仍然让子进程
-                                          一起死（true 是默认值，写出来是为了
-                                          清楚——避免误以为子进程会比主进程
-                                          活更久）
-        -->
         <service
             android:name=".core.nodejs.NodeService"
             android:enabled="true"
@@ -439,12 +346,6 @@
             android:process=":nodejs"
             android:stopWithTask="true" />
 
-        <!--
-            BootReceiver / ScheduledStartReceiver
-            宿主使用：用户在 host 内可配置"开机自启某个 webapp"和"定时启动"；
-                    BootReceiver 同时也兼容 shell 子 APK（行为等价的 java-override，
-                    含开机/更新后的通知服务恢复——改动需两侧同步）。
-        -->
         <receiver
             android:name=".core.autostart.BootReceiver"
             android:enabled="true"
@@ -464,11 +365,6 @@
             </intent-filter>
         </receiver>
 
-        <!--
-            Port query / release receivers
-            宿主使用：跨 webapp 端口协调（Node/PHP/Python/Go 多运行时共存时）。
-            exported=true 是因为多个由 WebToApp 打包出的 APK 之间需要互相广播查询端口。
-        -->
         <receiver
             android:name=".core.port.PortQueryReceiver"
             android:enabled="true"
@@ -487,11 +383,6 @@
             </intent-filter>
         </receiver>
 
-        <!--
-            BridgeAlarmReceiver - 通知调度（页内 Web Notification.scheduleNotification）。
-            宿主与生成的 APK 均使用（NativeBridge 为 shell 同步代码），shell 模板清单
-            必须保留同名声明，两边需同步修改。
-        -->
         <receiver
             android:name=".core.notification.BridgeAlarmReceiver"
             android:enabled="true"
