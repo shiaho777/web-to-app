@@ -29,7 +29,6 @@ import com.webtoapp.data.model.WebApp
 import com.webtoapp.data.model.withNotificationPolyfill
 import com.webtoapp.data.model.withRuntimePermissionsSyncedFromFeatures
 import com.webtoapp.data.model.getActivationCodeStrings
-import com.webtoapp.data.model.sortedGalleryItems
 import com.webtoapp.ui.components.announcement.toUiTemplate
 import com.webtoapp.ui.shell.buildPackagedHtmlShellEntryUrl
 import com.webtoapp.ui.theme.ThemeManager
@@ -632,7 +631,11 @@ class ApkBuilder(private val context: Context) {
                 val bgmPlaylistPaths = if (webApp.bgmEnabled) webApp.bgmConfig?.playlist?.map { it.path } ?: emptyList() else emptyList()
                 val bgmLrcDataList = if (webApp.bgmEnabled) webApp.bgmConfig?.playlist?.map { it.lrcData } ?: emptyList() else emptyList()
                 val bgmCoverPaths = if (webApp.bgmEnabled) webApp.bgmConfig?.playlist?.map { it.coverPath } ?: emptyList() else emptyList()
-                val galleryItems = if (webApp.appType == com.webtoapp.data.model.AppType.GALLERY) webApp.galleryConfig?.items ?: emptyList() else emptyList()
+                val galleryItems = if (config.appType == "GALLERY" && !config.gallery.useDeviceFolder) {
+                    webApp.galleryConfig?.getSortedItems().orEmpty()
+                } else {
+                    emptyList()
+                }
                 val htmlProjectId = webApp.htmlConfig?.projectId?.takeIf { it.isNotBlank() }
                 val htmlProjectDir = if (webApp.appType == com.webtoapp.data.model.AppType.HTML) {
                     htmlProjectId?.let { File(context.filesDir, "html_projects/$it") }
@@ -771,6 +774,7 @@ class ApkBuilder(private val context: Context) {
                     mediaContentPath = mediaContentPath,
                     htmlFiles = htmlFiles,
                     galleryItems = galleryItems,
+                    galleryUsesDeviceFolder = config.gallery.useDeviceFolder,
                     multiWebSites = webApp.multiWebConfig?.sites.orEmpty(),
                     wordPressProjectDir = wordPressProjectDir,
                     nodejsProjectDir = nodejsProjectDir,
@@ -1792,7 +1796,8 @@ class ApkBuilder(private val context: Context) {
                 }
                 val multiWebSiteSourceDirs = resolveMultiWebSiteSourceDirs(config)
 
-                val embedder = AppContentEmbedderFactory.create(config.appType)
+                val embedder = if (config.appType == "GALLERY" && config.gallery.useDeviceFolder) null
+                else AppContentEmbedderFactory.create(config.appType)
                 if (embedder != null) {
                     if (config.appType == "GO_APP" && projectDir != null) {
                         onProgress(90, "Verifying Go binary...")
@@ -4563,7 +4568,7 @@ private fun WebApp.buildHtmlBlock(): HtmlBlock = htmlConfig.toHtmlBlock()
 
 private fun WebApp.buildGalleryBlock(): GalleryBlock {
     val config = galleryConfig
-    val items = config?.let { sortedGalleryItems(it.items, it.sortOrder) }?.mapIndexed { index, item ->
+    val items = config?.takeUnless { it.useDeviceFolder }?.getSortedItems()?.mapIndexed { index, item ->
         val ext = if (item.type == com.webtoapp.data.model.GalleryItemType.VIDEO) "mp4" else "png"
         GalleryShellItemConfig(
             id = item.id,
@@ -4573,7 +4578,8 @@ private fun WebApp.buildGalleryBlock(): GalleryBlock {
             duration = item.duration,
             thumbnailPath = if (item.thumbnailPath != null) "gallery/thumb_$index.jpg" else null,
             sortIndex = item.sortIndex,
-            createdAt = item.createdAt
+            createdAt = item.createdAt,
+            categoryId = item.categoryId
         )
     } ?: emptyList()
     return GalleryBlock(
@@ -4592,7 +4598,9 @@ private fun WebApp.buildGalleryBlock(): GalleryBlock {
         defaultView = galleryConfig?.defaultView?.name ?: "GRID",
         gridColumns = galleryConfig?.gridColumns ?: 3,
         sortOrder = galleryConfig?.sortOrder?.name ?: "CUSTOM",
-        rememberPosition = galleryConfig?.rememberPosition ?: true
+        rememberPosition = galleryConfig?.rememberPosition ?: true,
+        useDeviceFolder = config?.useDeviceFolder == true,
+        categories = config?.categories.orEmpty()
     )
 }
 
@@ -4908,7 +4916,7 @@ internal fun resolveMultiWebSiteMediaInputs(webApp: WebApp): MultiWebSiteMediaIn
         } ?: continue
         when (source.appType) {
             com.webtoapp.data.model.AppType.GALLERY -> {
-                source.galleryConfig?.items?.takeIf { it.isNotEmpty() }?.let {
+                source.galleryConfig?.takeUnless { it.useDeviceFolder }?.getSortedItems()?.takeIf { it.isNotEmpty() }?.let {
                     gallery[site.id] = it
                 }
             }
@@ -5040,8 +5048,8 @@ internal fun rewriteMultiWebGallerySitePaths(
 internal fun previewGallerySiteItems(
     sourceWebApp: WebApp
 ): List<com.webtoapp.core.shell.GalleryShellItem> {
-    val config = sourceWebApp.galleryConfig ?: return emptyList()
-    return sortedGalleryItems(config.items, config.sortOrder).map { item ->
+    val config = sourceWebApp.galleryConfig?.takeUnless { it.useDeviceFolder } ?: return emptyList()
+    return config.getSortedItems().map { item ->
         com.webtoapp.core.shell.GalleryShellItem(
             id = item.id,
             assetPath = item.path,
@@ -5050,7 +5058,8 @@ internal fun previewGallerySiteItems(
             duration = item.duration,
             thumbnailPath = item.thumbnailPath,
             sortIndex = item.sortIndex,
-            createdAt = item.createdAt
+            createdAt = item.createdAt,
+            categoryId = item.categoryId
         )
     }
 }

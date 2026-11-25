@@ -688,8 +688,11 @@ data class GalleryConfig(
     val orientation: SplashOrientation = SplashOrientation.PORTRAIT,
     val enableAudio: Boolean = true,
     val videoAutoNext: Boolean = true,
-    val rememberPosition: Boolean = false
+    val rememberPosition: Boolean = false,
+    val useDeviceFolder: Boolean = false
 ) {
+    val hasContent: Boolean get() = useDeviceFolder || items.isNotEmpty()
+
     fun getItemsByCategory(categoryId: String?): List<GalleryItem> {
         return if (categoryId == null) items
         else items.filter { it.categoryId == categoryId }

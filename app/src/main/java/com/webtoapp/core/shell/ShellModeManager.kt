@@ -334,11 +334,9 @@ data class ShellConfig(
     @SerializedName("bgmLrcTheme")
     val bgmLrcTheme: LrcShellTheme? = null,
 
-    /** Null in an older export means the floating player is on. */
     @SerializedName("bgmShowFloatingPlayer")
     val bgmShowFloatingPlayer: Boolean? = null,
 
-    /** Null in an older export means the notification player is on. */
     @SerializedName("bgmShowNotificationPlayer")
     val bgmShowNotificationPlayer: Boolean? = null,
 
@@ -541,7 +539,6 @@ data class EmbeddedShellPlugin(
     val legacyCompat: Boolean = false
 ) {
     companion object {
-        /** Host preview direction: a resolved package payload → embedded record. */
         fun fromResolved(resolved: com.webtoapp.core.plugin.PluginSession.Resolved): EmbeddedShellPlugin {
             val p = resolved.plugin
             return EmbeddedShellPlugin(
@@ -583,7 +580,6 @@ data class EmbeddedShellPlugin(
         }
     }
 
-    /** Package payload → injectable session record (embedded == attached). */
     fun toResolved(): com.webtoapp.core.plugin.PluginSession.Resolved =
         com.webtoapp.core.plugin.PluginSession.Resolved(
             plugin = toPlugin(),
@@ -691,7 +687,13 @@ data class GalleryShellConfig(
     val sortOrder: String = "CUSTOM",
 
     @SerializedName("rememberPosition")
-    val rememberPosition: Boolean = true
+    val rememberPosition: Boolean = true,
+
+    @SerializedName("useDeviceFolder")
+    val useDeviceFolder: Boolean = false,
+
+    @SerializedName("categories")
+    val categories: List<com.webtoapp.data.model.GalleryCategory> = emptyList()
 )
 
 data class GalleryShellItem(
@@ -717,7 +719,10 @@ data class GalleryShellItem(
     val sortIndex: Int = 0,
 
     @SerializedName("createdAt")
-    val createdAt: Long = 0
+    val createdAt: Long = 0,
+
+    @SerializedName("categoryId")
+    val categoryId: String? = null
 )
 
 data class MediaShellConfig(
@@ -892,7 +897,6 @@ data class MultiWebShellConfig(
     @SerializedName("showSiteIcons")
     val showSiteIcons: Boolean = true,
 
-    // A missing key keeps the default below. Runtime treats a raw 0 as the old layout.
     @SerializedName("cardColumns")
     val cardColumns: Int = 2,
 
@@ -914,8 +918,6 @@ data class MultiWebShellConfig(
     @SerializedName("projectId")
     val projectId: String = "",
 
-    // LAST reopens the last session's site. SITE opens startSiteId.
-    // A missing key stays LAST.
     @SerializedName("startTab")
     val startTab: String = "LAST",
 
@@ -1225,9 +1227,6 @@ data class WebViewShellConfig(
     @SerializedName("enableShareBridge")
     val enableShareBridge: Boolean = true,
 
-    // Inbound share sheet (#943). Names must match ApkConfigJsonFactory.toShellConfigJson
-    // exactly — Gson drops unknown keys silently, so a rename here without the factory (or
-    // vice versa) turns the feature off in exported APKs with no error anywhere.
     @SerializedName("receiveShareImages")
     val receiveShareImages: Boolean = false,
 
@@ -1243,8 +1242,6 @@ data class WebViewShellConfig(
     @SerializedName("shareShowReceivedToast")
     val shareShowReceivedToast: Boolean = true,
 
-    // "Open with" file association (ACTION_VIEW file/content intents). Must match
-    // ApkConfigJsonFactory.webViewConfigPayload exactly — Gson drops unknown keys silently.
     @SerializedName("openWithEnabled")
     val openWithEnabled: Boolean = false,
 
@@ -1527,7 +1524,6 @@ data class WebViewShellConfig(
     @SerializedName("swipeRefreshZone")
     val swipeRefreshZone: String = "TOP_EDGE",
 
-    /** Missing on pre-#1193 exports. True keeps the platform edge effect. */
     @SerializedName("overscrollEffectEnabled")
     val overscrollEffectEnabled: Boolean = true,
 
@@ -1606,8 +1602,6 @@ data class WebViewShellConfig(
     @SerializedName("dnsConfig")
     val dnsConfig: DnsShellConfig = DnsShellConfig()
 ) {
-    // Resolved per-side fullscreen content padding: an unset (null) side follows
-    // the uniform fullscreenContentPaddingDp base (#916).
     val fullscreenPadTop: Int get() = fullscreenContentPaddingTopDp ?: fullscreenContentPaddingDp
     val fullscreenPadBottom: Int get() = fullscreenContentPaddingBottomDp ?: fullscreenContentPaddingDp
     val fullscreenPadStart: Int get() = fullscreenContentPaddingStartDp ?: fullscreenContentPaddingDp

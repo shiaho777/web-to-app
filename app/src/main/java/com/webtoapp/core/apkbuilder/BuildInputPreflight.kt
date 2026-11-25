@@ -27,7 +27,8 @@ data class BuildInputPreflightRequest(
     val nodeBinaryPath: String? = null,
     val pythonBinaryPath: String? = null,
     val muslLinkerPath: String? = null,
-    val builderMuslLinkerPath: String? = null
+    val builderMuslLinkerPath: String? = null,
+    val galleryUsesDeviceFolder: Boolean = false
 )
 
 data class BuildInputPreflightResult(
@@ -64,7 +65,7 @@ object BuildInputPreflight {
                 issues.requireHtmlFiles(request.htmlEntryFile, request.htmlFiles)
             }
             "GALLERY" -> {
-                issues.requireGalleryItems(request.galleryItems)
+                if (!request.galleryUsesDeviceFolder) issues.requireGalleryItems(request.galleryItems)
             }
             "FRONTEND" -> {
                 if (request.frontendProjectDir?.let { it.exists() && it.isDirectory && it.canRead() } != true) {

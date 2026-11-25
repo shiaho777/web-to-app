@@ -467,6 +467,25 @@ class MainViewModel(
         withContext(Dispatchers.IO) { SplashStorage.deleteMedia(previousPath) }
     }
 
+    private suspend fun deleteUnusedGalleryFiles(previous: GalleryConfig?, current: GalleryConfig?) {
+        if (previous?.items.isNullOrEmpty() || previous?.items === current?.items) return
+        val currentPaths = current?.items.orEmpty().mapTo(hashSetOf()) { it.path }
+        val removed = previous?.items.orEmpty().filter { it.path !in currentPaths }
+        if (removed.isEmpty()) return
+        withContext(Dispatchers.IO) {
+            val referenced = repository.allWebApps.first().asSequence()
+                .flatMap { it.galleryConfig?.items.orEmpty().asSequence() }
+                .flatMap { sequenceOf(it.path, it.thumbnailPath) }
+                .filterNotNull()
+                .toHashSet()
+            removed.forEach { item ->
+                if (item.path !in referenced) {
+                    MediaStorage.deleteGalleryMedia(item.copy(thumbnailPath = item.thumbnailPath?.takeUnless { it in referenced }))
+                }
+            }
+        }
+    }
+
     fun saveApp() {
         viewModelScope.launch {
             var state = _editState.value
@@ -748,6 +767,7 @@ class MainViewModel(
                 withContext(Dispatchers.IO) { repository.updateWebApp(updatedApp) }
                 deleteReplacedIconIfUnused(existingApp.iconPath, updatedApp.iconPath)
                 deleteReplacedSplashIfUnused(existingApp.splashConfig?.mediaPath, updatedApp.splashConfig?.mediaPath)
+                deleteUnusedGalleryFiles(existingApp.galleryConfig, updatedApp.galleryConfig)
                 _uiState.value = UiState.Success(Strings.appUpdatedSuccessfully.replaceFirst("%s", typeName))
             } catch (e: Exception) {
                 AppLogger.e("MainViewModel", "Failed to update $typeName app", e)
@@ -794,7 +814,7 @@ class MainViewModel(
         iconUri: Uri?,
         themeType: String = "AURORA"
     ) {
-        if (galleryConfig == null || galleryConfig.items.isEmpty()) {
+        if (galleryConfig == null || !galleryConfig.hasContent) {
             _uiState.value = UiState.Error(Strings.pleaseAddMediaFile)
             return
         }
@@ -1337,7 +1357,7 @@ class MainViewModel(
         iconUri: Uri?,
         themeType: String = "AURORA"
     ) {
-        if (galleryConfig == null || galleryConfig.items.isEmpty()) {
+        if (galleryConfig == null || !galleryConfig.hasContent) {
             _uiState.value = UiState.Error(Strings.pleaseAddMediaFile)
             return
         }

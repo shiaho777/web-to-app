@@ -2113,6 +2113,136 @@ object StringsD {
         AppLanguage.KOREAN -> "필터 목록 %d / %d개 사용 중"
     }
 
+    val galleryEmbeddedMedia: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "内置媒体"
+        AppLanguage.ENGLISH -> "Bundled media"
+        AppLanguage.ARABIC -> "وسائط مضمّنة"
+        AppLanguage.PORTUGUESE -> "Mídia incluída"
+        AppLanguage.SPANISH -> "Contenido incluido"
+        AppLanguage.FRENCH -> "Médias intégrés"
+        AppLanguage.GERMAN -> "Mitgelieferte Medien"
+        AppLanguage.RUSSIAN -> "Встроенные медиа"
+        AppLanguage.JAPANESE -> "同梱メディア"
+        AppLanguage.KOREAN -> "내장 미디어"
+    }
+
+    val galleryDeviceFolder: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "本机视频目录"
+        AppLanguage.ENGLISH -> "Device video folder"
+        AppLanguage.ARABIC -> "مجلد فيديوهات الجهاز"
+        AppLanguage.PORTUGUESE -> "Pasta de vídeos do dispositivo"
+        AppLanguage.SPANISH -> "Carpeta de vídeos del dispositivo"
+        AppLanguage.FRENCH -> "Dossier vidéo de l’appareil"
+        AppLanguage.GERMAN -> "Videoordner auf dem Gerät"
+        AppLanguage.RUSSIAN -> "Папка видео на устройстве"
+        AppLanguage.JAPANESE -> "端末の動画フォルダ"
+        AppLanguage.KOREAN -> "기기 동영상 폴더"
+    }
+
+    val galleryDeviceFolderHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "安装后在应用里选择视频目录，直接播放其中的视频。"
+        AppLanguage.ENGLISH -> "Choose a video folder in the installed app to play its files directly."
+        AppLanguage.ARABIC -> "اختر مجلد فيديوهات في التطبيق المثبّت لتشغيل ملفاته مباشرةً."
+        AppLanguage.PORTUGUESE -> "Escolha uma pasta de vídeos no app instalado para reproduzir os arquivos diretamente."
+        AppLanguage.SPANISH -> "Elige una carpeta de vídeos en la app instalada para reproducir sus archivos directamente."
+        AppLanguage.FRENCH -> "Choisissez un dossier vidéo dans l’application installée pour lire ses fichiers directement."
+        AppLanguage.GERMAN -> "Wähle in der installierten App einen Videoordner, um dessen Dateien direkt abzuspielen."
+        AppLanguage.RUSSIAN -> "Выберите папку видео в установленном приложении, чтобы воспроизводить файлы напрямую."
+        AppLanguage.JAPANESE -> "インストール後のアプリで動画フォルダを選ぶと、その中の動画を直接再生できます。"
+        AppLanguage.KOREAN -> "설치한 앱에서 동영상 폴더를 선택하면 파일을 바로 재생할 수 있습니다."
+    }
+
+    val galleryChooseFolder: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "选择文件夹"
+        AppLanguage.ENGLISH -> "Choose folder"
+        AppLanguage.ARABIC -> "اختر مجلدًا"
+        AppLanguage.PORTUGUESE -> "Escolher pasta"
+        AppLanguage.SPANISH -> "Elegir carpeta"
+        AppLanguage.FRENCH -> "Choisir un dossier"
+        AppLanguage.GERMAN -> "Ordner auswählen"
+        AppLanguage.RUSSIAN -> "Выбрать папку"
+        AppLanguage.JAPANESE -> "フォルダを選択"
+        AppLanguage.KOREAN -> "폴더 선택"
+    }
+
+    val galleryNewFolder: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "新建文件夹"
+        AppLanguage.ENGLISH -> "New folder"
+        AppLanguage.ARABIC -> "مجلد جديد"
+        AppLanguage.PORTUGUESE -> "Nova pasta"
+        AppLanguage.SPANISH -> "Nueva carpeta"
+        AppLanguage.FRENCH -> "Nouveau dossier"
+        AppLanguage.GERMAN -> "Neuer Ordner"
+        AppLanguage.RUSSIAN -> "Новая папка"
+        AppLanguage.JAPANESE -> "新しいフォルダ"
+        AppLanguage.KOREAN -> "새 폴더"
+    }
+
+    val galleryFolderName: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "文件夹名称"
+        AppLanguage.ENGLISH -> "Folder name"
+        AppLanguage.ARABIC -> "اسم المجلد"
+        AppLanguage.PORTUGUESE -> "Nome da pasta"
+        AppLanguage.SPANISH -> "Nombre de la carpeta"
+        AppLanguage.FRENCH -> "Nom du dossier"
+        AppLanguage.GERMAN -> "Ordnername"
+        AppLanguage.RUSSIAN -> "Название папки"
+        AppLanguage.JAPANESE -> "フォルダ名"
+        AppLanguage.KOREAN -> "폴더 이름"
+    }
+
+    val galleryMoveToFolder: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "移到文件夹"
+        AppLanguage.ENGLISH -> "Move to folder"
+        AppLanguage.ARABIC -> "نقل إلى مجلد"
+        AppLanguage.PORTUGUESE -> "Mover para a pasta"
+        AppLanguage.SPANISH -> "Mover a la carpeta"
+        AppLanguage.FRENCH -> "Déplacer vers un dossier"
+        AppLanguage.GERMAN -> "In Ordner verschieben"
+        AppLanguage.RUSSIAN -> "Переместить в папку"
+        AppLanguage.JAPANESE -> "フォルダに移動"
+        AppLanguage.KOREAN -> "폴더로 이동"
+    }
+
+    val galleryUnfiled: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "未归类"
+        AppLanguage.ENGLISH -> "Unfiled"
+        AppLanguage.ARABIC -> "بلا تصنيف"
+        AppLanguage.PORTUGUESE -> "Sem pasta"
+        AppLanguage.SPANISH -> "Sin carpeta"
+        AppLanguage.FRENCH -> "Non classés"
+        AppLanguage.GERMAN -> "Ohne Ordner"
+        AppLanguage.RUSSIAN -> "Без папки"
+        AppLanguage.JAPANESE -> "未分類"
+        AppLanguage.KOREAN -> "미분류"
+    }
+
+    val galleryFolderUnavailable: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "无法读取此目录，请重新选择。"
+        AppLanguage.ENGLISH -> "This folder can’t be read. Choose it again."
+        AppLanguage.ARABIC -> "يتعذّر قراءة هذا المجلد. اختره مجددًا."
+        AppLanguage.PORTUGUESE -> "Não foi possível ler esta pasta. Selecione-a novamente."
+        AppLanguage.SPANISH -> "No se puede leer esta carpeta. Selecciónala de nuevo."
+        AppLanguage.FRENCH -> "Impossible de lire ce dossier. Sélectionnez-le à nouveau."
+        AppLanguage.GERMAN -> "Dieser Ordner kann nicht gelesen werden. Wähle ihn erneut aus."
+        AppLanguage.RUSSIAN -> "Не удалось прочитать папку. Выберите её снова."
+        AppLanguage.JAPANESE -> "このフォルダを読み込めません。選び直してください。"
+        AppLanguage.KOREAN -> "이 폴더를 읽을 수 없습니다. 다시 선택하세요."
+    }
+
+    val galleryFolderEmpty: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "此目录没有视频或子文件夹。"
+        AppLanguage.ENGLISH -> "This folder has no videos or subfolders."
+        AppLanguage.ARABIC -> "لا يحتوي هذا المجلد على فيديوهات أو مجلدات فرعية."
+        AppLanguage.PORTUGUESE -> "Esta pasta não tem vídeos nem subpastas."
+        AppLanguage.SPANISH -> "Esta carpeta no tiene vídeos ni subcarpetas."
+        AppLanguage.FRENCH -> "Ce dossier ne contient ni vidéos ni sous-dossiers."
+        AppLanguage.GERMAN -> "Dieser Ordner enthält keine Videos oder Unterordner."
+        AppLanguage.RUSSIAN -> "В папке нет видео или подпапок."
+        AppLanguage.JAPANESE -> "このフォルダには動画やサブフォルダがありません。"
+        AppLanguage.KOREAN -> "이 폴더에는 동영상이나 하위 폴더가 없습니다."
+    }
+
     val galleryApp: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "媒体画廊"
         AppLanguage.ENGLISH -> "Media Gallery"

@@ -2441,6 +2441,16 @@ object Strings {
     val hostsSourceRuleCount: String get() = StringsD.hostsSourceRuleCount
     val hostsActiveRulesCount: String get() = StringsD.hostsActiveRulesCount
     val hostsSourcesEnabledSummary: String get() = StringsD.hostsSourcesEnabledSummary
+    val galleryEmbeddedMedia: String get() = StringsD.galleryEmbeddedMedia
+    val galleryDeviceFolder: String get() = StringsD.galleryDeviceFolder
+    val galleryDeviceFolderHint: String get() = StringsD.galleryDeviceFolderHint
+    val galleryChooseFolder: String get() = StringsD.galleryChooseFolder
+    val galleryNewFolder: String get() = StringsD.galleryNewFolder
+    val galleryFolderName: String get() = StringsD.galleryFolderName
+    val galleryMoveToFolder: String get() = StringsD.galleryMoveToFolder
+    val galleryUnfiled: String get() = StringsD.galleryUnfiled
+    val galleryFolderUnavailable: String get() = StringsD.galleryFolderUnavailable
+    val galleryFolderEmpty: String get() = StringsD.galleryFolderEmpty
     val galleryApp: String get() = StringsD.galleryApp
     val galleryCreateTitle: String get() = StringsD.galleryCreateTitle
 

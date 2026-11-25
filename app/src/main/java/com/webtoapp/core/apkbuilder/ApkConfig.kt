@@ -516,7 +516,6 @@ data class WebViewBlock(
     val mediaAlbumName: String = "",
     val swipeRefreshEnabled: Boolean = true,
     val swipeRefreshZone: String = "TOP_EDGE",
-    // Absent on configs exported before #1193. True keeps the platform stretch.
     val overscrollEffectEnabled: Boolean = true,
     val fullscreenEnabled: Boolean = true,
     val performanceOptimization: Boolean = false,
@@ -765,7 +764,9 @@ data class GalleryBlock(
     val defaultView: String = "GRID",
     val gridColumns: Int = 3,
     val sortOrder: String = "CUSTOM",
-    val rememberPosition: Boolean = true
+    val rememberPosition: Boolean = true,
+    val useDeviceFolder: Boolean = false,
+    val categories: List<com.webtoapp.data.model.GalleryCategory> = emptyList()
 )
 
 data class BgmBlock(
@@ -826,13 +827,6 @@ data class DeepLinkBlock(
     val schemes: List<String> = emptyList()
 )
 
-/**
- * Inbound share sheet registration (issue #943).
- *
- * [enabled] drives the `ACTION_SEND` intent-filter injection in [AxmlRebuilder]; when it is
- * false no manifest change happens at all, so exported APKs are byte-identical to builds
- * made before this block existed. [mimeTypes] is the resolved list the filter declares.
- */
 data class ShareReceiveBlock(
     val enabled: Boolean = false,
     val images: Boolean = false,
@@ -843,13 +837,6 @@ data class ShareReceiveBlock(
     val mimeTypes: List<String> = emptyList()
 )
 
-/**
- * `ACTION_VIEW` "open with" registration (`WebViewConfig.openWithEnabled`).
- *
- * [enabled] drives the intent-filter injection in [AxmlRebuilder]; the actual mime/extension
- * lists live in `ShareReceiveContract` (shell-synced, so the runtime inbox check uses the
- * same constants the manifest declared). When disabled the manifest is left untouched.
- */
 data class OpenWithBlock(
     val enabled: Boolean = false
 )
@@ -961,14 +948,10 @@ data class GalleryShellItemConfig(
     val duration: Long = 0,
     val thumbnailPath: String? = null,
     val sortIndex: Int = 0,
-    val createdAt: Long = 0
+    val createdAt: Long = 0,
+    val categoryId: String? = null
 )
 
-/**
- * Self-contained plugin payload embedded in the export config — the generated
- * APK runs plugins without the host's plugin store. Field names mirror
- * [com.webtoapp.core.plugin.Plugin] so shell-side conversion is mechanical.
- */
 data class EmbeddedPlugin(
     val id: String,
     val name: String,
@@ -1012,7 +995,6 @@ data class DnsApkConfig(
     val bypassSystemDns: Boolean = false,
     val echEnabled: Boolean = false
 ) {
-    /** Mirrors [com.webtoapp.data.model.DnsConfig.echEffective] on the export side. */
     val echEffective: Boolean
         get() = echEnabled && effectiveDohUrl.isNotBlank()
 
