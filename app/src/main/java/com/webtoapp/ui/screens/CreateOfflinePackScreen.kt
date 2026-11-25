@@ -22,49 +22,66 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.scraper.WebsiteScraper
+import androidx.compose.runtime.saveable.rememberSaveable
+import com.webtoapp.ui.viewmodel.OfflinePackDraft
+import com.webtoapp.ui.viewmodel.OfflinePackDraftState
+import com.webtoapp.ui.design.WtaAlertDialog
 import com.webtoapp.ui.components.*
 import com.webtoapp.ui.screens.create.WtaCreateFlowScaffold
 import com.webtoapp.ui.screens.create.WtaCreateFlowSection
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CreateOfflinePackScreen(
-    isScraping: Boolean,
+internal fun CreateOfflinePackScreen(
+    state: OfflinePackDraftState,
     onBack: () -> Unit,
-    onStartScrape: (
-        name: String,
-        url: String,
-        maxDepth: Int,
-        downloadCdn: Boolean,
-        followLinks: Boolean,
-        maxFiles: Int,
-        maxTotalSizeMb: Int,
-        skipPatterns: String,
-        timeoutSeconds: Int,
-        onProgress: (WebsiteScraper.ScrapeProgress) -> Unit
-    ) -> Unit
+    onStartScrape: (name: String, config: WebsiteScraper.ScrapeConfig) -> Unit,
+    onClosePreview: () -> Unit,
+    onDismissError: () -> Unit,
+    onSavePack: (OfflinePackDraft) -> Unit
 ) {
-    var url by remember { mutableStateOf("") }
-    var appName by remember { mutableStateOf("") }
-    var maxDepth by remember { mutableIntStateOf(3) }
-    var downloadCdn by remember { mutableStateOf(true) }
-    var followLinks by remember { mutableStateOf(true) }
-    var maxFiles by remember { mutableIntStateOf(500) }
-    var maxTotalSizeMb by remember { mutableIntStateOf(200) }
-    var skipPatterns by remember { mutableStateOf("") }
-    var timeoutSeconds by remember { mutableIntStateOf(30) }
-    var showAdvanced by remember { mutableStateOf(false) }
+    var url by rememberSaveable { mutableStateOf("") }
+    var appName by rememberSaveable { mutableStateOf("") }
+    var maxDepth by rememberSaveable { mutableIntStateOf(3) }
+    var downloadCdn by rememberSaveable { mutableStateOf(true) }
+    var followLinks by rememberSaveable { mutableStateOf(true) }
+    var maxFiles by rememberSaveable { mutableIntStateOf(500) }
+    var maxTotalSizeMb by rememberSaveable { mutableIntStateOf(200) }
+    var skipPatterns by rememberSaveable { mutableStateOf("") }
+    var timeoutSeconds by rememberSaveable { mutableIntStateOf(30) }
+    var showAdvanced by rememberSaveable { mutableStateOf(false) }
 
-    var scrapeProgress by remember { mutableStateOf<WebsiteScraper.ScrapeProgress?>(null) }
-
+    val isScraping = state is OfflinePackDraftState.Scraping
+    val scrapeProgress = (state as? OfflinePackDraftState.Scraping)?.progress
+    if (state is OfflinePackDraftState.Ready) {
+        OfflinePackPreviewScreen(state.draft, onClosePreview) { onSavePack(state.draft) }
+        return
+    }
+    if (state is OfflinePackDraftState.Failed) {
+        WtaAlertDialog(
+            onDismissRequest = onDismissError,
+            title = Strings.failed,
+            text = state.message,
+            confirmButton = { TextButton(onClick = onDismissError) { Text(Strings.close) } }
+        )
+    }
     val startScrape = {
         if (url.isNotBlank() && !isScraping) {
-            val finalUrl = if (url.startsWith("http")) url else "https://$url"
-            scrapeProgress = null
+            val input = url.trim()
+            val finalUrl = if (input.startsWith("http://", true) || input.startsWith("https://", true)) input else "https://$input"
             onStartScrape(
-                appName, finalUrl, maxDepth, downloadCdn,
-                followLinks, maxFiles, maxTotalSizeMb, skipPatterns, timeoutSeconds
-            ) { progress -> scrapeProgress = progress }
+                appName,
+                WebsiteScraper.ScrapeConfig(
+                    url = finalUrl,
+                    maxDepth = maxDepth,
+                    downloadCdnResources = downloadCdn,
+                    followLinks = followLinks,
+                    maxFiles = maxFiles,
+                    maxTotalSize = maxTotalSizeMb * 1024L * 1024L,
+                    skipPatterns = skipPatterns.split(',', ' ', ';').map(String::trim).filter(String::isNotEmpty),
+                    timeoutSeconds = timeoutSeconds
+                )
+            )
         }
     }
 
@@ -388,7 +405,7 @@ fun CreateOfflinePackScreen(
                     Text(Strings.preparing, modifier = Modifier.padding(16.dp))
                 }
                 if (isScraping && scrapeProgress != null) {
-                    val progress = scrapeProgress!!
+                    val progress = scrapeProgress
 
                     val animatedFileCount by animateIntAsState(
                         targetValue = progress.downloadedFiles,

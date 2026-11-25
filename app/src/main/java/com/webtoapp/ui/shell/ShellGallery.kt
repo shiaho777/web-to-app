@@ -47,6 +47,10 @@ import com.webtoapp.ui.design.WtaLoadingIndicator
 import com.webtoapp.ui.shared.AspectRatioSurface
 import com.webtoapp.ui.shared.GalleryPlaybackSpeedMenu
 import com.webtoapp.ui.shared.GalleryVideoTitle
+import com.webtoapp.ui.shared.GalleryVideoResume
+import com.webtoapp.ui.shared.GalleryWatchHistory
+import com.webtoapp.ui.shared.SaveGalleryPlaybackOnStop
+import com.webtoapp.ui.shared.galleryMatchesSearch
 import com.webtoapp.ui.shared.applyGalleryPlaybackSpeed
 import com.webtoapp.ui.shared.ZoomableState
 import com.webtoapp.ui.shared.zoomable
@@ -62,8 +66,10 @@ fun ShellGalleryPlayer(
     onBack: () -> Unit,
     positionKeySuffix: String? = null
 ) {
+    val libraryKey = positionKeySuffix ?: "shell"
+    val context = LocalContext.current
     if (galleryConfig.useDeviceFolder) {
-        GalleryDeviceFolderLibrary(positionKeySuffix ?: "shell", onBack) { videos, index, back ->
+        GalleryDeviceFolderLibrary(libraryKey, onBack) { videos, index, history, folderIds, back ->
             ShellGalleryPlayback(
                 galleryConfig = galleryConfig.copy(
                     items = videos,
@@ -74,11 +80,23 @@ fun ShellGalleryPlayer(
                 ),
                 onBack = back,
                 startIndex = index,
-                useDeviceFiles = true
+                useDeviceFiles = true,
+                history = history,
+                folderIds = folderIds
             )
         }
     } else {
-        GalleryFolderNavigator(galleryConfig.categories, onBack) { categoryId, back ->
+        val history = remember(libraryKey) { GalleryWatchHistory(context, "$libraryKey/bundled") }
+        val watched = history.latestEntry.collectAsState()
+        GalleryFolderNavigator(
+            galleryConfig.categories,
+            onBack,
+            latestVideo = {
+                watched.value?.takeIf { entry ->
+                    galleryConfig.items.any { it.watchId() == entry.videoId && it.type.equals("VIDEO", true) }
+                }
+            }
+        ) { categoryId, videoId, back ->
             val scopedConfig = if (categoryId == null) galleryConfig else galleryConfig.copy(
                 items = galleryConfig.items.filter { it.categoryId == categoryId },
                 rememberPosition = false
@@ -87,7 +105,9 @@ fun ShellGalleryPlayer(
                 galleryConfig = scopedConfig,
                 onBack = back,
                 positionKeySuffix = positionKeySuffix,
-                scanAssetsIfEmpty = categoryId == null
+                scanAssetsIfEmpty = categoryId == null,
+                history = history,
+                startVideoId = videoId
             )
         }
     }
@@ -101,7 +121,10 @@ private fun ShellGalleryPlayback(
     positionKeySuffix: String? = null,
     startIndex: Int? = null,
     useDeviceFiles: Boolean = false,
-    scanAssetsIfEmpty: Boolean = false
+    scanAssetsIfEmpty: Boolean = false,
+    history: GalleryWatchHistory,
+    folderIds: List<String> = emptyList(),
+    startVideoId: String? = null
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -138,8 +161,9 @@ private fun ShellGalleryPlayback(
         return
     }
 
+    val initialVideoPage = effectiveItems.indexOfFirst { it.watchId() == startVideoId }.takeIf { it >= 0 }
     val pagerState = androidx.compose.foundation.pager.rememberPagerState(
-        initialPage = startIndex?.coerceIn(effectiveItems.indices) ?: 0,
+        initialPage = initialVideoPage ?: startIndex?.coerceIn(effectiveItems.indices) ?: 0,
         pageCount = { effectiveItems.size }
     )
 
@@ -153,14 +177,15 @@ private fun ShellGalleryPlayback(
         if (positionKeySuffix.isNullOrBlank()) SHELL_GALLERY_POSITION_KEY
         else "${SHELL_GALLERY_POSITION_KEY}_$positionKeySuffix"
     }
-    var positionRestored by remember { mutableStateOf(!galleryConfig.rememberPosition) }
-    var showGrid by remember { mutableStateOf(startIndex == null) }
-    var enteredInPager by remember { mutableStateOf(startIndex != null) }
+    val rememberLegacyPosition = galleryConfig.rememberPosition && effectiveItems.none { it.type.equals("VIDEO", true) }
+    var positionRestored by remember { mutableStateOf(!rememberLegacyPosition) }
+    var showGrid by remember { mutableStateOf(startIndex == null && initialVideoPage == null) }
+    var enteredInPager by remember { mutableStateOf(!showGrid) }
     androidx.activity.compose.BackHandler(enabled = !showGrid && !enteredInPager) {
         showGrid = true
     }
     LaunchedEffect(effectiveItems) {
-        if (!positionRestored && effectiveItems.isNotEmpty()) {
+        if (rememberLegacyPosition && !positionRestored && effectiveItems.isNotEmpty()) {
             positionRestored = true
             val saved = positionPrefs.getInt(positionKey, 0)
                 .coerceIn(0, effectiveItems.size - 1)
@@ -172,7 +197,7 @@ private fun ShellGalleryPlayback(
         }
     }
     LaunchedEffect(currentIndex) {
-        if (galleryConfig.rememberPosition && positionRestored && currentIndex in effectiveItems.indices) {
+        if (rememberLegacyPosition && positionRestored && currentIndex in effectiveItems.indices) {
             positionPrefs.edit().putInt(positionKey, currentIndex).apply()
         }
     }
@@ -185,14 +210,18 @@ private fun ShellGalleryPlayback(
         }
     }
 
+    var continueRequested by remember { mutableStateOf(false) }
+
         if (showGrid) {
         ShellGalleryOverview(
             galleryConfig = galleryConfig,
             items = effectiveItems,
             bgColor = bgColor,
             assetDecryptor = assetDecryptor,
+            history = history,
             onBack = onBack,
-            onItemClick = { index ->
+            onItemClick = { index, resume ->
+                continueRequested = resume
                 scope.launch {
                     showGrid = false
                     pagerState.scrollToPage(index.coerceIn(0, effectiveItems.size - 1))
@@ -203,7 +232,7 @@ private fun ShellGalleryPlayback(
     }
 
     var showControls by remember { mutableStateOf(true) }
-    var isPlaying by remember { mutableStateOf(startIndex != null || galleryConfig.autoPlay) }
+    var isPlaying by remember { mutableStateOf(continueRequested || startIndex != null || initialVideoPage != null || galleryConfig.autoPlay) }
     var playbackSpeed by rememberSaveable { mutableFloatStateOf(1f) }
     var speedMenuOpen by remember { mutableStateOf(false) }
     var thumbnailBarHeight by remember { mutableIntStateOf(0) }
@@ -259,6 +288,9 @@ private fun ShellGalleryPlayback(
                     "VIDEO" -> {
                         ShellGalleryVideoPlayer(
                             item = item,
+                            resume = remember(history, item.watchId(), folderIds) {
+                                GalleryVideoResume(history, item.watchId(), item.name.ifBlank { item.assetPath.substringAfterLast('/') }, folderIds)
+                            },
                             assetDecryptor = assetDecryptor,
                             isCurrentPage = page == currentIndex,
                             isPlaying = isPlaying && page == currentIndex,
@@ -604,8 +636,9 @@ fun ShellGalleryImageViewer(
 }
 
 @Composable
-fun ShellGalleryVideoPlayer(
+private fun ShellGalleryVideoPlayer(
     item: com.webtoapp.core.shell.GalleryShellItem,
+    resume: GalleryVideoResume,
     assetDecryptor: com.webtoapp.core.crypto.AssetDecryptor,
     isCurrentPage: Boolean,
     isPlaying: Boolean,
@@ -649,17 +682,21 @@ fun ShellGalleryVideoPlayer(
 
                 withContext(Dispatchers.Main) {
                     mediaPlayer.setOnPreparedListener { mp ->
-                        isPrepared = true
                         duration = mp.duration.toLong()
                         videoWidth = mp.videoWidth
                         videoHeight = mp.videoHeight
                         surfaceHolder?.let { mp.setDisplay(it) }
+                        resume.restore(mp) {
+                            currentPosition = mp.currentPosition.toLong()
+                            isPrepared = true
+                        }
                     }
                     mediaPlayer.setOnVideoSizeChangedListener { _, width, height ->
                         videoWidth = width
                         videoHeight = height
                     }
                     mediaPlayer.setOnCompletionListener {
+                        resume.complete()
                         if (isActivePage) onVideoCompleted()
                     }
                     mediaPlayer.setOnErrorListener { _, _, _ ->
@@ -754,6 +791,7 @@ fun ShellGalleryVideoPlayer(
         player = mediaPlayer
 
         onDispose {
+            if (isPrepared) resume.save(mediaPlayer)
             job.cancel()
             try {
                 assetFd?.close()
@@ -775,9 +813,11 @@ fun ShellGalleryVideoPlayer(
         }
     }
 
+    SaveGalleryPlaybackOnStop(resume, player, isPrepared)
     LaunchedEffect(isPlaying, isPrepared, isCurrentPage, playbackSpeed) {
         player?.let { mp ->
             if (isPrepared) {
+                resume.setActive(mp, isCurrentPage, isPlaying)
                 if (isPlaying && isCurrentPage) {
                     if (!mp.isPlaying) mp.start()
                     mp.applyGalleryPlaybackSpeed(playbackSpeed)
@@ -808,6 +848,7 @@ fun ShellGalleryVideoPlayer(
             player?.let { mp ->
                 try {
                     currentPosition = mp.currentPosition.toLong()
+                    resume.tick(mp)
                 } catch (e: Exception) {
 
                 }
@@ -1088,9 +1129,16 @@ private fun ShellGalleryOverview(
     items: List<com.webtoapp.core.shell.GalleryShellItem>,
     bgColor: Color,
     assetDecryptor: com.webtoapp.core.crypto.AssetDecryptor,
+    history: GalleryWatchHistory,
     onBack: () -> Unit,
-    onItemClick: (Int) -> Unit
+    onItemClick: (Int, Boolean) -> Unit
 ) {
+    var query by rememberSaveable { mutableStateOf("") }
+    val filtered = remember(items, query) {
+        items.filter { galleryMatchesSearch(it.name.ifBlank { it.assetPath.substringAfterLast('/') }, query) }
+    }
+    val openFiltered: (Int) -> Unit = { index -> onItemClick(items.indexOf(filtered[index]), false) }
+    val watched by history.latestEntry.collectAsState()
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -1123,14 +1171,32 @@ private fun ShellGalleryOverview(
             }
         }
 
+        Surface {
+            GallerySearchField(query, { query = it })
+        }
+        if (query.isBlank()) {
+            watched?.takeIf { entry -> items.any { it.watchId() == entry.videoId } }?.let { entry ->
+                Surface {
+                    GalleryContinueWatching(entry) {
+                        onItemClick(items.indexOfFirst { it.watchId() == entry.videoId }, true)
+                    }
+                }
+            }
+        }
+        if (filtered.isEmpty()) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text(Strings.noSearchResults, color = Color.White)
+            }
+            return@Column
+        }
         when (galleryConfig.defaultView.uppercase()) {
-            "LIST" -> ShellGalleryListView(items = items, assetDecryptor = assetDecryptor, onItemClick = onItemClick)
-            "TIMELINE" -> ShellGalleryListView(items = items, assetDecryptor = assetDecryptor, onItemClick = onItemClick)
+            "LIST" -> ShellGalleryListView(items = filtered, assetDecryptor = assetDecryptor, onItemClick = openFiltered)
+            "TIMELINE" -> ShellGalleryListView(items = filtered, assetDecryptor = assetDecryptor, onItemClick = openFiltered)
             else -> ShellGalleryGridView(
-                items = items,
+                items = filtered,
                 columns = galleryConfig.gridColumns.coerceIn(1, 6),
                 assetDecryptor = assetDecryptor,
-                onItemClick = onItemClick
+                onItemClick = openFiltered
             )
         }
     }
@@ -1213,3 +1279,5 @@ private fun ShellGalleryListView(
         }
     }
 }
+
+private fun com.webtoapp.core.shell.GalleryShellItem.watchId(): String = id.ifBlank { assetPath }

@@ -47,6 +47,12 @@ import com.webtoapp.ui.design.WtaFadeOut
 import com.webtoapp.ui.shared.AspectRatioSurface
 import com.webtoapp.ui.shared.GalleryPlaybackSpeedMenu
 import com.webtoapp.ui.shared.GalleryVideoTitle
+import com.webtoapp.ui.shared.GalleryVideoResume
+import com.webtoapp.ui.shared.GalleryWatchHistory
+import com.webtoapp.ui.shared.SaveGalleryPlaybackOnStop
+import com.webtoapp.ui.shared.galleryMatchesSearch
+import com.webtoapp.ui.shell.GalleryContinueWatching
+import com.webtoapp.ui.shell.GallerySearchField
 import com.webtoapp.ui.shared.applyGalleryPlaybackSpeed
 import com.webtoapp.ui.shared.ZoomableState
 import com.webtoapp.ui.shared.zoomable
@@ -56,12 +62,14 @@ import java.io.File
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun GalleryPlayerScreen(
+internal fun GalleryPlayerScreen(
     config: GalleryConfig,
     startIndex: Int,
     onBack: () -> Unit,
     positionKey: String? = null,
-    startInOverview: Boolean = true
+    startInOverview: Boolean = true,
+    history: GalleryWatchHistory,
+    startVideoId: String? = null
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -81,7 +89,7 @@ fun GalleryPlayerScreen(
     var items by remember(config) { mutableStateOf(initialOrder) }
 
     val pagerState = rememberPagerState(
-        initialPage = startIndex,
+        initialPage = initialOrder.indexOfFirst { it.id == startVideoId }.takeIf { it >= 0 } ?: startIndex,
         pageCount = { items.size }
     )
 
@@ -109,13 +117,17 @@ fun GalleryPlayerScreen(
         }
     }
 
+    var continueRequested by remember { mutableStateOf(false) }
+
     if (showGrid) {
         GalleryOverview(
             config = config,
             items = items,
             bgColor = bgColor,
+            history = history,
             onBack = onBack,
-            onItemClick = { index ->
+            onItemClick = { index, resume ->
+                continueRequested = resume
                 scope.launch {
                     showGrid = false
                     pagerState.scrollToPage(index.coerceIn(0, items.size - 1))
@@ -126,7 +138,7 @@ fun GalleryPlayerScreen(
     }
 
     var showControls by remember { mutableStateOf(true) }
-    var isPlaying by remember { mutableStateOf(config.autoPlay) }
+    var isPlaying by remember { mutableStateOf(continueRequested || startVideoId != null || config.autoPlay) }
     var playbackSpeed by rememberSaveable { mutableFloatStateOf(1f) }
     var speedMenuOpen by remember { mutableStateOf(false) }
     var thumbnailBarHeight by remember { mutableIntStateOf(0) }
@@ -183,6 +195,9 @@ fun GalleryPlayerScreen(
                     GalleryItemType.VIDEO -> {
                         GalleryVideoPlayer(
                             item = item,
+                            resume = remember(history, item.id) {
+                                GalleryVideoResume(history, item.id, item.name.ifBlank { File(item.path).name }, emptyList())
+                            },
                             isCurrentPage = page == currentIndex,
                             isPlaying = isPlaying && page == currentIndex,
                             enableAudio = config.enableAudio,
@@ -517,8 +532,9 @@ fun GalleryImageViewer(
 }
 
 @Composable
-fun GalleryVideoPlayer(
+private fun GalleryVideoPlayer(
     item: GalleryItem,
+    resume: GalleryVideoResume,
     isCurrentPage: Boolean,
     isPlaying: Boolean,
     enableAudio: Boolean,
@@ -550,17 +566,21 @@ fun GalleryVideoPlayer(
             try {
                 setDataSource(item.path)
                 setOnPreparedListener { mp ->
-                    isPrepared = true
                     duration = mp.duration.toLong()
                     videoWidth = mp.videoWidth
                     videoHeight = mp.videoHeight
                     surfaceHolder?.let { mp.setDisplay(it) }
+                    resume.restore(mp) {
+                        currentPosition = mp.currentPosition.toLong()
+                        isPrepared = true
+                    }
                 }
                 setOnVideoSizeChangedListener { _, width, height ->
                     videoWidth = width
                     videoHeight = height
                 }
                 setOnCompletionListener {
+                    resume.complete()
                     if (isActivePage) onVideoCompleted()
                 }
                 setOnErrorListener { _, _, _ -> true }
@@ -572,6 +592,7 @@ fun GalleryVideoPlayer(
         player = mediaPlayer
 
         onDispose {
+            if (isPrepared) resume.save(mediaPlayer)
             try {
                 mediaPlayer.release()
             } catch (e: Exception) {
@@ -584,9 +605,11 @@ fun GalleryVideoPlayer(
         }
     }
 
+    SaveGalleryPlaybackOnStop(resume, player, isPrepared)
     LaunchedEffect(isPlaying, isPrepared, isCurrentPage, playbackSpeed, isFastForwarding) {
         player?.let { mp ->
             if (isPrepared) {
+                resume.setActive(mp, isCurrentPage, isPlaying)
                 if (isPlaying && isCurrentPage) {
                     if (!mp.isPlaying) mp.start()
                     mp.applyGalleryPlaybackSpeed(if (isFastForwarding) 2f else playbackSpeed)
@@ -617,6 +640,7 @@ fun GalleryVideoPlayer(
             player?.let { mp ->
                 try {
                     currentPosition = mp.currentPosition.toLong()
+                    resume.tick(mp)
                 } catch (e: Exception) {
 
                 }
@@ -839,9 +863,16 @@ private fun GalleryOverview(
     config: GalleryConfig,
     items: List<GalleryItem>,
     bgColor: Color,
+    history: GalleryWatchHistory,
     onBack: () -> Unit,
-    onItemClick: (Int) -> Unit
+    onItemClick: (Int, Boolean) -> Unit
 ) {
+    var query by rememberSaveable { mutableStateOf("") }
+    val filtered = remember(items, query) {
+        items.filter { galleryMatchesSearch(it.name.ifBlank { File(it.path).name }, query) }
+    }
+    val openFiltered: (Int) -> Unit = { index -> onItemClick(items.indexOf(filtered[index]), false) }
+    val watched by history.latestEntry.collectAsState()
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -880,13 +911,31 @@ private fun GalleryOverview(
             }
             return@Column
         }
+        Surface {
+            GallerySearchField(query, { query = it })
+        }
+        if (query.isBlank()) {
+            watched?.takeIf { entry -> items.any { it.id == entry.videoId } }?.let { entry ->
+                Surface {
+                    GalleryContinueWatching(entry) {
+                        onItemClick(items.indexOfFirst { it.id == entry.videoId }, true)
+                    }
+                }
+            }
+        }
+        if (filtered.isEmpty()) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text(Strings.noSearchResults, color = Color.White)
+            }
+            return@Column
+        }
         when (config.defaultView) {
-            GalleryViewMode.LIST -> GalleryListView(items = items, onItemClick = onItemClick)
-            GalleryViewMode.TIMELINE -> GalleryTimelineView(items = items, onItemClick = onItemClick)
+            GalleryViewMode.LIST -> GalleryListView(items = filtered, onItemClick = openFiltered)
+            GalleryViewMode.TIMELINE -> GalleryTimelineView(items = filtered, onItemClick = openFiltered)
             else -> GalleryGridView(
-                items = items,
+                items = filtered,
                 columns = config.gridColumns.coerceIn(1, 6),
-                onItemClick = onItemClick
+                onItemClick = openFiltered
             )
         }
     }

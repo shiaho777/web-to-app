@@ -14595,6 +14595,71 @@ object StringsE {
         AppLanguage.KOREAN -> "보낸 앱이 텍스트/설정/코드 파일(txt/json/xml/py/js…)을 받을 수 있습니다. 내용은 공유 받은함에 도착합니다"
     }
 
+    val galleryContinueWatching: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "继续观看"
+        AppLanguage.ENGLISH -> "Continue watching"
+        AppLanguage.ARABIC -> "متابعة المشاهدة"
+        AppLanguage.PORTUGUESE -> "Continuar assistindo"
+        AppLanguage.SPANISH -> "Seguir viendo"
+        AppLanguage.FRENCH -> "Reprendre la lecture"
+        AppLanguage.GERMAN -> "Weiterschauen"
+        AppLanguage.RUSSIAN -> "Продолжить просмотр"
+        AppLanguage.JAPANESE -> "続きを見る"
+        AppLanguage.KOREAN -> "이어 보기"
+    }
+
+    val galleryResumeUnavailable: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "找不到上次观看的视频。它可能已移动或删除。"
+        AppLanguage.ENGLISH -> "The last watched video could not be found. It may have been moved or deleted."
+        AppLanguage.ARABIC -> "تعذّر العثور على آخر فيديو شاهدته. ربما نُقل أو حُذف."
+        AppLanguage.PORTUGUESE -> "O último vídeo assistido não foi encontrado. Ele pode ter sido movido ou apagado."
+        AppLanguage.SPANISH -> "No se ha encontrado el último vídeo visto. Es posible que se haya movido o eliminado."
+        AppLanguage.FRENCH -> "La dernière vidéo regardée est introuvable. Elle a peut-être été déplacée ou supprimée."
+        AppLanguage.GERMAN -> "Das zuletzt angesehene Video wurde nicht gefunden. Es wurde möglicherweise verschoben oder gelöscht."
+        AppLanguage.RUSSIAN -> "Последнее просмотренное видео не найдено. Возможно, его переместили или удалили."
+        AppLanguage.JAPANESE -> "前回視聴した動画が見つかりません。移動または削除された可能性があります。"
+        AppLanguage.KOREAN -> "마지막으로 본 동영상을 찾을 수 없습니다. 이동되었거나 삭제되었을 수 있습니다."
+    }
+
+    val offlinePackPreviewTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "离线预览"
+        AppLanguage.ENGLISH -> "Offline preview"
+        AppLanguage.ARABIC -> "معاينة دون اتصال"
+        AppLanguage.PORTUGUESE -> "Prévia offline"
+        AppLanguage.SPANISH -> "Vista previa sin conexión"
+        AppLanguage.FRENCH -> "Aperçu hors ligne"
+        AppLanguage.GERMAN -> "Offline-Vorschau"
+        AppLanguage.RUSSIAN -> "Офлайн-просмотр"
+        AppLanguage.JAPANESE -> "オフラインプレビュー"
+        AppLanguage.KOREAN -> "오프라인 미리보기"
+    }
+
+    val offlinePackMissingResources: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "离线不可用的资源（%d）"
+        AppLanguage.ENGLISH -> "Resources unavailable offline (%d)"
+        AppLanguage.ARABIC -> "موارد غير متاحة دون اتصال (%d)"
+        AppLanguage.PORTUGUESE -> "Recursos indisponíveis offline (%d)"
+        AppLanguage.SPANISH -> "Recursos no disponibles sin conexión (%d)"
+        AppLanguage.FRENCH -> "Ressources indisponibles hors ligne (%d)"
+        AppLanguage.GERMAN -> "Offline nicht verfügbare Ressourcen (%d)"
+        AppLanguage.RUSSIAN -> "Ресурсы, недоступные офлайн (%d)"
+        AppLanguage.JAPANESE -> "オフラインで利用できないリソース（%d）"
+        AppLanguage.KOREAN -> "오프라인에서 사용할 수 없는 리소스 (%d)"
+    }
+
+    val offlinePackNoMissingResources: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "当前预览未发现缺失资源"
+        AppLanguage.ENGLISH -> "No missing resources found in this preview"
+        AppLanguage.ARABIC -> "لم يُعثر على موارد ناقصة في هذه المعاينة"
+        AppLanguage.PORTUGUESE -> "Nenhum recurso ausente nesta prévia"
+        AppLanguage.SPANISH -> "No se han encontrado recursos faltantes en esta vista previa"
+        AppLanguage.FRENCH -> "Aucune ressource manquante dans cet aperçu"
+        AppLanguage.GERMAN -> "In dieser Vorschau fehlen keine Ressourcen"
+        AppLanguage.RUSSIAN -> "В этом просмотре отсутствующие ресурсы не найдены"
+        AppLanguage.JAPANESE -> "このプレビューで不足しているリソースは見つかりませんでした"
+        AppLanguage.KOREAN -> "이 미리보기에서 누락된 리소스가 발견되지 않았습니다."
+    }
+
     val signingBackupTitle: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "备份独立签名密钥"
         AppLanguage.ENGLISH -> "Back up per-app signing keys"
