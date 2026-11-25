@@ -238,7 +238,6 @@ class ApkBuilder(private val context: Context) {
     private val templateProvider = CompositeTemplateProvider.default(context)
     private val signer = JarSigner(context)
     private val axmlRebuilder = AxmlRebuilder()
-    private val arscRebuilder = ArscRebuilder()
     private val featureStackGrafter = FeatureStackGrafter(axmlRebuilder, ArscPackageGrafter())
     private val logDirectory = BuildLogger(context)
     private val encryptedApkBuilder = EncryptedApkBuilder(context)
@@ -909,6 +908,7 @@ class ApkBuilder(private val context: Context) {
                             config = config,
                             iconPath = webApp.iconPath,
                             iconBackgroundColor = webApp.apkExportConfig?.iconBackgroundColor,
+                            preserveIconShape = webApp.apkExportConfig?.preserveIconShape == true,
                             splashMediaPath = webApp.getSplashMediaPath(),
                             mediaContentPath = mediaContentPath,
                             bgmPlaylistPaths = bgmPlaylistPaths,
@@ -954,6 +954,7 @@ class ApkBuilder(private val context: Context) {
                             config = config,
                             iconPath = webApp.iconPath,
                             iconBackgroundColor = webApp.apkExportConfig?.iconBackgroundColor,
+                            preserveIconShape = webApp.apkExportConfig?.preserveIconShape == true,
                             splashMediaPath = webApp.getSplashMediaPath(),
                             mediaContentPath = mediaContentPath,
                             bgmPlaylistPaths = bgmPlaylistPaths,
@@ -1002,6 +1003,7 @@ class ApkBuilder(private val context: Context) {
                         config = config,
                         iconPath = webApp.iconPath,
                         iconBackgroundColor = webApp.apkExportConfig?.iconBackgroundColor,
+                        preserveIconShape = webApp.apkExportConfig?.preserveIconShape == true,
                         splashMediaPath = webApp.getSplashMediaPath(),
                         mediaContentPath = mediaContentPath,
                         bgmPlaylistPaths = bgmPlaylistPaths,
@@ -1348,6 +1350,7 @@ class ApkBuilder(private val context: Context) {
         config: ApkConfig,
         iconPath: String?,
         iconBackgroundColor: String? = null,
+        preserveIconShape: Boolean = false,
         splashMediaPath: String?,
         mediaContentPath: String? = null,
         bgmPlaylistPaths: List<String> = emptyList(),
@@ -1381,8 +1384,9 @@ class ApkBuilder(private val context: Context) {
             "modifyApk started, mode=${mode.name}, encryption=${encryptionConfig.enabled}, " +
                 "abiFilter=${abiFilters.ifEmpty { "all" }}, source=${sourceApk.name}"
         )
-        val iconBitmap = iconPath?.let { template.loadBitmap(it) }
-            ?: generateDefaultIcon(config.appName, config.themeType, logger)
+        val customIcon = iconPath?.let(template::loadBitmap)
+        val useOriginalIcon = preserveIconShape && customIcon != null
+        val iconBitmap = customIcon ?: generateDefaultIcon(config.appName, config.themeType, logger)
         var hasConfigFile = false
         var strippedNativeLibSize = 0L
         val replacedIconPaths = mutableSetOf<String>()
@@ -1545,10 +1549,12 @@ class ApkBuilder(private val context: Context) {
 
                         entry.name == "resources.arsc" -> {
                             val originalData = zipIn.getInputStream(entry).readBytes()
+                            val arscRebuilder = ArscRebuilder()
                             var modifiedData = arscRebuilder.rebuildWithNewAppNameAndIcons(
                                 originalData,
                                 config.appName,
-                                replaceIcons = true
+                                replaceIcons = true,
+                                preserveIconShape = useOriginalIcon
                             )
 
                             discoveredOldIconPaths = arscRebuilder.getLastDiscoveredIconPaths()
@@ -1574,7 +1580,7 @@ class ApkBuilder(private val context: Context) {
                                 ArscRebuilder.LauncherIconKind.FOREGROUND ->
                                     template.createAdaptiveForegroundIcon(iconBitmap, ADAPTIVE_ICON_PX)
                                 ArscRebuilder.LauncherIconKind.ROUND ->
-                                    template.createRoundIcon(iconBitmap, iconPixelSizeForDensity(spec.densityDpi))
+                                    createRoundLauncherIcon(iconBitmap, iconPixelSizeForDensity(spec.densityDpi), useOriginalIcon)
                                 ArscRebuilder.LauncherIconKind.LAUNCHER ->
                                     template.scaleBitmapToPng(iconBitmap, iconPixelSizeForDensity(spec.densityDpi))
                                 null -> template.createAdaptiveForegroundIcon(iconBitmap, ADAPTIVE_ICON_PX)
@@ -1705,13 +1711,13 @@ class ApkBuilder(private val context: Context) {
 
                 if (mode == ModifyApkMode.FULL) {
                     if (iconBitmap != null && replacedIconPaths.isEmpty()) {
-                        addIconsToApk(zipOut, iconBitmap)
+                        addIconsToApk(zipOut, iconBitmap, useOriginalIcon)
                         logger.log("Added PNG mipmap icons (no existing PNG icons found in template)")
                     } else if (iconBitmap != null) {
                         logger.log("Replaced ${replacedIconPaths.size} existing PNG icon entries")
                     }
 
-                    if (iconBitmap != null) {
+                    if (iconBitmap != null && !useOriginalIcon) {
                         addAdaptiveIconPngs(zipOut, iconBitmap, entryNames)
 
                         val bgColor = ApkTemplate.parseIconBackgroundColor(iconBackgroundColor)
@@ -3670,7 +3676,7 @@ builtins.__import__ = _w2a_import
             }
             ?: "A"
 
-    private fun addIconsToApk(zipOut: ZipOutputStream, bitmap: Bitmap) {
+    private fun addIconsToApk(zipOut: ZipOutputStream, bitmap: Bitmap, preserveIconShape: Boolean) {
 
         ApkTemplate.ICON_PATHS.forEach { (path, size) ->
             val iconBytes = template.scaleBitmapToPng(bitmap, size)
@@ -3678,10 +3684,13 @@ builtins.__import__ = _w2a_import
         }
 
         ApkTemplate.ROUND_ICON_PATHS.forEach { (path, size) ->
-            val iconBytes = template.createRoundIcon(bitmap, size)
+            val iconBytes = createRoundLauncherIcon(bitmap, size, preserveIconShape)
             writeEntryDeflated(zipOut, path, iconBytes)
         }
     }
+
+    private fun createRoundLauncherIcon(bitmap: Bitmap, size: Int, preserveIconShape: Boolean): ByteArray =
+        if (preserveIconShape) template.scaleBitmapToPng(bitmap, size) else template.createRoundIcon(bitmap, size)
 
     private fun addAdaptiveIconPngs(
         zipOut: ZipOutputStream,

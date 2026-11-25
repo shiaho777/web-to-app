@@ -321,6 +321,9 @@ object Strings {
     val labelUrl: String get() = StringsA.labelUrl
     val labelIcon: String get() = StringsA.labelIcon
     val iconBackground: String get() = StringsA.iconBackground
+    val appIconStyle: String get() = StringsA.appIconStyle
+    val adaptiveAppIcon: String get() = StringsA.adaptiveAppIcon
+    val preserveAppIcon: String get() = StringsA.preserveAppIcon
     val iconBackgroundDesc: String get() = StringsA.iconBackgroundDesc
     val labelBasicInfo: String get() = StringsA.labelBasicInfo
     val labelAdvancedConfig: String get() = StringsA.labelAdvancedConfig

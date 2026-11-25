@@ -344,6 +344,11 @@ fun CreateAppScreen(
                             viewModel.updateEditState {
                                 copy(apkExportConfig = apkExportConfig.copy(iconBackgroundColor = color))
                             }
+                        },
+                        onPreserveIconShapeChange = { preserve ->
+                            viewModel.updateEditState {
+                                copy(apkExportConfig = apkExportConfig.copy(preserveIconShape = preserve))
+                            }
                         }
                     )
                 }
@@ -930,7 +935,8 @@ fun BasicInfoCard(
     onUrlChange: (String) -> Unit,
     onSelectIcon: () -> Unit,
     onSelectIconFromLibrary: (String) -> Unit = {},
-    onIconBackgroundColorChange: (String?) -> Unit = {}
+    onIconBackgroundColorChange: (String?) -> Unit = {},
+    onPreserveIconShapeChange: (Boolean) -> Unit = {}
 ) {
     WtaSettingCard {
         val coroutineScope = rememberCoroutineScope()
@@ -951,6 +957,8 @@ fun BasicInfoCard(
                     websiteUrl = if (editState.appType == AppType.WEB) editState.url else null,
                     iconBackgroundColor = editState.apkExportConfig.iconBackgroundColor,
                     onIconBackgroundColorChange = onIconBackgroundColorChange,
+                    preserveIconShape = editState.apkExportConfig.preserveIconShape,
+                    onPreserveIconShapeChange = onPreserveIconShapeChange,
                     onSelectFromGallery = onSelectIcon,
                     onSelectFromLibrary = onSelectIconFromLibrary
                 )

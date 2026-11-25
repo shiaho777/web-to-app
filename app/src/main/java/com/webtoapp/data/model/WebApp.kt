@@ -23,15 +23,6 @@ enum class AppType {
     GO_APP,
     MULTI_WEB;
 
-    /**
-     * Whether this app type execves native server runtimes (Node/PHP/Python/Go/WordPress) from
-     * app-private storage. Such apps must keep `targetSdk <= 28`: starting at targetSdk 29 the
-     * platform enforces write-xor-execute (W^X) on the app's writable data dir, which blocks
-     * execve on the bundled binaries. WebView-only types are free to raise targetSdk for Play.
-     *
-     * Single source of truth for "server runtime app" — also used by the Play policy checker
-     * (was previously duplicated as `AabExportCoordinator.PROCESS_EXEC_APP_TYPES`).
-     */
     val requiresProcessExec: Boolean
         get() = this in REQUIRES_PROCESS_EXEC
 
@@ -44,11 +35,6 @@ enum class AppType {
             WORDPRESS
         )
 
-        /**
-         * Parse a persisted app-type string (e.g. [MultiWebSite.appType]) into an [AppType],
-         * null for unknown values. The multi-web site type is stored as a raw string, so
-         * gating helpers need this bridge to reuse [requiresProcessExec].
-         */
         fun fromPersistedName(name: String?): AppType? =
             entries.firstOrNull { it.name.equals(name, ignoreCase = true) }
     }
@@ -112,17 +98,10 @@ data class WebApp(
     val translateEnabled: Boolean = false,
     val translateConfig: TranslateConfig? = null,
 
-    // Plugin attachments. Column names keep the legacy `extension*` spelling so
-    // existing databases migrate without a schema change.
     @ColumnInfo(name = "extensionEnabled")
     val pluginsEnabled: Boolean = false,
     @ColumnInfo(name = "extensionModuleIds")
     val pluginIds: List<String> = emptyList(),
-    /**
-     * Retired: the old injected floating-button icon. Plugin entries are now
-     * native (toolbar/menu/floating handle). The column stays so shipped v45
-     * databases open without a schema bump — Room verifies the table shape.
-     */
     @Deprecated("Plugin entries are native; the injected FAB no longer exists.")
     val extensionFabIcon: String? = null,
 
@@ -135,12 +114,6 @@ data class WebApp(
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis(),
 
-    /**
-     * Home-list slot when the user sorts by custom order. Lower is higher on
-     * screen. Writes must not stamp [updatedAt]. A new row stays 0 so it sorts
-     * ahead of migrated rows that share 0: custom order breaks ties by id
-     * descending. Backup restore copies the value through as-is.
-     */
     @ColumnInfo(defaultValue = "0")
     val homeSortIndex: Int = 0
 )
@@ -205,12 +178,6 @@ enum class LongPressMenuStyle {
     CONTEXT
 }
 
-/**
- * Where on the screen the pull-to-refresh gesture may start.
- * [TOP_EDGE] is the classic narrow band under the status bar (pre-2.4.5
- * behaviour, the default); [ANYWHERE] arms the pull across the whole content
- * area while the page is scrolled to the top (#511 / #515 behaviour).
- */
 enum class SwipeRefreshZone {
     TOP_EDGE,
     ANYWHERE
@@ -272,18 +239,6 @@ enum class UserAgentMode(
         null
     );
 
-    /**
-     * Maps a legacy UA-mode selection onto the equivalent [KernelFlavor].
-     *
-     * UA mode and kernel flavor used to be two independent settings that both fed the request
-     * User-Agent: the mode chose the string, the flavor chose the client-hint metadata. Setting
-     * them inconsistently produced a UA that contradicted `Sec-CH-UA`, which anti-bot systems
-     * read as a spoofing tell. Kernel flavor is now the single identity selector; persisted mode
-     * values are migrated through this mapping so existing apps keep their disguise.
-     *
-     * [CUSTOM] maps to [KernelFlavor.SYSTEM_DEFAULT] because a custom UA string is applied
-     * separately, with metadata derived from the string itself.
-     */
     fun toKernelFlavor(): com.webtoapp.core.kernel.KernelFlavor = when (this) {
         DEFAULT, CUSTOM -> com.webtoapp.core.kernel.KernelFlavor.SYSTEM_DEFAULT
         CHROME_MOBILE -> com.webtoapp.core.kernel.KernelFlavor.BLINK_CHROME
@@ -319,12 +274,6 @@ data class WebViewConfig(
     val zoomEnabled: Boolean = true,
     val swipeRefreshEnabled: Boolean = true,
     val swipeRefreshZone: SwipeRefreshZone = SwipeRefreshZone.TOP_EDGE,
-    /**
-     * System edge effect when the document scrolls past its end. On Android 12+
-     * that effect stretches the whole WebView, including `position: fixed`
-     * chrome. Off stops at the edge. Default on keeps the platform behavior
-     * for existing apps (#1193). A page's own scripted bounce is unchanged.
-     */
     val overscrollEffectEnabled: Boolean = true,
     val autoRefreshEnabled: Boolean = false,
     val autoRefreshIntervalSec: Int = 60,
@@ -334,9 +283,6 @@ data class WebViewConfig(
     val downloadLocationMode: DownloadLocationMode = DownloadLocationMode.SYSTEM_DOWNLOAD,
     val customDownloadDirUri: String = "",
     val openExternalLinks: Boolean = false,
-    // "Browser toolbar" master switch (#654 redesign): off (default) renders no toolbar
-    // at all — the page behaves fullscreen-like; on shows the toolbar with every item
-    // flag on, and the user trims individual buttons from there.
     val browserToolbarEnabled: Boolean = false,
     val toolbarShowTitle: Boolean = true,
     val toolbarShowUrl: Boolean = true,
@@ -347,18 +293,11 @@ data class WebViewConfig(
     val toolbarShowFind: Boolean = true,
     val hideToolbar: Boolean = false,
     val showStatusBarInFullscreen: Boolean = false,
-    // Issue #711: when video goes HTML5-fullscreen (onShowCustomView), force-hide the
-    // status bar even if showStatusBarInFullscreen is on; restore it on exit fullscreen.
     val hideStatusBarInVideoFullscreen: Boolean = true,
     val showNavigationBarInFullscreen: Boolean = false,
     val displayCutoutMode: DisplayCutoutMode = DisplayCutoutMode.SHORT_EDGES,
-    // Retained so saved configs and export JSON still round-trip. Fullscreen no
-    // longer hides the browser toolbar; [isBrowserToolbarVisible] ignores this flag.
     val showToolbarInFullscreen: Boolean = false,
     val fullscreenContentPaddingDp: Int = 0,
-    // Per-side overrides (#916). Nullable on purpose: stored JSON predating these
-    // fields deserializes to null, which means "follow fullscreenContentPaddingDp"
-    // — existing apps keep their uniform padding without a migration.
     val fullscreenContentPaddingTopDp: Int? = null,
     val fullscreenContentPaddingBottomDp: Int? = null,
     val fullscreenContentPaddingStartDp: Int? = null,
@@ -384,116 +323,38 @@ data class WebViewConfig(
     val followSystemDarkMode: Boolean = false,
     val longPressMenuEnabled: Boolean = false,
     val longPressMenuStyle: LongPressMenuStyle = LongPressMenuStyle.DISABLED,
-    // Off keeps today's buzz. On drops the vibration View.performLongClick adds
-    // the moment our listener returns true, and plays it only if a menu actually
-    // opens. A long-press handed back to the page still uses the engine's own
-    // haptic, which fires only when the page or a text selection consumes it.
     val longPressHapticOnActionOnly: Boolean = false,
 
     val popupBlockerEnabled: Boolean = false,
 
     val initialScale: Int = 0,
-    // Build-time per-app page zoom in percent (100 = default). A document-start
-    // script rewrites the viewport (layout width = cssWidth / zoom) so text,
-    // layout, images, and canvas scale together (#654, #1264). setInitialScale
-    // loses to the page's own viewport meta and is not the mechanism.
-    // This is THE page zoom — it moved from the runtime toolbar into Advanced
-    // Settings, so there is no runtime override layer. 0 (legacy) is 100.
     val pageZoomPercent: Int = 100,
     val viewportMode: ViewportMode = ViewportMode.DEFAULT,
     val customViewportWidth: Int = 0,
     val newWindowBehavior: NewWindowBehavior = NewWindowBehavior.SAME_WINDOW,
     val enablePaymentSchemes: Boolean = true,
 
-    /**
-     * Let third-party apps hand control **back** to this app after an app-to-app hop — the
-     * return leg of an OAuth / SSO login or an app-authorised action.
-     *
-     * Without it the page can still *open* the provider app (any non-http scheme is handed to
-     * the system), but nothing is registered to receive the callback, so the provider has
-     * nowhere to return to and the system reports that no app can handle the link.
-     *
-     * Only *return* channels are declared, never launcher schemes: claiming e.g. `weixin`
-     * would make this app compete with the real WeChat for its own links.
-     */
     val enableAppReturn: Boolean = true,
 
-    /**
-     * Extra return schemes, for providers whose callback scheme is bound to the site's own
-     * registered app id (so it cannot be shipped as a general-purpose default).
-     */
     val customAppReturnSchemes: List<String> = emptyList(),
 
-    /**
-     * Outbound Web Share. The page's `navigator.share({ text, url, files })` opens the
-     * system share sheet with the caption and the files together. The user picks the
-     * target app. On for new apps. Remote https pages get the same bridge as local ones.
-     */
     val enableShareBridge: Boolean = true,
 
-    /**
-     * Inbound counterpart of [enableShareBridge] (issue #943).
-     *
-     * `enableShareBridge` lets the *page* push content **out** to the system sheet via
-     * `navigator.share`. These fields let other apps push content **in** through the sheet:
-     * the exported APK gains an `ACTION_SEND` / `ACTION_SEND_MULTIPLE` intent-filter on
-     * `ShellActivity`, so the app shows up as a share target for images (and, when opted in,
-     * plain text/links).
-     *
-     * Both default to OFF: registering a share target changes the manifest (an extra
-     * exported entry point) and carries the same antivirus-reputation cost that keeps
-     * `geolocationEnabled` / `enableNotificationPolyfill` opt-in. The intent-filter is
-     * injected at export time in `AxmlRebuilder`, so `false` omits it entirely.
-     */
     val receiveShareImages: Boolean = false,
     val receiveShareText: Boolean = false,
 
-    /**
-     * `ACTION_VIEW` "open with" registration for text / config / code files.
-     *
-     * When on, `AxmlRebuilder` adds two intent-filters to `ShellActivity`: one matching the
-     * mime types in `ShareReceiveContract.OPEN_WITH_MIME_TYPES`, one matching the extension
-     * list via `pathPattern` (senders that label a `.conf` file `application/octet-stream`
-     * are still reachable by suffix). Received files land in the same share inbox as
-     * `ACTION_SEND` payloads and are delivered through the same channels.
-     *
-     * Off by default for the same reason as the share filters: an exported entry point is a
-     * manifest-visible capability, and anti-virus reputation treats broad file associations
-     * conservatively.
-     */
     val openWithEnabled: Boolean = false,
 
-    /**
-     * How a received item reaches the page. `BOTH` is the default because the two
-     * channels cover disjoint cases: the DOM event is zero-tap but only reaches pages
-     * (or extension modules) that listen for it, while the file-chooser pre-fill works
-     * on any third-party site but needs the user to tap the page's own upload control.
-     */
     val shareDeliveryMode: ShareDeliveryMode = ShareDeliveryMode.BOTH,
 
-    /**
-     * When pre-filling a file chooser, ask first instead of silently substituting the
-     * received file for the system picker. Opt-out (`false`) gives a fully automatic
-     * hand-off, at the cost of the user no longer being able to pick something else.
-     */
     val sharePromptBeforeUse: Boolean = true,
 
-    /**
-     * Toast on inbound share / open-with ("use the page's upload button"). Pages that
-     * listen for `wta:share` and upload themselves do not need it. Forced off when
-     * [shareDeliveryMode] is [ShareDeliveryMode.JS_EVENT] — that toast would be a lie.
-     */
     val shareShowReceivedToast: Boolean = true,
 
     val enableZoomPolyfill: Boolean = true,
     val enableCrossOriginIsolation: Boolean = false,
     val hideUrlPreview: Boolean = false,
 
-    // Features below default to ON: each one is opt-in-free, fails soft, and does not
-    // affect the normal run of the overwhelming majority of pages. Users can still turn
-    // any of them off per app in the editor's advanced settings. Only affects newly
-    // created apps — saved configs keep their stored values (Room converter preserves
-    // existing JSON fields).
     val decodeBase64DeepLinks: Boolean = true,
     val decodeBase64Mode: Base64DeepLinkMode = Base64DeepLinkMode.GESTURE_ONLY,
     val javaScriptCanOpenWindows: Boolean = true,
@@ -522,9 +383,6 @@ data class WebViewConfig(
     val enableCookiePersistence: Boolean = true,
 
     val enableClipboardPolyfill: Boolean = true,
-    // Notification polyfill stays default-OFF: enabling it makes every exported app
-    // request POST_NOTIFICATIONS on first launch (RuntimePermissionSync), a visible
-    // permission prompt most pages never earn.
     val enableNotificationPolyfill: Boolean = false,
     val enableOrientationPolyfill: Boolean = true,
     val enableCompatPolyfills: Boolean = true,
@@ -532,9 +390,6 @@ data class WebViewConfig(
     val enableNativeBridge: Boolean = true,
     val nativeBridgeCapabilities: NativeBridgeCapabilities = NativeBridgeCapabilities(),
 
-    // Geolocation stays default-OFF: enabling it makes every exported app declare and
-    // request location permission (RuntimePermissionSync), a heavy default with
-    // antivirus-reputation cost.
     val geolocationEnabled: Boolean = false,
     val geolocationAccuracy: GeolocationAccuracy = GeolocationAccuracy.FINE,
     val geolocationPolicy: GeolocationPolicy = GeolocationPolicy.ALWAYS_ASK,
@@ -546,10 +401,6 @@ data class WebViewConfig(
 
     val enableMediaSession: Boolean = true,
 
-    // Off by default. While on, audio that is already playing keeps going after
-    // the user leaves. The picture stops with the window and resumes on return.
-    // Requires the media-session foreground service; the editor turns that on
-    // together with this switch.
     val backgroundMediaPlayback: Boolean = false,
 
     val primeUserActivation: Boolean = true,
@@ -578,9 +429,6 @@ data class WebViewConfig(
     val pwaOfflineEnabled: Boolean = false,
     val pwaOfflineStrategy: String = "NETWORK_FIRST",
 
-    // Build-time Static Asset Pack: scrape static frontend assets (CSS/JS/fonts/icons)
-    // from the target URL at export and serve them locally at runtime, while the live
-    // site still provides the main document and all dynamic content.
     val staticAssetPackEnabled: Boolean = false,
     val staticAssetPackMaxAgeDays: Int = 30,
     val staticAssetPackIncludeImages: Boolean = false,
@@ -588,16 +436,9 @@ data class WebViewConfig(
     val staticAssetPackMaxTotalSizeMb: Int = 50,
 
     val showFloatingBackButton: Boolean = false,
-    // System back button behavior. See [BACK_GO_BACK], [BACK_GO_BACK_EXIT], [BACK_EXIT], [BACK_JS].
     val backButtonBehavior: String = BACK_GO_BACK,
-    /** Deliver volume keys to the page as `wta:volume`. Off leaves the system volume keys alone. */
     val forwardVolumeKeys: Boolean = false,
-    /** While [forwardVolumeKeys] is on, swallow the key so the system volume does not change. */
     val consumeVolumeKeys: Boolean = false,
-    /**
-     * Gallery subdirectory for system-download media (`Pictures/<name>`, and the
-     * matching movie/music folders). One path segment. Blank becomes WebToApp.
-     */
     val mediaAlbumName: String = "",
     val floatingWindowConfig: FloatingWindowConfig = FloatingWindowConfig(),
     val proxyMode: String = "NONE",
@@ -615,10 +456,6 @@ data class WebViewConfig(
     val tlsFingerprintTemplate: String = "CHROME_131",
     val tlsFingerprintCustomCiphers: List<String> = emptyList(),
 
-    // Issue #721: forward bridged requests through Chromium's own network stack with a
-    // QUIC hint per host, so HTTP/3 is attempted from the first request. Pairs with TLS
-    // fingerprint spoofing (the h3 upstream IS genuine Chromium); inert when a SOCKS
-    // upstream proxy is configured.
     val forceHttp3: Boolean = false,
 
     val antiCapture: Boolean = false,
@@ -626,46 +463,26 @@ data class WebViewConfig(
     val dnsMode: String = "SYSTEM",
     val dnsConfig: DnsConfig = DnsConfig()
 ) {
-    // Resolved per-side fullscreen content padding: an unset (null) side follows
-    // the uniform fullscreenContentPaddingDp base.
     val fullscreenPadTop: Int get() = fullscreenContentPaddingTopDp ?: fullscreenContentPaddingDp
     val fullscreenPadBottom: Int get() = fullscreenContentPaddingBottomDp ?: fullscreenContentPaddingDp
     val fullscreenPadStart: Int get() = fullscreenContentPaddingStartDp ?: fullscreenContentPaddingDp
     val fullscreenPadEnd: Int get() = fullscreenContentPaddingEndDp ?: fullscreenContentPaddingDp
 
-    /**
-     * Any inbound share channel enabled. A derived property, not a stored field — the export
-     * pipeline keeps the two filters separate so the intent-filter only advertises the types
-     * the app actually accepts (issue #943).
-     */
     val enableShareReceive: Boolean get() = receiveShareImages || receiveShareText
 
-    /** Whether a chooser may be pre-filled with a received file. */
     val prefillsFileChooser: Boolean get() = enableShareReceive &&
         shareDeliveryMode != ShareDeliveryMode.JS_EVENT
 
-    /** Whether received content is announced to the page as a DOM event. */
     val broadcastsShareEvent: Boolean get() = enableShareReceive &&
         shareDeliveryMode != ShareDeliveryMode.FILE_CHOOSER_PREFILL
 
     companion object {
-        /** Walk history. On the first page, Back asks for a second press before leaving. */
         const val BACK_GO_BACK = "GO_BACK"
 
-        /**
-         * Walk history the same way as [BACK_GO_BACK]. On the first page, one Back
-         * press leaves immediately. Issue #1329.
-         */
         const val BACK_GO_BACK_EXIT = "GO_BACK_EXIT"
 
-        /** Leave immediately. Back does not walk history. Issue #151. */
         const val BACK_EXIT = "EXIT"
 
-        /**
-         * Dispatch a cancelable `wta:back` event. `preventDefault()` keeps the
-         * page in front. If the page does not handle it, Back walks history the
-         * same way as [BACK_GO_BACK].
-         */
         const val BACK_JS = "JS"
     }
 }
@@ -795,7 +612,6 @@ data class SplashConfig(
     val videoStartMs: Long = 0,
     val videoEndMs: Long = 5000,
     val videoDurationMs: Long = 0,
-    // Show the Ns countdown in the top-right corner of the splash screen.
     val showCountdown: Boolean = true
 )
 
@@ -1086,19 +902,13 @@ data class MultiWebConfig(
     val displayMode: String = "TABS",
     val refreshInterval: Int = 30,
     val showSiteIcons: Boolean = true,
-    // A missing key keeps these defaults. The shell also treats a raw 0 as the
-    // historical layout (2 card columns, 1 drawer column, aspect 1.2).
     val cardColumns: Int = 2,
     val drawerColumns: Int = 1,
     val drawerEntry: String = "FLOATING",
     val drawerFabAnchor: String = "TOP_END",
     val cardAspectRatio: Float = 1.2f,
-    // Inverted storage: stored JSON predating this field deserializes to false,
-    // so existing and new apps both default to "sites follow the parent config".
     val sitesUseOwnConfig: Boolean = false,
     val projectId: String = "",
-    // LAST reopens the site from the last session. SITE opens startSiteId.
-    // A missing key stays LAST so existing apps keep resuming.
     val startTab: String = "LAST",
     val startSiteId: String = "",
     val independentSessions: Boolean = false
@@ -1318,11 +1128,6 @@ data class BgmConfig(
     val autoPlay: Boolean = true,
     val showLyrics: Boolean = true,
     val lrcTheme: LrcTheme? = null,
-    /**
-     * Null means the author never saved the switch. Playback treats that as
-     * on, so an older app gains controls until one of them is turned off.
-     * The two players are independent: both, either, or neither.
-     */
     val showFloatingPlayer: Boolean? = null,
     val showNotificationPlayer: Boolean? = null
 )
@@ -1373,61 +1178,18 @@ data class ApkExportConfig(
     val notificationEnabled: Boolean = false,
     val notificationConfig: NotificationExportConfig = NotificationExportConfig(),
     val loggingEnabled: Boolean = false,
-    /** Optional static policy metadata; false omits metadata rather than declaring deny. */
     val saepEnabled: Boolean = false,
-    /**
-     * Override the generated APK's `targetSdkVersion` (manifest `<uses-sdk>`).
-     *
-     * Why: the shell template ships targetSdk = 35; this pins a different value for
-     * compat or store requirements. Server-runtime types (`AppType.requiresProcessExec`)
-     * ignore it and are pinned to 28 so bundled binaries can execve. `null`/`<= 0`
-     * means "leave the template's 35 alone" for every other type. Values outside
-     * 23..36 are clamped at export; the editor offers a whitelist of chips.
-     */
     val targetSdk: Int? = null,
 
-    /**
-     * Override the generated APK's `minSdkVersion` (manifest `<uses-sdk>`).
-     *
-     * Raise-only: the shell DEX is compiled at minSdk 23, so a lower value would
-     * install on devices that then crash. `null`/`<= 0` keeps the template's 23.
-     * Export clamps to `23..effectiveTargetSdk`.
-     */
     val minSdk: Int? = null,
 
-    /**
-     * Sign this app with a dedicated, per-package identity instead of the host-wide signer.
-     *
-     * The identity is generated once per package name (RSA-3072 PKCS12 under
-     * `filesDir/app_signing/`, managed by `PerAppSigningIdentity`) and reused on every
-     * rebuild, so updates install cleanly while two different package names never share a
-     * certificate. When the flag is off the build behaves exactly as before.
-     */
     val perAppSigningEnabled: Boolean = false,
 
-    /**
-     * Remembered state of the build screen's "force full rebuild" toggle. Build-invocation
-     * behavior only: consumed host-side by `ApkBuilder.buildApk` and never serialized into
-     * the generated app's shell config JSON.
-     */
     val forceFullRebuild: Boolean = false,
 
-    /**
-     * Solid plate behind the adaptive launcher icon. `null` means derive from the
-     * image (opaque icons keep their border color; transparent icons use white).
-     * Hex `#RRGGBB` / `#AARRGGBB`. Host-side export only — not written into the
-     * generated app's shell config JSON.
-     */
     val iconBackgroundColor: String? = null,
+    val preserveIconShape: Boolean = false,
 
-    /**
-     * When the target package is already installed on this device with a higher
-     * versionCode, raise the build's version so the update can install
-     * (`ApkBuilder.suggestedVersionForInstall`). When false the build ships exactly
-     * [customVersionCode] / [customVersionName] — useful for pinned versions, at the
-     * cost of a downgrade install failing on devices that already have a higher
-     * versionCode. Build-invocation only; never serialized into the shell config.
-     */
     val autoVersionBump: Boolean = true
 )
 
@@ -1490,21 +1252,8 @@ data class ApkRuntimePermissions(
     val systemAlertWindow: Boolean = false,
     val backgroundLocation: Boolean = false,
     val queryAllPackages: Boolean = false,
-    /**
-     * Per-permission overrides keyed by [ExportPermissionCatalog] id.
-     * Null (missing JSON, or no override) means "follow the boolean bundles
-     * and feature defaults". An explicit false wins over both, so a row can
-     * be turned off without clearing the legacy bundle that still covers its
-     * siblings. Gson leaves this null on configs saved before the field existed.
-     */
     val grants: Map<String, Boolean>? = null
 ) {
-    /**
-     * Permissions enabled in this set but NOT in [auto] — i.e. permissions the user added
-     * manually beyond what features auto-enabled. The permission sync uses this to preserve
-     * manual choices while clearing permissions whose enabling feature was turned off
-     * (fixes the "can't turn off an auto-enabled permission" latch, issue #356).
-     */
     fun manualBeyond(auto: ApkRuntimePermissions): ApkRuntimePermissions = copy(
         camera = camera && !auto.camera,
         microphone = microphone && !auto.microphone,
@@ -1582,10 +1331,6 @@ data class BackgroundRunExportConfig(
 data class ApkEncryptionConfig(
     val enabled: Boolean = false,
     val customPassword: String? = null,
-    // Nullable on purpose: stored JSON predating this field deserializes to null,
-    // which must keep the signature-bound behavior existing apps were built with.
-    // "EMBEDDED" stores a build-time random key inside the APK (obfuscated), making
-    // encryption survive Play App Signing / any re-sign (#917).
     val keyMode: String? = null,
     val threatResponse: ThreatResponse = ThreatResponse.LOG_ONLY
 ) {
@@ -1705,10 +1450,6 @@ data class RemoteActivationConfig(
     val deliverUrl: Boolean = false,
     val encryptUrl: Boolean = false,
     val aesKeyBase64: String = "",
-    // When true, the verification request carries deviceBound=true so the server can
-    // enforce per-device seats (maxDevices, default 1 = one-time / single-device code).
-    // Requires a remote verifier; purely local activation cannot bind devices because
-    // there is no shared state between devices.
     val deviceBound: Boolean = false,
     val trustMode: RemoteActivationTrustMode = RemoteActivationTrustMode.SYSTEM,
     val pinnedCertificate: String = "",
@@ -1802,18 +1543,12 @@ enum class Base64DeepLinkMode {
     ALWAYS,
 }
 
-/**
- * How content received from the Android share sheet (issue #943) is handed to the page.
- */
 enum class ShareDeliveryMode {
 
-    /** Only queue + broadcast the `wta:share` DOM event; the page or an extension module opts in. */
     JS_EVENT,
 
-    /** Only pre-fill the next WebView file chooser with the received file. */
     FILE_CHOOSER_PREFILL,
 
-    /** Both: broadcast the event *and* pre-fill the next file chooser. */
     BOTH,
 }
 
@@ -1899,24 +1634,11 @@ data class NativeBridgeCapabilities(
     val orientation: Boolean = true,
     val fullscreen: Boolean = true,
     val print: Boolean = true,
-    // Native Google sign-in via the Credential Manager. Off by default: it reads the
-    // device's Google accounts (after an explicit system UI prompt) and requires the app
-    // owner to register the generated package name + signing SHA-1 with a Google Cloud
-    // project and provide its Web client ID.
     val googleSignIn: Boolean = false,
     val googleSignInClientId: String = "",
-    // One user-picked folder the page can list, read, and write. Off by default:
-    // a remote page that talks the user into choosing Downloads or DCIM can
-    // read everything in that tree. The grant is a persistable SAF permission,
-    // not a broad storage permission.
     val directory: Boolean = false,
 )
 
-/**
- * The web Notification polyfill calls [com.webtoapp.core.webview.NativeBridge.showWebNotification].
- * That method reports permission denied while [notification] is off, so a polyfill
- * that is on by itself never posts a system notification.
- */
 fun NativeBridgeCapabilities.withNotificationPolyfill(polyfillEnabled: Boolean): NativeBridgeCapabilities =
     if (polyfillEnabled) copy(notification = true) else this
 

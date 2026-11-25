@@ -15,12 +15,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
 import com.webtoapp.core.apkbuilder.ApkTemplate
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.ui.design.WtaChip
@@ -38,6 +35,8 @@ fun IconPickerWithLibrary(
     websiteUrl: String? = null,
     iconBackgroundColor: String? = null,
     onIconBackgroundColorChange: ((String?) -> Unit)? = null,
+    preserveIconShape: Boolean = false,
+    onPreserveIconShapeChange: ((Boolean) -> Unit)? = null,
     onSelectFromGallery: () -> Unit,
     onSelectFromLibrary: (String) -> Unit
 ) {
@@ -49,6 +48,7 @@ fun IconPickerWithLibrary(
     var isFetchingFavicon by remember { mutableStateOf(false) }
 
     val hasIcon = iconUri != null || iconPath != null
+    val showAdaptivePreview = hasIcon && onIconBackgroundColorChange != null && !preserveIconShape
     val transparentPlate = iconBackgroundColor.equals("#00000000", ignoreCase = true)
     val plateColor = remember(iconBackgroundColor) {
         iconBackgroundColor?.let { parseColor(it) } ?: Color.White
@@ -75,42 +75,35 @@ fun IconPickerWithLibrary(
         Surface(
             modifier = Modifier
                 .size(72.dp)
-                .clip(MaterialTheme.shapes.medium)
-                .then(if (hasIcon) plateFill else Modifier)
-                .border(
-                    width = 2.dp,
-                    color = if (hasIcon) MaterialTheme.colorScheme.primary
-                           else MaterialTheme.colorScheme.outline,
-                    shape = MaterialTheme.shapes.medium
+                .then(
+                    if (hasIcon && !showAdaptivePreview) Modifier else Modifier
+                        .clip(MaterialTheme.shapes.medium)
+                        .then(if (showAdaptivePreview) plateFill else Modifier)
+                        .border(
+                            width = 2.dp,
+                            color = if (hasIcon) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.outline,
+                            shape = MaterialTheme.shapes.medium
+                        )
                 )
                 .clickable { onSelectFromGallery() },
             color = if (hasIcon) Color.Transparent else MaterialTheme.colorScheme.surfaceVariant
         ) {
             when {
                 iconUri != null -> {
-                    AsyncImage(
-                        model = ImageRequest.Builder(context)
-                            .data(iconUri)
-                            .crossfade(true)
-                            .build(),
+                    AppIconImage(
+                        model = iconUri,
                         contentDescription = Strings.labelIcon,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(12.dp),
-                        contentScale = ContentScale.Fit
+                        modifier = Modifier.fillMaxSize().padding(if (showAdaptivePreview) 12.dp else 0.dp),
+                        crossfade = true
                     )
                 }
                 iconPath != null -> {
-                    AsyncImage(
-                        model = ImageRequest.Builder(context)
-                            .data(File(iconPath))
-                            .crossfade(true)
-                            .build(),
+                    AppIconImage(
+                        model = File(iconPath),
                         contentDescription = Strings.labelIcon,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(12.dp),
-                        contentScale = ContentScale.Fit
+                        modifier = Modifier.fillMaxSize().padding(if (showAdaptivePreview) 12.dp else 0.dp),
+                        crossfade = true
                     )
                 }
                 else -> {
@@ -201,7 +194,12 @@ fun IconPickerWithLibrary(
         }
     }
 
-    if (onIconBackgroundColorChange != null) {
+    if (hasIcon && onPreserveIconShapeChange != null) {
+        Spacer(modifier = Modifier.height(12.dp))
+        AppIconStyleSelector(preserveIconShape, onPreserveIconShapeChange)
+    }
+
+    if (onIconBackgroundColorChange != null && !preserveIconShape) {
         Spacer(modifier = Modifier.height(12.dp))
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(
@@ -246,7 +244,7 @@ fun IconPickerWithLibrary(
     }
     }
 
-    if (showBackgroundPicker && onIconBackgroundColorChange != null) {
+    if (showBackgroundPicker && onIconBackgroundColorChange != null && !preserveIconShape) {
         ColorPickerDialog(
             currentColor = iconBackgroundColor ?: "#FFFFFF",
             onColorSelected = { picked ->

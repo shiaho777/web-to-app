@@ -3984,6 +3984,42 @@ object StringsA {
         AppLanguage.KOREAN -> "앱 아이콘"
     }
 
+    val appIconStyle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "图标样式"
+        AppLanguage.ENGLISH -> "Icon style"
+        AppLanguage.ARABIC -> "نمط الأيقونة"
+        AppLanguage.PORTUGUESE -> "Estilo do ícone"
+        AppLanguage.SPANISH -> "Estilo del icono"
+        AppLanguage.FRENCH -> "Style de l’icône"
+        AppLanguage.GERMAN -> "Symbolstil"
+        AppLanguage.RUSSIAN -> "Стиль значка"
+        AppLanguage.JAPANESE -> "アイコンのスタイル"
+        AppLanguage.KOREAN -> "아이콘 스타일"
+    }
+    val adaptiveAppIcon: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "自适应"
+        AppLanguage.ENGLISH -> "Adaptive"
+        AppLanguage.ARABIC -> "تكيّفي"
+        AppLanguage.PORTUGUESE -> "Adaptável"
+        AppLanguage.SPANISH -> "Adaptable"
+        AppLanguage.FRENCH -> "Adaptative"
+        AppLanguage.GERMAN -> "Adaptiv"
+        AppLanguage.RUSSIAN -> "Адаптивный"
+        AppLanguage.JAPANESE -> "アダプティブ"
+        AppLanguage.KOREAN -> "적응형"
+    }
+    val preserveAppIcon: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "保留原图"
+        AppLanguage.ENGLISH -> "Original"
+        AppLanguage.ARABIC -> "أصلي"
+        AppLanguage.PORTUGUESE -> "Original"
+        AppLanguage.SPANISH -> "Original"
+        AppLanguage.FRENCH -> "Originale"
+        AppLanguage.GERMAN -> "Original"
+        AppLanguage.RUSSIAN -> "Оригинал"
+        AppLanguage.JAPANESE -> "元の画像"
+        AppLanguage.KOREAN -> "원본 유지"
+    }
     val iconBackground: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "图标背景"
         AppLanguage.ENGLISH -> "Icon background"
@@ -10966,9 +11002,6 @@ object StringsA {
         AppLanguage.KOREAN -> "활성화됨"
     }
 
-    // Shown on the activation record inside the code prompt when a valid grant
-    // exists but this launch still requires verification. Never claims "已激活"
-    // while a code is being demanded.
     val activationNeedsReverify: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "需重新验证"
         AppLanguage.ENGLISH -> "Re-verification required"

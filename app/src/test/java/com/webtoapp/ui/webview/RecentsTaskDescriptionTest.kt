@@ -1,18 +1,17 @@
 package com.webtoapp.ui.webview
 
 import android.graphics.Bitmap
+import android.graphics.Color
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
 
-/**
- * A separate-task recents card keeps the app's label and, when one is stored,
- * its own icon instead of the host launcher icon (#1446).
- */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33])
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Suppress("DEPRECATION")
 class RecentsTaskDescriptionTest {
 
@@ -25,7 +24,6 @@ class RecentsTaskDescriptionTest {
         assertThat(description.icon).isNotNull()
         assertThat(description.icon!!.width).isEqualTo(32)
         assertThat(description.icon!!.height).isEqualTo(32)
-        // The platform keeps the bitmap; the caller's small icon must survive.
         assertThat(icon.isRecycled).isFalse()
     }
 
@@ -39,12 +37,16 @@ class RecentsTaskDescriptionTest {
 
     @Test
     fun `oversized icon is scaled to the recents cap`() {
-        val icon = Bitmap.createBitmap(400, 200, Bitmap.Config.ARGB_8888)
+        val icon = Bitmap.createBitmap(400, 200, Bitmap.Config.ARGB_8888).apply { eraseColor(Color.RED) }
         val description = recentsTaskDescription("Example", icon)
 
         assertThat(description.icon).isNotNull()
         assertThat(description.icon!!.width).isEqualTo(144)
-        assertThat(description.icon!!.height).isEqualTo(72)
+        assertThat(description.icon!!.height).isEqualTo(144)
+        assertThat(description.icon!!.getPixel(72, 35)).isEqualTo(Color.TRANSPARENT)
+        assertThat(description.icon!!.getPixel(0, 36)).isEqualTo(Color.RED)
+        assertThat(description.icon!!.getPixel(143, 107)).isEqualTo(Color.RED)
+        assertThat(description.icon!!.getPixel(72, 108)).isEqualTo(Color.TRANSPARENT)
         assertThat(icon.isRecycled).isTrue()
         assertThat(description.icon!!.isRecycled).isFalse()
     }

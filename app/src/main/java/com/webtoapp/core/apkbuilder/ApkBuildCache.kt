@@ -128,6 +128,7 @@ class ApkBuildCache(private val context: Context) {
             abiFilters = abiFilters,
             iconPath = webApp.iconPath,
             iconBackgroundColor = webApp.apkExportConfig?.iconBackgroundColor,
+            preserveIconShape = webApp.apkExportConfig?.preserveIconShape == true,
             nativeLibsFingerprint = nativeLibsFingerprint,
             hostVersionCode = hostVersionCode,
             manifestFingerprint = manifestFingerprint.orEmpty() +
@@ -283,7 +284,6 @@ class ApkBuildCache(private val context: Context) {
         }
     }
 
-    /** Disk bytes the [clear] call for this app would free; 0 when nothing is cached. */
     fun entrySizeBytes(webApp: WebApp, packageName: String): Long {
         val dir = File(rootDir, cacheKeyFor(webApp, packageName))
         if (!dir.exists()) return 0L
@@ -317,9 +317,6 @@ class ApkBuildCache(private val context: Context) {
         if (entryName.startsWith("assets/php_app/")) return true
         if (entryName.startsWith("assets/python/")) return true
         if (entryName.startsWith("assets/python_app/")) return true
-        // Re-embedded by RuntimeAssetEmbedder.embedPythonStdlib on every build in both
-        // modes; without this entry CONTENT_OVERLAY copies the cached stdlib AND the
-        // embedder writes it again — duplicate entries accumulating on every rebuild.
         if (entryName.startsWith("assets/python_runtime/")) return true
         if (entryName.startsWith("assets/go_app/")) return true
         if (entryName.startsWith("assets/frontend_app/")) return true
@@ -372,6 +369,7 @@ class ApkBuildCache(private val context: Context) {
         abiFilters: List<String>,
         iconPath: String?,
         iconBackgroundColor: String? = null,
+        preserveIconShape: Boolean = false,
         nativeLibsFingerprint: String? = null,
         hostVersionCode: Int = 0,
         manifestFingerprint: String? = null,
@@ -383,12 +381,6 @@ class ApkBuildCache(private val context: Context) {
         parts += "pkg=${config.packageName}"
         parts += "vc=${config.versionCode}"
         parts += "vn=${config.versionName}"
-        // Host app versionCode participates so a host upgrade (which may ship improved
-        // packaging/alignment/export logic) invalidates every cached unsigned APK, forcing a
-        // FULL rebuild that re-applies the latest logic. Without this, a user who built a
-        // NODEJS_APP on an older host and upgrades without re-downloading libnode.so would
-        // keep hitting REUSE_UNSIGNED and serving a stale APK (e.g. one with an unaligned
-        // libnode.so that dlopen rejects on Android 15+/16KB-page devices).
         parts += "hostVc=$hostVersionCode"
         parts += "name=${config.appName}"
         parts += "type=${config.appType}"
@@ -398,39 +390,18 @@ class ApkBuildCache(private val context: Context) {
         parts += "enc=$encryptionEnabled"
         parts += "icon=${fileFingerprint(iconPath)}"
         parts += "iconBg=${iconBackgroundColor ?: "auto"}"
+        parts += "preserveIconShape=$preserveIconShape"
         parts += "deeplinkHosts=${config.deepLinkHosts.sorted().joinToString(",")}"
         parts += "deeplinkSchemes=${config.deepLinkSchemes.sorted().joinToString(",")}"
-        // Inbound share sheet (#943) also rewrites the manifest — the ACTION_SEND
-        // intent-filter. Without it in the key, flipping the toggle would reuse a cached
-        // unsigned APK that never became a share target.
         parts += "shareReceive=${config.shareReceiveMimeTypes.sorted().joinToString(",")}"
-        // The open-with flag changes the manifest (extra VIEW intent-filters), so it must
-        // bust the manifest-fingerprinted cache just like the share/deep-link lists do.
         parts += "openWith=${config.openWithEnabled}"
         parts += "runtimePerms=${config.runtimePermissions}"
         parts += "nativeNetworkTrust=v1:${config.networkTrustConfig}:${config.antiCaptureEnabled}"
-        // Native libs (libnode.so / libnode_bridge.so / libc++_shared.so) must participate
-        // so a host upgrade that ships a new/realigned libnode.so invalidates the cached
-        // unsigned APK. Otherwise REUSE_UNSIGNED serves a stale unaligned lib that dlopen
-        // rejects on Android 15+ (16KB-page) devices.
         parts += "nativeLibs=${nativeLibsFingerprint ?: "none"}"
-        // targetSdk / minSdk overrides change the manifest's <uses-sdk>; without
-        // these a cached unsigned APK would be reused after the user changes them.
         parts += "targetSdk=${config.targetSdkOverride ?: GeneratedSdkLevels.TEMPLATE_TARGET_SDK}"
         parts += "minSdk=${config.minSdkOverride ?: GeneratedSdkLevels.TEMPLATE_MIN_SDK}"
-        // The derived manifest permission/component set: CONTENT_OVERLAY reuses the
-        // cached base's AndroidManifest, so a config change that alters this set without
-        // touching any other identity part (e.g. enabling scheduled start →
-        // SCHEDULE_EXACT_ALARM + ScheduledStartReceiver) must change the identity or the
-        // overlay ships a stale manifest.
         parts += "manifest=${manifestFingerprint ?: "n/a"}"
-        // Export-level performance options change output bytes (resource stripping,
-        // asset re-optimization) without appearing in ApkConfig — key them explicitly
-        // or REUSE_UNSIGNED serves the old setting.
         parts += "perf=${perfFingerprint ?: "off"}"
-        // The unsigned APK is not signer-agnostic: encrypted builds embed the signing cert
-        // hash in the encryption metadata. Switching between global and per-app signing
-        // (or a regenerated identity) must not serve a cached APK bound to the old cert.
         parts += "signer=${signingFingerprint ?: "global"}"
         return sha256(parts.joinToString("\n"))
     }
@@ -510,9 +481,6 @@ class ApkBuildCache(private val context: Context) {
         val digest = MessageDigest.getInstance("SHA-256")
         dir.walkTopDown()
             .filter { it.isFile }
-            // .git is excluded by every embed config (RuntimeAssetEmbedder) so it
-            // can never affect the APK — but it can be thousands of files. Skip it
-            // here to avoid hashing the entire git history on every build.
             .filter { file ->
                 !file.relativeTo(dir).invariantSeparatorsPath
                     .split('/').contains(".git")
