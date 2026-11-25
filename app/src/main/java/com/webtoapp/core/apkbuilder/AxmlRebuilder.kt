@@ -1610,6 +1610,17 @@ class AxmlRebuilder {
         }
     }
 
+    fun setVersionInfo(axmlData: ByteArray, versionCode: Int, versionName: String): ByteArray {
+        require(versionCode > 0) { "versionCode must be positive" }
+        require(versionName.isNotBlank()) { "versionName must not be blank" }
+        val parsed = parseAxml(axmlData)
+            ?: throw IllegalStateException("Failed to parse AndroidManifest.xml (version update)")
+        check(modifyVersionInfo(parsed, versionCode, versionName)) {
+            "AndroidManifest.xml does not contain editable version metadata"
+        }
+        return rebuildAxml(parsed)
+    }
+
     /**
      * Set an existing `android:label`-style string attribute, or append one to
      * the start element when the page did not declare it.
@@ -1751,7 +1762,9 @@ class AxmlRebuilder {
 
             replacePackageString(parsed, originalPackage, newPackage)
 
-            modifyVersionInfo(parsed, versionCode, versionName)
+            check(modifyVersionInfo(parsed, versionCode, versionName)) {
+                "AndroidManifest.xml does not contain editable version metadata"
+            }
 
             if (targetSdk != null) {
                 modifyTargetSdk(parsed, targetSdk)
@@ -1870,11 +1883,14 @@ class AxmlRebuilder {
         return rebuildAxml(parsed)
     }
 
-    private fun modifyVersionInfo(parsed: ParsedAxml, versionCode: Int, versionName: String) {
-        val resourceMap = parsed.resourceMap ?: return
+    private fun modifyVersionInfo(parsed: ParsedAxml, versionCode: Int, versionName: String): Boolean {
+        val resourceMap = parsed.resourceMap ?: return false
 
         val versionCodeAttrIndex = resourceMap.indexOf(ATTR_VERSION_CODE)
         val versionNameAttrIndex = resourceMap.indexOf(ATTR_VERSION_NAME)
+        if (versionCodeAttrIndex < 0 || versionNameAttrIndex < 0) return false
+        var versionCodeUpdated = false
+        var versionNameUpdated = false
 
         AppLogger.d(TAG, "Version attr indices: versionCode=$versionCodeAttrIndex, versionName=$versionNameAttrIndex")
 
@@ -1916,6 +1932,7 @@ class AxmlRebuilder {
                         if (attrValueType == 0x10) {
                             buffer.position(attrOffset + 16)
                             buffer.putInt(versionCode)
+                            versionCodeUpdated = true
                             AppLogger.d(TAG, "Modified versionCode to $versionCode")
                         }
                     }
@@ -1936,6 +1953,7 @@ class AxmlRebuilder {
                             buffer.position(attrOffset + 16)
                             buffer.putInt(newIndex)
 
+                            versionNameUpdated = true
                             AppLogger.d(TAG, "Modified versionName to '$versionName' (index $newIndex)")
                         }
                     }
@@ -1944,6 +1962,7 @@ class AxmlRebuilder {
 
             break
         }
+        return versionCodeUpdated && versionNameUpdated
     }
 
     /**

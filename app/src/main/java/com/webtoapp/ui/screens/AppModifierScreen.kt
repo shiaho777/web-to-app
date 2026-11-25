@@ -1,5 +1,7 @@
 package com.webtoapp.ui.screens
 
+import android.content.Context
+import android.content.Intent
 import android.graphics.drawable.Drawable
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -17,10 +19,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.outlined.Android
-import androidx.compose.material.icons.outlined.Apps
 import androidx.compose.material.icons.outlined.Clear
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Info
@@ -64,6 +64,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.core.content.FileProvider
 import androidx.core.graphics.drawable.toBitmap
 import com.webtoapp.core.appmodifier.AppCloner
 import com.webtoapp.core.appmodifier.AppFilterType
@@ -83,7 +84,6 @@ import com.webtoapp.ui.design.WtaButtonVariant
 import com.webtoapp.ui.design.WtaCard
 import com.webtoapp.ui.design.WtaCardTone
 import com.webtoapp.ui.design.WtaChip
-import com.webtoapp.ui.design.WtaColors
 import com.webtoapp.ui.design.WtaEmptyState
 import com.webtoapp.ui.design.WtaExpandIn
 import com.webtoapp.ui.design.WtaFullEmptyState
@@ -110,11 +110,6 @@ private enum class AppSortMode {
     RECENT
 }
 
-private enum class ModifyOutputMode {
-    SHORTCUT,
-    CLONE
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppModifierScreen(
@@ -129,10 +124,8 @@ fun AppModifierScreen(
     var isLoading by remember { mutableStateOf(true) }
     var loadError by remember { mutableStateOf<String?>(null) }
     var searchQuery by rememberSaveable { mutableStateOf("") }
-    var filterName by rememberSaveable { mutableStateOf(AppFilterType.USER.name) }
     var sortName by rememberSaveable { mutableStateOf(AppSortMode.NAME.name) }
 
-    val filterType = runCatching { AppFilterType.valueOf(filterName) }.getOrDefault(AppFilterType.USER)
     val sortMode = runCatching { AppSortMode.valueOf(sortName) }.getOrDefault(AppSortMode.NAME)
 
     suspend fun reload() {
@@ -140,7 +133,10 @@ fun AppModifierScreen(
         loadError = null
         runCatching {
             withContext(Dispatchers.IO) {
-                appListProvider.getInstalledApps(AppFilterType.ALL, "")
+                appListProvider.getInstalledApps(
+                    AppFilterType.USER,
+                    ""
+                )
             }
         }.onSuccess {
             allApps = it
@@ -155,21 +151,10 @@ fun AppModifierScreen(
         reload()
     }
 
-    val userCount = remember(allApps) { allApps.count { !it.isSystemApp } }
-    val systemCount = remember(allApps) { allApps.count { it.isSystemApp } }
-    val totalCount = allApps.size
-
-    val filteredApps = remember(allApps, filterType, searchQuery, sortMode) {
+    val filteredApps = remember(allApps, searchQuery, sortMode) {
         val q = searchQuery.trim()
         allApps
             .asSequence()
-            .filter { app ->
-                when (filterType) {
-                    AppFilterType.ALL -> true
-                    AppFilterType.USER -> !app.isSystemApp
-                    AppFilterType.SYSTEM -> app.isSystemApp
-                }
-            }
             .filter { app ->
                 q.isEmpty() ||
                     app.appName.contains(q, ignoreCase = true) ||
@@ -261,31 +246,6 @@ fun AppModifierScreen(
                                 }
                             } else null
                         )
-                    }
-
-                    item {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .horizontalScroll(rememberScrollState()),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            WtaChip(
-                                selected = filterType == AppFilterType.USER,
-                                onClick = { filterName = AppFilterType.USER.name },
-                                label = "${Strings.userApps} · $userCount"
-                            )
-                            WtaChip(
-                                selected = filterType == AppFilterType.SYSTEM,
-                                onClick = { filterName = AppFilterType.SYSTEM.name },
-                                label = "${Strings.systemApps} · $systemCount"
-                            )
-                            WtaChip(
-                                selected = filterType == AppFilterType.ALL,
-                                onClick = { filterName = AppFilterType.ALL.name },
-                                label = "${Strings.all} · $totalCount"
-                            )
-                        }
                     }
 
                     item {
@@ -550,13 +510,31 @@ fun AppModifyFullScreen(
         onResult = { result ->
             scope.launch {
                 when (result) {
-                    is AppModifyResult.ShortcutSuccess -> {
-                        snackbarHostState.showSnackbar(Strings.shortcutCreated)
-                        onBack()
-                    }
                     is AppModifyResult.CloneSuccess -> {
-                        snackbarHostState.showSnackbar(Strings.cloneSuccess)
-                        onBack()
+                        val snackbarResult = snackbarHostState.showSnackbar(
+                            message = if (result.installerLaunched) {
+                                Strings.cloneSuccess
+                            } else {
+                                Strings.appModifierApkReady
+                            },
+                            actionLabel = Strings.shareApk,
+                            withDismissAction = true
+                        )
+                        if (snackbarResult == androidx.compose.material3.SnackbarResult.ActionPerformed) {
+                            try {
+                                shareCloneApk(
+                                    context = context,
+                                    apkPath = result.apkPath,
+                                    chooserTitle = Strings.shareApkTitle.replace("%s", resolvedApp.appName)
+                                )
+                            } catch (error: Exception) {
+                                snackbarHostState.showSnackbar(
+                                    "${Strings.failed}: ${error.localizedMessage ?: error.javaClass.simpleName}"
+                                )
+                            }
+                        } else {
+                            onBack()
+                        }
                     }
                     is AppModifyResult.Error -> {
                         snackbarHostState.showSnackbar("${Strings.failed}: ${result.message}")
@@ -565,6 +543,25 @@ fun AppModifyFullScreen(
             }
         }
     )
+}
+
+private fun shareCloneApk(context: Context, apkPath: String, chooserTitle: String) {
+    val apkFile = File(apkPath)
+    val uri = FileProvider.getUriForFile(
+        context,
+        "${context.packageName}.fileprovider",
+        apkFile
+    )
+    val sendIntent = Intent(Intent.ACTION_SEND).apply {
+        type = "*/*"
+        putExtra(Intent.EXTRA_STREAM, uri)
+        clipData = android.content.ClipData.newRawUri(apkFile.name, uri)
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    }
+    val chooser = Intent.createChooser(sendIntent, chooserTitle).apply {
+        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    }
+    context.startActivity(chooser)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -586,21 +583,21 @@ private fun AppModifyContent(
         mutableStateOf(
             AppModifierEditState(
                 newAppName = app.appName,
-                newPackageName = defaultClonePackage
+                newPackageName = defaultClonePackage,
+                newVersionName = app.versionName,
+                newVersionCode = app.versionCode.coerceIn(1, Int.MAX_VALUE.toLong()).toString()
             )
         )
     }
     var isProcessing by remember { mutableStateOf(false) }
     var progress by remember { mutableIntStateOf(0) }
     var progressText by remember { mutableStateOf("") }
-    var outputMode by remember { mutableStateOf(ModifyOutputMode.SHORTCUT) }
     var packageNameInstalled by remember { mutableStateOf(false) }
 
     val trimmedPackageName = editState.newPackageName.trim()
     val packageFormatInvalid = trimmedPackageName.isNotBlank() &&
         !ClonePackageNames.isValid(trimmedPackageName)
     val packageNameError = when {
-        outputMode != ModifyOutputMode.CLONE -> null
         packageFormatInvalid -> Strings.packageNameInvalidFormat
         packageNameInstalled -> Strings.appModifierPackageInUse
         else -> null
@@ -681,7 +678,13 @@ private fun AppModifyContent(
     }
 
     fun runClone() {
-        if (editState.newAppName.isBlank() || isProcessing || packageNameError != null) return
+        if (
+            editState.newAppName.isBlank() ||
+            editState.newVersionName.isBlank() ||
+            editState.newVersionCode.toIntOrNull()?.let { it > 0 } != true ||
+            isProcessing ||
+            packageNameError != null
+        ) return
         val chosenPackage = trimmedPackageName.ifBlank { defaultClonePackage }
         isProcessing = true
         scope.launch {
@@ -689,24 +692,6 @@ private fun AppModifyContent(
                 val result = appCloner.cloneAndInstall(
                     editState.copy(newPackageName = chosenPackage).toConfig(app)
                 ) { p, t ->
-                    progress = p
-                    progressText = t
-                }
-                isProcessing = false
-                onResult(result)
-            } catch (e: Exception) {
-                isProcessing = false
-                onResult(AppModifyResult.Error(e.message ?: Strings.failed))
-            }
-        }
-    }
-
-    fun runShortcut() {
-        if (editState.newAppName.isBlank() || isProcessing) return
-        isProcessing = true
-        scope.launch {
-            try {
-                val result = appCloner.createModifiedShortcut(editState.toConfig(app)) { p, t ->
                     progress = p
                     progressText = t
                 }
@@ -729,12 +714,6 @@ private fun AppModifyContent(
     val canClone = cloneBlockedReason == null
     val nameReady = editState.newAppName.isNotBlank()
 
-    LaunchedEffect(canClone) {
-        if (!canClone && outputMode == ModifyOutputMode.CLONE) {
-            outputMode = ModifyOutputMode.SHORTCUT
-        }
-    }
-
     WtaCreateFlowScaffold(
         title = Strings.modifyApp,
         onBack = if (isProcessing) {
@@ -747,16 +726,12 @@ private fun AppModifyContent(
                 isProcessing = isProcessing,
                 progress = progress,
                 progressText = progressText,
-                outputMode = outputMode,
                 canClone = canClone,
                 actionEnabled = nameReady && !isProcessing &&
-                    (outputMode != ModifyOutputMode.CLONE || (canClone && packageNameError == null)),
-                onPrimary = {
-                    when (outputMode) {
-                        ModifyOutputMode.SHORTCUT -> runShortcut()
-                        ModifyOutputMode.CLONE -> runClone()
-                    }
-                }
+                    canClone && packageNameError == null &&
+                    editState.newVersionName.isNotBlank() &&
+                    editState.newVersionCode.toIntOrNull()?.let { it > 0 } == true,
+                onPrimary = ::runClone
             )
         }
     ) {
@@ -765,22 +740,16 @@ private fun AppModifyContent(
                 original = app,
                 newName = editState.newAppName.ifBlank { app.appName },
                 newPackageName = trimmedPackageName.ifBlank { defaultClonePackage },
-                outputMode = outputMode,
                 hasCustomIcon = hasCustomIcon
-            )
-
-            OutputModeCard(
-                mode = outputMode,
-                cloneBlockedReason = cloneBlockedReason,
-                onModeChange = { outputMode = it }
             )
 
             BasicInfoCard(
                 editState = editState,
-                outputMode = outputMode,
                 packageNameError = packageNameError,
                 onNameChange = { update { copy(newAppName = it) } },
                 onPackageNameChange = { update { copy(newPackageName = it) } },
+                onVersionNameChange = { update { copy(newVersionName = it) } },
+                onVersionCodeChange = { update { copy(newVersionCode = it) } },
                 onPickFromGallery = { imagePickerLauncher.launch("image/*") },
                 onPickFromLibrary = { path ->
                     update { copy(newIconPath = path, newIconUri = null) }
@@ -792,6 +761,21 @@ private fun AppModifyContent(
         }
 
         WtaCreateFlowSection(title = Strings.appConfig) {
+            DialogEngineCard(
+                project = editState.dialogEngineProject.copy(
+                    enabled = editState.dialogEngineEnabled
+                ),
+                apkPath = app.apkPath,
+                onProjectChange = { project ->
+                    update {
+                        copy(
+                            dialogEngineEnabled = project.enabled,
+                            dialogEngineProject = project
+                        )
+                    }
+                }
+            )
+
             ActivationCodeCard(
                 enabled = editState.activationEnabled,
                 activationCodes = editState.activationCodes,
@@ -865,17 +849,10 @@ private fun AppModifyContent(
                 }
             )
 
-            if (outputMode == ModifyOutputMode.CLONE) {
-                WtaStatusBanner(
-                    message = Strings.cloneInstallWarning,
-                    tone = WtaStatusTone.Warning
-                )
-            } else {
-                WtaStatusBanner(
-                    message = Strings.appModifierShortcutHint,
-                    tone = WtaStatusTone.Info
-                )
-            }
+            WtaStatusBanner(
+                message = Strings.cloneInstallWarning,
+                tone = WtaStatusTone.Warning
+            )
         }
     }
 }
@@ -885,7 +862,6 @@ private fun IdentityPreviewCard(
     original: InstalledAppInfo,
     newName: String,
     newPackageName: String,
-    outputMode: ModifyOutputMode,
     hasCustomIcon: Boolean
 ) {
     WtaCard(tone = WtaCardTone.Highlighted, contentPadding = PaddingValues(16.dp)) {
@@ -915,11 +891,7 @@ private fun IdentityPreviewCard(
                 IdentitySide(
                     label = Strings.appModifierNewIdentity,
                     name = newName,
-                    packageName = if (outputMode == ModifyOutputMode.CLONE) {
-                        newPackageName
-                    } else {
-                        original.packageName
-                    },
+                    packageName = newPackageName,
                     icon = {
                         if (hasCustomIcon) {
                             Box(
@@ -983,133 +955,20 @@ private fun IdentitySide(
 }
 
 @Composable
-private fun OutputModeCard(
-    mode: ModifyOutputMode,
-    cloneBlockedReason: String?,
-    onModeChange: (ModifyOutputMode) -> Unit
-) {
-    val canClone = cloneBlockedReason == null
-    WtaCard(tone = WtaCardTone.Surface, contentPadding = PaddingValues(12.dp)) {
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(
-                text = Strings.appModifierOutputMode,
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.SemiBold
-            )
-            ModeOption(
-                selected = mode == ModifyOutputMode.SHORTCUT,
-                title = Strings.btnShortcut,
-                description = Strings.appModifierModeShortcutDesc,
-                icon = Icons.Outlined.PhoneAndroid,
-                badge = Strings.appModifierRecommended,
-                onClick = { onModeChange(ModifyOutputMode.SHORTCUT) }
-            )
-            ModeOption(
-                selected = mode == ModifyOutputMode.CLONE,
-                title = Strings.cloneInstall,
-                description = cloneBlockedReason ?: Strings.appModifierModeCloneDesc,
-                icon = Icons.Outlined.ContentCopy,
-                enabled = canClone,
-                onClick = { if (canClone) onModeChange(ModifyOutputMode.CLONE) }
-            )
-        }
-    }
-}
-
-@Composable
-private fun ModeOption(
-    selected: Boolean,
-    title: String,
-    description: String,
-    icon: ImageVector,
-    onClick: () -> Unit,
-    enabled: Boolean = true,
-    badge: String? = null
-) {
-    val container = when {
-        !enabled -> MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.5f)
-        selected -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.55f)
-        else -> MaterialTheme.colorScheme.surfaceContainerHigh
-    }
-    Surface(
-        onClick = onClick,
-        enabled = enabled,
-        shape = RoundedCornerShape(14.dp),
-        color = container,
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Row(
-            modifier = Modifier.padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.7f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    icon,
-                    contentDescription = null,
-                    tint = if (enabled) MaterialTheme.colorScheme.onSurface
-                    else MaterialTheme.colorScheme.outline
-                )
-            }
-            Spacer(Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.SemiBold,
-                        color = if (enabled) MaterialTheme.colorScheme.onSurface
-                        else MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    if (badge != null) {
-                        Spacer(Modifier.width(8.dp))
-                        Surface(
-                            shape = RoundedCornerShape(999.dp),
-                            color = WtaColors.semantic.success.copy(alpha = 0.14f)
-                        ) {
-                            Text(
-                                text = badge,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = WtaColors.semantic.success,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
-                            )
-                        }
-                    }
-                }
-                Spacer(Modifier.height(2.dp))
-                Text(
-                    text = description,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            if (selected && enabled) {
-                Icon(
-                    Icons.Filled.CheckCircle,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            }
-        }
-    }
-}
-
-@Composable
 private fun BasicInfoCard(
     editState: AppModifierEditState,
-    outputMode: ModifyOutputMode,
     packageNameError: String?,
     onNameChange: (String) -> Unit,
     onPackageNameChange: (String) -> Unit,
+    onVersionNameChange: (String) -> Unit,
+    onVersionCodeChange: (String) -> Unit,
     onPickFromGallery: () -> Unit,
     onPickFromLibrary: (String) -> Unit,
     onResetIcon: () -> Unit
 ) {
+    val versionInvalid = editState.newVersionName.isBlank() ||
+        editState.newVersionCode.toIntOrNull()?.let { it > 0 } != true
+
     WtaCard(tone = WtaCardTone.Surface, contentPadding = PaddingValues(16.dp)) {
         Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
             IconPickerWithLibrary(
@@ -1135,23 +994,42 @@ private fun BasicInfoCard(
                 onValueChange = onNameChange
             )
 
-            if (outputMode == ModifyOutputMode.CLONE) {
-                WtaTextField(
-                    value = editState.newPackageName,
-                    onValueChange = onPackageNameChange,
-                    modifier = Modifier.fillMaxWidth(),
-                    label = Strings.customPackageName,
-                    placeholder = Strings.apkPackageNamePlaceholder,
-                    supportingText = packageNameError
-                        ?: Strings.packageNameHint.takeIf { LocalShowDescriptions.current },
-                    isError = packageNameError != null,
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Ascii,
-                        autoCorrectEnabled = false
-                    )
+            WtaTextField(
+                value = editState.newPackageName,
+                onValueChange = onPackageNameChange,
+                modifier = Modifier.fillMaxWidth(),
+                label = Strings.customPackageName,
+                placeholder = Strings.apkPackageNamePlaceholder,
+                supportingText = packageNameError
+                    ?: Strings.packageNameHint.takeIf { LocalShowDescriptions.current },
+                isError = packageNameError != null,
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Ascii,
+                    autoCorrectEnabled = false
                 )
-            }
+            )
+
+            WtaTextField(
+                value = editState.newVersionName,
+                onValueChange = onVersionNameChange,
+                modifier = Modifier.fillMaxWidth(),
+                label = Strings.versionName,
+                supportingText = Strings.appModifierVersionInvalid.takeIf { versionInvalid },
+                isError = versionInvalid,
+                singleLine = true
+            )
+
+            WtaTextField(
+                value = editState.newVersionCode,
+                onValueChange = { value -> onVersionCodeChange(value.filter(Char::isDigit)) },
+                modifier = Modifier.fillMaxWidth(),
+                label = Strings.versionCode,
+                supportingText = Strings.appModifierVersionInvalid.takeIf { versionInvalid },
+                isError = versionInvalid,
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+            )
         }
     }
 }
@@ -1161,7 +1039,6 @@ private fun AppModifyBottomBar(
     isProcessing: Boolean,
     progress: Int,
     progressText: String,
-    outputMode: ModifyOutputMode,
     canClone: Boolean,
     actionEnabled: Boolean,
     onPrimary: () -> Unit
@@ -1206,8 +1083,7 @@ private fun AppModifyBottomBar(
 
             val primaryText = when {
                 isProcessing -> Strings.appModifierWorking
-                outputMode == ModifyOutputMode.CLONE -> Strings.cloneInstall
-                else -> Strings.btnShortcut
+                else -> Strings.cloneInstall
             }
 
             WtaButton(
@@ -1220,12 +1096,11 @@ private fun AppModifyBottomBar(
                 enabled = actionEnabled,
                 leadingIcon = when {
                     isProcessing -> null
-                    outputMode == ModifyOutputMode.CLONE -> Icons.Outlined.ContentCopy
-                    else -> Icons.Outlined.PhoneAndroid
+                    else -> Icons.Outlined.ContentCopy
                 }
             )
 
-            if (outputMode == ModifyOutputMode.CLONE && !canClone) {
+            if (!canClone) {
                 Spacer(Modifier.height(10.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(

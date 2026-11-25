@@ -30,13 +30,24 @@ val localProperties = Properties().apply {
     }
 }
 
-val releaseSigningStoreFile = localProperties.getProperty("signing.storeFile")
+val releaseSigningStorePath = localProperties.getProperty("signing.storeFile")
     ?.takeIf { it.isNotBlank() }
+    ?: System.getenv("SIGNING_STORE_FILE")?.takeIf { it.isNotBlank() }
+val releaseSigningStoreFile = releaseSigningStorePath
     ?.let { rootProject.file(it) }
+val releaseSigningStorePassword = localProperties.getProperty("signing.storePassword")
+    ?.takeIf { it.isNotBlank() }
+    ?: System.getenv("SIGNING_STORE_PASSWORD")?.takeIf { it.isNotBlank() }
+val releaseSigningKeyAlias = localProperties.getProperty("signing.keyAlias")
+    ?.takeIf { it.isNotBlank() }
+    ?: System.getenv("SIGNING_KEY_ALIAS")?.takeIf { it.isNotBlank() }
+val releaseSigningKeyPassword = localProperties.getProperty("signing.keyPassword")
+    ?.takeIf { it.isNotBlank() }
+    ?: System.getenv("SIGNING_KEY_PASSWORD")?.takeIf { it.isNotBlank() }
 val hasReleaseSigningConfig = releaseSigningStoreFile?.isFile == true &&
-    !localProperties.getProperty("signing.storePassword").isNullOrBlank() &&
-    !localProperties.getProperty("signing.keyAlias").isNullOrBlank() &&
-    !localProperties.getProperty("signing.keyPassword").isNullOrBlank()
+    !releaseSigningStorePassword.isNullOrBlank() &&
+    !releaseSigningKeyAlias.isNullOrBlank() &&
+    !releaseSigningKeyPassword.isNullOrBlank()
 
 val isFdroidBuild: Boolean = run {
     val raw = findProperty("fdroid")?.toString()?.trim()?.lowercase()
@@ -57,9 +68,9 @@ android {
         if (hasReleaseSigningConfig) {
             create("release") {
                 storeFile = releaseSigningStoreFile
-                storePassword = localProperties.getProperty("signing.storePassword")
-                keyAlias = localProperties.getProperty("signing.keyAlias")
-                keyPassword = localProperties.getProperty("signing.keyPassword")
+                storePassword = releaseSigningStorePassword
+                keyAlias = releaseSigningKeyAlias
+                keyPassword = releaseSigningKeyPassword
                 enableV1Signing = true
             }
         }
@@ -73,8 +84,8 @@ android {
         minSdk = 24
 
         targetSdk = 36
-        versionCode = 88
-        versionName = "2.9.0"
+        versionCode = 89
+        versionName = "2.9.1"
         buildConfigField("boolean", "SHELL_RUNTIME_ONLY", "false")
         buildConfigField("boolean", "FDROID", isFdroidBuild.toString())
 
@@ -120,9 +131,10 @@ android {
                     signingConfigs.getByName("debug")
                 else -> throw GradleException(
                     "Release build has no valid signing config. Configure signing.storeFile / " +
-                        "signing.storePassword / signing.keyAlias / signing.keyPassword in local.properties " +
-                        "before assembling a release APK for distribution. Refusing to silently sign with " +
-                        "the debug key — a debug-signed release breaks upgrades for existing users " +
+                        "signing.storePassword / signing.keyAlias / signing.keyPassword in local.properties, or set " +
+                        "SIGNING_STORE_FILE / SIGNING_STORE_PASSWORD / SIGNING_KEY_ALIAS / SIGNING_KEY_PASSWORD " +
+                        "environment variables before assembling a release APK for distribution. Refusing to silently sign " +
+                        "with the debug key — a debug-signed release breaks upgrades for existing users " +
                         "('signatures do not match'). For a throwaway debug-signed build (e.g. CI smoke " +
                         "build, never distribute it), pass -PallowDebugSignedRelease=true."
                 )

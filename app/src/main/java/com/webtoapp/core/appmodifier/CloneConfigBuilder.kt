@@ -45,7 +45,9 @@ object CloneConfigBuilder {
             "announcementContent" to announcement.content,
             "announcementContentIsHtml" to announcement.contentIsHtml,
             "announcementLinkUrl" to (announcement.linkUrl ?: ""),
-            "announcementLinkText" to (announcement.linkText ?: "")
+            "announcementLinkText" to (announcement.linkText ?: ""),
+            "dialogEngineEnabled" to (config.dialogEngineEnabled && config.dialogEngineProject.enabled),
+            "dialogEngine" to if (config.dialogEngineEnabled) config.dialogEngineProject else null
         )
 
         return GsonProvider.gson.toJson(cloneConfig)
@@ -68,6 +70,7 @@ object CloneConfigBuilder {
         val hasActivation = config.activationEnabled &&
             (config.activationCodes.isNotEmpty() || config.activationRemoteConfig.enabled)
         val hasAnnouncement = config.announcementEnabled && config.announcement.title.isNotBlank()
-        return hasSplash || hasActivation || hasAnnouncement
+        val hasDialog = config.dialogEngineEnabled && config.dialogEngineProject.enabled
+        return hasSplash || hasActivation || hasAnnouncement || hasDialog
     }
 }

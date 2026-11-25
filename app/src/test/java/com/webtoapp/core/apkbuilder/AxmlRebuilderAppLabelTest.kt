@@ -32,6 +32,9 @@ class AxmlRebuilderAppLabelTest {
             .first { it.hasElement() && it.element.name == "application" }
             .element
 
+    private fun manifest(axml: ByteArray): XmlElement =
+        AxmlToProtoXml.convert(axml).element
+
     private fun launcher(axml: ByteArray): XmlElement =
         application(axml).childList
             .first { it.hasElement() && it.element.name == "activity" }
@@ -65,5 +68,14 @@ class AxmlRebuilderAppLabelTest {
 
         assertThat(application(labelled).attr("label")?.value).isEqualTo("Cloned Name")
         assertThat(launcher(labelled).attr("label")?.value).isEqualTo("Cloned Name")
+    }
+
+    @Test
+    fun `updates manifest version metadata`() {
+        val modified = rebuilder.setVersionInfo(fixture(), 42, "2.4.0")
+        val attrs = manifest(modified).attributeList.associateBy { it.name }
+
+        assertThat(attrs["versionCode"]?.value).isEqualTo("42")
+        assertThat(attrs["versionName"]?.value).isEqualTo("2.4.0")
     }
 }

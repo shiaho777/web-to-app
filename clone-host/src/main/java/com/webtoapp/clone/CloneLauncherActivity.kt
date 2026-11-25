@@ -98,6 +98,9 @@ class CloneLauncherActivity : Activity() {
                 announcementContentIsHtml = obj.optBoolean("announcementContentIsHtml", false),
                 announcementLinkUrl = obj.optString("announcementLinkUrl", ""),
                 announcementLinkText = obj.optString("announcementLinkText", ""),
+                dialogEngineEnabled = obj.optBoolean("dialogEngineEnabled", false),
+                dialogEngineJson = obj.optJSONObject("dialogEngine")?.toString()
+                    ?: obj.optString("dialogEngine", ""),
                 originalLauncherActivity = obj.optString("originalLauncherActivity", "")
             )
         } catch (e: Exception) {
@@ -266,6 +269,93 @@ class CloneLauncherActivity : Activity() {
     }
 
     private fun proceedAfterActivation(cfg: CloneConfig) {
+        if (cfg.dialogEngineEnabled) {
+            showDialogEngine(cfg)
+        } else if (cfg.announcementEnabled && cfg.announcementTitle.isNotBlank()) {
+            showAnnouncement(cfg)
+        } else {
+            showSplash(cfg)
+        }
+    }
+
+    private fun showDialogEngine(cfg: CloneConfig) {
+        val dialogObject = runCatching {
+            JSONObject(cfg.dialogEngineJson)
+        }.getOrNull()
+
+        val title = dialogObject?.optString("title", "Dialog")?.ifBlank { "Dialog" } ?: "Dialog"
+        val message = dialogObject?.optString("message", "") ?: ""
+        val primaryText = dialogObject?.optString("primaryText", "Continue")?.ifBlank { "Continue" } ?: "Continue"
+        val secondaryText = dialogObject?.optString("secondaryText", "Close")?.ifBlank { "Close" } ?: "Close"
+        val primaryAction = dialogObject?.optString("primaryAction", "LAUNCH_TARGET") ?: "LAUNCH_TARGET"
+        val components = dialogObject?.optJSONArray("components")
+
+        val container = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(20), dp(12), dp(20), dp(12))
+            if (message.isNotBlank()) {
+                addView(TextView(this@CloneLauncherActivity).apply {
+                    text = message
+                    textSize = 14f
+                })
+            }
+            if (components != null) {
+                for (i in 0 until components.length()) {
+                    val component = components.optJSONObject(i) ?: continue
+                    val type = component.optString("type", "MESSAGE")
+                    val text = component.optString("text", "")
+                    when (type) {
+                        "TEXT_FIELD", "PASSWORD" -> addView(EditText(this@CloneLauncherActivity).apply {
+                            hint = component.optString("hint", text)
+                            inputType = if (type == "PASSWORD") {
+                                android.text.InputType.TYPE_CLASS_TEXT or
+                                    android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+                            } else android.text.InputType.TYPE_CLASS_TEXT
+                        })
+                        "CHECKBOX" -> addView(android.widget.CheckBox(this@CloneLauncherActivity).apply {
+                            setText(text)
+                            isChecked = component.optBoolean("selected", false)
+                        })
+                        "SWITCH" -> addView(android.widget.Switch(this@CloneLauncherActivity).apply {
+                            setText(text)
+                            isChecked = component.optBoolean("selected", false)
+                        })
+                        "PROGRESS" -> addView(android.widget.ProgressBar(
+                            this@CloneLauncherActivity,
+                            null,
+                            android.R.attr.progressBarStyleHorizontal
+                        ).apply { isIndeterminate = true })
+                        else -> if (text.isNotBlank()) addView(TextView(this@CloneLauncherActivity).apply {
+                            this.text = text
+                            textSize = if (type == "TITLE") 18f else 14f
+                        })
+                    }
+                }
+            }
+        }
+
+        val dialog = AlertDialog.Builder(this)
+            .setTitle(title)
+            .setView(ScrollView(this).apply { addView(container) })
+            .setCancelable(dialogObject?.optBoolean("dismissOnOutside", true) == true)
+            .setPositiveButton(primaryText) { _, _ ->
+                if (primaryAction == "LAUNCH_TARGET") {
+                    proceedAfterDialogEngine(cfg)
+                } else if (primaryAction == "CLOSE") {
+                    finish()
+                } else if (primaryAction == "OPEN_URL") {
+                    val url = dialogObject?.optString("primaryActionValue", "") ?: ""
+                    runCatching { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
+                }
+            }
+            .setNegativeButton(secondaryText) { _, _ -> proceedAfterDialogEngine(cfg) }
+            .create()
+
+        dialog.setCanceledOnTouchOutside(dialogObject?.optBoolean("dismissOnOutside", true) == true)
+        dialog.show()
+    }
+
+    private fun proceedAfterDialogEngine(cfg: CloneConfig) {
         if (cfg.announcementEnabled && cfg.announcementTitle.isNotBlank()) {
             showAnnouncement(cfg)
         } else {
@@ -539,5 +629,7 @@ data class CloneConfig(
     val announcementContentIsHtml: Boolean = false,
     val announcementLinkUrl: String = "",
     val announcementLinkText: String = "",
+    val dialogEngineEnabled: Boolean = false,
+    val dialogEngineJson: String = "",
     val originalLauncherActivity: String = ""
 )

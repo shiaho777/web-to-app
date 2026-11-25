@@ -35,6 +35,7 @@ import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -189,6 +190,7 @@ fun HomeScreen(
     var shareApkFailureReport by remember { mutableStateOf<BuildFailureReport?>(null) }
     var showDataBackupDialog by remember { mutableStateOf(false) }
     var showFabMenu by remember { mutableStateOf(false) }
+    var showDualPane by rememberSaveable { mutableStateOf(true) }
 
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -229,6 +231,9 @@ fun HomeScreen(
         CreateActionItem(Strings.createMediaApp, Strings.typeDescMedia, true, { WtaAppTypeIcon(AppType.VIDEO, Modifier.size(30.dp)) }, onCreateMediaApp)
     ).filter { advancedFeatures || !it.advanced }
 
+    if (showDualPane) {
+        DualPaneFileManagerScreen(onOpenApps = { showDualPane = false })
+    } else {
     WtaScreen(
         title = Strings.myApps,
         titleContent = {
@@ -265,6 +270,16 @@ fun HomeScreen(
         },
 
         actions = {
+                    IconButton(
+                        onClick = { showDualPane = true },
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.FolderOpen,
+                            contentDescription = Strings.dualPaneTitle,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
                     LanguageSelectorButton(
                         buttonSize = 40.dp,
                         onLanguageChanged = {
@@ -1059,6 +1074,7 @@ fun HomeScreen(
             }
 
             }
+    }
     }
 
     if (showFabMenu) {

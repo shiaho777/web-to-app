@@ -1,0 +1,4 @@
+- Added a dual-pane file manager with copy, move, compare, and text editing.
+- Added customizable startup dialogs and expanded APK modification options.
+- Improved cloned APK metadata and launcher behavior.
+- Updated Agent and file-manager documentation.

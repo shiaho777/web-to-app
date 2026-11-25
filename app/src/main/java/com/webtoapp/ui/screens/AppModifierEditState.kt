@@ -4,6 +4,7 @@ import android.net.Uri
 import androidx.compose.runtime.Stable
 import com.webtoapp.core.activation.ActivationCode
 import com.webtoapp.core.appmodifier.AppModifyConfig
+import com.webtoapp.core.appmodifier.DialogEngineProject
 import com.webtoapp.core.appmodifier.InstalledAppInfo
 import com.webtoapp.data.model.ActivationDialogConfig
 import com.webtoapp.data.model.Announcement
@@ -13,6 +14,8 @@ import com.webtoapp.data.model.SplashConfig
 data class AppModifierEditState(
     val newAppName: String = "",
     val newPackageName: String = "",
+    val newVersionName: String = "",
+    val newVersionCode: String = "",
     val newIconUri: Uri? = null,
     val newIconPath: String? = null,
 
@@ -28,7 +31,9 @@ data class AppModifierEditState(
     val activationRemoteConfig: com.webtoapp.data.model.RemoteActivationConfig = com.webtoapp.data.model.RemoteActivationConfig(),
 
     val announcementEnabled: Boolean = false,
-    val announcement: Announcement = Announcement()
+    val announcement: Announcement = Announcement(),
+    val dialogEngineEnabled: Boolean = false,
+    val dialogEngineProject: DialogEngineProject = DialogEngineProject()
 ) {
     fun toConfig(originalApp: InstalledAppInfo): AppModifyConfig {
         return AppModifyConfig(
@@ -36,6 +41,8 @@ data class AppModifierEditState(
             newAppName = newAppName,
             newPackageName = newPackageName.trim().takeIf { it.isNotBlank() },
             newIconPath = newIconPath ?: newIconUri?.toString(),
+            newVersionName = newVersionName,
+            newVersionCode = newVersionCode.toIntOrNull() ?: 0,
             splashEnabled = splashEnabled && !splashConfig.mediaPath.isNullOrBlank(),
             splashConfig = splashConfig,
             activationEnabled = activationEnabled,
@@ -44,7 +51,9 @@ data class AppModifierEditState(
             activationDialogConfig = activationDialogConfig,
             activationRemoteConfig = activationRemoteConfig,
             announcementEnabled = announcementEnabled,
-            announcement = announcement
+            announcement = announcement,
+            dialogEngineEnabled = dialogEngineEnabled && dialogEngineProject.enabled,
+            dialogEngineProject = dialogEngineProject
         )
     }
 }
