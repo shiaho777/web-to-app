@@ -4,6 +4,8 @@ import android.net.Uri
 import com.webtoapp.ui.design.WtaSwitch
 import com.webtoapp.ui.components.PremiumButton
 import androidx.activity.compose.BackHandler
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
@@ -48,7 +50,6 @@ import com.webtoapp.ui.screens.create.WtaCreateFlowScaffold
 import com.webtoapp.ui.screens.create.WtaCreateFlowSection
 import com.webtoapp.ui.shared.GalleryVideoTitle
 import com.webtoapp.util.MediaStorage
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.io.File
@@ -76,35 +77,36 @@ fun CreateGalleryAppScreenV2(
         name: String,
         galleryConfig: GalleryConfig,
         iconUri: Uri?,
-        themeType: String
-    ) -> Unit
+        themeType: String,
+        onFinished: (Boolean) -> Unit
+    ) -> Boolean
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val gridState = rememberLazyGridState()
 
-    var existingApp by remember { mutableStateOf<WebApp?>(null) }
+    val draft: GalleryEditorDraft = viewModel()
+    val existingApp = draft.existingApp
     LaunchedEffect(existingAppId) {
-        if (existingAppId != null) {
-            existingApp = org.koin.java.KoinJavaComponent.get<com.webtoapp.data.repository.WebAppRepository>(com.webtoapp.data.repository.WebAppRepository::class.java)
-                .getWebAppById(existingAppId)
-                .first()
+        if (existingAppId != null && draft.existingApp == null) {
+            val app = org.koin.java.KoinJavaComponent.get<com.webtoapp.data.repository.WebAppRepository>(
+                com.webtoapp.data.repository.WebAppRepository::class.java
+            ).getWebApp(existingAppId)
+            if (app != null) draft.load(app)
         }
     }
 
-    var appName by remember { mutableStateOf("") }
-    var appIcon by remember { mutableStateOf<Uri?>(null) }
-    var appIconPath by remember { mutableStateOf<String?>(null) }
-
-    var galleryItems by remember { mutableStateOf<List<GalleryItem>>(emptyList()) }
-    var folders by remember { mutableStateOf<List<GalleryCategory>>(emptyList()) }
-    var activeFolderId by remember { mutableStateOf<String?>(null) }
-    var useDeviceFolder by remember { mutableStateOf(false) }
+    var appName by draft.name
+    var appIcon by draft.icon
+    var appIconPath by draft.iconPath
+    var galleryItems by draft.items
+    var folders by draft.folders
+    var activeFolderId by draft.activeFolderId
+    var useDeviceFolder by draft.useDeviceFolder
     var importProgress by remember { mutableStateOf<Pair<Int, Int>?>(null) }
     var importJob by remember { mutableStateOf<Job?>(null) }
     var importFailures by remember { mutableStateOf<List<String>>(emptyList()) }
-    val draftItems = remember { mutableMapOf<String, GalleryItem>() }
-    var submitted by remember { mutableStateOf(false) }
+    val draftItems = draft.importedItems
     var showMoveDialog by remember { mutableStateOf(false) }
     var showFolderNameDialog by remember { mutableStateOf(false) }
     var editingFolder by remember { mutableStateOf<GalleryCategory?>(null) }
@@ -119,38 +121,18 @@ fun CreateGalleryAppScreenV2(
     var selectedItems by remember { mutableStateOf<Set<String>>(emptySet()) }
     val isSelectionMode = selectedItems.isNotEmpty()
 
-    var loop by remember { mutableStateOf(true) }
-    var autoPlay by remember { mutableStateOf(false) }
-    var imageInterval by remember { mutableIntStateOf(3) }
-    var enableAudio by remember { mutableStateOf(true) }
-    var videoAutoNext by remember { mutableStateOf(true) }
+    var loop by draft.loop
+    var autoPlay by draft.autoPlay
+    var imageInterval by draft.imageInterval
+    var enableAudio by draft.enableAudio
+    var videoAutoNext by draft.videoAutoNext
 
     var showAppInfoSection by remember { mutableStateOf(true) }
     var showSettingsSheet by remember { mutableStateOf(false) }
     var previewItem by remember { mutableStateOf<GalleryItem?>(null) }
 
     DisposableEffect(Unit) {
-        onDispose {
-            importJob?.cancel()
-            if (!submitted) draftItems.values.forEach { MediaStorage.deleteGalleryMedia(it) }
-        }
-    }
-
-    LaunchedEffect(existingApp) {
-        existingApp?.let { app ->
-            appName = app.name
-            app.iconPath?.let { appIconPath = it }
-            app.galleryConfig?.let { config ->
-                galleryItems = config.items
-                folders = config.categories.sortedBy { it.sortIndex }
-                useDeviceFolder = config.useDeviceFolder
-                loop = config.loop
-                autoPlay = config.autoPlay
-                imageInterval = config.imageInterval
-                enableAudio = config.enableAudio
-                videoAutoNext = config.videoAutoNext
-            }
-        }
+        onDispose { importJob?.cancel() }
     }
 
     val mediaPickerLauncher = rememberLauncherForActivityResult(
@@ -172,7 +154,7 @@ fun CreateGalleryAppScreenV2(
                         } else {
                             val filed = item.copy(categoryId = targetFolder, sortIndex = firstSortIndex + index)
                             added += filed
-                            draftItems[filed.id] = filed
+                            draft.trackImportedItem(filed)
                         }
                         importProgress = (index + 1) to uris.size
                     }
@@ -188,7 +170,7 @@ fun CreateGalleryAppScreenV2(
         ActivityResultContracts.GetContent()
     ) { uri -> uri?.let { appIcon = it } }
 
-    val canCreate = !isLoadingMedia && (existingAppId == null || existingApp != null) &&
+    val canCreate = !draft.isSaving && !isLoadingMedia && (existingAppId == null || existingApp != null) &&
         (useDeviceFolder || galleryItems.isNotEmpty())
     val moveSelected: (String?) -> Unit = { destination ->
         galleryItems = galleryItems.map { item ->
@@ -249,8 +231,11 @@ fun CreateGalleryAppScreenV2(
                             enableAudio = enableAudio,
                             videoAutoNext = videoAutoNext
                         )
-                        submitted = true
-                        onCreated(appName.ifBlank { Strings.galleryApp }, config, finalIconUri, "AURORA")
+                        draft.isSaving = true
+                        val accepted = onCreated(
+                            appName.ifBlank { Strings.galleryApp }, config, finalIconUri, "AURORA", draft::finishSave
+                        )
+                        if (!accepted) draft.finishSave(false)
                     },
                     enabled = canCreate
                 ) { Text(if (existingAppId != null) Strings.btnSave else Strings.btnCreate) }
@@ -629,4 +614,65 @@ private fun MediaPreviewDialog(item: GalleryItem, onDismiss: () -> Unit, onDelet
         confirmButton = { TextButton(onClick = onDismiss) { Text(Strings.btnOk) } },
         dismissButton = { TextButton(onClick = onDelete, colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)) { Icon(Icons.Default.Delete, null, modifier = Modifier.size(18.dp)); Spacer(Modifier.width(4.dp)); Text(Strings.delete) } }
     )
+}
+
+
+internal class GalleryEditorDraft : ViewModel() {
+    var existingApp by mutableStateOf<WebApp?>(null)
+        private set
+    val name = mutableStateOf("")
+    val icon = mutableStateOf<Uri?>(null)
+    val iconPath = mutableStateOf<String?>(null)
+    val items = mutableStateOf<List<GalleryItem>>(emptyList())
+    val folders = mutableStateOf<List<GalleryCategory>>(emptyList())
+    val activeFolderId = mutableStateOf<String?>(null)
+    val useDeviceFolder = mutableStateOf(false)
+    val loop = mutableStateOf(true)
+    val autoPlay = mutableStateOf(false)
+    val imageInterval = mutableIntStateOf(3)
+    val enableAudio = mutableStateOf(true)
+    val videoAutoNext = mutableStateOf(true)
+    val importedItems = mutableMapOf<String, GalleryItem>()
+    var isSaving by mutableStateOf(false)
+    private var closed = false
+
+    fun load(app: WebApp) {
+        name.value = app.name
+        iconPath.value = app.iconPath
+        app.galleryConfig?.let { config ->
+            items.value = config.items
+            folders.value = config.categories.sortedBy { it.sortIndex }
+            useDeviceFolder.value = config.useDeviceFolder
+            loop.value = config.loop
+            autoPlay.value = config.autoPlay
+            imageInterval.intValue = config.imageInterval
+            enableAudio.value = config.enableAudio
+            videoAutoNext.value = config.videoAutoNext
+        }
+        existingApp = app
+    }
+
+    fun trackImportedItem(item: GalleryItem) {
+        if (closed) {
+            MediaStorage.deleteGalleryMedia(item)
+        } else {
+            importedItems[item.id] = item
+        }
+    }
+
+    fun finishSave(saved: Boolean) {
+        isSaving = false
+        if (saved) importedItems.clear()
+        if (closed) discardImportedItems()
+    }
+
+    override fun onCleared() {
+        closed = true
+        if (!isSaving) discardImportedItems()
+    }
+
+    private fun discardImportedItems() {
+        importedItems.values.forEach(MediaStorage::deleteGalleryMedia)
+        importedItems.clear()
+    }
 }

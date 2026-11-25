@@ -178,7 +178,8 @@ object HtmlProjectHelper {
     suspend fun copyBuildOutputToStorage(
         context: Context,
         outputPath: String,
-        projectId: String
+        projectId: String,
+        requireAllFiles: Boolean = false
     ): List<HtmlFile> = withContext(Dispatchers.IO) {
         val outputDir = java.io.File(outputPath)
         if (!outputDir.exists() || !outputDir.isDirectory) {
@@ -187,15 +188,14 @@ object HtmlProjectHelper {
 
         val files = mutableListOf<HtmlFile>()
         outputDir.walkTopDown().forEach { file ->
-            // Skip internal change-tracking directories (e.g. Agent's ".changes/"
-            // which contains ".__deleted__" markers). These are not real project
-            // files and a 0-byte marker would fail the build preflight.
             val relativePath = file.relativeTo(outputDir).path
             if (relativePath.startsWith(".changes/") || relativePath == ".changes") return@forEach
             if (file.isFile) {
                 val savedPath = HtmlStorage.saveFromTempFile(context, file.absolutePath, relativePath, projectId)
                 if (savedPath != null) {
                     files.add(HtmlFile(name = relativePath, path = savedPath, type = detectFileType(file.name)))
+                } else if (requireAllFiles) {
+                    throw java.io.IOException("Could not copy project file: $relativePath")
                 }
             }
         }

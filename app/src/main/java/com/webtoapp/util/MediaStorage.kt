@@ -30,26 +30,23 @@ object MediaStorage {
     private const val THUMBNAIL_QUALITY = 80
 
     fun saveMedia(context: Context, uri: Uri, isVideo: Boolean): String? {
+        val mediaDir = File(context.filesDir, MEDIA_DIR)
+        val extension = if (isVideo) "mp4" else "png"
+        val destination = File(mediaDir, "media_${UUID.randomUUID()}.$extension")
+        var complete = false
         return try {
-            val mediaDir = File(context.filesDir, MEDIA_DIR)
-            if (!mediaDir.exists()) {
-                mediaDir.mkdirs()
-            }
-
-            val extension = if (isVideo) "mp4" else "png"
-            val fileName = "media_${UUID.randomUUID()}.$extension"
-            val destFile = File(mediaDir, fileName)
-
-            context.contentResolver.openInputStream(uri)?.use { input ->
-                FileOutputStream(destFile).use { output ->
-                    input.copyTo(output)
-                }
-            }
-
-            destFile.absolutePath
+            mediaDir.mkdirs()
+            val copied = context.contentResolver.openInputStream(uri)?.use { input ->
+                destination.outputStream().use { output -> input.copyTo(output) }
+            } ?: 0L
+            if (copied <= 0L) return null
+            complete = true
+            destination.absolutePath
         } catch (e: Exception) {
-            AppLogger.e(TAG, "Operation failed", e)
+            AppLogger.e(TAG, "Failed to save media", e)
             null
+        } finally {
+            if (!complete) destination.delete()
         }
     }
 
