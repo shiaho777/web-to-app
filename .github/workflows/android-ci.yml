@@ -63,7 +63,7 @@ jobs:
             :app:checkConfigFieldDrift
 
   package-apks:
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && startsWith(github.ref, 'refs/heads/ci/build-apk-'))
     runs-on: ubuntu-latest
     timeout-minutes: 90
 
