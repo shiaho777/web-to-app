@@ -3946,12 +3946,18 @@ fun SpecialSettingsCard(
                                         color = MaterialTheme.colorScheme.primary,
                                         modifier = Modifier.padding(bottom = 4.dp)
                                     )
-                                    Text(
-                                        text = Strings.appReturnCustomSchemesHint,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.padding(bottom = 4.dp)
-                                    )
+                                    AnimatedVisibility(
+                                        visible = LocalShowDescriptions.current,
+                                        enter = CardExpandTransition,
+                                        exit = CardCollapseTransition
+                                    ) {
+                                        Text(
+                                            text = Strings.appReturnCustomSchemesHint,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.padding(bottom = 4.dp)
+                                        )
+                                    }
                                     PremiumTextField(
                                         value = customSchemesText,
                                         onValueChange = { newText ->

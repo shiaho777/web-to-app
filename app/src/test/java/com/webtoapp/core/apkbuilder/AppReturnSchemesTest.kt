@@ -6,14 +6,6 @@ import com.webtoapp.data.model.WebApp
 import com.webtoapp.data.model.WebViewConfig
 import org.junit.Test
 
-/**
- * Covers the schemes an exported APK declares so that another app can hand control **back**.
- *
- * A page can always *open* a provider app — any non-http scheme is handed to the system — but
- * the provider can only come back if the APK declares the return channel. Without one, the
- * system finds no receiver and reports that no app can handle the link, which is how the
- * reported Discuz "QQ login opens QQ but never returns" symptom shows up.
- */
 class AppReturnSchemesTest {
 
     private fun schemesFor(
@@ -55,11 +47,11 @@ class AppReturnSchemesTest {
     fun `custom return schemes are kept and normalised`() {
         val schemes = schemesFor(
             config = WebViewConfig(
-                customAppReturnSchemes = listOf("wx1234567890abcdef", "myapp://", " TradeScheme ")
+                customAppReturnSchemes = listOf("wx-demo-return", "myapp://", " TradeScheme ")
             )
         )
 
-        assertThat(schemes).contains("wx1234567890abcdef")
+        assertThat(schemes).contains("wx-demo-return")
         assertThat(schemes).contains("myapp")
         assertThat(schemes).contains("tradescheme")
     }
@@ -76,9 +68,6 @@ class AppReturnSchemesTest {
 
     @Test
     fun `built-in schemes stay return-only so they cannot hijack a provider's own links`() {
-        // Declaring a launcher scheme such as `weixin` or `alipays` would make this app a
-        // candidate for the real provider's links, so "pay with WeChat" could surface this app
-        // instead of WeChat. Guard against ever adding one to the defaults.
         val schemes = schemesFor()
 
         assertThat(schemes).doesNotContain("weixin")
@@ -93,11 +82,11 @@ class AppReturnSchemesTest {
         val schemes = schemesFor(
             config = WebViewConfig(
                 enableAppReturn = false,
-                customAppReturnSchemes = listOf("wx1234567890abcdef")
+                customAppReturnSchemes = listOf("wx-demo-return")
             )
         )
 
-        assertThat(schemes).contains("wx1234567890abcdef")
+        assertThat(schemes).contains("wx-demo-return")
         assertThat(schemes).doesNotContain("mqqopensdkapi")
     }
 }
