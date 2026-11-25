@@ -3,7 +3,7 @@
     "name": "WebToApp",
     "description": "Turn any website into an installable app across iOS, Android, Windows, macOS and Linux, and generate a sharing link.",
     "stargazers_count": 205,
-    "forks_count": 46,
+    "forks_count": 47,
     "language": "Python",
     "pushed_at": "2026-11-21T13:03:52Z",
     "html_url": "https://github.com/shiaho777/WebToApp"
@@ -29,7 +29,7 @@
   {
     "name": "turn-mcp",
     "description": "Achieve infinite conversation turns in a single API request via turn-mcp.             Self-hosted MCP server with browser console for human-in-the-loop AI agents.",
-    "stargazers_count": 40,
+    "stargazers_count": 41,
     "forks_count": 9,
     "language": "TypeScript",
     "pushed_at": "2026-10-13T13:29:04Z",
@@ -38,7 +38,7 @@
   {
     "name": "qsyy",
     "description": "汽水音乐第三方 Web 播放器 · 全端可用 · 本地缓存直读 / 在线播放 / 逐字歌词 / 音效 / 下载",
-    "stargazers_count": 31,
+    "stargazers_count": 32,
     "forks_count": 0,
     "language": "JavaScript",
     "pushed_at": "2026-11-18T13:19:19Z",
@@ -47,8 +47,8 @@
   {
     "name": "andmx",
     "description": "Android-native AI coding agent (AndMX)",
-    "stargazers_count": 23,
-    "forks_count": 8,
+    "stargazers_count": 24,
+    "forks_count": 9,
     "language": "Kotlin",
     "pushed_at": "2026-11-19T01:24:31Z",
     "html_url": "https://github.com/shiaho777/andmx"
@@ -63,6 +63,15 @@
     "html_url": "https://github.com/shiaho777/WebViewIDE"
   },
   {
+    "name": "pneuma-android",
+    "description": "Pneuma · 一部会呼吸的 AI 虚拟手机：拟真桌面、聊天、朋友圈、查手机、地图定位、语音/视频通话、日记日历。AI 角色有作息、日程、位置和长期记忆，会主动发消息、发帖互动。数据全在设备本地，联网只调你自己配置的 LLM/生图/语音 API。",
+    "stargazers_count": 20,
+    "forks_count": 16,
+    "language": "TypeScript",
+    "pushed_at": "2026-11-12T10:06:27Z",
+    "html_url": "https://github.com/shiaho777/pneuma-android"
+  },
+  {
     "name": "revx",
     "description": "Rust reverse-engineering toolkit with CLI and local MCP server.",
     "stargazers_count": 18,
@@ -72,19 +81,10 @@
     "html_url": "https://github.com/shiaho777/revx"
   },
   {
-    "name": "pneuma-android",
-    "description": "Pneuma · 一部会呼吸的 AI 虚拟手机：拟真桌面、聊天、朋友圈、查手机、地图定位、语音/视频通话、日记日历。AI 角色有作息、日程、位置和长期记忆，会主动发消息、发帖互动。数据全在设备本地，联网只调你自己配置的 LLM/生图/语音 API。",
-    "stargazers_count": 18,
-    "forks_count": 14,
-    "language": "TypeScript",
-    "pushed_at": "2026-11-12T10:06:27Z",
-    "html_url": "https://github.com/shiaho777/pneuma-android"
-  },
-  {
     "name": "An-Harness",
     "description": "Android-first on-device AI agent harness — exploring everything possible on Android",
-    "stargazers_count": 17,
-    "forks_count": 4,
+    "stargazers_count": 18,
+    "forks_count": 5,
     "language": "Kotlin",
     "pushed_at": "2026-11-18T08:26:20Z",
     "html_url": "https://github.com/shiaho777/An-Harness"
@@ -167,7 +167,7 @@
     "stargazers_count": 10,
     "forks_count": 0,
     "language": "Python",
-    "pushed_at": "2026-11-24T10:48:44Z",
+    "pushed_at": "2026-11-24T23:01:57Z",
     "html_url": "https://github.com/shiaho777/pyj-j"
   },
   {
