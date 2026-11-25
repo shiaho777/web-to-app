@@ -1,6 +1,8 @@
 package com.webtoapp.core.apkbuilder
 
 import android.content.Context
+import android.util.AtomicFile
+import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.logging.AppLogger
 import org.bouncycastle.asn1.x500.X500Name
 import org.bouncycastle.asn1.x509.BasicConstraints
@@ -10,8 +12,6 @@ import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter
 import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder
 import java.io.File
-import java.io.FileInputStream
-import java.io.FileOutputStream
 import java.math.BigInteger
 import java.security.KeyPairGenerator
 import java.security.KeyStore
@@ -21,28 +21,12 @@ import java.security.SecureRandom
 import java.security.cert.X509Certificate
 import java.util.Date
 
-/**
- * Per-package signing identities (opt-in, `ApkExportConfig.perAppSigningEnabled`).
- *
- * The default signer (`JarSigner`) is a single host-wide identity — every exported APK shares
- * one certificate, so one leaked or revoked key taints the whole output. With per-app signing
- * each package name gets its own PKCS12 store under `filesDir/app_signing/`, generated once
- * and reused on every rebuild of that package — matching how desktop toolchains keep one
- * signing identity per package.
- *
- * Keys are RSA-3072 with a self-signed certificate (`CN=<packageName>`), stored under a
- * randomly generated host-local password. The store file name is a hash of the package name,
- * so updating the app (same package) keeps the identity while a different package never
- * collides with it.
- *
- * Everything here is host-only (`core/apkbuilder` is not shell-synced).
- */
 object PerAppSigningIdentity {
 
     private const val TAG = "PerAppSigning"
 
-    private const val STORE_DIR = "app_signing"
-    private const val CREDENTIAL_FILE = ".app_signing_credential"
+    internal const val STORE_DIR = "app_signing"
+    internal const val CREDENTIAL_FILE = ".app_signing_credential"
     private const val KEY_ALIAS = "app"
     private const val KEY_SIZE = 3072
     private const val VALIDITY_YEARS = 30L
@@ -55,100 +39,151 @@ object PerAppSigningIdentity {
         val storeFile: File,
         val createdNow: Boolean
     ) {
-        /** SHA-256 of the certificate DER — the value encryption metadata is built around. */
         fun certSha256(): ByteArray =
             MessageDigest.getInstance("SHA-256").digest(certificate.encoded)
 
-        fun certSha256Hex(): String = certSha256().joinToString("") { "%02x".format(it) }
+        fun certSha256Hex(): String = fingerprint(certificate)
 
         fun toSigningIdentity() = JarSigner.SigningIdentity(privateKey, certificate)
     }
 
-    /**
-     * Load the identity for [packageName], generating it on first use. RSA-3072 generation
-     * takes a few hundred milliseconds on-device — callers are always on `Dispatchers.IO`.
-     *
-     * @throws IllegalStateException when no usable identity can be produced. Callers should
-     *   fail the build rather than silently fall back to the global key: an APK signed with
-     *   the wrong identity can never be updated by the per-app one.
-     */
     @Synchronized
-    fun identityFor(context: Context, packageName: String): Identity {
+    fun identityFor(
+        context: Context,
+        packageName: String,
+        requireExisting: Boolean = false,
+        expectedFingerprint: String? = null
+    ): Identity {
         val storeFile = storeFileFor(context, packageName)
+        val existing = readExisting(context, packageName)
+        if (existing != null) {
+            check(expectedFingerprint == null || existing.certSha256Hex() == expectedFingerprint) {
+                Strings.signingBackupConflict
+            }
+            return existing
+        }
+        check(!requireExisting && expectedFingerprint == null) { Strings.signingBackupMissingKey }
         val password = getOrCreateStorePassword(context)
+        return try {
+            create(storeFile, password, packageName)
+        } finally {
+            password.fill('\u0000')
+        }
+    }
 
-        if (storeFile.exists()) {
-            load(storeFile, password, packageName)?.let { return it }
-            // load() removes the store itself only in one case: the certificate expired,
-            // where regenerating is the intended outcome. A store that still exists failed
-            // for a different reason (corruption, wrong password) — a corrupted store must
-            // not silently produce a *new* identity, that would break updates for every
-            // user who already installed the app. Surface the failure instead.
-            if (storeFile.exists()) {
-                throw IllegalStateException("per-app keystore exists but failed to load: ${storeFile.name}")
+    @Synchronized
+    internal fun readExisting(context: Context, packageName: String): Identity? {
+        val storeFile = storeFileFor(context, packageName)
+        val atomicFile = AtomicFile(storeFile)
+        val input = try {
+            atomicFile.openRead()
+        } catch (e: java.io.FileNotFoundException) {
+            if (!storeFile.exists()) return null
+            throw e
+        }
+        return input.use {
+            val password = readStorePassword(context) ?: error(Strings.signingBackupMissingKey)
+            val keyStore = KeyStore.getInstance("PKCS12")
+            try {
+                keyStore.load(it, password)
+                val key = keyStore.getKey(KEY_ALIAS, password) as PrivateKey
+                val certificate = keyStore.getCertificate(KEY_ALIAS) as X509Certificate
+                Identity(packageName, key, certificate, storeFile, createdNow = false)
+            } catch (e: Exception) {
+                throw IllegalStateException(Strings.signingBackupMissingKey, e)
+            } finally {
+                password.fill('\u0000')
             }
         }
-
-        return create(storeFile, password, packageName)
     }
 
-    /**
-     * SHA-256 fingerprint of the identity that *would* sign this package, or null when none
-     * has been generated yet. Never creates a store — safe for display in the editor.
-     */
-    fun existingFingerprint(context: Context, packageName: String): String? {
-        val storeFile = storeFileFor(context, packageName)
-        if (!storeFile.exists()) return null
-        val passwordFile = File(context.filesDir, CREDENTIAL_FILE)
-        if (!passwordFile.exists()) return null
-        return runCatching {
-            load(storeFile, passwordFile.readText().trim().toCharArray(), packageName)
-                ?.certificate?.encoded
-                ?.let { MessageDigest.getInstance("SHA-256").digest(it) }
-                ?.joinToString(":") { "%02X".format(it) }
-        }.getOrNull()
-    }
+    fun existingFingerprint(context: Context, packageName: String): String? =
+        runCatching { readExisting(context, packageName) }
+            .getOrNull()?.certSha256()?.joinToString(":") { "%02X".format(it) }
 
-    /** Drop the identity for one package (e.g. "reset signing" affordances). */
-    fun delete(context: Context, packageName: String): Boolean =
-        storeFileFor(context, packageName).delete()
+    internal fun fingerprint(certificate: X509Certificate): String =
+        MessageDigest.getInstance("SHA-256").digest(certificate.encoded)
+            .joinToString("") { "%02x".format(it) }
+
+    @Synchronized
+    internal fun restore(context: Context, identities: Map<String, JarSigner.SigningIdentity>) {
+        val missing = identities.filter { (packageName, identity) ->
+            val existing = readExisting(context, packageName)
+            check(existing == null || existing.certSha256Hex() == fingerprint(identity.certificate)) {
+                Strings.signingBackupConflict
+            }
+            existing == null
+        }
+        if (missing.isEmpty()) return
+        val password = getOrCreateStorePassword(context)
+        try {
+            missing.forEach { (packageName, identity) ->
+                writeStore(storeFileFor(context, packageName), password, identity.privateKey, identity.certificate)
+            }
+        } finally {
+            password.fill('\u0000')
+        }
+    }
 
     private fun storeFileFor(context: Context, packageName: String): File {
-        val dir = File(context.filesDir, STORE_DIR).apply { mkdirs() }
+        val dir = File(context.filesDir, STORE_DIR)
         val digest = MessageDigest.getInstance("SHA-256")
             .digest(packageName.toByteArray(Charsets.UTF_8))
             .joinToString("") { "%02x".format(it) }
         return File(dir, "sig_${digest.take(20)}.p12")
     }
 
-    private fun getOrCreateStorePassword(context: Context): CharArray {
+    private fun readStorePassword(context: Context): CharArray? {
         val file = File(context.filesDir, CREDENTIAL_FILE)
-        if (file.exists()) {
-            val saved = file.readText().trim()
-            if (saved.isNotEmpty()) return saved.toCharArray()
+        return try {
+            AtomicFile(file).openRead().bufferedReader().use { reader ->
+                reader.readText().trim().takeIf { it.isNotEmpty() }?.toCharArray()
+            }
+        } catch (e: java.io.FileNotFoundException) {
+            if (file.exists()) throw e
+            null
         }
+    }
+
+    private fun getOrCreateStorePassword(context: Context): CharArray {
+        readStorePassword(context)?.let { return it }
+        val directory = File(context.filesDir, STORE_DIR)
+        check(directory.listFiles()?.none { it.name.endsWith(".p12") } != false) {
+            Strings.signingBackupMissingKey
+        }
+        val random = SecureRandom()
         val chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
-        val password = CharArray(40) { chars[SecureRandom().nextInt(chars.length)] }
-        file.writeText(String(password))
+        val password = CharArray(40) { chars[random.nextInt(chars.length)] }
+        val encoded = String(password).toByteArray(Charsets.US_ASCII)
+        try {
+            AtomicFile(File(context.filesDir, CREDENTIAL_FILE)).replace { it.write(encoded) }
+        } finally {
+            encoded.fill(0)
+        }
         return password
     }
 
-    private fun load(storeFile: File, password: CharArray, packageName: String): Identity? {
-        return try {
-            val keyStore = KeyStore.getInstance("PKCS12")
-            FileInputStream(storeFile).use { keyStore.load(it, password.copyOf()) }
-            val key = keyStore.getKey(KEY_ALIAS, password.copyOf()) as? PrivateKey ?: return null
-            val cert = keyStore.getCertificate(KEY_ALIAS) as? X509Certificate ?: return null
-            if (cert.notAfter.before(Date())) {
-                AppLogger.w(TAG, "per-app certificate expired for $packageName — regenerating")
-                storeFile.delete()
-                return null
-            }
-            Identity(packageName, key, cert, storeFile, createdNow = false)
-        } catch (e: Exception) {
-            AppLogger.w(TAG, "per-app keystore load failed: ${e.message}")
-            null
+    private fun AtomicFile.replace(write: (java.io.FileOutputStream) -> Unit) {
+        val output = startWrite()
+        try {
+            write(output)
+            finishWrite(output)
+        } catch (error: Throwable) {
+            failWrite(output)
+            throw error
         }
+    }
+
+    private fun writeStore(
+        storeFile: File,
+        password: CharArray,
+        key: PrivateKey,
+        certificate: X509Certificate
+    ) {
+        val keyStore = KeyStore.getInstance("PKCS12")
+        keyStore.load(null, password)
+        keyStore.setKeyEntry(KEY_ALIAS, key, password, arrayOf(certificate))
+        AtomicFile(storeFile).replace { keyStore.store(it, password) }
     }
 
     private fun create(storeFile: File, password: CharArray, packageName: String): Identity {
@@ -171,10 +206,7 @@ object PerAppSigningIdentity {
         }.build(JcaContentSignerBuilder("SHA256withRSA").build(keyPair.private))
         val cert = JcaX509CertificateConverter().getCertificate(certHolder)
 
-        val keyStore = KeyStore.getInstance("PKCS12")
-        keyStore.load(null, password.copyOf())
-        keyStore.setKeyEntry(KEY_ALIAS, keyPair.private, password.copyOf(), arrayOf(cert))
-        FileOutputStream(storeFile).use { keyStore.store(it, password.copyOf()) }
+        writeStore(storeFile, password, keyPair.private, cert)
 
         AppLogger.i(TAG, "Created per-app signing identity for $packageName (${storeFile.name})")
         return Identity(packageName, keyPair.private, cert, storeFile, createdNow = true)

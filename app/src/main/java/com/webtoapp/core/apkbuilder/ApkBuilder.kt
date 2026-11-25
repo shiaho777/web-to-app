@@ -1,6 +1,10 @@
 package com.webtoapp.core.apkbuilder
 
 import android.content.Context
+import androidx.room.withTransaction
+import com.webtoapp.data.database.AppDatabase
+import com.webtoapp.data.model.ApkExportConfig
+import com.webtoapp.data.model.PublishedPerAppSigning
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
@@ -131,12 +135,13 @@ class ApkBuilder(private val context: Context) {
 
         private const val DEFAULT_VERSION_NAME = "1.0.0"
 
-        fun resolvePackageName(webApp: WebApp): String {
-            val custom = webApp.apkExportConfig?.customPackageName?.takeIf {
-                it.isNotBlank() && it.matches(PACKAGE_NAME_REGEX)
-            }
-            return custom ?: generatePackageName(webApp.name)
-        }
+        internal fun customPackageName(webApp: WebApp): String? =
+            webApp.apkExportConfig?.customPackageName?.takeIf(PACKAGE_NAME_REGEX::matches)
+
+        fun resolvePackageName(webApp: WebApp): String =
+            customPackageName(webApp)
+                ?: webApp.packageName?.takeIf(PACKAGE_NAME_REGEX::matches)
+                ?: generatePackageName(webApp.name)
 
         fun generatePackageName(appName: String): String {
             val raw = appName.hashCode().let {
@@ -311,26 +316,63 @@ class ApkBuilder(private val context: Context) {
             return BuildResult.Error(Strings.advancedFeaturesOff)
         }
         return withContext(Dispatchers.IO) {
-        ApkBuildService.acquire(context, webApp.name)
-        try {
-            lockFor(resolvePackageName(webApp)).withLock {
-                val versioned = withInstallAwareVersion(context, webApp)
-                if (versioned !== webApp) {
-                    AppLogger.i(
-                        "ApkBuilder",
-                        "Bumped version for ${resolvePackageName(webApp)}: " +
-                            "${webApp.apkExportConfig?.customVersionCode ?: 1} -> " +
-                            "${versioned.apkExportConfig?.customVersionCode}"
-                    )
+            ApkBuildService.acquire(context, webApp.name)
+            try {
+                if (webApp.id > 0) {
+                    lockFor("_project_${webApp.id}").withLock {
+                        buildWithResolvedIdentity(resolvePublishedIdentity(webApp), forceFullRebuild, onProgress)
+                    }
+                } else {
+                    buildWithResolvedIdentity(webApp, forceFullRebuild, onProgress)
                 }
-                buildApkInternal(versioned, forceFullRebuild) { percent, text ->
-                    ApkBuildService.updateProgress(context, percent, text)
-                    onProgress(percent, text)
-                }
+            } finally {
+                ApkBuildService.release(context)
             }
-        } finally {
-            ApkBuildService.release(context)
         }
+    }
+
+    private suspend fun buildWithResolvedIdentity(
+        webApp: WebApp,
+        forceFullRebuild: Boolean,
+        onProgress: (Int, String) -> Unit
+    ): BuildResult = lockFor(resolvePackageName(webApp)).withLock {
+        val versioned = withInstallAwareVersion(context, webApp)
+        buildApkInternal(versioned, forceFullRebuild) { percent, text ->
+            ApkBuildService.updateProgress(context, percent, text)
+            onProgress(percent, text)
+        }
+    }
+
+    private suspend fun resolvePublishedIdentity(webApp: WebApp): WebApp {
+        val current = AppDatabase.getInstance(context).webAppDao().getWebAppById(webApp.id) ?: return webApp
+        val config = webApp.apkExportConfig ?: ApkExportConfig()
+        return webApp.copy(
+            packageName = current.packageName ?: webApp.packageName,
+            apkExportConfig = config.copy(
+                publishedPerAppSigning = current.apkExportConfig?.publishedPerAppSigning
+                    ?: config.publishedPerAppSigning
+            )
+        )
+    }
+
+    private suspend fun recordPublishedIdentity(webApp: WebApp, packageName: String, fingerprint: String?) {
+        if (webApp.id <= 0) return
+        val database = AppDatabase.getInstance(context)
+        database.withTransaction {
+            val dao = database.webAppDao()
+            val current = dao.getWebAppById(webApp.id) ?: return@withTransaction
+            if (customPackageName(current) != customPackageName(webApp)) return@withTransaction
+            val pinned = current.packageName ?: packageName.takeIf { customPackageName(webApp) == null }
+            val currentConfig = current.apkExportConfig
+            val updated = if (fingerprint != null) {
+                (currentConfig ?: ApkExportConfig()).copy(
+                    perAppSigningEnabled = true,
+                    publishedPerAppSigning = PublishedPerAppSigning(packageName, fingerprint)
+                )
+            } else currentConfig
+            if (pinned != current.packageName || updated != currentConfig) {
+                dao.update(current.copy(packageName = pinned, apkExportConfig = updated))
+            }
         }
     }
 
@@ -359,7 +401,15 @@ class ApkBuilder(private val context: Context) {
 
             val perAppIdentity = if (webApp.apkExportConfig?.perAppSigningEnabled == true) {
                 try {
-                    PerAppSigningIdentity.identityFor(context, resolvePackageName(webApp))
+                    val packageName = resolvePackageName(webApp)
+                    val published = webApp.apkExportConfig.publishedPerAppSigning
+                        ?.takeIf { it.packageName == packageName }
+                    PerAppSigningIdentity.identityFor(
+                        context,
+                        packageName,
+                        requireExisting = published != null,
+                        expectedFingerprint = published?.certificateSha256
+                    )
                 } catch (e: Exception) {
                     return@withContext failBuild(
                         logger = logger,
@@ -1225,6 +1275,7 @@ class ApkBuilder(private val context: Context) {
                 analysisDeferred.await()
             }
 
+            recordPublishedIdentity(webApp, packageName, perAppIdentity?.certSha256Hex())
             onProgress(100, "Build complete")
 
             logger.logKeyValue("finalApkPath", signedApk.absolutePath)
@@ -1270,7 +1321,8 @@ class ApkBuilder(private val context: Context) {
                 incremental = usedIncremental,
                 buildMode = resolvedMode,
                 buildReason = resolvedReason,
-                metadataPath = metadataFile?.absolutePath
+                metadataPath = metadataFile?.absolutePath,
+                packageName = packageName
             )
 
         } catch (e: Exception) {
@@ -5322,7 +5374,8 @@ sealed class BuildResult {
         val incremental: Boolean = false,
         val buildMode: String = "FULL",
         val buildReason: String = "",
-        val metadataPath: String? = null
+        val metadataPath: String? = null,
+        val packageName: String? = null
     ) : BuildResult()
     data class Error(
         val message: String,

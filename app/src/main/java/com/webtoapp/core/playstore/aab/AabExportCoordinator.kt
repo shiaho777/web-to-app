@@ -36,12 +36,6 @@ class AabExportCoordinator(private val context: Context) {
             )
         }
 
-        // The AAB pipeline rewrites targetSdk to the Play-required level (>= 29). A
-        // server-runtime app (Node/PHP/Python/Go/WordPress, directly or via a multi-web
-        // site that survived source resolution) cannot exec its bundled runtimes under the
-        // W^X that follows, so converting it would mint an AAB whose app can never start.
-        // The interactive path blocks this via PlayPolicyChecker; this guard covers
-        // programmatic callers (agent tools, future automation).
         if (webApp.appType.requiresProcessExec) {
             throw AabExportException(
                 FailureStage.BUILD_APK,
@@ -66,11 +60,13 @@ class AabExportCoordinator(private val context: Context) {
         val outputAab = File(builtAabDir, "${safeName}_v${versionName}.aab")
         AppLogger.d(TAG, "Target AAB: ${outputAab.absolutePath}")
 
-        // Per-app signing carries over to the AAB: a Play upload signed with the host
-        // identity while the APK used the per-app one would split the update chain.
         val signingIdentity = if (webApp.apkExportConfig?.perAppSigningEnabled == true) {
             com.webtoapp.core.apkbuilder.PerAppSigningIdentity
-                .identityFor(context, ApkBuilder.resolvePackageName(webApp))
+                .identityFor(
+                    context,
+                    checkNotNull(buildResult.packageName),
+                    requireExisting = true
+                )
                 .toSigningIdentity()
         } else null
 

@@ -1193,7 +1193,13 @@ data class ApkExportConfig(
     val iconBackgroundColor: String? = null,
     val preserveIconShape: Boolean = false,
 
-    val autoVersionBump: Boolean = true
+    val autoVersionBump: Boolean = true,
+    val publishedPerAppSigning: PublishedPerAppSigning? = null
+)
+
+data class PublishedPerAppSigning(
+    val packageName: String,
+    val certificateSha256: String?
 )
 
 data class NetworkTrustConfig(

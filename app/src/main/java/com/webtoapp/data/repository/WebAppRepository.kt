@@ -1,6 +1,10 @@
 package com.webtoapp.data.repository
 
+import android.content.Context
 import androidx.room.Transaction
+import com.webtoapp.core.apkbuilder.BuildMetadataWriter
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import com.webtoapp.data.dao.WebAppDao
 import com.webtoapp.data.dao.WebAppStartupCandidate
 import com.webtoapp.data.dao.WebAppSummary
@@ -10,7 +14,10 @@ import com.webtoapp.core.i18n.Strings
 import com.webtoapp.data.dao.AppCategoryDao
 import kotlinx.coroutines.flow.Flow
 
-class WebAppRepository(private val webAppDao: WebAppDao) {
+class WebAppRepository(
+    private val webAppDao: WebAppDao,
+    private val context: Context? = null
+) {
 
     val allWebApps: Flow<List<WebApp>> = webAppDao.getAllWebApps()
 
@@ -32,7 +39,20 @@ class WebAppRepository(private val webAppDao: WebAppDao) {
     }
 
     suspend fun updateWebApp(webApp: WebApp) {
-        webAppDao.update(webApp.copy(updatedAt = System.currentTimeMillis()))
+        updateWebAppIfPresent(webApp)
+    }
+
+    suspend fun updateWebAppIfPresent(webApp: WebApp): Boolean {
+        val current = if (context != null && webApp.packageName == null) {
+            webAppDao.getWebAppById(webApp.id)
+        } else null
+        val formerAutoPackageName = if (context != null && current != null && current.name != webApp.name) {
+            withContext(Dispatchers.IO) { BuildMetadataWriter.findLegacyAutomaticPackageName(context, current) }
+        } else null
+        return webAppDao.updatePreservingPublishedIdentity(
+            webApp.copy(updatedAt = System.currentTimeMillis()),
+            formerAutoPackageName
+        )
     }
 
     suspend fun deleteWebApp(webApp: WebApp) {
@@ -110,7 +130,8 @@ class WebAppRepository(private val webAppDao: WebAppDao) {
             createdAt = now,
             updatedAt = now,
             isActivated = false,
-            // Match a newly created app so custom order shows the copy first.
+            packageName = null,
+            apkExportConfig = original.apkExportConfig?.copy(publishedPerAppSigning = null),
             homeSortIndex = 0,
         )
         return webAppDao.insert(copy)
@@ -128,7 +149,6 @@ class WebAppRepository(private val webAppDao: WebAppDao) {
         webAppDao.clearCategoryId(categoryId)
     }
 
-    /** Persists custom home order. Does not bump `updatedAt`. */
     suspend fun setHomeSortOrder(idsInOrder: List<Long>) {
         if (idsInOrder.isEmpty()) return
         webAppDao.setHomeSortOrder(idsInOrder)

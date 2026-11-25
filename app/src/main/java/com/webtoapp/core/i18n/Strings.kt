@@ -4195,6 +4195,18 @@ object Strings {
     fun buildServiceRunning(appName: String): String = StringsE.buildServiceRunning(appName)
     val openWithTitle: String get() = StringsE.openWithTitle
     val openWithHint: String get() = StringsE.openWithHint
+    val signingBackupTitle: String get() = StringsE.signingBackupTitle
+    val signingBackupUnlock: String get() = StringsE.signingBackupUnlock
+    val signingBackupPassword: String get() = StringsE.signingBackupPassword
+    val signingBackupConfirmPassword: String get() = StringsE.signingBackupConfirmPassword
+    val signingBackupPasswordHint: String get() = StringsE.signingBackupPasswordHint
+    val signingBackupExport: String get() = StringsE.signingBackupExport
+    val signingBackupWithoutKeys: String get() = StringsE.signingBackupWithoutKeys
+    val signingBackupNoKeys: String get() = StringsE.signingBackupNoKeys
+    val signingBackupMissingKey: String get() = StringsE.signingBackupMissingKey
+    val signingBackupConflict: String get() = StringsE.signingBackupConflict
+    val signingBackupUnreadable: String get() = StringsE.signingBackupUnreadable
+    val signingBackupInvalid: String get() = StringsE.signingBackupInvalid
     val perAppSigningTitle: String get() = StringsE.perAppSigningTitle
     val perAppSigningHint: String get() = StringsE.perAppSigningHint
 
