@@ -8922,16 +8922,16 @@ object StringsE {
         AppLanguage.KOREAN -> "사용자 지정 복귀 스킴"
     }
     val appReturnCustomSchemesHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "部分平台（如微信）的回调 scheme 与你在该平台注册的应用绑定，需自行填写。每行或用逗号分隔一个，例如 wx1234567890abcdef。"
-        AppLanguage.ENGLISH -> "Some providers (e.g. WeChat) bind the callback scheme to the app id you registered with them, so it cannot ship as a default. One per line or comma-separated, e.g. wx1234567890abcdef."
-        AppLanguage.ARABIC -> "بعض المزوّدين (مثل WeChat) يربطون مخطط الاستجابة بمعرّف التطبيق المسجَّل لديهم، لذا يُدخَل يدويًا. واحد في كل سطر أو مفصولة بفواصل، مثل wx1234567890abcdef."
-        AppLanguage.PORTUGUESE -> "Alguns provedores (ex.: WeChat) vinculam o esquema de retorno ao app id registrado neles e ele não pode vir como padrão. Um por linha ou separados por vírgula, ex.: wx1234567890abcdef."
-        AppLanguage.SPANISH -> "Algunos proveedores (p. ej. WeChat) vinculan el esquema de retorno al app id registrado en ellos y no puede venir por defecto. Uno por línea o separados por comas, p. ej. wx1234567890abcdef."
-        AppLanguage.FRENCH -> "Certains fournisseurs (ex. WeChat) lient le schéma de retour à l'app id enregistré chez eux ; il ne peut donc pas être fourni par défaut. Un par ligne ou séparés par des virgules, ex. wx1234567890abcdef."
-        AppLanguage.GERMAN -> "Manche Anbieter (z. B. WeChat) binden das Rückgabe-Schema an die dort registrierte App-ID, daher ist es nicht als Standard möglich. Eine pro Zeile oder kommagetrennt, z. B. wx1234567890abcdef."
-        AppLanguage.RUSSIAN -> "Некоторые провайдеры (напр. WeChat) привязывают схему возврата к вашему app id, поэтому её нельзя задать по умолчанию. Укажите по одной в строке или через запятую, например wx1234567890abcdef."
-        AppLanguage.JAPANESE -> "一部のプロバイダ（WeChat など）はコールバックスキームを登録済みのアプリ ID に紐づけるため、既定値として提供できません。1 行またはカンマ区切りで入力してください（例: wx1234567890abcdef）。"
-        AppLanguage.KOREAN -> "일부 제공자(예: WeChat)는 콜백 스킴을 등록한 앱 ID에 연결하므로 기본값으로 제공할 수 없습니다. 한 줄에 하나씩 또는 쉼표로 구분해 입력하세요(예: wx1234567890abcdef)."
+        AppLanguage.CHINESE -> "部分平台（如微信）会将回调 scheme 与注册的应用绑定。请填写在平台登记的 scheme，每行一个，也可用逗号分隔。"
+        AppLanguage.ENGLISH -> "Some providers, such as WeChat, tie the callback scheme to the registered app. Enter the schemes registered with your provider, one per line or separated by commas."
+        AppLanguage.ARABIC -> "يربط بعض المزوّدين، مثل WeChat، مخطط معاودة الاتصال بالتطبيق المسجّل. أدخل المخططات المسجّلة لدى المزوّد، بمخطط واحد في كل سطر أو بفصلها بفواصل."
+        AppLanguage.PORTUGUESE -> "Alguns provedores, como o WeChat, vinculam o esquema de retorno ao aplicativo registrado. Informe os esquemas registrados no provedor, um por linha ou separados por vírgulas."
+        AppLanguage.SPANISH -> "Algunos proveedores, como WeChat, vinculan el esquema de retorno a la aplicación registrada. Introduce los esquemas registrados con el proveedor, uno por línea o separados por comas."
+        AppLanguage.FRENCH -> "Certains fournisseurs, comme WeChat, associent le schéma de retour à l'application enregistrée. Saisissez les schémas enregistrés auprès du fournisseur, un par ligne ou séparés par des virgules."
+        AppLanguage.GERMAN -> "Einige Anbieter wie WeChat verknüpfen das Rückrufschema mit der registrierten App. Gib die beim Anbieter registrierten Schemata ein, eines pro Zeile oder durch Kommas getrennt."
+        AppLanguage.RUSSIAN -> "Некоторые сервисы, например WeChat, привязывают схему возврата к зарегистрированному приложению. Введите схемы, зарегистрированные у сервиса, по одной на строку или через запятую."
+        AppLanguage.JAPANESE -> "WeChat など一部のサービスでは、コールバックスキームが登録済みのアプリに紐づきます。サービスに登録したスキームを、1 行に 1 つずつ、またはカンマ区切りで入力してください。"
+        AppLanguage.KOREAN -> "WeChat과 같은 일부 제공자는 콜백 스킴을 등록된 앱에 연결합니다. 제공자에 등록한 스킴을 한 줄에 하나씩 입력하거나 쉼표로 구분하세요."
     }
     val decodeBase64DeepLinksTitle: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "解码 Base64 深度链接"
