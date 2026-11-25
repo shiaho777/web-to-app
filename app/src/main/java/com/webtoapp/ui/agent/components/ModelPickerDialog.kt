@@ -1,50 +1,32 @@
 package com.webtoapp.ui.agent.components
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.outlined.Circle
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.SmartToy
-import androidx.compose.material.icons.outlined.Verified
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.semantics.selected
 import com.webtoapp.core.i18n.Strings
-import com.webtoapp.ui.agent.ModelChoice
 import com.webtoapp.ui.agent.ProviderGroup
-import com.webtoapp.ui.design.WtaAlertDialog
-import com.webtoapp.ui.design.WtaAlpha
-import com.webtoapp.ui.design.WtaButton
-import com.webtoapp.ui.design.WtaButtonSize
-import com.webtoapp.ui.design.WtaButtonVariant
-import com.webtoapp.ui.design.WtaCard
-import com.webtoapp.ui.design.WtaCardTone
-import com.webtoapp.ui.design.WtaSize
+import com.webtoapp.ui.design.WtaChip
+import com.webtoapp.ui.design.WtaFullEmptyState
 import com.webtoapp.ui.design.WtaSpacing
-import com.webtoapp.ui.design.WtaTextField
 
 @Composable
 fun ModelPickerDialog(
@@ -53,255 +35,81 @@ fun ModelPickerDialog(
     onSelect: (String) -> Unit,
     onDismiss: () -> Unit
 ) {
-    var selectedProviderKeyId by remember {
-        mutableStateOf(initialSelectedProviderKeyId ?: groups.firstOrNull()?.apiKeyId)
-    }
-    var query by remember { mutableStateOf("") }
-    val currentGroup = groups.firstOrNull { it.apiKeyId == selectedProviderKeyId } ?: groups.firstOrNull()
-
-    // Flat matches across every provider when searching — drilling the two-pane
-    // layout provider-by-provider is the slow path when you know the model name.
-    val searchResults = remember(groups, query) {
-        if (query.isBlank()) emptyList()
-        else groups.flatMap { g ->
-            g.models.filter {
-                it.label.contains(query, ignoreCase = true) ||
-                    it.subtitle.contains(query, ignoreCase = true)
-            }.map { g.displayName to it }
+    var providerId by rememberSaveable { mutableStateOf(initialSelectedProviderKeyId) }
+    var query by rememberSaveable { mutableStateOf("") }
+    val selectedProvider = groups.firstOrNull { it.apiKeyId == providerId } ?: groups.firstOrNull()
+    val term = query.trim()
+    val filteredGroups = remember(groups, selectedProvider, term) {
+        if (term.isEmpty()) listOfNotNull(selectedProvider)
+        else groups.mapNotNull { group ->
+            val models = group.models.filter {
+                it.label.contains(term, ignoreCase = true) ||
+                    it.subtitle.contains(term, ignoreCase = true) ||
+                    group.displayName.contains(term, ignoreCase = true)
+            }
+            group.copy(models = models).takeIf { models.isNotEmpty() }
         }
     }
+    val modelList = rememberLazyListState()
+    LaunchedEffect(selectedProvider?.apiKeyId, term) { modelList.scrollToItem(0) }
 
-    WtaAlertDialog(
-        onDismissRequest = onDismiss,
-        icon = Icons.Outlined.SmartToy,
+    AgentPanel(
         title = Strings.agentModelPickerTitle,
-        confirmButton = {
-            WtaButton(
-                onClick = onDismiss,
-                text = Strings.agentActionCancel,
-                variant = WtaButtonVariant.Text,
-                size = WtaButtonSize.Small
-            )
-        },
-        content = {
-            Column(modifier = Modifier.fillMaxWidth()) {
-                WtaTextField(
-                    value = query,
-                    onValueChange = { query = it },
-                    placeholder = Strings.agentModelSearchHint,
-                    leadingIcon = Icons.Outlined.Search,
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
+        icon = Icons.Outlined.SmartToy,
+        onDismiss = onDismiss,
+        heightFraction = null
+    ) {
+        AgentSearchField(query, { query = it }, placeholder = Strings.agentModelSearchHint)
+        AgentReveal(visible = term.isEmpty() && groups.size > 1) {
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small),
+                state = rememberLazyListState(
+                    initialFirstVisibleItemIndex = groups.indexOf(selectedProvider).coerceAtLeast(0)
                 )
-                Spacer(Modifier.height(WtaSpacing.Small))
-                if (query.isNotBlank()) {
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .heightIn(min = 240.dp, max = 380.dp),
-                        verticalArrangement = Arrangement.spacedBy(WtaSpacing.Tiny + 2.dp)
-                    ) {
-                        if (searchResults.isEmpty()) {
-                            item {
-                                Text(
-                                    text = Strings.aiCatalogEmpty,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.padding(WtaSpacing.Medium)
-                                )
-                            }
-                        }
-                        items(searchResults, key = { it.second.id }) { (_, choice) ->
-                            ModelRow(
-                                choice = choice,
-                                onClick = { onSelect(choice.id) }
-                            )
-                        }
-                    }
-                } else {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .heightIn(min = 240.dp, max = 380.dp)
-                    ) {
-                        ProviderColumn(
-                            groups = groups,
-                            selectedKeyId = selectedProviderKeyId,
-                            onSelect = { selectedProviderKeyId = it },
-                            modifier = Modifier.weight(1f)
-                        )
-                        Spacer(Modifier.width(WtaSpacing.Small))
-                        ModelColumn(
-                            group = currentGroup,
-                            onSelect = onSelect,
-                            modifier = Modifier.weight(1.4f)
-                        )
-                    }
+            ) {
+                items(groups, key = { it.apiKeyId }) { group ->
+                    WtaChip(
+                        label = group.displayName,
+                        selected = group == selectedProvider,
+                        onClick = { providerId = group.apiKeyId },
+                        modifier = Modifier.animateItem()
+                    )
                 }
             }
         }
-    )
-}
-
-@Composable
-private fun ProviderColumn(
-    groups: List<ProviderGroup>,
-    selectedKeyId: String?,
-    onSelect: (String) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Column(modifier = modifier) {
-        Text(
-            text = Strings.agentModelPickerProviders,
-            style = MaterialTheme.typography.labelMedium,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(bottom = WtaSpacing.Small)
-        )
-        LazyColumn(
-            modifier = Modifier.fillMaxHeight(),
-            verticalArrangement = Arrangement.spacedBy(WtaSpacing.Tiny + 2.dp)
-        ) {
-            items(groups, key = { it.apiKeyId }) { group ->
-                ProviderRow(
-                    name = group.displayName,
-                    count = group.models.size,
-                    selected = group.apiKeyId == selectedKeyId,
-                    onClick = { onSelect(group.apiKeyId) }
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun ModelColumn(
-    group: ProviderGroup?,
-    onSelect: (String) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Column(modifier = modifier) {
-        Text(
-            text = Strings.agentModelPickerModels,
-            style = MaterialTheme.typography.labelMedium,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(bottom = WtaSpacing.Small)
-        )
-        val models = group?.models ?: emptyList()
-        LazyColumn(
-            modifier = Modifier.fillMaxHeight(),
-            verticalArrangement = Arrangement.spacedBy(WtaSpacing.Tiny + 2.dp)
-        ) {
-            items(models, key = { it.id }) { choice ->
-                ModelRow(
-                    choice = choice,
-                    onClick = { onSelect(choice.id) }
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun ProviderRow(
-    name: String,
-    count: Int,
-    selected: Boolean,
-    onClick: () -> Unit
-) {
-    val tone = if (selected) WtaCardTone.Highlighted else WtaCardTone.Surface
-    val onTone = if (selected) MaterialTheme.colorScheme.onPrimaryContainer
-    else MaterialTheme.colorScheme.onSurface
-    val onSubdued = if (selected) {
-        MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = WtaAlpha.Strong)
-    } else MaterialTheme.colorScheme.onSurfaceVariant
-
-    WtaCard(
-        onClick = onClick,
-        tone = tone,
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(
-            horizontal = WtaSpacing.Small + 2.dp,
-            vertical = WtaSpacing.Small
-        ),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-                imageVector = Icons.Outlined.Verified,
-                contentDescription = null,
-                tint = if (selected) MaterialTheme.colorScheme.primary
-                else MaterialTheme.colorScheme.outline,
-                modifier = Modifier.size(WtaSize.IconSmall)
+        if (filteredGroups.none { it.models.isNotEmpty() }) {
+            WtaFullEmptyState(
+                title = if (term.isEmpty()) Strings.aiCatalogEmpty else Strings.noSearchResults,
+                icon = if (term.isEmpty()) Icons.Outlined.SmartToy else Icons.Outlined.Search,
+                modifier = Modifier.padding(vertical = WtaSpacing.ExtraLarge),
+                fillMaxSize = false
             )
-            Spacer(Modifier.width(WtaSpacing.Small))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = name,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = onTone,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    text = count.toString(),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = onSubdued
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun ModelRow(
-    choice: ModelChoice,
-    onClick: () -> Unit
-) {
-    val selected = choice.selected
-    val tone = if (selected) WtaCardTone.Highlighted else WtaCardTone.Surface
-    val onTone = if (selected) MaterialTheme.colorScheme.onPrimaryContainer
-    else MaterialTheme.colorScheme.onSurface
-    val onSubdued = if (selected) {
-        MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = WtaAlpha.Strong)
-    } else MaterialTheme.colorScheme.onSurfaceVariant
-
-    WtaCard(
-        onClick = onClick,
-        tone = tone,
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(
-            horizontal = WtaSpacing.Small + 2.dp,
-            vertical = WtaSpacing.Small
-        ),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-                imageVector = if (selected) Icons.Filled.CheckCircle
-                else Icons.Outlined.Circle,
-                contentDescription = null,
-                tint = if (selected) MaterialTheme.colorScheme.primary
-                else MaterialTheme.colorScheme.outline,
-                modifier = Modifier.size(WtaSize.IconSmall)
-            )
-            Spacer(Modifier.width(WtaSpacing.Small))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = choice.label,
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = onTone,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    text = choice.subtitle,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = onSubdued,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+        } else {
+            LazyColumn(
+                state = modelList,
+                modifier = Modifier.fillMaxWidth().weight(1f, fill = false),
+                contentPadding = PaddingValues(bottom = WtaSpacing.Medium),
+                verticalArrangement = Arrangement.spacedBy(WtaSpacing.Tiny)
+            ) {
+                filteredGroups.forEach { group ->
+                    if (term.isNotEmpty()) item(key = "provider:${group.apiKeyId}") {
+                        Text(
+                            group.displayName,
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(WtaSpacing.Medium).animateItem()
+                        )
+                    }
+                    items(group.models, key = { it.id }) { model ->
+                        AgentSelectionRow(
+                            title = model.label,
+                            subtitle = model.subtitle.takeUnless { it == model.label },
+                            selected = model.selected,
+                            onClick = { onSelect(model.id) },
+                            modifier = Modifier.animateItem()
+                        )
+                    }
+                }
             }
         }
     }

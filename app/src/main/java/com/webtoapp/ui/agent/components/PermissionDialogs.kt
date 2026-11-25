@@ -2,31 +2,34 @@ package com.webtoapp.ui.agent.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.outlined.ChatBubbleOutline
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Circle
 import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.webtoapp.core.agent.permission.ChoiceRequest
@@ -41,11 +44,11 @@ import com.webtoapp.ui.design.WtaButtonSize
 import com.webtoapp.ui.design.WtaButtonVariant
 import com.webtoapp.ui.design.WtaCard
 import com.webtoapp.ui.design.WtaCardTone
-import com.webtoapp.ui.design.WtaRadius
 import com.webtoapp.ui.design.WtaSize
 import com.webtoapp.ui.design.WtaSpacing
 import com.webtoapp.ui.design.WtaTextField
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun PermissionDialog(
     request: PermissionRequest,
@@ -54,17 +57,22 @@ fun PermissionDialog(
     WtaAlertDialog(
         onDismissRequest = { onResponse(PermissionResponse.Deny) },
         icon = Icons.Outlined.Shield,
-        iconTint = MaterialTheme.colorScheme.primary,
-        title = request.toolName,
+        title = Strings.agentPermissionRequired,
         confirmButton = {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Tiny),
-                verticalAlignment = Alignment.CenterVertically
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Tiny, Alignment.End)
             ) {
+                WtaButton(
+                    onClick = { onResponse(PermissionResponse.Deny) },
+                    text = Strings.agentPermissionDeny,
+                    variant = WtaButtonVariant.Text,
+                    size = WtaButtonSize.Small
+                )
                 WtaButton(
                     onClick = { onResponse(PermissionResponse.AlwaysAllow) },
                     text = Strings.agentPermissionAlways,
-                    variant = WtaButtonVariant.Text,
+                    variant = WtaButtonVariant.Outlined,
                     size = WtaButtonSize.Small
                 )
                 WtaButton(
@@ -75,46 +83,43 @@ fun PermissionDialog(
                 )
             }
         },
-        dismissButton = {
-            WtaButton(
-                onClick = { onResponse(PermissionResponse.Deny) },
-                text = Strings.agentPermissionDeny,
-                variant = WtaButtonVariant.Text,
-                size = WtaButtonSize.Small
-            )
-        },
         content = {
             Text(
-                text = Strings.agentPermissionRequired,
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                text = toolActionLabel(request.toolName),
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurface
             )
             request.activity?.let { activity ->
                 Text(
                     text = activity,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             if (request.argsPreview.isNotEmpty()) {
                 WtaCard(
                     tone = WtaCardTone.Elevated,
-                    contentPadding = androidx.compose.foundation.layout.PaddingValues(WtaSpacing.Medium)
+                    contentPadding = PaddingValues(WtaSpacing.Medium),
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    request.argsPreview.entries.forEachIndexed { idx, (k, v) ->
-                        if (idx > 0) Spacer(Modifier.height(WtaSpacing.Tiny))
-                        Row(verticalAlignment = Alignment.Top) {
-                            Text(
-                                text = "$k:",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.width(96.dp)
-                            )
-                            Text(
-                                text = v,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
+                    Column(
+                        modifier = Modifier.heightIn(max = 208.dp).verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
+                    ) {
+                        request.argsPreview.forEach { (name, value) ->
+                            Column(verticalArrangement = Arrangement.spacedBy(WtaSpacing.Tiny)) {
+                                Text(
+                                    text = name,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    text = value,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontFamily = FontFamily.Monospace,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
                         }
                     }
                 }
@@ -123,129 +128,108 @@ fun PermissionDialog(
     )
 }
 
-@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun ChoiceBottomSheet(
     request: ChoiceRequest,
     onResponse: (ChoiceResponse) -> Unit
 ) {
-    val sheetState = androidx.compose.material3.rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val singleSelections = remember(request.id) { mutableStateMapOf<Int, String>() }
     val multiSelections = remember(request.id) { mutableStateMapOf<Int, MutableSet<String>>() }
     val otherTexts = remember(request.id) { mutableStateMapOf<Int, String>() }
 
-    ModalBottomSheet(
-        onDismissRequest = { onResponse(ChoiceResponse.Cancelled) },
-        sheetState = sheetState,
-        containerColor = MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(
-            topStart = WtaRadius.Dialog,
-            topEnd = WtaRadius.Dialog
-        )
+    AgentPanel(
+        title = Strings.agentChoiceTitle,
+        icon = Icons.Outlined.ChatBubbleOutline,
+        onDismiss = { onResponse(ChoiceResponse.Cancelled) },
+        heightFraction = null
     ) {
         Column(
-            modifier = Modifier.padding(
-                horizontal = WtaSpacing.ScreenHorizontal,
-                vertical = WtaSpacing.Small
-            ),
+            modifier = Modifier
+                .weight(1f, fill = false)
+                .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(WtaSpacing.Medium)
         ) {
-            Text(
-                text = Strings.agentChoiceTitle,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-
-            // Scrollable so long option lists never push the action row off-screen.
-            Column(
-                modifier = Modifier
-                    .weight(1f, fill = false)
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(WtaSpacing.Medium)
-            ) {
-                request.questions.forEachIndexed { qIdx, q ->
-                    Column(verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)) {
-                        Text(
-                            text = q.text,
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        q.options.forEach { opt ->
-                            OptionRow(
-                                label = opt.label,
-                                description = opt.description,
-                                selected = if (q.multiSelect) {
-                                    multiSelections[qIdx]?.contains(opt.label) == true
-                                } else {
-                                    singleSelections[qIdx] == opt.label
-                                },
-                                multi = q.multiSelect,
-                                onToggle = {
-                                    if (q.multiSelect) {
-                                        val current = multiSelections[qIdx] ?: emptySet()
-                                        multiSelections[qIdx] = if (opt.label in current) {
-                                            current - opt.label
-                                        } else {
-                                            current + opt.label
-                                        }.toMutableSet()
+            request.questions.forEachIndexed { qIdx, q ->
+                Column(verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)) {
+                    Text(
+                        text = q.text,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    q.options.forEach { opt ->
+                        OptionRow(
+                            label = opt.label,
+                            description = opt.description,
+                            selected = if (q.multiSelect) {
+                                multiSelections[qIdx]?.contains(opt.label) == true
+                            } else {
+                                singleSelections[qIdx] == opt.label
+                            },
+                            multi = q.multiSelect,
+                            onToggle = {
+                                if (q.multiSelect) {
+                                    val current = multiSelections[qIdx] ?: emptySet()
+                                    multiSelections[qIdx] = if (opt.label in current) {
+                                        current - opt.label
                                     } else {
-                                        singleSelections[qIdx] = opt.label
-                                    }
+                                        current + opt.label
+                                    }.toMutableSet()
+                                } else {
+                                    singleSelections[qIdx] = opt.label
                                 }
-                            )
-                        }
-                        if (q.allowOther) {
-                            WtaTextField(
-                                value = otherTexts[qIdx].orEmpty(),
-                                onValueChange = { otherTexts[qIdx] = it },
-                                placeholder = Strings.agentChoiceOtherHint,
-                                singleLine = true,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
+                            }
+                        )
                     }
-                    if (qIdx < request.questions.lastIndex) {
-                        HorizontalDivider(
-                            color = MaterialTheme.colorScheme.outlineVariant
-                                .copy(alpha = WtaAlpha.Divider)
+                    if (q.allowOther) {
+                        WtaTextField(
+                            value = otherTexts[qIdx].orEmpty(),
+                            onValueChange = { otherTexts[qIdx] = it },
+                            placeholder = Strings.agentChoiceOtherHint,
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
                         )
                     }
                 }
+                if (qIdx < request.questions.lastIndex) {
+                    HorizontalDivider(
+                        color = MaterialTheme.colorScheme.outlineVariant
+                            .copy(alpha = WtaAlpha.Divider)
+                    )
+                }
             }
-
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Tiny, Alignment.End),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                WtaButton(
-                    onClick = { onResponse(ChoiceResponse.Cancelled) },
-                    text = Strings.agentActionCancel,
-                    variant = WtaButtonVariant.Text,
-                    size = WtaButtonSize.Medium
-                )
-                WtaButton(
-                    onClick = {
-                        val answers = request.questions.indices.map { i ->
-                            val picks = mutableListOf<String>()
-                            if (request.questions[i].multiSelect) {
-                                picks += multiSelections[i]?.toList().orEmpty()
-                            } else {
-                                singleSelections[i]?.let { picks += it }
-                            }
-                            otherTexts[i]?.takeIf { it.isNotBlank() }?.let { picks += it }
-                            picks.toList()
-                        }
-                        onResponse(ChoiceResponse.Answered(answers))
-                    },
-                    text = Strings.agentActionSubmit,
-                    variant = WtaButtonVariant.Primary,
-                    size = WtaButtonSize.Medium
-                )
-            }
-            Spacer(Modifier.height(WtaSpacing.Tiny))
         }
+
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Tiny, Alignment.End),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            WtaButton(
+                onClick = { onResponse(ChoiceResponse.Cancelled) },
+                text = Strings.agentActionCancel,
+                variant = WtaButtonVariant.Text,
+                size = WtaButtonSize.Medium
+            )
+            WtaButton(
+                onClick = {
+                    val answers = request.questions.indices.map { i ->
+                        val picks = mutableListOf<String>()
+                        if (request.questions[i].multiSelect) {
+                            picks += multiSelections[i]?.toList().orEmpty()
+                        } else {
+                            singleSelections[i]?.let { picks += it }
+                        }
+                        otherTexts[i]?.takeIf { it.isNotBlank() }?.let { picks += it }
+                        picks.toList()
+                    }
+                    onResponse(ChoiceResponse.Answered(answers))
+                },
+                text = Strings.agentActionSubmit,
+                variant = WtaButtonVariant.Primary,
+                size = WtaButtonSize.Medium
+            )
+        }
+        Spacer(Modifier.height(WtaSpacing.Tiny))
     }
 }
 

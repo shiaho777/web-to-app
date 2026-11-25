@@ -1,43 +1,13 @@
 package com.webtoapp.ui.agent.components
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
+import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import com.webtoapp.core.agent.files.ProjectFileManager
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.ui.agent.AgentUiState
-import com.webtoapp.ui.design.WtaAlpha
-import com.webtoapp.ui.design.WtaElevation
-import com.webtoapp.ui.design.WtaFadeIn
-import com.webtoapp.ui.design.WtaFadeOut
-import com.webtoapp.ui.design.WtaIconButton
-import com.webtoapp.ui.design.WtaRadius
-import com.webtoapp.ui.design.WtaSpacing
 
 @Composable
 fun PreviewSheet(
@@ -45,82 +15,22 @@ fun PreviewSheet(
     state: AgentUiState,
     fileManager: ProjectFileManager,
     onDismiss: () -> Unit,
-
     onSelectFile: (String) -> Unit = {}
 ) {
-    AnimatedVisibility(visible = visible, enter = WtaFadeIn, exit = WtaFadeOut) {
+    if (!visible) return
 
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.5f))
-                .clickable(onClick = onDismiss)
-        )
-    }
-    AnimatedVisibility(
-        visible = visible,
-        enter = slideInVertically(initialOffsetY = { it }),
-        exit = slideOutVertically(targetOffsetY = { it })
+    AgentPanel(
+        title = Strings.agentPreviewOpen,
+        icon = Icons.Outlined.PlayArrow,
+        onDismiss = onDismiss,
+        closeLabel = Strings.agentPreviewClose,
+        heightFraction = 0.94f
     ) {
-        Surface(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(top = 48.dp),
-            color = MaterialTheme.colorScheme.surface,
-            shape = RoundedCornerShape(
-                topStart = WtaRadius.Dialog,
-                topEnd = WtaRadius.Dialog
-            ),
-            tonalElevation = WtaElevation.Level3
-        ) {
-            Column(modifier = Modifier.fillMaxSize()) {
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Spacer(Modifier.height(WtaSpacing.Small))
-                    Box(
-                        modifier = Modifier
-                            .size(width = 36.dp, height = 4.dp)
-                            .clip(RoundedCornerShape(2.dp))
-                            .background(MaterialTheme.colorScheme.outlineVariant)
-                    )
-                    Spacer(Modifier.height(WtaSpacing.Tiny))
-                }
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(
-                            horizontal = WtaSpacing.Small,
-                            vertical = WtaSpacing.Tiny
-                        ),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Spacer(Modifier.size(WtaSpacing.Small))
-                    Text(
-                        text = Strings.agentPreviewOpen,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.weight(1f)
-                    )
-                    WtaIconButton(
-                        onClick = onDismiss,
-                        icon = Icons.Outlined.Close,
-                        contentDescription = Strings.agentPreviewClose
-                    )
-                }
-                HorizontalDivider(
-                    color = MaterialTheme.colorScheme.outlineVariant
-                        .copy(alpha = WtaAlpha.Divider)
-                )
-                PreviewPane(
-                    state = state,
-                    fileManager = fileManager,
-                    onSelectFile = onSelectFile,
-                    modifier = Modifier.fillMaxSize()
-                )
-            }
-        }
+        PreviewPane(
+            state = state,
+            fileManager = fileManager,
+            onSelectFile = onSelectFile,
+            modifier = Modifier.fillMaxWidth().weight(1f)
+        )
     }
 }

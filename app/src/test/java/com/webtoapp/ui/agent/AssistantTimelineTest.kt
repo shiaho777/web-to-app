@@ -4,6 +4,7 @@ import com.google.common.truth.Truth.assertThat
 import com.webtoapp.core.agent.session.RecordedToolCall
 import com.webtoapp.ui.agent.components.AssistantTimelinePart
 import com.webtoapp.ui.agent.components.buildAssistantTimeline
+import com.webtoapp.ui.agent.components.compactToolActivity
 import org.junit.Test
 
 class AssistantTimelineTest {
@@ -42,6 +43,20 @@ class AssistantTimelineTest {
 
         assertThat(buildAssistantTimeline(text, listOf(first, second), emptyList()))
             .containsExactly(AssistantTimelinePart.Tools(listOf(first, second)))
+    }
+
+    @Test
+    fun `compact groups retain the open row, active work, and failure in execution order`() {
+        val failure = call("failure").copy(status = RecordedToolCall.Status.Failed)
+        val running = call("running").copy(status = RecordedToolCall.Status.Running)
+        val expanded = call("expanded")
+        val latest = call("latest")
+        val calls = listOf(failure, call("older"), expanded, running, latest)
+
+        assertThat(compactToolActivity(calls, expanded.toolCallId, live = true))
+            .containsExactly(failure, expanded, running).inOrder()
+        assertThat(compactToolActivity(calls, expanded.toolCallId, live = false))
+            .containsExactly(failure, expanded, latest).inOrder()
     }
 
     private fun toolMarker(id: String) = "\u2063TC:${id}\u2063"

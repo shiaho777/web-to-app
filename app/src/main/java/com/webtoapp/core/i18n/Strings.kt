@@ -1630,6 +1630,7 @@ object Strings {
     val agentPlanEmpty: String get() = StringsB.agentPlanEmpty
     val agentPlanAwaitingReview: String get() = StringsB.agentPlanAwaitingReview
     val agentPlanApprove: String get() = StringsB.agentPlanApprove
+    val agentPlanApprovedMessage: String get() = StringsB.agentPlanApprovedMessage
     val agentPlanRequestRevisions: String get() = StringsB.agentPlanRequestRevisions
     val agentCompacting: String get() = StringsB.agentCompacting
     val agentCompactedManual: String get() = StringsB.agentCompactedManual

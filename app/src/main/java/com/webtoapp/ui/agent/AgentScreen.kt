@@ -5,32 +5,35 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
-import androidx.compose.foundation.gestures.animateScrollBy
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.exclude
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Apps
@@ -39,15 +42,12 @@ import androidx.compose.material.icons.outlined.Bolt
 import androidx.compose.material.icons.outlined.Build
 import androidx.compose.material.icons.outlined.Checklist
 import androidx.compose.material.icons.outlined.History
-import androidx.compose.material.icons.outlined.Logout
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material.icons.outlined.Terminal
 import androidx.compose.material3.DrawerValue
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
@@ -63,6 +63,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -79,20 +81,27 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.webtoapp.core.i18n.Strings
-import com.webtoapp.ui.agent.components.ChoiceBottomSheet
-import com.webtoapp.ui.agent.components.Composer
 import com.webtoapp.ui.agent.components.AgentContextSheet
+import com.webtoapp.ui.agent.components.AgentDrawer
+import com.webtoapp.ui.agent.components.AgentPanel
+import com.webtoapp.ui.agent.components.AgentReveal
 import com.webtoapp.ui.agent.components.AgentToolsSheet
 import com.webtoapp.ui.agent.components.AgentWelcome
+import com.webtoapp.ui.agent.components.AppChangesReviewCard
+import com.webtoapp.ui.agent.components.ChangesReviewCard
+import com.webtoapp.ui.agent.components.ChoiceBottomSheet
+import com.webtoapp.ui.agent.components.Composer
 import com.webtoapp.ui.agent.components.MarkdownText
 import com.webtoapp.ui.agent.components.MessageActions
-import com.webtoapp.ui.agent.components.formatMessageForCopy
 import com.webtoapp.ui.agent.components.MessageBubble
 import com.webtoapp.ui.agent.components.PermissionDialog
 import com.webtoapp.ui.agent.components.PreviewSheet
-import com.webtoapp.ui.agent.components.AgentDrawer
 import com.webtoapp.ui.agent.components.StreamingBubble
 import com.webtoapp.ui.agent.components.TodoChecklist
+import com.webtoapp.ui.agent.components.formatMessageForCopy
+import com.webtoapp.ui.design.WtaButton
+import com.webtoapp.ui.design.WtaButtonSize
+import com.webtoapp.ui.design.WtaButtonVariant
 import com.webtoapp.ui.design.WtaCard
 import com.webtoapp.ui.design.WtaCardTone
 import com.webtoapp.ui.design.WtaDropdownMenu
@@ -106,12 +115,8 @@ import com.webtoapp.ui.design.WtaSize
 import com.webtoapp.ui.design.WtaSpacing
 import com.webtoapp.ui.design.WtaStatusBanner
 import com.webtoapp.ui.design.WtaStatusTone
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import com.webtoapp.ui.design.WtaButton
-import com.webtoapp.ui.design.WtaButtonSize
-import com.webtoapp.ui.design.WtaButtonVariant
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.launch
 
 @Composable
@@ -130,11 +135,20 @@ fun AgentScreen(
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val snackbar = remember { SnackbarHostState() }
+    val conversationPositions = rememberSaveableStateHolder()
     val focusManager = LocalFocusManager.current
+    val openModel: () -> Unit = {
+        focusManager.clearFocus()
+        if (state.modelMissing) onAddModel() else vm.openModelPicker()
+    }
 
     var drawerMounted by remember { mutableStateOf(false) }
     var actionsOpen by remember { mutableStateOf(false) }
     var toolsOpen by rememberSaveable { mutableStateOf(false) }
+    val planReview = state.pendingPlanReview
+    var planReviewOpen by rememberSaveable(state.currentSession?.id, planReview) {
+        mutableStateOf(planReview != null)
+    }
 
     val imagePicker = rememberLauncherForActivityResult(
         ActivityResultContracts.GetMultipleContents()
@@ -158,8 +172,7 @@ fun AgentScreen(
             if (state.drawerOpen ||
                 drawerState.currentValue != DrawerValue.Closed
             ) {
-                if (state.drawerOpen) vm.closeDrawer()
-                runCatching { drawerState.close() }
+                vm.closeDrawer()
                 return@launch
             }
             when {
@@ -190,8 +203,7 @@ fun AgentScreen(
             drawerMounted = true
             drawerState.open()
         } else {
-
-            if (drawerState.currentValue != DrawerValue.Closed) {
+            if (drawerState.currentValue != DrawerValue.Closed || drawerState.targetValue != DrawerValue.Closed) {
                 drawerState.close()
             }
             drawerMounted = false
@@ -227,37 +239,43 @@ fun AgentScreen(
 
     ModalNavigationDrawer(
         drawerState = drawerState,
-        gesturesEnabled = drawerState.isOpen,
+        gesturesEnabled = drawerState.isOpen && state.drawerOpen,
         drawerContent = {
 
-            if (drawerMounted) {
-                ModalDrawerSheet(
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .width(320.dp),
-                    drawerContainerColor = MaterialTheme.colorScheme.surface
-                ) {
+            ModalDrawerSheet(
+                drawerState = drawerState,
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .widthIn(max = 340.dp)
+                    .fillMaxWidth(0.88f),
+                drawerContainerColor = MaterialTheme.colorScheme.surface
+            ) {
+                if (drawerMounted) {
                     AgentDrawer(
                         state = state,
+                        onClose = vm::closeDrawer,
                         onTabChange = vm::setDrawerTab,
                         onSearchChange = vm::setDrawerSearch,
                         onPickSession = { id ->
-                            scope.launch { drawerState.close() }
+                            vm.closeDrawer()
                             vm.selectSession(id)
                         },
                         onNewSession = {
-                            scope.launch { drawerState.close() }
+                            vm.closeDrawer()
                             vm.tryNewSession()
                         },
-                        onDeleteSession = vm::deleteSession,
+                        onDeleteSession = { id ->
+                            conversationPositions.removeState(id)
+                            vm.deleteSession(id)
+                        },
                         onPinSession = vm::pinSession,
                         onRenameSession = vm::renameSession,
                         onExportSession = { id ->
-                            scope.launch { drawerState.close() }
+                            vm.closeDrawer()
                             vm.exportSession(id)
                         },
                         onPickFile = { path ->
-                            scope.launch { drawerState.close() }
+                            vm.closeDrawer()
                             vm.selectFile(path)
                             vm.openPreview()
                         },
@@ -266,7 +284,7 @@ fun AgentScreen(
                             scope.launch { snackbar.showSnackbar(Strings.agentPathCopied) }
                         },
                         onOpenWith = { path ->
-                            scope.launch { drawerState.close() }
+                            vm.closeDrawer()
                             vm.openWithSystemChooser(path)
                         },
                         onDeleteFile = vm::deleteSessionFile
@@ -305,6 +323,7 @@ fun AgentScreen(
                                 leadingIcon = Icons.Outlined.PlayArrow,
                                 onClick = {
                                     actionsOpen = false
+                                    focusManager.clearFocus()
                                     vm.openPreview()
                                 }
                             )
@@ -363,53 +382,56 @@ fun AgentScreen(
                     .fillMaxSize()
                     .windowInsetsPadding(WindowInsets.ime.exclude(WindowInsets.navigationBars))
             ) {
-                if (state.planActive) {
+                AgentReveal(visible = state.planActive || planReview != null) {
                     PlanBanner(
-                        planFilePath = state.planFilePath,
-                        onReview = if (state.canChangePlanMode) vm::submitPlanForReview else null
+                        planFilePath = planReview?.planPath ?: state.planFilePath,
+                        awaitingReview = planReview != null,
+                        onReview = when {
+                            planReview != null -> ({ planReviewOpen = true })
+                            state.canChangePlanMode -> vm::submitPlanForReview
+                            else -> null
+                        }
                     )
                 }
-                Conversation(
-                    state = state,
-                    actions = messageActions,
-                    onPickSession = vm::selectSession,
-                    onOpenSessions = { vm.openDrawer(AgentUiState.DrawerTab.Sessions) },
-                    onFillComposer = vm::setComposerText,
-                    modifier = Modifier.weight(1f)
-                )
-                state.pendingPlanReview?.let { review ->
-                    PlanReviewCard(
-                        review = review,
-                        onApprove = vm::approvePlan,
-                        onRequestRevisions = vm::rejectPlan
+                conversationPositions.SaveableStateProvider(state.currentSession?.id.orEmpty()) {
+                    Conversation(
+                        state = state,
+                        actions = messageActions,
+                        onPickSession = vm::selectSession,
+                        onOpenSessions = { vm.openDrawer(AgentUiState.DrawerTab.Sessions) },
+                        onFillComposer = vm::setComposerText,
+                        modifier = Modifier.weight(1f),
+                        fileReview = {
+                            ChangesReviewCard(
+                                changes = state.pendingChanges,
+                                expanded = state.changesReviewExpanded,
+                                onToggle = vm::toggleChangesReview,
+                                onUndoOne = vm::undoChange,
+                                onUndoAll = vm::undoAllChanges,
+                                onClear = vm::clearChangesReview
+                            )
+                        },
+                        appReview = {
+                            AppChangesReviewCard(
+                                changes = state.pendingAppChanges,
+                                expanded = state.appChangesExpanded,
+                                onToggle = vm::toggleAppChangesReview,
+                                onClear = vm::clearAppChanges,
+                                onOpenApp = onOpenApp
+                            )
+                        }
                     )
                 }
 
-                com.webtoapp.ui.agent.components.ChangesReviewCard(
-                    changes = state.pendingChanges,
-                    expanded = state.changesReviewExpanded,
-                    onToggle = vm::toggleChangesReview,
-                    onUndoOne = vm::undoChange,
-                    onUndoAll = vm::undoAllChanges,
-                    onClear = vm::clearChangesReview
-                )
-
-                com.webtoapp.ui.agent.components.AppChangesReviewCard(
-                    changes = state.pendingAppChanges,
-                    expanded = state.appChangesExpanded,
-                    onToggle = vm::toggleAppChangesReview,
-                    onClear = vm::clearAppChanges,
-                    onOpenApp = onOpenApp
-                )
-                if (state.editingMessageId != null) {
+                AgentReveal(visible = state.editingMessageId != null) {
                     EditingHint(onCancel = vm::cancelEditing)
                 }
                 Composer(
                     state = state,
-                    onTextChange = vm::setComposerText,
+                    onTextChange = vm::updateComposer,
                     onSend = vm::send,
                     onCancel = vm::cancelTurn,
-                    onRunSlashCommand = vm::runSlashCommand,
+                    onRunSlashCommand = { vm.runSlashCommand(it, openModel) },
                     onDismissSlash = vm::dismissSlash,
                     onPickMention = vm::pickFileMention,
                     onDismissMention = vm::dismissMention,
@@ -425,15 +447,23 @@ fun AgentScreen(
                         focusManager.clearFocus()
                         vm.openContextPicker()
                     },
-                    onOpenModelPicker = {
-                        focusManager.clearFocus()
-                        if (state.modelMissing) onAddModel() else vm.openModelPicker()
-                    }
+                    onOpenModelPicker = openModel
                 )
             }
         }
     }
 
+    if (planReview != null && planReviewOpen && !state.drawerOpen && !state.previewOpen &&
+        !state.contextPickerOpen && !state.modelPickerOpen && !state.saveAsAppDialogOpen && !toolsOpen &&
+        state.pendingPermission == null && state.pendingChoice == null
+    ) {
+        PlanReviewSheet(
+            review = planReview,
+            onDismiss = { planReviewOpen = false },
+            onApprove = vm::approvePlan,
+            onRequestRevisions = vm::rejectPlan
+        )
+    }
     if (state.contextPickerOpen) {
         AgentContextSheet(
             state = state,
@@ -512,7 +542,7 @@ private fun EditingHint(onCancel: () -> Unit) {
 }
 
 @Composable
-private fun PlanBanner(planFilePath: String?, onReview: (() -> Unit)?) {
+private fun PlanBanner(planFilePath: String?, awaitingReview: Boolean, onReview: (() -> Unit)?) {
     WtaCard(
         modifier = Modifier
             .fillMaxWidth()
@@ -531,7 +561,10 @@ private fun PlanBanner(planFilePath: String?, onReview: (() -> Unit)?) {
                 modifier = Modifier.size(WtaSize.Icon)
             )
             Column(modifier = Modifier.weight(1f)) {
-                Text(Strings.agentPlanModeBadge, style = MaterialTheme.typography.titleSmall)
+                Text(
+                    if (awaitingReview) Strings.agentPlanAwaitingReview else Strings.agentPlanModeBadge,
+                    style = MaterialTheme.typography.titleSmall
+                )
                 planFilePath?.let {
                     Text(
                         text = it,
@@ -546,7 +579,7 @@ private fun PlanBanner(planFilePath: String?, onReview: (() -> Unit)?) {
                 WtaButton(
                     onClick = onReview,
                     text = Strings.agentPlanReview,
-                    variant = WtaButtonVariant.Outlined,
+                    variant = if (awaitingReview) WtaButtonVariant.Tonal else WtaButtonVariant.Outlined,
                     size = WtaButtonSize.Small
                 )
             }
@@ -555,51 +588,54 @@ private fun PlanBanner(planFilePath: String?, onReview: (() -> Unit)?) {
 }
 
 @Composable
-private fun PlanReviewCard(
+private fun PlanReviewSheet(
     review: PlanReview,
+    onDismiss: () -> Unit,
     onApprove: () -> Unit,
     onRequestRevisions: () -> Unit
 ) {
-    WtaCard(
-        tone = WtaCardTone.Surface,
-        modifier = Modifier.fillMaxWidth().padding(
-            horizontal = WtaSpacing.ScreenHorizontal,
-            vertical = WtaSpacing.Tiny
-        ),
-        contentPadding = PaddingValues(WtaSpacing.Medium)
+    AgentPanel(
+        title = Strings.agentPlanAwaitingReview,
+        icon = Icons.Outlined.Checklist,
+        onDismiss = onDismiss,
+        heightFraction = null
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)) {
-            Text(
-                text = Strings.agentPlanAwaitingReview,
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.SemiBold
+        Text(
+            text = review.planPath,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f, fill = false)
+                .verticalScroll(rememberScrollState())
+                .padding(vertical = WtaSpacing.Small)
+        ) {
+            MarkdownText(text = review.content, color = MaterialTheme.colorScheme.onSurface)
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
+            horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
+        ) {
+            WtaButton(
+                onClick = onRequestRevisions,
+                text = Strings.agentPlanRequestRevisions,
+                variant = WtaButtonVariant.Outlined,
+                size = WtaButtonSize.Medium,
+                modifier = Modifier.weight(1f).fillMaxHeight(),
+                contentPadding = PaddingValues(horizontal = WtaSpacing.Medium, vertical = WtaSpacing.Small)
             )
-            MarkdownText(
-                text = review.content,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier
-                    .heightIn(max = 176.dp)
-                    .verticalScroll(rememberScrollState())
+            WtaButton(
+                onClick = onApprove,
+                text = Strings.agentPlanApprove,
+                variant = WtaButtonVariant.Primary,
+                size = WtaButtonSize.Medium,
+                modifier = Modifier.weight(1f).fillMaxHeight(),
+                contentPadding = PaddingValues(horizontal = WtaSpacing.Medium, vertical = WtaSpacing.Small)
             )
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
-            ) {
-                WtaButton(
-                    onClick = onRequestRevisions,
-                    text = Strings.agentPlanRequestRevisions,
-                    variant = WtaButtonVariant.Outlined,
-                    size = WtaButtonSize.Small,
-                    modifier = Modifier.weight(1f)
-                )
-                WtaButton(
-                    onClick = onApprove,
-                    text = Strings.agentPlanApprove,
-                    variant = WtaButtonVariant.Tonal,
-                    size = WtaButtonSize.Small,
-                    modifier = Modifier.weight(1f)
-                )
-            }
         }
     }
 }
@@ -611,19 +647,22 @@ private fun Conversation(
     onPickSession: (String) -> Unit,
     onOpenSessions: () -> Unit,
     onFillComposer: (String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    fileReview: @Composable () -> Unit,
+    appReview: @Composable () -> Unit
 ) {
     val listState = rememberLazyListState()
     val messages = state.currentSession?.messages.orEmpty().filterNot {
         it.id == state.streamingDraftMessageId
     }
 
-    var followBottom by remember { mutableStateOf(true) }
-    val atBottom by remember {
-        derivedStateOf { !listState.canScrollForward }
-    }
+    var followBottom by rememberSaveable { mutableStateOf(true) }
+    val pauseFollow: () -> Unit = remember { { followBottom = false } }
+    val atBottom by remember { derivedStateOf { !listState.canScrollForward } }
     val totalContentItems = messages.size +
         (if (state.todos.isNotEmpty()) 1 else 0) +
+        (if (state.pendingChanges.isNotEmpty()) 1 else 0) +
+        (if (state.pendingAppChanges.isNotEmpty()) 1 else 0) +
         (if (state.isWorking) 1 else 0)
 
     val userScrollMonitor = remember {
@@ -632,67 +671,47 @@ private fun Conversation(
                 available: androidx.compose.ui.geometry.Offset,
                 source: NestedScrollSource
             ): androidx.compose.ui.geometry.Offset {
-                if (source == NestedScrollSource.UserInput) {
-
-                    if (available.y > 2f) {
-                        followBottom = false
-                    }
+                if (source == NestedScrollSource.UserInput && available.y > 0f && listState.canScrollBackward) {
+                    followBottom = false
                 }
                 return androidx.compose.ui.geometry.Offset.Zero
             }
         }
     }
-
-    LaunchedEffect(atBottom) {
-
-        if (atBottom) followBottom = true
+    LaunchedEffect(listState) {
+        snapshotFlow { listState.layoutInfo.totalItemsCount > 0 && !listState.canScrollForward }
+            .collect { bottomVisible -> if (bottomVisible) followBottom = true }
     }
-
-    var wasWorking by remember { mutableStateOf(false) }
-    LaunchedEffect(state.isWorking) {
-        val working = state.isWorking
-        if (working && !wasWorking) {
-            followBottom = true
-            val target = totalContentItems - 1
-            if (target >= 0) {
-                runCatching { listState.scrollToItem(target) }
-            }
-        }
-        wasWorking = working
-    }
-
-    val streamingTextLen = state.streamingText.length
-    val streamingThinkingLen = state.streamingThinkingSegments.sumOf { it.content.length }
-    LaunchedEffect(
-        followBottom,
-        messages.size,
-        streamingTextLen,
-        streamingThinkingLen,
-        state.pendingToolCalls.size,
-        state.todos.size,
-        state.isWorking
-    ) {
-        if (!followBottom) return@LaunchedEffect
-        if (totalContentItems <= 0) return@LaunchedEffect
-
-        repeat(2) {
-            val info = listState.layoutInfo
-            val viewportBottom = info.viewportEndOffset - info.afterContentPadding
-            val last = info.visibleItemsInfo.lastOrNull()
-            if (last != null && last.index == info.totalItemsCount - 1) {
-                val gap = (last.offset + last.size) - viewportBottom
-                if (gap > 0) {
-                    listState.scrollBy(gap.toFloat())
+    LaunchedEffect(listState) {
+        snapshotFlow {
+            if (!followBottom || listState.isScrollInProgress || !listState.canScrollForward) {
+                null
+            } else {
+                val layout = listState.layoutInfo
+                val lastIndex = layout.totalItemsCount - 1
+                val tail = layout.visibleItemsInfo.lastOrNull { it.index == lastIndex }
+                when {
+                    lastIndex < 0 -> null
+                    tail == null -> LatestScrollTarget(lastIndex)
+                    else -> {
+                        val distance = tail.offset + tail.size - layout.viewportEndOffset + layout.afterContentPadding
+                        LatestScrollTarget(lastIndex, distance).takeIf { distance > 0 }
+                    }
                 }
-            } else if (info.totalItemsCount > 0) {
-                listState.scrollToItem(info.totalItemsCount - 1)
             }
-
-            kotlinx.coroutines.yield()
+        }.filterNotNull().collect { target ->
+            coroutineScope {
+                launch {
+                    if (followBottom) {
+                        if (target.distance == null) listState.scrollToItem(target.index)
+                        else listState.scrollBy(target.distance.toFloat())
+                    }
+                }
+            }
         }
     }
 
-    if (messages.isEmpty() && !state.isWorking && state.todos.isEmpty()) {
+    if (totalContentItems == 0) {
 
         AgentWelcome(
             sessions = state.sessions,
@@ -704,7 +723,6 @@ private fun Conversation(
         return
     }
 
-    val coroutineScope = rememberCoroutineScope()
     Box(modifier = modifier.fillMaxSize()) {
         LazyColumn(
             state = listState,
@@ -721,7 +739,8 @@ private fun Conversation(
                 MessageBubble(
                     message = msg,
                     actions = actions,
-                    modifier = Modifier.animateItem()
+                    modifier = Modifier.animateItem(),
+                    onInspectActivity = pauseFollow
                 )
             }
             if (state.todos.isNotEmpty()) {
@@ -738,48 +757,44 @@ private fun Conversation(
                             text = state.streamingText,
                             thinkingSegments = state.streamingThinkingSegments,
                             pendingTools = state.pendingToolCalls,
-                            activity = state.currentActivity
+                            activity = state.currentActivity,
+                            onInspectActivity = pauseFollow
                         )
                     }
+                }
+            }
+            if (state.pendingChanges.isNotEmpty()) {
+                item(key = "file-review") {
+                    Box(Modifier.animateItem()) { fileReview() }
+                }
+            }
+            if (state.pendingAppChanges.isNotEmpty()) {
+                item(key = "app-review") {
+                    Box(Modifier.animateItem()) { appReview() }
                 }
             }
         }
 
         AnimatedVisibility(
-            visible = !atBottom,
-            enter = WtaFadeIn + scaleIn(),
-            exit = WtaFadeOut + scaleOut(),
+            visible = !atBottom && !followBottom,
+            enter = WtaFadeIn,
+            exit = WtaFadeOut,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(bottom = WtaSpacing.Medium)
         ) {
             JumpToLatestPill(
-                onClick = {
-                    coroutineScope.launch {
-                        followBottom = true
-                        if (totalContentItems > 0) {
-                            val targetIndex = totalContentItems - 1
-                            if (listState.layoutInfo.visibleItemsInfo.none { it.index == targetIndex }) {
-                                listState.scrollToItem(targetIndex)
-                            }
-                            val info = listState.layoutInfo
-                            val viewportBottom =
-                                info.viewportEndOffset - info.afterContentPadding
-                            val last = info.visibleItemsInfo.lastOrNull()
-                            if (last != null) {
-                                val gap = (last.offset + last.size) - viewportBottom
-                                if (gap > 0) listState.animateScrollBy(gap.toFloat())
-                            }
-                        }
-                    }
-                }
+                working = state.isWorking && !followBottom,
+                onClick = { followBottom = true }
             )
         }
     }
 }
 
+private data class LatestScrollTarget(val index: Int, val distance: Int? = null)
+
 @Composable
-private fun JumpToLatestPill(onClick: () -> Unit) {
+private fun JumpToLatestPill(working: Boolean, onClick: () -> Unit) {
     WtaCard(
         onClick = onClick,
         tone = WtaCardTone.Elevated,
@@ -790,6 +805,12 @@ private fun JumpToLatestPill(onClick: () -> Unit) {
         )
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
+            if (working) {
+                Box(
+                    Modifier.size(6.dp).background(MaterialTheme.colorScheme.primary, CircleShape)
+                )
+                Spacer(Modifier.width(WtaSpacing.Small))
+            }
             Icon(
                 imageVector = Icons.Outlined.ArrowDownward,
                 contentDescription = null,

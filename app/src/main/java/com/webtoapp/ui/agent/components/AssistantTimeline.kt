@@ -73,3 +73,21 @@ private val legacyEmptyAssistantReplies = setOf(
     "(无输出)", "(no output)", "(لا يوجد ناتج)", "(sem saída)", "(sin salida)",
     "(aucune sortie)", "(keine Ausgabe)", "(нет вывода)", "(出力なし)", "(출력 없음)"
 )
+
+internal fun compactToolActivity(
+    calls: List<RecordedToolCall>,
+    expandedId: String?,
+    live: Boolean
+): List<RecordedToolCall> {
+    val limit = 3
+    if (calls.size <= limit) return calls
+    val pinned = listOfNotNull(
+        calls.firstOrNull { it.toolCallId == expandedId },
+        calls.lastOrNull { live && it.effectiveStatus == RecordedToolCall.Status.Running },
+        calls.lastOrNull { it.effectiveStatus == RecordedToolCall.Status.Failed },
+        calls.lastOrNull { it.effectiveStatus == RecordedToolCall.Status.Stopped }
+    )
+    val selectedIds = (pinned + calls.asReversed())
+        .asSequence().map { it.toolCallId }.distinct().take(limit).toSet()
+    return calls.filter { it.toolCallId in selectedIds }
+}

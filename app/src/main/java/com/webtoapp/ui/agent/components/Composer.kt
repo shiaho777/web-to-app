@@ -1,9 +1,11 @@
 package com.webtoapp.ui.agent.components
 
-import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,8 +20,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
@@ -27,24 +31,29 @@ import androidx.compose.material.icons.automirrored.outlined.Send
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.AttachFile
 import androidx.compose.material.icons.outlined.BookmarkBorder
-import androidx.compose.material.icons.outlined.Cancel
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Checklist
 import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.Compress
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.InsertDriveFile
 import androidx.compose.material.icons.outlined.SmartToy
 import androidx.compose.material.icons.outlined.Stop
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material.icons.outlined.Terminal
+import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -52,12 +61,23 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEvent
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.webtoapp.core.agent.session.UserAttachment
@@ -67,19 +87,22 @@ import com.webtoapp.ui.agent.SlashCommand
 import com.webtoapp.ui.design.WtaAlpha
 import com.webtoapp.ui.design.WtaCard
 import com.webtoapp.ui.design.WtaCardTone
-import com.webtoapp.ui.animation.CardCollapseTransition
-import com.webtoapp.ui.animation.CardExpandTransition
+import com.webtoapp.ui.design.WtaDropdownMenu
+import com.webtoapp.ui.design.WtaDropdownMenuItem
 import com.webtoapp.ui.design.WtaIconButton
 import com.webtoapp.ui.design.WtaLoadingIndicator
+import com.webtoapp.ui.design.WtaMotion
 import com.webtoapp.ui.design.WtaRadius
-import com.webtoapp.ui.design.WtaSettingRow
 import com.webtoapp.ui.design.WtaSize
 import com.webtoapp.ui.design.WtaSpacing
+import com.webtoapp.ui.design.rememberHapticClick
+import com.webtoapp.ui.theme.LocalAnimationSettings
+import com.webtoapp.ui.theme.LocalShowDescriptions
 
 @Composable
 fun Composer(
     state: AgentUiState,
-    onTextChange: (String) -> Unit,
+    onTextChange: (TextFieldValue) -> Unit,
     onSend: () -> Unit,
     onCancel: () -> Unit,
     onRunSlashCommand: (SlashCommand) -> Unit,
@@ -98,24 +121,73 @@ fun Composer(
 
     onOpenModelPicker: () -> Unit
 ) {
-    Column(
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        if (state.slashOpen) {
-            SlashSuggestions(
-                commandMatches = state.slashCommands.filter {
-                    val q = state.composerText.takeIf { it.startsWith("/") && !it.contains(" ") }
-                        ?.removePrefix("/")?.lowercase().orEmpty()
-                    q.isEmpty() || it.command.lowercase().contains(q)
-                }.take(6),
-                onPickCommand = onRunSlashCommand,
-                onDismiss = onDismissSlash
-            )
-        } else if (state.mentionPickerOpen) {
-            MentionSuggestions(
-                matches = state.mentionMatches,
-                onPick = onPickMention,
-                onDismiss = onDismissMention
+    val commandQuery = state.composerText.takeIf { it.startsWith("/") && it.none(Char::isWhitespace) }
+        ?.removePrefix("/").orEmpty()
+    val commands = if (state.slashOpen) {
+        SlashCommand.entries.asSequence()
+            .filter { it.command.contains(commandQuery, ignoreCase = true) }
+            .sortedByDescending { it.command.removePrefix("/").startsWith(commandQuery, ignoreCase = true) }
+            .take(6).toList()
+    } else emptyList()
+    val suggestions = if (state.slashOpen) {
+        commands.map { command ->
+            val (label, icon) = when (command) {
+                SlashCommand.Model -> (if (state.modelMissing) Strings.addModel else Strings.selectModel) to Icons.Outlined.SmartToy
+                SlashCommand.Plan -> Strings.agentPlanModeBadge to Icons.Outlined.Checklist
+                SlashCommand.ReviewPlan -> Strings.agentPlanReview to Icons.Outlined.Check
+                SlashCommand.Compact -> Strings.agentCompactNow to Icons.Outlined.Compress
+                SlashCommand.NewSession -> Strings.agentNewSession to Icons.Outlined.Add
+            }
+            ComposerSuggestion(command.name, command.command, label, icon) { onRunSlashCommand(command) }
+        }
+    } else {
+        state.mentionMatches.map { file ->
+            ComposerSuggestion(
+                file.relativePath,
+                file.relativePath.substringAfterLast('/'),
+                file.relativePath.substringBeforeLast('/', missingDelimiterValue = ""),
+                Icons.Outlined.Description
+            ) { onPickMention(file.relativePath) }
+        }
+    }
+    val suggestionsOpen = state.slashOpen || state.mentionPickerOpen
+    var highlighted by remember(state.slashOpen, state.mentionPickerOpen, commandQuery, state.mentionQuery) {
+        mutableIntStateOf(-1)
+    }
+    val onDismissSuggestions = if (state.slashOpen) onDismissSlash else onDismissMention
+    val handleSuggestionKey: (KeyEvent) -> Boolean = { event ->
+        if (!suggestionsOpen || event.type != KeyEventType.KeyDown) false
+        else when (event.key) {
+            Key.Escape -> {
+                onDismissSuggestions()
+                true
+            }
+            Key.DirectionDown, Key.DirectionUp -> {
+                if (suggestions.isEmpty()) false else {
+                    highlighted = if (event.key == Key.DirectionDown) (highlighted + 1) % suggestions.size
+                    else if (highlighted <= 0) suggestions.lastIndex else highlighted - 1
+                    true
+                }
+            }
+            Key.Enter, Key.Tab -> {
+                val index = if (event.key == Key.Tab && highlighted < 0) 0 else highlighted
+                suggestions.getOrNull(index)?.let { it.onPick(); true } ?: false
+            }
+            else -> false
+        }
+    }
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        if (suggestionsOpen) {
+            ComposerSuggestions(
+                header = if (state.slashOpen) Strings.agentSlashHeader else Strings.agentMentionHeader,
+                icon = if (state.slashOpen) Icons.Outlined.Terminal else Icons.Outlined.Description,
+                suggestions = suggestions,
+                highlighted = highlighted,
+                emptyLabel = if (state.slashOpen || state.mentionQuery.isNotBlank()) Strings.noSearchResults
+                    else Strings.agentMentionEmpty,
+                onDismiss = onDismissSuggestions,
+                modifier = Modifier.weight(1f, fill = false)
             )
         }
         ComposerActivity(state)
@@ -128,12 +200,17 @@ fun Composer(
             contentPadding = PaddingValues(WtaSpacing.Small)
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(WtaSpacing.Tiny)) {
-                if (state.pendingAttachments.isNotEmpty()) {
-                    PendingAttachmentsRow(
-                        attachments = state.pendingAttachments,
-                        onRemove = onRemoveAttachment,
-                        resolveAttachmentPreview = resolveAttachmentPreview
-                    )
+                val attachmentMotion = if (LocalAnimationSettings.current.enabled) {
+                    Modifier.animateContentSize(WtaMotion.standardTween())
+                } else Modifier
+                Box(attachmentMotion) {
+                    if (state.pendingAttachments.isNotEmpty()) {
+                        PendingAttachmentsRow(
+                            attachments = state.pendingAttachments,
+                            onRemove = onRemoveAttachment,
+                            resolveAttachmentPreview = resolveAttachmentPreview
+                        )
+                    }
                 }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -146,13 +223,14 @@ fun Composer(
                         onAttachFolder = onAttachFolder
                     )
                     ComposerField(
-                        value = state.composerText,
+                        value = state.composerValue,
                         onValueChange = onTextChange,
+                        onSuggestionKey = handleSuggestionKey,
                         placeholder = composerPlaceholder(state)
                     )
                     SendButton(
                         working = state.isWorking,
-                        enabled = state.canSend &&
+                        enabled = state.canSend && !state.modelMissing &&
                             (state.composerText.isNotBlank() || state.pendingAttachments.isNotEmpty()),
                         onSend = onSend,
                         onCancel = onCancel
@@ -174,11 +252,18 @@ fun Composer(
 
 @Composable
 private fun RowScope.ComposerField(
-    value: String,
-    onValueChange: (String) -> Unit,
+    value: TextFieldValue,
+    onValueChange: (TextFieldValue) -> Unit,
+    onSuggestionKey: (KeyEvent) -> Boolean,
     placeholder: String
 ) {
     val shape = RoundedCornerShape(WtaRadius.Control)
+    var focused by remember { mutableStateOf(false) }
+    val focusBorder by animateColorAsState(
+        if (focused) MaterialTheme.colorScheme.primary else Color.Transparent,
+        animationSpec = WtaMotion.standardTween(),
+        label = "composer focus"
+    )
     val textStyle = MaterialTheme.typography.bodyMedium.copy(
         color = MaterialTheme.colorScheme.onSurface
     )
@@ -187,8 +272,11 @@ private fun RowScope.ComposerField(
         onValueChange = onValueChange,
         modifier = Modifier
             .weight(1f)
+            .onPreviewKeyEvent(onSuggestionKey)
+            .onFocusChanged { focused = it.isFocused }
             .clip(shape)
             .background(MaterialTheme.colorScheme.surfaceContainerLow, shape)
+            .border(1.dp, focusBorder, shape)
             .heightIn(min = WtaSize.TouchTarget, max = 120.dp)
             .padding(horizontal = WtaSpacing.Small, vertical = WtaSpacing.Small),
         textStyle = textStyle,
@@ -198,7 +286,7 @@ private fun RowScope.ComposerField(
                 modifier = Modifier.fillMaxWidth(),
                 contentAlignment = Alignment.CenterStart
             ) {
-                if (value.isEmpty()) {
+                if (value.text.isEmpty()) {
                     Text(
                         text = placeholder,
                         style = MaterialTheme.typography.bodyMedium,
@@ -227,20 +315,20 @@ private fun AttachButton(
             contentDescription = Strings.agentAttachTooltip,
             modifier = Modifier.size(WtaSize.TouchTarget)
         )
-        DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-            DropdownMenuItem(
-                text = { Text(Strings.agentAttachImage) },
-                leadingIcon = { Icon(Icons.Outlined.Image, contentDescription = null) },
+        WtaDropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+            WtaDropdownMenuItem(
+                text = Strings.agentAttachImage,
+                leadingIcon = Icons.Outlined.Image,
                 onClick = { menuOpen = false; onAttachImage() }
             )
-            DropdownMenuItem(
-                text = { Text(Strings.agentAttachFile) },
-                leadingIcon = { Icon(Icons.Outlined.InsertDriveFile, contentDescription = null) },
+            WtaDropdownMenuItem(
+                text = Strings.agentAttachFile,
+                leadingIcon = Icons.Outlined.InsertDriveFile,
                 onClick = { menuOpen = false; onAttachFile() }
             )
-            DropdownMenuItem(
-                text = { Text(Strings.agentAttachFolder) },
-                leadingIcon = { Icon(Icons.Outlined.Folder, contentDescription = null) },
+            WtaDropdownMenuItem(
+                text = Strings.agentAttachFolder,
+                leadingIcon = Icons.Outlined.Folder,
                 onClick = { menuOpen = false; onAttachFolder() }
             )
         }
@@ -253,18 +341,18 @@ private fun PendingAttachmentsRow(
     onRemove: (String) -> Unit,
     resolveAttachmentPreview: (UserAttachment) -> Any?
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .horizontalScroll(rememberScrollState())
-            .padding(vertical = WtaSpacing.Tiny),
+    LazyRow(
+        modifier = Modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(vertical = WtaSpacing.Tiny),
         horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
     ) {
-        attachments.forEach { att ->
-            if (att.isImage) {
-                ImageAttachmentChip(att, onRemove, resolveAttachmentPreview(att))
-            } else {
-                FileAttachmentChip(att, onRemove)
+        items(attachments, key = { it.path }) { attachment ->
+            Box(Modifier.animateItem()) {
+                if (attachment.isImage) {
+                    ImageAttachmentChip(attachment, onRemove, resolveAttachmentPreview(attachment))
+                } else {
+                    FileAttachmentChip(attachment, onRemove)
+                }
             }
         }
     }
@@ -365,172 +453,112 @@ private fun SendButton(
     onSend: () -> Unit,
     onCancel: () -> Unit
 ) {
-    val container = when {
-        working -> MaterialTheme.colorScheme.secondaryContainer
-        enabled -> MaterialTheme.colorScheme.primary
-        else -> MaterialTheme.colorScheme.surfaceContainerHighest
-    }
-    val content = when {
-        working -> MaterialTheme.colorScheme.onSecondaryContainer
-        enabled -> MaterialTheme.colorScheme.onPrimary
-        else -> MaterialTheme.colorScheme.onSurfaceVariant
-    }
-    Surface(
-        onClick = if (working) onCancel else onSend,
+    val colors = MaterialTheme.colorScheme
+    val container by animateColorAsState(
+        targetValue = if (working) colors.secondaryContainer else colors.primary,
+        animationSpec = WtaMotion.standardTween(),
+        label = "send container"
+    )
+    val description = if (working) Strings.agentStopTooltip else Strings.agentSendTooltip
+    FilledIconButton(
+        onClick = rememberHapticClick(if (working) onCancel else onSend),
         enabled = working || enabled,
         shape = RoundedCornerShape(WtaRadius.Control),
-        color = container,
-        modifier = Modifier.size(WtaSize.TouchTarget)
+        colors = IconButtonDefaults.filledIconButtonColors(
+            containerColor = container,
+            contentColor = if (working) colors.onSecondaryContainer else colors.onPrimary
+        ),
+        modifier = Modifier.size(WtaSize.TouchTarget).semantics { contentDescription = description }
     ) {
-        Box(contentAlignment = Alignment.Center) {
+        Crossfade(
+            targetState = working,
+            animationSpec = WtaMotion.standardTween(WtaMotion.DurationQuick),
+            label = "send action"
+        ) { stopping ->
             Icon(
-                imageVector = if (working) Icons.Outlined.Stop else Icons.AutoMirrored.Outlined.Send,
-                contentDescription = if (working) Strings.agentStopTooltip else Strings.agentSendTooltip,
-                tint = content,
-                modifier = Modifier.size(16.dp)
+                imageVector = if (stopping) Icons.Outlined.Stop else Icons.AutoMirrored.Outlined.Send,
+                contentDescription = null,
+                modifier = Modifier.size(WtaSize.Icon)
             )
         }
     }
 }
 
-@Composable
-private fun SlashSuggestions(
-    commandMatches: List<SlashCommand>,
-    onPickCommand: (SlashCommand) -> Unit,
-    onDismiss: () -> Unit
-) {
-    if (commandMatches.isEmpty()) return
-    SuggestionsCard(
-        leading = "/",
-        header = Strings.agentSlashHeader,
-        onDismiss = onDismiss
-    ) {
-        LazyColumn(modifier = Modifier.heightIn(max = 320.dp)) {
-            items(commandMatches, key = { "cmd-${it.id}" }) { cmd ->
-                SuggestionRow(
-                    title = cmd.command,
-                    subtitle = cmd.description,
-                    hint = null,
-                    iconName = cmd.icon,
-                    iconColor = cmd.iconColor,
-                    onClick = { onPickCommand(cmd) }
-                )
-            }
-        }
-    }
-}
+private data class ComposerSuggestion(
+    val id: String,
+    val title: String,
+    val subtitle: String,
+    val icon: ImageVector,
+    val onPick: () -> Unit
+)
 
 @Composable
-private fun MentionSuggestions(
-    matches: List<com.webtoapp.core.agent.files.ProjectFileManager.FileInfo>,
-    onPick: (String) -> Unit,
-    onDismiss: () -> Unit
+private fun ComposerSuggestions(
+    header: String,
+    icon: ImageVector,
+    suggestions: List<ComposerSuggestion>,
+    highlighted: Int,
+    emptyLabel: String,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    SuggestionsCard(
-        leading = "@",
-        header = Strings.agentMentionHeader,
-        onDismiss = onDismiss
+    val list = rememberLazyListState()
+    LaunchedEffect(highlighted) {
+        if (highlighted in suggestions.indices &&
+            list.layoutInfo.visibleItemsInfo.none { it.index == highlighted }
+        ) list.scrollToItem(highlighted)
+    }
+    WtaCard(
+        modifier = modifier.fillMaxWidth().padding(horizontal = WtaSpacing.ScreenHorizontal),
+        tone = WtaCardTone.Elevated,
+        contentPadding = PaddingValues(0.dp)
     ) {
-        if (matches.isEmpty()) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(start = WtaSpacing.Medium, end = WtaSpacing.Tiny),
+            horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(WtaSize.IconSmall))
+            Text(header, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+            WtaIconButton(
+                onClick = onDismiss,
+                icon = Icons.Outlined.Close,
+                contentDescription = Strings.close
+            )
+        }
+        if (suggestions.isEmpty()) {
             Text(
-                text = Strings.agentMentionEmpty,
+                text = emptyLabel,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(
-                    horizontal = WtaSpacing.RowHorizontal,
-                    vertical = WtaSpacing.Large
-                )
+                modifier = Modifier.padding(start = WtaSpacing.Medium, bottom = WtaSpacing.Medium)
             )
         } else {
-            LazyColumn(modifier = Modifier.heightIn(max = 280.dp)) {
-                items(matches, key = { "mention-${it.relativePath}" }) { file ->
-                    WtaSettingRow(
-                        title = file.relativePath.substringAfterLast('/'),
-                        subtitle = file.relativePath.substringBeforeLast('/', missingDelimiterValue = ""),
-                        icon = Icons.Outlined.Description,
-                        onClick = { onPick(file.relativePath) }
-                    ) {
-                        Text(
-                            text = file.formatSize(),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+            LazyColumn(
+                state = list,
+                modifier = Modifier.heightIn(max = 160.dp),
+                contentPadding = PaddingValues(bottom = WtaSpacing.Tiny)
+            ) {
+                itemsIndexed(suggestions, key = { _, item -> item.id }) { index, item ->
+                    val active = index == highlighted
+                    val subtitle = item.subtitle.takeIf { it.isNotBlank() && LocalShowDescriptions.current }
+                    ListItem(
+                        headlineContent = {
+                            Text(item.title, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        },
+                        supportingContent = subtitle?.let { { Text(it, maxLines = 1, overflow = TextOverflow.Ellipsis) } },
+                        leadingContent = {
+                            Icon(item.icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(WtaSize.Icon))
+                        },
+                        colors = ListItemDefaults.colors(
+                            containerColor = if (active) MaterialTheme.colorScheme.surfaceContainerHighest else Color.Transparent
+                        ),
+                        modifier = Modifier
+                            .semantics { selected = active }
+                            .clickable(role = Role.Button, onClick = rememberHapticClick(item.onPick))
+                    )
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun SuggestionsCard(
-    leading: String,
-    header: String,
-    onDismiss: () -> Unit,
-    content: @Composable () -> Unit
-) {
-    Surface(color = MaterialTheme.colorScheme.surface) {
-        Column {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(
-                        horizontal = WtaSpacing.ScreenHorizontal,
-                        vertical = WtaSpacing.Small
-                    ),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = leading,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.outline,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Spacer(Modifier.width(WtaSpacing.Tiny))
-                Text(
-                    text = header,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.outline,
-                    modifier = Modifier.weight(1f)
-                )
-                WtaIconButton(
-                    onClick = onDismiss,
-                    icon = Icons.Outlined.Cancel,
-                    contentDescription = Strings.agentSlashClose,
-                    modifier = Modifier.size(WtaSize.TouchTarget)
-                )
-            }
-            HorizontalDivider(
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = WtaAlpha.Divider)
-            )
-            content()
-        }
-    }
-}
-
-@Composable
-private fun SuggestionRow(
-    title: String,
-    subtitle: String,
-    hint: String?,
-    iconName: String,
-    iconColor: String,
-    onClick: () -> Unit
-) {
-    WtaSettingRow(
-        title = title,
-        subtitle = subtitle.takeIf { it.isNotBlank() },
-        iconContent = {
-            MaterialIconGlyph(name = iconName, tintHex = iconColor, size = WtaSize.Icon)
-        },
-        onClick = onClick
-    ) {
-        if (hint != null) {
-            Text(
-                text = hint,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.tertiary
-            )
         }
     }
 }
@@ -544,22 +572,23 @@ private fun ComposerActivity(state: AgentUiState) {
         state.isWorking -> state.currentActivity ?: Strings.agentPhaseThinking
         else -> null
     }
-    AnimatedVisibility(
-        visible = activity != null,
-        enter = CardExpandTransition,
-        exit = CardCollapseTransition
+    val label = activity ?: return
+    Row(
+        modifier = Modifier.padding(
+            horizontal = WtaSpacing.ScreenHorizontal,
+            vertical = WtaSpacing.Tiny
+        ),
+        horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
-            modifier = Modifier.padding(
-                horizontal = WtaSpacing.ScreenHorizontal,
-                vertical = WtaSpacing.Tiny
-            ),
-            horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            WtaLoadingIndicator(size = 14.dp)
+        if (LocalAnimationSettings.current.enabled) WtaLoadingIndicator(size = 14.dp)
+        Crossfade(
+            targetState = label,
+            animationSpec = WtaMotion.standardTween(WtaMotion.DurationQuick),
+            label = "turn activity"
+        ) { displayed ->
             Text(
-                text = activity.orEmpty(),
+                text = displayed,
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
@@ -586,7 +615,9 @@ private fun ComposerActions(
                 else state.currentModelLabel.ifBlank { Strings.selectModel },
             icon = if (state.modelMissing) Icons.Outlined.Add else Icons.Outlined.SmartToy,
             onClick = onOpenModelPicker,
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.weight(1f).semantics {
+                if (!state.modelMissing) onClick(label = Strings.selectModel, action = null)
+            }
         )
         ComposerControl(
             label = Strings.agentPlanModeBadge,

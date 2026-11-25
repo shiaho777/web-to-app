@@ -8,10 +8,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -27,22 +27,23 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.webtoapp.core.agent.export.DetectedArtifact
 import com.webtoapp.core.i18n.Strings
-import com.webtoapp.ui.design.WtaAlertDialog
 import com.webtoapp.ui.design.WtaAlpha
 import com.webtoapp.ui.design.WtaButton
 import com.webtoapp.ui.design.WtaButtonSize
@@ -56,6 +57,7 @@ import com.webtoapp.ui.design.WtaRadius
 import com.webtoapp.ui.design.WtaSize
 import com.webtoapp.ui.design.WtaSpacing
 import com.webtoapp.ui.design.WtaTextField
+import com.webtoapp.ui.theme.LocalShowDescriptions
 
 @Composable
 fun SaveAsAppDialog(
@@ -67,14 +69,10 @@ fun SaveAsAppDialog(
     onDismiss: () -> Unit
 ) {
     val selected = artifacts.firstOrNull { it.id == selectedArtifactId } ?: artifacts.firstOrNull()
-    var name by remember(selected?.id) {
+    var name by rememberSaveable(selected?.id) {
         mutableStateOf(selected?.displayName.orEmpty())
     }
-    var iconUri by remember(selected?.id) { mutableStateOf<Uri?>(null) }
-
-    LaunchedEffect(selected?.id) {
-        name = selected?.displayName.orEmpty()
-    }
+    var iconUri by rememberSaveable(selected?.id) { mutableStateOf<Uri?>(null) }
 
     val iconPicker = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent()
@@ -82,100 +80,78 @@ fun SaveAsAppDialog(
 
     val isAppArtifact = selected?.kind?.target == DetectedArtifact.Kind.Target.App
 
-    WtaAlertDialog(
-        onDismissRequest = { if (!inFlight) onDismiss() },
-        icon = Icons.Outlined.Apps,
+    val showDescriptions = LocalShowDescriptions.current
+    AgentPanel(
         title = if (selected?.kind?.target == DetectedArtifact.Kind.Target.Module) {
             Strings.agentSaveAsModule
         } else {
             Strings.agentSaveAsAppTitle
         },
-        confirmButton = {
+        icon = Icons.Outlined.Apps,
+        onDismiss = onDismiss,
+        heightFraction = null,
+        dismissEnabled = !inFlight
+    ) {
+        LazyColumn(
+            modifier = Modifier.fillMaxWidth().weight(1f, fill = false),
+            verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small),
+            contentPadding = PaddingValues(bottom = WtaSpacing.Medium)
+        ) {
+            if (selected == null || showDescriptions) item(key = "description") {
+                Text(
+                    text = subtitleFor(selected),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            if (artifacts.isNotEmpty()) item(key = "artifact-label") {
+                Text(
+                    text = Strings.agentSaveDialogChooseLabel,
+                    style = MaterialTheme.typography.titleSmall
+                )
+            }
+            items(artifacts, key = { "artifact:${it.id}" }) { artifact ->
+                ArtifactRow(
+                    artifact = artifact,
+                    selected = artifact.id == selected?.id,
+                    enabled = !inFlight,
+                    onClick = { onSelectArtifact(artifact.id) },
+                    modifier = Modifier.animateItem()
+                )
+            }
+            if (isAppArtifact) item(key = "app-options") {
+                Column(
+                    modifier = Modifier.animateItem(),
+                    verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
+                ) {
+                    WtaTextField(
+                        value = name,
+                        onValueChange = { name = it },
+                        label = Strings.agentSaveAsAppNameLabel,
+                        singleLine = true,
+                        enabled = !inFlight,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    IconSlot(
+                        iconUri = iconUri,
+                        onPick = { if (!inFlight) iconPicker.launch("image/*") },
+                        onClear = { if (!inFlight) iconUri = null }
+                    )
+                }
+            }
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(bottom = WtaSpacing.Small),
+            horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small, Alignment.End),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (inFlight) WtaLoadingIndicator(size = WtaSize.IconSmall)
             WtaButton(
                 onClick = { onConfirm(name.trim(), iconUri) },
                 enabled = !inFlight && selected != null && (!isAppArtifact || name.isNotBlank()),
+                text = Strings.agentSaveAsAppConfirm,
                 variant = WtaButtonVariant.Primary,
-                size = WtaButtonSize.Small
-            ) {
-                if (inFlight) {
-                    WtaLoadingIndicator(
-                        size = 16.dp,
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
-                } else {
-                    Text(Strings.agentSaveAsAppConfirm)
-                }
-            }
-        },
-        dismissButton = {
-            WtaButton(
-                onClick = onDismiss,
-                enabled = !inFlight,
-                text = Strings.agentActionCancel,
-                variant = WtaButtonVariant.Text,
-                size = WtaButtonSize.Small
-            )
-        },
-        content = {
-
-            Text(
-                text = subtitleFor(selected),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(Modifier.size(WtaSpacing.Small))
-
-            Text(
-                text = Strings.agentSaveDialogChooseLabel,
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontWeight = FontWeight.SemiBold
-            )
-            Spacer(Modifier.size(WtaSpacing.Tiny))
-            ArtifactList(
-                artifacts = artifacts,
-                selectedId = selected?.id,
-                onSelect = onSelectArtifact
-            )
-
-            if (isAppArtifact) {
-                Spacer(Modifier.size(WtaSpacing.Medium))
-                WtaTextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    label = Strings.agentSaveAsAppNameLabel,
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(Modifier.size(WtaSpacing.Small))
-                IconSlot(
-                    iconUri = iconUri,
-                    onPick = { iconPicker.launch("image/*") },
-                    onClear = { iconUri = null }
-                )
-            }
-        }
-    )
-}
-
-@Composable
-private fun ArtifactList(
-    artifacts: List<DetectedArtifact>,
-    selectedId: String?,
-    onSelect: (String) -> Unit
-) {
-
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(max = 240.dp),
-        verticalArrangement = Arrangement.spacedBy(WtaSpacing.Tiny + 2.dp)
-    ) {
-        items(artifacts, key = { it.id }) { artifact ->
-            ArtifactRow(
-                artifact = artifact,
-                selected = artifact.id == selectedId,
-                onClick = { onSelect(artifact.id) }
+                size = WtaButtonSize.Medium
             )
         }
     }
@@ -185,23 +161,22 @@ private fun ArtifactList(
 private fun ArtifactRow(
     artifact: DetectedArtifact,
     selected: Boolean,
-    onClick: () -> Unit
+    enabled: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    val tone = if (selected) WtaCardTone.Highlighted else WtaCardTone.Surface
-    val onTone = if (selected) MaterialTheme.colorScheme.onPrimaryContainer
-    else MaterialTheme.colorScheme.onSurface
-    val onSubdued = if (selected) {
-        MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = WtaAlpha.Strong)
-    } else MaterialTheme.colorScheme.onSurfaceVariant
+    val tone = if (selected) WtaCardTone.Elevated else WtaCardTone.Surface
+    val colors = MaterialTheme.colorScheme
 
     WtaCard(
         onClick = onClick,
+        enabled = enabled,
         tone = tone,
         contentPadding = androidx.compose.foundation.layout.PaddingValues(
             horizontal = WtaSpacing.Medium,
             vertical = WtaSpacing.Small + 2.dp
         ),
-        modifier = Modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth().semantics { this.selected = selected }
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
@@ -221,8 +196,9 @@ private fun ArtifactRow(
                         text = artifact.displayName,
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.SemiBold,
-                        color = onTone,
-                        maxLines = 1
+                        color = colors.onSurface,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
                 Spacer(Modifier.size(2.dp))
@@ -232,7 +208,7 @@ private fun ArtifactRow(
                         humanSize(artifact.totalSizeBytes)
                     ),
                     style = MaterialTheme.typography.labelSmall,
-                    color = onSubdued
+                    color = colors.onSurfaceVariant
                 )
                 if (artifact.entryFile.isNotEmpty()) {
                     Text(
@@ -240,7 +216,7 @@ private fun ArtifactRow(
                         style = MaterialTheme.typography.labelSmall.copy(
                             fontFamily = FontFamily.Monospace
                         ),
-                        color = onSubdued,
+                        color = colors.onSurfaceVariant,
                         maxLines = 1
                     )
                 }

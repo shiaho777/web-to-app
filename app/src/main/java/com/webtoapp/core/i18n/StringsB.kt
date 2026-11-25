@@ -6250,6 +6250,18 @@ object StringsB {
         AppLanguage.JAPANESE -> "承認"
         AppLanguage.KOREAN -> "승인"
     }
+    val agentPlanApprovedMessage: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "计划已批准，请开始实现。"
+        AppLanguage.ENGLISH -> "Plan approved. Proceed with implementation."
+        AppLanguage.ARABIC -> "تمت الموافقة على الخطة. ابدأ التنفيذ."
+        AppLanguage.PORTUGUESE -> "Plano aprovado. Inicie a implementação."
+        AppLanguage.SPANISH -> "Plan aprobado. Empieza la implementación."
+        AppLanguage.FRENCH -> "Plan approuvé. Commencez la mise en œuvre."
+        AppLanguage.GERMAN -> "Der Plan ist genehmigt. Beginne mit der Umsetzung."
+        AppLanguage.RUSSIAN -> "План одобрен. Приступай к реализации."
+        AppLanguage.JAPANESE -> "計画を承認しました。実装を開始してください。"
+        AppLanguage.KOREAN -> "계획을 승인했습니다. 구현을 시작해 주세요."
+    }
     val agentPlanRequestRevisions: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "需要修改"
         AppLanguage.ENGLISH -> "Request revisions"
