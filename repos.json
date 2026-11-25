@@ -5,13 +5,13 @@
     "stargazers_count": 205,
     "forks_count": 47,
     "language": "Python",
-    "pushed_at": "2026-11-21T13:03:52Z",
+    "pushed_at": "2026-11-25T07:35:01Z",
     "html_url": "https://github.com/shiaho777/WebToApp"
   },
   {
     "name": "LogSleuth",
     "description": "Root-free Android logcat viewer & embeddable zero-permission logging SDK",
-    "stargazers_count": 44,
+    "stargazers_count": 46,
     "forks_count": 5,
     "language": "Kotlin",
     "pushed_at": "2026-11-18T10:54:52Z",
@@ -56,7 +56,7 @@
   {
     "name": "WebViewIDE",
     "description": "On-device IDE for HTML, CSS, and JavaScript. Preview in the system WebView and package a signed APK. No root.",
-    "stargazers_count": 22,
+    "stargazers_count": 23,
     "forks_count": 3,
     "language": "Kotlin",
     "pushed_at": "2026-11-20T01:24:57Z",
@@ -66,7 +66,7 @@
     "name": "pneuma-android",
     "description": "Pneuma · 一部会呼吸的 AI 虚拟手机：拟真桌面、聊天、朋友圈、查手机、地图定位、语音/视频通话、日记日历。AI 角色有作息、日程、位置和长期记忆，会主动发消息、发帖互动。数据全在设备本地，联网只调你自己配置的 LLM/生图/语音 API。",
     "stargazers_count": 20,
-    "forks_count": 16,
+    "forks_count": 17,
     "language": "TypeScript",
     "pushed_at": "2026-11-12T10:06:27Z",
     "html_url": "https://github.com/shiaho777/pneuma-android"
@@ -108,6 +108,15 @@
     "html_url": "https://github.com/shiaho777/wgsql"
   },
   {
+    "name": "anthropic-ui-skill",
+    "description": "A Skill that allows AI to generate the UI design style of Anthropic Company. Its aesthetics are very good.",
+    "stargazers_count": 14,
+    "forks_count": 1,
+    "language": null,
+    "pushed_at": "2026-05-28T08:50:31Z",
+    "html_url": "https://github.com/shiaho777/anthropic-ui-skill"
+  },
+  {
     "name": "MacBottle",
     "description": null,
     "stargazers_count": 13,
@@ -124,15 +133,6 @@
     "language": "Python",
     "pushed_at": "2026-05-28T10:56:43Z",
     "html_url": "https://github.com/shiaho777/echomind"
-  },
-  {
-    "name": "anthropic-ui-skill",
-    "description": "A Skill that allows AI to generate the UI design style of Anthropic Company. Its aesthetics are very good.",
-    "stargazers_count": 13,
-    "forks_count": 1,
-    "language": null,
-    "pushed_at": "2026-05-28T08:50:31Z",
-    "html_url": "https://github.com/shiaho777/anthropic-ui-skill"
   },
   {
     "name": "memx",
@@ -167,7 +167,7 @@
     "stargazers_count": 10,
     "forks_count": 0,
     "language": "Python",
-    "pushed_at": "2026-11-24T23:01:57Z",
+    "pushed_at": "2026-11-25T09:43:25Z",
     "html_url": "https://github.com/shiaho777/pyj-j"
   },
   {
@@ -241,6 +241,15 @@
     "language": "Kotlin",
     "pushed_at": "2026-11-18T15:14:31Z",
     "html_url": "https://github.com/shiaho777/ailiaili"
+  },
+  {
+    "name": "my-skill",
+    "description": "Personal agent skills for open-source projects, GitHub workflows, and documentation, with examples you can try.",
+    "stargazers_count": 1,
+    "forks_count": 0,
+    "language": "Shell",
+    "pushed_at": "2026-11-25T07:05:13Z",
+    "html_url": "https://github.com/shiaho777/my-skill"
   },
   {
     "name": "repo-maintenance",
