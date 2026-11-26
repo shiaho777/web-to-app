@@ -263,16 +263,31 @@
       function BridgedXHR() {
         this._xhr = new NativeXHR(); this._listeners = {}; this._headers = {}; this._method = 'GET'; this._url = ''; this._async = true;
         this.readyState = 0; this.response = null; this.responseText = ''; this.responseType = ''; this.responseURL = '';
-        this.status = 0; this.statusText = ''; this.timeout = 0; this.withCredentials = false;
-        this.onreadystatechange = null; this.onload = null; this.onerror = null; this.onloadend = null; this.upload = {};
+        this.status = 0; this.statusText = '';
+        this.onreadystatechange = null; this.onload = null; this.onerror = null; this.onloadend = null; this.upload = this._xhr.upload;
         const self = this;
-        ['readystatechange', 'load', 'error', 'loadend', 'timeout', 'abort', 'progress'].forEach((name) => {
+        ['readystatechange', 'loadstart', 'load', 'error', 'loadend', 'timeout', 'abort', 'progress'].forEach((name) => {
           self._xhr.addEventListener(name, (event) => { self._syncFromNative(); self._dispatch(name, event); });
         });
       }
       BridgedXHR.prototype._syncFromNative = function () {
         this.readyState = this._xhr.readyState; this.response = this._xhr.response; this.responseText = this._xhr.responseText || '';
         this.responseURL = this._xhr.responseURL || this._url; this.status = this._xhr.status || 0; this.statusText = this._xhr.statusText || '';
+      };
+      BridgedXHR.prototype._bodyByteLength = function (body) {
+        if (body === null || body === undefined) return null;
+        if (typeof body === 'string') return new Blob([body]).size;
+        if (typeof Blob !== 'undefined' && body instanceof Blob) return body.size;
+        if (body instanceof ArrayBuffer) return body.byteLength;
+        if (ArrayBuffer.isView(body)) return body.byteLength;
+        if (typeof URLSearchParams !== 'undefined' && body instanceof URLSearchParams) return new Blob([body.toString()]).size;
+        return null;
+      };
+      BridgedXHR.prototype._dispatchUpload = function (type, loaded, total) {
+        if (!this.upload || typeof ProgressEvent !== 'function') return;
+        try {
+          this.upload.dispatchEvent(new ProgressEvent(type, { lengthComputable: total !== null, loaded, total: total === null ? 0 : total }));
+        } catch (e) { setTimeout(() => { throw e; }); }
       };
       BridgedXHR.prototype._dispatch = function (type, sourceEvent) {
         const event = sourceEvent || { type, target: this, currentTarget: this };
@@ -282,7 +297,7 @@
       };
       BridgedXHR.prototype.open = function (method, url, async, user, password) {
         this._method = String(method || 'GET').toUpperCase(); this._url = new URL(String(url), window.location.href).href; this._async = async !== false; this.readyState = 1;
-        if (!isHttpUrl(this._url) || !shouldBridge(this._url)) { this._native = true; return this._xhr.open(method, url, async, user, password); }
+        if (!isHttpUrl(this._url) || !shouldBridge(this._url)) { this._native = true; return this._xhr.open.apply(this._xhr, arguments); }
         this._native = false; this._dispatch('readystatechange');
       };
       BridgedXHR.prototype.setRequestHeader = function (n, v) { if (this._native) return this._xhr.setRequestHeader(n, v); this._headers[String(n)] = String(v); };
@@ -292,8 +307,15 @@
         if (this._native) return this._xhr.send(body);
         if (this._async === false) throw new Error('Synchronous bridged XHR is not supported');
         const self = this;
+        const hasBody = body !== null && body !== undefined;
+        const uploadTotal = this._bodyByteLength(body);
+        if (hasBody) this._dispatchUpload('loadstart', 0, uploadTotal);
         nativeHttpRequest({ url: this._url, method: this._method, headers: this._headers, body })
           .then((result) => {
+            if (hasBody) {
+              const sent = uploadTotal === null ? 0 : uploadTotal;
+              self._dispatchUpload('progress', sent, uploadTotal); self._dispatchUpload('load', sent, uploadTotal); self._dispatchUpload('loadend', sent, uploadTotal);
+            }
             const headers = {}; Object.keys(result.headers || {}).forEach((n) => { headers[n.toLowerCase()] = String(result.headers[n]); });
             self._responseHeaders = headers; self.status = Number(result.status || 0); self.statusText = String(result.statusText || ''); self.responseURL = String(result.url || self._url);
             const bytes = base64ToBytes(result.bodyBase64 || '');
@@ -315,12 +337,20 @@
                 return;
               } catch (e) {}
             }
+            if (hasBody) { self._dispatchUpload('error', 0, uploadTotal); self._dispatchUpload('loadend', 0, uploadTotal); }
             self.readyState = 4; self._dispatch('readystatechange'); self._dispatch('error', { type: 'error', target: self }); self._dispatch('loadend');
           });
       };
       BridgedXHR.prototype.abort = function () { if (this._native) return this._xhr.abort(); };
       BridgedXHR.prototype.addEventListener = function (t, fn) { if (this._native) return this._xhr.addEventListener(t, fn); (this._listeners[t] = this._listeners[t] || []).push(fn); };
       BridgedXHR.prototype.removeEventListener = function (t, fn) { if (this._native) return this._xhr.removeEventListener(t, fn); const list = this._listeners[t] || []; const i = list.indexOf(fn); if (i >= 0) list.splice(i, 1); };
+      ['timeout', 'withCredentials'].forEach((name) => {
+        Object.defineProperty(BridgedXHR.prototype, name, {
+          configurable: true,
+          get() { return this._xhr[name]; },
+          set(value) { try { this._xhr[name] = value; } catch (e) {} }
+        });
+      });
       window.XMLHttpRequest = BridgedXHR;
     }
   };
