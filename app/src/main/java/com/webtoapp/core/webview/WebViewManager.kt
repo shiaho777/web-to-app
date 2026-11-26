@@ -6483,15 +6483,14 @@ class WebViewManager(
                         this.responseURL = '';
                         this.status = 0;
                         this.statusText = '';
-                        this.timeout = 0;
-                        this.withCredentials = false;
+                        this.upload = this._xhr.upload;
                         this.onreadystatechange = null;
                         this.onload = null;
                         this.onerror = null;
                         this.onloadend = null;
 
                         var self = this;
-                        ['readystatechange', 'load', 'error', 'loadend', 'timeout', 'abort', 'progress'].forEach(function(name) {
+                        ['readystatechange', 'loadstart', 'load', 'error', 'loadend', 'timeout', 'abort', 'progress'].forEach(function(name) {
                             self._xhr.addEventListener(name, function(event) {
                                 self._syncFromNative();
                                 self._dispatch(name, event);
@@ -6518,6 +6517,29 @@ class WebViewManager(
                         this.statusText = source.statusText || '';
                     };
 
+                    BridgedXHR.prototype._bodyByteLength = function(body) {
+                        if (body === null || body === undefined) return null;
+                        if (typeof body === 'string') return new Blob([body]).size;
+                        if (typeof Blob !== 'undefined' && body instanceof Blob) return body.size;
+                        if (body instanceof ArrayBuffer) return body.byteLength;
+                        if (ArrayBuffer.isView(body)) return body.byteLength;
+                        if (typeof URLSearchParams !== 'undefined' && body instanceof URLSearchParams) {
+                            return new Blob([body.toString()]).size;
+                        }
+                        return null;
+                    };
+
+                    BridgedXHR.prototype._dispatchUpload = function(type, loaded, total) {
+                        if (!this.upload || typeof ProgressEvent !== 'function') return;
+                        try {
+                            this.upload.dispatchEvent(new ProgressEvent(type, {
+                                lengthComputable: total !== null,
+                                loaded: loaded,
+                                total: total === null ? 0 : total
+                            }));
+                        } catch (e) { setTimeout(function() { throw e; }); }
+                    };
+
                     BridgedXHR.prototype._dispatch = function(type, sourceEvent) {
                         var event = sourceEvent || { type: type, target: this, currentTarget: this };
                         var list = this._listeners[type] || [];
@@ -6539,7 +6561,7 @@ class WebViewManager(
                             (this._method === 'GET' || this._method === 'HEAD'));
                         if (!bridgeable) {
                             this._native = true;
-                            return this._xhr.open(method, url, async, user, password);
+                            return this._xhr.open.apply(this._xhr, arguments);
                         }
                         this._native = false;
                         this._dispatch('readystatechange');
@@ -6566,8 +6588,17 @@ class WebViewManager(
                         if (this._native) return this._xhr.send(body);
                         if (this._async === false) throw new Error('Synchronous private network XHR is not supported');
                         var self = this;
+                        var hasBody = body !== null && body !== undefined;
+                        var uploadTotal = this._bodyByteLength(body);
+                        if (hasBody) this._dispatchUpload('loadstart', 0, uploadTotal);
                         nativeHttpRequest({ url: this._url, method: this._method, headers: this._headers, body: body })
                             .then(function(result) {
+                                if (hasBody) {
+                                    var sent = uploadTotal === null ? 0 : uploadTotal;
+                                    self._dispatchUpload('progress', sent, uploadTotal);
+                                    self._dispatchUpload('load', sent, uploadTotal);
+                                    self._dispatchUpload('loadend', sent, uploadTotal);
+                                }
                                 var headers = {};
                                 Object.keys(result.headers || {}).forEach(function(name) {
                                     headers[name.toLowerCase()] = String(result.headers[name]);
@@ -6595,6 +6626,10 @@ class WebViewManager(
                                 self._dispatch('load');
                                 self._dispatch('loadend');
                             }).catch(function(error) {
+                                if (hasBody) {
+                                    self._dispatchUpload('error', 0, uploadTotal);
+                                    self._dispatchUpload('loadend', 0, uploadTotal);
+                                }
                                 self.status = 0;
                                 self.statusText = '';
                                 self.readyState = 4;
@@ -6624,6 +6659,16 @@ class WebViewManager(
                     BridgedXHR.prototype.overrideMimeType = function(mimeType) {
                         if (this._native) return this._xhr.overrideMimeType(mimeType);
                     };
+
+                    ['timeout', 'withCredentials'].forEach(function(name) {
+                        Object.defineProperty(BridgedXHR.prototype, name, {
+                            configurable: true,
+                            get: function() { return this._xhr[name]; },
+                            set: function(value) {
+                                try { this._xhr[name] = value; } catch (e) { }
+                            }
+                        });
+                    });
 
                     Object.defineProperty(BridgedXHR.prototype, 'responseType', {
                         configurable: true,
