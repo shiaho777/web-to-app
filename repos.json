@@ -14,7 +14,7 @@
     "stargazers_count": 46,
     "forks_count": 5,
     "language": "Kotlin",
-    "pushed_at": "2026-11-18T10:54:52Z",
+    "pushed_at": "2026-11-25T13:53:51Z",
     "html_url": "https://github.com/shiaho777/LogSleuth"
   },
   {
@@ -50,7 +50,7 @@
     "stargazers_count": 24,
     "forks_count": 9,
     "language": "Kotlin",
-    "pushed_at": "2026-11-19T01:24:31Z",
+    "pushed_at": "2026-11-25T15:27:00Z",
     "html_url": "https://github.com/shiaho777/andmx"
   },
   {
@@ -167,7 +167,7 @@
     "stargazers_count": 10,
     "forks_count": 0,
     "language": "Python",
-    "pushed_at": "2026-11-25T09:43:25Z",
+    "pushed_at": "2026-11-25T22:20:51Z",
     "html_url": "https://github.com/shiaho777/pyj-j"
   },
   {
@@ -239,7 +239,7 @@
     "stargazers_count": 4,
     "forks_count": 0,
     "language": "Kotlin",
-    "pushed_at": "2026-11-18T15:14:31Z",
+    "pushed_at": "2026-11-25T15:06:09Z",
     "html_url": "https://github.com/shiaho777/ailiaili"
   },
   {
@@ -277,15 +277,6 @@
     "language": "Svelte",
     "pushed_at": "2026-11-18T14:43:06Z",
     "html_url": "https://github.com/shiaho777/Liora"
-  },
-  {
-    "name": "pneuma",
-    "description": "Pneuma · 感情优先的 AI 角色世界：酒馆的深度，消费级的体验。本地优先，零遥测。",
-    "stargazers_count": 0,
-    "forks_count": 0,
-    "language": "TypeScript",
-    "pushed_at": "2026-11-18T12:48:02Z",
-    "html_url": "https://github.com/shiaho777/pneuma"
   },
   {
     "name": "dogsc-compose",
