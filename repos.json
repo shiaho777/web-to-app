@@ -14,8 +14,17 @@
     "stargazers_count": 46,
     "forks_count": 5,
     "language": "Kotlin",
-    "pushed_at": "2026-11-25T13:53:51Z",
+    "pushed_at": "2026-11-26T08:11:07Z",
     "html_url": "https://github.com/shiaho777/LogSleuth"
+  },
+  {
+    "name": "turn-mcp",
+    "description": "Achieve infinite conversation turns in a single API request via turn-mcp.             Self-hosted MCP server with browser console for human-in-the-loop AI agents.",
+    "stargazers_count": 42,
+    "forks_count": 9,
+    "language": "TypeScript",
+    "pushed_at": "2026-10-13T13:29:04Z",
+    "html_url": "https://github.com/shiaho777/turn-mcp"
   },
   {
     "name": "jseek",
@@ -25,15 +34,6 @@
     "language": "Go",
     "pushed_at": "2026-11-18T13:19:17Z",
     "html_url": "https://github.com/shiaho777/jseek"
-  },
-  {
-    "name": "turn-mcp",
-    "description": "Achieve infinite conversation turns in a single API request via turn-mcp.             Self-hosted MCP server with browser console for human-in-the-loop AI agents.",
-    "stargazers_count": 41,
-    "forks_count": 9,
-    "language": "TypeScript",
-    "pushed_at": "2026-10-13T13:29:04Z",
-    "html_url": "https://github.com/shiaho777/turn-mcp"
   },
   {
     "name": "qsyy",
@@ -50,7 +50,7 @@
     "stargazers_count": 24,
     "forks_count": 9,
     "language": "Kotlin",
-    "pushed_at": "2026-11-25T15:27:00Z",
+    "pushed_at": "2026-11-26T08:24:15Z",
     "html_url": "https://github.com/shiaho777/andmx"
   },
   {
@@ -167,7 +167,7 @@
     "stargazers_count": 10,
     "forks_count": 0,
     "language": "Python",
-    "pushed_at": "2026-11-25T22:20:51Z",
+    "pushed_at": "2026-11-26T09:20:23Z",
     "html_url": "https://github.com/shiaho777/pyj-j"
   },
   {
@@ -261,6 +261,15 @@
     "html_url": "https://github.com/shiaho777/repo-maintenance"
   },
   {
+    "name": "cutbud",
+    "description": "Cutbud is a modern, powerful on-device screen recorder and video editor for Android.",
+    "stargazers_count": 0,
+    "forks_count": 0,
+    "language": "Kotlin",
+    "pushed_at": "2026-11-26T06:07:24Z",
+    "html_url": "https://github.com/shiaho777/cutbud"
+  },
+  {
     "name": "web-to-app-runtimes",
     "description": "Android runtime binaries for WebToApp (PHP, and future runtimes). Versioned releases with sha256 pins; consumed by https://github.com/shiaho777/web-to-app",
     "stargazers_count": 0,
@@ -277,15 +286,6 @@
     "language": "Svelte",
     "pushed_at": "2026-11-18T14:43:06Z",
     "html_url": "https://github.com/shiaho777/Liora"
-  },
-  {
-    "name": "dogsc-compose",
-    "description": "Unofficial Android port of DogSC — clean-room Compose recorder + editor",
-    "stargazers_count": 0,
-    "forks_count": 0,
-    "language": "Kotlin",
-    "pushed_at": "2026-11-18T11:43:01Z",
-    "html_url": "https://github.com/shiaho777/dogsc-compose"
   },
   {
     "name": "nixiang",
