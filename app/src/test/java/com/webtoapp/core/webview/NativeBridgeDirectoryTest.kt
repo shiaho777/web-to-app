@@ -30,6 +30,7 @@ class NativeBridgeDirectoryTest {
         val bridge = bridge(directory = true, pageUrl = "https://evil.test/embed", origin = "https://app.test")
         assertThat(JSONObject(bridge.listDirectory("")).getString("error")).isEqualTo("CALLER_NOT_ALLOWED")
         assertThat(JSONObject(bridge.readDirectoryFile("a.txt", 0, 16)).getString("error")).isEqualTo("CALLER_NOT_ALLOWED")
+        assertThat(JSONObject(bridge.openDirectoryFileUrl("a.txt")).getString("error")).isEqualTo("CALLER_NOT_ALLOWED")
         assertThat(JSONObject(bridge.writeDirectoryFile("a.txt", "", false)).getString("error")).isEqualTo("CALLER_NOT_ALLOWED")
     }
 

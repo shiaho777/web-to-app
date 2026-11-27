@@ -2051,6 +2051,9 @@ class WebViewManager(
             ): WebResourceResponse? {
                 request?.let {
                     val url = it.url?.toString() ?: ""
+                    if (view != null) {
+                        WebViewStreamRoutes.intercept(view, it)?.let { response -> return response }
+                    }
                     diagRequestCount++
 
                     if (config.enableNotificationPolyfill) {
@@ -2256,6 +2259,7 @@ class WebViewManager(
                     rememberMainFrameReferer(currentMainFrameUrl)
                 }
                 currentMainFrameUrl = url
+                if (view != null) WebViewStreamRoutes.onPageStarted(view, url.orEmpty())
                 if (TlsMitmBridge.isRunning()) {
                     TlsMitmBridge.allowHost(runCatching { android.net.Uri.parse(url ?: "").host }.getOrNull())
                 }
@@ -4068,6 +4072,7 @@ class WebViewManager(
     }
 
     fun destroyWebView(webView: WebView) {
+        WebViewStreamRoutes.destroy(webView)
         try {
             speechBridges.remove(webView)?.release(webView)
             managedWebViews.remove(webView)

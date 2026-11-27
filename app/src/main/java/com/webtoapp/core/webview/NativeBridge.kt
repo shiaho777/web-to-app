@@ -86,7 +86,7 @@ class NativeBridge(
 
     private val directoryStore by lazy {
         LocalDirectoryStore(
-            context = context,
+            context = context.applicationContext,
             grantKey = directoryGrantKey.ifBlank { context.packageName ?: "default" }
         )
     }
@@ -2178,6 +2178,32 @@ await WtaDirectory.write('exports/image.png', pngBytes);
     }
 
     @JavascriptInterface
+    fun openDirectoryFileUrl(relativePath: String): String = openDirectoryStream(relativePath, oneShot = false)
+
+    @JavascriptInterface
+    fun openDirectoryReadUrl(relativePath: String): String = openDirectoryStream(relativePath, oneShot = true)
+
+    private fun openDirectoryStream(relativePath: String, oneShot: Boolean): String {
+        if (!capabilities.directory) return directoryError("DISABLED", "The folder capability is off")
+        val url = resolveCallerPageUrl()
+        if (!directoryCallerAllowed(url)) return directoryError("CALLER_NOT_ALLOWED", "Only the app's own pages can use the folder")
+        val view = webViewProvider() ?: return directoryError("NO_ACTIVITY", "The WebView is unavailable")
+        val page = WebViewStreamRoutes.page(view, url) ?: return directoryError("CALLER_NOT_ALLOWED", "The caller changed")
+        val file = try {
+            directoryStore.streamFile(relativePath)
+        } catch (e: LocalDirectoryStore.StreamFileException) {
+            return directoryError(e.code, e.message.orEmpty())
+        } catch (e: SecurityException) {
+            return directoryError("NO_GRANT", "The folder is no longer available")
+        }
+        val opaqueOrigin = url.startsWith("file:") || url.startsWith("content:")
+        val streamUrl = page.register(oneShot, key = file.key.takeUnless { oneShot }) { request ->
+            DirectoryFileResponse.create(file, request, opaqueOrigin)
+        } ?: return directoryError("BUSY", "Too many open file URLs")
+        return org.json.JSONObject().put("ok", true).put("url", streamUrl).toString()
+    }
+
+    @JavascriptInterface
     fun writeDirectoryFile(relativePath: String, base64: String, append: Boolean): String {
         if (!capabilities.directory) return directoryError("DISABLED", "The folder capability is off")
         if (!directoryCallerAllowed()) return directoryError("CALLER_NOT_ALLOWED", "Only the app's own pages can use the folder")
@@ -2191,8 +2217,7 @@ await WtaDirectory.write('exports/image.png', pngBytes);
         return directoryStore.delete(relativePath)
     }
 
-    private fun directoryCallerAllowed(): Boolean {
-        val callerPageUrl = resolveCallerPageUrl()
+    private fun directoryCallerAllowed(callerPageUrl: String = resolveCallerPageUrl()): Boolean {
         if (callerPageUrl.isBlank()) return false
         if (callerPageUrl.startsWith("file:") || callerPageUrl.startsWith("content:")) return true
         if (isPrivateNetworkUrl(callerPageUrl)) return true
