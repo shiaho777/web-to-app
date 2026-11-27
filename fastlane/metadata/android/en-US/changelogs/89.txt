@@ -1,0 +1,6 @@
+- Faster, more resilient APK and large web downloads in preview and exported apps.
+- Stream large cross-origin XHR responses and play or seek files in granted folders.
+- Gallery adds folders, device video libraries, search, and per-video resume.
+- Preview captured sites offline before saving a pack.
+- Improved the Agent workspace, project restores, and editor saves.
+- Added imported CA support and WebView speech synthesis.

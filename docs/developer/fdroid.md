@@ -52,9 +52,9 @@ RepoType: git
 Repo: https://github.com/shiaho777/web-to-app.git
 
 Builds:
-  - versionName: "2.9.0"
-    versionCode: 88
-    commit: v2.9.0
+  - versionName: "2.9.5"
+    versionCode: 89
+    commit: v2.9.5
     subdir: app
     gradle:
       - standard
@@ -69,7 +69,7 @@ UpdateCheckMode: Tags
 UpdateCheckData: app/build.gradle.kts|versionCode = (\d+)|.|versionName = "([^"]+)"
 ```
 
-Tag the same commit that GitHub Releases use (`v2.9.0`). F-Droid and GitHub then ship the same version from one tag; F-Droid's signing key is different, so the two APKs cannot update each other.
+Tag the same commit that GitHub Releases use (`v2.9.5`). F-Droid and GitHub then ship the same version from one tag. Update each APK through its original channel to keep the same signing key.
 
 ## Do not mix templates
 

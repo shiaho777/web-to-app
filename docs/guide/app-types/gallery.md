@@ -13,6 +13,8 @@ Albums, portfolios, and offline media viewers.
 
 The device folder mode has no preset video count or file-size limit. Available storage and device playback support determine what you can keep and play. Bundled media increases the exported app's size and is subject to the distribution channel's size limits.
 
+Use search to filter the current folder by name. Gallery saves progress separately for each video. Select **Continue watching** in the library overview to return to the last video with saved progress.
+
 ## Core config
 
 Backed by `GalleryConfig`.
@@ -30,7 +32,7 @@ Backed by `GalleryConfig`.
 - **Shuffle on loop** (`shuffleOnLoop`) — reshuffle the order every time playback wraps around (only meaningful with loop on).
 - **Video auto-next** (`videoAutoNext`) — advance to the next item when a video ends.
 - **Video controls** — play or pause, seek with the progress bar, skip ten seconds, and choose a speed from 0.5× to 2×.
-- **Remember position** (`rememberPosition`) — resume playback position (per gallery in preview; fixed slot in exported apps).
+- **Remember position** (`rememberPosition`) — restore the last item in a bundled gallery without videos.
 - **Enable audio** (`enableAudio`).
 
 ### View

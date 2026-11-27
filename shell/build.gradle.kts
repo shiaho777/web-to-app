@@ -36,8 +36,8 @@ android {
         minSdk = 23
 
         targetSdk = 35
-        versionCode = 88
-        versionName = "2.9.0"
+        versionCode = 89
+        versionName = "2.9.5"
 
         buildConfigField("boolean", "SHELL_RUNTIME_ONLY", "true")
         buildConfigField("boolean", "FDROID", isFdroidBuild.toString())
@@ -307,12 +307,6 @@ val syncShellRuntimeSources by tasks.registering(Sync::class) {
 
 tasks.named("preBuild") { dependsOn(syncShellRuntimeSources) }
 
-/**
- * Emits reduced Strings.kt / StringsA-E.kt into build/generated/shellStrings:
- * only the members referenced by the synced runtime sources (plus the Strings
- * language-state infrastructure). Editor-only strings stay out of the shell
- * template and therefore out of every generated APK.
- */
 abstract class GenerateShellStringsTask : DefaultTask() {
     @get:InputFile
     @get:PathSensitive(PathSensitivity.NONE)
