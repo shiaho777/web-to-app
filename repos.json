@@ -14,14 +14,14 @@
     "stargazers_count": 46,
     "forks_count": 5,
     "language": "Kotlin",
-    "pushed_at": "2026-11-26T08:11:07Z",
+    "pushed_at": "2026-11-26T18:10:06Z",
     "html_url": "https://github.com/shiaho777/LogSleuth"
   },
   {
     "name": "turn-mcp",
     "description": "Achieve infinite conversation turns in a single API request via turn-mcp.             Self-hosted MCP server with browser console for human-in-the-loop AI agents.",
-    "stargazers_count": 42,
-    "forks_count": 9,
+    "stargazers_count": 41,
+    "forks_count": 8,
     "language": "TypeScript",
     "pushed_at": "2026-10-13T13:29:04Z",
     "html_url": "https://github.com/shiaho777/turn-mcp"
@@ -29,8 +29,8 @@
   {
     "name": "jseek",
     "description": "The fastest way to pull values out of JSON in Go — zero allocations, no structs, no full parse",
-    "stargazers_count": 41,
-    "forks_count": 2,
+    "stargazers_count": 40,
+    "forks_count": 1,
     "language": "Go",
     "pushed_at": "2026-11-18T13:19:17Z",
     "html_url": "https://github.com/shiaho777/jseek"
@@ -47,16 +47,16 @@
   {
     "name": "andmx",
     "description": "Android-native AI coding agent (AndMX)",
-    "stargazers_count": 24,
+    "stargazers_count": 23,
     "forks_count": 9,
     "language": "Kotlin",
-    "pushed_at": "2026-11-26T08:24:15Z",
+    "pushed_at": "2026-11-26T17:40:11Z",
     "html_url": "https://github.com/shiaho777/andmx"
   },
   {
     "name": "WebViewIDE",
     "description": "On-device IDE for HTML, CSS, and JavaScript. Preview in the system WebView and package a signed APK. No root.",
-    "stargazers_count": 23,
+    "stargazers_count": 22,
     "forks_count": 3,
     "language": "Kotlin",
     "pushed_at": "2026-11-20T01:24:57Z",
@@ -72,15 +72,6 @@
     "html_url": "https://github.com/shiaho777/pneuma-android"
   },
   {
-    "name": "revx",
-    "description": "Rust reverse-engineering toolkit with CLI and local MCP server.",
-    "stargazers_count": 18,
-    "forks_count": 0,
-    "language": "Rust",
-    "pushed_at": "2026-11-18T13:07:54Z",
-    "html_url": "https://github.com/shiaho777/revx"
-  },
-  {
     "name": "An-Harness",
     "description": "Android-first on-device AI agent harness — exploring everything possible on Android",
     "stargazers_count": 18,
@@ -90,9 +81,18 @@
     "html_url": "https://github.com/shiaho777/An-Harness"
   },
   {
+    "name": "revx",
+    "description": "Rust reverse-engineering toolkit with CLI and local MCP server.",
+    "stargazers_count": 17,
+    "forks_count": 0,
+    "language": "Rust",
+    "pushed_at": "2026-11-18T13:07:54Z",
+    "html_url": "https://github.com/shiaho777/revx"
+  },
+  {
     "name": "zv-codec",
     "description": "Tiny video/audio codec optimized for screen recordings. 24% smaller than x265 lossless RGB at the same speed, ~1100 lines of C, no NN, no external deps.",
-    "stargazers_count": 17,
+    "stargazers_count": 16,
     "forks_count": 1,
     "language": "C",
     "pushed_at": "2026-11-17T09:11:56Z",
@@ -101,7 +101,7 @@
   {
     "name": "wgsql",
     "description": "GPU-accelerated columnar OLAP via WebGPU. One WGSL kernel, four backends.",
-    "stargazers_count": 16,
+    "stargazers_count": 15,
     "forks_count": 0,
     "language": "Rust",
     "pushed_at": "2026-09-17T06:30:59Z",
@@ -110,7 +110,7 @@
   {
     "name": "anthropic-ui-skill",
     "description": "A Skill that allows AI to generate the UI design style of Anthropic Company. Its aesthetics are very good.",
-    "stargazers_count": 14,
+    "stargazers_count": 13,
     "forks_count": 1,
     "language": null,
     "pushed_at": "2026-05-28T08:50:31Z",
@@ -119,7 +119,7 @@
   {
     "name": "MacBottle",
     "description": null,
-    "stargazers_count": 13,
+    "stargazers_count": 12,
     "forks_count": 0,
     "language": "Swift",
     "pushed_at": "2026-11-18T09:21:15Z",
@@ -128,7 +128,7 @@
   {
     "name": "echomind",
     "description": "A non-attention LM recipe with proven small-scale ICL and Chinchilla-style scaling law (R²=0.995). Reproducible in 25 minutes on a MacBook.",
-    "stargazers_count": 13,
+    "stargazers_count": 12,
     "forks_count": 0,
     "language": "Python",
     "pushed_at": "2026-05-28T10:56:43Z",
@@ -137,7 +137,7 @@
   {
     "name": "memx",
     "description": "MemX — ~100× lower LLM memory on Apple, original precision. Stable planes: ~9× phys · ~100× engine · ~300× vessel capability (bitexact).",
-    "stargazers_count": 12,
+    "stargazers_count": 11,
     "forks_count": 0,
     "language": "Objective-C",
     "pushed_at": "2026-11-18T11:42:06Z",
@@ -146,7 +146,7 @@
   {
     "name": "clipshelf",
     "description": "macOS menu bar clipboard history — rules on copy, app-aware paste, local search.",
-    "stargazers_count": 12,
+    "stargazers_count": 11,
     "forks_count": 0,
     "language": "Swift",
     "pushed_at": "2026-11-16T14:33:09Z",
@@ -167,7 +167,7 @@
     "stargazers_count": 10,
     "forks_count": 0,
     "language": "Python",
-    "pushed_at": "2026-11-26T09:20:23Z",
+    "pushed_at": "2026-11-26T22:22:18Z",
     "html_url": "https://github.com/shiaho777/pyj-j"
   },
   {
@@ -207,15 +207,6 @@
     "html_url": "https://github.com/shiaho777/hard-metric-bench"
   },
   {
-    "name": "issue-pr-ci-delivery",
-    "description": "Bootstrap & run an Issue → PR → CI → merge delivery loop for any GitHub repo",
-    "stargazers_count": 9,
-    "forks_count": 0,
-    "language": null,
-    "pushed_at": "2026-07-31T07:26:23Z",
-    "html_url": "https://github.com/shiaho777/issue-pr-ci-delivery"
-  },
-  {
     "name": "pocket-linux-images",
     "description": "Public prebuilt Linux rootfs images for the PocketLinux Android app (Ubuntu/Debian x XFCE/LXQt)",
     "stargazers_count": 8,
@@ -232,6 +223,15 @@
     "language": "Kotlin",
     "pushed_at": "2026-09-10T05:36:50Z",
     "html_url": "https://github.com/shiaho777/charter"
+  },
+  {
+    "name": "issue-pr-ci-delivery",
+    "description": "Bootstrap & run an Issue → PR → CI → merge delivery loop for any GitHub repo",
+    "stargazers_count": 8,
+    "forks_count": 0,
+    "language": null,
+    "pushed_at": "2026-07-31T07:26:23Z",
+    "html_url": "https://github.com/shiaho777/issue-pr-ci-delivery"
   },
   {
     "name": "ailiaili",
@@ -261,12 +261,21 @@
     "html_url": "https://github.com/shiaho777/repo-maintenance"
   },
   {
+    "name": "android-linux-runtime",
+    "description": "A rootless ARM64 Alpine VM and SDK for Android",
+    "stargazers_count": 0,
+    "forks_count": 0,
+    "language": "Java",
+    "pushed_at": "2026-11-26T17:38:32Z",
+    "html_url": "https://github.com/shiaho777/android-linux-runtime"
+  },
+  {
     "name": "cutbud",
     "description": "Cutbud is a modern, powerful on-device screen recorder and video editor for Android.",
     "stargazers_count": 0,
     "forks_count": 0,
     "language": "Kotlin",
-    "pushed_at": "2026-11-26T06:07:24Z",
+    "pushed_at": "2026-11-26T13:34:20Z",
     "html_url": "https://github.com/shiaho777/cutbud"
   },
   {
