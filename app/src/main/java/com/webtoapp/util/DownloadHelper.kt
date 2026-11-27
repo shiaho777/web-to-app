@@ -1,24 +1,37 @@
 package com.webtoapp.util
 
 import android.app.DownloadManager
+import android.content.ContentValues
 import android.content.Context
 import android.content.pm.PackageManager
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
+import android.os.SystemClock
+import android.provider.MediaStore
 import android.webkit.MimeTypeMap
 import android.webkit.CookieManager
 import android.webkit.URLUtil
 import android.widget.Toast
 import androidx.core.content.ContextCompat
+import androidx.documentfile.provider.DocumentFile
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.webview.DocumentDownloadPolicy
+import com.webtoapp.core.webview.WebDownloadReferrer
+import com.webtoapp.data.model.DownloadLocationMode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.io.FilterInputStream
+import java.io.IOException
+import java.io.InputStream
+import java.io.OutputStream
 import java.io.UnsupportedEncodingException
 import java.net.URLDecoder
 
@@ -26,15 +39,14 @@ object DownloadHelper {
 
     private const val TAG = "DownloadHelper"
 
-    private const val MAX_RETRY_COUNT = 3
-    private const val RETRY_DELAY_MS = 1000L
+    private const val COPY_BUFFER_SIZE = 64 * 1024
     private val DOWNLOAD_ALLOWED_SCHEMES = setOf("http", "https")
 
     private val RFC5987_REGEX = Regex("""filename\*\s*=\s*([^']*)'([^']*)'(.+)""", RegexOption.IGNORE_CASE)
     private val QUOTED_FILENAME_REGEX = Regex("""filename\s*=\s*"([^"]+)""""", RegexOption.IGNORE_CASE)
     private val UNQUOTED_FILENAME_REGEX = Regex("""filename\s*=\s*([^;\s]+)""", RegexOption.IGNORE_CASE)
 
-    private val retryCountMap = mutableMapOf<String, Int>()
+    private val downloadScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     fun parseFileName(url: String, contentDisposition: String?, mimeType: String?): String {
         var fileName: String? = null
@@ -53,7 +65,8 @@ object DownloadHelper {
 
         fileName = ensureExtension(fileName, mimeType)
 
-        return fileName
+        return fileName.substringAfterLast('/').substringAfterLast('\\')
+            .takeUnless { it.isBlank() || it == "." || it == ".." } ?: "download"
     }
 
     private fun parseContentDisposition(contentDisposition: String): String? {
@@ -154,33 +167,18 @@ object DownloadHelper {
         userAgent: String,
         contentDisposition: String,
         mimeType: String,
-        contentLength: Long,
+        referrer: String? = null,
         showEnhancedNotification: Boolean = true,
         saveToGallery: Boolean = true,
-        scope: CoroutineScope? = null,
         onBlobDownload: ((blobUrl: String, filename: String) -> Unit)? = null,
-        downloadLocationMode: com.webtoapp.data.model.DownloadLocationMode = com.webtoapp.data.model.DownloadLocationMode.SYSTEM_DOWNLOAD,
+        downloadLocationMode: DownloadLocationMode = DownloadLocationMode.SYSTEM_DOWNLOAD,
         customDownloadDirUri: String = "",
         albumName: String = ""
     ) {
-
-        if (url.startsWith("blob:")) {
-            val filename = parseFileName(url, contentDisposition, mimeType)
+        if (url.startsWith("blob:") || url.startsWith("data:")) {
             if (onBlobDownload != null) {
                 Toast.makeText(context, Strings.blobDownloadProcessing, Toast.LENGTH_SHORT).show()
-                onBlobDownload(url, filename)
-            } else {
-
-                Toast.makeText(context, Strings.blobDownloadFailed, Toast.LENGTH_SHORT).show()
-            }
-            return
-        }
-
-        if (url.startsWith("data:")) {
-            val filename = parseFileName(url, contentDisposition, mimeType)
-            if (onBlobDownload != null) {
-                Toast.makeText(context, Strings.blobDownloadProcessing, Toast.LENGTH_SHORT).show()
-                onBlobDownload(url, filename)
+                onBlobDownload(url, parseFileName(url, contentDisposition, mimeType))
             } else {
                 Toast.makeText(context, Strings.blobDownloadFailed, Toast.LENGTH_SHORT).show()
             }
@@ -189,487 +187,259 @@ object DownloadHelper {
 
         val safeUrl = sanitizeDownloadUrl(url)
         if (safeUrl.isEmpty()) {
-            AppLogger.w(TAG, "Blocked unsafe download URL: $url")
             Toast.makeText(context, Strings.downloadFailed, Toast.LENGTH_SHORT).show()
             return
         }
 
         val fileName = parseFileName(safeUrl, contentDisposition, mimeType)
+        val initialMime = mimeType.ifBlank {
+            MimeTypeMap.getSingleton().getMimeTypeFromExtension(fileName.substringAfterLast('.', "").lowercase())
+                ?: "application/octet-stream"
+        }
+        val download = HttpDownload(safeUrl, userAgent, referrer, fileName, initialMime)
+        val appContext = context.applicationContext
+        val mode = if (downloadLocationMode == DownloadLocationMode.CUSTOM && customDownloadDirUri.isBlank()) {
+            DownloadLocationMode.SYSTEM_DOWNLOAD
+        } else {
+            downloadLocationMode
+        }
 
-        if (downloadLocationMode == com.webtoapp.data.model.DownloadLocationMode.ASK) {
-            downloadToUserChoice(
-                context, safeUrl, userAgent, fileName, mimeType, scope
-            )
+        if (mode == DownloadLocationMode.ASK) {
+            DownloadSavePrompter.prompt(context, fileName, initialMime) { uri ->
+                if (uri == null) {
+                    Toast.makeText(context, Strings.downloadSaveCancelled, Toast.LENGTH_SHORT).show()
+                } else {
+                    downloadInApp(appContext, download, mode, customDownloadDirUri, uri)
+                }
+            }
             return
         }
 
-        val customDir = downloadLocationMode == com.webtoapp.data.model.DownloadLocationMode.CUSTOM &&
-            customDownloadDirUri.isNotBlank()
-        if (!customDir && saveToGallery && MediaSaver.isMediaFile(mimeType, fileName) && scope != null) {
-            saveMediaToGallery(context, safeUrl, fileName, mimeType, scope, albumName)
+        val gallery = mode == DownloadLocationMode.SYSTEM_DOWNLOAD &&
+            saveToGallery && MediaSaver.isMediaFile(mimeType, fileName)
+        val cookie = CookieManager.getInstance().getCookie(safeUrl)
+        val network = appContext.getSystemService(ConnectivityManager::class.java)
+        val capabilities = network?.getNetworkCapabilities(network.activeNetwork)
+        val unvalidatedNetwork = capabilities != null &&
+            !capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+        val canSaveDirectly = mode != DownloadLocationMode.SYSTEM_DOWNLOAD ||
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q ||
+            ContextCompat.checkSelfPermission(appContext, android.Manifest.permission.WRITE_EXTERNAL_STORAGE) ==
+            PackageManager.PERMISSION_GRANTED
+        val adaptiveHttps = canSaveDirectly && Uri.parse(safeUrl).scheme.equals("https", ignoreCase = true)
+
+        if (adaptiveHttps || gallery || mode == DownloadLocationMode.CUSTOM ||
+            DocumentDownloadPolicy.isLoopbackUrl(safeUrl) || unvalidatedNetwork ||
+            !cookie.isNullOrBlank() || WebDownloadReferrer.containsPageDetails(referrer)
+        ) {
+            downloadInApp(appContext, download, mode, customDownloadDirUri, gallery = gallery, albumName = albumName)
             return
         }
 
-        downloadWithManager(
-            context, safeUrl, userAgent, contentDisposition, mimeType, showEnhancedNotification, scope = scope,
-            downloadLocationMode = downloadLocationMode,
-            customDownloadDirUri = customDownloadDirUri,
-            albumName = albumName
-        )
-    }
-
-    private fun saveMediaToGallery(
-        context: Context,
-        url: String,
-        fileName: String,
-        mimeType: String,
-        scope: CoroutineScope,
-        albumName: String
-    ) {
-        val mediaType = MediaSaver.getMediaType(mimeType) ?: MediaSaver.getMediaTypeByExtension(fileName)
-        val typeText = when (mediaType) {
-            MediaSaver.MediaType.IMAGE -> Strings.filePrefixImage
-            MediaSaver.MediaType.VIDEO -> Strings.filePrefixVideo
-            else -> Strings.filePrefixFile
-        }
-
-        val notificationManager = DownloadNotificationManager.getInstance(context)
-        val progressNotificationId = notificationManager.showIndeterminateProgress(fileName)
-
-        val savingMsg = when (mediaType) {
-            MediaSaver.MediaType.IMAGE -> Strings.savingImageToGallery
-            MediaSaver.MediaType.VIDEO -> Strings.savingVideoToGallery
-            else -> Strings.savingToGallery
-        }
-        Toast.makeText(context, savingMsg, Toast.LENGTH_SHORT).show()
-
-        scope.launch(Dispatchers.Main) {
-            val result = MediaSaver.saveFromUrl(
-                context, url, fileName, mimeType,
-                albumName = AlbumFolderName.sanitize(albumName)
-            )
-
-            when (result) {
-                is MediaSaver.SaveResult.Success -> {
-                    val savedMsg = when (mediaType) {
-                        MediaSaver.MediaType.IMAGE -> Strings.imageSavedToGallery
-                        MediaSaver.MediaType.VIDEO -> Strings.videoSavedToGallery
-                        else -> Strings.imageSavedToGallery
+        val id = try {
+            val request = DownloadManager.Request(Uri.parse(safeUrl)).apply {
+                if (userAgent.isNotBlank()) addRequestHeader("User-Agent", userAgent)
+                referrer?.let { addRequestHeader("Referer", it) }
+                setNotificationVisibility(
+                    if (showEnhancedNotification && canHideDownloadManagerNotification(appContext)) {
+                        DownloadManager.Request.VISIBILITY_HIDDEN
+                    } else {
+                        DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED
                     }
-                    Toast.makeText(context, savedMsg, Toast.LENGTH_SHORT).show()
-
-                    notificationManager.showMediaSaveComplete(
-                        fileName = fileName,
-                        uri = result.uri,
-                        mimeType = mimeType,
-                        isImage = mediaType == MediaSaver.MediaType.IMAGE,
-                        progressNotificationId = progressNotificationId
-                    )
+                )
+                setTitle(fileName)
+                setDescription(Strings.downloadingNotificationText)
+                if (mode == DownloadLocationMode.APP_PRIVATE) {
+                    setDestinationInExternalFilesDir(appContext, Environment.DIRECTORY_DOWNLOADS, fileName)
+                } else {
+                    setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName)
                 }
-                is MediaSaver.SaveResult.Error -> {
-                    Toast.makeText(context, Strings.saveFailedWithReason.replace("%s", result.message), Toast.LENGTH_SHORT).show()
-                    notificationManager.showSaveFailed(fileName, result.message, progressNotificationId)
-                }
+                if (initialMime != "application/octet-stream") setMimeType(initialMime)
             }
-        }
-    }
-
-    fun downloadWithManager(
-        context: Context,
-        url: String,
-        userAgent: String,
-        contentDisposition: String,
-        mimeType: String,
-        showEnhancedNotification: Boolean = true,
-        retryOnFailure: Boolean = true,
-        scope: CoroutineScope? = null,
-        downloadLocationMode: com.webtoapp.data.model.DownloadLocationMode = com.webtoapp.data.model.DownloadLocationMode.SYSTEM_DOWNLOAD,
-        customDownloadDirUri: String = "",
-        albumName: String = ""
-    ) {
-        val safeUrl = sanitizeDownloadUrl(url)
-        if (safeUrl.isEmpty()) {
-            AppLogger.w(TAG, "Blocked unsafe download URL in downloadWithManager: $url")
-            Toast.makeText(context, Strings.downloadFailed, Toast.LENGTH_SHORT).show()
+            appContext.getSystemService(DownloadManager::class.java).enqueue(request)
+        } catch (e: RuntimeException) {
+            AppLogger.w(TAG, "System download could not be enqueued", e)
+            downloadInApp(appContext, download, mode, customDownloadDirUri)
             return
         }
 
-        val fileName = parseFileName(safeUrl, contentDisposition, mimeType)
-
-        if (downloadLocationMode == com.webtoapp.data.model.DownloadLocationMode.ASK) {
-            downloadToUserChoice(context, safeUrl, userAgent, fileName, mimeType, scope)
-            return
-        }
-
-        if (downloadLocationMode == com.webtoapp.data.model.DownloadLocationMode.CUSTOM && customDownloadDirUri.isNotBlank()) {
-            downloadInApp(context, safeUrl, userAgent, fileName, mimeType, scope, downloadLocationMode, customDownloadDirUri, albumName)
-            return
-        }
-
-        // Downloads from the app's own loopback webserver skip the system DownloadManager:
-        // it runs out-of-process and adds OEM failure modes (disabled/throttled provider),
-        // while the in-app client reaches the embedded server directly with cookies and
-        // headers attached.
-        if (DocumentDownloadPolicy.isLoopbackUrl(safeUrl) && runsAsGeneratedApp(context)) {
-            AppLogger.d(TAG, "Loopback URL routed to in-app downloader: $safeUrl")
-            downloadInApp(context, safeUrl, userAgent, fileName, mimeType, scope, downloadLocationMode, customDownloadDirUri, albumName)
-            return
-        }
-
-        val downloadId = try {
-            val request = buildDownloadManagerRequest(
-                context = context,
-                safeUrl = safeUrl,
-                userAgent = userAgent,
-                contentDisposition = contentDisposition,
-                mimeType = mimeType,
-                fileName = fileName,
-                showEnhancedNotification = showEnhancedNotification,
-                downloadLocationMode = downloadLocationMode
-            )
-            val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-            downloadManager.enqueue(request)
-        } catch (e: Exception) {
-            AppLogger.e(TAG, "DownloadManager enqueue failed, falling back to in-app download", e)
-
-            if (retryOnFailure) {
-                val currentRetry = retryCountMap[safeUrl] ?: 0
-                if (currentRetry < MAX_RETRY_COUNT) {
-                    retryCountMap[safeUrl] = currentRetry + 1
-                    Toast.makeText(
-                        context,
-                        "${Strings.downloadFailed}, ${Strings.retry} (${currentRetry + 1}/$MAX_RETRY_COUNT)...",
-                        Toast.LENGTH_SHORT
-                    ).show()
-
-                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                        downloadWithManager(context, safeUrl, userAgent, contentDisposition, mimeType, showEnhancedNotification, true, scope,
-                            downloadLocationMode = downloadLocationMode,
-                            customDownloadDirUri = customDownloadDirUri)
-                    }, RETRY_DELAY_MS * (currentRetry + 1))
-                    return
-                }
-            }
-
-            retryCountMap.remove(safeUrl)
-            downloadInApp(context, safeUrl, userAgent, fileName, mimeType, scope, downloadLocationMode, customDownloadDirUri, albumName)
-            return
-        }
-
-        retryCountMap.remove(safeUrl)
-
-        if (showEnhancedNotification) {
-            try {
-                val notificationManager = DownloadNotificationManager.getInstance(context)
-                notificationManager.trackDownload(downloadId, fileName, mimeType)
-            } catch (e: Exception) {
-                AppLogger.w(TAG, "Download enqueued but enhanced notification tracking failed", e)
-            }
-        }
-
+        if (showEnhancedNotification) DownloadNotificationManager.getInstance(appContext).trackDownload(id, fileName, initialMime)
         Toast.makeText(context, Strings.startDownload.replace("%s", fileName), Toast.LENGTH_SHORT).show()
     }
 
-    private fun buildDownloadManagerRequest(
-        context: Context,
-        safeUrl: String,
-        userAgent: String,
-        contentDisposition: String,
-        mimeType: String,
-        fileName: String,
-        showEnhancedNotification: Boolean,
-        downloadLocationMode: com.webtoapp.data.model.DownloadLocationMode = com.webtoapp.data.model.DownloadLocationMode.SYSTEM_DOWNLOAD
-    ): DownloadManager.Request {
-        val originHeader = buildOriginHeader(safeUrl)
+    private fun canHideDownloadManagerNotification(context: Context): Boolean =
+        ContextCompat.checkSelfPermission(context, "android.permission.DOWNLOAD_WITHOUT_NOTIFICATION") ==
+            PackageManager.PERMISSION_GRANTED
 
-        return DownloadManager.Request(Uri.parse(safeUrl)).apply {
-            addRequestHeader("User-Agent", userAgent)
+    private data class HttpDownload(
+        val url: String,
+        val userAgent: String,
+        val referrer: String?,
+        val fileName: String,
+        val mimeType: String
+    )
 
-            CookieManager.getInstance().getCookie(safeUrl)?.let { cookie ->
-                if (cookie.isNotBlank()) {
-                    addRequestHeader("Cookie", cookie)
-                }
-            }
-
-            originHeader?.let { origin ->
-                addRequestHeader("Origin", origin)
-                addRequestHeader("Referer", "$origin/")
-            }
-
-            if (showEnhancedNotification && canHideDownloadManagerNotification(context)) {
-                setNotificationVisibility(DownloadManager.Request.VISIBILITY_HIDDEN)
-            } else {
-                setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-            }
-            setTitle(fileName)
-            setDescription(Strings.downloadingNotificationText)
-
-            when (downloadLocationMode) {
-                com.webtoapp.data.model.DownloadLocationMode.APP_PRIVATE -> {
-                    setDestinationInExternalFilesDir(context, Environment.DIRECTORY_DOWNLOADS, fileName)
-                }
-                com.webtoapp.data.model.DownloadLocationMode.SYSTEM_DOWNLOAD,
-                com.webtoapp.data.model.DownloadLocationMode.CUSTOM,
-                com.webtoapp.data.model.DownloadLocationMode.ASK -> {
-                    setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName)
-                }
-            }
-
-            setAllowedNetworkTypes(
-                DownloadManager.Request.NETWORK_WIFI or
-                    DownloadManager.Request.NETWORK_MOBILE
-            )
-
-            if (mimeType.isNotBlank()) {
-                setMimeType(mimeType)
-            }
-        }
-    }
-
-    private fun canHideDownloadManagerNotification(context: Context): Boolean {
-        return ContextCompat.checkSelfPermission(
-            context,
-            "android.permission.DOWNLOAD_WITHOUT_NOTIFICATION"
-        ) == PackageManager.PERMISSION_GRANTED
-    }
-
-    /** Generated shells carry a shell config in assets; the host app does not. */
-    private fun runsAsGeneratedApp(context: Context): Boolean = try {
-        com.webtoapp.WebToAppApplication.shellMode.isShellMode()
-    } catch (_: Exception) {
-        false
-    }
-
-    private fun downloadToUserChoice(
-        context: Context,
-        url: String,
-        userAgent: String,
-        fileName: String,
-        mimeType: String,
-        scope: CoroutineScope?
-    ) {
-        val mime = mimeType.ifBlank { "application/octet-stream" }
-        DownloadSavePrompter.prompt(context, fileName, mime) { uri ->
-            if (uri == null) {
-                Toast.makeText(context, Strings.downloadSaveCancelled, Toast.LENGTH_SHORT).show()
-                return@prompt
-            }
-            val notificationManager = DownloadNotificationManager.getInstance(context)
-            val notificationId = notificationManager.showIndeterminateProgress(fileName)
-            val worker = scope ?: CoroutineScope(Dispatchers.IO)
-            worker.launch(Dispatchers.IO) {
-                var connection: java.net.HttpURLConnection? = null
-                try {
-                    connection = (java.net.URL(url).openConnection() as java.net.HttpURLConnection).apply {
-                        connectTimeout = 30000
-                        readTimeout = 60000
-                        requestMethod = "GET"
-                        setRequestProperty("User-Agent", userAgent)
-                        CookieManager.getInstance().getCookie(url)?.let { cookie ->
-                            if (cookie.isNotBlank()) setRequestProperty("Cookie", cookie)
-                        }
-                        buildOriginHeader(url)?.let { origin ->
-                            setRequestProperty("Origin", origin)
-                            setRequestProperty("Referer", "$origin/")
-                        }
-                        instanceFollowRedirects = true
-                    }
-                    val responseCode = connection.responseCode
-                    if (responseCode !in 200..299) {
-                        throw java.io.IOException("HTTP $responseCode")
-                    }
-                    val actualMime = mimeType.ifBlank {
-                        connection.contentType?.substringBefore(';')?.trim().orEmpty()
-                    }.ifBlank { "application/octet-stream" }
-                    val output = context.contentResolver.openOutputStream(uri)
-                        ?: throw java.io.IOException("Cannot write file")
-                    output.use { out ->
-                        connection.inputStream.use { input ->
-                            input.copyTo(out, bufferSize = 64 * 1024)
-                        }
-                    }
-                    withContext(Dispatchers.Main) {
-                        Toast.makeText(context, Strings.savedTo.replace("%s", fileName), Toast.LENGTH_LONG).show()
-                        notificationManager.showSaveComplete(
-                            fileName = fileName,
-                            filePath = uri.toString(),
-                            mimeType = actualMime,
-                            progressNotificationId = notificationId,
-                            contentUri = uri.toString()
-                        )
-                    }
-                } catch (e: Exception) {
-                    AppLogger.e(TAG, "Save to chosen location failed", e)
-                    withContext(Dispatchers.Main) {
-                        Toast.makeText(
-                            context,
-                            Strings.saveFailedWithReason.replace("%s", e.message ?: ""),
-                            Toast.LENGTH_SHORT
-                        ).show()
-                        notificationManager.showSaveFailed(fileName, e.message ?: Strings.unknownError, notificationId)
-                    }
-                } finally {
-                    connection?.disconnect()
-                }
-            }
-        }
-    }
+    private data class SavedDownload(val name: String, val path: String, val uri: Uri? = null)
 
     private fun downloadInApp(
         context: Context,
-        url: String,
-        userAgent: String,
-        fileName: String,
-        mimeType: String,
-        scope: CoroutineScope?,
-        downloadLocationMode: com.webtoapp.data.model.DownloadLocationMode = com.webtoapp.data.model.DownloadLocationMode.SYSTEM_DOWNLOAD,
-        customDownloadDirUri: String = "",
+        download: HttpDownload,
+        mode: DownloadLocationMode,
+        customDir: String,
+        chosenUri: Uri? = null,
+        gallery: Boolean = false,
         albumName: String = ""
     ) {
-        val notificationManager = DownloadNotificationManager.getInstance(context)
-        val notificationId = notificationManager.showIndeterminateProgress(fileName)
-
-        val s = scope ?: CoroutineScope(Dispatchers.IO)
-        s.launch(Dispatchers.IO) {
-            var connection: java.net.HttpURLConnection? = null
+        val notifications = DownloadNotificationManager.getInstance(context)
+        val notificationId = notifications.showIndeterminateProgress(download.fileName)
+        downloadScope.launch {
             try {
-                connection = (java.net.URL(url).openConnection() as java.net.HttpURLConnection).apply {
-                    connectTimeout = 30000
-                    readTimeout = 60000
-                    requestMethod = "GET"
-                    setRequestProperty("User-Agent", userAgent)
-                    CookieManager.getInstance().getCookie(url)?.let { cookie ->
-                        if (cookie.isNotBlank()) setRequestProperty("Cookie", cookie)
+                val transfer = WebDownloadTransfer(
+                    cookieFor = { CookieManager.getInstance().getCookie(it.toString()) },
+                    statusError = Strings::httpErrorCode,
+                    transferError = Strings.downloadFailed,
+                    log = { AppLogger.d(TAG, "Download $notificationId $it") }
+                )
+                var mime = download.mimeType
+                val saved = transfer.open(download.url, download.userAgent, download.referrer).use { input ->
+                    val serverMime = input.mime
+                    if (mime == "application/octet-stream" && serverMime.isNotBlank()) mime = serverMime
+                    val apk = DownloadArtifact.isApk(download.fileName, mime)
+                    if (apk && serverMime.equals("text/html", ignoreCase = true)) throw IOException(Strings.downloadFailed)
+                    val checked = if (apk) DownloadArtifact.requireContent(input, Strings.notifDownloadEmptyResponse) else input
+                    val source = DownloadProgressInput(checked, input.totalBytes) { bytes ->
+                        notifications.updateTransferProgress(notificationId, download.fileName, bytes, input.totalBytes)
                     }
-                    buildOriginHeader(url)?.let { origin ->
-                        setRequestProperty("Origin", origin)
-                        setRequestProperty("Referer", "$origin/")
-                    }
-                    instanceFollowRedirects = true
-                }
-
-                val responseCode = connection.responseCode
-                if (responseCode !in 200..299) {
-                    throw java.io.IOException("HTTP $responseCode")
-                }
-
-                val actualMimeType = mimeType.ifBlank {
-                    connection.contentType ?: "application/octet-stream"
-                }
-                val totalBytes = connection.contentLengthLong.takeIf { it > 0 } ?: -1L
-
-                val isMedia = MediaSaver.isMediaFile(actualMimeType, fileName) &&
-                    downloadLocationMode != com.webtoapp.data.model.DownloadLocationMode.CUSTOM
-                val savedFile: File? = if (isMedia) {
-                    connection.inputStream.use { input ->
-                        val bytes = input.readBytes()
-                        val result = MediaSaver.saveFromBytes(
-                            context, bytes, fileName, actualMimeType,
-                            albumName = AlbumFolderName.sanitize(albumName)
-                        )
-                        when (result) {
-                            is MediaSaver.SaveResult.Success -> {
-                                withContext(Dispatchers.Main) {
-                                    val isImage = actualMimeType.startsWith("image/")
-                                    val typeText = if (isImage) Strings.image else Strings.video
-                                    Toast.makeText(context, Strings.savedToGallery.replace("%s", typeText), Toast.LENGTH_SHORT).show()
-                                    notificationManager.showMediaSaveComplete(
-                                        fileName = fileName,
-                                        uri = result.uri,
-                                        mimeType = actualMimeType,
-                                        isImage = isImage,
-                                        progressNotificationId = notificationId
-                                    )
-                                }
-                                File(result.path)
-                            }
-                            is MediaSaver.SaveResult.Error -> {
-                                withContext(Dispatchers.Main) {
-                                    Toast.makeText(context, Strings.saveFailedWithReason.replace("%s", result.message), Toast.LENGTH_SHORT).show()
-                                    notificationManager.showSaveFailed(fileName, result.message, notificationId)
-                                }
-                                null
-                            }
+                    if (gallery) {
+                        when (val result = MediaSaver.saveFromStream(context, source, download.fileName, mime, albumName)) {
+                            is MediaSaver.SaveResult.Success -> SavedDownload(download.fileName, result.path, result.uri)
+                            is MediaSaver.SaveResult.Error -> throw IOException(result.message)
+                        }
+                    } else {
+                        saveDownload(context, download.fileName, mime, mode, customDir, chosenUri) { output ->
+                            source.copyTo(output, COPY_BUFFER_SIZE)
                         }
                     }
-                } else {
-                    val targetFile = resolveDownloadTargetFile(context, fileName, downloadLocationMode, customDownloadDirUri)
-                    connection.inputStream.use { input ->
-                        java.io.FileOutputStream(targetFile).use { output ->
-                            input.copyTo(output, bufferSize = 64 * 1024)
-                        }
-                    }
-                    if (downloadLocationMode == com.webtoapp.data.model.DownloadLocationMode.CUSTOM) {
-                        MediaSaver.scanIntoGallery(context, targetFile, actualMimeType)
-                    }
-                    withContext(Dispatchers.Main) {
-                        Toast.makeText(context, Strings.savedTo.replace("%s", targetFile.name), Toast.LENGTH_LONG).show()
-                        notificationManager.showSaveComplete(
-                            fileName = targetFile.name,
-                            filePath = targetFile.absolutePath,
-                            mimeType = actualMimeType,
-                            progressNotificationId = notificationId
-                        )
-                    }
-                    targetFile
                 }
 
-                AppLogger.d(TAG, "In-app download complete: ${savedFile?.absolutePath}")
-            } catch (e: Exception) {
-                AppLogger.e(TAG, "In-app download failed", e)
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(context, Strings.saveFailedWithReason.replace("%s", e.message ?: ""), Toast.LENGTH_SHORT).show()
-                    notificationManager.showSaveFailed(fileName, e.message ?: Strings.unknownError, notificationId)
+                    Toast.makeText(context, Strings.savedTo.replace("%s", saved.name), Toast.LENGTH_LONG).show()
+                    notifications.showSaveComplete(saved.name, saved.path, mime, notificationId, saved.uri?.toString())
                 }
-            } finally {
-                connection?.disconnect()
+            } catch (e: Exception) {
+                val reason = e.message ?: Strings.unknownError
+                AppLogger.w(TAG, "In-app download failed", e)
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(context, Strings.saveFailedWithReason.replace("%s", reason), Toast.LENGTH_SHORT).show()
+                    notifications.showSaveFailed(download.fileName, reason, notificationId)
+                }
             }
         }
     }
 
-    private fun resolveDownloadTargetFile(
+    private class DownloadProgressInput(
+        input: InputStream,
+        private val totalBytes: Long,
+        private val report: (Long) -> Unit
+    ) : FilterInputStream(input) {
+        private var bytes = 0L
+        private var lastUpdate = 0L
+
+        override fun read(): Int = super.read().also { onRead(if (it < 0) -1 else 1) }
+
+        override fun read(buffer: ByteArray, offset: Int, length: Int): Int =
+            super.read(buffer, offset, length).also(::onRead)
+
+        private fun onRead(count: Int) {
+            if (count <= 0) return
+            bytes += count
+            val now = SystemClock.elapsedRealtime()
+            if (now - lastUpdate >= 500 || bytes == totalBytes) {
+                lastUpdate = now
+                report(bytes)
+            }
+        }
+    }
+
+    private fun saveDownload(
         context: Context,
         fileName: String,
-        downloadLocationMode: com.webtoapp.data.model.DownloadLocationMode = com.webtoapp.data.model.DownloadLocationMode.SYSTEM_DOWNLOAD,
-        customDownloadDirUri: String = ""
-    ): File {
-        val baseDir = when (downloadLocationMode) {
-            com.webtoapp.data.model.DownloadLocationMode.APP_PRIVATE -> {
-                context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS) ?: context.filesDir
-            }
-            com.webtoapp.data.model.DownloadLocationMode.ASK -> {
-                throw IllegalStateException("ASK downloads use the system save dialog")
-            }
-            com.webtoapp.data.model.DownloadLocationMode.CUSTOM -> {
-                if (customDownloadDirUri.isNotBlank()) {
-                    File(customDownloadDirUri).also { if (!it.exists()) it.mkdirs() }
-                } else {
-                    getPublicDownloadsDir().also { if (!it.exists()) it.mkdirs() }
-                }
-            }
-            else -> {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    getPublicDownloadsDir()
-                } else {
-                    getPublicDownloadsDir().also { if (!it.exists()) it.mkdirs() }
-                }
+        mime: String,
+        mode: DownloadLocationMode,
+        customDir: String,
+        chosenUri: Uri?,
+        write: (OutputStream) -> Unit
+    ): SavedDownload {
+        val resolver = context.contentResolver
+        if (chosenUri != null) {
+            val output = resolver.openOutputStream(chosenUri, "wt") ?: throw IOException(Strings.cannotWriteFile)
+            output.use(write)
+            return SavedDownload(fileName, chosenUri.toString(), chosenUri)
+        }
+
+        if (mode == DownloadLocationMode.CUSTOM && customDir.startsWith("content://")) {
+            val directory = DocumentFile.fromTreeUri(context, Uri.parse(customDir))
+            val target = directory?.createFile(mime, fileName) ?: throw IOException(Strings.cannotWriteFile)
+            try {
+                val output = resolver.openOutputStream(target.uri) ?: throw IOException(Strings.cannotWriteFile)
+                output.use(write)
+                return SavedDownload(target.name ?: fileName, target.uri.toString(), target.uri)
+            } catch (e: Exception) {
+                target.delete()
+                throw e
             }
         }
 
-        var targetFile = File(baseDir, fileName)
-        var counter = 1
-        val nameWithoutExt = fileName.substringBeforeLast(".")
-        val ext = if (fileName.contains(".")) ".${fileName.substringAfterLast(".")}" else ""
-        while (targetFile.exists()) {
-            targetFile = File(baseDir, "${nameWithoutExt}_$counter$ext")
-            counter++
+        if (mode == DownloadLocationMode.SYSTEM_DOWNLOAD && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val values = ContentValues().apply {
+                put(MediaStore.Downloads.DISPLAY_NAME, fileName)
+                put(MediaStore.Downloads.MIME_TYPE, mime)
+                put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
+                put(MediaStore.Downloads.IS_PENDING, 1)
+            }
+            val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
+                ?: throw IOException(Strings.cannotWriteFile)
+            try {
+                val output = resolver.openOutputStream(uri) ?: throw IOException(Strings.cannotWriteFile)
+                output.use(write)
+                values.clear()
+                values.put(MediaStore.Downloads.IS_PENDING, 0)
+                if (resolver.update(uri, values, null, null) != 1) throw IOException(Strings.cannotWriteFile)
+            } catch (e: Exception) {
+                resolver.delete(uri, null, null)
+                throw e
+            }
+            val actualName = runCatching {
+                resolver.query(uri, arrayOf(MediaStore.Downloads.DISPLAY_NAME), null, null, null)?.use {
+                    if (it.moveToFirst()) it.getString(0) else null
+                }
+            }.getOrNull() ?: fileName
+            return SavedDownload(actualName, uri.toString(), uri)
         }
-        return targetFile
+
+        val directory = when (mode) {
+            DownloadLocationMode.APP_PRIVATE -> context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS) ?: context.filesDir
+            DownloadLocationMode.CUSTOM -> File(customDir)
+            DownloadLocationMode.SYSTEM_DOWNLOAD -> Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+            DownloadLocationMode.ASK -> throw IOException(Strings.cannotWriteFile)
+        }
+        if (!directory.isDirectory && !directory.mkdirs() && !directory.isDirectory) {
+            throw IOException(Strings.cannotWriteFile)
+        }
+        var target = File(directory, fileName)
+        val extension = if ('.' in fileName) "." + fileName.substringAfterLast('.') else ""
+        val stem = fileName.removeSuffix(extension)
+        var index = 1
+        while (!target.createNewFile()) target = File(directory, "${stem}_${index++}$extension")
+        try {
+            target.outputStream().use(write)
+        } catch (e: Exception) {
+            target.delete()
+            throw e
+        }
+        if (mode == DownloadLocationMode.CUSTOM) MediaSaver.scanIntoGallery(context, target, mime)
+        return SavedDownload(target.name, target.absolutePath)
     }
-
-    @Suppress("DEPRECATION")
-    private fun getPublicDownloadsDir(): File =
-        Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
 
     fun openInBrowser(context: Context, url: String) {
         try {
@@ -684,18 +454,6 @@ object DownloadHelper {
         val normalized = normalizeExternalIntentUrl(rawUrl)
         if (normalized.isEmpty()) return ""
         return if (isAllowedUrlScheme(normalized, DOWNLOAD_ALLOWED_SCHEMES)) normalized else ""
-    }
-
-    private fun buildOriginHeader(url: String): String? {
-        return try {
-            val uri = Uri.parse(url)
-            val scheme = uri.scheme ?: return null
-            val host = uri.host ?: return null
-            if (!isAllowedUrlScheme(url, DOWNLOAD_ALLOWED_SCHEMES)) return null
-            if (uri.port > 0) "$scheme://$host:${uri.port}" else "$scheme://$host"
-        } catch (e: Exception) {
-            null
-        }
     }
 
     fun guessExtension(url: String, mimeType: String?): String {

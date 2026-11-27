@@ -61,8 +61,8 @@ class SystemWebViewEngine(
                 return false
             }
 
-            override fun onDownloadStart(url: String, userAgent: String, contentDisposition: String, mimeType: String, contentLength: Long) {
-                callback.onDownloadStart(url, userAgent, contentDisposition, mimeType, contentLength)
+            override fun onDownloadStart(url: String, userAgent: String, contentDisposition: String, mimeType: String, contentLength: Long, referrer: String?) {
+                callback.onDownloadStart(url, userAgent, contentDisposition, mimeType, contentLength, referrer)
             }
 
             override fun onLongPress(webView: WebView, x: Float, y: Float): Boolean = false

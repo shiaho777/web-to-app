@@ -3074,6 +3074,11 @@ object Strings {
     val notifDownloadChannelDesc: String get() = StringsE.notifDownloadChannelDesc
     val notifDownloadComplete: String get() = StringsE.notifDownloadComplete
     val notifDownloadFailed: String get() = StringsE.notifDownloadFailed
+    val notifDownloadEmptyResponse: String get() = StringsE.notifDownloadEmptyResponse
+    val notifDownloadQueued: String get() = StringsE.notifDownloadQueued
+    val notifDownloadRetrying: String get() = StringsE.notifDownloadRetrying
+    val notifDownloadWaitingNetwork: String get() = StringsE.notifDownloadWaitingNetwork
+    val notifDownloadWaitingWifi: String get() = StringsE.notifDownloadWaitingWifi
     val notifDownloading: String get() = StringsE.notifDownloading
     val notifDownloadingFile: String get() = StringsE.notifDownloadingFile
     val notifDownloadingMultipleFiles: String get() = StringsE.notifDownloadingMultipleFiles

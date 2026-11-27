@@ -15,10 +15,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
-/**
- * The edge stretch is a property of the WebView widget (#1193). Pooled views
- * must be reset, so both states are assigned explicitly.
- */
 @RunWith(RobolectricTestRunner::class)
 class WebViewOverscrollModeTest {
 
@@ -47,7 +43,8 @@ class WebViewOverscrollModeTest {
             userAgent: String,
             contentDisposition: String,
             mimeType: String,
-            contentLength: Long
+            contentLength: Long,
+            referrer: String?
         ) {}
     }
 

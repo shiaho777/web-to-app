@@ -33,7 +33,6 @@ import com.webtoapp.core.floatingwindow.FloatingWindowService
 import com.webtoapp.ui.shared.StatusBarAppearance
 import com.webtoapp.ui.shared.WindowHelper
 
-/** One generated APK hosts exactly one app — the resume-state key is constant. */
 private const val SHELL_RESUME_SESSION_KEY = "shell"
 private const val KEY_SAVED_SURFACE_SITE_ID = "com.webtoapp.SAVED_SURFACE_SITE_ID"
 
@@ -83,43 +82,25 @@ class ShellActivity : AppCompatActivity() {
     private var pendingFloatingWindowLaunch = false
     private var notificationPolyfillEnabled = false
 
-    // Inbound share sheet (issue #943).
     private var shareReceiveMimeTypes: List<String> = emptyList()
     private var shareDeliveryMode: com.webtoapp.data.model.ShareDeliveryMode =
         com.webtoapp.data.model.ShareDeliveryMode.BOTH
     private var shareShowReceivedToast: Boolean = true
 
-    // "Open with" file association (ACTION_VIEW on file/content URIs), same inbox.
     private var openWithEnabled = false
 
-    /** Set once the main frame has loaded, so a share can be announced to a page that exists. */
     private var sharePageReady = false
     internal var mediaSessionBridge: com.webtoapp.core.webview.MediaSessionBridge? = null
     private var geckoMediaAdapter: com.webtoapp.core.engine.GeckoMediaSessionAdapter? = null
 
-    // Screen-awake (ALWAYS/TIMED) timer management. The timed clear is tracked so it can be
-    // cancelled/re-scheduled whenever the mode is re-applied (e.g. after a forced-run change).
     private val screenAwakeHandler = android.os.Handler(android.os.Looper.getMainLooper())
     private var screenAwakeClearRunnable: Runnable? = null
 
     private var webViewStateBundle: Bundle? = null
     private var shellConfig: com.webtoapp.core.shell.ShellConfig? = null
 
-    /**
-     * External-pointer normalizer (#1031): feeds the touch stream so a quirky
-     * OEM dispatch that reports the primary mouse button as raw
-     * BUTTON_PRESS/RELEASE generic events still produces a click.
-     */
     private val mouseInputCompat = com.webtoapp.core.webview.MouseInputCompat()
 
-    /**
-     * Persists the committed page URL that last handed off to an external app
-     * (#1030). When the process dies while e.g. WeChat is foreground, the
-     * restored WebView history has that page as its current entry — and OAuth /
-     * payment trampolines are one-shot: reloading them either lands on an
-     * expired-token page or bounces straight back out, which reads as a frozen
-     * white screen. The restore path below vetoes that entry instead.
-     */
     private val resumeStore by lazy { com.webtoapp.core.webview.WebViewResumeStore(this) }
 
     internal fun noteExternalAppLaunch(sourceUrl: String?) {
@@ -157,9 +138,6 @@ class ShellActivity : AppCompatActivity() {
         val systemDark = isSystemInDarkMode()
         val effectiveColorMode = if (systemDark) statusBarColorModeDark else statusBarColorMode
         val effectiveCustomColor = if (systemDark) statusBarCustomColorDark else statusBarCustomColor
-        // Issue #711: while a web video holds HTML5 fullscreen (custom view showing), the
-        // status bar is force-hidden regardless of the static "show status bar in fullscreen"
-        // preference; the flag is cleared in hideCustomView() when the video exits fullscreen.
         val effectiveShowStatusBar = showStatusBarInFullscreen &&
             !(hideStatusBarInVideoFullscreen && customView != null)
         WindowHelper.applyImmersiveFullscreen(
@@ -177,16 +155,9 @@ class ShellActivity : AppCompatActivity() {
             tag = "ShellActivity",
             statusBarAppearance = statusBarAppearance
         )
-        // showNavigationBarInFullscreen only applies while fullscreen is on.
-        // Leaving fullscreen always shows the system navigation bar.
         if (!enabled || !shouldHideNavBar) applyPageEdgeNavigation(systemDark)
     }
 
-    /**
-     * Applies the screen-awake mode (ALWAYS / TIMED / legacy keepScreenOn) to the window's
-     * FLAG_KEEP_SCREEN_ON. For TIMED, schedules a delayed clear; any previously scheduled clear is
-     * cancelled first so re-applying (e.g. after a forced-run state change) doesn't stack timers.
-     */
     private fun applyScreenAwakeMode() {
         val webViewConfig = WebToAppApplication.shellMode.getConfig()?.webViewConfig ?: return
         screenAwakeClearRunnable?.let { screenAwakeHandler.removeCallbacks(it) }
@@ -234,12 +205,6 @@ class ShellActivity : AppCompatActivity() {
         }
     }
 
-    /**
-     * Forward keys to the page only when focus actually belongs to the page (the WebView /
-     * browser surface, or no app UI is focused). While a find session is active, Chromium's
-     * WebView consumes DEL unconditionally, so blindly forwarding ate the backspace of app
-     * UI like the find-in-page input.
-     */
     private fun isFocusInsidePageView(): Boolean {
         var view = currentFocus ?: return true
         val pageView = browserSurface?.view ?: webView
@@ -262,10 +227,6 @@ class ShellActivity : AppCompatActivity() {
         ) {
             return true
         }
-        // Enter diagnostics for hardware-keyboard modifier loss (#1032): if the
-        // IME translated the key into an editor action it never reaches us — a
-        // missing log line is itself the signal; a logged meta=0x0 means the
-        // pipeline dropped modifiers upstream.
         val isEnter = event.keyCode == KeyEvent.KEYCODE_ENTER ||
             event.keyCode == KeyEvent.KEYCODE_NUMPAD_ENTER
         if (shouldForwardKeyToWebView(event) && isFocusInsidePageView() &&
@@ -349,8 +310,8 @@ class ShellActivity : AppCompatActivity() {
         userAgent: String,
         contentDisposition: String,
         mimeType: String,
-        contentLength: Long
-    ) = permissionDelegate.handleDownloadWithPermission(url, userAgent, contentDisposition, mimeType, contentLength, webView)
+        referrer: String?
+    ) = permissionDelegate.handleDownloadWithPermission(url, userAgent, contentDisposition, mimeType, referrer, webView)
 
     fun handleExternalDownloadResponse(
         url: String,
@@ -381,16 +342,11 @@ class ShellActivity : AppCompatActivity() {
     }
 
     private fun resetFreshBrowsingSession() {
-        // Drop any restored navigation first. A saved bundle would reload the
-        // previous document, including a dead EventSource, on top of the clear.
         webViewStateBundle = null
         com.webtoapp.core.webview.WebViewManager.beginFreshBrowsingSession()
         val gecko = com.webtoapp.core.engine.EngineType.fromString(shellConfig?.engineType ?: "") ==
             com.webtoapp.core.engine.EngineType.GECKOVIEW
         if (gecko) {
-            // Cold start clears inside GeckoViewEngine.createView, which owns
-            // runtime creation. A warm process already has a runtime, so the
-            // profile has to be cleared here before the next loadUrl.
             if (com.webtoapp.core.engine.GeckoViewEngine.hasLiveRuntime()) {
                 com.webtoapp.core.engine.GeckoViewEngine.clearStoredDataHoldingNavigation()
             }
@@ -399,8 +355,6 @@ class ShellActivity : AppCompatActivity() {
         val wiped = com.webtoapp.core.webview.WebViewProfileWiper.wipeIfProviderInactive(applicationContext)
         com.webtoapp.core.webview.WebViewManager.noteFreshProfileWiped(wiped)
         if (!wiped) {
-            // Provider is already live (launcher relaunch inside this process).
-            // Deleting app_webview now would corrupt the open cookie database.
             com.webtoapp.core.webview.WebViewManager.clearBrowsingData(
                 this,
                 webView,
@@ -409,27 +363,16 @@ class ShellActivity : AppCompatActivity() {
         }
     }
 
-    /**
-     * Stash a WebView state bundle for the next creation — the composable-side
-     * memory teardown (#1033) hands the saved navigation stack here so the
-     * restored view picks it up exactly like process-death recovery.
-     *
-     * [siteId] must be the saved surface's site id, matching what
-     * [onSaveInstanceState] writes: without the tag the restore site check is
-     * bypassed and a multi-web bundle can graft onto the wrong site's view.
-     */
     internal fun stashWebViewState(bundle: Bundle, siteId: String?) {
         bundle.putString(KEY_SAVED_SURFACE_SITE_ID, siteId)
         webViewStateBundle = bundle
     }
 
-    /** Drop activity-level view refs after a composable-side teardown. */
     internal fun clearWebViewRefs() {
         webView = null
         browserSurface = null
     }
 
-    /** Drop activity-level refs that still point at [surface] — release order vs. recreation is not guaranteed. */
     internal fun releaseSurfaceRefs(surface: BrowserSurface?) {
         if (surface != null && browserSurface === surface) browserSurface = null
         val wv = surface?.webView
@@ -449,11 +392,6 @@ class ShellActivity : AppCompatActivity() {
 
     override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {
         super.onConfigurationChanged(newConfig)
-        // The shell manifest declares configChanges including uiMode, so switching the system
-        // dark/light theme does NOT recreate this activity. Compose recomposition already
-        // refreshes the chrome (status bar etc.), but the WebView's dark-mode switch
-        // (FORCE_DARK / algorithmic darkening, static flags) must be re-derived from the new uiMode
-        // explicitly — see WebViewManager.refreshSystemDarkMode (#301 / #341 / #485).
         try {
             val config = WebToAppApplication.shellMode.getConfig()
             val wv = webView
@@ -467,9 +405,6 @@ class ShellActivity : AppCompatActivity() {
             com.webtoapp.core.shell.ShellLogger.w("ShellActivity", "onConfigurationChanged: refresh dark mode failed", e)
         }
 
-        // Rotating a classic-path window makes the system re-evaluate the bars
-        // against the new configuration and drops the hidden-bar flags — without
-        // re-applying, a status-bar strip comes back in fullscreen.
         if (customView != null || immersiveFullscreenEnabled) {
             applyImmersiveFullscreen(true, isDarkTheme = isSystemInDarkMode())
         }
@@ -521,8 +456,6 @@ class ShellActivity : AppCompatActivity() {
 
         com.webtoapp.core.shell.ShellLogger.i("ShellActivity", "配置加载成功: ${config.appName}")
         shellConfig = config
-        // Before anything that can spin up a WebView. Once the provider is
-        // live, the on-disk profile can no longer be deleted.
         clearBrowsingDataOnLaunch = config.webViewConfig.clearBrowsingDataOnLaunch
         if (clearBrowsingDataOnLaunch) {
             resetFreshBrowsingSession()
@@ -539,8 +472,6 @@ class ShellActivity : AppCompatActivity() {
                 com.webtoapp.core.i18n.AppLanguage.valueOf(config.language.uppercase())
             }.getOrDefault(com.webtoapp.core.i18n.AppLanguage.CHINESE)
             Strings.setLanguage(appLanguage)
-            // Persist for the :nodejs child process — Strings.lang is per-process
-            // and generated apps carry the language in assets config, not DataStore.
             getSharedPreferences("wta_runtime_lang", MODE_PRIVATE)
                 .edit().putString("app_language", appLanguage.name).apply()
             AppLogger.d("ShellActivity", "设置界面语言: ${config.language} -> $appLanguage")
@@ -611,9 +542,6 @@ class ShellActivity : AppCompatActivity() {
         shareShowReceivedToast = config.webViewConfig.shareShowReceivedToast
         openWithEnabled = config.webViewConfig.openWithEnabled
 
-        // Decide the launch window before any immersive flags. Fullscreen mode
-        // sets FLAG_FULLSCREEN; doing that first keeps this activity on screen
-        // and the floating-window service never becomes the app the user sees.
         if (ShellActivityInit.opensAsFloatingWindow(config)) {
             immersiveFullscreenEnabled = false
             val floatingWindowConfig = config.webViewConfig.floatingWindowConfig
@@ -649,14 +577,9 @@ class ShellActivity : AppCompatActivity() {
             com.webtoapp.core.shell.ShellLogger.d("ShellActivity", "屏幕亮度: ${shellBrightness}%")
         }
 
-        // Issue #1029: relaunching the task from Recents replays its original launch
-        // intent (ACTION_SEND / ACTION_VIEW) — a history restore, not a fresh share or
-        // deep link. None of the inbound-intent channels below may fire for it.
         if (!com.webtoapp.core.share.SharedContentInbox.isHistoryRelaunchIntent(intent)) {
             val intentUrl = intent?.data?.toString()
             if (isOpenWithCandidate(intent)) {
-                // An ACTION_VIEW on a file/content URI is the "open with" channel, not a
-                // deep link — the payload goes to the share inbox, not a WebView URL.
                 acceptOpenWithIntent(intent)
             } else if (!intentUrl.isNullOrBlank() && intent?.action == Intent.ACTION_VIEW) {
                 val validatedUrl = resolveShellDeepLinkUrl(intentUrl, config)
@@ -664,8 +587,6 @@ class ShellActivity : AppCompatActivity() {
                 com.webtoapp.core.shell.ShellLogger.i("ShellActivity", "收到 Deep Link: $validatedUrl (原始: $intentUrl)")
             }
 
-            // Issue #943: a cold start triggered by the share sheet. The payload is copied
-            // now, while the one-shot read grant on the sender's content:// URI is valid.
             acceptShareIntent(intent)
         }
 
@@ -685,8 +606,6 @@ class ShellActivity : AppCompatActivity() {
                     if (surface.webView == null) {
                         webView = null
                         com.webtoapp.core.shell.ShellLogger.i("ShellActivity", "Browser surface created (GeckoView), ECH engine active")
-                        // GeckoView implements the web Media Session API itself;
-                        // its engine events feed the shared native core (#593).
                         if (config.webViewConfig.enableMediaSession || config.webViewConfig.backgroundMediaPlayback) {
                             val geckoEngine = surface.engine as? com.webtoapp.core.engine.GeckoViewEngine
                             if (geckoEngine != null) {
@@ -713,10 +632,6 @@ class ShellActivity : AppCompatActivity() {
 
                         val chooserRetained = com.webtoapp.core.webview.FileChooserLifetime.consumeReattached(wv)
                         val savedState = if (chooserRetained) null else webViewStateBundle
-                        // Multi-web surfaces save with their site id; a bundle
-                        // tagged for another site must wait for that site's
-                        // own view instead of being grafted onto whichever
-                        // site happened to compose first (#1036).
                         val savedSiteId = savedState?.getString(KEY_SAVED_SURFACE_SITE_ID)
                         val wvSiteId = (wv as? com.webtoapp.core.webview.WtaWebView)?.siteId
                         if (savedState != null && savedSiteId != null && savedSiteId != wvSiteId) {
@@ -738,9 +653,6 @@ class ShellActivity : AppCompatActivity() {
                                     wv.tag = "state_restored"
                                     com.webtoapp.core.shell.ShellLogger.i("ShellActivity", "WebView state restored from saved bundle")
                                 } else {
-                                    // A dead entry (blank page / external-app
-                                    // trampoline) must not become the reload target;
-                                    // untagged falls through to initialUrl = targetUrl.
                                     com.webtoapp.core.shell.ShellLogger.i(
                                         "ShellActivity",
                                         "Restored WebView entry is not resumable ($restoredUrl), loading start URL"
@@ -757,16 +669,14 @@ class ShellActivity : AppCompatActivity() {
                         } catch (e: Exception) {
                             com.webtoapp.data.model.DownloadLocationMode.SYSTEM_DOWNLOAD
                         }
-                        // Gate the JS-side download surface on the same flag that gates the
-                        // injected script: an always-registered bridge would let any page
-                        // (or embedded iframe) drop arbitrary content into public storage.
                         if (config.webViewConfig.downloadEnabled) {
                             val downloadBridge = com.webtoapp.core.webview.DownloadBridge(
                                 this@ShellActivity,
                                 lifecycleScope,
                                 downloadLocationMode,
                                 config.webViewConfig.customDownloadDirUri,
-                                config.webViewConfig.mediaAlbumName
+                                config.webViewConfig.mediaAlbumName,
+                                currentPageUrl = { wv.url }
                             )
                             wv.addJavascriptInterface(downloadBridge, com.webtoapp.core.webview.DownloadBridge.JS_INTERFACE_NAME)
                         }
@@ -993,7 +903,6 @@ class ShellActivity : AppCompatActivity() {
                 startService(intent)
             }
         } catch (e: Exception) {
-            // targetSdk 34+ may reject background FGS start; the floating window may not appear.
             com.webtoapp.core.shell.ShellLogger.w("ShellActivity", "悬浮窗服务启动被拒: ${e.message}")
         }
         com.webtoapp.core.shell.ShellLogger.i("ShellActivity", "悬浮窗服务已启动，关闭主 Activity")
@@ -1023,12 +932,7 @@ class ShellActivity : AppCompatActivity() {
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        // Save through the surface first: on engine-backed (GeckoView) sites the
-        // activity's webView field stays null while the surface holds the live view.
         browserSurface?.saveState(outState) ?: webView?.saveState(outState)
-        // Multi-web: record which site the saved surface belonged to so a
-        // restore only lands on that site's view — otherwise the first-created
-        // site would inherit the previously selected site's history (#1036).
         outState.putString(
             KEY_SAVED_SURFACE_SITE_ID,
             ((browserSurface?.webView ?: webView) as? com.webtoapp.core.webview.WtaWebView)?.siteId
@@ -1040,8 +944,6 @@ class ShellActivity : AppCompatActivity() {
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
 
-        // Issue #1029: the same Recents replay can reach an activity that is still
-        // around — a history restore must never re-fire inbound intent handling.
         if (com.webtoapp.core.share.SharedContentInbox.isHistoryRelaunchIntent(intent)) return
 
         val launcherRelaunch = intent?.action == Intent.ACTION_MAIN &&
@@ -1088,28 +990,13 @@ class ShellActivity : AppCompatActivity() {
             com.webtoapp.core.shell.ShellLogger.i("ShellActivity", "onNewIntent Deep Link: $validatedUrl (原始: $url)")
         }
 
-        // Issue #943: the app was already running (singleTask) and a share arrived. Handled
-        // here as well as in onCreate because a share that lands while the app is in the
-        // foreground never goes through onCreate.
         acceptShareIntent(intent)
     }
 
-    /**
-     * Persist anything an inbound `ACTION_SEND` carries, then announce it to the page
-     * (issue #943).
-     *
-     * Called from both `onCreate` and `onNewIntent`. The bytes are copied off the sender's URI
-     * immediately — that read grant dies with the intent, so deferring would silently lose the
-     * payload. Delivery is a separate, idempotent step because the page may not exist yet on a
-     * cold start; [deliverPendingShares] runs again from `onPageFinished`.
-     */
     private fun acceptShareIntent(intent: Intent?) {
         if (shareReceiveMimeTypes.isEmpty() || intent == null) return
 
         lifecycleScope.launch {
-            // A share that cannot be handled must never take the app down with it: an
-            // exception escaping this scope is an uncaught exception. The inbox already drops
-            // individual bad payloads itself, so this only covers the wrapper.
             try {
                 val accepted = com.webtoapp.core.share.SharedContentInbox.acceptIntent(
                     this@ShellActivity,
@@ -1118,8 +1005,6 @@ class ShellActivity : AppCompatActivity() {
                 )
                 if (accepted.isEmpty()) return@launch
 
-                // Consume the launch intent so a later recreate() — e.g. after the
-                // custom-password dialog — cannot re-accept the same share (#1029).
                 setIntent(Intent(Intent.ACTION_MAIN))
 
                 com.webtoapp.core.shell.ShellLogger.i(
@@ -1138,22 +1023,12 @@ class ShellActivity : AppCompatActivity() {
         }
     }
 
-    /**
-     * True when the intent is an "open with" delivery we should claim: `ACTION_VIEW` with a
-     * `file`/`content` data URI and the feature enabled in the export config. Everything
-     * else keeps flowing through the deep-link resolver.
-     */
     private fun isOpenWithCandidate(intent: Intent?): Boolean {
         if (!openWithEnabled || intent?.action != Intent.ACTION_VIEW) return false
         val scheme = intent.data?.scheme?.lowercase()
         return scheme == "content" || scheme == "file"
     }
 
-    /**
-     * Persist a file handed over via "open with" and announce it to the page — the same
-     * inbox + delivery channels as a share-sheet payload. Runs on a coroutine for the same
-     * reason as [acceptShareIntent]: the one-shot read grant dies with the intent.
-     */
     private fun acceptOpenWithIntent(intent: Intent?) {
         lifecycleScope.launch {
             try {
@@ -1162,7 +1037,6 @@ class ShellActivity : AppCompatActivity() {
                     intent
                 ) ?: return@launch
 
-                // Same consume step as acceptShareIntent (#1029).
                 setIntent(Intent(Intent.ACTION_MAIN))
 
                 com.webtoapp.core.shell.ShellLogger.i(
@@ -1179,11 +1053,6 @@ class ShellActivity : AppCompatActivity() {
         }
     }
 
-    /**
-     * The chooser-path hint. Pages that only listen for `wta:share` (JS_EVENT, or the
-     * author turned the toast off) already know the content arrived — the upload-button
-     * copy would be wrong.
-     */
     private fun maybeShowShareReceivedToast() {
         if (!shareShowReceivedToast) return
         if (shareDeliveryMode == com.webtoapp.data.model.ShareDeliveryMode.JS_EVENT) return
@@ -1194,22 +1063,15 @@ class ShellActivity : AppCompatActivity() {
         ).show()
     }
 
-    /** A new document started loading; hold deliveries until it has finished. */
     fun onShellPageStarted() {
         sharePageReady = false
     }
 
-    /** Main frame loaded — the page can now receive queued shares. */
     fun onShellPageReady() {
         sharePageReady = true
         deliverPendingShares()
     }
 
-    /**
-     * Push every queued share to the current page when the delivery mode includes the JS
-     * channel. Re-announcing on each document load is intentional: the page de-duplicates by
-     * id, so a reload regains the content while a single document never sees it twice.
-     */
     fun deliverPendingShares() {
         if (shareReceiveMimeTypes.isEmpty() && !openWithEnabled) return
         if (shareDeliveryMode == com.webtoapp.data.model.ShareDeliveryMode.FILE_CHOOSER_PREFILL) return
@@ -1234,8 +1096,6 @@ class ShellActivity : AppCompatActivity() {
                     "已向页面投递 ${items.size} 条分享内容"
                 )
             } catch (e: Exception) {
-                // Delivery is best-effort: the file-chooser channel is unaffected, and a
-                // failure here must not surface as a crash in an app the user just shared to.
                 com.webtoapp.core.shell.ShellLogger.w("ShellActivity", "分享内容投递失败: ${e.message}", e)
             }
         }
@@ -1274,9 +1134,6 @@ class ShellActivity : AppCompatActivity() {
         if (keepMedia) {
             com.webtoapp.core.shell.ShellLogger.logLifecycle("ShellActivity", "onPause - background media playing, leaving the page running")
         } else if (notificationPolyfillEnabled && browserSurface == null) {
-            // Keep JavaScript timers running so background web notifications can fire.
-            // Only applies to system WebView (NativeBridge is unavailable in GeckoView).
-            // The foreground service keeps the process alive.
             com.webtoapp.core.shell.ShellLogger.logLifecycle("ShellActivity", "onPause - notification polyfill active, keeping JS timers alive")
         } else {
             browserSurface?.onPause() ?: webView?.onPause()
@@ -1290,11 +1147,6 @@ class ShellActivity : AppCompatActivity() {
         )
     }
 
-    /**
-     * Explicitly dispatch a visibilitychange event to the WebView page so that
-     * document.hidden / document.visibilityState reflect the real Activity state.
-     * Android WebView does not reliably do this across all OEM ROMs and versions.
-     */
     private fun dispatchVisibilityEvent(visible: Boolean) {
         val js = if (visible) {
             """(function(){try{Object.defineProperty(document,'visibilityState',{get:function(){return 'visible';},configurable:true});Object.defineProperty(document,'hidden',{get:function(){return false;},configurable:true});document.dispatchEvent(new Event('visibilitychange'));}catch(e){}})();"""
@@ -1312,8 +1164,6 @@ class ShellActivity : AppCompatActivity() {
         super.onTrimMemory(level)
 
         if (level >= android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW) {
-            // The real work happens in ShellScreen's ComponentCallbacks2 —
-            // it owns the recreation key needed to rebuild after a teardown.
             com.webtoapp.core.shell.ShellLogger.logLifecycle("ShellActivity", "Memory pressure (level=$level)")
         }
     }

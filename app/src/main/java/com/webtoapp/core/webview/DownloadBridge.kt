@@ -23,7 +23,8 @@ class DownloadBridge(
     private val scope: CoroutineScope,
     private val downloadLocationMode: DownloadLocationMode = DownloadLocationMode.SYSTEM_DOWNLOAD,
     private val customDownloadDirUri: String = "",
-    private val mediaAlbumName: String = ""
+    private val mediaAlbumName: String = "",
+    private val currentPageUrl: () -> String? = { null }
 ) {
     private val notificationManager = DownloadNotificationManager.getInstance(context)
 
@@ -242,6 +243,11 @@ class DownloadBridge(
                 const originalCreateElement = document.createElement.bind(document);
                 ${getBlobCacheHookScript()}
                 const blobUrlMap = window.__wtaBlobMap || (window.__wtaBlobMap = new Map());
+                function downloadNamedLink(link, href, filename) {
+                    const metaPolicy = document.querySelector('meta[name="referrer" i]')?.content || '';
+                    const policy = link.relList.contains('noreferrer') ? 'no-referrer' : link.referrerPolicy || metaPolicy;
+                    window.AndroidDownload.downloadNamed(href, filename, navigator.userAgent || '', policy);
+                }
                 document.createElement = function(tagName) {
                     const element = originalCreateElement(tagName);
 
@@ -271,7 +277,7 @@ class DownloadBridge(
 
                             if (download && (href.startsWith('http:') || href.startsWith('https:')) &&
                                 window.AndroidDownload && window.AndroidDownload.downloadNamed) {
-                                window.AndroidDownload.downloadNamed(href, download, navigator.userAgent || '');
+                                downloadNamedLink(element, href, download);
                                 return;
                             }
 
@@ -313,7 +319,7 @@ class DownloadBridge(
                             window.AndroidDownload && window.AndroidDownload.downloadNamed) {
                             e.preventDefault();
                             e.stopPropagation();
-                            window.AndroidDownload.downloadNamed(href, download, navigator.userAgent || '');
+                            downloadNamedLink(target, href, download);
                             return false;
                         }
                     }
@@ -1188,21 +1194,26 @@ class DownloadBridge(
     }
 
     @JavascriptInterface
-    fun downloadNamed(url: String, filename: String, userAgent: String) {
+    fun downloadNamed(url: String, filename: String, userAgent: String) =
+        downloadNamed(url, filename, userAgent, "")
+
+    @JavascriptInterface
+    fun downloadNamed(url: String, filename: String, userAgent: String, referrerPolicy: String) {
         val safe = sanitizeFilename(filename).ifBlank { return }
         val quoted = safe.replace("\"", "")
-        com.webtoapp.util.DownloadHelper.handleDownload(
-            context = context,
-            url = url,
-            userAgent = userAgent,
-            contentDisposition = "attachment; filename=\"$quoted\"",
-            mimeType = "",
-            contentLength = -1L,
-            scope = scope,
-            downloadLocationMode = downloadLocationMode,
-            customDownloadDirUri = customDownloadDirUri,
-            albumName = mediaAlbumName
-        )
+        scope.launch(Dispatchers.Main) {
+            com.webtoapp.util.DownloadHelper.handleDownload(
+                context = context,
+                url = url,
+                userAgent = userAgent,
+                contentDisposition = "attachment; filename=\"$quoted\"",
+                mimeType = "",
+                referrer = WebDownloadReferrer.fromPage(url, currentPageUrl(), referrerPolicy),
+                downloadLocationMode = downloadLocationMode,
+                customDownloadDirUri = customDownloadDirUri,
+                albumName = mediaAlbumName
+            )
+        }
     }
 
     @JavascriptInterface
