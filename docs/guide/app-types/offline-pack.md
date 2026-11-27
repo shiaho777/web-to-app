@@ -6,6 +6,10 @@ Scrapes a live website into a self-contained offline package, then wraps it like
 
 Archiving a site for offline use — reading material, documentation, or any site you want available without a network.
 
+## Preview before saving
+
+After the crawl finishes, **Offline preview** opens the captured site from local files. Follow links in the preview and open the missing-resource list to see which requested files are unavailable offline. Select **Save** to create the Offline Pack project.
+
 ## Core config (scraper)
 
 ### Crawl scope
