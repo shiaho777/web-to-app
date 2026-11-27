@@ -127,11 +127,14 @@ await WtaDirectory.write('exports/image.png', pngBytes);
 | `pickDirectory(requestId)` | Opens the system picker. The result arrives at `window.NativeBridgeDirectoryResult` |
 | `listDirectory(relativePath)` | `{ ok, entries, truncated }`. An empty path is the granted root |
 | `readDirectoryFile(relativePath, offset, length)` | One chunk, at most 256 KiB, base64 in `data` |
+| `openDirectoryFileUrl(relativePath)` | Read-only, WebView-scoped URL for a file in the granted folder |
 | `writeDirectoryFile(relativePath, base64, append)` | Writes one chunk. `append: false` creates or replaces |
 | `deleteDirectoryEntry(relativePath)` | Deletes a file or a child directory, never the granted root |
 | `releaseDirectory()` | Drops the grant |
 
 `WtaDirectory.pick`, `read`, `write`, and `list` are the helpers injected with the capability. The object names above are the underlying `NativeBridge` methods.
+
+`WtaDirectory.openUrl(path)` returns a URL you can assign to `<audio src>` or `<video src>` to play a granted file while it is being read. The URL supports single byte ranges when the document provider reports the file's size. It is valid for the current page, and subsequent calls for the same path reuse it. When finished, call `WtaDirectory.closeUrl(url)` to release it. Call `WtaDirectory.read(path)` when you need the complete file as a `Uint8Array`.
 
 ## Device and network
 

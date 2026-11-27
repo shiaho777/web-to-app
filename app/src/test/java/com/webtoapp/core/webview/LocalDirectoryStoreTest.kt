@@ -6,12 +6,14 @@ import androidx.documentfile.provider.DocumentFile
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import org.json.JSONObject
+import org.junit.Assert.assertThrows
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import java.io.File
+import java.io.RandomAccessFile
 
 @RunWith(RobolectricTestRunner::class)
 class LocalDirectoryStoreTest {
@@ -96,6 +98,40 @@ class LocalDirectoryStoreTest {
         assertThat(info.getBoolean("ok")).isTrue()
         assertThat(info.getBoolean("granted")).isFalse()
         assertThat(JSONObject(store.list("")).getString("error")).isEqualTo("NO_GRANT")
+    }
+
+    @Test
+    fun `stream opens distinguish invalid paths folders and missing grants`() {
+        val granted = folder.newFolder("stream-errors")
+        File(granted, "audio").mkdir()
+        val store = storeFor(granted)
+        for ((path, code) in listOf("../song.wav" to "BAD_PATH", "unknown.wav" to "NOT_FOUND", "audio" to "NOT_A_FILE")) {
+            val error = assertThrows(LocalDirectoryStore.StreamFileException::class.java) { store.streamFile(path) }
+            assertThat(error.code).isEqualTo(code)
+        }
+        val missing = LocalDirectoryStore(context, "ungranted-${System.nanoTime()}")
+        val error = assertThrows(LocalDirectoryStore.StreamFileException::class.java) { missing.streamFile("song.wav") }
+        assertThat(error.code).isEqualTo("NO_GRANT")
+    }
+
+    @Test
+    fun `large offsets read the requested bytes and release invalidates open urls`() {
+        val granted = folder.newFolder("large")
+        val file = File(granted, "audio.wav")
+        val offset = 128L * 1024 * 1024
+        RandomAccessFile(file, "rw").use {
+            it.seek(offset)
+            it.write(byteArrayOf(9, 8, 7))
+        }
+        val store = storeFor(granted)
+        val slice = JSONObject(store.read("audio.wav", offset, 3))
+        assertThat(Base64.decode(slice.getString("data"), Base64.DEFAULT)).isEqualTo(byteArrayOf(9, 8, 7))
+        assertThat(slice.getBoolean("eof")).isTrue()
+        val opened = store.streamFile("audio.wav")
+        assertThat(opened.size).isEqualTo(offset + 3)
+        assertThat(opened.open(offset + 1)?.use { it.read() }).isEqualTo(8)
+        store.release()
+        assertThat(opened.open(offset)).isNull()
     }
 
     private fun storeFor(root: File): LocalDirectoryStore {

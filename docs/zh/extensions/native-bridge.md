@@ -127,11 +127,14 @@ await WtaDirectory.write('exports/image.png', pngBytes);
 | `pickDirectory(requestId)` | 打开系统目录选择器，结果送到 `window.NativeBridgeDirectoryResult` |
 | `listDirectory(relativePath)` | `{ ok, entries, truncated }`。空路径是授权根 |
 | `readDirectoryFile(relativePath, offset, length)` | 一块最多 256 KiB，`data` 是 base64 |
+| `openDirectoryFileUrl(relativePath)` | 授权目录文件的只读 URL，仅当前 WebView 可用 |
 | `writeDirectoryFile(relativePath, base64, append)` | 写一块。`append: false` 是新建或覆盖 |
 | `deleteDirectoryEntry(relativePath)` | 删除文件或子目录，不能删授权根 |
 | `releaseDirectory()` | 丢掉授权 |
 
 `WtaDirectory.pick`、`read`、`write`、`list` 是打开这项能力后注入的简便方法。表里的名字是底层 `NativeBridge` 方法。
+
+可以把 `WtaDirectory.openUrl(path)` 返回的 URL 传给 `<audio src>` 或 `<video src>`，边读边播。文件提供方能返回文件大小时，URL 支持单段字节范围，可用于跳播。URL 在当前页面内有效，同一文件路径会复用地址。用完可调用 `WtaDirectory.closeUrl(url)` 释放。需要完整的 `Uint8Array` 时使用 `WtaDirectory.read(path)`。
 
 ## 设备和网络
 

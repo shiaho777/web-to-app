@@ -1,10 +1,5 @@
 package com.webtoapp.core.webview
 
-/**
- * Page-facing helper installed only when the directory capability is on.
- * Chunking stays here so a page can `await WtaDirectory.read(path)` without
- * reimplementing the bridge's size cap.
- */
 internal object LocalDirectoryScript {
     const val SOURCE: String = """
 (function(){
@@ -26,6 +21,11 @@ internal object LocalDirectoryScript {
     for (var i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
     return out;
   }
+  function fileUrl(raw) {
+    var file = parse(raw);
+    if (!file.ok) throw Object.assign(new Error(file.message || file.error), file);
+    return file.url;
+  }
   window.WtaDirectory = {
     info: function() { return parse(NativeBridge.directoryInfo()); },
     pick: function() {
@@ -45,7 +45,19 @@ internal object LocalDirectoryScript {
     },
     release: function() { return parse(NativeBridge.releaseDirectory()); },
     list: function(path) { return parse(NativeBridge.listDirectory(path || '')); },
+    openUrl: function(path) { return fileUrl(NativeBridge.openDirectoryFileUrl(path)); },
+    closeUrl: function(url) { NativeBridge.releaseStreamUrl(url); },
     read: async function(path) {
+      if (typeof NativeBridge.openDirectoryReadUrl === 'function') {
+        var url = fileUrl(NativeBridge.openDirectoryReadUrl(path));
+        try {
+          var response = await fetch(url, { cache: 'no-store' });
+          if (!response.ok) throw new Error('Could not read the file (HTTP ' + response.status + ')');
+          return new Uint8Array(await response.arrayBuffer());
+        } finally {
+          NativeBridge.releaseStreamUrl(url);
+        }
+      }
       var parts = [];
       var offset = 0;
       var size = 0;
