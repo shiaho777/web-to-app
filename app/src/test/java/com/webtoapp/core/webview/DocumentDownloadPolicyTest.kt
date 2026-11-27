@@ -31,6 +31,27 @@ class DocumentDownloadPolicyTest {
     }
 
     @Test
+    fun `GitHub release attachments are separate from login and release pages`() {
+        val path = "/owner/repo/releases/download/v2.9%2F0/app.APK"
+        assertThat(DocumentDownloadPolicy.isGitHubReleaseAssetUrl("https://github.com$path?source=web#file")).isTrue()
+        assertThat(DocumentDownloadPolicy.isGitHubReleaseAssetUrl("https://GITHUB.COM:443$path")).isTrue()
+
+        for (url in listOf(
+            "https://github.com/login?return_to=$path",
+            "https://github.com/owner/repo/releases/tag/v2.9.0",
+            "https://github.com/owner/repo/releases/download/v2.9.0/",
+            "https://github.com/owner/repo/releases/download/v2.9.0/dir/app.apk",
+            "https://github.com.evil.example$path",
+            "https://github.com@elsewhere.example$path",
+            "https://account@github.com$path",
+            "https://github.com:8443$path",
+            "http://github.com$path"
+        )) {
+            assertThat(DocumentDownloadPolicy.isGitHubReleaseAssetUrl(url)).isFalse()
+        }
+    }
+
+    @Test
     fun `mime types map to the detected extension`() {
         assertThat(DocumentDownloadPolicy.mimeTypeFor("https://example.com/a.pdf"))
             .isEqualTo("application/pdf")
