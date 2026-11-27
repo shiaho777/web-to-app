@@ -3,6 +3,7 @@ package com.webtoapp.util
 import com.google.common.truth.Truth.assertThat
 import okhttp3.HttpUrl
 import okhttp3.OkHttpClient
+import okhttp3.Protocol
 import org.junit.Assert.assertThrows
 import org.junit.Rule
 import org.junit.Test
@@ -11,9 +12,11 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.IOException
 import java.net.InetAddress
+import java.net.Proxy
 import java.net.ServerSocket
 import java.net.Socket
 import java.security.KeyStore
+import java.security.Security
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.TimeUnit
@@ -263,11 +266,14 @@ class WebDownloadTransferTest {
             if (process.isAlive) process.destroyForcibly()
         }
         val store = KeyStore.getInstance("PKCS12").apply { path.inputStream().use { load(it, pass) } }
-        val keys = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm()).apply { init(store, pass) }
-        val trust = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm()).apply { init(store) }
-        val ssl = SSLContext.getInstance("TLS").apply { init(keys.keyManagers, trust.trustManagers, null) }
+        val jsse = checkNotNull(Security.getProvider("SunJSSE"))
+        val keys = KeyManagerFactory.getInstance("SunX509", jsse).apply { init(store, pass) }
+        val trust = TrustManagerFactory.getInstance("PKIX", jsse).apply { init(store) }
+        val ssl = SSLContext.getInstance("TLS", jsse).apply { init(keys.keyManagers, trust.trustManagers, null) }
         val server = ssl.serverSocketFactory.createServerSocket(0, 4, InetAddress.getByName("127.0.0.1"))
         val client = OkHttpClient.Builder()
+            .proxy(Proxy.NO_PROXY)
+            .protocols(listOf(Protocol.HTTP_1_1))
             .sslSocketFactory(ssl.socketFactory, trust.trustManagers.filterIsInstance<X509TrustManager>().single())
             .followRedirects(false).retryOnConnectionFailure(false).build()
         return server to client
