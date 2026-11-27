@@ -236,6 +236,41 @@ class WebDownloadTransferTest {
         }
     }
 
+    @Test
+    fun `idle faster connection takes only the unfinished bytes of a slow part`() {
+        val (server, client) = tls()
+        val logs = CopyOnWriteArrayList<String>()
+        val slow = AtomicReference<Received>()
+        withServer({ index, request, socket ->
+            val range = request.headers["range"]?.let { requestedRange(request) }
+            if (index == 0) {
+                sendSlow(socket)
+            } else if (range != null && range.count() == testPartBytes && slow.compareAndSet(null, request)) {
+                val output = socket.getOutputStream()
+                output.write(responseHeaders("206 Partial Content", range.count(), tag, "bytes ${range.first}-${range.last}/${data.size}"))
+                for (offset in range step 2048) {
+                    output.write(data, offset, minOf(2048, range.last + 1 - offset))
+                    output.flush()
+                    Thread.sleep(300)
+                }
+            } else {
+                sendRange(socket, request, keepAlive = true)
+            }
+        }, server = server, scheme = "https", keepAlive = true) { url, requests ->
+            assertThat(probingTransfer(client, logs, 2_500).open(url, "", null).use { it.readBytes() }).isEqualTo(data)
+            val slowRequest = checkNotNull(slow.get())
+            val slowRange = requestedRange(slowRequest)
+            val replacement = requests.single { request ->
+                val range = request.headers["range"]?.let { requestedRange(request) }
+                range != null && range.first > slowRange.first && range.last == slowRange.last
+            }
+            assertThat(replacement.port).isNotEqualTo(slowRequest.port)
+            assertThat(requests.takeWhile { it != replacement }.any { it.port == replacement.port }).isTrue()
+            assertThat(logs).contains("range handoff host=127.0.0.1 start=${requestedRange(replacement).first} end=${slowRange.last}")
+            assertThat(logs.none { it.startsWith("recover ") }).isTrue()
+        }
+    }
+
     private val testFirstPartBytes = 16 * 1024
     private val testPartBytes = 48 * 1024
 
@@ -296,32 +331,42 @@ class WebDownloadTransferTest {
         return value.substringBefore('-').toInt()..(value.substringAfter('-').toIntOrNull() ?: data.lastIndex)
     }
 
-    private fun sendRange(socket: Socket, request: Received, maxBytes: Int = data.size) {
+    private fun sendRange(socket: Socket, request: Received, maxBytes: Int = data.size, keepAlive: Boolean = false) {
         val range = requestedRange(request)
         val body = data.copyOfRange(range.first, minOf(range.first + maxBytes, range.last + 1))
-        send(socket, "206 Partial Content", body, length = range.count(), range = "bytes ${range.first}-${range.last}/${data.size}")
+        send(socket, "206 Partial Content", body, range.count(), range = "bytes ${range.first}-${range.last}/${data.size}", keepAlive = keepAlive)
     }
 
-    private fun send(socket: Socket, status: String, body: ByteArray, length: Int = body.size, etag: String? = tag, range: String? = null) {
+    private fun send(
+        socket: Socket,
+        status: String,
+        body: ByteArray,
+        length: Int = body.size,
+        etag: String? = tag,
+        range: String? = null,
+        keepAlive: Boolean = false
+    ) {
         val output = socket.getOutputStream()
-        output.write(responseHeaders(status, length, etag, range))
+        output.write(responseHeaders(status, length, etag, range, keepAlive))
         output.write(body)
         output.flush()
     }
 
-    private fun responseHeaders(status: String, length: Int, etag: String?, range: String?): ByteArray = buildString {
-        append("HTTP/1.1 $status\r\nContent-Length: $length\r\nContent-Type: application/octet-stream\r\nConnection: close\r\n")
+    private fun responseHeaders(status: String, length: Int, etag: String?, range: String?, keepAlive: Boolean = false): ByteArray = buildString {
+        val connection = if (keepAlive) "keep-alive" else "close"
+        append("HTTP/1.1 $status\r\nContent-Length: $length\r\nContent-Type: application/octet-stream\r\nConnection: $connection\r\n")
         etag?.let { append("ETag: $it\r\n") }
         range?.let { append("Content-Range: $it\r\n") }
         append("\r\n")
     }.toByteArray()
 
-    private data class Received(val headers: Map<String, String>)
+    private data class Received(val headers: Map<String, String>, val port: Int)
 
     private fun withServer(
         handle: (Int, Received, Socket) -> Unit,
         server: ServerSocket = ServerSocket(0, 4, InetAddress.getByName("127.0.0.1")),
         scheme: String = "http",
+        keepAlive: Boolean = false,
         verify: (String, List<Received>) -> Unit
     ) {
         server.use {
@@ -335,16 +380,18 @@ class WebDownloadTransferTest {
                             accepted.use { socket ->
                                 socket.soTimeout = 2_000
                                 val input = socket.getInputStream().bufferedReader()
-                                if (input.readLine() == null) return@use
-                                val headers = buildMap {
-                                    while (true) {
-                                        val line = input.readLine()?.takeIf(String::isNotEmpty) ?: break
-                                        put(line.substringBefore(':').lowercase(), line.substringAfter(':').trim())
+                                do {
+                                    if (input.readLine() == null) return@use
+                                    val headers = buildMap {
+                                        while (true) {
+                                            val line = input.readLine()?.takeIf(String::isNotEmpty) ?: break
+                                            put(line.substringBefore(':').lowercase(), line.substringAfter(':').trim())
+                                        }
                                     }
-                                }
-                                val request = Received(headers)
-                                val index = synchronized(requests) { requests.size.also { requests.add(request) } }
-                                handle(index, request, socket)
+                                    val request = Received(headers, socket.port)
+                                    val index = synchronized(requests) { requests.size.also { requests.add(request) } }
+                                    handle(index, request, socket)
+                                } while (keepAlive)
                             }
                         } catch (_: IOException) {
                             accepted.close()
