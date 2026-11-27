@@ -19,10 +19,6 @@ interface WebViewCallbacks {
     fun onGeolocationPermission(origin: String?, callback: GeolocationPermissions.Callback?)
     fun onPermissionRequest(request: PermissionRequest?)
 
-    /**
-     * WebView drops a capture request when the activity pauses for the system
-     * permission dialog. Hosts use this to reload after the user allows access.
-     */
     fun onPermissionRequestCanceled(request: PermissionRequest?) {}
 
     fun onScrollChanged(webView: android.webkit.WebView?, scrollY: Int) {}
@@ -36,7 +32,8 @@ interface WebViewCallbacks {
         userAgent: String,
         contentDisposition: String,
         mimeType: String,
-        contentLength: Long
+        contentLength: Long,
+        referrer: String? = null
     )
 
     fun onExternalDownloadResponse(
@@ -56,44 +53,18 @@ interface WebViewCallbacks {
 
     fun onUrlChanged(webView: WebView?, url: String?) {}
 
-    /**
-     * History navigation state changed (canGoBack/canGoForward). Only fired by engines that
-     * track history themselves (GeckoView's NavigationDelegate); the System WebView path keeps
-     * deriving the state from [onUrlChanged] + `WebView.canGoBack()`.
-     */
     fun onNavigationStateChanged(canGoBack: Boolean, canGoForward: Boolean) {}
 
-    /**
-     * A popup window was requested (newWindowBehavior = POPUP_WINDOW). Return true when the
-     * host actually renders the popup transport; false makes WebViewManager fall back to
-     * loading the popup URL in the same window so the navigation is never silently dropped.
-     */
     fun onNewWindow(resultMsg: android.os.Message?): Boolean = false
 
     fun onRenderProcessGone(didCrash: Boolean) {}
 
-    /**
-     * A main-frame navigation was handed to an external app (deep-link schemes
-     * like `weixin://`, `intent://` app launches). [sourceUrl] is the committed
-     * page that issued the jump — often a one-shot OAuth/payment trampoline
-     * that must not be restored after process death (#1030).
-     */
     fun onExternalAppLaunch(url: String, sourceUrl: String?) {}
 
-    /**
-     * Request Android runtime permissions on behalf of an engine that cannot request them itself
-     * (GeckoView). The host shows the system dialog and reports the result via [onResult]. Default
-     * grants so hosts without an Activity (e.g. headless preview) do not deadlock the engine.
-     */
     fun onAndroidPermissionsRequest(permissions: Array<String>, onResult: (Boolean) -> Unit) {
         onResult(true)
     }
 
-    /**
-     * Request location access (Android permission + system location service check, with the same
-     * settings dialog used by the Chromium prompt path) on behalf of GeolocationBridge. Default
-     * denies so hosts without an Activity do not silently fake a grant.
-     */
     fun requestGeolocationAccess(onResult: (Boolean) -> Unit) {
         onResult(false)
     }

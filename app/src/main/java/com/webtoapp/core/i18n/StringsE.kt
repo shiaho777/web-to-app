@@ -2028,6 +2028,71 @@ object StringsE {
         AppLanguage.KOREAN -> "다운로드 실패"
     }
 
+    val notifDownloadEmptyResponse: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "服务器返回了空的 APK"
+        AppLanguage.ENGLISH -> "The server returned an empty APK"
+        AppLanguage.ARABIC -> "أعاد الخادم ملف APK فارغًا"
+        AppLanguage.PORTUGUESE -> "O servidor retornou um APK vazio"
+        AppLanguage.SPANISH -> "El servidor devolvió un APK vacío"
+        AppLanguage.FRENCH -> "Le serveur a renvoyé un APK vide"
+        AppLanguage.GERMAN -> "Der Server hat eine leere APK-Datei zurückgegeben"
+        AppLanguage.RUSSIAN -> "Сервер вернул пустой APK"
+        AppLanguage.JAPANESE -> "サーバーから空の APK が返されました"
+        AppLanguage.KOREAN -> "서버에서 빈 APK를 반환했습니다"
+    }
+
+    val notifDownloadQueued: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "等待开始"
+        AppLanguage.ENGLISH -> "Queued"
+        AppLanguage.ARABIC -> "في قائمة الانتظار"
+        AppLanguage.PORTUGUESE -> "Na fila"
+        AppLanguage.SPANISH -> "En cola"
+        AppLanguage.FRENCH -> "En attente"
+        AppLanguage.GERMAN -> "In Warteschlange"
+        AppLanguage.RUSSIAN -> "В очереди"
+        AppLanguage.JAPANESE -> "待機中"
+        AppLanguage.KOREAN -> "대기 중"
+    }
+
+    val notifDownloadRetrying: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "等待重试"
+        AppLanguage.ENGLISH -> "Waiting to retry"
+        AppLanguage.ARABIC -> "بانتظار إعادة المحاولة"
+        AppLanguage.PORTUGUESE -> "Aguardando nova tentativa"
+        AppLanguage.SPANISH -> "Esperando para reintentar"
+        AppLanguage.FRENCH -> "En attente d’une nouvelle tentative"
+        AppLanguage.GERMAN -> "Wartet auf neuen Versuch"
+        AppLanguage.RUSSIAN -> "Ожидание повтора"
+        AppLanguage.JAPANESE -> "再試行を待機中"
+        AppLanguage.KOREAN -> "재시도 대기 중"
+    }
+
+    val notifDownloadWaitingNetwork: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "等待网络"
+        AppLanguage.ENGLISH -> "Waiting for network"
+        AppLanguage.ARABIC -> "بانتظار الشبكة"
+        AppLanguage.PORTUGUESE -> "Aguardando rede"
+        AppLanguage.SPANISH -> "Esperando la red"
+        AppLanguage.FRENCH -> "En attente du réseau"
+        AppLanguage.GERMAN -> "Wartet auf Netzwerk"
+        AppLanguage.RUSSIAN -> "Ожидание сети"
+        AppLanguage.JAPANESE -> "ネットワーク接続を待機中"
+        AppLanguage.KOREAN -> "네트워크 연결 대기 중"
+    }
+
+    val notifDownloadWaitingWifi: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "等待 Wi-Fi"
+        AppLanguage.ENGLISH -> "Waiting for Wi-Fi"
+        AppLanguage.ARABIC -> "بانتظار Wi-Fi"
+        AppLanguage.PORTUGUESE -> "Aguardando Wi-Fi"
+        AppLanguage.SPANISH -> "Esperando Wi-Fi"
+        AppLanguage.FRENCH -> "En attente du Wi-Fi"
+        AppLanguage.GERMAN -> "Wartet auf WLAN"
+        AppLanguage.RUSSIAN -> "Ожидание Wi-Fi"
+        AppLanguage.JAPANESE -> "Wi-Fi 接続を待機中"
+        AppLanguage.KOREAN -> "Wi-Fi 연결 대기 중"
+    }
+
     val notifDownloading: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "下载中"
         AppLanguage.ENGLISH -> "Downloading"

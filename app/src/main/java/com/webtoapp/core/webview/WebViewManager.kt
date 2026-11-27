@@ -1731,7 +1731,8 @@ class WebViewManager(
             if (config.downloadEnabled) {
                 setDownloadListener { url, userAgent, contentDisposition, mimeType, contentLength ->
                     noteDownloadInterceptedUrl(url)
-                    callbacks.onDownloadStart(url, userAgent, contentDisposition, mimeType, contentLength)
+                    val referrer = WebDownloadReferrer.fromPage(url, this.url)
+                    callbacks.onDownloadStart(url, userAgent, contentDisposition, mimeType, contentLength, referrer)
                 }
 
                 if (config.enableBlobDownloadInterception) {
@@ -2245,7 +2246,12 @@ class WebViewManager(
                         view?.settings?.userAgentString ?: "",
                         "",
                         DocumentDownloadPolicy.mimeTypeFor(url),
-                        -1L
+                        -1L,
+                        WebDownloadReferrer.fromPage(
+                            url,
+                            request.requestHeaders?.entries?.firstOrNull { it.key.equals("Referer", ignoreCase = true) }?.value
+                                ?: view?.url
+                        )
                     )
                     return true
                 }

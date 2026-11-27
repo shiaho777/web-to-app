@@ -16,13 +16,6 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 
-/**
- * Regression for #1023: pages served from LAN/loopback hosts take the
- * `minimizeLocalRuntimeInjection` path, which used to skip the whole
- * compatibility-script batch — including ORIENTATION_POLYFILL_JS — so
- * `screen.orientation.lock()` silently fell back to the stock WebView API
- * (which rejects unless fullscreen) even though the toggle was on.
- */
 @RunWith(RobolectricTestRunner::class)
 class WebViewManagerOrientationPolyfillTest {
 
@@ -51,7 +44,8 @@ class WebViewManagerOrientationPolyfillTest {
             userAgent: String,
             contentDisposition: String,
             mimeType: String,
-            contentLength: Long
+            contentLength: Long,
+            referrer: String?
         ) {}
     }
 
@@ -87,8 +81,6 @@ class WebViewManagerOrientationPolyfillTest {
             WebViewConfig(enableOrientationPolyfill = false)
         )
 
-        // The last eval is the private-network bridge fallback; whatever it is,
-        // the orientation shim must not have been installed at all.
         if (js != null) {
             assertThat(js).doesNotContain("__webtoapp_orientation_polyfill__")
         }

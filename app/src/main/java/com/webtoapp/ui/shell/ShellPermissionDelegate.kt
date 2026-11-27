@@ -43,7 +43,7 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
         val userAgent: String,
         val contentDisposition: String,
         val mimeType: String,
-        val contentLength: Long
+        val referrer: String?
     )
 
     private fun resolveDownloadLocationConfig(): Pair<com.webtoapp.data.model.DownloadLocationMode, String> {
@@ -75,12 +75,6 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
 
     private var pendingFilePathCallback: android.webkit.ValueCallback<Array<Uri>>? = null
 
-    /**
-     * A pending FilePathCallback cannot survive process death — when the camera
-     * app gets us killed, the restored activity re-receives the chooser result
-     * with no callback to answer, and the captured temp file would leak in
-     * cacheDir. Persist the URI so [onRestoreInstanceState] can drop it (#1030).
-     */
     fun onSaveInstanceState(outState: Bundle) {
         outState.putString(KEY_PENDING_CAMERA_PHOTO, cameraPhotoUri?.toString())
     }
@@ -168,10 +162,6 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
 
         if (filePathCallback == null) return false
 
-        // Issue #943: content the user just shared into the app is a better answer than the
-        // system picker, and it is what they shared it for. This branch owns the callback
-        // from here on — it always answers it, either with the shared file or by handing the
-        // flow back to continueWithSystemPicker().
         if (tryUseSharedContent(fileChooserParams)) return true
 
         continueWithSystemPicker(fileChooserParams)
@@ -179,13 +169,7 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
         return true
     }
 
-    /**
-     * Resume the normal picker flow: camera runtime permission first when the page asked for
-     * something the camera can supply, then the chooser itself.
-     */
     private fun continueWithSystemPicker(fileChooserParams: WebChromeClient.FileChooserParams?) {
-        // Keep the WebView that owns the ValueCallback alive until the picker
-        // returns. Tearing it down here reloads the start URL (#1319).
         com.webtoapp.core.webview.FileChooserLifetime.markOpen()
         val needsCamera = isCameraRequired(fileChooserParams)
         val hasCameraPermission = ContextCompat.checkSelfPermission(
@@ -206,13 +190,6 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
         }
     }
 
-    /**
-     * Offer the newest queued share that matches what the page is asking for (issue #943).
-     *
-     * @return true when this call took ownership of [pendingFilePathCallback]. It answers the
-     *   callback in every branch, so a page never ends up stuck in its upload state — the
-     *   failure mode this whole delegate exists to avoid.
-     */
     private fun tryUseSharedContent(fileChooserParams: WebChromeClient.FileChooserParams?): Boolean {
         val config = try {
             com.webtoapp.WebToAppApplication.shellMode.getConfig()
@@ -220,8 +197,6 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
             null
         }
         val wv = config?.webViewConfig ?: return false
-        // Both inbound channels feed the same inbox: an "open with" file should reach a
-        // page's upload control even when share-sheet receiving itself is off.
         if (!wv.receiveShareImages && !wv.openWithEnabled) return false
 
         val mode = try {
@@ -236,9 +211,6 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
             ?.map { it.trim() }
 
         activity.lifecycleScope.launch {
-            // The callback has already been taken over, so *every* exit from here must answer
-            // it — an exception escaping this coroutine would both leave the page stuck and
-            // crash the process (uncaught exceptions in a lifecycle scope propagate).
             try {
                 val item = com.webtoapp.core.share.SharedContentInbox.findForFileChooser(
                     activity,
@@ -253,8 +225,6 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
                 }
             } catch (e: Exception) {
                 AppLogger.e("ShellPermission", "Shared-content file chooser path failed", e)
-                // Only fall back while the callback is still unanswered; a failure *after*
-                // answerWithSharedContent() has already replied must not reply twice.
                 if (pendingFilePathCallback != null) {
                     continueWithSystemPicker(fileChooserParams)
                 }
@@ -264,11 +234,6 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
         return true
     }
 
-    /**
-     * Ask before substituting the shared file, so the user keeps the option of picking
-     * something else. The item is still in the queue at this point — it is only claimed once
-     * the user commits.
-     */
     private fun promptForSharedContent(
         item: com.webtoapp.core.share.SharedItem,
         fileChooserParams: WebChromeClient.FileChooserParams?
@@ -286,19 +251,15 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
                 continueWithSystemPicker(fileChooserParams)
             }
             .setOnCancelListener {
-                // A dismissed dialog must still unblock the page.
                 pendingFilePathCallback?.onReceiveValue(null)
                 pendingFilePathCallback = null
             }
             .show()
     }
 
-    /** Hand the shared file to the page and drop it from the queue. */
     private fun answerWithSharedContent(item: com.webtoapp.core.share.SharedItem) {
         val callback = pendingFilePathCallback
         pendingFilePathCallback = null
-        // No camera capture is in flight on this path; clear any stale URI so a later
-        // cancellation cannot resurrect it (see fileChooserActivityLauncher).
         cameraPhotoUri = null
 
         activity.lifecycleScope.launch {
@@ -499,8 +460,7 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
                     userAgent = download.userAgent,
                     contentDisposition = download.contentDisposition,
                     mimeType = download.mimeType,
-                    contentLength = download.contentLength,
-                    scope = activity.lifecycleScope,
+                    referrer = download.referrer,
                     downloadLocationMode = mode,
                     customDownloadDirUri = customDir,
                     albumName = resolveAlbumName()
@@ -517,8 +477,7 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
                     userAgent = download.userAgent,
                     contentDisposition = download.contentDisposition,
                     mimeType = download.mimeType,
-                    contentLength = download.contentLength,
-                    scope = activity.lifecycleScope,
+                    referrer = download.referrer,
                     downloadLocationMode = mode,
                     customDownloadDirUri = customDir,
                     albumName = resolveAlbumName()
@@ -568,11 +527,6 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
         callback?.invoke(allGranted)
     }
 
-    /**
-     * Request Android runtime permissions on behalf of an engine that cannot request them itself
-     * (GeckoView's onAndroidPermissionsRequest, #344). Reports whether every permission ended up
-     * granted; permissions already granted skip the system dialog.
-     */
     fun requestAndroidPermissions(permissions: Array<String>, onResult: (Boolean) -> Unit) {
         val notGranted = permissions.filter {
             ContextCompat.checkSelfPermission(activity, it) != PackageManager.PERMISSION_GRANTED
@@ -677,11 +631,6 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
             .show()
     }
 
-    /**
-     * Request location access (Android runtime permission + system location service check)
-     * on behalf of GeolocationBridge's native navigator.geolocation backend. The host shows
-     * the same system dialog and location-services dialog used by the Chromium prompt path.
-     */
     fun requestLocationAccess(accuracy: String, onResult: (Boolean) -> Unit) {
         val perms = if (accuracy.equals("FINE", ignoreCase = true)) {
             arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
@@ -814,7 +763,7 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
         userAgent: String,
         contentDisposition: String,
         mimeType: String,
-        contentLength: Long,
+        referrer: String?,
         webView: android.webkit.WebView?
     ) {
 
@@ -932,8 +881,7 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
                 userAgent = userAgent,
                 contentDisposition = contentDisposition,
                 mimeType = mimeType,
-                contentLength = contentLength,
-                scope = activity.lifecycleScope,
+                referrer = referrer,
                 onBlobDownload = onBlobDownload,
                 downloadLocationMode = downloadLocationMode,
                 customDownloadDirUri = customDownloadDirUri,
@@ -954,8 +902,7 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
                 userAgent = userAgent,
                 contentDisposition = contentDisposition,
                 mimeType = mimeType,
-                contentLength = contentLength,
-                scope = activity.lifecycleScope,
+                referrer = referrer,
                 onBlobDownload = onBlobDownload,
                 downloadLocationMode = downloadLocationMode,
                 customDownloadDirUri = customDownloadDirUri,
@@ -963,7 +910,7 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
             )
         } else {
 
-            pendingDownload = PendingDownload(url, userAgent, contentDisposition, mimeType, contentLength)
+            pendingDownload = PendingDownload(url, userAgent, contentDisposition, mimeType, referrer)
             storagePermissionLauncher.launch(
                 arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE)
             )

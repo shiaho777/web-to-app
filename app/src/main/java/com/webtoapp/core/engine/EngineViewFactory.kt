@@ -62,11 +62,6 @@ object EngineViewFactory {
         expectLatePluginPayloads: Boolean = false,
         browserDisguiseConfig: com.webtoapp.core.appearance.BrowserDisguiseConfig? = null,
         deviceDisguiseConfig: com.webtoapp.core.appearance.DeviceDisguiseConfig? = null,
-        /**
-         * The app's own origin URL (target URL / local base). Only consumed by the GeckoView
-         * path, which builds its NativeBridge inside the engine; the System WebView path gets
-         * the same value from the host's own bridge construction sites.
-         */
         appOriginUrl: String = "",
         webProfileName: String? = null
     ): BrowserSurface {
@@ -210,8 +205,9 @@ fun WebViewCallbacks.toBrowserEngineCallback(): BrowserEngineCallback {
             userAgent: String,
             contentDisposition: String,
             mimeType: String,
-            contentLength: Long
-        ) = source.onDownloadStart(url, userAgent, contentDisposition, mimeType, contentLength)
+            contentLength: Long,
+            referrer: String?
+        ) = source.onDownloadStart(url, userAgent, contentDisposition, mimeType, contentLength, referrer)
 
         override fun onExternalDownloadResponse(
             url: String,

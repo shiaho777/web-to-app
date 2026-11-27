@@ -17,22 +17,11 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 
-/**
- * Regression for the packaged-app notification gap: HTML / FRONTEND apps are
- * served by LocalHttpServer on 127.0.0.1, which `shouldMinimizeLocalRuntimeInjection`
- * treats as a local-runtime page — and `injectNotificationPolyfill` used to bail on
- * that gate, so `window.Notification` stayed undefined even with the
- * `enableNotificationPolyfill` toggle on (remote-https WEB apps got it; LAN-hosted
- * dev sites on 192.168.x.x / *.local hit the same skip). The polyfill only *adds*
- * APIs backed by NativeBridge and the toggle is opt-in, so it must install on
- * local-runtime pages like every other additive shim (#1023 pattern).
- */
 @RunWith(RobolectricTestRunner::class)
 class WebViewManagerNotificationPolyfillTest {
 
     private val context: Context = ApplicationProvider.getApplicationContext()
 
-    /** Records every evaluateJavascript call; ShadowWebView only keeps the last. */
     private class RecordingWebView(context: Context) : WebView(context) {
         val scripts = mutableListOf<String>()
 
@@ -65,7 +54,8 @@ class WebViewManagerNotificationPolyfillTest {
             userAgent: String,
             contentDisposition: String,
             mimeType: String,
-            contentLength: Long
+            contentLength: Long,
+            referrer: String?
         ) {}
     }
 

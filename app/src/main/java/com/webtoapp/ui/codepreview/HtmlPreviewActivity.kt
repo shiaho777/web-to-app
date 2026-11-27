@@ -49,7 +49,6 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 
-/** Bounded console buffer: page console spam must not grow state without limit. */
 private const val CONSOLE_LOG_CAP = 500
 
 class HtmlPreviewActivity : ComponentActivity() {
@@ -217,7 +216,11 @@ private fun HtmlPreviewScreen(
                             } catch (_: Throwable) {  }
 
                             lifecycleScope?.let { scope ->
-                                val downloadBridge = com.webtoapp.core.webview.DownloadBridge(ctx, scope)
+                                val downloadBridge = com.webtoapp.core.webview.DownloadBridge(
+                                    ctx,
+                                    scope,
+                                    currentPageUrl = { url }
+                                )
                                 addJavascriptInterface(downloadBridge, com.webtoapp.core.webview.DownloadBridge.JS_INTERFACE_NAME)
 
                                 val printBridge = com.webtoapp.core.webview.PrintBridge(
@@ -350,9 +353,6 @@ private fun WebView.setupWebView(
 
         databaseEnabled = true
 
-        // Local HTML preview: allow gesture-free media playback so <audio>/<video>
-        // (including data: sources and scripted play()) behaves like the app
-        // preview in WebViewActivity, which forces this off for HTML apps.
         mediaPlaybackRequiresUserGesture = false
     }
 

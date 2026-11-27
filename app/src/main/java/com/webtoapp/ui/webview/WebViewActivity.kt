@@ -1050,7 +1050,8 @@ open class WebViewActivity : AppCompatActivity() {
                             lifecycleScope,
                             effectiveDownloadConfig?.downloadLocationMode ?: com.webtoapp.data.model.DownloadLocationMode.SYSTEM_DOWNLOAD,
                             effectiveDownloadConfig?.customDownloadDirUri ?: "",
-                            effectiveDownloadConfig?.mediaAlbumName ?: ""
+                            effectiveDownloadConfig?.mediaAlbumName ?: "",
+                            currentPageUrl = { wv.url }
                         )
                         wv.addJavascriptInterface(downloadBridge, com.webtoapp.core.webview.DownloadBridge.JS_INTERFACE_NAME)
                     }
@@ -3080,7 +3081,8 @@ fun WebViewScreen(
                 userAgent: String,
                 contentDisposition: String,
                 mimeType: String,
-                contentLength: Long
+                contentLength: Long,
+                referrer: String?
             ) {
 
                 val effectiveApp = webApp ?: previewApp
@@ -3090,8 +3092,7 @@ fun WebViewScreen(
                     userAgent = userAgent,
                     contentDisposition = contentDisposition,
                     mimeType = mimeType,
-                    contentLength = contentLength,
-                    scope = scope,
+                    referrer = referrer,
                     downloadLocationMode = effectiveApp?.webViewConfig?.downloadLocationMode
                         ?: com.webtoapp.data.model.DownloadLocationMode.SYSTEM_DOWNLOAD,
                     customDownloadDirUri = effectiveApp?.webViewConfig?.customDownloadDirUri ?: "",

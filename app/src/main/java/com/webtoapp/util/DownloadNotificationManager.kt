@@ -2,23 +2,28 @@ package com.webtoapp.util
 
 import android.annotation.SuppressLint
 import android.app.DownloadManager
-import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.database.Cursor
 import android.net.Uri
 import android.os.Build
-import android.os.Handler
-import android.os.Looper
+import android.os.SystemClock
 import com.webtoapp.core.logging.AppLogger
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import com.webtoapp.core.i18n.Strings
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -54,10 +59,11 @@ class DownloadNotificationManager(private val context: Context) {
 
     private val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
     private val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-    private val handler = Handler(Looper.getMainLooper())
+    private val pollingScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
     private val activeDownloads = mutableMapOf<Long, DownloadInfo>()
-    private var progressRunnable: Runnable? = null
+    private var pollingJob: Job? = null
+    private var lastQueryErrorAt: Long? = null
 
     private var downloadReceiver: BroadcastReceiver? = null
 
@@ -83,9 +89,7 @@ class DownloadNotificationManager(private val context: Context) {
             override fun onReceive(context: Context?, intent: Intent?) {
                 if (intent?.action == DownloadManager.ACTION_DOWNLOAD_COMPLETE) {
                     val downloadId = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1)
-                    if (downloadId != -1L) {
-                        handleDownloadComplete(downloadId)
-                    }
+                    if (downloadId in activeDownloads) startProgressPolling()
                 }
             }
         }
@@ -100,81 +104,104 @@ class DownloadNotificationManager(private val context: Context) {
     }
 
     fun trackDownload(downloadId: Long, fileName: String, mimeType: String) {
-        activeDownloads[downloadId] = DownloadInfo(
-            id = downloadId,
-            fileName = fileName,
-            mimeType = mimeType,
-            progress = 0,
-            totalBytes = 0,
-            downloadedBytes = 0
-        )
-
-        showProgressNotification()
-
-        startProgressPolling()
+        pollingScope.launch {
+            activeDownloads[downloadId] = DownloadInfo(
+                id = downloadId,
+                fileName = fileName,
+                mimeType = mimeType
+            )
+            showProgressNotification()
+            startProgressPolling()
+        }
     }
 
     private fun startProgressPolling() {
-        progressRunnable?.let { handler.removeCallbacks(it) }
-
-        progressRunnable = object : Runnable {
-            override fun run() {
-                if (activeDownloads.isEmpty()) {
-                    notificationManager.cancel(PROGRESS_NOTIFICATION_ID)
-                    return
+        if (pollingJob?.isActive == true) return
+        pollingJob = pollingScope.launch {
+            while (activeDownloads.isNotEmpty()) {
+                val expected = activeDownloads.keys.toList()
+                val rows = withContext(Dispatchers.IO) { queryProgress(expected) }
+                if (rows != null) {
+                    for (id in expected) {
+                        val tracked = activeDownloads[id] ?: continue
+                        val row = rows[id]
+                        if (row == null) activeDownloads.remove(id)
+                        else applyProgress(tracked, row)
+                    }
+                    showProgressNotification()
                 }
-
-                updateDownloadProgress()
-                showProgressNotification()
-
-                handler.postDelayed(this, 500)
+                if (activeDownloads.isNotEmpty()) delay(if (rows == null) 2_000 else 500)
             }
         }
-
-        handler.post(progressRunnable!!)
     }
 
-    private fun updateDownloadProgress() {
-        val idsToRemove = mutableListOf<Long>()
+    private data class DownloadRow(
+        val status: Int,
+        val reason: Int,
+        val bytes: Long,
+        val total: Long,
+        val uri: String?,
+        val mime: String?
+    )
 
-        activeDownloads.forEach { (downloadId, info) ->
-            val query = DownloadManager.Query().setFilterById(downloadId)
-            val cursor: Cursor? = downloadManager.query(query)
-
-            cursor?.use {
-                if (it.moveToFirst()) {
-                    val statusIndex = it.getColumnIndex(DownloadManager.COLUMN_STATUS)
-                    val totalIndex = it.getColumnIndex(DownloadManager.COLUMN_TOTAL_SIZE_BYTES)
-                    val downloadedIndex = it.getColumnIndex(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR)
-
-                    if (statusIndex >= 0 && totalIndex >= 0 && downloadedIndex >= 0) {
-                        val status = it.getInt(statusIndex)
-                        val totalBytes = it.getLong(totalIndex)
-                        val downloadedBytes = it.getLong(downloadedIndex)
-
-                        info.totalBytes = totalBytes
-                        info.downloadedBytes = downloadedBytes
-                        info.progress = if (totalBytes > 0) {
-                            ((downloadedBytes * 100) / totalBytes).toInt()
-                        } else {
-                            0
-                        }
-
-                        when (status) {
-                            DownloadManager.STATUS_SUCCESSFUL,
-                            DownloadManager.STATUS_FAILED -> {
-                                idsToRemove.add(downloadId)
-                            }
-                        }
+    private fun queryProgress(ids: List<Long>): Map<Long, DownloadRow>? {
+        return try {
+            val rows = mutableMapOf<Long, DownloadRow>()
+            for (batch in ids.chunked(100)) {
+                val query = DownloadManager.Query().setFilterById(*batch.toLongArray())
+                val cursor = downloadManager.query(query) ?: return null
+                cursor.use {
+                    val id = it.getColumnIndexOrThrow(DownloadManager.COLUMN_ID)
+                    val status = it.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS)
+                    val reason = it.getColumnIndexOrThrow(DownloadManager.COLUMN_REASON)
+                    val bytes = it.getColumnIndexOrThrow(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR)
+                    val total = it.getColumnIndexOrThrow(DownloadManager.COLUMN_TOTAL_SIZE_BYTES)
+                    val uri = it.getColumnIndexOrThrow(DownloadManager.COLUMN_LOCAL_URI)
+                    val mime = it.getColumnIndexOrThrow(DownloadManager.COLUMN_MEDIA_TYPE)
+                    while (it.moveToNext()) {
+                        rows[it.getLong(id)] = DownloadRow(
+                            it.getInt(status), it.getInt(reason), it.getLong(bytes), it.getLong(total),
+                            it.getString(uri), it.getString(mime)
+                        )
                     }
-                } else {
-
-                    idsToRemove.add(downloadId)
                 }
             }
+            rows
+        } catch (e: RuntimeException) {
+            val now = SystemClock.elapsedRealtime()
+            if (lastQueryErrorAt?.let { now - it < 30_000 } != true) {
+                lastQueryErrorAt = now
+                AppLogger.w(TAG, "Could not query system downloads", e)
+            }
+            null
         }
+    }
 
-        idsToRemove.forEach { activeDownloads.remove(it) }
+    private fun applyProgress(info: DownloadInfo, row: DownloadRow) {
+        if (row.status != info.status || row.reason != info.reason) {
+            AppLogger.d(TAG, "Download id=${info.id} status=${row.status} reason=${row.reason} bytes=${row.bytes} total=${row.total}")
+        }
+        info.status = row.status
+        info.reason = row.reason
+        info.downloadedBytes = row.bytes
+        info.totalBytes = row.total
+        info.progress = if (row.total > 0) (row.bytes.toDouble() * 100 / row.total).toInt().coerceIn(0, 100) else 0
+        val mime = row.mime ?: info.mimeType
+        when (row.status) {
+            DownloadManager.STATUS_SUCCESSFUL -> {
+                activeDownloads.remove(info.id)
+                if (row.bytes == 0L && DownloadArtifact.isApk(info.fileName, mime)) {
+                    showDownloadFailedNotification(info.id, info.fileName, Strings.notifDownloadEmptyResponse)
+                } else {
+                    showDownloadCompleteNotification(info.id, info.fileName, row.uri, mime)
+                }
+            }
+            DownloadManager.STATUS_FAILED -> {
+                activeDownloads.remove(info.id)
+                val message = if (row.reason in 400..599) Strings.httpErrorCode(row.reason) else "#${row.reason}"
+                showDownloadFailedNotification(info.id, info.fileName, message)
+            }
+        }
     }
 
     private fun showProgressNotification() {
@@ -195,59 +222,35 @@ class DownloadNotificationManager(private val context: Context) {
 
         val totalDownloaded = activeDownloads.values.sumOf { it.downloadedBytes }
         val totalSize = activeDownloads.values.sumOf { it.totalBytes }
-        val progressText = if (totalSize > 0) {
-            "${formatFileSize(totalDownloaded)} / ${formatFileSize(totalSize)}"
-        } else {
-            "${formatFileSize(totalDownloaded)}"
-        }
+        val progressText = transferText(totalDownloaded, totalSize)
+        val waiting = activeDownloads.values.firstNotNullOfOrNull { info ->
+            when (info.status) {
+                DownloadManager.STATUS_PENDING -> Strings.notifDownloadQueued
+                DownloadManager.STATUS_PAUSED -> when (info.reason) {
+                    DownloadManager.PAUSED_WAITING_TO_RETRY -> Strings.notifDownloadRetrying
+                    DownloadManager.PAUSED_QUEUED_FOR_WIFI -> Strings.notifDownloadWaitingWifi
+                    DownloadManager.PAUSED_WAITING_FOR_NETWORK -> Strings.notifDownloadWaitingNetwork
+                    else -> Strings.notifDownloadQueued
+                }
+                else -> null
+            }
+        }.takeIf { activeDownloads.values.none { it.status == DownloadManager.STATUS_RUNNING } }
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.stat_sys_download)
             .setContentTitle(title)
-            .setContentText(progressText)
+            .setContentText(if (waiting == null) progressText else "$waiting · $progressText")
             .setProgress(100, avgProgress, totalSize <= 0)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
+            .setContentIntent(PendingIntent.getActivity(
+                context, PROGRESS_NOTIFICATION_ID, Intent(DownloadManager.ACTION_VIEW_DOWNLOADS),
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            ))
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .build()
 
         notificationManager.notify(PROGRESS_NOTIFICATION_ID, notification)
-    }
-
-    private fun handleDownloadComplete(downloadId: Long) {
-        val info = activeDownloads.remove(downloadId)
-
-        val query = DownloadManager.Query().setFilterById(downloadId)
-        val cursor: Cursor? = downloadManager.query(query)
-
-        cursor?.use {
-            if (it.moveToFirst()) {
-                val statusIndex = it.getColumnIndex(DownloadManager.COLUMN_STATUS)
-                val localUriIndex = it.getColumnIndex(DownloadManager.COLUMN_LOCAL_URI)
-                val titleIndex = it.getColumnIndex(DownloadManager.COLUMN_TITLE)
-                val mimeTypeIndex = it.getColumnIndex(DownloadManager.COLUMN_MEDIA_TYPE)
-
-                if (statusIndex >= 0) {
-                    val status = it.getInt(statusIndex)
-                    val localUri = if (localUriIndex >= 0) it.getString(localUriIndex) else null
-                    val title = if (titleIndex >= 0) it.getString(titleIndex) else info?.fileName ?: "File"
-                    val mimeType = if (mimeTypeIndex >= 0) it.getString(mimeTypeIndex) else info?.mimeType ?: "*/*"
-
-                    when (status) {
-                        DownloadManager.STATUS_SUCCESSFUL -> {
-                            showDownloadCompleteNotification(downloadId, title, localUri, mimeType)
-                        }
-                        DownloadManager.STATUS_FAILED -> {
-                            showDownloadFailedNotification(downloadId, title)
-                        }
-                    }
-                }
-            }
-        }
-
-        if (activeDownloads.isEmpty()) {
-            notificationManager.cancel(PROGRESS_NOTIFICATION_ID)
-        }
     }
 
     private fun showDownloadCompleteNotification(
@@ -305,13 +308,13 @@ class DownloadNotificationManager(private val context: Context) {
         notificationManager.notify(notificationId, builder.build())
     }
 
-    private fun showDownloadFailedNotification(downloadId: Long, fileName: String) {
+    private fun showDownloadFailedNotification(downloadId: Long, fileName: String, reason: String) {
         val notificationId = (COMPLETE_NOTIFICATION_ID_BASE + downloadId).toInt()
 
         val builder = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.stat_notify_error)
             .setContentTitle(Strings.notifDownloadFailed)
-            .setContentText(fileName)
+            .setContentText(Strings.notifSaveFailedWithReason.format(fileName, reason))
             .setAutoCancel(true)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
 
@@ -376,6 +379,23 @@ class DownloadNotificationManager(private val context: Context) {
         notificationManager.notify(notificationId, notification)
         return notificationId
     }
+
+    fun updateTransferProgress(notificationId: Int, fileName: String, downloaded: Long, total: Long) {
+        val progress = if (total > 0) ((downloaded * 100) / total).toInt().coerceIn(0, 100) else 0
+        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(android.R.drawable.stat_sys_download)
+            .setContentTitle(Strings.notifDownloadingFile.format(fileName))
+            .setContentText(transferText(downloaded, total))
+            .setProgress(100, progress, total <= 0)
+            .setOngoing(true)
+            .setOnlyAlertOnce(true)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .build()
+        notificationManager.notify(notificationId, notification)
+    }
+
+    private fun transferText(downloaded: Long, total: Long): String =
+        if (total > 0) "${formatFileSize(downloaded)} / ${formatFileSize(total)}" else formatFileSize(downloaded)
 
     fun updateProgress(notificationId: Int, fileName: String, progress: Int) {
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
@@ -481,8 +501,8 @@ class DownloadNotificationManager(private val context: Context) {
 
     private fun cleanup() {
         try {
-            progressRunnable?.let { handler.removeCallbacks(it) }
-            progressRunnable = null
+            pollingScope.cancel()
+            pollingJob = null
             downloadReceiver?.let {
                 context.unregisterReceiver(it)
             }
@@ -500,6 +520,8 @@ class DownloadNotificationManager(private val context: Context) {
         val mimeType: String,
         var progress: Int = 0,
         var totalBytes: Long = 0,
-        var downloadedBytes: Long = 0
+        var downloadedBytes: Long = 0,
+        var status: Int = DownloadManager.STATUS_PENDING,
+        var reason: Int = 0
     )
 }
