@@ -44,7 +44,8 @@ internal class WebDownloadTransfer(
         val minRemaining: Long = 8 * 1024 * 1024,
         val firstPartBytes: Int = 64 * 1024,
         val partBytes: Int = 512 * 1024,
-        val rangeStartupMs: Long = 7_000
+        val rangeStartupMs: Long = 7_000,
+        val rangeHandoffAfterMs: Long = 1_500
     )
 
     private data class Representation(val size: Long, val mime: String, val tag: String?, val identity: Boolean)
@@ -267,7 +268,7 @@ internal class WebDownloadTransfer(
             val url = active.url
             val referrer = active.referrer
             val ranges = ParallelDownloadInput.start(
-                delivered, totalBytes, policy.firstPartBytes, policy.partBytes,
+                delivered, totalBytes, policy.firstPartBytes, policy.partBytes, policy.rangeHandoffAfterMs, nanoTime,
                 createCall = { connections, start, end ->
                     val transport = client.newBuilder()
                         .connectTimeout(8, TimeUnit.SECONDS)
@@ -282,6 +283,9 @@ internal class WebDownloadTransfer(
                 canRetry = { error -> error !is InvalidRepresentation && canRecover(error, readingBody = true) },
                 onRetry = { start, end, error ->
                     log("range retry host=${url.host} start=$start end=$end reason=${error.javaClass.simpleName}")
+                },
+                onHandoff = { start, end ->
+                    log("range handoff host=${url.host} start=$start end=$end")
                 }
             ) ?: return
             if (!ranges.awaitFirstBytes(policy.rangeStartupMs)) {
