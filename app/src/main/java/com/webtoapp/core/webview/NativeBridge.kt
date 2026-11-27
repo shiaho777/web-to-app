@@ -1341,7 +1341,34 @@ await WtaDirectory.write('exports/image.png', pngBytes);
     }
 
     @JavascriptInterface
-    fun httpRequest(requestJson: String): String {
+    fun httpRequest(requestJson: String): String = executeHttpRequest(requestJson) { response ->
+        response.use {
+            val bytes = it.body?.byteStream()?.use { input ->
+                val output = ByteArrayOutputStream()
+                val buffer = ByteArray(8192)
+                while (true) {
+                    val read = input.read(buffer)
+                    if (read == -1) break
+                    if (output.size() + read > PRIVATE_NETWORK_MAX_RESPONSE_BYTES) {
+                        return@executeHttpRequest privateNetworkBridgeError(
+                            "RESPONSE_TOO_LARGE",
+                            "Private network response exceeds ${PRIVATE_NETWORK_MAX_RESPONSE_BYTES / 1024 / 1024}MB"
+                        )
+                    }
+                    output.write(buffer, 0, read)
+                }
+                output.toByteArray()
+            } ?: ByteArray(0)
+            responseMetadata(it).put("bodyBase64", Base64.encodeToString(bytes, Base64.NO_WRAP)).toString()
+        }
+    }
+
+    private fun executeHttpRequest(
+        requestJson: String,
+        start: (okhttp3.Call) -> Boolean = { true },
+        callerUrl: String? = null,
+        consume: (okhttp3.Response) -> String
+    ): String {
         if (!capabilities.privateNetwork && !corsBypass) {
             return privateNetworkBridgeError(
                 "disabled",
@@ -1349,6 +1376,7 @@ await WtaDirectory.write('exports/image.png', pngBytes);
                     "Enable the private network (or CORS bypass) capability for the native bridge in the WebToApp editor and rebuild."
             )
         }
+        var ownedCall: okhttp3.Call? = null
         return try {
             val request = org.json.JSONObject(requestJson)
             val url = request.optString("url").trim()
@@ -1359,7 +1387,7 @@ await WtaDirectory.write('exports/image.png', pngBytes);
                     AppLogger.w("NativeBridge", "Blocked CORS-bypass request to non-HTTP(S) URL: $url")
                     return privateNetworkBridgeError("URL_NOT_ALLOWED", "Only HTTP(S) URLs are allowed")
                 }
-                val pageUrl = resolveCallerPageUrl()
+                val pageUrl = callerUrl ?: resolveCallerPageUrl()
                 val appOriginIsLocal = appOriginUrl.isNotBlank() && (
                     isPrivateNetworkUrl(appOriginUrl) ||
                         appOriginUrl.startsWith("file:") ||
@@ -1393,7 +1421,7 @@ await WtaDirectory.write('exports/image.png', pngBytes);
                 return privateNetworkBridgeError("URL_NOT_ALLOWED", "Only private network HTTP(S) URLs are allowed")
             }
             if (!corsBypass) {
-                val pageUrl = resolveCallerPageUrl()
+                val pageUrl = callerUrl ?: resolveCallerPageUrl()
                 if (!isPrivateNetworkUrl(pageUrl)) {
                     AppLogger.w("NativeBridge", "Blocked private-network bridge request from non-local page: $pageUrl -> $url")
                     return privateNetworkBridgeError("CALLER_NOT_ALLOWED", "Only packaged local pages can use the private network bridge")
@@ -1463,66 +1491,160 @@ await WtaDirectory.write('exports/image.png', pngBytes);
                 baseClient
             }
 
-            client.newCall(builder.build()).execute().use { response ->
-                val responseBody = response.body
-                val bytes = responseBody?.byteStream()?.use { input ->
-                    val out = ByteArrayOutputStream()
-                    val buffer = ByteArray(8192)
-                    var total = 0
-                    while (true) {
-                        val read = input.read(buffer)
-                        if (read == -1) break
-                        total += read
-                        if (total > PRIVATE_NETWORK_MAX_RESPONSE_BYTES) {
-                            return privateNetworkBridgeError(
-                                "RESPONSE_TOO_LARGE",
-                                "Private network response exceeds ${PRIVATE_NETWORK_MAX_RESPONSE_BYTES / 1024 / 1024}MB"
-                            )
-                        }
-                        out.write(buffer, 0, read)
-                    }
-                    out.toByteArray()
-                } ?: ByteArray(0)
-
-                val responseHeaders = org.json.JSONObject()
-                response.headers.names().forEach { name ->
-                    responseHeaders.put(name, response.headers.values(name).joinToString(", "))
-                }
-
-                org.json.JSONObject().apply {
-                    put("ok", true)
-                    put("status", response.code)
-                    put("statusText", response.message)
-                    put("url", response.request.url.toString())
-                    put("headers", responseHeaders)
-                    put("bodyBase64", Base64.encodeToString(bytes, Base64.NO_WRAP))
-                }.toString()
+            val call = client.newCall(builder.build())
+            ownedCall = call
+            if (!start(call)) return privateNetworkBridgeError("ABORTED", "The request was cancelled")
+            val response = call.execute()
+            try {
+                consume(response)
+            } catch (e: Exception) {
+                response.close()
+                throw e
             }
         } catch (e: RedirectBlockedByGateException) {
             AppLogger.w("NativeBridge", "Private network bridge redirect blocked", e)
             privateNetworkBridgeError("REDIRECT_NOT_ALLOWED", e.message ?: "Redirect crossed the private/public boundary")
         } catch (e: Exception) {
-            AppLogger.e("NativeBridge", "Private network HTTP bridge request failed", e)
-            privateNetworkBridgeError("REQUEST_FAILED", e.message ?: e::class.java.simpleName)
+            if (ownedCall?.isCanceled() == true) {
+                privateNetworkBridgeError("ABORTED", "The request was cancelled")
+            } else {
+                AppLogger.e("NativeBridge", "Private network HTTP bridge request failed", e)
+                privateNetworkBridgeError("REQUEST_FAILED", e.message ?: e::class.java.simpleName)
+            }
+        }
+    }
+
+    private fun responseMetadata(response: okhttp3.Response): org.json.JSONObject {
+        val headers = org.json.JSONObject()
+        response.headers.names().forEach { name ->
+            if (!name.equals("Set-Cookie", ignoreCase = true) && !name.equals("Set-Cookie2", ignoreCase = true)) {
+                headers.put(name, response.headers.values(name).joinToString(", "))
+            }
+        }
+        return org.json.JSONObject().apply {
+            put("ok", true)
+            put("status", response.code)
+            put("statusText", response.message)
+            put("url", response.request.url.toString())
+            put("headers", headers)
+            put("contentLength", response.body?.contentLength() ?: -1L)
         }
     }
 
     @JavascriptInterface
     fun httpRequestAsync(requestJson: String, callbackId: String) {
         scope.launch(Dispatchers.IO) {
-            val result = httpRequest(requestJson)
-            val quotedId = com.webtoapp.util.JsStrings.quote(callbackId)
-            val quotedResult = com.webtoapp.util.JsStrings.quote(result)
-            withContext(Dispatchers.Main) {
-                try {
-                    webViewProvider()?.evaluateJavascript(
-                        "window.__wtaNativeHttpResponse && window.__wtaNativeHttpResponse($quotedId, $quotedResult);",
-                        null
-                    )
-                } catch (e: Exception) {
-                    AppLogger.w("NativeBridge", "Failed to deliver async bridge response", e)
+            deliverHttpResult(callbackId, httpRequest(requestJson))
+        }
+    }
+
+    private val pendingHttp = mutableMapOf<String, BridgeHttpCancellation>()
+
+    @JavascriptInterface
+    fun httpRequestStreamAsync(requestJson: String, callbackId: String) {
+        val initialView = webViewProvider()
+        val initialPage = initialView?.let(WebViewStreamRoutes::current)
+        val transfer = BridgeHttpCancellation()
+        val accepted = synchronized(pendingHttp) {
+            if (callbackId.length > 128 || pendingHttp.size >= 32 || pendingHttp.containsKey(callbackId)) false else {
+                pendingHttp[callbackId] = transfer
+                true
+            }
+        }
+        if (!accepted) {
+            scope.launch { deliverHttpResult(callbackId, privateNetworkBridgeError("BUSY", "Too many requests in this page")) }
+            return
+        }
+        val job = scope.launch(Dispatchers.IO) {
+            val owner = if (initialView != null && initialPage != null) initialView to initialPage else withContext(Dispatchers.Main) {
+                val view = webViewProvider() ?: return@withContext null
+                val url = view.url ?: return@withContext null
+                val page = WebViewStreamRoutes.page(view, url) ?: return@withContext null
+                view to page
+            }
+            val (view, page) = owner ?: return@launch
+            val watch = page.watch(transfer) ?: return@launch
+            var streamUrl: String? = null
+            var delivered = false
+            try {
+                val result = executeHttpRequest(requestJson, transfer::attach, page.callerUrl) { response ->
+                    val metadata = responseMetadata(response)
+                    val body = response.body
+                    if (body == null || body.contentLength() == 0L ||
+                        response.request.method == "HEAD" || response.code in setOf(204, 205, 304)
+                    ) {
+                        response.close()
+                    } else {
+                        val headers = buildMap {
+                            put("Cache-Control", "no-store")
+                            put("X-Content-Type-Options", "nosniff")
+                            put("Content-Security-Policy", "sandbox; default-src 'none'")
+                            val length = body.contentLength()
+                            if (length >= 0) put("Content-Length", length.toString())
+                        }
+                        streamUrl = page.register(oneShot = true, close = {
+                            transfer.close()
+                            response.close()
+                        }) {
+                            android.webkit.WebResourceResponse(
+                                "application/octet-stream", null, 200, "OK", headers, body.byteStream()
+                            )
+                        }
+                        if (streamUrl == null) {
+                            response.close()
+                            return@executeHttpRequest privateNetworkBridgeError("BUSY", "The response could not be transferred")
+                        }
+                        metadata.put("streamUrl", streamUrl)
+                    }
+                    metadata.toString()
+                }
+                withContext(Dispatchers.Main) {
+                    if (!transfer.isClosed() && webViewProvider() === view && WebViewStreamRoutes.isCurrent(view, page)) {
+                        delivered = deliverHttpResultToView(view, callbackId, result)
+                    }
+                }
+            } finally {
+                watch.close()
+                if (!delivered) {
+                    transfer.close()
+                    streamUrl?.let(page::release)
                 }
             }
+        }
+        job.invokeOnCompletion { cause ->
+            synchronized(pendingHttp) { if (pendingHttp[callbackId] === transfer) pendingHttp.remove(callbackId) }
+            if (cause != null) transfer.close()
+        }
+    }
+
+    @JavascriptInterface
+    fun cancelHttpRequest(callbackId: String) {
+        val transfer = synchronized(pendingHttp) { pendingHttp[callbackId] }
+        transfer?.close()
+    }
+
+    @JavascriptInterface
+    fun releaseStreamUrl(url: String) {
+        val view = webViewProvider() ?: return
+        WebViewStreamRoutes.page(view, resolveCallerPageUrl())?.release(url)
+    }
+
+    private suspend fun deliverHttpResult(callbackId: String, result: String) = withContext(Dispatchers.Main) {
+        webViewProvider()?.let { deliverHttpResultToView(it, callbackId, result) }
+    }
+
+    private fun deliverHttpResultToView(view: WebView, callbackId: String, result: String): Boolean {
+        val quotedId = com.webtoapp.util.JsStrings.quote(callbackId)
+        val quotedResult = com.webtoapp.util.JsStrings.quote(result)
+        return try {
+            view.evaluateJavascript(
+                "window.__wtaNativeHttpResponse && window.__wtaNativeHttpResponse($quotedId, $quotedResult);",
+                null
+            )
+            true
+        } catch (e: Exception) {
+            AppLogger.w("NativeBridge", "Failed to deliver async bridge response", e)
+            false
         }
     }
 
@@ -2305,5 +2427,20 @@ class PrivateNetworkNativeBridgeAdapter(
     @JavascriptInterface
     fun httpRequestAsync(requestJson: String, callbackId: String) {
         delegate.httpRequestAsync(requestJson, callbackId)
+    }
+
+    @JavascriptInterface
+    fun httpRequestStreamAsync(requestJson: String, callbackId: String) {
+        delegate.httpRequestStreamAsync(requestJson, callbackId)
+    }
+
+    @JavascriptInterface
+    fun cancelHttpRequest(callbackId: String) {
+        delegate.cancelHttpRequest(callbackId)
+    }
+
+    @JavascriptInterface
+    fun releaseStreamUrl(url: String) {
+        delegate.releaseStreamUrl(url)
     }
 }

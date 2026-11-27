@@ -30,7 +30,7 @@ function setup({ scope = 'CORS_BYPASS', browser, bridge, bridgeAvailable = true 
     }
     vm.runInNewContext(script, {
         window, URL, Request, Response, Headers, Blob, ReadableStream, DOMException,
-        TextEncoder, Uint8Array, URLSearchParams, ArrayBuffer, atob, btoa,
+        TextEncoder, Uint8Array, URLSearchParams, ArrayBuffer, atob, btoa, setTimeout, clearTimeout,
     });
     return { window, calls, routes: () => calls.map(call => call.transport) };
 }
