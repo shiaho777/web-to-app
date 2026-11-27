@@ -307,12 +307,6 @@ val syncShellRuntimeSources by tasks.registering(Sync::class) {
 
 tasks.named("preBuild") { dependsOn(syncShellRuntimeSources) }
 
-/**
- * Emits reduced Strings.kt / StringsA-E.kt into build/generated/shellStrings:
- * only the members referenced by the synced runtime sources (plus the Strings
- * language-state infrastructure). Editor-only strings stay out of the shell
- * template and therefore out of every generated APK.
- */
 abstract class GenerateShellStringsTask : DefaultTask() {
     @get:InputFile
     @get:PathSensitive(PathSensitivity.NONE)
