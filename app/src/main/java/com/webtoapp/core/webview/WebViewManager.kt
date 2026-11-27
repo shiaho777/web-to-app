@@ -2222,12 +2222,17 @@ class WebViewManager(
                     }
                 }
 
-                if (request.isForMainFrame && isOAuthServiceRequest(url)) {
+                val documentDownload = request.isForMainFrame && config.downloadEnabled &&
+                    DocumentDownloadPolicy.isUnrenderableDocumentUrl(url)
+                val githubReleaseDownload = documentDownload && request.method == "GET" &&
+                    DocumentDownloadPolicy.isGitHubReleaseAssetUrl(url)
+
+                if (!githubReleaseDownload && request.isForMainFrame && isOAuthServiceRequest(url)) {
                     AppLogger.d("WebViewManager", "Keeping OAuth navigation in-app: $url")
                     return false
                 }
 
-                if (config.openExternalLinks && isExternalUrl(url, view?.url)) {
+                if (!githubReleaseDownload && config.openExternalLinks && isExternalUrl(url, view?.url)) {
                     if (isLocalAppUrl(view?.url) && !isUserGesture) {
                         return false
                     }
@@ -2235,10 +2240,7 @@ class WebViewManager(
                     return true
                 }
 
-                if (request.isForMainFrame &&
-                    config.downloadEnabled &&
-                    DocumentDownloadPolicy.isUnrenderableDocumentUrl(url)
-                ) {
+                if (documentDownload) {
                     AppLogger.d("WebViewManager", "Intercepting unrenderable document as download: $url")
                     noteDownloadInterceptedUrl(url)
                     callbacks.onDownloadStart(

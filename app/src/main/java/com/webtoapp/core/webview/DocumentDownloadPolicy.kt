@@ -1,17 +1,11 @@
 package com.webtoapp.core.webview
 
-/**
- * Classifies navigations and download URLs that need special handling around
- * Chromium's inability to render documents inline (issue #601: tapping a PDF
- * served by the embedded webserver navigated the main frame to an unrenderable
- * response — a black page — and never reached the download listener).
- *
- * Kept free of Android dependencies so it is unit-testable on the plain JVM.
- */
+import java.net.URI
+
 object DocumentDownloadPolicy {
 
-    /** Document types Chromium cannot display inline; served without a
-     *  Content-Disposition they navigate to a blank frame instead of downloading. */
+    private val GITHUB_RELEASE_ASSET_PATH = Regex("/[^/]+/[^/]+/releases/download/[^/]+/[^/]+")
+
     private val UNRENDERABLE_EXTENSIONS = setOf(
         "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx",
         "zip", "rar", "7z", "epub", "apk"
@@ -32,21 +26,23 @@ object DocumentDownloadPolicy {
         "apk" to "application/vnd.android.package-archive"
     )
 
-    /**
-     * True for http(s) main-frame targets the WebView would render as a blank or
-     * garbled frame; those navigations should be handed to the download pipeline.
-     */
     fun isUnrenderableDocumentUrl(url: String): Boolean {
         if (!url.startsWith("http://") && !url.startsWith("https://")) return false
         val ext = urlExtension(url) ?: return false
         return ext in UNRENDERABLE_EXTENSIONS
     }
 
+    fun isGitHubReleaseAssetUrl(url: String): Boolean {
+        val uri = runCatching { URI(url) }.getOrNull() ?: return false
+        return uri.scheme.equals("https", ignoreCase = true) &&
+            uri.host.equals("github.com", ignoreCase = true) &&
+            uri.userInfo == null && (uri.port == -1 || uri.port == 443) &&
+            GITHUB_RELEASE_ASSET_PATH.matches(uri.rawPath.orEmpty())
+    }
+
     fun mimeTypeFor(url: String): String =
         urlExtension(url)?.let { MIME_BY_EXTENSION[it] } ?: "application/octet-stream"
 
-    /** The app's own embedded runtimes bind these hosts; downloads from them are best
-     *  fetched in-process instead of through the out-of-process system DownloadManager. */
     fun isLoopbackUrl(url: String): Boolean {
         val host = uriHost(url) ?: return false
         return host == "127.0.0.1" || host == "localhost" || host == "::1"
