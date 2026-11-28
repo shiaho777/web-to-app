@@ -5,7 +5,7 @@
     "stargazers_count": 206,
     "forks_count": 47,
     "language": "Python",
-    "pushed_at": "2026-11-25T07:35:01Z",
+    "pushed_at": "2026-11-27T15:37:25Z",
     "html_url": "https://github.com/shiaho777/WebToApp"
   },
   {
@@ -50,7 +50,7 @@
     "stargazers_count": 23,
     "forks_count": 9,
     "language": "Kotlin",
-    "pushed_at": "2026-11-27T09:38:13Z",
+    "pushed_at": "2026-11-27T14:05:05Z",
     "html_url": "https://github.com/shiaho777/andmx"
   },
   {
@@ -66,7 +66,7 @@
     "name": "pneuma-android",
     "description": "Pneuma · 一部会呼吸的 AI 虚拟手机：拟真桌面、聊天、朋友圈、查手机、地图定位、语音/视频通话、日记日历。AI 角色有作息、日程、位置和长期记忆，会主动发消息、发帖互动。数据全在设备本地，联网只调你自己配置的 LLM/生图/语音 API。",
     "stargazers_count": 20,
-    "forks_count": 17,
+    "forks_count": 18,
     "language": "TypeScript",
     "pushed_at": "2026-11-12T10:06:27Z",
     "html_url": "https://github.com/shiaho777/pneuma-android"
@@ -75,7 +75,7 @@
     "name": "An-Harness",
     "description": "Android-first on-device AI agent harness — exploring everything possible on Android",
     "stargazers_count": 18,
-    "forks_count": 5,
+    "forks_count": 4,
     "language": "Kotlin",
     "pushed_at": "2026-11-18T08:26:20Z",
     "html_url": "https://github.com/shiaho777/An-Harness"
@@ -167,7 +167,7 @@
     "stargazers_count": 10,
     "forks_count": 0,
     "language": "Python",
-    "pushed_at": "2026-11-27T09:38:00Z",
+    "pushed_at": "2026-11-27T21:58:56Z",
     "html_url": "https://github.com/shiaho777/pyj-j"
   },
   {
@@ -239,7 +239,7 @@
     "stargazers_count": 4,
     "forks_count": 0,
     "language": "Kotlin",
-    "pushed_at": "2026-11-25T15:06:09Z",
+    "pushed_at": "2026-11-27T14:53:28Z",
     "html_url": "https://github.com/shiaho777/ailiaili"
   },
   {
@@ -266,7 +266,7 @@
     "stargazers_count": 0,
     "forks_count": 0,
     "language": "Kotlin",
-    "pushed_at": "2026-11-27T04:12:11Z",
+    "pushed_at": "2026-11-27T13:24:05Z",
     "html_url": "https://github.com/shiaho777/cutbud"
   },
   {
@@ -286,15 +286,6 @@
     "language": null,
     "pushed_at": "2026-11-21T06:14:13Z",
     "html_url": "https://github.com/shiaho777/web-to-app-runtimes"
-  },
-  {
-    "name": "Liora",
-    "description": "An open-source browser framework: the shell is the core, the kernel is swappable.",
-    "stargazers_count": 0,
-    "forks_count": 0,
-    "language": "Svelte",
-    "pushed_at": "2026-11-18T14:43:06Z",
-    "html_url": "https://github.com/shiaho777/Liora"
   },
   {
     "name": "nixiang",
