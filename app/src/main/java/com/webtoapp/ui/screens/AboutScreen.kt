@@ -140,7 +140,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-private val inverseAboutIconColors = ColorFilter.colorMatrix(
+private val inverseContactIconColors = ColorFilter.colorMatrix(
     ColorMatrix(
         floatArrayOf(
             -1f, 0f, 0f, 0f, 255f,
@@ -560,8 +560,7 @@ private fun AboutHeaderCard(
                 modifier = Modifier
                     .size(56.dp)
                     .clip(RoundedCornerShape(WtaRadius.Card)),
-                contentScale = ContentScale.Crop,
-                colorFilter = if (LocalIsDarkTheme.current) null else inverseAboutIconColors
+                contentScale = ContentScale.Crop
             )
             Text(
                 text = "WebToApp",
@@ -731,8 +730,7 @@ private fun ContactGrid() {
                 iconAsset = "docs",
                 label = docsLabel,
                 value = "shiaho777.github.io",
-                action = ContactAction.OpenUrl("https://shiaho777.github.io/web-to-app/"),
-                invertInLightTheme = true
+                action = ContactAction.OpenUrl("https://shiaho777.github.io/web-to-app/")
             ),
             ContactEntry(
                 iconAsset = "telegram",
@@ -921,7 +919,7 @@ private fun ContactTile(
                     .size(36.dp)
                     .clip(RoundedCornerShape(WtaRadius.IconPlate)),
                 colorFilter = if (entry.invertInLightTheme && !LocalIsDarkTheme.current) {
-                    inverseAboutIconColors
+                    inverseContactIconColors
                 } else {
                     null
                 }

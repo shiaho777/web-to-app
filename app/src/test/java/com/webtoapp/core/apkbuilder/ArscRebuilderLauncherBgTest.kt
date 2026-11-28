@@ -28,13 +28,13 @@ class ArscRebuilderLauncherBgTest {
     }
 
     @Test
-    fun `original launcher background entry value is a white color int`() {
+    fun `original launcher background entry is the default branding color`() {
         val original = readTemplateArsc()
         val entry = ArscRebuilder().findLauncherBackgroundEntry(original)
 
         assertThat(entry).isNotNull()
         assertThat(entry!![1]).isEqualTo(0x1d)
-        assertThat(entry[2]).isEqualTo(0xffffffff.toInt())
+        assertThat(entry[2]).isEqualTo(0xffecede7.toInt())
     }
 
     @Test
