@@ -52,9 +52,9 @@ RepoType: git
 Repo: https://github.com/shiaho777/web-to-app.git
 
 Builds:
-  - versionName: "2.9.5"
-    versionCode: 89
-    commit: v2.9.5
+  - versionName: "2.9.6"
+    versionCode: 90
+    commit: v2.9.6
     subdir: app
     gradle:
       - standard
@@ -69,7 +69,7 @@ UpdateCheckMode: Tags
 UpdateCheckData: app/build.gradle.kts|versionCode = (\d+)|.|versionName = "([^"]+)"
 ```
 
-Tag the same commit that GitHub Releases use (`v2.9.5`). F-Droid and GitHub then ship the same version from one tag. Update each APK through its original channel to keep the same signing key.
+Tag the same commit that GitHub Releases use (`v2.9.6`). Use the complete recipe in `metadata/com.webtoapp.yml`, which also removes development examples and sample archives and strips inactive Google dependencies before source scanning. Update each APK through its original channel to keep the same signing key.
 
 ## Do not mix templates
 
