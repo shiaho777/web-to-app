@@ -2,6 +2,23 @@
 
 const WTA_ROUTER_DIAGNOSTIC_LIMIT = 65536;
 
+const WTA_ROUTER_RANGE_CHUNK = 2097152;
+
+const WTA_ROUTER_CONTENT_TYPES = [
+    'mp3' => 'audio/mpeg', 'm4a' => 'audio/mp4', 'aac' => 'audio/aac', 'wav' => 'audio/wav',
+    'ogg' => 'audio/ogg', 'oga' => 'audio/ogg', 'opus' => 'audio/ogg', 'flac' => 'audio/flac',
+    'weba' => 'audio/webm', 'mp4' => 'video/mp4', 'm4v' => 'video/mp4', 'webm' => 'video/webm',
+    'ogv' => 'video/ogg', 'mov' => 'video/quicktime', 'mkv' => 'video/x-matroska',
+    'html' => 'text/html; charset=UTF-8', 'htm' => 'text/html; charset=UTF-8', 'css' => 'text/css',
+    'js' => 'text/javascript', 'mjs' => 'text/javascript', 'json' => 'application/json',
+    'xml' => 'application/xml', 'txt' => 'text/plain; charset=UTF-8', 'csv' => 'text/csv',
+    'png' => 'image/png', 'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'gif' => 'image/gif',
+    'svg' => 'image/svg+xml', 'webp' => 'image/webp', 'avif' => 'image/avif', 'ico' => 'image/x-icon',
+    'woff' => 'font/woff', 'woff2' => 'font/woff2', 'ttf' => 'font/ttf', 'otf' => 'font/otf',
+    'pdf' => 'application/pdf', 'zip' => 'application/zip', 'wasm' => 'application/wasm',
+    'map' => 'application/json',
+];
+
 const WTA_ROUTER_STATIC_EXTENSIONS = [
     'css', 'js', 'mjs', 'json', 'xml', 'txt', 'csv', 'png', 'jpg', 'jpeg', 'gif', 'svg', 'ico',
     'webp', 'avif', 'woff', 'woff2', 'ttf', 'otf', 'pdf', 'zip', 'mp4', 'webm', 'mp3', 'ogg', 'wav',
@@ -41,6 +58,115 @@ function wta_router_resolve(string $path, string $docRoot, string $entryFile): s
     }
 
     return $docRoot . '/' . ltrim($entryFile, '/');
+}
+
+function wta_router_file_content_type(string $file): string
+{
+    $extension = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+    if (isset(WTA_ROUTER_CONTENT_TYPES[$extension])) {
+        return WTA_ROUTER_CONTENT_TYPES[$extension];
+    }
+    if (function_exists('mime_content_type')) {
+        $detected = @mime_content_type($file);
+        if (is_string($detected) && $detected !== '') {
+            return $detected;
+        }
+    }
+    return 'application/octet-stream';
+}
+
+function wta_router_parse_range(string $header, int $size): array|false|null
+{
+    if (!preg_match('/^\s*bytes\s*=\s*(\d*)\s*-\s*(\d*)\s*$/i', $header, $m)) {
+        return null;
+    }
+    if ($m[1] === '' && $m[2] === '') {
+        return null;
+    }
+    if ($m[1] === '') {
+        $suffix = (int) $m[2];
+        if ($suffix === 0 || $size === 0) {
+            return false;
+        }
+        return [max(0, $size - $suffix), $size - 1, false];
+    }
+    $start = (int) $m[1];
+    if ($start >= $size) {
+        return false;
+    }
+    if ($m[2] === '') {
+        return [$start, $size - 1, true];
+    }
+    $end = (int) $m[2];
+    if ($end < $start) {
+        return null;
+    }
+    return [$start, min($end, $size - 1), false];
+}
+
+function wta_router_serve_range(string $file): void
+{
+    $size = (int) filesize($file);
+    $modified = (int) filemtime($file);
+    $etag = sprintf('"%x-%x"', $modified, $size);
+    $lastModified = gmdate('D, d M Y H:i:s', $modified) . ' GMT';
+
+    $range = wta_router_parse_range((string) ($_SERVER['HTTP_RANGE'] ?? ''), $size);
+    $ifRange = $_SERVER['HTTP_IF_RANGE'] ?? null;
+    if ($ifRange !== null && trim($ifRange) !== $etag && trim($ifRange) !== $lastModified) {
+        $range = null;
+    }
+
+    header('Accept-Ranges: bytes');
+    header('ETag: ' . $etag);
+    header('Last-Modified: ' . $lastModified);
+
+    if ($range === false) {
+        http_response_code(416);
+        header('Content-Range: bytes */' . $size);
+        header('Content-Length: 0');
+        return;
+    }
+
+    header('Content-Type: ' . wta_router_file_content_type($file));
+    if ($range === null) {
+        $start = 0;
+        $end = $size - 1;
+        http_response_code(200);
+    } else {
+        [$start, $end, $openEnded] = $range;
+        if ($openEnded) {
+            $end = min($end, $start + WTA_ROUTER_RANGE_CHUNK - 1);
+        }
+        http_response_code(206);
+        header("Content-Range: bytes $start-$end/$size");
+    }
+    $length = $size === 0 ? 0 : $end - $start + 1;
+    header('Content-Length: ' . $length);
+
+    if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'HEAD' || $length === 0) {
+        return;
+    }
+
+    $handle = fopen($file, 'rb');
+    if ($handle === false) {
+        return;
+    }
+    fseek($handle, $start);
+    $remaining = $length;
+    while ($remaining > 0 && !feof($handle)) {
+        $chunk = fread($handle, min(65536, $remaining));
+        if ($chunk === false || $chunk === '') {
+            break;
+        }
+        echo $chunk;
+        flush();
+        $remaining -= strlen($chunk);
+        if (connection_aborted()) {
+            break;
+        }
+    }
+    fclose($handle);
 }
 
 function wta_router_content_type(): string
@@ -290,6 +416,10 @@ if ($GLOBALS['__wta_router_target'] === '' || !is_file($GLOBALS['__wta_router_ta
 }
 
 if (strtolower(pathinfo($GLOBALS['__wta_router_target'], PATHINFO_EXTENSION)) !== 'php') {
+    if (isset($_SERVER['HTTP_RANGE']) && in_array($_SERVER['REQUEST_METHOD'] ?? 'GET', ['GET', 'HEAD'], true)) {
+        wta_router_serve_range($GLOBALS['__wta_router_target']);
+        return true;
+    }
     return false;
 }
 

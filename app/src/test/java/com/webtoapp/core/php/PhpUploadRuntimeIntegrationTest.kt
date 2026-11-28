@@ -392,6 +392,67 @@ class PhpUploadRuntimeIntegrationTest {
     }
 
     @Test
+    fun `static media honours byte ranges so players can seek`() {
+        val base = startServer()
+        val track = mediaTrack()
+        val url = "$base/data/audio/track.mp3"
+
+        val slice = raw(url, mapOf("Range" to "bytes=100-199"))
+        assertThat(slice.code).isEqualTo(206)
+        assertThat(slice.header("Content-Range")).isEqualTo("bytes 100-199/${track.size}")
+        assertThat(slice.header("Accept-Ranges")).isEqualTo("bytes")
+        assertThat(slice.header("Content-Type")).isEqualTo("audio/mpeg")
+        assertThat(slice.body).isEqualTo(track.copyOfRange(100, 200))
+
+        val suffix = raw(url, mapOf("Range" to "bytes=-64"))
+        assertThat(suffix.code).isEqualTo(206)
+        assertThat(suffix.body).isEqualTo(track.copyOfRange(track.size - 64, track.size))
+
+        val first = raw(url, mapOf("Range" to "bytes=0-"))
+        assertThat(first.code).isEqualTo(206)
+        assertThat(first.header("Content-Range")).isEqualTo("bytes 0-2097151/${track.size}")
+        assertThat(first.body).isEqualTo(track.copyOfRange(0, 2097152))
+
+        val rest = raw(url, mapOf("Range" to "bytes=2097152-"))
+        assertThat(rest.code).isEqualTo(206)
+        assertThat(rest.header("Content-Range")).isEqualTo("bytes 2097152-${track.size - 1}/${track.size}")
+        assertThat(rest.body).isEqualTo(track.copyOfRange(2097152, track.size))
+    }
+
+    @Test
+    fun `static media range edge cases follow http semantics`() {
+        val base = startServer()
+        val track = mediaTrack()
+        val url = "$base/data/audio/track.mp3"
+
+        val unsatisfiable = raw(url, mapOf("Range" to "bytes=${track.size}-"))
+        assertThat(unsatisfiable.code).isEqualTo(416)
+        assertThat(unsatisfiable.header("Content-Range")).isEqualTo("bytes */${track.size}")
+
+        val multi = raw(url, mapOf("Range" to "bytes=0-1,5-6"))
+        assertThat(multi.code).isEqualTo(200)
+        assertThat(multi.body).isEqualTo(track)
+
+        val staleIfRange = raw(url, mapOf("Range" to "bytes=0-9", "If-Range" to "\"stale\""))
+        assertThat(staleIfRange.code).isEqualTo(200)
+        assertThat(staleIfRange.body).isEqualTo(track)
+
+        val etag = raw(url, mapOf("Range" to "bytes=0-0")).header("ETag")!!
+        val matchingIfRange = raw(url, mapOf("Range" to "bytes=0-9", "If-Range" to etag))
+        assertThat(matchingIfRange.code).isEqualTo(206)
+        assertThat(matchingIfRange.body).isEqualTo(track.copyOfRange(0, 10))
+
+        val head = raw(url, mapOf("Range" to "bytes=0-9"), method = "HEAD")
+        assertThat(head.code).isEqualTo(206)
+        assertThat(head.header("Content-Length")).isEqualTo("10")
+        assertThat(head.body).isEmpty()
+
+        val plain = raw(url, emptyMap())
+        assertThat(plain.code).isEqualTo(200)
+        assertThat(plain.body).isEqualTo(track)
+    }
+
+    @Test
     fun `static files health and missing assets are served`() {
         val base = startServer()
         assertThat(get("$base/__health").text).isEqualTo("OK")
@@ -521,6 +582,34 @@ class PhpUploadRuntimeIntegrationTest {
             Thread.sleep(100)
         } while (System.currentTimeMillis() < deadline)
         assertThat(leaked).isEmpty()
+    }
+
+    private fun mediaTrack(): ByteArray {
+        val bytes = Random(9).nextBytes(3 * 1024 * 1024 + 4321)
+        File(docRoot, "data/audio").mkdirs()
+        File(docRoot, "data/audio/track.mp3").writeBytes(bytes)
+        return bytes
+    }
+
+    private data class RawResponse(val code: Int, val headers: Map<String, List<String>>, val body: ByteArray) {
+        fun header(name: String): String? =
+            headers.entries.firstOrNull { it.key.equals(name, ignoreCase = true) }?.value?.firstOrNull()
+    }
+
+    private fun raw(url: String, headers: Map<String, String>, method: String = "GET"): RawResponse {
+        val conn = URL(url).openConnection() as HttpURLConnection
+        try {
+            conn.requestMethod = method
+            conn.connectTimeout = 5000
+            conn.readTimeout = 60000
+            headers.forEach { (name, value) -> conn.setRequestProperty(name, value) }
+            val code = conn.responseCode
+            val stream = if (code >= 400) conn.errorStream else conn.inputStream
+            val body = if (method == "HEAD") ByteArray(0) else stream?.use { it.readBytes() } ?: ByteArray(0)
+            return RawResponse(code, conn.headerFields.filterKeys { it != null }, body)
+        } finally {
+            conn.disconnect()
+        }
     }
 
     private fun uploadedFile(response: Response, field: String): JsonObject {
