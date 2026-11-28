@@ -62,28 +62,28 @@
 
 <table>
   <tr>
-    <td align="center" width="25%"><img src=".github/assets/screenshots/01-home.jpg" width="200" alt="My Apps home screen"><br><sub><b>My Apps</b> — your projects at a glance</sub></td>
-    <td align="center" width="25%"><img src=".github/assets/screenshots/02-app-types.jpg" width="200" alt="Create panel with 12 app types"><br><sub><b>Create</b> — pick from 12 app types</sub></td>
-    <td align="center" width="25%"><img src=".github/assets/screenshots/03-app-actions.jpg" width="200" alt="Per-app action menu"><br><sub><b>Actions</b> — build, share, export & more</sub></td>
-    <td align="center" width="25%"><img src=".github/assets/screenshots/04-toolbox.jpg" width="200" alt="Main toolbox menu"><br><sub><b>Toolbox</b> — Agent, modules, ports, engines</sub></td>
+    <td align="center" valign="top" width="25%"><img src=".github/assets/screenshots/01-home.jpg" width="200" alt="My Apps home screen"><br><sub><b>My Apps</b><br>your projects at a glance</sub></td>
+    <td align="center" valign="top" width="25%"><img src=".github/assets/screenshots/02-app-types.jpg" width="200" alt="Create panel with 12 app types"><br><sub><b>Create</b><br>pick from 12 app types</sub></td>
+    <td align="center" valign="top" width="25%"><img src=".github/assets/screenshots/03-app-actions.jpg" width="200" alt="Per-app action menu"><br><sub><b>Actions</b><br>build, share, export & more</sub></td>
+    <td align="center" valign="top" width="25%"><img src=".github/assets/screenshots/04-toolbox.jpg" width="200" alt="Main toolbox menu"><br><sub><b>Toolbox</b><br>Agent, plugins & local tools</sub></td>
   </tr>
   <tr>
-    <td align="center" width="25%"><img src=".github/assets/screenshots/05-editor-basic.jpg" width="200" alt="Editor basic info card"><br><sub><b>Editor</b> — icon, name, URL & analyze site</sub></td>
-    <td align="center" width="25%"><img src=".github/assets/screenshots/06-editor-activation.jpg" width="200" alt="Editor activation code card"><br><sub><b>Editor</b> — activation codes</sub></td>
-    <td align="center" width="25%"><img src=".github/assets/screenshots/07-editor-fullscreen.jpg" width="200" alt="Editor fullscreen settings"><br><sub><b>Editor</b> — fullscreen & orientation</sub></td>
-    <td align="center" width="25%"><img src=".github/assets/screenshots/08-editor-floating.jpg" width="200" alt="Editor floating window settings"><br><sub><b>Editor</b> — floating window</sub></td>
+    <td align="center" valign="top" width="25%"><img src=".github/assets/screenshots/05-editor-basic.jpg" width="200" alt="Editor basic info card"><br><sub><b>Editor</b><br>Icon, name, URL & analysis</sub></td>
+    <td align="center" valign="top" width="25%"><img src=".github/assets/screenshots/06-editor-activation.jpg" width="200" alt="Editor activation code card"><br><sub><b>Editor</b><br>activation codes</sub></td>
+    <td align="center" valign="top" width="25%"><img src=".github/assets/screenshots/07-editor-fullscreen.jpg" width="200" alt="Editor fullscreen settings"><br><sub><b>Editor</b><br>fullscreen & orientation</sub></td>
+    <td align="center" valign="top" width="25%"><img src=".github/assets/screenshots/08-editor-floating.jpg" width="200" alt="Editor floating window settings"><br><sub><b>Editor</b><br>floating window</sub></td>
   </tr>
   <tr>
-    <td align="center" width="25%"><img src=".github/assets/screenshots/09-editor-toggles.jpg" width="200" alt="Editor feature toggles"><br><sub><b>Editor</b> — splash, BGM, translate & more</sub></td>
-    <td align="center" width="25%"><img src=".github/assets/screenshots/10-editor-more.jpg" width="200" alt="Editor plugins and ad-blocking toggles"><br><sub><b>Editor</b> — plugins, ads & more toggles</sub></td>
-    <td align="center" width="25%"><img src=".github/assets/screenshots/11-editor-advanced.jpg" width="200" alt="Editor advanced and export settings"><br><sub><b>Editor</b> — advanced & export settings</sub></td>
-    <td align="center" width="25%"><img src=".github/assets/screenshots/12-agent.jpg" width="200" alt="Agent screen with build suggestions"><br><sub><b>Agent</b> — describe it, AI builds it</sub></td>
+    <td align="center" valign="top" width="25%"><img src=".github/assets/screenshots/09-editor-toggles.jpg" width="200" alt="Editor feature toggles"><br><sub><b>Editor</b><br>Splash, music & translation</sub></td>
+    <td align="center" valign="top" width="25%"><img src=".github/assets/screenshots/10-editor-more.jpg" width="200" alt="Editor plugins and ad-blocking toggles"><br><sub><b>Editor</b><br>plugins, ads & more toggles</sub></td>
+    <td align="center" valign="top" width="25%"><img src=".github/assets/screenshots/11-editor-advanced.jpg" width="200" alt="Editor advanced and export settings"><br><sub><b>Editor</b><br>advanced & export settings</sub></td>
+    <td align="center" valign="top" width="25%"><img src=".github/assets/screenshots/12-agent.jpg" width="200" alt="Agent screen with build suggestions"><br><sub><b>Agent</b><br>describe it, AI builds it</sub></td>
   </tr>
   <tr>
-    <td align="center" width="25%"><img src=".github/assets/screenshots/13-agent-chat.jpg" width="200" alt="Agent chat session"><br><sub><b>Agent</b> — a live build session</sub></td>
-    <td align="center" width="25%"><img src=".github/assets/screenshots/14-build-environment.jpg" width="200" alt="Local build environment"><br><sub><b>Build env</b> — Node, npm, and the local toolchain</sub></td>
-    <td align="center" width="25%"><img src=".github/assets/screenshots/15-plugins.jpg" width="200" alt="Plugins list"><br><sub><b>Plugins</b> — built-in modules and the market</sub></td>
-    <td align="center" width="25%"><img src=".github/assets/screenshots/16-about.jpg" width="200" alt="About page"><br><sub><b>About</b> — version & community links</sub></td>
+    <td align="center" valign="top" width="25%"><img src=".github/assets/screenshots/13-agent-chat.jpg" width="200" alt="Agent chat session"><br><sub><b>Agent</b><br>a live build session</sub></td>
+    <td align="center" valign="top" width="25%"><img src=".github/assets/screenshots/14-build-environment.jpg" width="200" alt="Local build environment"><br><sub><b>Build env</b><br>Node, npm & build tools</sub></td>
+    <td align="center" valign="top" width="25%"><img src=".github/assets/screenshots/15-plugins.jpg" width="200" alt="Plugins list"><br><sub><b>Plugins</b><br>Built-in & market modules</sub></td>
+    <td align="center" valign="top" width="25%"><img src=".github/assets/screenshots/16-about.jpg" width="200" alt="About page"><br><sub><b>About</b><br>version & community links</sub></td>
   </tr>
 </table>
 

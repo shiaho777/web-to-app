@@ -62,28 +62,28 @@
 
 <table>
   <tr>
-    <td align="center" width="25%"><img src="../assets/screenshots/01-home.jpg" width="200" alt="「我的应用」主页"><br><sub><b>主页</b> —— 应用项目一览</sub></td>
-    <td align="center" width="25%"><img src="../assets/screenshots/02-app-types.jpg" width="200" alt="12 种应用类型创建面板"><br><sub><b>创建</b> —— 12 种应用类型任选</sub></td>
-    <td align="center" width="25%"><img src="../assets/screenshots/03-app-actions.jpg" width="200" alt="单应用操作菜单"><br><sub><b>操作菜单</b> —— 构建、分享、导出等</sub></td>
-    <td align="center" width="25%"><img src="../assets/screenshots/04-toolbox.jpg" width="200" alt="主工具箱菜单"><br><sub><b>工具箱</b> —— Agent、模块、端口、引擎</sub></td>
+    <td align="center" valign="top" width="25%"><img src="../assets/screenshots/01-home.jpg" width="200" alt="「我的应用」主页"><br><sub><b>我的应用</b><br>应用项目一览</sub></td>
+    <td align="center" valign="top" width="25%"><img src="../assets/screenshots/02-app-types.jpg" width="200" alt="12 种应用类型创建面板"><br><sub><b>创建</b><br>12 种应用类型任选</sub></td>
+    <td align="center" valign="top" width="25%"><img src="../assets/screenshots/03-app-actions.jpg" width="200" alt="单应用操作菜单"><br><sub><b>操作</b><br>构建、分享、导出等</sub></td>
+    <td align="center" valign="top" width="25%"><img src="../assets/screenshots/04-toolbox.jpg" width="200" alt="主工具箱菜单"><br><sub><b>工具箱</b><br>Agent、模块、端口、引擎</sub></td>
   </tr>
   <tr>
-    <td align="center" width="25%"><img src="../assets/screenshots/05-editor-basic.jpg" width="200" alt="编辑器基本信息卡"><br><sub><b>编辑器</b> —— 图标、名称、URL 与站点分析</sub></td>
-    <td align="center" width="25%"><img src="../assets/screenshots/06-editor-activation.jpg" width="200" alt="编辑器激活码卡片"><br><sub><b>编辑器</b> —— 激活码</sub></td>
-    <td align="center" width="25%"><img src="../assets/screenshots/07-editor-fullscreen.jpg" width="200" alt="编辑器全屏设置"><br><sub><b>编辑器</b> —— 全屏与方向</sub></td>
-    <td align="center" width="25%"><img src="../assets/screenshots/08-editor-floating.jpg" width="200" alt="编辑器悬浮窗设置"><br><sub><b>编辑器</b> —— 悬浮窗</sub></td>
+    <td align="center" valign="top" width="25%"><img src="../assets/screenshots/05-editor-basic.jpg" width="200" alt="编辑器基本信息卡"><br><sub><b>编辑器</b><br>图标、名称、URL 与站点分析</sub></td>
+    <td align="center" valign="top" width="25%"><img src="../assets/screenshots/06-editor-activation.jpg" width="200" alt="编辑器激活码卡片"><br><sub><b>编辑器</b><br>激活码</sub></td>
+    <td align="center" valign="top" width="25%"><img src="../assets/screenshots/07-editor-fullscreen.jpg" width="200" alt="编辑器全屏设置"><br><sub><b>编辑器</b><br>全屏与方向</sub></td>
+    <td align="center" valign="top" width="25%"><img src="../assets/screenshots/08-editor-floating.jpg" width="200" alt="编辑器悬浮窗设置"><br><sub><b>编辑器</b><br>悬浮窗</sub></td>
   </tr>
   <tr>
-    <td align="center" width="25%"><img src="../assets/screenshots/09-editor-toggles.jpg" width="200" alt="编辑器功能开关"><br><sub><b>编辑器</b> —— 启动屏、音乐、翻译等</sub></td>
-    <td align="center" width="25%"><img src="../assets/screenshots/10-editor-more.jpg" width="200" alt="编辑器插件与广告拦截开关"><br><sub><b>编辑器</b> —— 插件、广告拦截等</sub></td>
-    <td align="center" width="25%"><img src="../assets/screenshots/11-editor-advanced.jpg" width="200" alt="编辑器高级与导出设置"><br><sub><b>编辑器</b> —— 高级与导出设置</sub></td>
-    <td align="center" width="25%"><img src="../assets/screenshots/12-agent.jpg" width="200" alt="Agent 界面与建议卡片"><br><sub><b>Agent</b> —— 描述需求,AI 来构建</sub></td>
+    <td align="center" valign="top" width="25%"><img src="../assets/screenshots/09-editor-toggles.jpg" width="200" alt="编辑器功能开关"><br><sub><b>编辑器</b><br>启动屏、音乐、翻译等</sub></td>
+    <td align="center" valign="top" width="25%"><img src="../assets/screenshots/10-editor-more.jpg" width="200" alt="编辑器插件与广告拦截开关"><br><sub><b>编辑器</b><br>插件、广告拦截等</sub></td>
+    <td align="center" valign="top" width="25%"><img src="../assets/screenshots/11-editor-advanced.jpg" width="200" alt="编辑器高级与导出设置"><br><sub><b>编辑器</b><br>高级与导出设置</sub></td>
+    <td align="center" valign="top" width="25%"><img src="../assets/screenshots/12-agent.jpg" width="200" alt="Agent 界面与建议卡片"><br><sub><b>Agent</b><br>描述需求,AI 来构建</sub></td>
   </tr>
   <tr>
-    <td align="center" width="25%"><img src="../assets/screenshots/13-agent-chat.jpg" width="200" alt="Agent 对话会话"><br><sub><b>Agent</b> —— 一次实际构建对话</sub></td>
-    <td align="center" width="25%"><img src="../assets/screenshots/14-build-environment.jpg" width="200" alt="本地构建环境"><br><sub><b>构建环境</b> —— Node、npm 与本地工具链</sub></td>
-    <td align="center" width="25%"><img src="../assets/screenshots/15-plugins.jpg" width="200" alt="插件列表"><br><sub><b>插件</b> —— 内置模块与模块市场</sub></td>
-    <td align="center" width="25%"><img src="../assets/screenshots/16-about.jpg" width="200" alt="关于页"><br><sub><b>关于</b> —— 版本与社区链接</sub></td>
+    <td align="center" valign="top" width="25%"><img src="../assets/screenshots/13-agent-chat.jpg" width="200" alt="Agent 对话会话"><br><sub><b>Agent</b><br>一次实际构建对话</sub></td>
+    <td align="center" valign="top" width="25%"><img src="../assets/screenshots/14-build-environment.jpg" width="200" alt="本地构建环境"><br><sub><b>构建环境</b><br>Node、npm 与本地工具链</sub></td>
+    <td align="center" valign="top" width="25%"><img src="../assets/screenshots/15-plugins.jpg" width="200" alt="插件列表"><br><sub><b>插件</b><br>内置模块与模块市场</sub></td>
+    <td align="center" valign="top" width="25%"><img src="../assets/screenshots/16-about.jpg" width="200" alt="关于页"><br><sub><b>关于</b><br>版本与社区链接</sub></td>
   </tr>
 </table>
 
