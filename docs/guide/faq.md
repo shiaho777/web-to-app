@@ -71,7 +71,7 @@ In the [File Manager](/guide/more-features/file-manager) — APK builds, AAB exp
 
 ### How do I get the download fixes in an app I already exported?
 
-Update WebToApp to 2.9.5, rebuild the project, and install the new APK over the existing app using the same package name and signing key. The export includes the runtime that handles page downloads. Large HTTPS downloads can use multiple connections when the server supports byte ranges and the response has a stable validator.
+Update WebToApp to 2.9.5 or later, rebuild the project, and install the new APK over the existing app using the same package name and signing key. The export includes the runtime that handles page downloads. Large HTTPS downloads can use multiple connections when the server supports byte ranges and the response has a stable validator.
 
 ## Runtimes
 

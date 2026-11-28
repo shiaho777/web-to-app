@@ -16,7 +16,7 @@
 
 </div>
 
-在 Android 桌面找到带 WA 标志的 WebToApp 图标并打开。
+在 Android 桌面找到浅灰白底、圆角 WA 标志的 WebToApp 图标并打开。
 
 `WebToAppApplication` 以 **构建器模式**（`SHELL_RUNTIME_ONLY = false`）启动，初始化语言、Room 数据库和依赖图。首次启动时，先确认语言，再完成或跳过导览。进入**我的应用**后，如果仍有未授权的启动权限，应用会显示权限说明。见[主界面](/zh/guide/main-screen/my-apps)。
 

@@ -52,9 +52,9 @@ RepoType: git
 Repo: https://github.com/shiaho777/web-to-app.git
 
 Builds:
-  - versionName: "2.9.5"
-    versionCode: 89
-    commit: v2.9.5
+  - versionName: "2.9.6"
+    versionCode: 90
+    commit: v2.9.6
     subdir: app
     gradle:
       - standard
@@ -69,7 +69,7 @@ UpdateCheckMode: Tags
 UpdateCheckData: app/build.gradle.kts|versionCode = (\d+)|.|versionName = "([^"]+)"
 ```
 
-使用与 GitHub Releases 相同的 tag（`v2.9.5`）。两个渠道同一版本；F-Droid 用自己的签名，两边的 APK 不能互相覆盖更新。
+使用与 GitHub Releases 相同的 tag（`v2.9.6`）。请以 `metadata/com.webtoapp.yml` 的完整配方为准，其中还包含移除开发示例和示例压缩包、在源码扫描前剔除未启用的 Google 依赖的步骤。更新时请继续使用原安装渠道，以保持签名一致。
 
 ## 不要混用模板
 

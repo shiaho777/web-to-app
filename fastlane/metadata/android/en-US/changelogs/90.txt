@@ -1,0 +1,4 @@
+- First-run guidance uses the confirmed language, with permission explanations shown after the tour.
+- The empty My Apps screen has a single Create App button.
+- New rounded WA icon on a light gray background and a refreshed About page.
+- Updated distribution build configuration and documentation.
