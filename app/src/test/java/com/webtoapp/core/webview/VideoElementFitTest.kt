@@ -149,6 +149,14 @@ class VideoElementFitTest {
     }
 
     @Test
+    fun `computed lengths are read as caps only when they are pixel values`() {
+        val script = VideoElementFit.SCRIPT
+        val px = script.substring(script.indexOf("function px("), script.indexOf("function lengthPx("))
+        assertThat(px).contains("match(/^(\\d+(?:\\.\\d+)?)px$/i)")
+        assertThat(px).doesNotContain("parseFloat(v)")
+    }
+
+    @Test
     fun `script shrinks only overflowing videos and restores fullscreen`() {
         val script = VideoElementFit.SCRIPT
         assertThat(script).contains("window.__wtaVideoFit")
