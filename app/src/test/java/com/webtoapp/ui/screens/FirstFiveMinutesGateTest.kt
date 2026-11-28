@@ -60,6 +60,26 @@ class FirstFiveMinutesGateTest {
     }
 
     @Test
+    fun `startup dialogs wait for the confirmed language and completed tour`() {
+        val main = source("ui/MainActivity.kt")
+        val beforeContent = main.substringBefore("setContent {")
+        assertWithMessage("Language selection must be initialized outside the builder theme")
+            .that(main.substringAfter("setContent {").substringBefore("WebToAppTheme {"))
+            .contains("val hasSelectedLanguage = InitializeLanguage()")
+        assertWithMessage("A startup dialog must not interrupt language selection or the tour")
+            .that(main)
+            .contains("val startupReady = hasSelectedLanguage == true && onboardingCompleted == true")
+        listOf("requestNecessaryPermissions()", "checkShortcutPermission()").forEach { check ->
+            assertWithMessage("$check must run inside the startup gate")
+                .that(main.substringAfter("LaunchedEffect(startupReady)").substringBefore("CompositionLocalProvider("))
+                .contains(check)
+            assertWithMessage("$check must not run before composition")
+                .that(beforeContent)
+                .doesNotContain(check)
+        }
+    }
+
+    @Test
     fun `empty state offers create and sample actions`() {
         val home = source("ui/screens/HomeScreen.kt")
         assertWithMessage("EmptyState must accept a create callback")

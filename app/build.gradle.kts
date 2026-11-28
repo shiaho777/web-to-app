@@ -99,6 +99,7 @@ android {
         }
         create("gplay") {
             applicationId = "shiaho.webtoapp"
+            versionCode = requireNotNull(defaultConfig.versionCode) + 1
         }
     }
 

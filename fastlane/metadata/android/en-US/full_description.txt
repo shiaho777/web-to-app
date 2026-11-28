@@ -2,7 +2,7 @@ WebToApp is an on-device workshop for turning websites and local web projects in
 
 You can wrap a URL, package HTML or frontend files, ship a gallery or media player, or run a local Node.js, PHP, Python, Go, or WordPress server inside the generated app. The system WebView is the default engine; an optional GeckoView (Firefox) runtime can be downloaded later.
 
-This F-Droid build omits Firebase Cloud Messaging, Google Sign-In, and AdMob. Push still works through the Web Notification polyfill, HTTP polling, and WebSocket. Optional engine and runtime downloads are explicit opt-in.
+This F-Droid build omits Firebase Cloud Messaging and Google Sign-In. Push still works through the Web Notification polyfill, HTTP polling, and WebSocket.
 
 Features include:
 

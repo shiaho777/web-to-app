@@ -4290,19 +4290,17 @@ object Strings {
 }
 
 @Composable
-fun InitializeLanguage() {
+fun InitializeLanguage(): Boolean? {
     val context = LocalContext.current
     val languageManager = remember { LanguageManager.getInstance(context) }
-    val language by languageManager.currentLanguageFlow.collectAsState(initial = AppLanguage.CHINESE)
+    var hasSelectedLanguage by remember { mutableStateOf<Boolean?>(null) }
 
-    LaunchedEffect(language) {
-        Strings.attachContext(context, language)
-        Strings.setLanguage(language)
-
-        try {
-        } catch (e: Exception) {
-
+    LaunchedEffect(languageManager, context) {
+        languageManager.selectedLanguageFlow.collect { language ->
+            language?.let { HostLanguage.apply(context, it) }
+            hasSelectedLanguage = language != null
         }
     }
 
+    return hasSelectedLanguage
 }

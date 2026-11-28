@@ -3,20 +3,28 @@ package com.webtoapp.core.i18n
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
-/**
- * Shortcut cold starts never compose the builder screen, which used to be the
- * only place that published the saved language. Strings then stayed on the
- * Chinese default (#1391).
- */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33])
 class HostLanguageTest {
+
+    @Test
+    fun `language selection publishes the confirmed language from the same settings update`() = runBlocking {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val manager = LanguageManager.getInstance(context)
+
+        manager.setLanguage(AppLanguage.CHINESE)
+        assertThat(manager.selectedLanguageFlow.first()).isEqualTo(AppLanguage.CHINESE)
+
+        manager.setLanguage(AppLanguage.ARABIC)
+        assertThat(manager.selectedLanguageFlow.first()).isEqualTo(AppLanguage.ARABIC)
+    }
 
     @Test
     fun `apply publishes the chosen language before any activity`() {

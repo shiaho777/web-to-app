@@ -2,7 +2,7 @@ WebToApp 是跑在手机上的 APK 工坊，把网站和本地网页项目做成
 
 可以套一层网址、打包 HTML 或前端文件、做成画廊或媒体播放器，也可以在生成的应用里跑本地 Node.js、PHP、Python、Go 或 WordPress。默认用系统 WebView；可选的 GeckoView（Firefox）运行时需要时再下载。
 
-本 F-Droid 构建不含 Firebase Cloud Messaging、Google 登录和 AdMob。推送仍可通过 Web Notification polyfill、HTTP 轮询和 WebSocket 工作。引擎和运行时下载都是显式选择后才发生。
+本 F-Droid 构建不含 Firebase Cloud Messaging 和 Google 登录。推送仍可通过 Web Notification polyfill、HTTP 轮询和 WebSocket 工作。
 
 能力包括：
 

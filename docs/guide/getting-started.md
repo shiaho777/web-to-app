@@ -16,7 +16,9 @@ Get the APK from [GitHub Releases](https://github.com/shiaho777/web-to-app/relea
 
 </div>
 
-On launch, `WebToAppApplication` starts in **builder mode** (`SHELL_RUNTIME_ONLY = false`): it initializes the i18n strings, the Room database, and the dependency graph, then shows **My Apps** — the home screen that lists every app you create. See [Main Screen](/guide/main-screen/my-apps).
+Open WebToApp using its WA icon in the Android launcher.
+
+`WebToAppApplication` starts in **builder mode** (`SHELL_RUNTIME_ONLY = false`) and initializes the language, the Room database, and the dependency graph. On first launch, confirm a language and complete or skip the tour. When **My Apps** opens, WebToApp explains any startup permissions it still needs. See [Main Screen](/guide/main-screen/my-apps).
 
 ## 2. Create an app definition
 

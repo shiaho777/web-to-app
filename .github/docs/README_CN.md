@@ -139,7 +139,7 @@ Node.js、PHP、Python、Go、WordPress、图片和视频的代码仍在应用�
 
 从全新安装到第一个签名 APK,大约一分钟:
 
-1. **安装打包器** —— 从 [GitHub Releases](https://github.com/shiaho777/web-to-app/releases) 下载 APK,装到 Android 7.0(API 24)或更新的设备上。
+1. **安装打包器** —— 从 [GitHub Releases](https://github.com/shiaho777/web-to-app/releases) 下载 APK,装到 Android 7.0(API 24)或更新的设备上。在桌面找到带 WA 标志的 WebToApp 图标并打开。
 2. **创建应用** —— 在「我的应用」点 **创建**。默认网格是网页、多站点、HTML、离线包、前端和画廊。PHP、WordPress、Node.js、Python、Go 和媒体要打开 **关于 → 高级功能** 后才出现。
 3. **填基本信息** —— 应用名、目标 URL(或项目文件)和可选图标,然后 **Save**。编辑器里其余卡片都是可选配置。
 4. **预览** —— 点应用卡片,运行在与导出产物相同的运行时代码里。
