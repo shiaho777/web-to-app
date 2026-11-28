@@ -28,6 +28,13 @@ if (isFdroidBuild) {
 }
 
 android {
+    if (isFdroidBuild) {
+        dependenciesInfo {
+            includeInApk = false
+            includeInBundle = false
+        }
+    }
+
     namespace = "com.webtoapp"
     compileSdk = 36
 

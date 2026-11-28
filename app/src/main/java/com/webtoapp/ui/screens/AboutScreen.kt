@@ -19,15 +19,19 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -50,11 +54,8 @@ import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.Hub
 import androidx.compose.material.icons.rounded.MenuBook
 import androidx.compose.material.icons.rounded.NorthEast
-import androidx.compose.material.icons.rounded.PlayCircle
-import androidx.compose.material.icons.rounded.Send
 import androidx.compose.material.icons.rounded.Subtitles
 import androidx.compose.material.icons.rounded.Sync
-import androidx.compose.material.icons.rounded.Tag
 import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Download
@@ -62,7 +63,6 @@ import androidx.compose.material.icons.outlined.ExpandLess
 import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.ForkRight
 import androidx.compose.material.icons.outlined.History
-import androidx.compose.material.icons.outlined.Link
 import androidx.compose.material.icons.outlined.NorthEast
 import androidx.compose.material.icons.outlined.RestartAlt
 import androidx.compose.material.icons.outlined.Schedule
@@ -73,7 +73,6 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ProgressIndicatorDefaults
@@ -92,18 +91,22 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
 import com.webtoapp.R
 import com.webtoapp.core.agent.mcp.HostMcpController
 import com.webtoapp.core.host.HostRuntimePrefs
@@ -114,11 +117,12 @@ import com.webtoapp.ui.design.WtaAlertDialog
 import com.webtoapp.ui.design.WtaCard
 import com.webtoapp.ui.design.WtaCardTone
 import com.webtoapp.ui.design.WtaLoadingIndicator
-import com.webtoapp.ui.design.WtaMorphingShape
 import com.webtoapp.ui.design.WtaMotion
 import com.webtoapp.ui.design.WtaSectionDivider
+import com.webtoapp.ui.design.WtaSettingCard
 import com.webtoapp.ui.design.WtaSettingRow
-import com.webtoapp.ui.design.WtaSwitch
+import com.webtoapp.ui.design.WtaSize
+import com.webtoapp.ui.design.WtaToggleRow
 import com.webtoapp.ui.design.WtaRadius
 import com.webtoapp.ui.design.WtaIconPlate
 import com.webtoapp.ui.design.WtaScreen
@@ -126,7 +130,6 @@ import com.webtoapp.ui.design.WtaSection
 import com.webtoapp.ui.design.WtaSectionHeaderStyle
 import com.webtoapp.ui.design.WtaSpacing
 import com.webtoapp.ui.design.rememberHapticClick
-import com.webtoapp.ui.design.wtaPressScale
 import com.webtoapp.ui.theme.LocalIsDarkTheme
 import com.webtoapp.ui.theme.LocalAnimationSettings
 import com.webtoapp.ui.theme.LocalShowDescriptions
@@ -136,6 +139,17 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+
+private val inverseAboutIconColors = ColorFilter.colorMatrix(
+    ColorMatrix(
+        floatArrayOf(
+            -1f, 0f, 0f, 0f, 255f,
+            0f, -1f, 0f, 0f, 255f,
+            0f, 0f, -1f, 0f, 255f,
+            0f, 0f, 0f, 1f, 0f
+        )
+    )
+)
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -167,200 +181,154 @@ fun AboutScreen(onBack: () -> Unit) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             state = listState,
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(
+            contentPadding = PaddingValues(
                 horizontal = WtaSpacing.ScreenHorizontal,
                 vertical = WtaSpacing.ScreenVertical
             ),
             verticalArrangement = Arrangement.spacedBy(WtaSpacing.SectionGap)
         ) {
             item(key = "hero") {
-                AuthorHeroCard(
+                AboutHeaderCard(
                     versionName = version.name,
                     versionCode = version.code
                 )
             }
+            item(key = "preferences") { AboutPreferences() }
             item(key = "contact") { ContactGrid() }
-            item(key = "descriptions") { DescriptionsToggleCard() }
-            if (!com.webtoapp.BuildConfig.FDROID) {
-                item(key = "auto_update") { AutoUpdateCheckCard() }
-            }
-            item(key = "separate_tasks") { SeparateTasksCard() }
-            item(key = "advanced_features") { AdvancedFeaturesCard() }
-            item(key = "local_mcp") { LocalMcpCard() }
+            item(key = "trust") { TrustAndLicensesCard() }
+            item(key = "community") { CommunityCard() }
+            item(key = "onboarding") { FeatureTourCard() }
+            item(key = "legal") { LegalTabContent() }
             item(key = "other_projects") {
                 OtherProjectsSection(
                     state = repoState,
                     onRefresh = { repoScope.launch { repoState.load(appContext) } }
                 )
             }
-            item(key = "trust") { TrustAndLicensesCard() }
-            item(key = "community") { CommunityCard() }
-            item(key = "onboarding") { FeatureTourCard() }
-            item(key = "legal") { LegalTabContent() }
             item(key = "footer") { MadeWithLoveFooter() }
         }
     }
 }
 
 @Composable
-private fun DescriptionsToggleCard() {
+private fun AboutPreferences() {
+    WtaSection(
+        title = aboutPreferencesTitle(),
+        headerStyle = WtaSectionHeaderStyle.Quiet
+    ) {
+        WtaSettingCard {
+            DescriptionsToggle()
+            if (!com.webtoapp.BuildConfig.FDROID) {
+                WtaSectionDivider()
+                AutoUpdateToggle()
+            }
+            WtaSectionDivider()
+            SeparateTasksToggle()
+            WtaSectionDivider()
+            AdvancedFeaturesToggle()
+            WtaSectionDivider()
+            LocalMcpSettings()
+        }
+    }
+}
+
+@Composable
+private fun DescriptionsToggle() {
     val context = LocalContext.current
     val themeManager = remember { ThemeManager.getInstance(context) }
     val showDescriptions by themeManager.showDescriptionsFlow.collectAsStateWithLifecycle()
     val scope = androidx.compose.runtime.rememberCoroutineScope()
 
-    WtaCard(
-        modifier = Modifier.fillMaxWidth(),
-        tone = WtaCardTone.Elevated,
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)
-    ) {
-        WtaSettingRow(
-            iconContent = { AboutTonalIcon(icon = Icons.Rounded.Subtitles, shapeIndex = 6, plateSize = 40.dp, iconSize = 20.dp) },
-            showIconPlate = false,
-            title = Strings.showDescriptions,
-            subtitle = Strings.showDescriptionsHint.ifDescriptionsShown(),
-            onClick = { scope.launch { themeManager.setShowDescriptions(!showDescriptions) } },
-            trailing = {
-                WtaSwitch(
-                    checked = showDescriptions,
-                    onCheckedChange = {
-                        scope.launch { themeManager.setShowDescriptions(it) }
-                    }
-                )
-            }
-        )
-    }
+    WtaToggleRow(
+        title = Strings.showDescriptions,
+        checked = showDescriptions,
+        onCheckedChange = { scope.launch { themeManager.setShowDescriptions(it) } },
+        subtitle = Strings.showDescriptionsHint.ifDescriptionsShown(),
+        icon = Icons.Rounded.Subtitles
+    )
 }
 
 @Composable
-private fun AutoUpdateCheckCard() {
+private fun AutoUpdateToggle() {
     val context = LocalContext.current
     val updatePrefs = remember { com.webtoapp.core.update.UpdatePrefs.getInstance(context) }
     val autoCheck by updatePrefs.autoCheckFlow.collectAsState(initial = true)
     val scope = androidx.compose.runtime.rememberCoroutineScope()
 
-    WtaCard(
-        modifier = Modifier.fillMaxWidth(),
-        tone = WtaCardTone.Elevated,
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)
-    ) {
-        WtaSettingRow(
-            iconContent = { AboutTonalIcon(icon = Icons.Outlined.Sync, shapeIndex = 4, plateSize = 40.dp, iconSize = 20.dp) },
-            showIconPlate = false,
-            title = Strings.autoCheckUpdates,
-            subtitle = Strings.autoCheckUpdatesDesc.ifDescriptionsShown(),
-            onClick = { scope.launch { updatePrefs.setAutoCheckEnabled(!autoCheck) } },
-            trailing = {
-                WtaSwitch(
-                    checked = autoCheck,
-                    onCheckedChange = { scope.launch { updatePrefs.setAutoCheckEnabled(it) } }
-                )
-            }
-        )
-    }
+    WtaToggleRow(
+        title = Strings.autoCheckUpdates,
+        checked = autoCheck,
+        onCheckedChange = { scope.launch { updatePrefs.setAutoCheckEnabled(it) } },
+        subtitle = Strings.autoCheckUpdatesDesc.ifDescriptionsShown(),
+        icon = Icons.Outlined.Sync
+    )
 }
 
 @Composable
-private fun AdvancedFeaturesCard() {
+private fun AdvancedFeaturesToggle() {
     val context = LocalContext.current
     val hostPrefs = remember { HostRuntimePrefs.getInstance(context) }
     val enabled by hostPrefs.advancedFeaturesFlow.collectAsStateWithLifecycle()
     val scope = androidx.compose.runtime.rememberCoroutineScope()
 
-    WtaCard(
-        modifier = Modifier.fillMaxWidth(),
-        tone = WtaCardTone.Elevated,
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)
-    ) {
-        WtaSettingRow(
-            iconContent = { AboutTonalIcon(icon = Icons.Rounded.Tune, shapeIndex = 3, plateSize = 40.dp, iconSize = 20.dp) },
-            showIconPlate = false,
-            title = Strings.advancedFeatures,
-            subtitle = Strings.advancedFeaturesDesc.ifDescriptionsShown(),
-            onClick = { scope.launch { hostPrefs.setAdvancedFeaturesEnabled(!enabled) } },
-            trailing = {
-                WtaSwitch(
-                    checked = enabled,
-                    onCheckedChange = { scope.launch { hostPrefs.setAdvancedFeaturesEnabled(it) } }
-                )
-            }
-        )
-    }
+    WtaToggleRow(
+        title = Strings.advancedFeatures,
+        checked = enabled,
+        onCheckedChange = { scope.launch { hostPrefs.setAdvancedFeaturesEnabled(it) } },
+        subtitle = Strings.advancedFeaturesDesc.ifDescriptionsShown(),
+        icon = Icons.Rounded.Tune
+    )
 }
 
 @Composable
-private fun SeparateTasksCard() {
+private fun SeparateTasksToggle() {
     val context = LocalContext.current
     val hostPrefs = remember { HostRuntimePrefs.getInstance(context) }
     val separateTasks by hostPrefs.separateTasksFlow.collectAsStateWithLifecycle()
 
-    fun apply(enabled: Boolean) {
-        hostPrefs.setSeparateTasksEnabled(enabled)
-        if (!enabled) {
-            WebViewDocumentActivity.finishAllDocumentTasks()
-        }
-    }
-
-    WtaCard(
-        modifier = Modifier.fillMaxWidth(),
-        tone = WtaCardTone.Elevated,
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)
-    ) {
-        WtaSettingRow(
-            iconContent = { AboutTonalIcon(icon = Icons.Rounded.FilterNone, shapeIndex = 1, plateSize = 40.dp, iconSize = 20.dp) },
-            showIconPlate = false,
-            title = Strings.webAppSeparateTasks,
-            subtitle = Strings.webAppSeparateTasksDesc.ifDescriptionsShown(),
-            onClick = { apply(!separateTasks) },
-            trailing = {
-                WtaSwitch(
-                    checked = separateTasks,
-                    onCheckedChange = { apply(it) }
-                )
+    WtaToggleRow(
+        title = Strings.webAppSeparateTasks,
+        checked = separateTasks,
+        onCheckedChange = { enabled ->
+            hostPrefs.setSeparateTasksEnabled(enabled)
+            if (!enabled) {
+                WebViewDocumentActivity.finishAllDocumentTasks()
             }
-        )
-    }
+        },
+        subtitle = Strings.webAppSeparateTasksDesc.ifDescriptionsShown(),
+        icon = Icons.Rounded.FilterNone
+    )
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun LocalMcpCard() {
+private fun LocalMcpSettings() {
     val context = LocalContext.current
     val hostPrefs = remember { HostRuntimePrefs.getInstance(context) }
     val mcp by hostPrefs.mcpFlow.collectAsStateWithLifecycle()
     val status by HostMcpController.status.collectAsStateWithLifecycle()
     val scope = androidx.compose.runtime.rememberCoroutineScope()
 
-    fun setEnabled(enabled: Boolean) {
-        scope.launch {
-            hostPrefs.setMcpEnabled(enabled)
-            HostMcpController.apply(context.applicationContext)
-        }
-    }
-
-    WtaCard(
-        modifier = Modifier.fillMaxWidth(),
-        tone = WtaCardTone.Elevated,
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)
-    ) {
-        Column {
-            WtaSettingRow(
-                iconContent = { AboutTonalIcon(icon = Icons.Rounded.Hub, shapeIndex = 2, plateSize = 40.dp, iconSize = 20.dp) },
-                showIconPlate = false,
-                title = Strings.localMcp,
-                subtitle = Strings.localMcpDesc.ifDescriptionsShown(),
-                onClick = { setEnabled(!mcp.enabled) },
-                trailing = {
-                    WtaSwitch(
-                        checked = mcp.enabled,
-                        onCheckedChange = { setEnabled(it) }
-                    )
+    Column {
+        WtaToggleRow(
+            title = Strings.localMcp,
+            checked = mcp.enabled,
+            onCheckedChange = { enabled ->
+                scope.launch {
+                    hostPrefs.setMcpEnabled(enabled)
+                    HostMcpController.apply(context.applicationContext)
                 }
-            )
-            AnimatedVisibility(
-                visible = mcp.enabled,
-                enter = com.webtoapp.ui.animation.CardExpandTransition,
-                exit = com.webtoapp.ui.animation.CardCollapseTransition
-            ) {
+            },
+            subtitle = Strings.localMcpDesc.ifDescriptionsShown(),
+            icon = Icons.Rounded.Hub
+        )
+        AnimatedVisibility(
+            visible = mcp.enabled,
+            enter = com.webtoapp.ui.animation.CardExpandTransition,
+            exit = com.webtoapp.ui.animation.CardCollapseTransition
+        ) {
+            Column {
+                WtaSectionDivider()
                 Column(
                     modifier = Modifier.padding(
                         horizontal = WtaSpacing.RowHorizontal,
@@ -400,7 +368,9 @@ private fun LocalMcpCard() {
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-                    Row(horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small)) {
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
+                    ) {
                         TextButton(onClick = {
                             context.copyToClipboard(
                                 "webtoapp-mcp",
@@ -452,7 +422,7 @@ private fun CopyOnLongPressText(
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun AuthorHeroCard(
+private fun AboutHeaderCard(
     versionName: String,
     versionCode: Long
 ) {
@@ -478,15 +448,12 @@ private fun AuthorHeroCard(
             onDismiss = { showInstallPermissionDialog = false }
         )
     }
-
-    // Version history state
     var showHistorySheet by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
     var historyLoading by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
     var historyError by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf<String?>(null) }
     var historyReleases by androidx.compose.runtime.remember {
         androidx.compose.runtime.mutableStateOf<List<com.webtoapp.core.update.UpdateChecker.ReleaseSummary>>(emptyList())
     }
-    // Per-release download state keyed by tag, so each version downloads independently.
     val historyDownloadStates = androidx.compose.runtime.remember {
         androidx.compose.runtime.mutableStateMapOf<String, com.webtoapp.core.update.UpdateDownloadState>()
     }
@@ -572,200 +539,180 @@ private fun AuthorHeroCard(
         )
     }
 
-
     WtaCard(
         modifier = Modifier.fillMaxWidth(),
         tone = WtaCardTone.Elevated,
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(
-            horizontal = 24.dp,
-            vertical = 28.dp
-        )
+        contentPadding = PaddingValues(0.dp)
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(
+                    horizontal = WtaSpacing.RowHorizontal,
+                    vertical = WtaSpacing.Medium
+                ),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(WtaSpacing.Tiny)
         ) {
-
-            Box(
-                modifier = Modifier.size(132.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                WtaMorphingShape(
-                    startPolygon = MaterialShapes.Cookie9Sided,
-                    endPolygon = MaterialShapes.Sunny,
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    modifier = Modifier.matchParentSize()
-                )
-                Image(
-                    painter = painterResource(id = R.drawable.about_avatar),
-                    contentDescription = Strings.authorAvatar,
-                    modifier = Modifier
-                        .size(88.dp)
-                        .clip(CircleShape),
-                    contentScale = ContentScale.Crop
-                )
-            }
-
-            Spacer(Modifier.height(18.dp))
-
+            Image(
+                painter = painterResource(R.drawable.about_avatar),
+                contentDescription = null,
+                modifier = Modifier
+                    .size(56.dp)
+                    .clip(RoundedCornerShape(WtaRadius.Card)),
+                contentScale = ContentScale.Crop,
+                colorFilter = if (LocalIsDarkTheme.current) null else inverseAboutIconColors
+            )
             Text(
                 text = "WebToApp",
                 style = MaterialTheme.typography.headlineSmallEmphasized,
                 color = MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center
             )
-
             AnimatedVisibility(visible = LocalShowDescriptions.current) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Spacer(Modifier.height(4.dp))
-
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(WtaSpacing.Tiny)
+                ) {
                     Text(
                         text = byLine,
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center
                     )
-
-                    Spacer(Modifier.height(12.dp))
-
                     Text(
                         text = Strings.aboutAppDescription,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(horizontal = 8.dp)
+                        textAlign = TextAlign.Center
                     )
                 }
             }
+        }
 
-            Spacer(Modifier.height(18.dp))
-
-            VersionPill(
-                versionName = versionName,
-                versionCode = versionCode,
-                updateCheckEnabled = !com.webtoapp.BuildConfig.FDROID,
-                onClick = {
-                    showUpdateDialog = true
-                    if (!isCheckingUpdate) {
-                        isCheckingUpdate = true
-                        updateResult = null
-                        scope.launch {
-                            val result = com.webtoapp.core.update.UpdateChecker.check(versionName)
-                            updateResult = result
-                            isCheckingUpdate = false
-                        }
+        WtaSectionDivider()
+        VersionActions(
+            versionName = versionName,
+            versionCode = versionCode,
+            updateCheckEnabled = !com.webtoapp.BuildConfig.FDROID,
+            onCheckForUpdates = {
+                showUpdateDialog = true
+                if (!isCheckingUpdate) {
+                    isCheckingUpdate = true
+                    updateResult = null
+                    scope.launch {
+                        val result = com.webtoapp.core.update.UpdateChecker.check(versionName)
+                        updateResult = result
+                        isCheckingUpdate = false
                     }
-                },
-                onCopy = {
-                    val label = "WebToApp version"
-                    val text = "WebToApp v$versionName ($versionCode)"
-                    context.copyToClipboard(label, text)
-                    Toast.makeText(
-                        context,
-                        versionCopied,
-                        Toast.LENGTH_SHORT
-                    ).show()
-                },
-                onHistory = {
-                    showHistorySheet = true
-                    if (historyReleases.isEmpty() && !historyLoading) {
-                        historyLoading = true
-                        historyError = null
-                        scope.launch {
-                            try {
-                                historyReleases = com.webtoapp.core.update.UpdateChecker.fetchAllReleases()
-                            } catch (e: Exception) {
-                                historyError = e.message ?: e.javaClass.simpleName
-                            } finally {
-                                historyLoading = false
-                            }
+                }
+            },
+            onCopy = {
+                val label = "WebToApp version"
+                val text = "WebToApp v$versionName ($versionCode)"
+                context.copyToClipboard(label, text)
+                Toast.makeText(
+                    context,
+                    versionCopied,
+                    Toast.LENGTH_SHORT
+                ).show()
+            },
+            onHistory = {
+                showHistorySheet = true
+                if (historyReleases.isEmpty() && !historyLoading) {
+                    historyLoading = true
+                    historyError = null
+                    scope.launch {
+                        try {
+                            historyReleases = com.webtoapp.core.update.UpdateChecker.fetchAllReleases()
+                        } catch (e: Exception) {
+                            historyError = e.message ?: e.javaClass.simpleName
+                        } finally {
+                            historyLoading = false
                         }
                     }
                 }
-            )
-        }
+            }
+        )
     }
 }
 
 @Composable
-private fun VersionPill(
+private fun VersionActions(
     versionName: String,
     versionCode: Long,
     updateCheckEnabled: Boolean,
-    onClick: () -> Unit,
+    onCheckForUpdates: () -> Unit,
     onCopy: () -> Unit,
     onHistory: () -> Unit
 ) {
-    val interactionSource = remember { MutableInteractionSource() }
-    val hapticClick = rememberHapticClick(onClick)
-    val hapticCopy = rememberHapticClick(onCopy)
-    val hapticHistory = rememberHapticClick(onHistory)
+    val checkForUpdates = rememberHapticClick(onCheckForUpdates)
+    val copyVersion = rememberHapticClick(onCopy)
+    val showHistory = rememberHapticClick(onHistory)
 
-    Row(
-        modifier = Modifier
-            .clip(RoundedCornerShape(999.dp))
-            .background(MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.8f))
-            .then(
-                if (updateCheckEnabled) {
-                    Modifier.clickable(
-                        interactionSource = interactionSource,
-                        indication = null,
-                        onClick = hapticClick
-                    )
-                } else {
-                    Modifier
-                }
-            )
-            .wtaPressScale(interactionSource, pressedScale = 0.95f)
-            .padding(horizontal = 14.dp, vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(
-            text = "v$versionName",
-            style = MaterialTheme.typography.labelLargeEmphasized,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-        Spacer(Modifier.width(6.dp))
-        Text(
-            text = "·",
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.outline
-        )
-        Spacer(Modifier.width(6.dp))
-        Text(
-            text = versionCode.toString(),
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        if (updateCheckEnabled) {
-            Spacer(Modifier.width(8.dp))
-            Icon(
-                Icons.Outlined.Sync,
-                contentDescription = Strings.updateCheckTitle,
-                modifier = Modifier.size(14.dp),
-                tint = MaterialTheme.colorScheme.primary
+        Box(
+            modifier = Modifier
+                .clip(RoundedCornerShape(WtaRadius.Control))
+                .heightIn(min = WtaSize.TouchTarget)
+                .then(
+                    if (updateCheckEnabled) {
+                        Modifier.clickable(
+                            onClickLabel = Strings.updateCheckTitle,
+                            onClick = checkForUpdates
+                        )
+                    } else {
+                        Modifier
+                    }
+                )
+                .padding(horizontal = WtaSpacing.RowHorizontal),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "v$versionName · $versionCode",
+                style = MaterialTheme.typography.labelLargeEmphasized,
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center
             )
         }
-        Spacer(Modifier.width(10.dp))
-        Icon(
-            Icons.Outlined.History,
-            contentDescription = Strings.versionHistoryButtonHint,
-            modifier = Modifier
-                .clip(CircleShape)
-                .clickable(onClick = hapticHistory)
-                .size(15.dp),
-            tint = MaterialTheme.colorScheme.primary
-        )
-        Spacer(Modifier.width(10.dp))
-        Icon(
-            Icons.Outlined.ContentCopy,
-            contentDescription = null,
-            modifier = Modifier
-                .clip(CircleShape)
-                .clickable(onClick = hapticCopy)
-                .size(14.dp),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(WtaSpacing.ContentGap),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (updateCheckEnabled) {
+                IconButton(
+                    onClick = checkForUpdates,
+                    modifier = Modifier.size(WtaSize.TouchTarget)
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Sync,
+                        contentDescription = Strings.updateCheckTitle,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+            IconButton(
+                onClick = showHistory,
+                modifier = Modifier.size(WtaSize.TouchTarget)
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.History,
+                    contentDescription = Strings.versionHistoryButtonHint
+                )
+            }
+            IconButton(
+                onClick = copyVersion,
+                modifier = Modifier.size(WtaSize.TouchTarget)
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.ContentCopy,
+                    contentDescription = Strings.copy
+                )
+            }
+        }
     }
 }
 
@@ -781,84 +728,81 @@ private fun ContactGrid() {
     val entries = remember(groupWord, qqCopied, authorLabel, docsLabel) {
         listOf(
             ContactEntry(
-                icon = Icons.Rounded.MenuBook,
+                iconAsset = "docs",
                 label = docsLabel,
                 value = "shiaho777.github.io",
                 action = ContactAction.OpenUrl("https://shiaho777.github.io/web-to-app/"),
-                shapeIndex = 0
+                invertInLightTheme = true
             ),
             ContactEntry(
-                icon = Icons.Rounded.Send,
+                iconAsset = "telegram",
                 label = "Telegram",
                 value = "@webtoapp777",
-                action = ContactAction.OpenUrl("https://t.me/webtoapp777"),
-                shapeIndex = 1
+                action = ContactAction.OpenUrl("https://t.me/webtoapp777")
             ),
             ContactEntry(
-                icon = Icons.Rounded.Tag,
-                label = "X (Twitter)",
+                iconAsset = "x",
+                label = "X",
                 value = "@shiaho777",
                 action = ContactAction.OpenUrl("https://x.com/shiaho777"),
-                shapeIndex = 2
+                invertInLightTheme = true
             ),
             ContactEntry(
-                icon = Icons.Rounded.PlayCircle,
+                iconAsset = "bilibili",
                 label = "Bilibili",
                 value = "b23.tv/8mGDo2N",
-                action = ContactAction.OpenUrl("https://b23.tv/8mGDo2N"),
-                shapeIndex = 3
+                action = ContactAction.OpenUrl("https://b23.tv/8mGDo2N")
             ),
             ContactEntry(
-                icon = Icons.Rounded.Groups,
+                iconAsset = "qq",
                 label = "QQ $groupWord",
                 value = "1041130206",
                 action = ContactAction.CopyText(
                     label = "QQ Group",
                     text = "1041130206",
                     toast = qqCopied
-                ),
-                shapeIndex = 4
+                )
             ),
             ContactEntry(
-                icon = Icons.Rounded.Forum,
+                iconAsset = "projects",
                 label = authorLabel,
                 value = "shiaho",
-                action = ContactAction.OpenUrl("https://github.com/shiaho777"),
-                shapeIndex = 5
+                action = ContactAction.OpenUrl("https://github.com/shiaho777")
             )
         )
+    }
+
+    val onContactAction: (ContactAction) -> Unit = remember(context) {
+        { action ->
+            when (action) {
+                is ContactAction.OpenUrl -> context.openUrl(action.url)
+                is ContactAction.CopyText -> {
+                    context.copyToClipboard(action.label, action.text)
+                    Toast.makeText(context, action.toast, Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
     }
 
     WtaSection(
         title = contactTitle,
         headerStyle = WtaSectionHeaderStyle.Quiet
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(WtaSpacing.CardGap)) {
-            GitHubRepoCard(onClick = { context.openUrl("https://github.com/shiaho777/web-to-app") })
-            entries.chunked(2).forEach { pair ->
-                Row(horizontalArrangement = Arrangement.spacedBy(WtaSpacing.CardGap)) {
-                    pair.forEach { entry ->
-                        ContactTile(
-                            entry = entry,
-                            modifier = Modifier.weight(1f),
-                            onAction = { action ->
-                                when (action) {
-                                    is ContactAction.OpenUrl -> context.openUrl(action.url)
-                                    is ContactAction.CopyText -> {
-                                        context.copyToClipboard(action.label, action.text)
-                                        Toast.makeText(
-                                            context,
-                                            action.toast,
-                                            Toast.LENGTH_SHORT
-                                        ).show()
-                                    }
-                                }
-                            }
-                        )
-                    }
+        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+            val minTileWidth = 168.dp * LocalDensity.current.fontScale.coerceAtLeast(1f)
+            val columns = if (maxWidth >= minTileWidth * 2 + WtaSpacing.CardGap) 2 else 1
 
-                    if (pair.size == 1) {
-                        Spacer(modifier = Modifier.weight(1f))
+            Column(verticalArrangement = Arrangement.spacedBy(WtaSpacing.CardGap)) {
+                GitHubRepoCard(onClick = { context.openUrl("https://github.com/shiaho777/web-to-app") })
+                entries.chunked(columns).forEach { row ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(WtaSpacing.CardGap)) {
+                        row.forEach { entry ->
+                            ContactTile(
+                                entry = entry,
+                                modifier = Modifier.weight(1f),
+                                onAction = onContactAction
+                            )
+                        }
                     }
                 }
             }
@@ -867,11 +811,11 @@ private fun ContactGrid() {
 }
 
 private data class ContactEntry(
-    val icon: ImageVector,
+    val iconAsset: String,
     val label: String,
     val value: String,
     val action: ContactAction,
-    val shapeIndex: Int
+    val invertInLightTheme: Boolean = false
 )
 
 private sealed interface ContactAction {
@@ -887,7 +831,6 @@ private sealed interface ContactAction {
 @Composable
 private fun GitHubRepoCard(onClick: () -> Unit) {
     val isDark = LocalIsDarkTheme.current
-    // GitHub brand mark: keep it recognizable in both themes by inverting the badge.
     val badgeColor = if (isDark) Color(0xFFE6EDF3) else Color(0xFF24292F)
     val markColor = if (isDark) Color(0xFF24292F) else Color.White
 
@@ -895,7 +838,10 @@ private fun GitHubRepoCard(onClick: () -> Unit) {
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
         tone = WtaCardTone.Elevated,
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(18.dp)
+        contentPadding = PaddingValues(
+            horizontal = WtaSpacing.RowHorizontal,
+            vertical = WtaSpacing.ContentGap
+        )
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -903,7 +849,7 @@ private fun GitHubRepoCard(onClick: () -> Unit) {
         ) {
             Box(
                 modifier = Modifier
-                    .size(50.dp)
+                    .size(WtaSize.IconPlate)
                     .clip(RoundedCornerShape(WtaRadius.IconPlate))
                     .background(badgeColor),
                 contentAlignment = Alignment.Center
@@ -911,11 +857,11 @@ private fun GitHubRepoCard(onClick: () -> Unit) {
                 Icon(
                     painter = painterResource(R.drawable.ic_github_mark),
                     contentDescription = null,
-                    modifier = Modifier.size(28.dp),
+                    modifier = Modifier.size(WtaSize.Icon),
                     tint = markColor
                 )
             }
-            Spacer(Modifier.width(14.dp))
+            Spacer(Modifier.width(WtaSpacing.IconTextGap))
             Column(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(2.dp)
@@ -938,21 +884,13 @@ private fun GitHubRepoCard(onClick: () -> Unit) {
                     )
                 }
             }
-            Spacer(Modifier.width(8.dp))
-            Box(
-                modifier = Modifier
-                    .size(32.dp)
-                    .clip(RoundedCornerShape(WtaRadius.IconPlate))
-                    .background(MaterialTheme.colorScheme.tertiaryContainer),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    Icons.Rounded.NorthEast,
-                    contentDescription = null,
-                    modifier = Modifier.size(15.dp),
-                    tint = MaterialTheme.colorScheme.onTertiaryContainer
-                )
-            }
+            Spacer(Modifier.width(WtaSpacing.Small))
+            Icon(
+                imageVector = Icons.Rounded.NorthEast,
+                contentDescription = null,
+                modifier = Modifier.size(WtaSize.IconSmall),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }
@@ -967,19 +905,28 @@ private fun ContactTile(
         onClick = { onAction(entry.action) },
         modifier = modifier,
         tone = WtaCardTone.Surface,
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(14.dp)
+        contentPadding = PaddingValues(
+            horizontal = WtaSpacing.Medium,
+            vertical = WtaSpacing.Small
+        )
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            AboutTonalIcon(
-                icon = entry.icon,
-                shapeIndex = entry.shapeIndex,
-                plateSize = 38.dp,
-                iconSize = 19.dp
+            AsyncImage(
+                model = "file:///android_asset/contact_icons/${entry.iconAsset}.png",
+                contentDescription = null,
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(RoundedCornerShape(WtaRadius.IconPlate)),
+                colorFilter = if (entry.invertInLightTheme && !LocalIsDarkTheme.current) {
+                    inverseAboutIconColors
+                } else {
+                    null
+                }
             )
-            Spacer(Modifier.width(12.dp))
+            Spacer(Modifier.width(WtaSpacing.Small))
             Column(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(1.dp)
@@ -999,12 +946,15 @@ private fun ContactTile(
                     overflow = TextOverflow.Ellipsis
                 )
             }
-            Icon(
-                Icons.Outlined.Link,
-                contentDescription = null,
-                modifier = Modifier.size(14.dp),
-                tint = MaterialTheme.colorScheme.outline
-            )
+            if (entry.action is ContactAction.CopyText) {
+                Spacer(Modifier.width(WtaSpacing.Tiny))
+                Icon(
+                    imageVector = Icons.Outlined.ContentCopy,
+                    contentDescription = Strings.copy,
+                    modifier = Modifier.size(WtaSize.IconSmall),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
     }
 }
@@ -1175,9 +1125,6 @@ private fun UpdateCheckDialog(
     val available = result as? com.webtoapp.core.update.UpdateChecker.Result.UpdateAvailable
     val downloading = downloadState is com.webtoapp.core.update.UpdateDownloadState.Downloading ||
         downloadState is com.webtoapp.core.update.UpdateDownloadState.Verifying
-    // True when the confirmButton shows a real action (Download/Install/Retry/Cancel). When false
-    // (UpToDate / Failed), confirmButton itself is "Close" — the dismissButton must stay empty in
-    // that case or the dialog shows two identical Close buttons.
     val hasActionButton = available != null ||
         downloadState is com.webtoapp.core.update.UpdateDownloadState.Done
 
@@ -1550,7 +1497,6 @@ private fun VersionHistoryItem(
         AnimatedVisibility(visible = expanded) {
             Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp)) {
                 if (hasNotes) {
-                    // Thin divider line above notes.
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -1586,7 +1532,6 @@ private fun VersionHistoryItem(
                 Spacer(Modifier.height(12.dp))
             }
         }
-        // Divider between items.
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -1678,7 +1623,6 @@ private fun VersionHistoryDownloadRow(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             } else if (isCurrent) {
-                // Already installed — no download button.
             } else {
                 TextButton(onClick = onDownload) {
                     Icon(
@@ -1699,7 +1643,6 @@ private fun DownloadProgressRow(downloaded: Long, total: Long, speed: Long) {
     val percent = if (total > 0) {
         (downloaded.toFloat() / total.toFloat()).coerceIn(0f, 1f)
     } else {
-        // indeterminate when Content-Length unknown
         -1f
     }
     Text(Strings.updateDownloading, style = MaterialTheme.typography.labelMedium)
@@ -1844,6 +1787,20 @@ private fun aboutAuthorByLine(): String = when (Strings.currentLanguage.value) {
 }
 
 @Composable
+private fun aboutPreferencesTitle(): String = when (Strings.lang) {
+    AppLanguage.CHINESE -> "应用设置"
+    AppLanguage.ENGLISH -> "App settings"
+    AppLanguage.ARABIC -> "إعدادات التطبيق"
+    AppLanguage.PORTUGUESE -> "Configurações do app"
+    AppLanguage.SPANISH -> "Ajustes de la aplicación"
+    AppLanguage.FRENCH -> "Paramètres de l’application"
+    AppLanguage.GERMAN -> "App-Einstellungen"
+    AppLanguage.RUSSIAN -> "Настройки приложения"
+    AppLanguage.JAPANESE -> "アプリ設定"
+    AppLanguage.KOREAN -> "앱 설정"
+}
+
+@Composable
 private fun contactSectionTitle(): String = when (Strings.currentLanguage.value) {
     AppLanguage.CHINESE -> "联系作者"
     AppLanguage.ENGLISH -> "Get in touch"
@@ -1927,7 +1884,6 @@ private fun versionCopiedToast(): String = when (Strings.currentLanguage.value) 
     AppLanguage.KOREAN -> "Version copied"
 }
 
-
 private enum class RepoSortMode { STARS, RECENT }
 
 private class AuthorReposState {
@@ -1954,12 +1910,6 @@ private class AuthorReposState {
 
 private const val COLLAPSED_REPO_COUNT = 5
 
-/**
- * "More projects" section: lists the author's public GitHub repos (forks and
- * this app filtered out). Cached JSON renders instantly on revisit while a
- * silent refresh swaps in fresh data. Default order is by stars; a header
- * segmented toggle switches to most-recently-pushed, client-side.
- */
 @Composable
 private fun OtherProjectsSection(
     state: AuthorReposState,
@@ -2098,10 +2048,6 @@ private fun OtherProjectsSection(
     }
 }
 
-/**
- * Compact two-option segmented pill for the section header — smaller and
- * cleaner than two FilterChips next to the title.
- */
 @Composable
 private fun RepoSortToggle(
     sortMode: RepoSortMode,
@@ -2349,10 +2295,6 @@ private fun RepoLoadErrorCard(message: String?, onRetry: () -> Unit) {
     }
 }
 
-/**
- * Approximate GitHub linguist colors for the language dot — the same visual
- * cue GitHub repo lists use.
- */
 private fun languageColor(name: String): Color = when (name) {
     "Kotlin" -> Color(0xFFA97BFF)
     "Java" -> Color(0xFFB07219)

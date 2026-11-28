@@ -6,18 +6,6 @@ import java.util.zip.ZipFile
 import org.junit.Assume.assumeTrue
 import org.junit.Test
 
-/**
- * Pins the launcher-background rewrite done by [ArscRebuilder]: the template ships
- * `color/ic_launcher_background` as a black color int, and a rebuild with icon
- * replacement converts it into a drawable string reference so the generated app's
- * adaptive icons get the patched `res/ic_launcher_bg.png`.
- *
- * Localization goes through [ArscRebuilder.findLauncherBackgroundEntry] — the same
- * by-name lookup the runtime uses. An earlier revision scanned for the entry at a
- * hardcoded index (0x71) inside the color type chunk, which silently assumed a fixed
- * resource-merge order; adding the Credential Manager libraries shifted the indices
- * and broke the test without any functional change.
- */
 class ArscRebuilderLauncherBgTest {
 
     private val templateApk: File by lazy {
@@ -40,13 +28,13 @@ class ArscRebuilderLauncherBgTest {
     }
 
     @Test
-    fun `original launcher background entry value is a black color int`() {
+    fun `original launcher background entry value is a white color int`() {
         val original = readTemplateArsc()
         val entry = ArscRebuilder().findLauncherBackgroundEntry(original)
 
         assertThat(entry).isNotNull()
         assertThat(entry!![1]).isEqualTo(0x1d)
-        assertThat(entry[2]).isEqualTo(0xff000000.toInt())
+        assertThat(entry[2]).isEqualTo(0xffffffff.toInt())
     }
 
     @Test
@@ -73,8 +61,6 @@ class ArscRebuilderLauncherBgTest {
         val rebuilt = rebuilder.rebuildWithNewAppNameAndIcons(original, "TestApp", replaceIcons = true)
 
         val entry = ArscRebuilder().findLauncherBackgroundEntry(rebuilt)!!
-        // The global string pool sits right after the 12-byte table header
-        // (ResTable_header): its count is at offset 8 + 8.
         val scount = readI32(rebuilt, 8 + 8)
 
         assertThat(entry[2]).isIn(0 until scount)

@@ -25,11 +25,28 @@ Builds:
     ndk: r28c
     rm:
       - app/src/google
+      - examples
+      - sample-bundles
+    prebuild: |-
+      python3 -c '
+      from pathlib import Path
+
+      markers = (
+          "com.google.firebase:",
+          "androidx.credentials:credentials-play-services-auth:",
+          "com.google.android.libraries.identity.googleid:",
+      )
+      for path in (Path("build.gradle.kts"), Path("../shell/build.gradle.kts")):
+          lines = path.read_text().splitlines(keepends=True)
+          path.write_text("".join(line for line in lines if not any(marker in line for marker in markers)))
+      '
 
 MaintainerNotes: |-
   One source tree. -Pfdroid=true drops Firebase, Play Services Google
   Sign-In, and GeckoView's FIDO client, and leaves the APK
-  unsigned. Do not mix with a normal release in the same Gradle run.
+  unsigned. The preparation step strips the inactive Google dependency entries
+  before scanning the source. The root sample archives and development examples
+  are outside the APK build inputs.
   UpdateCheckData is pinned to app/build.gradle.kts because that is the
   released host version. The shell template version is kept in sync with it
   by ReleaseVersionParityTest, so either file would report the same release.

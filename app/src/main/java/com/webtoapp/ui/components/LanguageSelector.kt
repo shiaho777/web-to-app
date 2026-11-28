@@ -14,6 +14,7 @@ import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -270,14 +271,12 @@ private fun LanguageOption(
 }
 
 @Composable
-fun FirstLaunchLanguageScreen(
-    onLanguageSelected: () -> Unit
-) {
+fun FirstLaunchLanguageScreen() {
     val context = LocalContext.current
     val languageManager = remember { LanguageManager.getInstance(context) }
     val scope = rememberCoroutineScope()
 
-    var selectedLanguage by remember { mutableStateOf<AppLanguage?>(null) }
+    var selectedLanguage by rememberSaveable { mutableStateOf<AppLanguage?>(null) }
     val scrollState = rememberScrollState()
     val isTv = isRunningOnTv()
     val confirmFocusRequester = remember { FocusRequester() }
@@ -398,7 +397,6 @@ fun FirstLaunchLanguageScreen(
                     selectedLanguage?.let { lang ->
                         scope.launch {
                             languageManager.setLanguage(lang)
-                            onLanguageSelected()
                         }
                     }
                 },

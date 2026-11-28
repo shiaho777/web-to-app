@@ -19,10 +19,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
@@ -34,9 +30,10 @@ import com.webtoapp.WebToAppApplication
 import com.webtoapp.core.agent.mcp.HostMcpController
 import com.webtoapp.core.agent.permission.ChoiceRequest
 import com.webtoapp.core.agent.permission.PermissionRequest
-import com.webtoapp.core.i18n.LanguageManager
+import com.webtoapp.core.i18n.InitializeLanguage
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.logging.AppLogger
+import com.webtoapp.core.onboarding.OnboardingPrefs
 import com.webtoapp.ui.agent.components.ChoiceBottomSheet
 import com.webtoapp.ui.agent.components.PermissionDialog
 import com.webtoapp.ui.components.FirstLaunchLanguageScreen
@@ -53,19 +50,17 @@ import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
-    private var showLanguageSelection by mutableStateOf(true)
-    private var showOnboarding by mutableStateOf(true)
-
     private var showShortcutPermissionDialog by mutableStateOf(false)
-    private var shortcutPermissionMessage by mutableStateOf("")
 
     private var showStartupPermissionRationale by mutableStateOf(false)
+    private var requestingStartupPermissions by mutableStateOf(false)
     private var showPermissionDeniedDialog by mutableStateOf(false)
     private var pendingStartupPermissions: List<String> = emptyList()
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { results ->
+        requestingStartupPermissions = false
         val denied = results.filterValues { !it }.keys
         if (denied.isNotEmpty()) {
             AppLogger.i("MainActivity", "Startup permissions denied: ${denied.joinToString()}")
@@ -127,10 +122,6 @@ class MainActivity : ComponentActivity() {
             AppLogger.w("MainActivity", "enableEdgeToEdge failed", e)
         }
 
-        requestNecessaryPermissions()
-
-        checkShortcutPermission()
-
         try {
             WindowCompat.setDecorFitsSystemWindows(window, false)
         } catch (e: Exception) {
@@ -138,7 +129,7 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
-
+            val hasSelectedLanguage = InitializeLanguage()
             val themeRevealState = rememberThemeRevealState()
 
             WebToAppTheme { isDarkTheme ->
@@ -161,17 +152,19 @@ class MainActivity : ComponentActivity() {
                 }
 
                 val context = LocalContext.current
-                val languageManager = remember { LanguageManager.getInstance(context) }
-                // Nullable gate: a `true` initial would paint AppNavigation for
-                // one frame, then flip to the language picker on first launch.
-                val hasSelectedLanguage by remember {
-                    languageManager.hasSelectedLanguageFlow.map<Boolean, Boolean?> { it }
-                }.collectAsState(initial = null)
-                val onboardingPrefs = remember { com.webtoapp.core.onboarding.OnboardingPrefs.getInstance(context) }
+                val onboardingPrefs = remember { OnboardingPrefs.getInstance(context) }
                 val onboardingCompleted by remember {
                     onboardingPrefs.completedFlow.map<Boolean, Boolean?> { it }
                 }.collectAsState(initial = null)
                 val onboardingScope = rememberCoroutineScope()
+                val startupReady = hasSelectedLanguage == true && onboardingCompleted == true
+
+                LaunchedEffect(startupReady) {
+                    if (startupReady) {
+                        requestNecessaryPermissions()
+                        checkShortcutPermission()
+                    }
+                }
 
                 CompositionLocalProvider(
                     LocalThemeRevealState provides themeRevealState
@@ -182,23 +175,15 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier.fillMaxSize(),
                             color = MaterialTheme.colorScheme.background
                         ) {
-                            if (hasSelectedLanguage == false && showLanguageSelection) {
-                                FirstLaunchLanguageScreen(
-                                    onLanguageSelected = {
-                                        showLanguageSelection = false
-                                    }
-                                )
-                            } else if (hasSelectedLanguage == true &&
-                                onboardingCompleted == false &&
-                                showOnboarding
-                            ) {
+                            if (hasSelectedLanguage == false) {
+                                FirstLaunchLanguageScreen()
+                            } else if (hasSelectedLanguage == true && onboardingCompleted == false) {
                                 com.webtoapp.ui.components.OnboardingScreen(
                                     onFinished = {
-                                        showOnboarding = false
                                         onboardingScope.launch { onboardingPrefs.setCompleted(true) }
                                     }
                                 )
-                            } else if (hasSelectedLanguage != null && onboardingCompleted != null) {
+                            } else if (startupReady) {
                                 AppNavigation()
                             }
                         }
@@ -230,7 +215,7 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                if (showStartupPermissionRationale) {
+                if (startupReady && showStartupPermissionRationale) {
                     WtaAlertDialog(
                         onDismissRequest = { showStartupPermissionRationale = false },
                         title = Strings.startupPermissionTitle,
@@ -255,7 +240,7 @@ class MainActivity : ComponentActivity() {
                     )
                 }
 
-                if (showPermissionDeniedDialog) {
+                if (startupReady && showPermissionDeniedDialog) {
                     WtaAlertDialog(
                         onDismissRequest = { showPermissionDeniedDialog = false },
                         title = Strings.permissionDeniedTitle,
@@ -276,11 +261,13 @@ class MainActivity : ComponentActivity() {
                     )
                 }
 
-                if (showShortcutPermissionDialog) {
+                if (startupReady && showShortcutPermissionDialog &&
+                    !showStartupPermissionRationale && !requestingStartupPermissions && !showPermissionDeniedDialog
+                ) {
                     WtaAlertDialog(
                         onDismissRequest = { showShortcutPermissionDialog = false },
                         title = Strings.shortcutPermissionTitle,
-                        text = shortcutPermissionMessage,
+                        text = buildShortcutPermissionMessage(),
                         confirmButton = {
                             TextButton(
                                 onClick = {
@@ -305,15 +292,8 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun checkShortcutPermission() {
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-
-            if (!ShortcutManagerCompat.isRequestPinShortcutSupported(this)) {
-
-                shortcutPermissionMessage = buildShortcutPermissionMessage()
-                showShortcutPermissionDialog = true
-            }
-        }
+        showShortcutPermissionDialog = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
+            !ShortcutManagerCompat.isRequestPinShortcutSupported(this)
     }
 
     private fun buildShortcutPermissionMessage(): String {
@@ -389,6 +369,7 @@ class MainActivity : ComponentActivity() {
         }
         if (needRequest.isNotEmpty()) {
             AppLogger.d("MainActivity", "Requesting permissions: ${needRequest.joinToString()}")
+            requestingStartupPermissions = true
             permissionLauncher.launch(needRequest.toTypedArray())
         }
     }

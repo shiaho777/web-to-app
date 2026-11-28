@@ -3,10 +3,12 @@ package com.webtoapp.core.i18n
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.res.Configuration
+import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import java.util.Locale
@@ -57,9 +59,15 @@ class LanguageManager(private val context: Context) {
     }
 
     val currentLanguageFlow: Flow<AppLanguage> = context.languageDataStore.data.map { prefs ->
-        val code = prefs[LANGUAGE_KEY] ?: getSystemLanguageCode()
-        AppLanguage.fromCode(code)
+        prefs.readLanguage()
     }
+
+    val selectedLanguageFlow: Flow<AppLanguage?> = context.languageDataStore.data.map { prefs ->
+        if (prefs[LANGUAGE_SELECTED_KEY] == "true") prefs.readLanguage() else null
+    }.distinctUntilChanged()
+
+    private fun Preferences.readLanguage(): AppLanguage =
+        AppLanguage.fromCode(this[LANGUAGE_KEY] ?: getSystemLanguageCode())
 
     private fun getSystemLanguageCode(): String {
         val systemLocale = Locale.getDefault()
@@ -75,14 +83,6 @@ class LanguageManager(private val context: Context) {
             "ko" -> "ko"
             else -> "en"
         }
-    }
-
-    val hasSelectedLanguageFlow: Flow<Boolean> = context.languageDataStore.data.map { prefs ->
-        prefs[LANGUAGE_SELECTED_KEY] == "true"
-    }
-
-    suspend fun hasSelectedLanguage(): Boolean {
-        return hasSelectedLanguageFlow.first()
     }
 
     suspend fun setLanguage(language: AppLanguage) {

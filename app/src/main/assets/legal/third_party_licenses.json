@@ -21,6 +21,7 @@
     { "name": "AndroidX Room", "version": "2.7.2", "spdx": "Apache-2.0", "url": "https://developer.android.com/jetpack/androidx/releases/room" },
     { "name": "kotlinx.coroutines", "version": "1.7.3", "spdx": "Apache-2.0", "url": "https://github.com/Kotlin/kotlinx.coroutines" },
     { "name": "Coil", "version": "2.5.0", "spdx": "Apache-2.0", "url": "https://github.com/coil-kt/coil" },
+    { "name": "GitHub Octicons", "version": "", "spdx": "MIT", "spdxNote": "Copyright (c) 2026 GitHub Inc.", "url": "https://primer.style/octicons/icon/repo-24/" },
     { "name": "Gson", "version": "2.10.1", "spdx": "Apache-2.0", "url": "https://github.com/google/gson" },
     { "name": "OkHttp (incl. DNS-over-HTTPS)", "version": "4.12.0", "spdx": "Apache-2.0", "url": "https://github.com/square/okhttp" },
     { "name": "Firebase Cloud Messaging (standard builds only)", "version": "BOM 33.7.0", "spdx": "Apache-2.0", "spdxNote": "SDK code is Apache-2.0; the Firebase service itself is governed by Google's terms of service.", "url": "https://firebase.google.com/docs/cloud-messaging" },
