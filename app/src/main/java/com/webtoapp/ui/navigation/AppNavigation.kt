@@ -217,7 +217,6 @@ fun AppNavigation() {
                         viewModel.createNewApp()
                         navController.navigate(Routes.CREATE_APP)
                     },
-                    onCreateSampleApp = { viewModel.createSampleApp() },
                     onCreateMediaApp = { navController.navigate(Routes.CREATE_MEDIA_APP) },
                     onCreateGalleryApp = { navController.navigate(Routes.CREATE_GALLERY_APP) },
                     onCreateHtmlApp = { navController.navigate(Routes.CREATE_HTML_APP) },
