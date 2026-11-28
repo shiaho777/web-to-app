@@ -3231,9 +3231,6 @@ object Strings {
     val permissionDeniedTitle: String get() = StringsE.permissionDeniedTitle
     val permissionDeniedMessage: String get() = StringsE.permissionDeniedMessage
     val emptyStateHint: String get() = StringsE.emptyStateHint
-    val emptyStateSampleApp: String get() = StringsE.emptyStateSampleApp
-    val sampleAppName: String get() = StringsE.sampleAppName
-    val sampleAppCreated: String get() = StringsE.sampleAppCreated
     val onboardingSkip: String get() = StringsE.onboardingSkip
     val onboardingNext: String get() = StringsE.onboardingNext
     val onboardingStart: String get() = StringsE.onboardingStart

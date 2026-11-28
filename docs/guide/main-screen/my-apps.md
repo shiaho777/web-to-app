@@ -34,4 +34,4 @@ From left to right: the title (**My Apps**), then [Dark / Light](/guide/main-scr
 
 ## Empty state
 
-With no apps yet, the list area shows an empty state with a hint and a **Create** shortcut.
+With no apps yet, select **Create App** in the bottom-right corner to choose an app type.

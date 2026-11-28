@@ -80,18 +80,22 @@ class FirstFiveMinutesGateTest {
     }
 
     @Test
-    fun `empty state offers create and sample actions`() {
+    fun `the floating button is the only create action on empty home`() {
         val home = source("ui/screens/HomeScreen.kt")
-        assertWithMessage("EmptyState must accept a create callback")
-            .that(home)
-            .contains("onCreateApp: () -> Unit = {}")
-        assertWithMessage("EmptyState must offer the sample app action")
-            .that(home)
-            .contains("Strings.emptyStateSampleApp")
-        val navigation = source("ui/navigation/AppNavigation.kt")
-        assertWithMessage("Navigation must wire sample creation")
-            .that(navigation)
-            .contains("onCreateSampleApp = { viewModel.createSampleApp() }")
+        val createButton = home.substringAfter("floatingActionButton = {").substringBefore("\n        },")
+        assertWithMessage("The floating Create App button must open the app-type picker")
+            .that(createButton)
+            .contains("showFabMenu = true")
+        assertWithMessage("The floating button must be labeled Create App")
+            .that(createButton)
+            .contains("Strings.createApp")
+        assertWithMessage("The floating button must expose its accessible name")
+            .that(createButton)
+            .contains("contentDescription = createAppLabel")
+        val emptyState = home.substringAfter("fun HomeEmptyState(").substringBefore("\n}\n")
+        assertWithMessage("The empty state body must not render an action button")
+            .that(emptyState)
+            .doesNotContain("Button(")
     }
 
     @Test

@@ -2,7 +2,6 @@ package com.webtoapp.ui.screens
 import android.content.Intent
 import android.net.Uri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.webtoapp.ui.components.PremiumButton
 import com.webtoapp.ui.components.SettingsSwitch
 
 import androidx.compose.animation.AnimatedVisibility
@@ -42,6 +41,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -127,12 +128,13 @@ import com.webtoapp.data.home.stepCustomDrag
 import com.webtoapp.ui.design.WtaBadge
 import com.webtoapp.ui.theme.LocalShowDescriptions
 
+private val HomeCreateButtonBottomSpace = 88.dp
+
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun HomeScreen(
     viewModel: MainViewModel,
     onCreateApp: () -> Unit,
-    onCreateSampleApp: () -> Unit = {},
     onCreateMediaApp: () -> Unit = {},
     onCreateGalleryApp: () -> Unit = {},
     onCreateHtmlApp: () -> Unit = {},
@@ -255,10 +257,12 @@ fun HomeScreen(
         },
         snackbarHostState = snackbarHostState,
         floatingActionButton = {
+            val createAppLabel = Strings.createApp
             ExtendedFloatingActionButton(
                 onClick = rememberHapticClick { showFabMenu = true },
+                modifier = Modifier.semantics { contentDescription = createAppLabel },
                 icon = { Icon(Icons.Default.Add, contentDescription = null) },
-                text = { Text(Strings.createApp, style = MaterialTheme.typography.labelLargeEmphasized) },
+                text = { Text(createAppLabel, style = MaterialTheme.typography.labelLargeEmphasized) },
                 containerColor = MaterialTheme.colorScheme.primaryContainer,
                 contentColor = MaterialTheme.colorScheme.onPrimaryContainer
             )
@@ -514,11 +518,11 @@ fun HomeScreen(
                     .weight(weight = 1f, fill = true)
             ) {
                 if (apps.isEmpty()) {
-
-                    EmptyState(
-                        modifier = Modifier.align(Alignment.Center),
-                        onCreateApp = onCreateApp,
-                        onCreateSampleApp = onCreateSampleApp
+                    HomeEmptyState(
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .padding(bottom = HomeCreateButtonBottomSpace)
+                            .verticalScroll(rememberScrollState())
                     )
                 } else {
 
@@ -847,7 +851,7 @@ fun HomeScreen(
                         LazyVerticalGrid(
                             columns = GridCells.Adaptive(minSize = 150.dp),
                             state = rememberLazyGridState(),
-                            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 88.dp),
+                            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = HomeCreateButtonBottomSpace),
                             horizontalArrangement = Arrangement.spacedBy(10.dp),
                             verticalArrangement = Arrangement.spacedBy(10.dp),
                             modifier = Modifier.fillMaxSize()
@@ -871,7 +875,7 @@ fun HomeScreen(
                     LazyColumn(
                     state = listState,
                     userScrollEnabled = listDrag.id == null,
-                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 88.dp),
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = HomeCreateButtonBottomSpace),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     if (showDragHint) {
@@ -1754,14 +1758,10 @@ fun AppTypeChip(appType: com.webtoapp.data.model.AppType) {
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun EmptyState(
-    modifier: Modifier = Modifier,
-    onCreateApp: () -> Unit = {},
-    onCreateSampleApp: () -> Unit = {}
-) {
+private fun HomeEmptyState(modifier: Modifier = Modifier) {
     val colors = MaterialTheme.colorScheme
     Column(
-        modifier = modifier.padding(horizontal = 32.dp, vertical = 40.dp),
+        modifier = modifier.padding(horizontal = 32.dp, vertical = WtaSpacing.ScreenVertical),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Box(
@@ -1796,23 +1796,6 @@ fun EmptyState(
                 color = colors.onSurfaceVariant,
                 textAlign = TextAlign.Center
             )
-        }
-        Spacer(modifier = Modifier.height(24.dp))
-        PremiumButton(
-            onClick = onCreateApp,
-            modifier = Modifier.widthIn(min = 220.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Rounded.Add,
-                contentDescription = null,
-                modifier = Modifier.size(18.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(Strings.createApp)
-        }
-        Spacer(modifier = Modifier.height(8.dp))
-        TextButton(onClick = onCreateSampleApp) {
-            Text(Strings.emptyStateSampleApp)
         }
     }
 }

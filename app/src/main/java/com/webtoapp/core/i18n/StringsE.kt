@@ -4001,45 +4001,6 @@ object StringsE {
         AppLanguage.KOREAN -> "웹사이트, 프론트엔드 프로젝트, 로컬 서버를 진짜 Android 앱으로 만드세요. 모든 과정이 휴대폰에서 이루어집니다."
     }
 
-    val emptyStateSampleApp: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "先创建一个示例应用"
-        AppLanguage.ENGLISH -> "Start with a sample app"
-        AppLanguage.ARABIC -> "ابدأ بتطبيق تجريبي"
-        AppLanguage.PORTUGUESE -> "Comece com um app de exemplo"
-        AppLanguage.SPANISH -> "Empieza con una app de ejemplo"
-        AppLanguage.FRENCH -> "Commencer avec une application d'exemple"
-        AppLanguage.GERMAN -> "Mit einer Beispiel-App starten"
-        AppLanguage.RUSSIAN -> "Начать с примера приложения"
-        AppLanguage.JAPANESE -> "サンプルアプリから始める"
-        AppLanguage.KOREAN -> "샘플 앱으로 시작하기"
-    }
-
-    val sampleAppName: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "示例 · WebToApp 文档"
-        AppLanguage.ENGLISH -> "Sample · WebToApp Docs"
-        AppLanguage.ARABIC -> "مثال · وثائق WebToApp"
-        AppLanguage.PORTUGUESE -> "Exemplo · Docs do WebToApp"
-        AppLanguage.SPANISH -> "Ejemplo · Docs de WebToApp"
-        AppLanguage.FRENCH -> "Exemple · Docs WebToApp"
-        AppLanguage.GERMAN -> "Beispiel · WebToApp-Doku"
-        AppLanguage.RUSSIAN -> "Пример · Документация WebToApp"
-        AppLanguage.JAPANESE -> "サンプル · WebToApp ドキュメント"
-        AppLanguage.KOREAN -> "샘플 · WebToApp 문서"
-    }
-
-    val sampleAppCreated: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "示例应用已创建，点击即可预览"
-        AppLanguage.ENGLISH -> "Sample app created — tap it to preview"
-        AppLanguage.ARABIC -> "تم إنشاء التطبيق التجريبي — اضغط عليه للمعاينة"
-        AppLanguage.PORTUGUESE -> "App de exemplo criado — toque para pré-visualizar"
-        AppLanguage.SPANISH -> "App de ejemplo creada: tócala para previsualizar"
-        AppLanguage.FRENCH -> "Application d'exemple créée — appuyez pour prévisualiser"
-        AppLanguage.GERMAN -> "Beispiel-App erstellt — zum Ansehen antippen"
-        AppLanguage.RUSSIAN -> "Пример приложения создан — нажмите для предпросмотра"
-        AppLanguage.JAPANESE -> "サンプルアプリを作成しました。タップしてプレビューできます"
-        AppLanguage.KOREAN -> "샘플 앱이 생성되었습니다. 탭하여 미리 보세요"
-    }
-
     val onboardingSkip: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "跳过"
         AppLanguage.ENGLISH -> "Skip"
